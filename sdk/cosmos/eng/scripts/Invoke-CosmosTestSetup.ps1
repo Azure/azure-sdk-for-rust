@@ -14,6 +14,37 @@ if ($env:COSMOS_RUSTFLAGS) {
     Write-Host "RUSTFLAGS appended with COSMOS_RUSTFLAGS: $env:RUSTFLAGS"
 }
 
+# Byte-level binary-JSON codec fuzzing (cargo-fuzz). Triggered by
+# AZURE_COSMOS_FUZZ=1 (matrix variable on the Linux + nightly fuzz leg in
+# sdk/cosmos/fuzz-matrix.json). Replays the committed golden vectors through
+# every codec fuzz target (libFuzzer -runs=0, no mutation) to prove they still
+# decode without panicking. Linux-only; the leg carries ContinueOnError=true.
+# Guarded so it runs once even though Test-Setup.ps1 fires per crate.
+if ($env:AZURE_COSMOS_FUZZ -eq '1' -and -not $env:AZURE_COSMOS_FUZZ_RAN) {
+    $env:AZURE_COSMOS_FUZZ_RAN = '1'
+    if (-not $IsLinux) {
+        Write-Host "AZURE_COSMOS_FUZZ=1 but not on Linux; cargo-fuzz is Linux-only. Skipping."
+    }
+    else {
+        Write-Host "==> Cosmos binary-JSON fuzz: golden-vector corpus validation (-runs=0)"
+        & "$PSScriptRoot\Run-BinaryJsonFuzz.ps1" -ValidateOnly -Toolchain ([Channels]::Nightly())
+    }
+    # Strip any test_category cfg COSMOS_RUSTFLAGS injected so the subsequent
+    # cargo build/test runs only the always-on offline unit tests (no
+    # emulator/live-gated tests, which would panic with no connection string).
+    if ($env:RUSTFLAGS -match 'test_category') {
+        $env:RUSTFLAGS = ($env:RUSTFLAGS -replace '--cfg[= ]test_category="[^"]*"', '' -replace '\s+', ' ').Trim()
+        Write-Host "Stripped test_category from RUSTFLAGS on fuzz leg: '$env:RUSTFLAGS'"
+    }
+    # No live account is provisioned on the fuzz leg. Mark the test mode as
+    # skipped so `resolve_test_env` treats the unset connection string as a skip
+    # (not a fatal "required" panic) when the archetype's subsequent
+    # `cargo test` builds the account-backed driver tests on this Azure
+    # Pipelines job (SYSTEM_TEAMPROJECTID is set).
+    $env:AZURE_COSMOS_TEST_MODE = 'skipped'
+    return
+}
+
 # Hosted in-memory emulator path. The additional CI matrix sets one of the two
 # flavors below so the existing emulator suites run against both Gateway V1
 # and Gateway 2.0 over cleartext HTTP/2.
@@ -211,7 +242,7 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'vnext') {
         $env:AZURE_COSMOS_CONNECTION_STRING = "AccountEndpoint=http://localhost:8081;AccountKey=$vnextKey;"
         Write-Host "Set AZURE_COSMOS_CONNECTION_STRING to vnext emulator endpoint."
     }
-    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_vnext`""
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator_vnext`" --cfg=cosmos_aad_supported"
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
     $env:RUST_TEST_THREADS = "1"
     return
@@ -299,7 +330,7 @@ if ($IsWindows) {
 
     # Set environment variables for the tests
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
-    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`" --cfg=cosmos_aad_supported"
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
 
     # Run tests single-threaded to avoid env var contamination from proxy tests.
@@ -352,7 +383,7 @@ elseif (Get-Command "docker" -ErrorAction SilentlyContinue) {
 
     # Set environment variables for the tests
     $env:AZURE_COSMOS_CONNECTION_STRING = "emulator"
-    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`""
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"emulator`" --cfg=cosmos_aad_supported"
     Write-Host "RUSTFLAGS set to: $env:RUSTFLAGS"
 
     # Run tests single-threaded to avoid env var contamination from proxy tests.

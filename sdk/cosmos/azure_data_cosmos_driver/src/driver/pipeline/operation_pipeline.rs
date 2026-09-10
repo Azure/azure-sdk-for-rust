@@ -8,7 +8,7 @@
 //! (PPAF/PPCB), and deadline enforcement.
 
 use std::pin::Pin;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -16,7 +16,7 @@ use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use futures::future::{pending, select, Either, Future};
 
 use crate::{
-    diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineType, TransportSecurity},
+    diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineKind, TransportSecurity},
     driver::{
         routing::{
             can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
@@ -25,6 +25,7 @@ use crate::{
             CosmosEndpoint, LocationEffect, LocationSnapshot, LocationStateStore,
         },
         transport::CosmosTransport,
+        CosmosDriver,
     },
     models::{
         cosmos_headers::{PATCH_CONTENT_TYPE, QUERY_CONTENT_TYPE},
@@ -33,7 +34,7 @@ use crate::{
         Credential, DefaultConsistencyLevel, OperationType, SessionToken, SubStatusCode,
     },
     options::{
-        resolve_effective_consistency, HedgeThreshold, OperationOptionsView,
+        resolve_effective_consistency, HedgeThreshold, OperationOptions, OperationOptionsView,
         ReadConsistencyStrategy, Region, ResolvedThroughputControl,
     },
 };
@@ -65,7 +66,7 @@ use crate::driver::transport::{
 /// cumulative-wait budget, and the per-retry delay cap ("interval"). Data-plane
 /// gets more retries at a longer interval (count-limited); metadata keeps the
 /// patient, shorter-interval budget.
-fn default_throttle_budget(pipeline_type: PipelineType) -> (u32, Duration, Duration) {
+fn default_throttle_budget(pipeline_type: PipelineKind) -> (u32, Duration, Duration) {
     if pipeline_type.is_data_plane() {
         (
             DATA_PLANE_MAX_THROTTLE_ATTEMPTS,
@@ -78,6 +79,99 @@ fn default_throttle_budget(pipeline_type: PipelineType) -> (u32, Duration, Durat
             METADATA_MAX_THROTTLE_WAIT,
             METADATA_MAX_PER_RETRY_DELAY,
         )
+    }
+}
+
+fn container_recreation_refresh_eligible(
+    operation: &CosmosOperation,
+    overrides: &OperationOverrides,
+    custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
+    retry_attempted: bool,
+) -> bool {
+    if retry_attempted
+        || overrides.container_recreation_recovery_disabled
+        || operation.resource_type() == crate::models::ResourceType::StoredProcedure
+        || operation
+            .container()
+            .is_none_or(|container| container.is_by_rid())
+        || operation.request_headers().session_token.is_some()
+        || overrides.continuation.is_some()
+        || overrides.region_pin.is_some()
+    {
+        return false;
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    if operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch {
+        return false;
+    }
+
+    let session_header = HeaderName::from_static(request_header_names::SESSION_TOKEN);
+    !custom_headers.is_some_and(|headers| headers.contains_key(&session_header))
+}
+
+fn container_recreation_retry_eligible(
+    operation: &CosmosOperation,
+    overrides: &OperationOverrides,
+    custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
+    retry_attempted: bool,
+) -> bool {
+    container_recreation_refresh_eligible(operation, overrides, custom_headers, retry_attempted)
+        && !operation.is_patch_sub_operation()
+        && overrides.partition_key_range_id.is_none()
+        && overrides.feed_range.is_none()
+        && overrides.pkrange_bounds.is_none()
+}
+
+fn is_container_recreation_signal(
+    result: &TransportResult,
+    retry_state: &OperationRetryState,
+) -> bool {
+    let TransportOutcome::HttpError { status, .. } = &result.outcome else {
+        return false;
+    };
+
+    (status.status_code() == azure_core::http::StatusCode::BadRequest
+        && status.sub_status() == Some(SubStatusCode::COLLECTION_RID_MISMATCH))
+        || (status.status_code() == azure_core::http::StatusCode::Gone
+            && status.sub_status() == Some(SubStatusCode::NAME_CACHE_STALE))
+        || (status.is_read_session_not_available() && !retry_state.can_retry_session())
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ContainerRecreationRecoveryOutcome {
+    NotAttempted = 0,
+    Attempted = 1,
+    PlanRebuildRequired = 2,
+}
+
+#[derive(Debug, Default)]
+pub(crate) struct ContainerRecreationRecoveryTracker {
+    outcome: AtomicU8,
+}
+
+impl ContainerRecreationRecoveryTracker {
+    pub(crate) fn mark_attempted(&self) {
+        self.outcome.fetch_max(
+            ContainerRecreationRecoveryOutcome::Attempted as u8,
+            Ordering::SeqCst,
+        );
+    }
+
+    pub(crate) fn mark_plan_rebuild_required(&self) {
+        self.outcome.store(
+            ContainerRecreationRecoveryOutcome::PlanRebuildRequired as u8,
+            Ordering::SeqCst,
+        );
+    }
+
+    pub(crate) fn outcome(&self) -> ContainerRecreationRecoveryOutcome {
+        match self.outcome.load(Ordering::SeqCst) {
+            0 => ContainerRecreationRecoveryOutcome::NotAttempted,
+            1 => ContainerRecreationRecoveryOutcome::Attempted,
+            2 => ContainerRecreationRecoveryOutcome::PlanRebuildRequired,
+            value => unreachable!("invalid container recreation recovery outcome: {value}"),
+        }
     }
 }
 
@@ -156,6 +250,14 @@ pub(crate) struct OperationOverrides {
     /// — this struct is captured by the operation future, which is already
     /// close to the `clippy::large_futures` budget.
     pub region_pin: Option<Box<RegionPin>>,
+
+    /// Prevents an outer logical-operation coordinator from starting a second
+    /// container-recreation recovery after it already consumed that budget.
+    pub container_recreation_recovery_disabled: bool,
+
+    /// Reports whether this request consumed recreation recovery and whether
+    /// its physical routing requires the owning plan to be rebuilt.
+    pub container_recreation_recovery_tracker: Option<Arc<ContainerRecreationRecoveryTracker>>,
 }
 
 impl OperationOverrides {
@@ -254,19 +356,6 @@ impl OperationOverrides {
                 HeaderName::from_static(header_name),
                 HeaderValue::from(continuation.clone()),
             );
-
-            // For change feed reads, the per-partition continuation (carried
-            // via `If-None-Match`) fully describes the resume position. Any
-            // start-from marker the operation set for not-yet-polled partitions
-            // (e.g. `If-Modified-Since` for a `PointInTime` start) must not
-            // co-exist with it, otherwise the request carries two conflicting
-            // position headers. The `Now` start marker (`If-None-Match: *`) is
-            // already overwritten above by this same header insert.
-            if continuation_as_if_none_match {
-                headers.remove(HeaderName::from_static(
-                    request_header_names::IF_MODIFIED_SINCE,
-                ));
-            }
         }
 
         Ok(())
@@ -283,9 +372,11 @@ impl OperationOverrides {
 /// can take effect from the very first attempt.
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
-    operation: &CosmosOperation,
+    driver: &CosmosDriver,
+    operation: &mut CosmosOperation,
     overrides: OperationOverrides,
     options: &OperationOptionsView<'_>,
+    operation_options: &OperationOptions,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     location_state_store: &LocationStateStore,
     transport: &CosmosTransport,
@@ -294,7 +385,7 @@ pub(crate) async fn execute_operation_pipeline(
     user_agent: &azure_core::http::headers::HeaderValue,
     client_id: &azure_core::http::headers::HeaderValue,
     activity_id: &ActivityId,
-    pipeline_type: PipelineType,
+    pipeline_type: PipelineKind,
     transport_security: TransportSecurity,
     diagnostics: DiagnosticsContextBuilder,
     session_manager: &SessionManager,
@@ -305,6 +396,8 @@ pub(crate) async fn execute_operation_pipeline(
     hedge_budget: &HedgeBudget,
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
+    let mut throughput_control = throughput_control;
+    let mut container_recreation_retry_attempted = false;
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
 
@@ -424,13 +517,13 @@ pub(crate) async fn execute_operation_pipeline(
         operation.prefers_write_endpoints_for_read(),
     );
 
-    // HUB_REGION_PROCESSING_HEADER_SPEC.md §1.5: gate the
+    // Spec 0010, Hub-region processing header, §1.5: gate the
     // `x-ms-cosmos-hub-region-processing-only` latch on data-plane scope
     // so metadata-pipeline operations (which ride the same
     // `execute_operation_pipeline`) never emit the header.
     //
-    // Use the `PipelineType::is_data_plane()` accessor — NOT `==` matching
-    // — because `PipelineType` is `#[non_exhaustive]` and a future variant
+    // Use the `PipelineKind::is_data_plane()` accessor — NOT `==` matching
+    // — because `PipelineKind` is `#[non_exhaustive]` and a future variant
     // would silently bypass an equality gate. Equivalently
     // `!pipeline_type.is_metadata()` (the metadata pipeline is the only
     // current variant that is out of spec scope).
@@ -448,6 +541,8 @@ pub(crate) async fn execute_operation_pipeline(
         .or_else(|| configured_request_timeout.map(|t| Instant::now() + t));
 
     loop {
+        diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
+
         // ── STAGE 1: Acquire LocationSnapshot ──────────────────────────
         let location = location_state_store.snapshot();
 
@@ -715,7 +810,7 @@ pub(crate) async fn execute_operation_pipeline(
         let mut transport_request =
             build_transport_request(operation, &overrides, custom_headers, &ctx)?;
 
-        // HUB_REGION_PROCESSING_HEADER_SPEC.md §3 / public-spec §3.4:
+        // Spec 0010, Hub-region processing header, §3 / public spec §3.4:
         // Emit the `x-ms-cosmos-hub-region-processing-only: True` header
         // when the latch is set. The latch is flipped in
         // `try_handle_read_session_not_available` on the first 1002 of a
@@ -737,10 +832,10 @@ pub(crate) async fn execute_operation_pipeline(
             "transport request created");
 
         let selected_transport = match pipeline_type {
-            PipelineType::DataPlane => {
+            PipelineKind::DataPlane => {
                 transport.get_dataplane_transport(account_endpoint, routing.transport_mode)?
             }
-            PipelineType::Metadata => transport.get_metadata_transport(account_endpoint)?,
+            PipelineKind::Metadata => transport.get_metadata_transport(account_endpoint)?,
         };
 
         // ── STAGE 4: Execute via transport pipeline ────────────────────
@@ -796,6 +891,82 @@ pub(crate) async fn execute_operation_pipeline(
                     &result.outcome,
                 ) {
                     session_manager.capture_session_token(operation, cosmos_headers);
+                }
+            }
+        }
+
+        if container_recreation_refresh_eligible(
+            operation,
+            &overrides,
+            custom_headers,
+            container_recreation_retry_attempted,
+        ) && is_container_recreation_signal(&result, &retry_state)
+        {
+            let retry_in_place = container_recreation_retry_eligible(
+                operation,
+                &overrides,
+                custom_headers,
+                container_recreation_retry_attempted,
+            ) && overrides.container_recreation_recovery_tracker.is_none();
+            container_recreation_retry_attempted = true;
+            if let Some(tracker) = &overrides.container_recreation_recovery_tracker {
+                tracker.mark_attempted();
+            }
+            match driver
+                .try_recover_recreated_container(operation, operation_options)
+                .await
+            {
+                Ok(true) => {
+                    if !retry_in_place {
+                        if let Some(tracker) = &overrides.container_recreation_recovery_tracker {
+                            tracker.mark_plan_rebuild_required();
+                        }
+                        let error = match &result.outcome {
+                            TransportOutcome::HttpError {
+                                status,
+                                cosmos_headers,
+                                body,
+                                ..
+                            } => build_service_error(status, cosmos_headers, body),
+                            _ => unreachable!("recreation signals are HTTP responses"),
+                        };
+                        diagnostics.set_operation_status(
+                            error.status().status_code(),
+                            error.status().sub_status(),
+                        );
+                        let diagnostics_ctx = Arc::new(diagnostics.complete());
+                        return Err(crate::error::CosmosErrorBuilder::from_error(error)
+                            .with_diagnostics(diagnostics_ctx)
+                            .build());
+                    }
+                    retry_state.pending_write_effects.clear();
+                    retry_state.partition_key_range_id =
+                        Box::pin(driver.pre_resolve_partition_key_range_id(
+                            operation,
+                            &overrides,
+                            session_consistency_active,
+                            operation_options,
+                        ))
+                        .await;
+                    throughput_control = operation
+                        .container()
+                        .map(|container| driver.effective_throughput_control(options, container))
+                        .transpose()?;
+                    diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
+                    tracing::info!(
+                        activity_id = %activity_id,
+                        container_rid = operation.container().map(|container| container.rid()),
+                        "retrying operation after container recreation",
+                    );
+                    continue;
+                }
+                Ok(false) => {}
+                Err(error) => {
+                    tracing::warn!(
+                        activity_id = %activity_id,
+                        error = %error,
+                        "container metadata refresh failed; preserving the original service response",
+                    );
                 }
             }
         }
@@ -1993,17 +2164,15 @@ fn build_transport_request(
         } else {
             format!("/{}", request_path)
         };
-        // Set the path exactly as computed. `Url::set_path` percent-encodes only
-        // the characters that are structurally significant in a URL path (space,
-        // `?`, `#`, `<`, `>`, `{`, `}`, backtick) and leaves everything else —
-        // including base64's `=`/`+` padding and path-legal sub-delimiters like
-        // `@` — byte-for-byte intact. That is exactly what both addressing modes
-        // need: a RID segment reaches the gateway raw so its lowercased-RID
-        // signature is honored, and a name segment matches the raw resource link
-        // we signed (and, on Gateway 2.0, its RNTBD target). Encoding those
-        // path-legal characters ourselves would make a RID look name-based and
-        // break Gateway 2.0's outer-path-vs-RNTBD equality check for names.
-        base.set_path(&normalized);
+        // Escape literal percent bytes before `Url::set_path`: it preserves valid
+        // `%HH` sequences, but Cosmos resource names treat them as literal text.
+        // Leave path separators and path-legal characters (`@`, `+`, `=`) intact
+        // so RID routing and Gateway 2.0 path comparisons remain unchanged.
+        if normalized.contains('%') {
+            base.set_path(&normalized.replace('%', "%25"));
+        } else {
+            base.set_path(&normalized);
+        }
         base
     };
 
@@ -2024,6 +2193,17 @@ fn build_transport_request(
         }
     }
     operation.request_headers().write_to_headers(&mut headers);
+    if matches!(ctx.routing.transport_mode, TransportMode::Gateway) {
+        if let Some(container) = operation
+            .container()
+            .filter(|container| !container.is_by_rid())
+        {
+            headers.insert(
+                HeaderName::from_static(request_header_names::INTENDED_COLLECTION_RID),
+                HeaderValue::from(container.rid().to_owned()),
+            );
+        }
+    }
 
     // Add activity ID if not already set by the operation
     if operation.request_headers().activity_id.is_none() {
@@ -2303,7 +2483,7 @@ fn should_capture_session_token_from_status(
 /// transport pipeline expects for diagnostics annotation.
 ///
 /// - First attempt (no failover, no session retry) → `Initial`
-/// - Any session retry in progress → `Retry`
+/// - Any session retry in progress → `OperationRetry`
 /// - Otherwise (a failover retry) → `RegionFailover`
 ///
 /// Session-retry takes precedence over failover-retry because in the rare
@@ -2314,7 +2494,7 @@ fn compute_execution_context(retry_state: &OperationRetryState) -> ExecutionCont
     if retry_state.failover_retry_count == 0 && retry_state.session_token_retry_count == 0 {
         ExecutionContext::Initial
     } else if retry_state.session_token_retry_count > 0 {
-        ExecutionContext::Retry
+        ExecutionContext::OperationRetry
     } else {
         ExecutionContext::RegionFailover
     }
@@ -2384,7 +2564,7 @@ fn should_emit_hub_region_header(
 /// having elapsed, so the zero-overhead happy path (primary wins
 /// pre-threshold) is preserved.
 fn should_build_shared_hub_region_latch(
-    pipeline_type: PipelineType,
+    pipeline_type: PipelineKind,
     can_use_multiple_write_locations: bool,
 ) -> bool {
     pipeline_type.is_data_plane() && !can_use_multiple_write_locations
@@ -2716,7 +2896,7 @@ struct AttemptContext<'a> {
     user_agent: &'a azure_core::http::headers::HeaderValue,
     client_id: &'a azure_core::http::headers::HeaderValue,
     activity_id: &'a ActivityId,
-    pipeline_type: PipelineType,
+    pipeline_type: PipelineKind,
     transport_security: TransportSecurity,
     /// Global database account name parsed from `account_endpoint`. Used by
     /// Gateway 2.0 request wrapping when an attempt routes to a G2 endpoint.
@@ -3005,7 +3185,7 @@ fn maybe_upgrade_to_hedge<'a>(
     primary: &RoutingDecision,
     request_timeout: Option<Duration>,
     hedge_budget: &'a HedgeBudget,
-    pipeline_type: PipelineType,
+    pipeline_type: PipelineKind,
     activity_id: &ActivityId,
 ) -> (OperationAction, Option<HedgePermit<'a>>) {
     // Extract `new_state` from the retry-upgrade-eligible variants;
@@ -3150,10 +3330,10 @@ async fn perform_single_attempt(
     apply_optional_request_headers(&mut transport_request, ctx.operation, ctx.options);
 
     let selected_transport = match ctx.pipeline_type {
-        PipelineType::DataPlane => ctx
+        PipelineKind::DataPlane => ctx
             .transport
             .get_dataplane_transport(ctx.account_endpoint, routing.transport_mode)?,
-        PipelineType::Metadata => ctx.transport.get_metadata_transport(ctx.account_endpoint)?,
+        PipelineKind::Metadata => ctx.transport.get_metadata_transport(ctx.account_endpoint)?,
     };
 
     // Resolve the per-leg throttle (429) retry budget from the same effective
@@ -3602,6 +3782,11 @@ async fn execute_hedged(
     // The diag clone is owned by the future and returned alongside the
     // result, so the borrow checker can reclaim it after `select` resolves.
     let primary_diag = parent_diagnostics.clone_for_hedge_attempt();
+    // Describe the primary as a race participant before its builder is moved
+    // into the future. `leg_dispatch` reads the leg's launch instant, so the
+    // fan-out record orders correctly against every attempt in the operation.
+    let primary_dispatch =
+        primary_diag.leg_dispatch(primary_region.clone(), ExecutionContext::Initial);
     let primary_attempt = Box::pin(async move {
         let mut diag = primary_diag;
         // Primary is launched before Stage 2 elapses, so no shared
@@ -3799,7 +3984,21 @@ async fn execute_hedged(
     )
     .then(|| Arc::new(AtomicBool::new(ctx.hub_region_processing_only_initial)));
     let secondary_shared_latch = shared_hub_region_latch.clone();
+    // Record the fan-out on the *parent* before the race runs, so the operation
+    // is known to have hedged regardless of which leg won. Each leg's own
+    // attempts survive the race via the diagnostics hedge journal, so this
+    // record only has to reconstruct a leg cancelled before it dispatched
+    // anything — most commonly the alternate, which `select` never polls when
+    // the primary is already resolved. The parent builder reaches every exit
+    // path (`finalize_hedge_attempt` on Terminal, `diagnostics:
+    // parent_diagnostics` on BothTransient), so the record always survives to
+    // `complete()`.
     let secondary_diag = parent_diagnostics.clone_for_hedge_attempt();
+    let secondary_dispatch = secondary_diag.leg_dispatch(
+        secondary_region.clone(),
+        crate::diagnostics::ExecutionContext::Hedging,
+    );
+    parent_diagnostics.record_hedge_fanout(primary_dispatch, secondary_dispatch);
     let secondary_attempt = Box::pin(async move {
         let mut diag = secondary_diag;
         let result = perform_single_attempt(
@@ -4752,10 +4951,67 @@ mod tests {
         assert_eq!(request.url.path(), "/dbs/mydb");
     }
 
-    /// Builds a transport request for `operation` with default routing/context
-    /// and returns the final `Url::path()` after `set_path` has reprocessed it.
-    /// Used to assert the raw-vs-percent-encoded seam in `build_transport_request`.
-    fn transport_request_path(operation: &CosmosOperation) -> String {
+    #[test]
+    fn classic_gateway_emits_intended_collection_rid_for_name_addressing() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item);
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
+
+        assert_eq!(
+            request.headers.get_optional_str(&HeaderName::from_static(
+                request_header_names::INTENDED_COLLECTION_RID,
+            )),
+            Some(test_container().rid()),
+        );
+    }
+
+    #[test]
+    fn gateway_v2_does_not_emit_intended_collection_rid() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item);
+        let mut routing = test_routing();
+        routing.transport_mode = TransportMode::GatewayV2;
+        let activity_id = ActivityId::from_string("activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+
+        let request =
+            build_transport_request(&operation, &OperationOverrides::default(), None, &ctx)
+                .expect("request should build");
+
+        assert!(request
+            .headers
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::INTENDED_COLLECTION_RID,
+            ))
+            .is_none());
+    }
+
+    /// Builds a transport request for `operation` with default routing/context.
+    fn transport_request(operation: &CosmosOperation) -> super::TransportRequest {
         let routing = test_routing();
         let activity_id = ActivityId::from_string("default-activity".to_string());
         let ctx = TransportRequestContext {
@@ -4770,9 +5026,12 @@ mod tests {
         };
         build_transport_request(operation, &OperationOverrides::default(), None, &ctx)
             .expect("request should build")
-            .url
-            .path()
-            .to_owned()
+    }
+
+    /// Returns the final `Url::path()` after `set_path` has reprocessed it.
+    /// Used to assert the raw-vs-percent-encoded seam in `build_transport_request`.
+    fn transport_request_path(operation: &CosmosOperation) -> String {
+        transport_request(operation).url.path().to_owned()
     }
 
     #[test]
@@ -4818,6 +5077,23 @@ mod tests {
         assert_eq!(
             transport_request_path(&operation),
             "/dbs/testdb/colls/testcontainer/docs/Item@1-abc"
+        );
+    }
+
+    #[test]
+    fn build_transport_request_escapes_literal_percent_without_changing_signing_link() {
+        let item =
+            ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "item%41");
+        let operation = CosmosOperation::read_item(item);
+        let request = transport_request(&operation);
+
+        assert_eq!(
+            request.url.path(),
+            "/dbs/testdb/colls/testcontainer/docs/item%2541"
+        );
+        assert_eq!(
+            request.auth_context.resource_link.as_str(),
+            "dbs/testdb/colls/testcontainer/docs/item%41"
         );
     }
 
@@ -4869,7 +5145,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -4902,7 +5178,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -4947,12 +5223,10 @@ mod tests {
     }
 
     #[test]
-    fn build_transport_request_change_feed_continuation_drops_if_modified_since() {
+    fn build_transport_request_change_feed_continuation_keeps_if_modified_since() {
         // PointInTime start sets If-Modified-Since on the shared operation.
-        // Once a partition has a continuation (ETag) it must resume purely
-        // from that ETag (sent as If-None-Match); the stale start marker must
-        // not co-exist, otherwise the request carries two conflicting
-        // position headers.
+        // Merged partitions require the original timestamp alongside every
+        // ETag continuation so the backend can filter interleaved parent LSNs.
         let pk_def = test_partition_key_definition("/partition_key");
         let target = crate::models::FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
         let operation = CosmosOperation::change_feed(test_container(), Some(target))
@@ -4964,7 +5238,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -4989,14 +5263,12 @@ mod tests {
             Some("\"etag-123\"".to_string()),
             "continuation must be sent as If-None-Match"
         );
-        assert!(
-            request
-                .headers
-                .get_optional_str(&HeaderName::from_static(
-                    request_header_names::IF_MODIFIED_SINCE
-                ))
-                .is_none(),
-            "stale PointInTime start marker must be dropped once a continuation is present"
+        assert_eq!(
+            request.headers.get_optional_str(&HeaderName::from_static(
+                request_header_names::IF_MODIFIED_SINCE
+            )),
+            Some("Mon, 01 Jan 2024 00:00:00 GMT"),
+            "PointInTime start marker must remain alongside the continuation"
         );
     }
 
@@ -5014,7 +5286,7 @@ mod tests {
         let ctx = TransportRequestContext {
             routing: &routing,
             activity_id: &activity_id,
-            execution_context: ExecutionContext::Retry,
+            execution_context: ExecutionContext::OperationRetry,
             deadline: Some(std::time::Instant::now() + Duration::from_secs(5)),
             effective_consistency: DefaultConsistencyLevel::Session,
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
@@ -9728,17 +10000,17 @@ mod tests {
     fn execution_context_retry_when_session_retry_active() {
         // Session-retry takes precedence over failover-retry: when both
         // counters are non-zero, the most recent advance was the session
-        // retry, so the attempt is annotated as a `Retry`.
+        // retry, so the attempt is annotated as an `OperationRetry`.
         let state = retry_state_with_counts(1, 1);
         assert!(matches!(
             super::compute_execution_context(&state),
-            ExecutionContext::Retry
+            ExecutionContext::OperationRetry
         ));
 
         let state = retry_state_with_counts(0, 1);
         assert!(matches!(
             super::compute_execution_context(&state),
-            ExecutionContext::Retry
+            ExecutionContext::OperationRetry
         ));
     }
 
@@ -9753,7 +10025,7 @@ mod tests {
 
     // ── apply_hub_region_header ──────────────────────────────────────
     //
-    // See HUB_REGION_PROCESSING_HEADER_SPEC.md §3.4 / public-spec §4.2.
+    // See Spec 0010, Hub-region processing header, §3.4 / public spec §4.2.
     // The emission logic itself is a 4-line conditional; these tests
     // exercise both branches so AC-1/AC-5 don't drift on a refactor.
 
@@ -10040,6 +10312,33 @@ mod tests {
             crate::models::CosmosResponseHeaders::default(),
             Vec::new(),
         )
+    }
+
+    #[test]
+    fn container_recreation_signals_match_verified_statuses() {
+        let available = super::OperationRetryState::initial(0, false, Vec::new(), 3, 1);
+        let exhausted = super::OperationRetryState::initial(0, false, Vec::new(), 3, 0);
+
+        assert!(super::is_container_recreation_signal(
+            &http_result(400, Some(1024)),
+            &available,
+        ));
+        assert!(super::is_container_recreation_signal(
+            &http_result(410, Some(1000)),
+            &available,
+        ));
+        assert!(!super::is_container_recreation_signal(
+            &http_result(404, Some(1002)),
+            &available,
+        ));
+        assert!(super::is_container_recreation_signal(
+            &http_result(404, Some(1002)),
+            &exhausted,
+        ));
+        assert!(!super::is_container_recreation_signal(
+            &http_result(410, Some(1024)),
+            &available,
+        ));
     }
 
     #[test]
@@ -10419,7 +10718,7 @@ mod tests {
 
     #[test]
     fn diagnostics_clone_for_hedge_attempt_starts_empty() {
-        let parent = test_diagnostics();
+        let mut parent = test_diagnostics();
         let child = parent.clone_for_hedge_attempt();
         // A fresh sub-builder must not carry the parent's request list,
         // status, or accumulated hedge diagnostics.
@@ -10438,7 +10737,7 @@ mod tests {
         );
         let _ = child.start_request(
             super::ExecutionContext::Hedging,
-            super::PipelineType::DataPlane,
+            super::PipelineKind::DataPlane,
             super::TransportSecurity::Secure,
             TransportKind::Gateway,
             TransportHttpVersion::Http11,
@@ -10554,7 +10853,7 @@ mod tests {
         );
         let _ = child.start_request(
             super::ExecutionContext::Hedging,
-            super::PipelineType::DataPlane,
+            super::PipelineKind::DataPlane,
             super::TransportSecurity::Secure,
             TransportKind::Gateway,
             TransportHttpVersion::Http11,
@@ -10590,7 +10889,7 @@ mod tests {
         );
         let _ = child.start_request(
             super::ExecutionContext::Hedging,
-            super::PipelineType::DataPlane,
+            super::PipelineKind::DataPlane,
             super::TransportSecurity::Secure,
             TransportKind::Gateway,
             TransportHttpVersion::Http11,
@@ -10625,7 +10924,7 @@ mod tests {
     #[test]
     fn shared_hub_region_latch_eligibility_dataplane_single_master() {
         assert!(super::should_build_shared_hub_region_latch(
-            super::PipelineType::DataPlane,
+            super::PipelineKind::DataPlane,
             false, // single-master
         ));
     }
@@ -10634,22 +10933,22 @@ mod tests {
     #[test]
     fn shared_hub_region_latch_eligibility_skip_multi_master() {
         assert!(!super::should_build_shared_hub_region_latch(
-            super::PipelineType::DataPlane,
+            super::PipelineKind::DataPlane,
             true, // multi-master
         ));
     }
 
     /// T-S7 — Eligibility predicate: metadata pipeline → skip. Mirrors
     /// AC-8 and the data-plane scope gate of
-    /// `HUB_REGION_PROCESSING_HEADER_SPEC.md`.
+    /// Spec 0010: Hub-region processing header.
     #[test]
     fn shared_hub_region_latch_eligibility_skip_metadata() {
         assert!(!super::should_build_shared_hub_region_latch(
-            super::PipelineType::Metadata,
+            super::PipelineKind::Metadata,
             false,
         ));
         assert!(!super::should_build_shared_hub_region_latch(
-            super::PipelineType::Metadata,
+            super::PipelineKind::Metadata,
             true,
         ));
     }

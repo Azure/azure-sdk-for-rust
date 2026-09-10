@@ -207,7 +207,7 @@ fn aad_token_invalid_issuer(error: &CosmosError) -> bool {
 /// separate paths — so a container read succeeding in a region does not mean an
 /// item request there is authorized yet. Key auth bypasses RBAC entirely, so
 /// this is only expected under AAD.
-fn rbac_name_based_data_not_ready(error: &CosmosError) -> bool {
+pub(crate) fn rbac_name_based_data_not_ready(error: &CosmosError) -> bool {
     error.status().status_code() == StatusCode::Forbidden
         && error.status().sub_status() == Some(SubStatusCode::new(5302))
 }
@@ -255,6 +255,71 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
         ))
         .build()
         .into()
+}
+
+/// Data-plane readiness probe used after container creation on AAD legs.
+///
+/// A `container.read(...)` on both clients confirms the collection is
+/// metadata-visible, but Cosmos authorizes metadata (5301) and name-based data
+/// (5302) on separate RBAC paths — so the first data-plane request on a fresh
+/// container can race and return `403/5302 RbacUnauthorizedNameBasedDataRequest`
+/// before the name→RID mapping is cached on that client's data-plane
+/// connection. Under key auth this is invisible because the master key bypasses
+/// RBAC entirely.
+///
+/// The probe deletes an id that cannot exist: it mutates nothing on success
+/// (the delete answers a bare 404), reuses the same `items/*` grant tests need,
+/// and returns as soon as the data path answers with a normal not-found. It
+/// tolerates `5302` and `collection_create_in_progress` as retryable while the
+/// name registers on this client. Read-path races that leak past this probe
+/// are absorbed by `TestClient::read_item`'s 5302 retry loop; probing reads
+/// here as well would spuriously trip fault-injection assertions that count
+/// retries on the fault client.
+pub async fn probe_data_plane_ready(
+    label: &str,
+    container: &ContainerClient,
+) -> azure_data_cosmos::Result<()> {
+    const MAX_ATTEMPTS: usize = 20;
+    const RETRY_DELAY: Duration = Duration::from_millis(500);
+
+    let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
+    for attempt in 1..=MAX_ATTEMPTS {
+        let outcome = container
+            .delete_item(
+                PartitionKey::from(probe_id.clone()),
+                probe_id.as_str(),
+                None,
+            )
+            .await;
+
+        let error = match outcome {
+            Ok(_) => {
+                return Err(azure_data_cosmos_driver::error::CosmosError::builder()
+                    .with_status(CosmosStatus::new(StatusCode::InternalServerError))
+                    .with_message(format!(
+                        "data-plane readiness probe deleted {probe_id} on {label}, which cannot exist"
+                    ))
+                    .build()
+                    .into());
+            }
+            Err(error) => error,
+        };
+
+        if item_not_found(&error) {
+            return Ok(());
+        }
+
+        let retryable =
+            rbac_name_based_data_not_ready(&error) || collection_create_in_progress(&error);
+        if !retryable || attempt == MAX_ATTEMPTS {
+            return Err(error);
+        }
+
+        println!("waiting for data-plane readiness on {label}: {error}");
+        tokio::time::sleep(RETRY_DELAY).await;
+    }
+
+    unreachable!("loop should be exited by 'return' when attempts are exhausted")
 }
 
 /// Options for configuring test execution.
@@ -358,11 +423,27 @@ impl TestOptions {
         self
     }
 
-    /// Configures Cosmos binary JSON encoding for the normal (non-fault) client
-    /// via the standard client option, avoiding any `std::env` mutation.
+    /// Configures Cosmos binary JSON encoding for the underlying clients via the
+    /// standard client option, avoiding any `std::env` mutation.
     pub fn with_binary_encoding(mut self, options: BinaryEncodingOptions) -> Self {
         self.binary_encoding = Some(options);
         self
+    }
+}
+
+fn effective_binary_encoding(
+    binary_encoding: Option<BinaryEncodingOptions>,
+) -> Option<BinaryEncodingOptions> {
+    #[cfg(test_category = "emulator_vnext")]
+    {
+        // Temporary workaround for #5240; product code should eventually
+        // negotiate vNext binary support.
+        Some(binary_encoding.unwrap_or_else(|| BinaryEncodingOptions::new().with_enabled(false)))
+    }
+
+    #[cfg(not(test_category = "emulator_vnext"))]
+    {
+        binary_encoding
     }
 }
 
@@ -382,7 +463,7 @@ enum CosmosTestMode {
 
 /// Selects which credential the primary (data-plane) test client uses.
 #[derive(PartialEq, Eq, Clone, Copy, Debug, Default)]
-enum AuthMode {
+pub enum AuthMode {
     /// Authenticate every operation with the account key (default).
     #[default]
     Key,
@@ -399,7 +480,7 @@ impl AuthMode {
     /// than `key` or `aad` (case-insensitive) panics, so a misconfigured CI leg
     /// fails loudly instead of silently falling back to key auth and skipping
     /// AAD coverage.
-    fn from_env() -> Self {
+    pub fn from_env() -> Self {
         match std::env::var(AUTH_MODE_ENV_VAR) {
             Err(_) => AuthMode::Key,
             Ok(v) => match v.to_lowercase().as_str() {
@@ -520,13 +601,14 @@ impl TestClient {
         fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         application_region: Option<Region>,
         allow_invalid_certificates: bool,
+        binary_encoding: Option<BinaryEncodingOptions>,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         Self::from_env_inner(
             None,
             fault_rules,
             application_region,
             allow_invalid_certificates,
-            None,
+            binary_encoding,
         )
         .await
     }
@@ -549,6 +631,8 @@ impl TestClient {
                 cosmos_client: None,
             });
         };
+
+        let binary_encoding = effective_binary_encoding(binary_encoding);
 
         match env_var.as_ref() {
             "emulator" => {
@@ -735,8 +819,12 @@ impl TestClient {
                         .client_application_region
                         .clone()
                         .unwrap_or(HUB_REGION);
-                    let (aad_client, _recorder) =
-                        build_aad_client_from_env(region, Vec::new()).await?;
+                    let (aad_client, _recorder) = build_aad_client_from_env(
+                        region,
+                        Vec::new(),
+                        options.binary_encoding.clone(),
+                    )
+                    .await?;
                     (aad_client, Some(key_client))
                 }
                 AuthMode::Key => (key_client, None),
@@ -754,13 +842,22 @@ impl TestClient {
                             .fault_client_application_region
                             .clone()
                             .unwrap_or(HUB_REGION);
-                        Some(build_aad_client_from_env(region, rules).await?.0)
+                        Some(
+                            build_aad_client_from_env(
+                                region,
+                                rules,
+                                options.binary_encoding.clone(),
+                            )
+                            .await?
+                            .0,
+                        )
                     }
                     AuthMode::Key => {
                         Self::from_env_with_fault_rules(
                             rules,
                             options.fault_client_application_region.clone(),
                             options.allow_invalid_certificates,
+                            options.binary_encoding.clone(),
                         )
                         .await?
                         .cosmos_client
@@ -1051,6 +1148,22 @@ impl TestRunContext {
                     tokio::time::sleep(backoff).await;
                     backoff = (backoff * 2).min(MAX_BACKOFF);
                 }
+                // AAD-only: the very first read on a fresh `ContainerClient` can
+                // race the server-side RBAC name→RID mapping for `items/read`
+                // and return `403/5302 RbacUnauthorizedNameBasedDataRequest`,
+                // even after `probe_data_plane_ready` has warmed `items/delete`
+                // on the container that was used to create the item. Retry with
+                // the same backoff so we do not spuriously fail the test.
+                Err(e) if rbac_name_based_data_not_ready(&e) => {
+                    println!(
+                        "Read item hit RBAC name-based data race ({:?}): {}. Retrying after {:?}...",
+                        e.status().status_code(),
+                        e,
+                        backoff
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(MAX_BACKOFF);
+                }
                 Err(e) => return Err(e),
             }
         }
@@ -1219,6 +1332,8 @@ impl TestRunContext {
                 .await?
                 .into_model()?;
             let container_id = created.id;
+            let probe_container_id = container_id.clone();
+            let probe_db_id = db_client.id().clone();
 
             let original_db_client = db_client;
             let original_container_id = container_id.clone();
@@ -1265,6 +1380,32 @@ impl TestRunContext {
             );
 
             let (container, _) = tokio::try_join!(original_readiness, fault_readiness)?;
+
+            // Metadata (5301) and name-based data (5302) authorize through
+            // separate RBAC paths, so a `container.read(...)` succeeding on
+            // the primary client does not guarantee the next item request is
+            // authorized on that connection. Under AAD this races and shows
+            // up as `403/5302 RbacUnauthorizedNameBasedDataRequest` on the
+            // first data-plane call. Probe the primary client's data path
+            // once to warm it up.
+            //
+            // Deliberately do NOT probe the fault-injection client: the
+            // probe issues a DELETE, which would trip fault-injection rules
+            // targeting DeleteItem (or consume fault-injection budget) and
+            // cause false-positive failures in fault-injection retry tests.
+            // The residual 5302 race on the fault client is absorbed by
+            // `TestClient::read_item`'s 5302 retry loop for tests that go
+            // through the framework helper.
+            let auth_mode = AuthMode::from_env();
+            if auth_mode == AuthMode::Aad {
+                let primary_client_for_probe = self.client().clone();
+                let primary_container = primary_client_for_probe
+                    .database_client(probe_db_id.clone())
+                    .container_client(&*probe_container_id, None)
+                    .await?;
+                probe_data_plane_ready("original client", &primary_container).await?;
+            }
+
             Ok(container)
         })
     }
@@ -1381,6 +1522,26 @@ impl TestRunContext {
             #[cfg(test_category = "multi_write")]
             self.wait_for_satellite_data_plane_readiness(&db_id, &container_id)
                 .await?;
+
+            // Under AAD, RBAC authorizes metadata (5301) and name-based data
+            // (5302) on separate paths, so `container.read(...)` succeeding
+            // does not guarantee the next data-plane call is authorized. Probe
+            // the data path once here so tests that immediately create/read
+            // items after container creation don't race with `403/5302
+            // RbacUnauthorizedNameBasedDataRequest` and burn their per-test
+            // budget on driver retries.
+            //
+            // Deliberately do NOT probe the fault-injection client here: the
+            // probe issues a DELETE, which would trip
+            // fault-injection rules targeting DeleteItem (or otherwise
+            // consume fault-injection budget) and cause false-positive
+            // failures in emulator/multi-write fault-injection tests. The
+            // residual read-path 5302 race on the fault client is absorbed by
+            // `TestClient::read_item`'s 5302 retry loop for tests that go
+            // through the framework helper.
+            if !targets_emulator() && AuthMode::from_env() == AuthMode::Aad {
+                probe_data_plane_ready("original client", &container).await?;
+            }
 
             Ok(container)
         })
@@ -1611,7 +1772,7 @@ impl TestRunContext {
     pub async fn aad_client(
         &self,
     ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
-        build_aad_client_from_env(HUB_REGION, Vec::new()).await
+        build_aad_client_from_env(HUB_REGION, Vec::new(), None).await
     }
 
     /// Cleans up test resources.
@@ -1704,6 +1865,7 @@ pub fn targets_emulator() -> bool {
 pub async fn build_aad_client_from_env(
     region: Region,
     fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
+    binary_encoding: Option<BinaryEncodingOptions>,
 ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
     use super::CosmosEmulatorCredential;
 
@@ -1722,6 +1884,9 @@ pub async fn build_aad_client_from_env(
     let is_emulator = is_emulator_shorthand || host_is_local(&endpoint_str);
 
     let mut builder = CosmosClient::builder();
+    if let Some(options) = effective_binary_encoding(binary_encoding) {
+        builder = builder.with_binary_encoding_options(options);
+    }
     let strategy = RoutingStrategy::ProximityTo(region);
 
     let (credential, recorder): (
@@ -1765,9 +1930,9 @@ pub async fn build_aad_client_from_env(
 #[cfg(test)]
 mod tests {
     use super::{
-        aad_token_invalid_issuer, item_not_found, rbac_name_based_data_not_ready,
-        retry_container_readiness, satellite_probe_should_retry,
-        transient_satellite_readiness_error, AuthMode,
+        aad_token_invalid_issuer, effective_binary_encoding, item_not_found,
+        rbac_name_based_data_not_ready, retry_container_readiness, satellite_probe_should_retry,
+        transient_satellite_readiness_error, AuthMode, BinaryEncodingOptions,
     };
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{CosmosError, CosmosStatus, SubStatusCode};
@@ -1779,6 +1944,17 @@ mod tests {
         },
         time::Duration,
     };
+
+    #[test]
+    #[cfg(test_category = "emulator_vnext")]
+    fn vnext_disables_binary_encoding_by_default() {
+        assert!(!effective_binary_encoding(None).unwrap().enabled);
+        assert!(
+            effective_binary_encoding(Some(BinaryEncodingOptions::new()))
+                .unwrap()
+                .enabled
+        );
+    }
 
     fn error_with_status(status: StatusCode, sub_status: SubStatusCode) -> CosmosError {
         azure_data_cosmos_driver::error::CosmosError::builder()

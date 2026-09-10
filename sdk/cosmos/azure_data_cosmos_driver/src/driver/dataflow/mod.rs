@@ -30,10 +30,10 @@
 //!   [`TopologyProvider`] trait with the driver's
 //!   [`PartitionKeyRangeCache`](crate::driver::cache::PartitionKeyRangeCache).
 //!
-//! See `FEED_OPERATIONS_REQS.md` for the design intent behind the dataflow
-//! pipeline (paged operations, split recovery, continuation tokens, planned
-//! cross-partition strategies).
+//! The design follows Spec 0012: Feed operations and dataflow, including paged
+//! operations, split recovery, continuation tokens, and cross-partition strategies.
 
+mod binary_heap;
 mod context;
 mod distinct;
 pub(crate) mod distinct_hash;
@@ -44,6 +44,7 @@ mod integration_tests;
 #[cfg(test)]
 pub(crate) mod mocks;
 mod node;
+mod non_streaming_ordered_merge;
 pub(crate) mod order_by;
 mod pipeline;
 pub(crate) mod planner;
@@ -66,6 +67,7 @@ pub(crate) use drained::DrainedLeaf;
 pub(crate) use node::{
     split_replacement_invalid, validate_exact_coverage, PageResult, PipelineNode, SplitReplacements,
 };
+pub(crate) use non_streaming_ordered_merge::NonStreamingOrderedMerge;
 pub use pipeline::OperationPlan;
 pub(crate) use pipeline::Pipeline;
 pub(crate) use request::{intersect_feed_ranges, Request, RequestTarget};
@@ -104,7 +106,12 @@ mod tests {
             response: response(b"page"),
             is_terminal: true,
         })])));
-        OperationPlan::new(pipeline, std::sync::Arc::new(operation()))
+        OperationPlan::new(
+            pipeline,
+            std::sync::Arc::new(operation()),
+            crate::options::PlanOptions::default(),
+            false,
+        )
     }
 
     /// A poisoned plan must refuse to mint rather than hand back a token that

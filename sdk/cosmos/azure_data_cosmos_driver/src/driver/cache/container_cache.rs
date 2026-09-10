@@ -77,6 +77,7 @@ impl ContainerRidKey {
 pub(crate) struct ContainerCache {
     by_name: AsyncCache<ContainerNameKey, crate::error::Result<ContainerReference>>,
     by_rid: AsyncCache<ContainerRidKey, crate::error::Result<ContainerReference>>,
+    refreshes: AsyncCache<ContainerNameKey, crate::error::Result<ContainerReference>>,
 }
 
 impl ContainerCache {
@@ -85,6 +86,7 @@ impl ContainerCache {
         Self {
             by_name: AsyncCache::new(),
             by_rid: AsyncCache::new(),
+            refreshes: AsyncCache::new(),
         }
     }
 
@@ -112,6 +114,75 @@ impl ContainerCache {
         self.get_or_fetch_impl(&self.by_name, key, fetch_fn).await
     }
 
+    /// Refreshes a name-addressed container if the cache still contains the
+    /// caller's observed RID.
+    ///
+    /// Concurrent refreshes share one service request while the previous value
+    /// remains readable. If another caller already installed a newer RID, that
+    /// value wins without invoking `fetch_fn`. A failed refresh leaves the
+    /// previous valid entry untouched.
+    pub(crate) async fn refresh_by_name_if_same<F, Fut>(
+        &self,
+        account_endpoint: &str,
+        db_name: &str,
+        container_name: &str,
+        observed_rid: &str,
+        fetch_fn: F,
+    ) -> crate::error::Result<Arc<ContainerReference>>
+    where
+        F: FnOnce() -> Fut,
+        Fut: std::future::Future<Output = crate::error::Result<ContainerReference>>,
+    {
+        let key = ContainerNameKey {
+            account_endpoint: account_endpoint.to_owned(),
+            db_name: db_name.to_owned(),
+            container_name: container_name.to_owned(),
+        };
+        let previous = self.by_name.get(&key).await;
+        if let Some(Ok(container)) = previous.as_deref() {
+            if container.rid() != observed_rid {
+                return Ok(Arc::new(container.clone()));
+            }
+        }
+
+        let resolved = self
+            .refreshes
+            .get_or_insert_with(key.clone(), fetch_fn)
+            .await;
+
+        let result = match resolved.as_ref() {
+            Ok(container) => {
+                let current = self.by_name.get(&key).await;
+                if let Some(Ok(current)) = current.as_deref() {
+                    if current.rid() != observed_rid {
+                        self.refreshes.invalidate_if_same(&key, &resolved).await;
+                        return Ok(Arc::new(current.clone()));
+                    }
+                }
+
+                let replacement = Arc::new(Ok(container.clone()));
+                let replaced = if let Some(current) = current.as_ref() {
+                    self.by_name
+                        .replace_if_same(&key, current, replacement)
+                        .await
+                } else {
+                    false
+                };
+                if replaced {
+                    self.put(container.clone()).await;
+                    Ok(Arc::new(container.clone()))
+                } else {
+                    let container = container.clone();
+                    self.get_or_fetch_impl(&self.by_name, key.clone(), || async { Ok(container) })
+                        .await
+                }
+            }
+            Err(error) => Err(error.clone()),
+        };
+        self.refreshes.invalidate_if_same(&key, &resolved).await;
+        result
+    }
+
     /// Looks up a container by RID, fetching if not cached.
     ///
     /// On a cache miss, calls `fetch_fn` to resolve the container from the
@@ -136,7 +207,6 @@ impl ContainerCache {
     }
 
     /// Returns a cached container looked up by name, or `None` if not cached.
-    #[allow(dead_code)] // Used in tests; will be called from production code once lookup-by-name is wired up.
     pub(crate) async fn get_by_name(
         &self,
         account_endpoint: &str,
@@ -257,6 +327,10 @@ mod tests {
     };
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
+    use tokio::{
+        sync::Notify,
+        time::{sleep, Duration},
+    };
     use url::Url;
 
     fn test_account() -> AccountReference {
@@ -281,12 +355,20 @@ mod tests {
     }
 
     fn test_container(db: &str, container: &str) -> ContainerReference {
+        test_container_with_rid(db, container, &format!("{db}_{container}_rid"))
+    }
+
+    fn test_container_with_rid(
+        db: &str,
+        container: &str,
+        container_rid: &str,
+    ) -> ContainerReference {
         ContainerReference::new(
             test_account(),
             db.to_owned(),
             format!("{db}_rid"),
             container.to_owned(),
-            format!("{db}_{container}_rid"),
+            container_rid.to_owned(),
             &test_container_props(),
         )
     }
@@ -364,6 +446,167 @@ mod tests {
 
         assert_eq!(resolved.name(), "mycoll");
         assert_eq!(counter.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn refresh_by_name_replaces_only_observed_generation() {
+        let cache = ContainerCache::new();
+        let old = test_container_with_rid("mydb", "mycoll", "old_rid");
+        let replacement = test_container_with_rid("mydb", "mycoll", "new_rid");
+        cache.put(old).await;
+
+        let resolved = cache
+            .refresh_by_name_if_same(ACCOUNT_ENDPOINT, "mydb", "mycoll", "old_rid", || async {
+                Ok(replacement)
+            })
+            .await
+            .expect("refresh should succeed");
+
+        assert_eq!(resolved.rid(), "new_rid");
+        assert_eq!(
+            cache
+                .get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll")
+                .await
+                .expect("name entry should remain cached")
+                .rid(),
+            "new_rid",
+        );
+        assert!(cache
+            .get_by_rid(ACCOUNT_ENDPOINT, "old_rid")
+            .await
+            .is_some());
+        assert!(cache
+            .get_by_rid(ACCOUNT_ENDPOINT, "new_rid")
+            .await
+            .is_some());
+    }
+
+    #[tokio::test]
+    async fn refresh_by_name_preserves_newer_winner() {
+        let cache = ContainerCache::new();
+        cache
+            .put(test_container_with_rid("mydb", "mycoll", "new_rid"))
+            .await;
+        let calls = AtomicUsize::new(0);
+
+        let resolved = cache
+            .refresh_by_name_if_same(ACCOUNT_ENDPOINT, "mydb", "mycoll", "old_rid", || async {
+                calls.fetch_add(1, Ordering::SeqCst);
+                Ok(test_container_with_rid("mydb", "mycoll", "other_rid"))
+            })
+            .await
+            .expect("newer winner should be returned");
+
+        assert_eq!(resolved.rid(), "new_rid");
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
+    }
+
+    #[tokio::test]
+    async fn failed_refresh_restores_observed_generation() {
+        let cache = ContainerCache::new();
+        cache
+            .put(test_container_with_rid("mydb", "mycoll", "old_rid"))
+            .await;
+
+        let error = crate::error::CosmosError::builder()
+            .with_message("refresh failed")
+            .build();
+        let result = cache
+            .refresh_by_name_if_same(ACCOUNT_ENDPOINT, "mydb", "mycoll", "old_rid", || async {
+                Err(error)
+            })
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(
+            cache
+                .get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll")
+                .await
+                .expect("old generation should be restored")
+                .rid(),
+            "old_rid",
+        );
+    }
+
+    #[tokio::test]
+    async fn failed_concurrent_refresh_keeps_observed_generation_readable() {
+        let cache = Arc::new(ContainerCache::new());
+        cache
+            .put(test_container_with_rid("mydb", "mycoll", "old_rid"))
+            .await;
+        let calls = Arc::new(AtomicUsize::new(0));
+        let started = Arc::new(Notify::new());
+        let release = Arc::new(Notify::new());
+
+        let owner = {
+            let cache = Arc::clone(&cache);
+            let calls = Arc::clone(&calls);
+            let started = Arc::clone(&started);
+            let release = Arc::clone(&release);
+            tokio::spawn(async move {
+                cache
+                    .refresh_by_name_if_same(
+                        ACCOUNT_ENDPOINT,
+                        "mydb",
+                        "mycoll",
+                        "old_rid",
+                        || async move {
+                            calls.fetch_add(1, Ordering::SeqCst);
+                            started.notify_one();
+                            release.notified().await;
+                            Err(crate::error::CosmosError::builder()
+                                .with_message("refresh failed")
+                                .build())
+                        },
+                    )
+                    .await
+            })
+        };
+
+        started.notified().await;
+        assert_eq!(
+            cache
+                .get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll")
+                .await
+                .expect("old generation should remain readable during refresh")
+                .rid(),
+            "old_rid",
+        );
+
+        let waiter = {
+            let cache = Arc::clone(&cache);
+            let calls = Arc::clone(&calls);
+            tokio::spawn(async move {
+                cache
+                    .refresh_by_name_if_same(
+                        ACCOUNT_ENDPOINT,
+                        "mydb",
+                        "mycoll",
+                        "old_rid",
+                        || async move {
+                            calls.fetch_add(1, Ordering::SeqCst);
+                            Err(crate::error::CosmosError::builder()
+                                .with_message("unexpected second refresh")
+                                .build())
+                        },
+                    )
+                    .await
+            })
+        };
+        sleep(Duration::from_millis(10)).await;
+        release.notify_one();
+
+        assert!(owner.await.unwrap().is_err());
+        assert!(waiter.await.unwrap().is_err());
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            cache
+                .get_by_name(ACCOUNT_ENDPOINT, "mydb", "mycoll")
+                .await
+                .expect("old generation should remain cached after refresh failure")
+                .rid(),
+            "old_rid",
+        );
     }
 
     // --- put ---
@@ -561,6 +804,7 @@ mod tests {
 
         cache.by_name.clear().await;
         cache.by_rid.clear().await;
+        cache.refreshes.clear().await;
 
         assert!(cache
             .get_by_name(ACCOUNT_ENDPOINT, "db", "coll1")

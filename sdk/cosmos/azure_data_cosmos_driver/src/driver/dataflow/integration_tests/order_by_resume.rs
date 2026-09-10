@@ -19,7 +19,7 @@ use super::super::{
     mocks::{MockRequestExecutor, MockTopologyProvider},
     order_by::OrderByResumeValue,
     planner::build_streaming_ordered_merge,
-    query_plan::{QueryInfo, QueryPlan, QueryRange, SortOrder},
+    query_plan::{DistinctType, QueryInfo, QueryPlan, QueryRange, SortOrder},
     snapshot::{OrderByRangeToken, ValueBoundary},
     Pipeline, PipelineContext, PipelineNodeState, ResolvedRange,
 };
@@ -593,6 +593,63 @@ async fn merges_two_binary_partitions_into_global_order() {
             .map(str::to_owned)
             .collect::<Vec<_>>(),
         "binary ORDER BY pages must interleave in the same global order as text"
+    );
+}
+
+/// Alternating text and binary backend pages must remain format-agnostic
+/// through the complete ordered pipeline. The duplicate `b` straddles the
+/// encoding boundary; the global window applies after it is removed.
+#[tokio::test]
+async fn mixed_backend_formats_flow_through_ordered_distinct_and_skip_take() {
+    let op = binary_order_by_operation_with_page_size(2);
+    let mut plan = order_by_plan();
+    {
+        let info = plan.query_info.as_mut().unwrap();
+        info.distinct_type = DistinctType::Ordered;
+        info.offset = Some(1);
+        info.limit = Some(3);
+    }
+
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(envelope_page(&[("a", 1), ("b", 2)], Some("page-2"))),
+        Ok(binary_envelope_page(&[("b", 2), ("c", 3)], Some("page-3"))),
+        Ok(envelope_page(&[("d", 4), ("e", 5)], None)),
+    ]);
+
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None)
+        .await
+        .unwrap();
+    let mut ids = Vec::new();
+    let mut emitted_pages = 0usize;
+    let mut noop_topology = super::super::mocks::NoopTopologyProvider;
+    loop {
+        let mut context = PipelineContext::new(&mut executor, Some(&mut noop_topology));
+        match pipeline.next_page(&mut context).await.unwrap() {
+            Some(response) => {
+                let page_ids = ids_in_page(&response);
+                if !page_ids.is_empty() {
+                    assert!(
+                        page_is_binary(&response),
+                        "negotiated binary output must not follow each backend page's format"
+                    );
+                    emitted_pages += 1;
+                }
+                ids.extend(page_ids);
+            }
+            None => break,
+        }
+    }
+
+    assert_eq!(ids, vec!["b", "c", "d"]);
+    assert!(
+        emitted_pages >= 2,
+        "the window must span output pages for the composition test to be meaningful"
+    );
+    assert_eq!(
+        executor.continuation_calls.len(),
+        3,
+        "all three alternating backend pages must be consumed"
     );
 }
 

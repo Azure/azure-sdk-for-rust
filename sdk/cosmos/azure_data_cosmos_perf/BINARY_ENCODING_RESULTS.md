@@ -1,7 +1,6 @@
 # Binary encoding: measured impact
 
-Measured against a live Cosmos DB account with
-[`binary_payload_ab`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_perf/src/bin/binary_payload_ab.rs),
+Measured against a live Cosmos DB account with `binary_payload_ab`,
 which installs a custom `TransportClient` and counts bytes at the wire boundary
 — request bodies *after* binary transcoding, response bodies *before* it.
 Headers excluded, no content encoding negotiated. Text and binary arms are

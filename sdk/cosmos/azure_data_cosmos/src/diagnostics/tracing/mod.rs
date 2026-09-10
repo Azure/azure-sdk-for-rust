@@ -19,11 +19,15 @@ mod tests {
     use std::time::{Duration, Instant, SystemTime};
 
     use azure_core::http::StatusCode;
-    use azure_data_cosmos_driver::diagnostics::{DiagnosticsContext, RequestDiagnostics};
+    use azure_data_cosmos_driver::diagnostics::{
+        DiagnosticsContext, ExecutionContext, HedgeDiagnostics, HedgeTerminalState,
+        RequestDiagnostics,
+    };
     use azure_data_cosmos_driver::models::{ActivityId, RequestCharge};
     use azure_data_cosmos_driver::options::Region;
     use azure_data_cosmos_driver::{CosmosStatus, DiagnosticsThresholds};
     use opentelemetry::trace::{SpanId, TracerProvider};
+    use opentelemetry::{Array, Value};
     use opentelemetry_sdk::trace::{in_memory_exporter::InMemorySpanExporter, SdkTracerProvider};
 
     use super::handler::should_emit_span;
@@ -491,5 +495,250 @@ mod tests {
             root.start_time <= earliest_child,
             "root must start no later than its earliest child"
         );
+    }
+
+    /// Builds a hedged operation in its **production `AlternateWon` shape**: the
+    /// primary East US leg lost the race and was structurally dropped (so it has
+    /// no retained per-request record), leaving only the winning speculative
+    /// hedge leg to West US 2 (200) tagged `ExecutionContext::Hedging`, with
+    /// `AlternateWon` hedge diagnostics naming both regions. The dropped primary
+    /// region is recovered for `requested_regions()` from the hedge diagnostics.
+    fn hedged_context(anchor: Instant) -> DiagnosticsContext {
+        let hedge_leg = RequestDiagnostics::for_testing(
+            "https://acct-westus2.documents.azure.com:443/",
+            Some(Region::WEST_US_2),
+            CosmosStatus::new(StatusCode::Ok),
+            RequestCharge::new(2.0),
+            anchor - Duration::from_millis(150),
+            anchor - Duration::from_millis(50),
+        )
+        .with_execution_context_for_testing(ExecutionContext::Hedging);
+        let hedge = HedgeDiagnostics::for_testing(
+            Region::EAST_US,
+            Some(Region::WEST_US_2),
+            Some(Region::WEST_US_2),
+            HedgeTerminalState::AlternateWon,
+        );
+        DiagnosticsContext::for_testing_with_hedge(
+            ActivityId::new_uuid(),
+            Duration::from_millis(250),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("read_item"),
+            vec![hedge_leg],
+            Some(hedge),
+        )
+    }
+
+    /// Returns the string members of a `string[]` span attribute, if present.
+    fn string_array_attr(
+        span: &opentelemetry_sdk::trace::SpanData,
+        key: &str,
+    ) -> Option<Vec<String>> {
+        span.attributes.iter().find_map(|kv| {
+            if kv.key.as_str() != key {
+                return None;
+            }
+            match &kv.value {
+                Value::Array(Array::String(values)) => {
+                    Some(values.iter().map(|v| v.as_str().to_string()).collect())
+                }
+                _ => None,
+            }
+        })
+    }
+
+    #[test]
+    fn hedged_operation_surfaces_hedging_span_attributes() {
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("test");
+        let now_instant = Instant::now();
+        let now_system = SystemTime::now();
+
+        let ctx = hedged_context(now_instant);
+        emit_backdated_span_tree(&tracer, &ctx, None, None, now_instant, now_system);
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        let root = spans
+            .iter()
+            .find(|s| s.name == "read_item")
+            .expect("root span present");
+
+        // hedging_started = true (bool).
+        assert!(
+            root.attributes.iter().any(|kv| {
+                kv.key.as_str() == attributes::HEDGING_STARTED
+                    && matches!(kv.value, Value::Bool(true))
+            }),
+            "root span must carry hedging_started = true"
+        );
+        // hedge region = the alternate region the hedge fanned out to.
+        assert!(root.attributes.iter().any(|kv| {
+            kv.key.as_str() == attributes::HEDGE_REGION && kv.value.as_str() == "westus2"
+        }));
+        // terminal state = alternate_won.
+        assert!(root.attributes.iter().any(|kv| {
+            kv.key.as_str() == attributes::HEDGE_TERMINAL_STATE
+                && kv.value.as_str() == "alternate_won"
+        }));
+        // requested_regions carries both dispatched regions — the winning hedge
+        // leg (westus2) plus the structurally-dropped primary (eastus) recovered
+        // from the hedge diagnostics.
+        let requested = string_array_attr(root, attributes::REQUESTED_REGIONS)
+            .expect("requested_regions string[] present");
+        assert!(requested.iter().any(|r| r == "eastus"));
+        assert!(requested.iter().any(|r| r == "westus2"));
+        // responded_regions carries only the winning hedge region: the dropped
+        // primary leg never produced a service reply.
+        let responded = string_array_attr(root, attributes::RESPONDED_REGIONS)
+            .expect("responded_regions string[] present");
+        assert!(responded.iter().any(|r| r == "westus2"));
+        assert!(
+            !responded.iter().any(|r| r == "eastus"),
+            "the structurally-dropped primary leg must not appear in responded_regions"
+        );
+        // Nothing was truncated, so the exact-count attributes stay off the span
+        // entirely — they exist only to make an elision explicit, and emitting
+        // them unconditionally would put a redundant integer on every hedged
+        // span.
+        for key in [
+            attributes::REQUESTED_REGIONS_TOTAL,
+            attributes::RESPONDED_REGIONS_TOTAL,
+        ] {
+            assert!(
+                !root.attributes.iter().any(|kv| kv.key.as_str() == key),
+                "{key} must be absent when the region history was not truncated"
+            );
+        }
+
+        // The speculative hedge leg's child span is tagged.
+        let tagged = spans
+            .iter()
+            .filter(|s| s.name == "cosmosdb.request")
+            .any(|s| {
+                s.attributes.iter().any(|kv| {
+                    kv.key.as_str() == attributes::HEDGE_LEG
+                        && matches!(kv.value, Value::Bool(true))
+                })
+            });
+        assert!(tagged, "the hedge leg child span must carry the hedge tag");
+    }
+
+    /// Builds a hedged operation in its **production `PrimaryWonAfterHedge`
+    /// shape**: the primary East US leg won after the threshold, so the
+    /// speculative West US 2 hedge leg was structurally cancelled and has no
+    /// retained record. Only the primary (Initial, 200) survives; the hedge
+    /// region is recovered from the hedge diagnostics.
+    fn primary_won_after_hedge_context(anchor: Instant) -> DiagnosticsContext {
+        let primary = RequestDiagnostics::for_testing(
+            "https://acct-eastus.documents.azure.com:443/",
+            Some(Region::EAST_US),
+            CosmosStatus::new(StatusCode::Ok),
+            RequestCharge::new(2.0),
+            anchor - Duration::from_millis(300),
+            anchor - Duration::from_millis(180),
+        );
+        let hedge = HedgeDiagnostics::for_testing(
+            Region::EAST_US,
+            Some(Region::WEST_US_2),
+            Some(Region::EAST_US),
+            HedgeTerminalState::PrimaryWonAfterHedge,
+        );
+        DiagnosticsContext::for_testing_with_hedge(
+            ActivityId::new_uuid(),
+            Duration::from_millis(200),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("read_item"),
+            vec![primary],
+            Some(hedge),
+        )
+    }
+
+    #[test]
+    fn primary_won_after_hedge_recovers_hedge_region_without_child_span() {
+        // When the primary wins cleanly the hedge leg is dropped, so there is no
+        // child span to tag. The authoritative hedge signal must still be on the
+        // root span, and the dropped hedge region recovered into requested_regions.
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("test");
+        let now_instant = Instant::now();
+        let now_system = SystemTime::now();
+
+        let ctx = primary_won_after_hedge_context(now_instant);
+        emit_backdated_span_tree(&tracer, &ctx, None, None, now_instant, now_system);
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        let root = spans
+            .iter()
+            .find(|s| s.name == "read_item")
+            .expect("root span present");
+
+        assert!(root.attributes.iter().any(|kv| {
+            kv.key.as_str() == attributes::HEDGING_STARTED && matches!(kv.value, Value::Bool(true))
+        }));
+        assert!(root.attributes.iter().any(|kv| {
+            kv.key.as_str() == attributes::HEDGE_REGION && kv.value.as_str() == "westus2"
+        }));
+        assert!(root.attributes.iter().any(|kv| {
+            kv.key.as_str() == attributes::HEDGE_TERMINAL_STATE
+                && kv.value.as_str() == "primary_won_after_hedge"
+        }));
+        // The dropped hedge leg's region is recovered into requested_regions...
+        let requested = string_array_attr(root, attributes::REQUESTED_REGIONS)
+            .expect("requested_regions string[] present");
+        assert!(requested.iter().any(|r| r == "eastus"));
+        assert!(requested.iter().any(|r| r == "westus2"));
+        // ...but only the winning primary produced a response.
+        let responded = string_array_attr(root, attributes::RESPONDED_REGIONS)
+            .expect("responded_regions string[] present");
+        assert_eq!(responded, vec!["eastus".to_string()]);
+        // The hedge leg was structurally dropped, so no child span carries the
+        // hedge tag; the root span's hedge attributes carry the signal instead.
+        let any_hedge_child = spans
+            .iter()
+            .filter(|s| s.name == "cosmosdb.request")
+            .any(|s| {
+                s.attributes.iter().any(|kv| {
+                    kv.key.as_str() == attributes::HEDGE_LEG
+                        && matches!(kv.value, Value::Bool(true))
+                })
+            });
+        assert!(
+            !any_hedge_child,
+            "a structurally-dropped hedge leg must not produce a tagged child span"
+        );
+    }
+
+    #[test]
+    fn non_hedged_operation_omits_hedging_span_attributes() {
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("test");
+        let now_instant = Instant::now();
+        let now_system = SystemTime::now();
+
+        // A plain failed operation — no hedge diagnostics, all Initial legs.
+        let ctx = context(
+            Duration::from_millis(5),
+            Some(CosmosStatus::new(StatusCode::TooManyRequests)),
+            Some("read_item"),
+            &[(5, 5, CosmosStatus::new(StatusCode::TooManyRequests))],
+            now_instant,
+        );
+        emit_backdated_span_tree(&tracer, &ctx, None, None, now_instant, now_system);
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        for span in &spans {
+            for kv in span.attributes.iter() {
+                let key = kv.key.as_str();
+                assert_ne!(key, attributes::HEDGING_STARTED);
+                assert_ne!(key, attributes::HEDGE_REGION);
+                assert_ne!(key, attributes::HEDGE_TERMINAL_STATE);
+                assert_ne!(key, attributes::REQUESTED_REGIONS);
+                assert_ne!(key, attributes::RESPONDED_REGIONS);
+                assert_ne!(key, attributes::HEDGE_LEG);
+            }
+        }
     }
 }

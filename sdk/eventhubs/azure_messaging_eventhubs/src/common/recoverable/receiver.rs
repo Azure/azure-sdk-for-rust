@@ -41,6 +41,16 @@ impl RecoverableReceiver {
         RecoverableConnection::should_retry_receive_error(e)
     }
 
+    /// Builds the error that a receive timeout produces. The cause goes in
+    /// unboxed, because `azure_core::Error::new` boxes its argument and a
+    /// pre-boxed cause defeats `downcast_ref::<std::io::Error>()`.
+    fn receive_timeout_error() -> AmqpError {
+        AmqpError::from(azure_core::Error::new(
+            AzureErrorKind::Io,
+            std::io::Error::from(std::io::ErrorKind::TimedOut),
+        ))
+    }
+
     /// Wraps an `ensure_receiver` failure so the original error stays reachable
     /// through the source chain.
     ///
@@ -124,9 +134,7 @@ impl AmqpReceiverApis for RecoverableReceiver {
                     select! {
                         delivery = receiver.receive_delivery().fuse() => Ok(delivery),
                         _ = azure_core::sleep::sleep(delivery_timeout).fuse() => {
-                             Err(AmqpError::from(azure_core::Error::new(
-                                AzureErrorKind::Io,
-                                Box::new(std::io::Error::from(std::io::ErrorKind::TimedOut)))))
+                             Err(Self::receive_timeout_error())
                         },
                     }?
                 } else {
@@ -176,6 +184,19 @@ mod tests {
             None,
             Default::default(),
         )))
+    }
+
+    // A caller that branches on a receive timeout downcasts the cause to
+    // `std::io::Error`. A cause that goes in already boxed is stored as
+    // `Box<std::io::Error>`, which no downcast to `std::io::Error` finds.
+    #[test]
+    fn receive_timeout_cause_downcasts_to_io_error() {
+        let error = azure_core::Error::from(RecoverableReceiver::receive_timeout_error());
+        assert_eq!(error.kind(), &AzureErrorKind::Io);
+        let cause = error
+            .downcast_ref::<std::io::Error>()
+            .expect("the receive timeout cause must downcast to std::io::Error");
+        assert_eq!(cause.kind(), std::io::ErrorKind::TimedOut);
     }
 
     // The broker rejects a re-attach at the old epoch with `amqp:link:stolen`.

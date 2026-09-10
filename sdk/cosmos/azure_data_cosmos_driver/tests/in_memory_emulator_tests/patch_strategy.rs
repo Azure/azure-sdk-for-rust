@@ -156,7 +156,7 @@ async fn delete_item(driver: &CosmosDriver, container: &ContainerReference) {
 
 fn response_json(response: CosmosResponse) -> serde_json::Value {
     let bytes = response.into_body().single().unwrap_or_default();
-    serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null)
+    super::parse_json_body(&bytes).unwrap_or(serde_json::Value::Null)
 }
 
 fn without_system_properties(mut document: serde_json::Value) -> serde_json::Value {

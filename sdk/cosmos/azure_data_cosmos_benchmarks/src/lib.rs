@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cSpell:ignore benchdb benchcontainer benchitem
-
 //! Shared transport infrastructure for `azure_data_cosmos_benchmarks`.
 //!
 //! Provides both a mock transport (zero-latency, in-memory) and a live-transport
@@ -19,7 +17,7 @@ use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntimeBuilder,
     models::{AccountReference, CosmosOperation, DatabaseReference, ItemReference, PartitionKey},
     options::{DriverOptions, OperationOptions},
-    testing::{
+    test::{
         ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
         TransportClient, TransportError,
     },

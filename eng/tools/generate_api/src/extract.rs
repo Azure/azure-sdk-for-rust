@@ -5,7 +5,7 @@ use crate::{
     driver::PackageMetadata,
     model::{
         ApiAttribute, ApiItem, ApiItemKind, ApiMember, ApiMemberKind, ApiModel, ApiModule,
-        ApiNavigationPath, ApiPathReference, InherentImplSortKey,
+        ApiNavigationPath, ApiPathReference, InherentImplSortKey, SourceLocation,
     },
     rustdoc_compat,
 };
@@ -22,6 +22,68 @@ pub(crate) trait WorkspaceResolver {
     fn is_workspace_crate(&self, crate_name: &str) -> bool;
     fn load_workspace_model(&mut self, crate_name: &str) -> Result<Option<Arc<ApiModel>>, String>;
     fn load_workspace_crate(&mut self, crate_name: &str) -> Result<Option<Arc<Crate>>, String>;
+}
+
+fn source_location_at_offset(item: &Item, source: &str, offset: usize) -> Option<SourceLocation> {
+    let mut location = source_location(item)?;
+    let prefix = source.get(..offset)?;
+    let line_count = prefix.bytes().filter(|byte| *byte == b'\n').count();
+    location.line += line_count;
+    location.column = if line_count == 0 {
+        location.column + prefix.chars().count()
+    } else {
+        prefix
+            .rsplit_once('\n')
+            .map_or(0, |(_, suffix)| suffix.chars().count())
+    };
+    Some(location)
+}
+
+fn proc_macro_helper_location(item: &Item, helper: &str) -> Option<SourceLocation> {
+    let span = item.span.as_ref()?;
+    let source = crate::source_cache::get(&span.filename)?;
+    let lines = source.lines().collect::<Vec<_>>();
+    let item_line = span.begin.0.saturating_sub(1).min(lines.len());
+    let attribute_start = (0..item_line)
+        .rev()
+        .find(|index| lines[*index].contains("#[proc_macro_derive"))?;
+
+    let mut in_helpers = false;
+    for (line_index, line) in lines
+        .iter()
+        .enumerate()
+        .take(item_line)
+        .skip(attribute_start)
+    {
+        let search_from = if in_helpers {
+            0
+        } else {
+            let Some(attributes) = line.find("attributes") else {
+                continue;
+            };
+            in_helpers = true;
+            attributes + "attributes".len()
+        };
+        if let Some(column) = find_identifier(&line[search_from..], helper) {
+            return Some(SourceLocation {
+                path: repo_relative_source_path(&span.filename)?,
+                line: line_index,
+                column: search_from + column,
+            });
+        }
+    }
+    None
+}
+
+fn find_identifier(text: &str, identifier: &str) -> Option<usize> {
+    text.match_indices(identifier)
+        .map(|(index, _)| index)
+        .find(|index| {
+            let before = text[..*index].chars().next_back();
+            let after = text[*index + identifier.len()..].chars().next();
+            !before.is_some_and(|character| character == '_' || character.is_alphanumeric())
+                && !after.is_some_and(|character| character == '_' || character.is_alphanumeric())
+        })
 }
 
 fn find_item_entry<'a>(
@@ -78,7 +140,11 @@ pub(crate) fn extract_model(
         return Err("rustdoc JSON root item was not a module".to_string());
     };
 
-    let mut model = ApiModel::new(package.name.clone(), package.version.clone());
+    let mut model = ApiModel::new(
+        package.name.clone(),
+        package.version.clone(),
+        package.api.clone(),
+    );
     model.root_module = extract_module(krate, root, package.name.clone(), resolver)?;
     Ok(model)
 }
@@ -95,6 +161,7 @@ fn extract_module(
 
     let mut result = ApiModule {
         path,
+        declaration_location: source_location(item),
         doc_comments: extract_doc_comments(item),
         attributes: extract_module_attributes(item, module.is_crate),
         items: Vec::new(),
@@ -115,7 +182,8 @@ fn extract_module(
                     result.path,
                     child.name.as_deref().unwrap_or("unknown_module")
                 );
-                let module = extract_module(krate, child, child_path, resolver)?;
+                let mut module = extract_module(krate, child, child_path, resolver)?;
+                module.declaration_location = module_declaration_location(item, child);
                 insert_module(&mut result.modules, &mut seen_modules, module);
             }
             ItemEnum::Impl(impl_block) => {
@@ -743,6 +811,7 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
     ApiItem {
         name: item_name(krate, item),
         kind: item_kind(item),
+        declaration_location: source_location(item),
         source_id: (!matches!(item.inner, ItemEnum::Use(_)))
             .then(|| qualified_source_id(krate, item.id)),
         navigation_paths: item_navigation_paths(krate, item),
@@ -782,8 +851,8 @@ fn item_name(krate: &Crate, item: &Item) -> String {
 
 fn extract_members(krate: &Crate, item: &Item) -> Vec<ApiMember> {
     match &item.inner {
-        ItemEnum::Macro(source) => extract_macro_members(source),
-        ItemEnum::ProcMacro(proc_macro) => extract_proc_macro_members(proc_macro),
+        ItemEnum::Macro(source) => extract_macro_members(item, source),
+        ItemEnum::ProcMacro(proc_macro) => extract_proc_macro_members(item, proc_macro),
         ItemEnum::Struct(struct_item) => extract_struct_members(krate, struct_item),
         ItemEnum::Enum(enum_item) => extract_enum_members(krate, enum_item),
         ItemEnum::Trait(trait_item) => extract_trait_members(krate, trait_item),
@@ -823,6 +892,172 @@ fn qualified_source_id(krate: &Crate, id: Id) -> String {
         .and_then(|summary| summary.path.first())
         .map(|crate_name| format!("{crate_name}::{}", id.0))
         .unwrap_or_else(|| id.0.to_string())
+}
+
+fn source_location(item: &Item) -> Option<SourceLocation> {
+    let span = item.span.as_ref()?;
+    Some(SourceLocation {
+        path: repo_relative_source_path(&span.filename)?,
+        line: span.begin.0.saturating_sub(1),
+        column: span.begin.1.saturating_sub(1),
+    })
+}
+
+fn module_declaration_location(parent: &Item, module: &Item) -> Option<SourceLocation> {
+    let parent_span = parent.span.as_ref()?;
+    let module_span = module.span.as_ref()?;
+    if parent_span.filename == module_span.filename {
+        return source_location(module);
+    }
+
+    let name = module.name.as_deref()?;
+    let source = crate::source_cache::get(&parent_span.filename)?;
+    let (line, column) = find_module_declaration(
+        &source,
+        name,
+        parent_span.begin.0.saturating_sub(1),
+        parent_span.end.0,
+        Some(&module_span.filename),
+        matches!(module.visibility, Visibility::Public),
+    )?;
+    Some(SourceLocation {
+        path: repo_relative_source_path(&parent_span.filename)?,
+        line,
+        column,
+    })
+}
+
+fn find_module_declaration(
+    source: &str,
+    name: &str,
+    start_line: usize,
+    end_line: usize,
+    module_file: Option<&std::path::Path>,
+    is_public: bool,
+) -> Option<(usize, usize)> {
+    let mut candidates = Vec::new();
+    for (line_index, line) in source
+        .lines()
+        .enumerate()
+        .skip(start_line)
+        .take(end_line.saturating_sub(start_line))
+    {
+        for (mod_index, _) in line.match_indices("mod") {
+            let before = &line[..mod_index];
+            let previous = before.chars().next_back();
+            if previous.is_some_and(|character| character == '_' || character.is_alphanumeric()) {
+                continue;
+            }
+
+            let prefix = before.trim();
+            if !is_module_declaration_prefix(prefix) {
+                continue;
+            }
+
+            let after_mod = &line[mod_index + 3..];
+            let after_whitespace = after_mod.trim_start();
+            let Some(after_name) = after_whitespace.strip_prefix(name) else {
+                continue;
+            };
+            if after_name
+                .chars()
+                .next()
+                .is_some_and(|character| character == '_' || character.is_alphanumeric())
+            {
+                continue;
+            }
+            if matches!(after_name.trim_start().chars().next(), Some(';' | '{')) {
+                candidates.push((
+                    line_index,
+                    line.len() - line.trim_start().len(),
+                    path_attribute_before(source, line_index),
+                    is_public_module_declaration_prefix(prefix),
+                ));
+            }
+        }
+    }
+    if candidates.len() == 1 {
+        return candidates.pop().map(|(line, column, _, _)| (line, column));
+    }
+
+    let candidates = candidates
+        .into_iter()
+        .filter(|(_, _, _, candidate_is_public)| *candidate_is_public == is_public)
+        .collect::<Vec<_>>();
+    if candidates.len() == 1 {
+        return candidates
+            .into_iter()
+            .next()
+            .map(|(line, column, _, _)| (line, column));
+    }
+
+    let module_file = module_file?.to_string_lossy().replace('\\', "/");
+    candidates
+        .into_iter()
+        .find(|(_, _, path, _)| {
+            path.as_deref()
+                .is_some_and(|path| module_file.ends_with(&path.replace('\\', "/")))
+        })
+        .map(|(line, column, _, _)| (line, column))
+}
+
+fn is_module_declaration_prefix(prefix: &str) -> bool {
+    let visibility = prefix
+        .strip_suffix("unsafe")
+        .map(str::trim_end)
+        .unwrap_or(prefix);
+    visibility.is_empty()
+        || visibility == "pub"
+        || (visibility.starts_with("pub(") && visibility.ends_with(')'))
+}
+
+fn is_public_module_declaration_prefix(prefix: &str) -> bool {
+    prefix
+        .strip_suffix("unsafe")
+        .map(str::trim_end)
+        .unwrap_or(prefix)
+        == "pub"
+}
+
+fn path_attribute_before(source: &str, line_index: usize) -> Option<String> {
+    for line in source
+        .lines()
+        .collect::<Vec<_>>()
+        .into_iter()
+        .take(line_index)
+        .rev()
+    {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with("///") || line.starts_with("//!") {
+            continue;
+        }
+        if !line.starts_with("#[") {
+            break;
+        }
+        let Some(path) = line.strip_prefix("#[path") else {
+            continue;
+        };
+        let start = path.find('"')? + 1;
+        let end = path[start..].find('"')? + start;
+        return Some(path[start..end].to_string());
+    }
+    None
+}
+
+fn repo_relative_source_path(path: &std::path::Path) -> Option<String> {
+    let path = if path.is_absolute() {
+        path.strip_prefix(std::env::current_dir().ok()?).ok()?
+    } else {
+        path
+    };
+    if path
+        .components()
+        .any(|component| matches!(component, std::path::Component::ParentDir))
+    {
+        return None;
+    }
+
+    Some(path.to_string_lossy().replace('\\', "/"))
 }
 
 fn reexport_navigation_paths(path: &str) -> Vec<String> {
@@ -1682,6 +1917,7 @@ fn extract_trait_impl(
     Some(ApiItem {
         name: self_type,
         kind: ApiItemKind::TraitImpl,
+        declaration_location: source_location(item),
         source_id: Some(qualified_source_id(krate, item.id)),
         navigation_paths: Vec::new(),
         owner_name: owner.map(|owner| {
@@ -1740,6 +1976,7 @@ fn extract_inherent_impl(
             .clone()
             .unwrap_or_else(|| fallback_item_name(target).to_string()),
         kind: ApiItemKind::InherentImpl,
+        declaration_location: source_location(item),
         source_id: Some(qualified_source_id(krate, item.id)),
         navigation_paths: Vec::new(),
         owner_name: Some(
@@ -1808,13 +2045,58 @@ fn extract_trait_members(krate: &Crate, trait_item: &Trait) -> Vec<ApiMember> {
         .collect()
 }
 
-fn extract_macro_members(source: &str) -> Vec<ApiMember> {
-    parse_macro_definition(source)
-        .map(|(_, members)| members)
+fn extract_macro_members(item: &Item, source: &str) -> Vec<ApiMember> {
+    let source = source_text_for_span(item).unwrap_or_else(|| source.to_string());
+    parse_macro_definition(&source)
+        .map(|parsed| {
+            parsed
+                .members
+                .into_iter()
+                .map(|(offset, mut member)| {
+                    member.declaration_location = source_location_at_offset(item, &source, offset);
+                    member
+                })
+                .collect()
+        })
         .unwrap_or_default()
 }
 
-fn extract_proc_macro_members(proc_macro: &rustdoc_types::ProcMacro) -> Vec<ApiMember> {
+fn source_text_for_span(item: &Item) -> Option<String> {
+    let span = item.span.as_ref()?;
+    let source = crate::source_cache::get(&span.filename)?;
+    let lines = source.lines().collect::<Vec<_>>();
+    let start_line = span.begin.0.checked_sub(1)?;
+    let end_line = span.end.0.min(lines.len());
+    let mut selected = lines.get(start_line..end_line)?.to_vec();
+    let start_column = span.begin.1.saturating_sub(1);
+    let end_column = span.end.1.saturating_sub(1);
+    if selected.len() == 1 {
+        let line = *selected.first()?;
+        let start_byte = byte_index_at_character(line, start_column);
+        let end_byte = byte_index_at_character(line, end_column);
+        *selected.first_mut()? = line.get(start_byte..end_byte)?;
+    } else {
+        let first = *selected.first()?;
+        let start_byte = byte_index_at_character(first, start_column);
+        *selected.first_mut()? = first.get(start_byte..)?;
+
+        let last = *selected.last()?;
+        let end_byte = byte_index_at_character(last, end_column);
+        *selected.last_mut()? = last.get(..end_byte)?;
+    }
+    Some(selected.join("\n"))
+}
+
+fn byte_index_at_character(text: &str, character: usize) -> usize {
+    text.char_indices()
+        .nth(character)
+        .map_or(text.len(), |(index, _)| index)
+}
+
+fn extract_proc_macro_members(
+    item: &Item,
+    proc_macro: &rustdoc_types::ProcMacro,
+) -> Vec<ApiMember> {
     if !matches!(proc_macro.kind, MacroKind::Derive) || proc_macro.helpers.is_empty() {
         return Vec::new();
     }
@@ -1826,6 +2108,7 @@ fn extract_proc_macro_members(proc_macro: &rustdoc_types::ProcMacro) -> Vec<ApiM
     members.extend(proc_macro.helpers.iter().map(|helper| ApiMember {
         name: helper.clone(),
         kind: ApiMemberKind::MacroInput,
+        declaration_location: proc_macro_helper_location(item, helper),
         doc_comments: Vec::new(),
         attributes: Vec::new(),
         declaration: format!("#[{helper}]"),
@@ -1863,6 +2146,7 @@ fn extract_enum_members(krate: &Crate, enum_item: &rustdoc_types::Enum) -> Vec<A
         .map(|variant_item| ApiMember {
             name: variant_item.name.clone().unwrap_or_default(),
             kind: ApiMemberKind::Variant,
+            declaration_location: source_location(variant_item),
             doc_comments: extract_doc_comments(variant_item),
             attributes: extract_attributes(variant_item),
             declaration: render_variant(krate, variant_item),
@@ -1878,6 +2162,7 @@ fn extract_field_member(krate: &Crate, field_item: &Item) -> Option<ApiMember> {
     render_named_field(field_item).map(|declaration| ApiMember {
         name: field_item.name.clone().unwrap_or_default(),
         kind: ApiMemberKind::Field,
+        declaration_location: source_location(field_item),
         doc_comments: extract_doc_comments(field_item),
         attributes: extract_attributes(field_item),
         declaration,
@@ -1889,6 +2174,7 @@ fn api_member(krate: &Crate, item: &Item, kind: ApiMemberKind, declaration: Stri
     ApiMember {
         name: item.name.clone().unwrap_or_default(),
         kind,
+        declaration_location: source_location(item),
         doc_comments: extract_doc_comments(item),
         attributes: extract_attributes(item),
         declaration,
@@ -1902,6 +2188,7 @@ fn text_member(name: impl Into<String>, declaration: impl Into<String>) -> ApiMe
     ApiMember {
         name: name.into(),
         kind: ApiMemberKind::Text,
+        declaration_location: None,
         doc_comments: Vec::new(),
         attributes: Vec::new(),
         declaration: declaration.into(),
@@ -2292,7 +2579,7 @@ fn render_item_declaration(krate: &Crate, item: &Item) -> String {
 
 fn render_macro_declaration(source: &str) -> String {
     parse_macro_definition(source)
-        .map(|(declaration, _)| declaration)
+        .map(|parsed| parsed.declaration)
         .unwrap_or_else(|| source.to_string())
 }
 
@@ -2335,7 +2622,13 @@ fn render_proc_macro_declaration(name: &str, proc_macro: &rustdoc_types::ProcMac
     }
 }
 
-fn parse_macro_definition(source: &str) -> Option<(String, Vec<ApiMember>)> {
+struct ParsedMacro {
+    declaration: String,
+    members: Vec<(usize, ApiMember)>,
+}
+
+fn parse_macro_definition(source: &str) -> Option<ParsedMacro> {
+    let leading_whitespace = source.len() - source.trim_start().len();
     let source = source.trim();
     let open_index = source.find('{')?;
     let close_index = find_matching_delimiter(source, open_index, '{', '}')?;
@@ -2348,20 +2641,29 @@ fn parse_macro_definition(source: &str) -> Option<(String, Vec<ApiMember>)> {
     let members = split_macro_arms(body)
         .into_iter()
         .enumerate()
-        .map(|(index, arm)| ApiMember {
-            name: format!("arm_{index}"),
-            kind: ApiMemberKind::MacroInput,
-            doc_comments: Vec::new(),
-            attributes: Vec::new(),
-            declaration: summarize_macro_arm(&arm),
-            declaration_path_references: Vec::new(),
+        .map(|(index, (offset, arm))| {
+            (
+                leading_whitespace + open_index + 1 + offset,
+                ApiMember {
+                    name: format!("arm_{index}"),
+                    kind: ApiMemberKind::MacroInput,
+                    declaration_location: None,
+                    doc_comments: Vec::new(),
+                    attributes: Vec::new(),
+                    declaration: summarize_macro_arm(&arm),
+                    declaration_path_references: Vec::new(),
+                },
+            )
         })
         .collect::<Vec<_>>();
 
-    (!members.is_empty()).then_some((declaration, members))
+    (!members.is_empty()).then_some(ParsedMacro {
+        declaration,
+        members,
+    })
 }
 
-fn split_macro_arms(body: &str) -> Vec<String> {
+fn split_macro_arms(body: &str) -> Vec<(usize, String)> {
     let mut arms = Vec::new();
     let mut start = None;
     let mut paren_depth = 0usize;
@@ -2389,7 +2691,7 @@ fn split_macro_arms(body: &str) -> Vec<String> {
                 if let Some(start_index) = start {
                     let arm = body[start_index..index].trim();
                     if !arm.is_empty() {
-                        arms.push(arm.to_string());
+                        arms.push((start_index, arm.to_string()));
                     }
                 }
                 start = None;
@@ -2404,7 +2706,7 @@ fn split_macro_arms(body: &str) -> Vec<String> {
     if let Some(start_index) = start {
         let arm = body[start_index..].trim();
         if !arm.is_empty() {
-            arms.push(arm.to_string());
+            arms.push((start_index, arm.to_string()));
         }
     }
 

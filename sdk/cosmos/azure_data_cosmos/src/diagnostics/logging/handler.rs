@@ -77,7 +77,41 @@ impl DiagnosticsHandler for TracingLogHandler {
         // only evaluated when a subscriber is actually listening for the event
         // (the `tracing` macros run an "is enabled" check before evaluating
         // field expressions).
-        if diagnostics.is_failure() {
+        //
+        // When a cross-region hedge fanned out, surface the hedging signal as
+        // dedicated fields (in addition to the JSON blob) — high-signal for
+        // exactly the failed / threshold-breaching operations this handler emits.
+        //
+        // Fan-out is decided by `hedging_started()`, consistently with the hedged
+        // metric counter and the root span. The per-outcome `hedge_region` /
+        // `hedge_terminal_state` fields additionally require `hedge_diagnostics`
+        // (with a fanned-out alternate): a both-transient hedge that is later
+        // resolved by a failover attempt has no recorded terminal outcome
+        // (`finalize_both_transient` deliberately does not stamp one on the
+        // non-terminal path). `tracing` field sets are fixed per call site, so
+        // that case gets its own arm carrying just `hedging_started` rather than
+        // emitting misleading empty strings — or, worse, dropping the signal.
+        let hedge = diagnostics
+            .hedge_diagnostics()
+            .filter(|hedge| hedge.alternate_region().is_some());
+        if let Some(hedge) = hedge {
+            let hedge_region = hedge
+                .alternate_region()
+                .map(|region| region.as_str())
+                .unwrap_or_default();
+            let hedge_terminal_state = hedge.terminal_state().as_str();
+            if diagnostics.is_failure() {
+                tracing::warn!(target: SAMPLED_TARGET, reason, hedging_started = true, hedge_region, hedge_terminal_state, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+            } else {
+                tracing::info!(target: SAMPLED_TARGET, reason, hedging_started = true, hedge_region, hedge_terminal_state, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+            }
+        } else if diagnostics.hedging_started() {
+            if diagnostics.is_failure() {
+                tracing::warn!(target: SAMPLED_TARGET, reason, hedging_started = true, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+            } else {
+                tracing::info!(target: SAMPLED_TARGET, reason, hedging_started = true, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+            }
+        } else if diagnostics.is_failure() {
             tracing::warn!(target: SAMPLED_TARGET, reason, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
         } else {
             tracing::info!(target: SAMPLED_TARGET, reason, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");

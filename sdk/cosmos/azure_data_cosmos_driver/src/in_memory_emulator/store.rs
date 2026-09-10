@@ -5,7 +5,7 @@
 //! In-memory document store with multi-region support.
 
 use std::collections::{BTreeMap, HashMap, VecDeque};
-use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
@@ -18,6 +18,9 @@ use super::session::SessionState;
 use crate::models::{PartitionKeyDefinition, PartitionKeyKind, PartitionKeyVersion};
 
 type SplitMergeLocks = HashMap<(String, String), Arc<async_lock::Mutex<()>>>;
+type ReplicationTrackerHandle = Arc<std::sync::Mutex<ReplicationTracker>>;
+type CatchUpJournals = Arc<std::sync::Mutex<HashMap<(String, u64), Vec<PendingReplication>>>>;
+type ReplicationRegistrationHook = Arc<dyn Fn() + Send + Sync>;
 /// Sentinel pkrange id used for control-plane (database/container/offer) session
 /// tokens. Chosen as `u32::MAX` so it cannot collide with any user pkrange id,
 /// since real Cosmos partition counts are bounded far below this value.
@@ -231,6 +234,29 @@ pub struct EmulatorStore {
     dtx_replication_capture: std::sync::Mutex<Option<Vec<CapturedReplication>>>,
     /// Tracks spawned replication tasks so tests can drain them.
     replication_tasks: std::sync::Mutex<tokio::task::JoinSet<()>>,
+    /// Coordinates local mutation registration with delayed catch-up.
+    ///
+    /// Writes share the barrier; catch-up takes it exclusively across snapshot
+    /// and finalization.
+    replication_barrier: Arc<async_lock::RwLock<()>>,
+    /// Delayed replications that have been scheduled but not yet applied.
+    ///
+    /// Region enrollment replays this bounded set into the joining replica so
+    /// a mutation already queued for the seed hub cannot fall between the
+    /// source snapshot and target enrollment. The tracker retains the newest
+    /// mutation for an item until every older in-flight mutation completes.
+    replication_tracker: ReplicationTrackerHandle,
+    next_replication_operation_id: AtomicU64,
+    /// Per-incarnation mutation journals for regions using delayed catch-up.
+    ///
+    /// Every replication committed from enrollment through the catch-up timer
+    /// is appended here. After the source snapshot is copied, replaying the
+    /// journal in LWW order preserves later deletes and prevents an
+    /// enrollment-time create from being resurrected.
+    catch_up_journals: CatchUpJournals,
+    next_catch_up_journal_id: AtomicU64,
+    /// Optional deterministic interleaving hook for emulator regression tests.
+    before_replication_registration: std::sync::Mutex<Option<ReplicationRegistrationHook>>,
     /// Tracks spawned split/merge tasks separately from replication so a
     /// control-plane panic does not surface inside an unrelated point-write
     /// handler that happens to call `replicate()`.
@@ -301,6 +327,12 @@ impl EmulatorStore {
             #[cfg(feature = "preview_dtx")]
             dtx_replication_capture: std::sync::Mutex::new(None),
             replication_tasks: std::sync::Mutex::new(tokio::task::JoinSet::new()),
+            replication_barrier: Arc::new(async_lock::RwLock::new(())),
+            replication_tracker: Arc::new(std::sync::Mutex::new(ReplicationTracker::default())),
+            next_replication_operation_id: AtomicU64::new(0),
+            catch_up_journals: Arc::new(std::sync::Mutex::new(HashMap::new())),
+            next_catch_up_journal_id: AtomicU64::new(0),
+            before_replication_registration: std::sync::Mutex::new(None),
             control_plane_tasks: std::sync::Mutex::new(Vec::new()),
             transport_request_counter: AtomicU32::new(0),
             replication_semaphore: Arc::new(tokio::sync::Semaphore::new(
@@ -479,6 +511,19 @@ impl EmulatorStore {
     #[cfg(feature = "preview_dtx")]
     pub(crate) fn document_write_lock(&self) -> Arc<async_lock::Mutex<()>> {
         self.document_write_lock.clone()
+    }
+
+    pub(crate) fn replication_barrier(&self) -> Arc<async_lock::RwLock<()>> {
+        Arc::clone(&self.replication_barrier)
+    }
+
+    /// Sets a hook invoked after local commit and before replication registration.
+    #[doc(hidden)]
+    pub fn set_before_replication_registration_hook_for_tests(
+        &self,
+        hook: Option<Arc<dyn Fn() + Send + Sync>>,
+    ) {
+        *self.before_replication_registration.lock().unwrap() = hook;
     }
 
     /// Returns the preview-DTX document write lock for internal emulator tests.
@@ -876,64 +921,146 @@ impl EmulatorStore {
         seeding: SeedingPolicy,
     ) -> crate::error::Result<()> {
         let region_name = region.name().to_string();
-        let source_name = self.config.write_region_name();
-        let source = {
-            let regions = self.regions.read().unwrap();
-            if regions.contains_key(&region_name) {
-                // Bail out before building anything, so a duplicate add can
-                // never clobber the existing region's data.
-                return Err(already_present(&region_name));
-            }
-            regions.get(&source_name).map(Arc::clone)
-        };
-
-        let region_store = match source {
-            Some(source) => RegionStore::seeded_from(&source),
-            None => RegionStore::new(),
-        };
-        if let SeedingPolicy::Delayed(_) = seeding {
-            region_store.clear_documents();
-        }
-        let region_store = Arc::new(region_store);
-
-        // Insert the store *before* publishing the region into the topology.
-        // Seeding deep-copies every document, so the reverse order would leave a
-        // window -- proportional to dataset size -- in which the region is
-        // already advertised and resolvable but has no store, and requests
-        // routed to it would get a bare 404 that is indistinguishable from a
-        // genuine "item not found".
-        {
+        let catch_up_journal_id = matches!(seeding, SeedingPolicy::Delayed(_))
+            .then(|| self.next_catch_up_journal_id.fetch_add(1, Ordering::SeqCst));
+        // Hold the map's write lock across source selection, snapshot, and
+        // target insertion. Replication discovers targets under the matching
+        // read lock, so a concurrent write is either included in the snapshot
+        // or sees the newly enrolled target -- it cannot fall between both.
+        //
+        // Resolving the current hub under this same lock also closes the race
+        // where a prior hub is removed between reading its name and looking up
+        // its store.
+        let (region_store, seed_source) = {
             let mut regions = self.regions.write().unwrap();
             if regions.contains_key(&region_name) {
                 return Err(already_present(&region_name));
             }
-            regions.insert(region_name.clone(), Arc::clone(&region_store));
-        }
+            let source_name = self.config.write_region_name();
+            let source = regions
+                .get(&source_name)
+                .map(Arc::clone)
+                .expect("the current write region must have a region store");
+            let region_store = RegionStore::seeded_from(&source);
+            if matches!(seeding, SeedingPolicy::Delayed(_)) {
+                region_store.clear_documents();
+            }
 
-        if let Err(error) = self.config.add_region(region) {
-            self.regions.write().unwrap().remove(&region_name);
-            return Err(error);
-        }
+            // Replay mutations that were committed before enrollment but have
+            // not reached every existing replica yet. Delayed tasks remain in
+            // the replication tracker until apply; paused targets retain their
+            // entries in per-region buffers. A write beginning after this
+            // snapshot blocks on the regions read lock and will discover the
+            // newly inserted target normally.
+            let mut pending: Vec<PendingReplication> = {
+                // Keep the same tracker -> journals lock order as
+                // `replicate`. Journal creation and replication registration
+                // are atomic relative to each other: a mutation is either in
+                // this initial snapshot or appended to the new journal.
+                let tracker = self.replication_tracker.lock().unwrap();
+                let pending = tracker.replay_snapshot();
+                if let Some(journal_id) = catch_up_journal_id {
+                    self.catch_up_journals
+                        .lock()
+                        .unwrap()
+                        .insert((region_name.clone(), journal_id), pending.clone());
+                }
+                pending
+            };
+            let mut buffered = Vec::new();
+            for existing_region in regions.values() {
+                buffered.extend(
+                    existing_region
+                        .replication_buffer
+                        .read()
+                        .unwrap()
+                        .iter()
+                        .cloned(),
+                );
+            }
+            if let Some(journal_id) = catch_up_journal_id {
+                self.catch_up_journals
+                    .lock()
+                    .unwrap()
+                    .get_mut(&(region_name.clone(), journal_id))
+                    .expect("catch-up journal was created above")
+                    .extend(buffered);
+            } else {
+                pending.extend(buffered);
+                sort_pending_replications(&mut pending);
+                for entry in &pending {
+                    region_store.apply_pending_replication(entry);
+                }
+            }
+
+            let region_store = Arc::new(region_store);
+            regions.insert(region_name.clone(), Arc::clone(&region_store));
+            (region_store, source)
+        };
+
+        let hidden_until_ready = matches!(seeding, SeedingPolicy::HiddenUntilReady(_));
+        let add_operation_id = match self.config.add_region(region, hidden_until_ready) {
+            Ok((_, operation_id)) => operation_id,
+            Err(error) => {
+                self.regions.write().unwrap().remove(&region_name);
+                if let Some(journal_id) = catch_up_journal_id {
+                    self.catch_up_journals
+                        .lock()
+                        .unwrap()
+                        .remove(&(region_name.clone(), journal_id));
+                }
+                return Err(error);
+            }
+        };
 
         // Only after the region is published, so the new region's own partitions
         // are included in the bump and every region agrees on the version.
         self.advance_vector_clock_versions();
 
         if let SeedingPolicy::Delayed(delay) = seeding {
-            // Hold Arcs to the two region stores directly; nothing here needs
-            // the outer store, so the task stays alive exactly as long as the
-            // regions it touches.
+            // Delayed intentionally starts empty, then takes a later snapshot.
+            // This preserves the original policy's observable lag behavior.
             let target = Arc::clone(&region_store);
-            let source = {
-                let regions = self.regions.read().unwrap();
-                regions.get(&source_name).map(Arc::clone)
-            };
-            if let Some(source) = source {
-                tokio::spawn(async move {
-                    tokio::time::sleep(delay).await;
-                    target.catch_up_from(&source);
-                });
-            }
+            let barrier = Arc::clone(&self.replication_barrier);
+            let tracker = Arc::clone(&self.replication_tracker);
+            let journals = Arc::clone(&self.catch_up_journals);
+            let journal_key = (
+                region_name.clone(),
+                catch_up_journal_id.expect("Delayed always allocates a catch-up journal"),
+            );
+            tokio::spawn(async move {
+                tokio::time::sleep(delay).await;
+                let _replication_guard = barrier.write().await;
+                target.catch_up_from(&seed_source);
+                // Match replication registration's tracker -> journals lock
+                // order. A mutation registered before finalization either
+                // appends before removal or blocks finalization at in-flight.
+                let tracker_guard = tracker.lock().unwrap();
+                let mut journals_guard = journals.lock().unwrap();
+                let mut pending = journals_guard.remove(&journal_key).unwrap_or_default();
+                sort_pending_replications(&mut pending);
+                for entry in &pending {
+                    target.apply_pending_replication(entry);
+                }
+                // Keep registration blocked until ordered replay is complete:
+                // no mutation can apply to the target between journal removal
+                // and replay.
+                drop(journals_guard);
+                drop(tracker_guard);
+            });
+        } else if let SeedingPolicy::HiddenUntilReady(delay) = seeding {
+            // Hidden buildout is already internally seeded and participates in
+            // normal replication while external clients cannot see or write to
+            // it. Completion therefore changes visibility only -- no late
+            // snapshot can overwrite newer writes or miss deletion tombstones.
+            let config = self.config.clone();
+            let completion_region_name = region_name.clone();
+            let operation_id =
+                add_operation_id.expect("HiddenUntilReady always allocates an operation ID");
+            tokio::spawn(async move {
+                tokio::time::sleep(delay).await;
+                config.complete_region_add(&completion_region_name, operation_id);
+            });
         }
 
         Ok(())
@@ -1007,6 +1134,15 @@ impl EmulatorStore {
 
         self.advance_vector_clock_versions();
         self.config.remove_region(region_name)?;
+        {
+            // Match replication registration's tracker -> journals order so
+            // no mutation can append to an orphaned journal during cleanup.
+            let _tracker = self.replication_tracker.lock().unwrap();
+            self.catch_up_journals
+                .lock()
+                .unwrap()
+                .retain(|(name, _), _| name != region_name);
+        }
         self.regions.write().unwrap().remove(region_name);
         Ok(())
     }
@@ -1016,11 +1152,99 @@ impl EmulatorStore {
         self.config.set_write_mode(mode);
     }
 
+    /// Revokes local write status from a satellite region of a multi-write
+    /// account without removing it from the advertised location lists.
+    ///
+    /// Writes routed there fail with `403/3 WriteForbidden`; reads continue to
+    /// work. The hub write region cannot be revoked.
+    pub fn revoke_region_write(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.revoke_region_write(region_name)
+    }
+
+    /// Restores local write status to a previously revoked satellite region.
+    pub fn restore_region_write(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.restore_region_write(region_name)
+    }
+
     /// Moves write ownership to another region, as a failover would.
     ///
     /// Writes to the demoted region then fail with `403/3 WriteForbidden`.
     pub fn set_write_region(&self, region_name: &str) -> crate::error::Result<()> {
         self.config.set_write_region(region_name)
+    }
+
+    /// Takes a region out of service, as the ARM `offlineRegion` operation does.
+    ///
+    /// The region stays a member of the account but disappears from both
+    /// `readableLocations` and `writableLocations`, and its endpoint stops
+    /// resolving: requests routed there fail with `503/20012
+    /// TransportDnsFailed` rather than the `403/1008` a *removed* region
+    /// returns.
+    ///
+    /// Offlining the write region is permitted and fails over to the next
+    /// region in priority order, matching the service. Errors with `400` if the
+    /// region is unknown or is the last one still online.
+    ///
+    /// The region's data store is retained, so bringing it back with
+    /// [`Self::set_region_online`] restores it without re-seeding -- an offline
+    /// region keeps its replica, unlike a removed one.
+    pub fn set_region_offline(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.set_region_offline(region_name)
+    }
+
+    /// Returns an offlined region to service.
+    ///
+    /// Does not restore write ownership if offlining this region caused a
+    /// failover.
+    ///
+    /// On a live account the corresponding `onlineRegion` operation is gated
+    /// behind an account capability that is off by default.
+    pub fn set_region_online(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.set_region_online(region_name)
+    }
+
+    /// Reorders the account's failover priorities, as the ARM
+    /// `failoverPriorityChange` operation does.
+    ///
+    /// `order` must name every active region exactly once. A reorder that
+    /// changes position 0 moves the account hub in both modes. Under
+    /// [`WriteMode::Single`] that is also a manual failover and moves exclusive
+    /// write ownership; under multi-write the other eligible regions remain
+    /// writable.
+    pub fn set_failover_priorities(&self, order: &[&str]) -> crate::error::Result<()> {
+        self.config.set_failover_priorities(order)
+    }
+
+    /// Announces an upcoming failover without moving write ownership.
+    ///
+    /// `writableLocations` widens to include the incoming region while the
+    /// **outgoing** region still accepts writes — the leading edge of a
+    /// failover, modeling the service's `Topology.NextWriteRegion`. Observed on
+    /// a live account as a ~6 s window in which both regions were advertised
+    /// and writes to the outgoing region still returned `201`.
+    ///
+    /// The full transition is `announce_failover` → [`Self::begin_failover`] →
+    /// [`Self::complete_failover`].
+    pub fn announce_failover(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.announce_failover(region_name)
+    }
+
+    /// Begins a manual failover, entering the state where both the outgoing and
+    /// incoming write regions are advertised as writable while
+    /// `enableMultipleWriteLocations` stays `false`.
+    ///
+    /// Write ownership moves immediately, so the outgoing region rejects writes
+    /// with `403/3` while still being advertised -- the stale-payload race a
+    /// real failover exposes. Call [`Self::complete_failover`] to narrow the
+    /// payload to the new write region.
+    pub fn begin_failover(&self, region_name: &str) -> crate::error::Result<()> {
+        self.config.begin_failover(region_name)
+    }
+
+    /// Ends an in-flight failover, narrowing `writableLocations` to the single
+    /// current write region.
+    pub fn complete_failover(&self) {
+        self.config.complete_failover();
     }
 
     /// Pauses replication TO the given target region.
@@ -1157,6 +1381,34 @@ impl EmulatorStore {
             }
         }
 
+        // Register before target discovery. add_region snapshots this map while
+        // holding regions.write(), so a concurrent enrollment either replays
+        // this mutation or the discovery below sees the newly inserted target.
+        // Immediate and delayed replication share the same ordering guarantee.
+        let operation_id = self
+            .next_replication_operation_id
+            .fetch_add(1, Ordering::SeqCst);
+        let pending_replication = PendingReplication {
+            db_id: db_id.to_string(),
+            coll_id: coll_id.to_string(),
+            source_region: source_region.to_string(),
+            doc: doc.clone(),
+            is_delete,
+        };
+        let registration_hook = self.before_replication_registration.lock().unwrap().clone();
+        if let Some(hook) = registration_hook {
+            hook();
+        }
+        {
+            // Match add_region's tracker -> journals lock order.
+            let mut tracker = self.replication_tracker.lock().unwrap();
+            let mut journals = self.catch_up_journals.lock().unwrap();
+            tracker.register(operation_id, pending_replication.clone());
+            for journal in journals.values_mut() {
+                journal.push(pending_replication.clone());
+            }
+        }
+
         let regions = self.regions.read().unwrap();
         let region_names: Vec<String> = regions
             .keys()
@@ -1164,6 +1416,15 @@ impl EmulatorStore {
             .cloned()
             .collect();
         drop(regions);
+
+        if region_names.is_empty() {
+            self.replication_tracker
+                .lock()
+                .unwrap()
+                .complete(operation_id);
+            return;
+        }
+        let remaining_targets = Arc::new(AtomicUsize::new(region_names.len()));
 
         for target_name in region_names {
             let repl_config = self.config.replication_for(source_region, &target_name);
@@ -1179,6 +1440,7 @@ impl EmulatorStore {
             if delay.is_zero() {
                 // Immediate replication — no async needed
                 store.apply_replication(&target, &source, &db, &coll, &document, is_delete);
+                store.complete_replication_target(operation_id, &remaining_targets);
             } else {
                 // Async delayed replication. Bound concurrency via the
                 // per-store semaphore so a burst of writes against a multi-
@@ -1187,13 +1449,24 @@ impl EmulatorStore {
                 // apply, which serializes excess work behind the cap.
                 let store_clone = store;
                 let semaphore = Arc::clone(&self.replication_semaphore);
+                let remaining = Arc::clone(&remaining_targets);
                 self.replication_tasks.lock().unwrap().spawn(async move {
                     let _permit = semaphore.acquire_owned().await.ok();
                     tokio::time::sleep(delay).await;
                     store_clone
                         .apply_replication(&target, &source, &db, &coll, &document, is_delete);
+                    store_clone.complete_replication_target(operation_id, &remaining);
                 });
             }
+        }
+    }
+
+    fn complete_replication_target(&self, operation_id: u64, remaining_targets: &AtomicUsize) {
+        if remaining_targets.fetch_sub(1, Ordering::SeqCst) == 1 {
+            self.replication_tracker
+                .lock()
+                .unwrap()
+                .complete(operation_id);
         }
     }
 
@@ -1541,6 +1814,19 @@ impl RegionStore {
             }
         }
     }
+
+    /// Applies a pending mutation directly to this joining replica.
+    fn apply_pending_replication(&self, pending: &PendingReplication) {
+        let containers = self.containers.read().unwrap();
+        let key = (pending.db_id.clone(), pending.coll_id.clone());
+        let Some(state) = containers.get(&key) else {
+            return;
+        };
+        let Some(partition) = state.find_partition(&pending.doc.epk) else {
+            return;
+        };
+        apply_doc_to_partition(partition, &pending.doc, pending.is_delete);
+    }
 }
 
 /// Pending replication entry.
@@ -1554,6 +1840,112 @@ pub(crate) struct PendingReplication {
     pub source_region: String,
     pub doc: StoredDocument,
     pub is_delete: bool,
+}
+
+#[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
+struct ReplicationKey {
+    db_id: String,
+    coll_id: String,
+    epk: Epk,
+    id: String,
+}
+
+struct TrackedReplication {
+    operation_id: u64,
+    pending: PendingReplication,
+}
+
+#[derive(Default)]
+struct ReplicationTracker {
+    in_flight: HashMap<u64, PendingReplication>,
+    in_flight_counts: BTreeMap<ReplicationKey, usize>,
+    latest_by_item: BTreeMap<ReplicationKey, TrackedReplication>,
+}
+
+impl ReplicationTracker {
+    fn register(&mut self, operation_id: u64, pending: PendingReplication) {
+        let key = pending.key();
+        *self.in_flight_counts.entry(key.clone()).or_default() += 1;
+        let should_replace = self
+            .latest_by_item
+            .get(&key)
+            .is_none_or(|tracked| pending.lww_order() > tracked.pending.lww_order());
+        if should_replace {
+            self.latest_by_item.insert(
+                key,
+                TrackedReplication {
+                    operation_id,
+                    pending: pending.clone(),
+                },
+            );
+        }
+        self.in_flight.insert(operation_id, pending);
+    }
+
+    fn complete(&mut self, operation_id: u64) {
+        let Some(pending) = self.in_flight.remove(&operation_id) else {
+            return;
+        };
+        let key = pending.key();
+        let count = self
+            .in_flight_counts
+            .get_mut(&key)
+            .expect("registered replication must have an in-flight count");
+        *count -= 1;
+        if *count == 0 {
+            self.in_flight_counts.remove(&key);
+            self.latest_by_item.remove(&key);
+        }
+    }
+
+    fn replay_snapshot(&self) -> Vec<PendingReplication> {
+        let mut pending: Vec<_> = self.in_flight.values().cloned().collect();
+        pending.extend(
+            self.latest_by_item
+                .values()
+                .filter(|tracked| !self.in_flight.contains_key(&tracked.operation_id))
+                .map(|tracked| tracked.pending.clone()),
+        );
+        pending
+    }
+}
+
+impl PendingReplication {
+    fn key(&self) -> ReplicationKey {
+        ReplicationKey {
+            db_id: self.db_id.clone(),
+            coll_id: self.coll_id.clone(),
+            epk: self.doc.epk.clone(),
+            id: self.doc.id.clone(),
+        }
+    }
+
+    fn lww_order(&self) -> (u64, u64) {
+        (self.doc.ts, self.doc.lsn)
+    }
+}
+
+fn sort_pending_replications(pending: &mut [PendingReplication]) {
+    pending.sort_by(|a, b| {
+        (
+            &a.db_id,
+            &a.coll_id,
+            &a.doc.epk,
+            &a.doc.id,
+            a.doc.ts,
+            a.doc.lsn,
+            &a.source_region,
+        )
+            .cmp(&(
+                &b.db_id,
+                &b.coll_id,
+                &b.doc.epk,
+                &b.doc.id,
+                b.doc.ts,
+                b.doc.lsn,
+                &b.source_region,
+            ))
+    });
 }
 
 /// Database metadata.
@@ -3296,6 +3688,199 @@ fn decode_v1_number_hex_to_u32(hex: &str) -> Result<u32, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn test_store(config: VirtualAccountConfig) -> Arc<EmulatorStore> {
+        let store = EmulatorStore::new(config);
+        store.create_database("db");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        store.create_container_with_config(
+            "db",
+            "c",
+            partition_key,
+            ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
+        );
+        store
+    }
+
+    fn test_document(id: &str, ts: u64, lsn: u64) -> StoredDocument {
+        StoredDocument {
+            body: serde_json::json!({"id": id, "pk": "value"}),
+            id: id.to_string(),
+            rid: format!("rid-{id}"),
+            etag: format!("etag-{lsn}"),
+            ts,
+            self_link: format!("dbs/db/colls/c/docs/{id}/"),
+            lsn,
+            epk: Epk::MIN,
+            body_size_bytes: 32,
+            source_region: "West".to_string(),
+        }
+    }
+
+    fn apply_local_document(
+        store: &EmulatorStore,
+        region_name: &str,
+        doc: &StoredDocument,
+        is_delete: bool,
+    ) {
+        let region = Arc::clone(
+            store
+                .regions
+                .read()
+                .unwrap()
+                .get(region_name)
+                .expect("test region must exist"),
+        );
+        let containers = region.containers.read().unwrap();
+        let state = containers
+            .get(&("db".to_string(), "c".to_string()))
+            .expect("test container must exist");
+        let partition = state
+            .find_partition(&doc.epk)
+            .expect("test partition must exist");
+        apply_doc_to_partition(partition, doc, is_delete);
+    }
+
+    fn contains_document(store: &EmulatorStore, region_name: &str, epk: &Epk, id: &str) -> bool {
+        let region = Arc::clone(
+            store
+                .regions
+                .read()
+                .unwrap()
+                .get(region_name)
+                .expect("test region must exist"),
+        );
+        let containers = region.containers.read().unwrap();
+        let state = containers
+            .get(&("db".to_string(), "c".to_string()))
+            .expect("test container must exist");
+        let partition = state
+            .find_partition(epk)
+            .expect("test partition must exist");
+        let documents = partition.documents.read().unwrap();
+        documents.get(epk).is_some_and(|docs| docs.contains_key(id))
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn region_add_replays_completed_delete_after_older_create() {
+        let delay_call = Arc::new(AtomicUsize::new(0));
+        let delay_call_clone = Arc::clone(&delay_call);
+        let replication = super::super::config::ReplicationConfig::immediate()
+            .with_replication_delay_fn(Arc::new(move || {
+                if delay_call_clone.fetch_add(1, Ordering::SeqCst) == 0 {
+                    Duration::from_secs(3_600)
+                } else {
+                    Duration::ZERO
+                }
+            }));
+        let config = VirtualAccountConfig::new(vec![
+            VirtualRegion::new("East", url::Url::parse("https://east.local").unwrap()),
+            VirtualRegion::new("West", url::Url::parse("https://west.local").unwrap()),
+        ])
+        .unwrap()
+        .with_replication_config(replication);
+        let store = test_store(config);
+        let mut create = test_document("item", 1, 1);
+        create.source_region = "East".to_string();
+        let mut delete = test_document("item", 2, 2);
+        delete.body = serde_json::Value::Null;
+        delete.source_region = "East".to_string();
+
+        apply_local_document(&store, "East", &create, false);
+        store.replicate("East", "db", "c", &create, false);
+        apply_local_document(&store, "East", &delete, true);
+        store.replicate("East", "db", "c", &delete, true);
+
+        store
+            .add_region(
+                VirtualRegion::new("Central", url::Url::parse("https://central.local").unwrap()),
+                SeedingPolicy::Immediate,
+            )
+            .unwrap();
+
+        assert!(!contains_document(&store, "Central", &Epk::MIN, "item"));
+        tokio::time::advance(Duration::from_secs(3_600)).await;
+        store.drain_pending_replications().await;
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn delayed_catch_up_waits_for_local_replication_registration() {
+        let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+            "East",
+            url::Url::parse("https://east.local").unwrap(),
+        )])
+        .unwrap()
+        .with_write_mode(WriteMode::Multi)
+        .with_replication_config(super::super::config::ReplicationConfig::fixed(
+            Duration::from_secs(3_600),
+        ));
+        let store = test_store(config);
+        store
+            .add_region(
+                VirtualRegion::new("West", url::Url::parse("https://west.local").unwrap()),
+                SeedingPolicy::Delayed(Duration::from_secs(10)),
+            )
+            .unwrap();
+        tokio::task::yield_now().await;
+
+        let barrier = store.replication_barrier();
+        let replication_guard = barrier.read().await;
+        let document = test_document("item", 1, 1);
+        apply_local_document(&store, "West", &document, false);
+
+        tokio::time::advance(Duration::from_secs(10)).await;
+        tokio::task::yield_now().await;
+        store.replicate("West", "db", "c", &document, false);
+        drop(replication_guard);
+
+        for _ in 0..10 {
+            if store.catch_up_journals.lock().unwrap().is_empty() {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+
+        assert!(
+            store.catch_up_journals.lock().unwrap().is_empty(),
+            "catch-up must finish after the replication barrier is released"
+        );
+        assert!(contains_document(&store, "West", &Epk::MIN, "item"));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn removing_delayed_region_clears_catch_up_journal() {
+        let config = super::super::config::VirtualAccountConfig::new(vec![
+            super::super::config::VirtualRegion::new(
+                "r1",
+                url::Url::parse("https://r1.local").unwrap(),
+            ),
+        ])
+        .unwrap();
+        let store = EmulatorStore::new(config);
+        store
+            .add_region(
+                super::super::config::VirtualRegion::new(
+                    "r2",
+                    url::Url::parse("https://r2.local").unwrap(),
+                ),
+                SeedingPolicy::Delayed(Duration::from_secs(3_600)),
+            )
+            .unwrap();
+        assert_eq!(store.catch_up_journals.lock().unwrap().len(), 1);
+
+        store.remove_region("r2").unwrap();
+
+        assert!(
+            store.catch_up_journals.lock().unwrap().is_empty(),
+            "removed region must not retain an orphaned catch-up journal"
+        );
+    }
 
     #[tokio::test]
     async fn manual_split_waits_for_explicit_completion() {

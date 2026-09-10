@@ -8,7 +8,8 @@
 //! ## Blob user delegation SAS
 //!
 //! ```rust no_run
-//! use azure_storage_sas::{SasBuilder, UserDelegationKey};
+//! use azure_storage_common::models::UserDelegationKey;
+//! use azure_storage_sas::SasBuilder;
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {
@@ -25,7 +26,8 @@
 //! ## Container SAS
 //!
 //! ```rust no_run
-//! use azure_storage_sas::{SasBuilder, UserDelegationKey};
+//! use azure_storage_common::models::UserDelegationKey;
+//! use azure_storage_sas::SasBuilder;
 //! use time::OffsetDateTime;
 //!
 //! # fn example(udk: UserDelegationKey) -> azure_core::Result<()> {

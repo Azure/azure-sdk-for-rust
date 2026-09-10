@@ -121,6 +121,10 @@ fn test_amqp_error_condition_from_str() {
 
     // Test Microsoft-specific error conditions
     assert_eq!(
+        AmqpErrorCondition::from_str("com.microsoft:dead-letter").unwrap(),
+        AmqpErrorCondition::DeadLetter
+    );
+    assert_eq!(
         AmqpErrorCondition::from_str("com.microsoft:server-busy").unwrap(),
         AmqpErrorCondition::ServerBusyError
     );
@@ -209,6 +213,10 @@ fn test_amqp_error_condition_to_str() {
         "amqp:decode-error"
     );
     assert_eq!(
+        <&str>::from(&AmqpErrorCondition::DeadLetter),
+        "com.microsoft:dead-letter"
+    );
+    assert_eq!(
         <&str>::from(&AmqpErrorCondition::ServerBusyError),
         "com.microsoft:server-busy"
     );
@@ -224,6 +232,10 @@ fn test_amqp_error_condition_as_ref() {
     assert_eq!(
         AmqpErrorCondition::DecodeError.as_ref(),
         "amqp:decode-error"
+    );
+    assert_eq!(
+        AmqpErrorCondition::DeadLetter.as_ref(),
+        "com.microsoft:dead-letter"
     );
     assert_eq!(
         AmqpErrorCondition::ServerBusyError.as_ref(),
@@ -244,6 +256,10 @@ fn test_amqp_error_condition_display() {
     assert_eq!(
         format!("{}", AmqpErrorCondition::NotFound),
         "amqp:not-found"
+    );
+    assert_eq!(
+        format!("{}", AmqpErrorCondition::DeadLetter),
+        "com.microsoft:dead-letter"
     );
     assert_eq!(
         format!("{}", AmqpErrorCondition::UnknownValue("test".to_string())),

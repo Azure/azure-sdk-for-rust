@@ -199,8 +199,8 @@ impl ClientContext {
     }
 }
 
-/// The environment variable that enables Cosmos binary JSON encoding when no
-/// explicit client option is supplied.
+/// The environment variable that configures Cosmos binary JSON encoding when
+/// no explicit client option is supplied.
 pub(crate) const BINARY_ENCODING_ENV_VAR: &str = "AZURE_COSMOS_BINARY_ENCODING_ENABLED";
 
 /// Resolves the client's [`BinaryEncodingOptions`] from an explicit client
@@ -210,10 +210,12 @@ pub(crate) const BINARY_ENCODING_ENV_VAR: &str = "AZURE_COSMOS_BINARY_ENCODING_E
 /// option (see
 /// [`CosmosClientBuilder::with_binary_encoding_options`](crate::CosmosClientBuilder::with_binary_encoding_options))
 /// takes precedence; when the caller leaves it unset (`None`), enablement falls
-/// back to the [`BINARY_ENCODING_ENV_VAR`] environment variable (truthy values
-/// `1` / `true` / `yes` / `on`, case-insensitive, trimmed). The resolved
-/// options are the single source of truth for both encoding item bodies and
-/// advertising binary-response negotiation. Binary encoding is in preview.
+/// back to the [`BINARY_ENCODING_ENV_VAR`] environment variable and defaults to
+/// enabled when the variable is absent. Truthy values are `1` / `true` / `yes`
+/// / `on` (case-insensitive, trimmed); any other value disables encoding. The
+/// resolved options are the single source of truth for both encoding item
+/// bodies and advertising binary-response negotiation. Binary encoding is in
+/// preview.
 pub(crate) fn resolve_binary_encoding(
     explicit: Option<BinaryEncodingOptions>,
 ) -> BinaryEncodingOptions {
@@ -233,7 +235,7 @@ fn resolve_binary_encoding_with(
         let enabled = get_env(BINARY_ENCODING_ENV_VAR)
             .as_deref()
             .map(flag_value_is_truthy)
-            .unwrap_or(false);
+            .unwrap_or(true);
         BinaryEncodingOptions::new().with_enabled(enabled)
     })
 }
@@ -295,12 +297,14 @@ mod tests {
     }
 
     #[test]
-    fn environment_disabled_by_default_when_unset() {
-        // No explicit option and no env value ⇒ disabled.
+    fn enabled_by_default_when_option_and_environment_unset() {
+        // No explicit option and no env value means binary encoding is enabled.
         let resolved = resolve_binary_encoding_with(None, |_| None);
-        assert!(!resolved.enabled);
+        assert!(resolved.enabled);
+    }
 
-        // A non-truthy env value also resolves to disabled.
+    #[test]
+    fn environment_disables_with_non_truthy_value() {
         let resolved = resolve_binary_encoding_with(None, |_| Some("nope".to_owned()));
         assert!(!resolved.enabled);
     }

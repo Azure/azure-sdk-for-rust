@@ -206,7 +206,7 @@ pub(crate) struct OperationRetryState {
     pub can_use_multiple_write_locations: bool,
     /// Whether this operation is on the data-plane pipeline (vs metadata).
     ///
-    /// Load-bearing: set via `PipelineType::is_data_plane()` so non-exhaustive variants stay scoped out.
+    /// Load-bearing: set via `PipelineKind::is_data_plane()` so non-exhaustive variants stay scoped out.
     pub is_dataplane: bool,
     /// Hub-region-processing-only latch.
     ///
@@ -492,8 +492,7 @@ impl OperationRetryState {
 ///   over to another region is not the correct response to a concurrency
 ///   conflict).
 ///
-/// Mirrors the policy described in
-/// `sdk/cosmos/azure-cosmos/docs/TimeoutAndRetriesConfig.md`.
+/// Mirrors the legacy timeout and retry configuration policy.
 #[derive(Clone, Debug)]
 pub(crate) struct RetryWithRetryState {
     /// Number of 449 retries already attempted for this operation.

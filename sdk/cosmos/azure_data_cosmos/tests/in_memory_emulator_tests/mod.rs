@@ -11,6 +11,7 @@ use std::time::Duration;
 use tracing_subscriber::EnvFilter;
 
 pub mod binary_round_trip;
+pub mod container_recreation;
 pub mod cosmos_hpk_split;
 pub mod driver_end_to_end;
 #[cfg(feature = "preview_dtx")]
@@ -22,9 +23,11 @@ pub mod end_to_end;
 pub mod handler_propagation;
 pub mod hpk;
 pub mod partition_key_equality;
+pub mod partition_merge;
 pub mod partition_range_drain;
 pub mod query_comparison;
 pub mod session_token;
+pub mod topology_parity;
 pub mod user_agent;
 pub mod validation;
 

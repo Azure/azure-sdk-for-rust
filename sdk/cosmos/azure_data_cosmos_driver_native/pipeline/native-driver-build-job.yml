@@ -1,0 +1,117 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+parameters:
+  - name: UsePlatformContainer
+    type: boolean
+  - name: OSName
+    type: string
+  - name: Matrix
+    type: object
+  - name: DependsOn
+    type: string
+  - name: CloudConfig
+    type: object
+
+jobs:
+  - job:
+    displayName: Build native driver
+    dependsOn: ${{ parameters.DependsOn }}
+    condition: and(succeeded(), ne(${{ parameters.Matrix }}, '{}'))
+    strategy:
+      matrix: $[ ${{ parameters.Matrix }} ]
+    pool:
+      name: $(Pool)
+      ${{ if eq(parameters.OSName, 'macOS') }}:
+        vmImage: $(OSVmImage)
+      ${{ else }}:
+        image: $(OSVmImage)
+      os: ${{ parameters.OSName }}
+    steps:
+      - template: /eng/pipelines/templates/steps/use-rust.yml@self
+        parameters:
+          Toolchain: active
+
+      - ${{ if eq(parameters.OSName, 'windows') }}:
+        - pwsh: |
+            $mingwBin = 'C:\msys64\mingw64\bin'
+            if (-not (Test-Path $mingwBin -PathType Container)) {
+              throw "MSYS2 MinGW64 toolchain directory was not found: $mingwBin"
+            }
+
+            Write-Host "##vso[task.prependpath]$mingwBin"
+            $env:PATH = "$mingwBin;$env:PATH"
+            foreach ($tool in @('gcc', 'ar')) {
+              if (-not (Get-Command $tool -CommandType Application -ErrorAction SilentlyContinue)) {
+                throw "Required MSYS2 tool is unavailable: $tool"
+              }
+            }
+          displayName: Add MSYS2 MinGW64 to PATH
+
+      - ${{ if eq(parameters.OSName, 'linux') }}:
+        - bash: |
+            set -euo pipefail
+
+            case "$(TargetId)" in
+              linux-amd64-glibc)
+                ;;
+              linux-arm64-glibc)
+                sudo apt-get update
+                sudo apt-get install -yq gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+                ;;
+              linux-amd64-musl)
+                sudo apt-get update
+                sudo apt-get install -yq musl-dev musl-tools
+                ;;
+              linux-arm64-musl)
+                toolchain_root="$(Agent.TempDirectory)/aarch64-linux-musl"
+                toolchain_archive="$(Agent.TempDirectory)/aarch64-linux-musl-gcc-10.3.0.tar.gz"
+                mkdir -p "$toolchain_root"
+                curl -sSL \
+                  "https://github.com/microsoft/vscode-linux-build-agent/releases/download/v20260212-405735/aarch64-linux-musl-gcc-10.3.0.tar.gz" \
+                  -o "$toolchain_archive"
+                echo "58cd59ee4038291fe8a7f4adccac0ecbe8d23cbad1cb650b381e45e7e1e22424  $toolchain_archive" |
+                  sha256sum --check
+                tar -xzf "$toolchain_archive" -C "$toolchain_root"
+                echo "##vso[task.prependpath]$toolchain_root/output/bin"
+                export PATH="$toolchain_root/output/bin:$PATH"
+                ;;
+              *)
+                echo "Unsupported Linux native-driver target: $(TargetId)" >&2
+                exit 2
+                ;;
+            esac
+
+            command -v "$(CCompiler)"
+          displayName: Install Linux compiler for $(TargetId)
+
+      - pwsh: cargo install cargo-auditable --locked
+        displayName: Install cargo-auditable
+
+      - pwsh: >
+          $(pipelineDir)/Build-NativeMatrix.ps1
+          -TargetId $(TargetId)
+          -OutputRoot $(Build.ArtifactStagingDirectory)/native
+          -CCompiler $(CCompiler)
+          -StaticOnly
+        displayName: Build $(TargetId) (static library + metadata)
+
+      - task: GoTool@0
+        displayName: Install Go $(GoToolchainVersion)
+        inputs:
+          version: $(GoToolchainVersion)
+
+      - pwsh: >
+          $(pipelineDir)/Test-NativeLink.ps1
+          -TargetId $(TargetId)
+          -ArtifactRoot $(Build.ArtifactStagingDirectory)/native
+          -CCompiler $(CCompiler)
+        displayName: Link smoke test $(TargetId)
+        env:
+          GOTOOLCHAIN: local
+
+      - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
+        parameters:
+          ArtifactName: native-$(TargetId)
+          ArtifactPath: $(Build.ArtifactStagingDirectory)/native/$(TargetId)
+          SbomEnabled: true

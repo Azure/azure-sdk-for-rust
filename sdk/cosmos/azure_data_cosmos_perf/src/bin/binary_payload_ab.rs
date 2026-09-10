@@ -87,7 +87,7 @@ use azure_data_cosmos_driver::{
     diagnostics::RequestSentStatus,
     error::{CosmosError, CosmosStatus},
     models::ConnectionString,
-    testing::{
+    test::{
         ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
         TransportClient, TransportError,
     },

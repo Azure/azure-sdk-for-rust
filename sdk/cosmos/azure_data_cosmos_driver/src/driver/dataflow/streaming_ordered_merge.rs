@@ -59,6 +59,7 @@ use async_trait::async_trait;
 
 use crate::models::{CosmosOperation, FeedRange, MaxItemCountHint, SessionToken};
 
+use super::binary_heap;
 use super::order_by::{
     classify_row_vs_boundary, compare_key_tuples, compare_rids, OrderByItem, OrderByResumeValue,
     RowVsBoundary,
@@ -525,51 +526,12 @@ impl StreamingOrderedMerge {
         let mut heap = Vec::with_capacity(self.children.len());
         for idx in 0..self.children.len() {
             if self.children[idx].buffered.front().is_some() {
-                self.heap_push(&mut heap, idx);
+                binary_heap::push_by(&mut heap, idx, |left, right| {
+                    self.row_less_than(*left, *right)
+                });
             }
         }
         heap
-    }
-
-    fn heap_push(&self, heap: &mut Vec<usize>, child_idx: usize) {
-        heap.push(child_idx);
-        let mut pos = heap.len() - 1;
-        while pos > 0 {
-            let parent = (pos - 1) / 2;
-            if !self.row_less_than(heap[pos], heap[parent]) {
-                break;
-            }
-            heap.swap(pos, parent);
-            pos = parent;
-        }
-    }
-
-    fn heap_pop(&self, heap: &mut Vec<usize>) -> Option<usize> {
-        let winner = *heap.first()?;
-        let last = heap.pop().expect("heap has a first element");
-        if !heap.is_empty() {
-            heap[0] = last;
-            let mut pos = 0;
-            loop {
-                let left = pos * 2 + 1;
-                if left >= heap.len() {
-                    break;
-                }
-                let right = left + 1;
-                let smallest = if right < heap.len() && self.row_less_than(heap[right], heap[left])
-                {
-                    right
-                } else {
-                    left
-                };
-                if !self.row_less_than(heap[smallest], heap[pos]) {
-                    break;
-                }
-                heap.swap(pos, smallest);
-                pos = smallest;
-            }
-        }
-        Some(winner)
     }
 
     fn row_less_than(&self, a_idx: usize, b_idx: usize) -> bool {
@@ -627,7 +589,9 @@ impl PipelineNode for StreamingOrderedMerge {
         let mut items: Vec<bytes::Bytes> = Vec::new();
 
         while items.len() < cap {
-            let Some(winner) = self.heap_pop(&mut head_heap) else {
+            let Some(winner) = binary_heap::pop_by(&mut head_heap, |left, right| {
+                self.row_less_than(*left, *right)
+            }) else {
                 break;
             };
             let row = self.children[winner]
@@ -669,7 +633,9 @@ impl PipelineNode for StreamingOrderedMerge {
             items.push(item);
             if items.len() < cap {
                 if self.children[winner].buffered.front().is_some() {
-                    self.heap_push(&mut head_heap, winner);
+                    binary_heap::push_by(&mut head_heap, winner, |left, right| {
+                        self.row_less_than(*left, *right)
+                    });
                 } else {
                     // From here on rows have already been consumed and their
                     // boundaries advanced, so a fetch failure must not discard
@@ -698,7 +664,9 @@ impl PipelineNode for StreamingOrderedMerge {
                         }
                         head_heap = self.build_head_heap();
                     } else if self.children[winner].buffered.front().is_some() {
-                        self.heap_push(&mut head_heap, winner);
+                        binary_heap::push_by(&mut head_heap, winner, |left, right| {
+                            self.row_less_than(*left, *right)
+                        });
                     }
                 }
             }
@@ -811,11 +779,8 @@ impl PipelineNode for StreamingOrderedMerge {
 /// the Gateway's rewritten query so a service-side rewrite change does not
 /// invalidate in-flight tokens.
 ///
-/// Because this hashes the *serialized* body, the query body's serialization
-/// shape (serde field order, optional-field emission) is a compatibility
-/// surface: changing it invalidates in-flight tokens with a hard
-/// `CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID` rather than silently
-/// resuming the wrong query.
+/// Bodies retain their exact serialized form for compatibility with existing
+/// tokens. The planner calls this before any optional request encoding.
 pub(super) fn query_fingerprint(body: Option<&[u8]>, scope: Option<&FeedRange>) -> String {
     // The body hash is rendered fixed-width first so the two components can
     // never run together; EPK hex is `[0-9A-F]*`, so neither separator can
@@ -824,7 +789,8 @@ pub(super) fn query_fingerprint(body: Option<&[u8]>, scope: Option<&FeedRange>) 
     // backend and other SDKs may hand back a bound with that padding trimmed.
     // An absent scope hashes as empty, which stays distinct from the
     // full-container range (`-FF`).
-    let body_hash = crate::models::murmur_hash::murmurhash3_128(body.unwrap_or_default(), 0);
+    let body = body.unwrap_or_default();
+    let body_hash = crate::models::murmur_hash::murmurhash3_128(body, 0);
     let scope = match scope {
         Some(range) => format!(
             "{}-{}",
@@ -3137,13 +3103,14 @@ mod tests {
         );
     }
 
-    /// Same body and same scope is stable, so an unchanged query resumes.
+    /// Preserve the exact fingerprint minted before binary query encoding so
+    /// in-flight text tokens remain valid.
     #[test]
-    fn query_fingerprint_is_stable_for_identical_inputs() {
-        let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#;
+    fn parameterized_text_query_fingerprint_matches_historical_value() {
+        let body = br#"{"query":"SELECT * FROM c WHERE c.rank >= @min ORDER BY c.rank","parameters":[{"name":"@min","value":1}]}"#;
         assert_eq!(
             query_fingerprint(Some(body), Some(&range("", "80"))),
-            query_fingerprint(Some(body), Some(&range("", "80"))),
+            "b84b9c269862dcd73781038d90add3be",
         );
     }
 }

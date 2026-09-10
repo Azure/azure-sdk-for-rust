@@ -164,6 +164,21 @@ impl InMemoryEmulatorHttpClient {
         // endpoint until its next topology refresh, and the service answers
         // those with 403/1008 rather than failing to route.
         let region_name = match resolve_region(request.url(), self.store.config()) {
+            Some(resolved) if resolved.status.is_unreachable() => {
+                // An offlined region has had its regional DNS record withdrawn,
+                // so the request never reaches the service. Surfacing a Cosmos
+                // 403/1008 here would be wrong: the driver's transport layer
+                // classifies this as `TRANSPORT_DNS_FAILED`, and that is the
+                // path a client actually takes against an offlined region.
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::TRANSPORT_DNS_FAILED)
+                    .with_message(format!(
+                        "in-memory emulator: region '{}' is offline; its endpoint \
+                         does not resolve",
+                        resolved.name
+                    ))
+                    .build());
+            }
             Some(resolved) if !resolved.status.is_unavailable() => resolved.name,
             Some(_) => {
                 // The service names the account in this error, derived from the

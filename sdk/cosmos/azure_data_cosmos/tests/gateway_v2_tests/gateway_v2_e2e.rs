@@ -8,7 +8,8 @@ use azure_core::http::{Etag, StatusCode};
 use azure_data_cosmos::diagnostics::{DiagnosticsContext, TransportKind};
 use azure_data_cosmos::models::{
     CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, ContainerProperties,
-    IndexingPolicy, PartitionKeyDefinition, PartitionKeyVersion, ThroughputProperties,
+    IndexingPolicy, ItemResponse, PartitionKeyDefinition, PartitionKeyVersion,
+    ThroughputProperties,
 };
 use azure_data_cosmos::options::{
     BinaryEncodingOptions, ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions,
@@ -94,6 +95,42 @@ fn live_credentials() -> Option<(String, String)> {
     let (endpoint_var, key_var) = ("AZURE_COSMOS_GW_V2_ENDPOINT", "AZURE_COSMOS_GW_V2_KEY");
 
     Some((read_env(endpoint_var)?, read_env(key_var)?))
+}
+
+async fn create_seed_item<P, T>(
+    container: &azure_data_cosmos::clients::ContainerClient,
+    partition_key: P,
+    item_id: &str,
+    item: &T,
+) -> Result<ItemResponse, Box<dyn std::error::Error>>
+where
+    P: Into<azure_data_cosmos::PartitionKey> + Clone,
+    T: Serialize,
+{
+    const MAX_ATTEMPTS: u32 = 6;
+
+    let mut delay = std::time::Duration::from_millis(250);
+    for attempt in 1..=MAX_ATTEMPTS {
+        match container
+            .create_item(partition_key.clone(), item_id, item, None)
+            .await
+        {
+            Ok(response) => return Ok(response),
+            Err(error)
+                if error.status().status_code() == StatusCode::Unauthorized
+                    && error.to_string().contains("MAC signature")
+                    && attempt < MAX_ATTEMPTS =>
+            {
+                eprintln!(
+                    "transient 401 during Gateway 2.0 seed write; retrying attempt {attempt}/{MAX_ATTEMPTS} after {delay:?}: {error}"
+                );
+                tokio::time::sleep(delay).await;
+                delay = (delay * 2).min(std::time::Duration::from_secs(5));
+            }
+            Err(error) => return Err(error.into()),
+        }
+    }
+    unreachable!("the bounded retry loop always returns on its final attempt")
 }
 
 /// Build a [`CosmosClient`] against the live Gateway 2.0 account.
@@ -202,21 +239,23 @@ async fn build_client_ppcb_disabled(
 ///
 /// - `404 / 1013 CollectionCreateInProgress` while the service finishes
 ///   provisioning the collection, and
-/// - `404 / 1003 OwnerResourceNotFound` while the Gateway 2.0 proxy's routing
-///   table catches up so the freshly-created collection becomes routable.
+/// - `404 / 1003 OwnerResourceNotFound` while the metadata path's routing
+///   caches catch up so the freshly-created collection becomes resolvable.
 ///
-/// Crucially, a freshly-created collection can resolve at the metadata gateway
-/// (so `container_client(..)` and a container `read` both succeed) while the
-/// Gateway 2.0 *data plane* still routes to nothing — meaning the caller's very
-/// first item write/query is the request that races the `404 / 1003` window and
-/// fails. Gating on metadata alone is therefore not enough: this helper also
-/// drives one page of a read-only full-container query so a data-plane
-/// `404 / 1003` surfaces *here* (and is retried) rather than in the caller.
+/// Readiness is gated on the metadata path only (`container_client(..)` +
+/// container `read`). Firing a real data-plane query here to also warm the
+/// Gateway 2.0 proxy's routing table was found to reliably race the proxy's
+/// collection-key propagation window on freshly-created containers and
+/// surface downstream as `401 / MAC signature mismatch` on the caller's very
+/// next `POST /docs`; the caller is now expected to tolerate the residual
+/// `404 / 1003` window on its first data-plane request instead — queries in
+/// particular should drive their first attempt through
+/// [`retry_query_owner_not_found`], since query routing lags the metadata
+/// path's own cache by a beat.
 ///
-/// It keeps retrying container resolution, the metadata `read`, and the
-/// data-plane query probe until all succeed, until an error outside those two
-/// transient conditions surfaces, or until the bounded poll budget is
-/// exhausted.
+/// It keeps retrying container resolution and the metadata `read` until both
+/// succeed, until an error outside those two transient conditions surfaces,
+/// or until the bounded poll budget is exhausted.
 async fn wait_for_container_ready(
     db_client: &azure_data_cosmos::clients::DatabaseClient,
     container_name: &str,
@@ -226,8 +265,8 @@ async fn wait_for_container_ready(
 
     // A freshly-created collection is still "becoming ready" when the service
     // reports `404 / 1013 CollectionCreateInProgress` (create not finished) or
-    // the Gateway 2.0 proxy reports `404 / 1003 OwnerResourceNotFound` (routing
-    // table not yet propagated). Both are transient; anything else is fatal.
+    // the metadata path reports `404 / 1003 OwnerResourceNotFound` (routing
+    // caches not yet propagated). Both are transient; anything else is fatal.
     fn is_transient_not_ready(status: &azure_data_cosmos::CosmosStatus) -> bool {
         status.status_code() == StatusCode::NotFound
             && matches!(
@@ -239,38 +278,22 @@ async fn wait_for_container_ready(
             )
     }
 
-    // A single end-to-end readiness attempt: resolve the container, read its
-    // metadata, and drive one page of a read-only full-container query so the
-    // Gateway 2.0 proxy's collection routing is proven resolvable on the data
-    // plane before the caller issues its first item operation. The query scope
-    // is partition-key-shape agnostic (works for flat and hierarchical keys)
-    // and read-only, so it is safe on the just-created empty collection.
     async fn probe_ready(
         db_client: &azure_data_cosmos::clients::DatabaseClient,
         container_name: &str,
     ) -> azure_data_cosmos::Result<azure_data_cosmos::clients::ContainerClient> {
         let container_client = db_client.container_client(container_name, None).await?;
         container_client.read(None).await?;
-        let mut pages = container_client
-            .query_items::<serde_json::Value>(
-                Query::from("SELECT * FROM c"),
-                FeedScope::full_container(),
-                None,
-            )
-            .await?
-            .into_pages();
-        if let Some(page) = pages.next().await {
-            page?;
-        }
         Ok(container_client)
     }
 
     for attempt in 0..MAX_ATTEMPTS {
-        let last_err = match probe_ready(db_client, container_name).await {
-            Ok(container_client) => return Ok(container_client),
-            Err(e) if is_transient_not_ready(&e.status()) => e,
-            Err(e) => return Err(Box::new(e)),
-        };
+        let last_err: Box<dyn std::error::Error> =
+            match probe_ready(db_client, container_name).await {
+                Ok(container_client) => return Ok(container_client),
+                Err(e) if is_transient_not_ready(&e.status()) => Box::new(e),
+                Err(e) => return Err(Box::new(e)),
+            };
 
         if attempt + 1 == MAX_ATTEMPTS {
             return Err(format!(
@@ -279,6 +302,41 @@ async fn wait_for_container_ready(
             .into());
         }
         tokio::time::sleep(POLL_INTERVAL).await;
+    }
+    unreachable!("loop above always returns on the final iteration");
+}
+
+/// Retries `run` past the residual `404 / 1003 OwnerResourceNotFound` window
+/// that a **query** (unlike point CRUD) can still observe on its first
+/// attempt against a container [`wait_for_container_ready`] just reported
+/// ready: readiness there is gated on the metadata path only, and the
+/// query path resolves partition-key-range routing through a separate cache
+/// that can lag a beat behind it. `run` must be safe to call repeatedly from
+/// scratch (e.g. a read-only query drain).
+async fn retry_query_owner_not_found<T, F, Fut>(mut run: F) -> Result<T, Box<dyn std::error::Error>>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = Result<T, Box<dyn std::error::Error>>>,
+{
+    const MAX_ATTEMPTS: u32 = 10;
+    const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
+
+    fn is_owner_resource_not_found(e: &(dyn std::error::Error + 'static)) -> bool {
+        e.downcast_ref::<azure_data_cosmos::CosmosError>()
+            .is_some_and(|ce| {
+                ce.status().status_code() == StatusCode::NotFound
+                    && ce.status().sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND)
+            })
+    }
+
+    for attempt in 0..MAX_ATTEMPTS {
+        match run().await {
+            Ok(value) => return Ok(value),
+            Err(e) if attempt + 1 < MAX_ATTEMPTS && is_owner_resource_not_found(e.as_ref()) => {
+                tokio::time::sleep(POLL_INTERVAL).await;
+            }
+            Err(e) => return Err(e),
+        }
     }
     unreachable!("loop above always returns on the final iteration");
 }
@@ -293,12 +351,20 @@ async fn provision_database_and_container(
     let db_name = format!("gw_v2-test-db-{unique}");
     let container_name = format!("gw_v2-test-container-{unique}");
 
-    client.create_database(&db_name, None).await?;
+    if let Err(error) = client.create_database(&db_name, None).await {
+        if error.status().status_code() != StatusCode::Conflict {
+            return Err(error.into());
+        }
+    }
     let db_client = client.database_client(&db_name);
 
     let pk_def: PartitionKeyDefinition = "/pk".into();
     let properties = ContainerProperties::new(container_name.clone(), pk_def);
-    db_client.create_container(properties, None).await?;
+    if let Err(error) = db_client.create_container(properties, None).await {
+        if error.status().status_code() != StatusCode::Conflict {
+            return Err(error.into());
+        }
+    }
     let container_client = wait_for_container_ready(&db_client, &container_name).await?;
 
     let body = container_client.read(None).await?.into_body().single()?;
@@ -595,9 +661,7 @@ pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error
         label: "initial".into(),
     };
 
-    let create_resp = container
-        .create_item(&pk_value, &item_id, &item, None)
-        .await?;
+    let create_resp = create_seed_item(&container, &pk_value, &item_id, &item).await?;
     assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
     assert!(!create_resp.diagnostics().activity_id().as_str().is_empty());
     assert!(create_resp.diagnostics().duration() > std::time::Duration::ZERO);
@@ -878,9 +942,7 @@ pub async fn gateway_v2_v1_container_point_crud_round_trip(
             label: "initial".into(),
         };
 
-        let create_resp = container
-            .create_item(&pk_value, &item_id, &item, None)
-            .await?;
+        let create_resp = create_seed_item(&container, &pk_value, &item_id, &item).await?;
         assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
 
         let read_resp = container.read_item(&pk_value, &item_id, None).await?;
@@ -1015,9 +1077,7 @@ pub async fn gateway_v2_diagnostics_validation() -> Result<(), Box<dyn std::erro
         value: 99,
         label: "diag".into(),
     };
-    container
-        .create_item(&pk_value, "diag-item", &item, None)
-        .await?;
+    create_seed_item(&container, &pk_value, "diag-item", &item).await?;
 
     let read_resp = container.read_item(&pk_value, "diag-item", None).await?;
     let diagnostics = read_resp.diagnostics();
@@ -1131,7 +1191,7 @@ pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip(
                 // `PartitionKeyValue: From<&'static str>` impl is the only
                 // borrow-friendly one) — clone strings into the tuple.
                 let pk = PartitionKey::from((tenant.to_string(), user_id, session_id));
-                container.create_item(pk, &id, &item, None).await?;
+                create_seed_item(&container, pk, &id, &item).await?;
             }
         }
     }
@@ -1153,28 +1213,36 @@ pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip(
     // PartitionKey only has tuple From-impls for 2 and 3 components; for a
     // single-component prefix, construct it from a Vec<PartitionKeyValue> so
     // the dispatcher sees a 1-component value against a 3-path container.
-    let partial_pk = PartitionKey::from(vec![PartitionKeyValue::from(target_tenant.clone())]);
-    let query = Query::from("SELECT * FROM c");
-    let mut pages = container
-        .query_items::<GwV2HpkItem>(query, FeedScope::partition(partial_pk), None)
-        .await?
-        .into_pages();
+    let (mut returned_ids, pages_seen) = retry_query_owner_not_found(|| {
+        let query = Query::from("SELECT * FROM c");
+        let partial_pk = PartitionKey::from(vec![PartitionKeyValue::from(target_tenant.clone())]);
+        let target_tenant = &target_tenant;
+        let container = &container;
+        async move {
+            let mut pages = container
+                .query_items::<GwV2HpkItem>(query, FeedScope::partition(partial_pk), None)
+                .await?
+                .into_pages();
 
-    let mut returned_ids: Vec<String> = Vec::new();
-    let mut pages_seen = 0_usize;
-    while let Some(page) = pages.next().await {
-        let page = page?;
-        pages_seen += 1;
-        assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
-        assert!(!page.diagnostics().activity_id().as_str().is_empty());
-        for it in page.items() {
-            assert_eq!(
-                it.tenant_id, target_tenant,
-                "partial-PK query must not bleed across tenants"
-            );
-            returned_ids.push(it.id.clone());
+            let mut returned_ids: Vec<String> = Vec::new();
+            let mut pages_seen = 0_usize;
+            while let Some(page) = pages.next().await {
+                let page = page?;
+                pages_seen += 1;
+                assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
+                assert!(!page.diagnostics().activity_id().as_str().is_empty());
+                for it in page.items() {
+                    assert_eq!(
+                        &it.tenant_id, target_tenant,
+                        "partial-PK query must not bleed across tenants"
+                    );
+                    returned_ids.push(it.id.clone());
+                }
+            }
+            Ok((returned_ids, pages_seen))
         }
-    }
+    })
+    .await?;
     assert!(pages_seen >= 1, "expected at least one query page");
     expected_target_ids.sort();
     returned_ids.sort();
@@ -1336,9 +1404,7 @@ pub async fn order_by_continuation_matches_gateway_v1_and_v2(
                 value: (index / 4) as i64,
                 label: format!("label-{}", index % 4),
             };
-            let response = v2_container
-                .create_item(&item.pk, &item.id, &item, None)
-                .await?;
+            let response = create_seed_item(&v2_container, &item.pk, &item.id, &item).await?;
             assert_transport_kind(&response.diagnostics(), TransportKind::GatewayV2);
         }
 
@@ -1346,8 +1412,14 @@ pub async fn order_by_continuation_matches_gateway_v1_and_v2(
             .database_client(&db_name)
             .container_client(&container_name, None)
             .await?;
-        let v2_ids = drain_order_by_with_transport(&v2_container, TransportKind::GatewayV2).await?;
-        let v1_ids = drain_order_by_with_transport(&v1_container, TransportKind::Gateway).await?;
+        let v2_ids = retry_query_owner_not_found(|| {
+            drain_order_by_with_transport(&v2_container, TransportKind::GatewayV2)
+        })
+        .await?;
+        let v1_ids = retry_query_owner_not_found(|| {
+            drain_order_by_with_transport(&v1_container, TransportKind::Gateway)
+        })
+        .await?;
         assert_eq!(v1_ids, v2_ids);
         assert_eq!(v1_ids.len(), 20);
         Ok::<(), Box<dyn std::error::Error>>(())
@@ -1414,34 +1486,38 @@ pub async fn gateway_v2_cross_partition_query_full_container(
             value: i as i64,
             label: format!("row-{i}"),
         };
-        container.create_item(&pk, &id, &item, None).await?;
+        create_seed_item(&container, &pk, &id, &item).await?;
         expected_ids.insert(id);
     }
 
-    let query = Query::from("SELECT * FROM c");
-    let mut pages = container
-        .query_items::<GwV2TestItem>(query, FeedScope::full_container(), None)
-        .await?
-        .into_pages();
+    let (pages_seen, seen_ids) = retry_query_owner_not_found(|| async {
+        let query = Query::from("SELECT * FROM c");
+        let mut pages = container
+            .query_items::<GwV2TestItem>(query, FeedScope::full_container(), None)
+            .await?
+            .into_pages();
 
-    let mut pages_seen = 0_usize;
-    let mut seen_ids: HashSet<String> = HashSet::new();
-    while let Some(page) = pages.next().await {
-        let page = page?;
-        pages_seen += 1;
-        assert!(
-            !page.diagnostics().activity_id().as_str().is_empty(),
-            "every cross-partition Gateway 2.0 page must surface an activity-id",
-        );
-        for item in page.items() {
+        let mut pages_seen = 0_usize;
+        let mut seen_ids: HashSet<String> = HashSet::new();
+        while let Some(page) = pages.next().await {
+            let page = page?;
+            pages_seen += 1;
             assert!(
-                seen_ids.insert(item.id.clone()),
-                "item {} returned twice — sequential drain over physical \
-                 partitions must not duplicate items across partition boundaries",
-                item.id,
+                !page.diagnostics().activity_id().as_str().is_empty(),
+                "every cross-partition Gateway 2.0 page must surface an activity-id",
             );
+            for item in page.items() {
+                assert!(
+                    seen_ids.insert(item.id.clone()),
+                    "item {} returned twice — sequential drain over physical \
+                     partitions must not duplicate items across partition boundaries",
+                    item.id,
+                );
+            }
         }
-    }
+        Ok((pages_seen, seen_ids))
+    })
+    .await?;
 
     assert!(
         pages_seen >= 1,
@@ -1492,29 +1568,33 @@ pub async fn gateway_v2_cross_partition_query_via_feed_range_full(
             value: i as i64,
             label: format!("row-{i}"),
         };
-        container.create_item(&pk, &id, &item, None).await?;
+        create_seed_item(&container, &pk, &id, &item).await?;
         expected_ids.insert(id);
     }
 
-    let query = Query::from("SELECT * FROM c");
-    let mut pages = container
-        .query_items::<GwV2TestItem>(query, FeedScope::range(FeedRange::full()), None)
-        .await?
-        .into_pages();
+    let seen_ids: HashSet<String> = retry_query_owner_not_found(|| async {
+        let query = Query::from("SELECT * FROM c");
+        let mut pages = container
+            .query_items::<GwV2TestItem>(query, FeedScope::range(FeedRange::full()), None)
+            .await?
+            .into_pages();
 
-    let mut seen_ids: HashSet<String> = HashSet::new();
-    while let Some(page) = pages.next().await {
-        let page = page?;
-        assert!(!page.diagnostics().activity_id().as_str().is_empty());
-        for item in page.items() {
-            assert!(
-                seen_ids.insert(item.id.clone()),
-                "item {} returned twice via FeedRange::full() — explicit \
-                 feed-range fanout must not duplicate items",
-                item.id,
-            );
+        let mut seen_ids: HashSet<String> = HashSet::new();
+        while let Some(page) = pages.next().await {
+            let page = page?;
+            assert!(!page.diagnostics().activity_id().as_str().is_empty());
+            for item in page.items() {
+                assert!(
+                    seen_ids.insert(item.id.clone()),
+                    "item {} returned twice via FeedRange::full() — explicit \
+                     feed-range fanout must not duplicate items",
+                    item.id,
+                );
+            }
         }
-    }
+        Ok(seen_ids)
+    })
+    .await?;
     assert_eq!(
         seen_ids, expected_ids,
         "FeedScope::range(FeedRange::full()) on Gateway 2.0 must yield \
@@ -1579,7 +1659,7 @@ pub async fn gateway_v2_session_read_your_writes_ppcb_disabled(
             value: i as i64,
             label: format!("row-{i}"),
         };
-        let create_resp = container.create_item(&pk, &id, &item, None).await?;
+        let create_resp = create_seed_item(&container, &pk, &id, &item).await?;
         assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
         written.push((pk, id.clone()));
         expected_ids.insert(id);
@@ -1674,36 +1754,44 @@ pub async fn gateway_v2_query_honors_max_item_count_page_size(
             value: i as i64,
             label: format!("row-{i}"),
         };
-        container.create_item(&pk_value, &id, &item, None).await?;
+        create_seed_item(&container, &pk_value, &id, &item).await?;
     }
 
     let page_size = NonZeroU32::new(3).expect("3 is non-zero");
-    let options = QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(page_size));
-    let mut pages = container
-        .query_items::<GwV2TestItem>(
-            Query::from("SELECT * FROM c"),
-            FeedScope::partition(pk_value.clone()),
-            Some(options),
-        )
-        .await?
-        .into_pages();
+    let (pages_seen, total_seen, page_lens) = retry_query_owner_not_found(|| {
+        let pk_value = pk_value.clone();
+        async {
+            let options =
+                QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(page_size));
+            let mut pages = container
+                .query_items::<GwV2TestItem>(
+                    Query::from("SELECT * FROM c"),
+                    FeedScope::partition(pk_value),
+                    Some(options),
+                )
+                .await?
+                .into_pages();
 
-    let mut pages_seen = 0_usize;
-    let mut total_seen = 0_usize;
-    let mut page_lens: Vec<usize> = Vec::new();
-    while let Some(page) = pages.next().await {
-        let page = page?;
-        pages_seen += 1;
-        assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
-        let len = page.items().len();
-        page_lens.push(len);
-        total_seen += len;
-        assert!(
-            len <= 3,
-            "page {pages_seen} returned {len} items, exceeding the requested \
-             max_item_count of 3 — the PageSize token was not honored",
-        );
-    }
+            let mut pages_seen = 0_usize;
+            let mut total_seen = 0_usize;
+            let mut page_lens: Vec<usize> = Vec::new();
+            while let Some(page) = pages.next().await {
+                let page = page?;
+                pages_seen += 1;
+                assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
+                let len = page.items().len();
+                page_lens.push(len);
+                total_seen += len;
+                assert!(
+                    len <= 3,
+                    "page {pages_seen} returned {len} items, exceeding the requested \
+                     max_item_count of 3 — the PageSize token was not honored",
+                );
+            }
+            Ok((pages_seen, total_seen, page_lens))
+        }
+    })
+    .await?;
 
     assert_eq!(
         total_seen, total_items,
@@ -1757,9 +1845,7 @@ pub async fn gateway_v2_if_match_precondition_round_trip() -> Result<(), Box<dyn
         label: "initial".into(),
     };
 
-    let create_resp = container
-        .create_item(&pk_value, &item_id, &item, None)
-        .await?;
+    let create_resp = create_seed_item(&container, &pk_value, &item_id, &item).await?;
     assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
     let etag_v1: Etag = create_resp
         .headers()
@@ -1866,9 +1952,7 @@ pub async fn gateway_v2_read_with_non_default_consistency_strategy(
         value: 42,
         label: "rcs".into(),
     };
-    container
-        .create_item(&pk_value, &item_id, &item, None)
-        .await?;
+    create_seed_item(&container, &pk_value, &item_id, &item).await?;
 
     const MAX_ATTEMPTS: u32 = 40;
     const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
@@ -1951,9 +2035,7 @@ pub async fn gateway_v2_point_read_usable_from_every_region(
         value: 7,
         label: "multi-region".into(),
     };
-    let create_resp = container
-        .create_item(&pk_value, &item_id, &item, None)
-        .await?;
+    let create_resp = create_seed_item(&container, &pk_value, &item_id, &item).await?;
     assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
 
     for region in REGIONS {

@@ -85,6 +85,26 @@ impl From<serde_json::Error> for QueryPlanError {
 }
 
 impl QueryPlanError {
+    /// Bounded diagnostic category safe to emit without exposing native payloads.
+    pub(crate) fn diagnostic_code(&self) -> &'static str {
+        match self {
+            Self::Unexpected { .. } => "unexpected_hresult",
+            Self::Expected { .. } => "expected_query_error",
+            Self::Deserialization { .. } => "deserialization",
+            Self::LibraryNotAvailable { .. } => "library_not_available",
+            Self::ConfigContainsNull => "config_contains_null",
+            Self::InvalidUtf8 { .. } => "invalid_utf8",
+        }
+    }
+
+    /// Native HRESULT, when the error originated from an FFI failure.
+    pub(crate) fn hresult(&self) -> Option<u32> {
+        match self {
+            Self::Unexpected { hresult } | Self::Expected { hresult, .. } => Some(*hresult),
+            _ => None,
+        }
+    }
+
     /// Creates an [`Unexpected`](QueryPlanError::Unexpected) error from a raw HRESULT.
     pub(crate) fn from_hresult(hr: HResult) -> Self {
         Self::Unexpected { hresult: hr as u32 }
@@ -130,5 +150,13 @@ mod tests {
     fn config_null_error() {
         let err = QueryPlanError::ConfigContainsNull;
         assert!(format!("{err}").contains("null"));
+    }
+
+    #[test]
+    fn diagnostic_fields_do_not_expose_native_payload() {
+        let err = QueryPlanError::from_hresult_with_payload(-1, "SELECT * FROM secret".to_string());
+        assert_eq!(err.diagnostic_code(), "expected_query_error");
+        assert_eq!(err.hresult(), Some(u32::MAX));
+        assert!(!err.diagnostic_code().contains("secret"));
     }
 }

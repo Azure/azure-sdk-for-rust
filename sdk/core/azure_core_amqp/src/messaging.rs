@@ -1294,6 +1294,7 @@ impl AmqpMessage {
         }
         #[cfg(not(feature = "fe2o3_amqp"))]
         {
+            let _ = message;
             unimplemented!();
         }
     }

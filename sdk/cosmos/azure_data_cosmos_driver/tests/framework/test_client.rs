@@ -9,7 +9,7 @@ use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
 #[cfg(feature = "__internal_testing")]
 use azure_data_cosmos_driver::CosmosDriver;
 use azure_data_cosmos_driver::{
-    diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
+    diagnostics::{DiagnosticsContext, PipelineKind, TransportSecurity},
     driver::CosmosDriverRuntime,
     error::CosmosError,
     models::{
@@ -51,7 +51,7 @@ pub struct DriverTestClient {
     /// per-operation helpers (`create_database`, `read_item`, …). Empty by
     /// default; populated by [`run_with_unique_db_and_hedging`] for the
     /// hedging path, which requires application-preferred regions to be set
-    /// per `HEDGING_SPEC.md` §5.2.
+    /// per Spec 0009: Cross-region hedging, §5.2.
     preferred_regions: Vec<Region>,
     /// Driver-level fault-injection rules applied to every driver created by
     /// the per-operation helpers. Empty by default; populated by the
@@ -458,8 +458,8 @@ impl DriverTestClient {
 
     /// Like [`run_with_unique_db_and_fault_injection_options`](Self::run_with_unique_db_and_fault_injection_options)
     /// but additionally pre-configures driver-level `preferred_regions`,
-    /// which is required for cross-region hedging eligibility per
-    /// `HEDGING_SPEC.md` §5.2 (the §5.1 `should_hedge()` short-circuits
+    /// which is required for cross-region hedging eligibility per Spec 0009:
+    /// Cross-region hedging, §5.2 (the §5.1 `should_hedge()` short-circuits
     /// when no application-preferred regions are configured).
     ///
     /// The `preferred_regions` are stored on the client and applied to every
@@ -528,6 +528,46 @@ impl DriverTestClient {
         })
         .await
     }
+
+    /// Runs a test with runtime operation options and a unique database.
+    pub async fn run_with_unique_db_options<F, Fut>(
+        operation_options: OperationOptions,
+        f: F,
+    ) -> Result<(), Box<dyn Error>>
+    where
+        F: FnOnce(DriverTestRunContext, DatabaseReference) -> Fut,
+        Fut: Future<Output = Result<(), Box<dyn Error>>>,
+    {
+        let Some(env) = resolve_test_env()? else {
+            println!("Skipping test: Cosmos DB environment not configured");
+            return Ok(());
+        };
+
+        let runtime = CosmosDriverRuntime::builder()
+            .with_connection_pool(env.connection_pool)
+            .with_default_operation_options(operation_options)
+            .build()
+            .await?;
+
+        let client = Self {
+            runtime,
+            account: env.account,
+            preferred_regions: Vec::new(),
+            #[cfg(feature = "fault_injection")]
+            fault_injection_rules: Vec::new(),
+            partition_failover_options: None,
+        };
+        let context = DriverTestRunContext::new(client);
+        let db_name = context.unique_database_name();
+        let db_ref = context.create_database(&db_name).await?;
+
+        let result = f(context.clone(), db_ref.clone()).await;
+
+        // Cleanup (best effort)
+        let _ = context.delete_database(&db_ref).await;
+
+        result
+    }
 }
 
 /// Context for a test run, providing helpers for driver operations.
@@ -541,7 +581,11 @@ impl DriverTestRunContext {
     fn new(client: DriverTestClient) -> Self {
         Self {
             client: Arc::new(client),
-            run_id: Uuid::new_v4().to_string()[..8].to_string(),
+            // v7 (not v4) so a cleanup sweep can decode the creation time straight from the
+            // name; kept un-truncated (unlike unique_container_name) because v7's timestamp
+            // occupies the leading hex digits - truncating there would drop all randomness
+            // and risk collisions between runs started in the same time bucket.
+            run_id: Uuid::now_v7().simple().to_string(),
         }
     }
 
@@ -573,6 +617,26 @@ impl DriverTestRunContext {
     /// these helpers inherits them.
     fn driver_options(&self) -> Result<DriverOptions, Box<dyn Error>> {
         let mut builder = DriverOptions::builder(self.client.account.clone());
+        #[cfg(test_category = "emulator_vnext")]
+        {
+            // Temporary workaround for #5240; product code should eventually
+            // negotiate vNext binary support. Explicit test configuration wins.
+            if self
+                .client
+                .runtime
+                .default_operation_options()
+                .binary_encoding
+                .is_none()
+            {
+                let options = OperationOptionsBuilder::new()
+                    .with_binary_encoding(
+                        azure_data_cosmos_driver::options::BinaryEncodingOptions::new()
+                            .with_enabled(false),
+                    )
+                    .build();
+                builder = builder.with_operation_options(options);
+            }
+        }
         if !self.client.preferred_regions.is_empty() {
             builder = builder.with_preferred_regions(self.client.preferred_regions.clone());
         }
@@ -612,15 +676,20 @@ impl DriverTestRunContext {
         F: FnMut() -> Fut,
         Fut: Future<Output = Result<T, Box<dyn Error>>>,
     {
+        const MAX_ATTEMPTS: u32 = 12;
+
         let mut delay = Duration::from_millis(250);
         let mut last_error = None;
-        for attempt in 1..=6 {
+        for attempt in 1..=MAX_ATTEMPTS {
             match f().await {
                 Ok(result) => return Ok(result),
-                Err(error) if Self::is_transport_generated_503(error.as_ref()) && attempt < 6 => {
+                Err(error)
+                    if Self::is_transport_generated_503(error.as_ref())
+                        && attempt < MAX_ATTEMPTS =>
+                {
                     last_error = Some(error.to_string());
                     eprintln!(
-                        "transient transport failure during {operation}; retrying attempt {attempt}/6 after {delay:?}: {}",
+                        "transient transport failure during {operation}; retrying attempt {attempt}/{MAX_ATTEMPTS} after {delay:?}: {}",
                         last_error.as_deref().unwrap_or("<unknown>")
                     );
                     tokio::time::sleep(delay).await;
@@ -764,8 +833,17 @@ impl DriverTestRunContext {
         let operation =
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
-        let create_result = driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+        let create_result = self
+            .retry_transient_transport("create container", || {
+                let operation = operation.clone();
+                let driver = driver.clone();
+                async move {
+                    driver
+                        .execute_singleton_operation(operation, OperationOptions::default())
+                        .await
+                        .map_err(Into::into)
+                }
+            })
             .await;
         // Tolerate a 409 Conflict from the create itself: a client-side
         // timeout (surfaced as a synthetic `TransportGenerated503`) doesn't
@@ -774,8 +852,15 @@ impl DriverTestRunContext {
         // already exists. Fall through to the resolve-retry loop below
         // exactly as a successful create would, since that's what actually
         // produces the `ContainerReference` this method returns.
-        match create_result {
-            Err(error) if error.status().status_code() == StatusCode::Conflict => {}
+        let mut ambiguous_create_error = match create_result {
+            Err(error)
+                if error
+                    .downcast_ref::<CosmosError>()
+                    .is_some_and(|error| error.status().status_code() == StatusCode::Conflict) =>
+            {
+                None
+            }
+            Err(error) if Self::is_transport_generated_503(error.as_ref()) => Some(error),
             other => {
                 let result = other?;
                 // Check for success status (201 Created)
@@ -784,8 +869,9 @@ impl DriverTestRunContext {
                 if !status.map(|s| s.is_success()).unwrap_or(false) {
                     return Err(format!("Failed to create container, status: {:?}", status).into());
                 }
+                None
             }
-        }
+        };
         let db_name = database
             .name()
             .ok_or_else(|| "database reference must be name-based".to_string())?;
@@ -812,15 +898,23 @@ impl DriverTestRunContext {
                     let create_in_progress = status.status_code() == StatusCode::NotFound
                         && status.sub_status()
                             == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
-                    if create_in_progress {
+                    let ambiguous_not_found = ambiguous_create_error.is_some()
+                        && status.status_code() == StatusCode::NotFound;
+                    if create_in_progress || ambiguous_not_found {
                         tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
                         delay_ms = (delay_ms * 2).min(5000);
                         last_err_msg = Some(format!("{e}"));
                         continue;
                     }
+                    if let Some(error) = ambiguous_create_error.take() {
+                        return Err(error);
+                    }
                     return Err(e.into());
                 }
             }
+        }
+        if let Some(error) = ambiguous_create_error.take() {
+            return Err(error);
         }
         Err(format!(
             "resolve_container_by_name failed after 12 retries: {}",
@@ -1088,7 +1182,7 @@ impl DriverTestRunContext {
         let first_request = &requests[0];
         assert_eq!(
             first_request.pipeline_type(),
-            PipelineType::DataPlane,
+            PipelineKind::DataPlane,
             "Should use data plane pipeline for item operations"
         );
 

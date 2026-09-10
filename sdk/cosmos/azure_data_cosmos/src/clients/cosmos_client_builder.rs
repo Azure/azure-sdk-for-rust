@@ -195,10 +195,11 @@ impl CosmosClientBuilder {
     /// a query body is a query spec rather than a document. The options are
     /// resolved once at [`build()`](Self::build) time.
     ///
-    /// When this setter is **not** called, enablement falls back to the
-    /// `AZURE_COSMOS_BINARY_ENCODING_ENABLED` environment variable (truthy
-    /// values `1` / `true` / `yes` / `on`, case-insensitive, trimmed). Passing
-    /// explicit options here takes precedence over that variable.
+    /// Binary encoding is enabled by default. When this setter is **not**
+    /// called, `AZURE_COSMOS_BINARY_ENCODING_ENABLED` can override the default;
+    /// truthy values are `1` / `true` / `yes` / `on` (case-insensitive,
+    /// trimmed), and any other value disables encoding. Passing explicit
+    /// options here takes precedence over that variable.
     pub fn with_binary_encoding_options(mut self, options: BinaryEncodingOptions) -> Self {
         self.options.binary_encoding = Some(options);
         self
@@ -441,7 +442,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        options::{PartitionFailoverOptions, Region, UserAgentSuffix},
+        options::{PartitionFailoverOptions, QueryPlanMode, Region, UserAgentSuffix},
         RoutingStrategy,
     };
 
@@ -576,6 +577,18 @@ mod tests {
             .build()
             .expect("driver options should build");
         assert_eq!(opts.preferred_regions(), input.as_slice());
+    }
+
+    #[test]
+    fn query_plan_mode_flows_to_driver_options() {
+        let mut input = test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()));
+        input.operation_options.query_plan_mode = Some(QueryPlanMode::GatewayOnly);
+        let opts = input.build().expect("driver options should build");
+
+        assert_eq!(
+            opts.operation_options().query_plan_mode,
+            Some(QueryPlanMode::GatewayOnly)
+        );
     }
 
     /// The user-agent suffix must flow through to the per-driver options so

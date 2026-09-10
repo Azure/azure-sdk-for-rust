@@ -377,7 +377,7 @@ dependencies = [
  "async-lock",
  "async-trait",
  "azure_core_examples",
- "azure_core_macros 1.1.0-beta.1",
+ "azure_core_macros 1.0.0",
  "azure_core_test 0.2.0",
  "bytes",
  "clap",
@@ -394,7 +394,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "thiserror",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -448,7 +447,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "typespec 1.2.0-beta.1",
- "typespec_macros 1.1.0-beta.1",
+ "typespec_macros 1.0.0",
 ]
 
 [[package]]
@@ -560,9 +559,11 @@ dependencies = [
 name = "azure_core_test_macros"
 version = "0.2.0"
 dependencies = [
+ "azure_core_test 0.2.0",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+ "tokio",
 ]
 
 [[package]]
@@ -578,7 +579,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "0.38.0"
+version = "0.39.0"
 dependencies = [
  "arbitrary",
  "async-lock",
@@ -623,7 +624,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "arc-swap",
  "async-lock",
@@ -642,6 +643,7 @@ dependencies = [
  "quick-xml",
  "rand 0.10.2",
  "reqwest",
+ "rustc_version",
  "serde",
  "serde_json",
  "time",
@@ -786,6 +788,7 @@ dependencies = [
  "openssl",
  "pin-project",
  "rand 0.10.2",
+ "reqwest",
  "serde",
  "serde_json",
  "serde_test",
@@ -799,7 +802,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "async-lock",
  "async-stream",
@@ -829,7 +832,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "async-trait",
  "azure_core 1.2.0-beta.1",
@@ -952,7 +955,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_blob"
-version = "1.1.0-beta.3"
+version = "1.2.0-beta.1"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -978,7 +981,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_common"
-version = "0.2.0"
+version = "1.1.0-beta.1"
 dependencies = [
  "azure_core 1.2.0-beta.1",
  "serde",
@@ -988,7 +991,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_queue"
-version = "1.1.0-beta.2"
+version = "1.2.0-beta.1"
 dependencies = [
  "async-trait",
  "azure_core 1.2.0-beta.1",
@@ -1005,7 +1008,7 @@ dependencies = [
 
 [[package]]
 name = "azure_storage_sas"
-version = "0.2.0"
+version = "1.1.0-beta.1"
 dependencies = [
  "azure_core 1.2.0-beta.1",
  "azure_storage_common",
@@ -4235,6 +4238,7 @@ checksum = "9ae9cec805b01e8fc3fd2fe289f89149a9b66dd16786abd8b19cfa7b48cb0098"
 dependencies = [
  "bytes",
  "futures-core",
+ "futures-io",
  "futures-sink",
  "pin-project-lite",
  "tokio",
@@ -4635,10 +4639,12 @@ dependencies = [
  "serde_json",
  "time",
  "tokio",
+ "tokio-stream",
+ "tokio-util",
  "tracing",
  "tracing-subscriber",
  "typespec 1.2.0-beta.1",
- "typespec_macros 1.1.0-beta.1",
+ "typespec_macros 1.0.0",
  "url",
  "uuid",
 ]

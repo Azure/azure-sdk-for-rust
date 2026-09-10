@@ -37,6 +37,10 @@ pub const METRIC_RESPONSE_RETURNED_ROWS: &str = "db.client.response.returned_row
 /// instrumented client, under the intended one-handler-per-client registration).
 pub const METRIC_ACTIVE_INSTANCE_COUNT: &str = "azure.cosmosdb.client.active_instance.count";
 
+/// Optional counter (operations): number of operations that dispatched a
+/// cross-region hedge fan-out.
+pub const METRIC_OPERATION_HEDGED: &str = "azure.cosmosdb.client.operation.hedged";
+
 // =========================================================================
 // Instrument units
 // =========================================================================
@@ -56,6 +60,9 @@ pub const UNIT_ROW: &str = "{row}";
 
 /// Unit for [`METRIC_ACTIVE_INSTANCE_COUNT`] — client instances.
 pub const UNIT_INSTANCE: &str = "{instance}";
+
+/// Unit for [`METRIC_OPERATION_HEDGED`] — operations.
+pub const UNIT_OPERATION: &str = "{operation}";
 
 // =========================================================================
 // Explicit histogram bucket boundaries
@@ -166,3 +173,12 @@ pub const ATTR_SUB_STATUS_CODE: &str = attributes::SUB_STATUS_CODE;
 
 /// `azure.cosmosdb.connection.mode` — gateway vs. direct connection mode.
 pub const ATTR_CONNECTION_MODE: &str = attributes::CONNECTION_MODE;
+
+/// `azure.cosmosdb.operation.hedge_terminal_state` — how the hedging race ended.
+/// Low cardinality (one value per terminal state), attached to the hedged
+/// counter unconditionally.
+pub const ATTR_HEDGE_TERMINAL_STATE: &str = attributes::HEDGE_TERMINAL_STATE;
+
+/// `azure.cosmosdb.operation.hedge_region` — the alternate hedge region. Higher
+/// cardinality, so attached only under the extended-attribute opt-in.
+pub const ATTR_HEDGE_REGION: &str = attributes::HEDGE_REGION;

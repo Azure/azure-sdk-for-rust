@@ -42,6 +42,8 @@ pub enum AmqpErrorCondition {
     LinkDetachForced,
     /// See [AMQP Error](https://docs.oasis-open.org/amqp/core/v1.0/os/amqp-core-transport-v1.0-os.html#type-amqp-error) for more information.
     ConnectionForced,
+    /// Microsoft specific error conditions: dead letter.
+    DeadLetter,
     /// Microsoft specific error conditions: server busy.
     ServerBusyError,
     /// Microsoft specific error conditions: argument error.
@@ -117,6 +119,7 @@ impl<'a> ::std::convert::From<&'a AmqpErrorCondition> for &'a str {
             AmqpErrorCondition::LinkPayloadSizeExceeded => "amqp:link:message-size-exceeded",
             AmqpErrorCondition::LinkDetachForced => "amqp:link:detach-forced",
             AmqpErrorCondition::ConnectionForced => "amqp:connection:forced",
+            AmqpErrorCondition::DeadLetter => "com.microsoft:dead-letter",
             AmqpErrorCondition::ServerBusyError => "com.microsoft:server-busy",
             AmqpErrorCondition::ArgumentError => "com.microsoft:argument-error",
             AmqpErrorCondition::ArgumentOutOfRangeError => "com.microsoft:argument-out-of-range",
@@ -168,6 +171,7 @@ impl ::std::str::FromStr for AmqpErrorCondition {
             "amqp:link:message-size-exceeded" => AmqpErrorCondition::LinkPayloadSizeExceeded,
             "amqp:link:detach-forced" => AmqpErrorCondition::LinkDetachForced,
             "amqp:connection:forced" => AmqpErrorCondition::ConnectionForced,
+            "com.microsoft:dead-letter" => AmqpErrorCondition::DeadLetter,
             "com.microsoft:server-busy" => AmqpErrorCondition::ServerBusyError,
             "com.microsoft:argument-error" => AmqpErrorCondition::ArgumentError,
             "com.microsoft:argument-out-of-range" => AmqpErrorCondition::ArgumentOutOfRangeError,
@@ -218,6 +222,7 @@ impl ::std::convert::AsRef<str> for AmqpErrorCondition {
             AmqpErrorCondition::LinkPayloadSizeExceeded => "amqp:link:message-size-exceeded",
             AmqpErrorCondition::LinkDetachForced => "amqp:link:detach-forced",
             AmqpErrorCondition::ConnectionForced => "amqp:connection:forced",
+            AmqpErrorCondition::DeadLetter => "com.microsoft:dead-letter",
             AmqpErrorCondition::ServerBusyError => "com.microsoft:server-busy",
             AmqpErrorCondition::ArgumentError => "com.microsoft:argument-error",
             AmqpErrorCondition::ArgumentOutOfRangeError => "com.microsoft:argument-out-of-range",
@@ -272,6 +277,7 @@ impl ::std::fmt::Display for AmqpErrorCondition {
             }
             AmqpErrorCondition::LinkDetachForced => f.write_str("amqp:link:detach-forced"),
             AmqpErrorCondition::ConnectionForced => f.write_str("amqp:connection:forced"),
+            AmqpErrorCondition::DeadLetter => f.write_str("com.microsoft:dead-letter"),
             AmqpErrorCondition::ServerBusyError => f.write_str("com.microsoft:server-busy"),
             AmqpErrorCondition::ArgumentError => f.write_str("com.microsoft:argument-error"),
             AmqpErrorCondition::ArgumentOutOfRangeError => {
