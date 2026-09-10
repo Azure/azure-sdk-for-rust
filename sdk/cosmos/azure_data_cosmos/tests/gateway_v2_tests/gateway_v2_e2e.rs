@@ -722,9 +722,7 @@ pub async fn gateway_v2_binary_encoding_point_crud_round_trip(
         label: "initial".into(),
     };
 
-    let create_resp = container
-        .create_item(&pk_value, &item_id, &item, None)
-        .await?;
+    let create_resp = create_seed_item(&container, &pk_value, &item_id, &item).await?;
     assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
 
     let read_resp = container.read_item(&pk_value, &item_id, None).await?;
@@ -795,39 +793,42 @@ pub async fn gateway_v2_binary_encoding_query_round_trip() -> Result<(), Box<dyn
             value: i as i64,
             label: format!("row-{i}"),
         };
-        let resp = container.create_item(&pk_value, &id, &item, None).await?;
-        assert_transport_kind(&resp.diagnostics(), TransportKind::GatewayV2);
+        create_seed_item(&container, &pk_value, &id, &item).await?;
         expected_ids.insert(id);
     }
 
-    let query = Query::from("SELECT * FROM c");
-    let mut pages = container
-        .query_items::<GwV2TestItem>(query, FeedScope::partition(pk_value.clone()), None)
-        .await?
-        .into_pages();
+    let seen_ids = retry_query_owner_not_found(|| async {
+        let query = Query::from("SELECT * FROM c");
+        let mut pages = container
+            .query_items::<GwV2TestItem>(query, FeedScope::partition(pk_value.clone()), None)
+            .await?
+            .into_pages();
 
-    let mut seen_ids: HashSet<String> = HashSet::new();
-    while let Some(page) = pages.next().await {
-        let page = page?;
-        assert!(
-            !page.diagnostics().activity_id().as_str().is_empty(),
-            "every binary-negotiated Gateway 2.0 query page must surface an activity-id",
-        );
-        for item in page.items() {
+        let mut seen_ids: HashSet<String> = HashSet::new();
+        while let Some(page) = pages.next().await {
+            let page = page?;
             assert!(
-                seen_ids.insert(item.id.clone()),
-                "binary query returned item {} twice",
-                item.id,
+                !page.diagnostics().activity_id().as_str().is_empty(),
+                "every binary-negotiated Gateway 2.0 query page must surface an activity-id",
             );
-            // Each item's label must match its value, proving a correct decode.
-            assert_eq!(
-                item.label,
-                format!("row-{}", item.value),
-                "binary-decoded item {} has mismatched fields",
-                item.id,
-            );
+            for item in page.items() {
+                assert!(
+                    seen_ids.insert(item.id.clone()),
+                    "binary query returned item {} twice",
+                    item.id,
+                );
+                // Each item's label must match its value, proving a correct decode.
+                assert_eq!(
+                    item.label,
+                    format!("row-{}", item.value),
+                    "binary-decoded item {} has mismatched fields",
+                    item.id,
+                );
+            }
         }
-    }
+        Ok(seen_ids)
+    })
+    .await?;
 
     assert_eq!(
         seen_ids, expected_ids,
@@ -866,9 +867,7 @@ pub async fn gateway_v2_binary_encoding_rich_document_round_trip(
     let item_id = format!("rich-{}", azure_core::Uuid::new_v4());
     let doc = sample_rich_document(&item_id, &pk_value);
 
-    let create_resp = container
-        .create_item(&pk_value, &item_id, &doc, None)
-        .await?;
+    let create_resp = create_seed_item(&container, &pk_value, &item_id, &doc).await?;
     assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
 
     // Read back and require an exact match.
