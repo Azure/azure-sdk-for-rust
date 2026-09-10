@@ -1005,7 +1005,7 @@ mod tests {
     }
 
     #[test]
-    fn v1_non_latin_managed_native_goldens() {
+    fn v1_non_latin_managed_native_expected_values() {
         let text = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя".repeat(4);
         let cases = [
             (49, "05C1C1BD37FE08D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BF00"),

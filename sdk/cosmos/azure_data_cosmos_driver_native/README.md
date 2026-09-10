@@ -206,59 +206,6 @@ below for the production-shape guidance.
 >   `cosmos_completion_queue_free_completions`. The examples print status/body;
 >   inspect the response-header value's discriminant before reading its union.
 
-### Counted UTF-8 input contract (breaking native 0.1 ABI change)
-
-Every caller-provided text input now uses `cosmos_string_view_t { data, len }`
-by value, not `const char *`. Rebuild bindings and native callers together.
-`len` is a pointer-sized **UTF-8 byte count**, excluding any optional trailing
-terminator. It must be at most `isize::MAX`. A nonempty view must reference one
-readable allocation valid until the call returns. Rust copies retained inputs
-before returning, including before asynchronous submits return.
-
-| Input category | Migrated fields |
-| --- | --- |
-| Account constructors (master key and credential callback) | `endpoint`, `key` |
-| Resource constructors/resolution (blocking and submit) | `database_id`, `container_id` |
-| Operation request | `item_id`, `resource_link`, `session_token`, `activity_id`, `continuation_token`, `precondition_etag`, `patch_tracking_id` |
-| Runtime options | `correlation_id`, `user_agent_suffix`, `wrapping_sdk_identifier` |
-| Operation options | `throughput_control_group`; each `excluded_regions` entry; custom header `name` and `value` |
-| Driver options | Each `preferred_regions` entry |
-| Partition keys | The string leg of each component union |
-
-- Optional text: **NULL/0 is unset**, non-NULL/0 is explicitly empty. Empty
-  values still undergo existing field validation (for example, an empty UUID
-  or header name is invalid).
-- Required text rejects NULL, even with length zero. The sole exception is
-  a partition-key string: NULL/0 means an empty string, not a JSON null component.
-- NULL with nonzero length is invalid everywhere. All bytes are validated as
-  UTF-8, including bytes after an embedded NUL; invalid UTF-8 returns
-  `CLIENT_FFI_INVALID_UTF8`.
-- Partition-key strings preserve embedded NUL. Other fields reject it before
-  parsing or normalization: endpoints use `CLIENT_INVALID_ACCOUNT_ENDPOINT_URL`,
-  header names/values, session tokens and ETags use `CLIENT_FFI_INVALID_HEADER`,
-  and other text uses `CLIENT_FFI_INVALID_OPTION_VALUE`. IDs never become the
-  prefix before NUL. Existing downstream validation otherwise remains intact.
-- Region arrays contain **views**, not string pointers. Header arrays contain
-  pairs of views. Array counts count entries, while each entry's `len` counts
-  bytes. Arrays must be aligned, initialized, and contained in one readable
-  allocation whose byte extent is at most `isize::MAX`; NULL/nonzero is invalid.
-  NULL/0 means absent. Non-NULL/0 clears custom headers, is an empty preferred
-  region list, and remains invalid for excluded regions.
-- Bodies and credential-bridge token/scope/error buffers retain their existing
-  counted-byte representation. **Output C strings are unchanged.**
-
-For example, `cosmos_header_kv_t` is now two `cosmos_string_view_t` members;
-`preferred_regions` and `excluded_regions` are `const cosmos_string_view_t *`.
-On 64-bit targets the request is 224 bytes, operation options are 96 bytes,
-runtime options are 64 bytes, and each custom header is 32 bytes. Do not pack
-these structs or assume character counts equal byte counts.
-
-The examples allocate/pin UTF-8 storage until each call returns. For additional
-optional fields use the same text helper; keep its owner alive when assigning a
-view into an options struct or array. In Go, use `C.CBytes` for **all** payloads
-pointed to by request/option structs (including union text and bodies); never
-put Go pointers inside a Go struct passed by pointer to C.
-
 ### .NET (C# 12 / .NET 8+)
 
 Copy `azurecosmosdriver.{dll,so,dylib}` next to the executable, then
@@ -1170,7 +1117,7 @@ class CosmosStringView(ctypes.Structure):
 def text(value):
     if value is None:
         return CosmosStringView()
-    data = value.encode("utf-8") if isinstance(value, str) else value
+    data = value.encode("utf-8")
     buffer = ctypes.create_string_buffer(data, max(1, len(data)))
     result = CosmosStringView(ctypes.cast(buffer, u8_p), len(data))
     result._buffer = buffer
@@ -1375,15 +1322,15 @@ def main() -> int:
 
         # 4. CREATE.
         body = json.dumps({"id": "doc1", "pk": "tenant-42", "name": "hello"}).encode("utf-8")
-        create = submit(drv, q, item_request(KIND_CREATE_ITEM, container, pk, b"doc1", body=body))
+        create = submit(drv, q, item_request(KIND_CREATE_ITEM, container, pk, "doc1", body=body))
         print(f"CREATE status={create['http_status']}")
 
         # 5. READ.
-        read = submit(drv, q, item_request(KIND_READ_ITEM, container, pk, b"doc1"))
+        read = submit(drv, q, item_request(KIND_READ_ITEM, container, pk, "doc1"))
         print(f"READ status={read['http_status']} body={read['body'].decode('utf-8')}")
 
         # 6. DELETE.
-        delete = submit(drv, q, item_request(KIND_DELETE_ITEM, container, pk, b"doc1"))
+        delete = submit(drv, q, item_request(KIND_DELETE_ITEM, container, pk, "doc1"))
         print(f"DELETE status={delete['http_status']}")
         return 0
     finally:
