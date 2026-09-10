@@ -21,7 +21,7 @@
 //! Transport-side knobs (connection pool, user-agent suffix, workload
 //! id, correlation id) live on the runtime options, not here.
 //!
-use std::ffi::{c_char, CStr};
+use crate::string::{required_text, validate_array, CosmosStringView};
 use std::sync::Arc;
 
 use azure_data_cosmos_driver::options::{DriverOptions, DriverOptionsBuilder, Region};
@@ -85,7 +85,7 @@ pub extern "C" fn cosmos_driver_options_free(options: *mut DriverOptionsHandle) 
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Decodes a `(ptr, len)` array of NUL-terminated UTF-8 region names into a
+/// Decodes a `(ptr, len)` array of counted UTF-8 region names into a
 /// `Vec<Region>` for the flat [`cosmos_driver_options_build`].
 ///
 /// A NULL pointer with `len == 0` yields an empty list (clears the regions).
@@ -93,16 +93,14 @@ pub extern "C" fn cosmos_driver_options_free(options: *mut DriverOptionsHandle) 
 ///
 /// # Safety
 ///
-/// `regions` must be NULL or point at `len` valid NUL-terminated UTF-8 string
-/// pointers for the duration of the call.
+/// `regions` must be NULL/0 or point at `regions_len` initialized views.
+/// Each view follows [`CosmosStringView`]'s allocation contract.
 unsafe fn decode_preferred_regions(
-    regions: *const *const c_char,
+    regions: *const CosmosStringView,
     regions_len: usize,
 ) -> Result<Vec<Region>, CosmosErrorCode> {
-    if regions.is_null() {
-        if regions_len > 0 {
-            return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-        }
+    validate_array(regions, regions_len)?;
+    if regions_len == 0 {
         return Ok(Vec::new());
     }
     let mut owned: Vec<Region> = Vec::with_capacity(regions_len);
@@ -110,16 +108,14 @@ unsafe fn decode_preferred_regions(
         // SAFETY: `regions` is non-NULL (checked above) and the caller
         // guarantees the array has at least `regions_len` entries.
         let entry_ptr = unsafe { *regions.add(i) };
-        if entry_ptr.is_null() {
-            return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-        }
-        // SAFETY: each entry is a NUL-terminated C string per the caller's
-        // contract.
-        let cstr = unsafe { CStr::from_ptr(entry_ptr) };
-        let s = cstr
-            .to_str()
-            .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidUtf8)?;
-        owned.push(Region::new(s.to_owned()));
+        // SAFETY: each view is readable for the duration of this call.
+        let s = unsafe {
+            required_text(
+                entry_ptr,
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+            )
+        }?;
+        owned.push(Region::new(s));
     }
     Ok(owned)
 }
@@ -156,9 +152,9 @@ unsafe fn decode_preferred_regions(
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct CosmosDriverOptionsConfig {
-    /// Preferred regions for routing — array of NUL-terminated UTF-8 region
+    /// Preferred regions for routing — array of counted UTF-8 region
     /// names. NULL / `0` length = none.
-    pub preferred_regions: *const *const c_char,
+    pub preferred_regions: *const CosmosStringView,
     /// Number of entries in `preferred_regions`.
     pub preferred_regions_len: usize,
     /// Per-driver default operation options, or NULL to inherit the driver
@@ -257,6 +253,44 @@ pub extern "C" fn cosmos_driver_options_build(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::string::view;
+
+    #[test]
+    fn preferred_regions_reject_nul_suffix_and_invalid_metadata() {
+        for (entry, expected) in [
+            (
+                view(b"East US\0junk"),
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+            ),
+            (
+                view(b"East US\0\xff"),
+                CosmosErrorCode::CosmosErrorCodeInvalidUtf8,
+            ),
+            (
+                CosmosStringView::default(),
+                CosmosErrorCode::CosmosErrorCodeInvalidArgument,
+            ),
+        ] {
+            let regions = [view(b"West US"), entry];
+            // SAFETY: array and buffers remain live during decoding.
+            assert_eq!(
+                unsafe { decode_preferred_regions(regions.as_ptr(), 2) }.unwrap_err(),
+                expected
+            );
+        }
+        let entries = [view(b"East US")];
+        // SAFETY: invalid metadata is rejected before pointer arithmetic.
+        unsafe {
+            assert_eq!(
+                decode_preferred_regions(std::ptr::null(), 1).unwrap_err(),
+                CosmosErrorCode::CosmosErrorCodeInvalidArgument
+            );
+            assert_eq!(
+                decode_preferred_regions(entries.as_ptr(), usize::MAX).unwrap_err(),
+                CosmosErrorCode::CosmosErrorCodeInvalidArgument
+            );
+        }
+    }
     use std::ffi::CString;
     use std::ptr;
 
@@ -327,7 +361,7 @@ mod tests {
         let account = make_account();
         let r1 = ok_cstr("East US");
         let r2 = ok_cstr("West US 3");
-        let arr: [*const c_char; 2] = [r1.as_ptr(), r2.as_ptr()];
+        let arr = [view(r1.as_bytes()), view(r2.as_bytes())];
         let op_opts = crate::op_request::cosmos_operation_options_default();
 
         let mut cfg = cosmos_driver_options_config_default();
@@ -358,7 +392,7 @@ mod tests {
     #[test]
     fn flat_build_rejects_null_region_entry() {
         let account = make_account();
-        let arr: [*const c_char; 1] = [ptr::null()];
+        let arr = [CosmosStringView::default()];
         let mut cfg = cosmos_driver_options_config_default();
         cfg.preferred_regions = arr.as_ptr();
         cfg.preferred_regions_len = 1;

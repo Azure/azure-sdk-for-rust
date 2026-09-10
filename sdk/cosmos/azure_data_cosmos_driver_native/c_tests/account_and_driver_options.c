@@ -38,8 +38,8 @@ static int test_account_ref_master_key_happy_path(void) {
     cosmos_account_ref_t *account = NULL;
     cosmos_error_t *err = NULL;
     int32_t rc = cosmos_account_ref_with_master_key(
-        "https://myaccount.documents.azure.com:443/",
-        "fake-master-key",
+        SV("https://myaccount.documents.azure.com:443/"),
+        SV("fake-master-key"),
         &account,
         &err);
     REQUIRE(rc == COSMOS_STATUS_SUCCESS,
@@ -58,18 +58,18 @@ static int test_account_ref_rejects_null_arguments(void) {
     cosmos_error_t *err = NULL;
 
     int32_t rc = cosmos_account_ref_with_master_key(
-        NULL, "k", &account, &err);
+        SV_NULL, SV("k"), &account, &err);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL endpoint rejected (rc=%d)", rc);
     ASSERT(account == NULL, "out_account untouched on NULL endpoint");
 
     rc = cosmos_account_ref_with_master_key(
-        "https://x.documents.azure.com:443/", NULL, &account, &err);
+        SV("https://x.documents.azure.com:443/"), SV_NULL, &account, &err);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL key rejected (rc=%d)", rc);
 
     rc = cosmos_account_ref_with_master_key(
-        "https://x.documents.azure.com:443/", "k", NULL, &err);
+        SV("https://x.documents.azure.com:443/"), SV("k"), NULL, &err);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL out_account rejected (rc=%d)", rc);
 
@@ -81,7 +81,7 @@ static int test_account_ref_rejects_invalid_endpoint(void) {
     cosmos_account_ref_t *account = NULL;
     cosmos_error_t *err = NULL;
     int32_t rc = cosmos_account_ref_with_master_key(
-        "not a url", "k", &account, &err);
+        SV("not a url"), SV("k"), &account, &err);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_INVALID_ACCOUNT_ENDPOINT_URL,
            "invalid endpoint rejected (rc=%d)", rc);
     ASSERT(account == NULL, "no handle on failure");
@@ -95,11 +95,11 @@ static int test_database_ref_create_happy_path(void) {
     cosmos_account_ref_t *account = NULL;
     cosmos_error_t *err = NULL;
     cosmos_account_ref_with_master_key(
-        "https://x.documents.azure.com:443/", "k", &account, &err);
+        SV("https://x.documents.azure.com:443/"), SV("k"), &account, &err);
     REQUIRE(account != NULL, "account allocated");
 
     cosmos_database_ref_t *db = NULL;
-    int32_t rc = cosmos_database_ref_create(account, "mydb", &db);
+    int32_t rc = cosmos_database_ref_create(account, SV("mydb"), &db);
     ASSERT(rc == COSMOS_STATUS_SUCCESS,
            "database_ref_create returned SUCCESS (rc=%d)", rc);
     ASSERT(db != NULL, "database_ref produced a non-NULL handle");
@@ -121,17 +121,17 @@ static int test_database_ref_rejects_null_arguments(void) {
     cosmos_account_ref_t *account = NULL;
     cosmos_error_t *err = NULL;
     cosmos_account_ref_with_master_key(
-        "https://x.documents.azure.com:443/", "k", &account, &err);
+        SV("https://x.documents.azure.com:443/"), SV("k"), &account, &err);
     REQUIRE(account != NULL, "account allocated");
 
     cosmos_database_ref_t *db = NULL;
-    int32_t rc = cosmos_database_ref_create(NULL, "mydb", &db);
+    int32_t rc = cosmos_database_ref_create(NULL, SV("mydb"), &db);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL account rejected (rc=%d)", rc);
-    rc = cosmos_database_ref_create(account, NULL, &db);
+    rc = cosmos_database_ref_create(account, SV_NULL, &db);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL database_id rejected (rc=%d)", rc);
-    rc = cosmos_database_ref_create(account, "mydb", NULL);
+    rc = cosmos_database_ref_create(account, SV("mydb"), NULL);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "NULL out_database rejected (rc=%d)", rc);
 
@@ -145,10 +145,10 @@ static int test_driver_options_build_happy_path(void) {
     cosmos_account_ref_t *account = NULL;
     cosmos_error_t *err = NULL;
     cosmos_account_ref_with_master_key(
-        "https://x.documents.azure.com:443/", "k", &account, &err);
+        SV("https://x.documents.azure.com:443/"), SV("k"), &account, &err);
     REQUIRE(account != NULL, "account allocated");
 
-    const char *regions[] = {"East US", "West US 3"};
+    cosmos_string_view_t regions[] = {SV("East US"), SV("West US 3")};
     cosmos_driver_options_config_t cfg = cosmos_driver_options_config_default();
     cfg.preferred_regions = regions;
     cfg.preferred_regions_len = 2;
@@ -173,7 +173,7 @@ static int test_driver_options_build_null_config(void) {
     cosmos_account_ref_t *account = NULL;
     cosmos_error_t *err = NULL;
     cosmos_account_ref_with_master_key(
-        "https://x.documents.azure.com:443/", "k", &account, &err);
+        SV("https://x.documents.azure.com:443/"), SV("k"), &account, &err);
     REQUIRE(account != NULL, "account allocated");
 
     // A NULL config means "no preferred regions, default operation options".
@@ -193,7 +193,7 @@ static int test_driver_options_build_rejects_nulls(void) {
     cosmos_account_ref_t *account = NULL;
     cosmos_error_t *err = NULL;
     cosmos_account_ref_with_master_key(
-        "https://x.documents.azure.com:443/", "k", &account, &err);
+        SV("https://x.documents.azure.com:443/"), SV("k"), &account, &err);
     REQUIRE(account != NULL, "account allocated");
 
     cosmos_driver_options_config_t cfg = cosmos_driver_options_config_default();
@@ -211,7 +211,7 @@ static int test_driver_options_build_rejects_nulls(void) {
            "NULL out_options rejected (rc=%d)", rc);
 
     // NULL entry within the regions array.
-    const char *bad_regions[] = {NULL};
+    cosmos_string_view_t bad_regions[] = {SV_NULL};
     cfg.preferred_regions = bad_regions;
     cfg.preferred_regions_len = 1;
     rc = cosmos_driver_options_build(account, &cfg, &opts);
