@@ -581,7 +581,11 @@ impl DriverTestRunContext {
     fn new(client: DriverTestClient) -> Self {
         Self {
             client: Arc::new(client),
-            run_id: Uuid::new_v4().to_string()[..8].to_string(),
+            // v7 (not v4) so a cleanup sweep can decode the creation time straight from the
+            // name; kept un-truncated (unlike unique_container_name) because v7's timestamp
+            // occupies the leading hex digits - truncating there would drop all randomness
+            // and risk collisions between runs started in the same time bucket.
+            run_id: Uuid::now_v7().simple().to_string(),
         }
     }
 
@@ -672,15 +676,20 @@ impl DriverTestRunContext {
         F: FnMut() -> Fut,
         Fut: Future<Output = Result<T, Box<dyn Error>>>,
     {
+        const MAX_ATTEMPTS: u32 = 12;
+
         let mut delay = Duration::from_millis(250);
         let mut last_error = None;
-        for attempt in 1..=6 {
+        for attempt in 1..=MAX_ATTEMPTS {
             match f().await {
                 Ok(result) => return Ok(result),
-                Err(error) if Self::is_transport_generated_503(error.as_ref()) && attempt < 6 => {
+                Err(error)
+                    if Self::is_transport_generated_503(error.as_ref())
+                        && attempt < MAX_ATTEMPTS =>
+                {
                     last_error = Some(error.to_string());
                     eprintln!(
-                        "transient transport failure during {operation}; retrying attempt {attempt}/6 after {delay:?}: {}",
+                        "transient transport failure during {operation}; retrying attempt {attempt}/{MAX_ATTEMPTS} after {delay:?}: {}",
                         last_error.as_deref().unwrap_or("<unknown>")
                     );
                     tokio::time::sleep(delay).await;

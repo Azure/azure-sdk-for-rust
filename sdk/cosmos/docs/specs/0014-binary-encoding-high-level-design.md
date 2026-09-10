@@ -86,9 +86,11 @@ format to be uniform across a result set — the pipeline paths that reparse a p
 sniff the `0x80` preamble per page (`normalize_page_body`) and the emitted
 encoding is a property of the operation (`emits_binary_payload`), not of any
 absorbed page, so a merge over mixed binary and text source pages already
-normalizes them. Point ops force `CosmosBinary` — a single body with no pipeline
-behind it has nothing to gain from a per-response choice. Both constants are
-documented in `driver/cosmos_driver.rs`.
+normalizes them. `Distinct` and `SkipTake` share the same binary-aware feed
+splitter, so their composed pipeline also normalizes each source page once.
+Point ops force `CosmosBinary` — a single body with no pipeline behind it has
+nothing to gain from a per-response choice. Both constants are documented in
+`driver/cosmos_driver.rs`.
 
 **What a text answer costs.** The accept-list keeps the query *working*, but the
 fallback is not free and it is not only a diagnosability gap:
@@ -103,13 +105,13 @@ fallback is not free and it is not only a diagnosability gap:
   integer field can then fail.
 
 That second cost applies to **every** query shape, not just the ones that reparse
-pages. `normalize_page_body` is reached only from `parse_envelope_page` (the
-`ORDER BY` merge) and `skip_take_page`, and `build_sequential_drain` wraps the
-fan-out in `SkipTake` only when `skip > 0 || take.is_some()` — so a plain
-`SELECT * FROM c` hands the service's page back untouched. On the merge path the
-page is not rescued either: `normalize_page_body` is a no-op on text, and
-`build_page` re-encodes through `serde_json`, so the value has already lost its
-integer tag. Point ops are unaffected, since they demand `CosmosBinary` outright.
+pages. `normalize_page_body` is reached from `parse_envelope_page` (the
+`ORDER BY` merge) and the feed splitter shared by `Distinct` and `SkipTake`; a
+plain `SELECT * FROM c` hands the service's page back untouched. On the merge
+path the page is not rescued either: `normalize_page_body` is a no-op on text,
+and `build_page` re-encodes through `serde_json`, so the value has already lost
+its integer tag. Point ops are unaffected, since they demand `CosmosBinary`
+outright.
 
 The request `Content-Type` stays `application/json`; the service detects the binary body from its first byte.
 
@@ -528,6 +530,7 @@ When the option is **off**, both paths collapse to the existing text behavior �
   * `request_text_response_keeps_wire_binary_and_returns_data` — with `request_text_response`, a `RequestObserver` confirms every item request advertised `CosmosBinary` (wire stayed binary) while the typed document still round-trips (driver transcoded to text).
 * **Response-format negotiation** — `binary_response_format.rs` sends a binary request through the emulator and inspects the **raw** response bytes for each negotiation (`CosmosBinary` → binary, `JsonText` → text, none → text); `dispatch.rs` unit tests cover the emulator's `binary_response` decision.
 * **Transcoding** — `binary_json::transcode_to_text` **and** `transcode_to_binary` unit tests (round-trip equivalence, binary/text/empty passthrough, malformed-input errors); `ResponseBody::transcode_to_text` tests.
+* **DISTINCT pipelines** — text/binary numeric equivalence, mixed-format `ORDER BY` → `DISTINCT` → `SkipTake` composition, continuation portability, and live partition-split coverage.
 * **Driver option + request encode** — `OperationOptions.binary_encoding` builder/layered-resolution tests; `apply_request_binary_encoding` tests (text→binary + header, already-binary passthrough, invalid-text error).
 * **FFI** — `cosmos_operation_options_t` conversion tests: `binary_encoding_enabled` + `request_text_response` build the driver option (enabled+text, enabled-only, explicit disable preserved).
 * **Benchmarks** — `azure_data_cosmos_benchmarks`'s `binary_encode` / `binary_decode` compare text, the retired via-`Value` path, and the shipped native codec on small and ~1.7 MB items.
@@ -616,7 +619,8 @@ non-binary work · **N/A** out of scope by design.
 | Query — passthrough cross-partition | text by design | Yes | Yes | **Done** |
 | Query — streaming ORDER BY (scalar keys) | text by design | Yes | Yes | **Done** |
 | Query — `OFFSET` / `LIMIT` / `TOP` (SkipTake) | text by design | Yes | Yes | **Done** |
-| Query — aggregate / GROUP BY / DISTINCT | — | — | — | **Blocked** — engine absent |
+| Query — `DISTINCT` | text by design | Yes | Yes | **Done** |
+| Query — aggregate / GROUP BY | — | — | — | **Blocked** — engine absent |
 | `patch` | No | No | Yes | **N/A** — client-side RMW; its inner read/replace are encoded |
 | Change feed / `ReadFeed` | No | No | capable, unused | **N/A** — backend does not honor the header |
 | Transactional `batch` / `bulk` / stored procedures / control-plane | No | No | — | **N/A** — deferred by spec |
@@ -629,7 +633,7 @@ non-binary work · **N/A** out of scope by design.
 | 2 | **`parse_envelope_page` on binary (perf + fidelity)** — see below | Efficiency and byte fidelity only; no correctness gap | Medium–Large |
 | 3 | **`delete` negotiation** — add to `supports_binary_response` to match .NET | Wire-scope parity; low impact (no request body, usually no response body) | Small |
 | 4 | **Cross-implementation vectors** — validate against captured real .NET / Java binary output | Our encoder emits none of the compact forms (reference dedup, system strings), so emulator-based tests never exercise them. A slice-based reader would pass every test we have and still corrupt real service data. | Medium |
-| 5 | **Aggregate / GROUP BY / DISTINCT** | **Blocked, not pending.** `validate_query_info` rejects all three cross-partition in *any* encoding, so there is no merge to make binary-aware. Whoever builds the engine owns the binary path with it — ideally on a format-agnostic value model (like .NET's `CosmosElement`) so binary is inherent, not retrofitted. Single-partition DISTINCT is a passthrough drain and already round-trips binary. | — |
+| 5 | **Aggregate / GROUP BY** | **Blocked, not pending.** The cross-partition engine does not support these shapes in either encoding. Whoever builds the engine owns the binary path with it — ideally on a format-agnostic value model (like .NET's `CosmosElement`) so binary is inherent, not retrofitted. | — |
 
 #### Detail: item 2, binary-aware `parse_envelope_page`
 
@@ -698,7 +702,7 @@ decode** (auto-detected by the `0x80` first byte).
 
 | # | Difference | Detail | Severity |
 |---|---|---|---|
-| 1 | Aggregate / GROUP BY / DISTINCT cross-partition | .NET runs them; its merge is on the format-agnostic `CosmosElement` model, so binary works for free. Rust's `validate_query_info` **rejects them in any encoding** — the engine does not exist yet. | Real capability gap (not binary-specific) |
+| 1 | Aggregate / GROUP BY cross-partition | .NET runs them; its merge is on the format-agnostic `CosmosElement` model, so binary works for free. Rust rejects them in either encoding because the engine does not exist yet. | Real capability gap (not binary-specific) |
 | 2 | `delete` negotiation | .NET's `IsPointOperationSupportedForBinaryEncoding` includes `Delete`; Rust's `supports_binary_request_body` / `supports_binary_response` exclude it. | Minor — pending item 3 |
 | 3 | Gateway 2.0 negotiation | Honored on the standard gateway only; the thin-client path drops the header and the service returns text. | Real gap — pending item 1 |
 | 4 | Patch mechanism | .NET Patch is a real server op, not binary-negotiated. Rust Patch is a client-side read-modify-write, so its internal read/replace **are** encoded when enabled. Both functionally correct. | Cosmetic / architectural |
