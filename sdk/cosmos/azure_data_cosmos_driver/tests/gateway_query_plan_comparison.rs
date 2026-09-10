@@ -190,7 +190,7 @@ async fn fetch_gateway_plan(
         }
     }
 
-    unreachable!("the bounded retry loop returns on its final attempt")
+    unreachable!("retry loop should always return before ending")
 }
 
 /// Compare a locally-generated `queryInfo` JSON object against what the Cosmos DB
