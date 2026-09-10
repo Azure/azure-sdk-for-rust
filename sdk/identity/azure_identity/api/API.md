@@ -21,7 +21,7 @@ pub fn new_executor() -> std::sync::Arc<dyn Executor>;
 pub struct AzureCliCredential {
 }
 impl AzureCliCredential {
-    fn new(options: Option<AzureCliCredentialOptions>) -> azure_core::Result<Arc<Self>>;
+    pub fn new(options: Option<AzureCliCredentialOptions>) -> azure_core::Result<Arc<Self>>;
 }
 impl Debug for AzureCliCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -42,7 +42,7 @@ impl Debug for AzureCliCredentialOptions {
 pub struct AzureDeveloperCliCredential {
 }
 impl AzureDeveloperCliCredential {
-    fn new(options: Option<AzureDeveloperCliCredentialOptions>) -> azure_core::Result<Arc<Self>>;
+    pub fn new(options: Option<AzureDeveloperCliCredentialOptions>) -> azure_core::Result<Arc<Self>>;
 }
 impl Debug for AzureDeveloperCliCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -61,7 +61,7 @@ impl Debug for AzureDeveloperCliCredentialOptions {
 }
 pub struct AzurePipelinesCredential(/* private fields */);
 impl AzurePipelinesCredential {
-    fn new<T>(tenant_id: String, client_id: String, service_connection_id: &str, system_access_token: T, options: Option<AzurePipelinesCredentialOptions>) -> azure_core::Result<Arc<Self>> where T: Into<Secret>;
+    pub fn new<T>(tenant_id: String, client_id: String, service_connection_id: &str, system_access_token: T, options: Option<AzurePipelinesCredentialOptions>) -> azure_core::Result<Arc<Self>> where T: Into<Secret>;
 }
 impl Debug for AzurePipelinesCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -80,7 +80,7 @@ impl Debug for AzurePipelinesCredentialOptions {
 pub struct ClientAssertionCredential<C> {
 }
 impl<C: ClientAssertion> ClientAssertionCredential<C> {
-    fn new(tenant_id: String, client_id: String, assertion: C, options: Option<ClientAssertionCredentialOptions>) -> azure_core::Result<Arc<Self>>;
+    pub fn new(tenant_id: String, client_id: String, assertion: C, options: Option<ClientAssertionCredentialOptions>) -> azure_core::Result<Arc<Self>>;
 }
 impl<C: ClientAssertion> TokenCredential for ClientAssertionCredential<C> {
     #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
@@ -101,7 +101,7 @@ pub struct ClientCertificateCredential {
 }
 #[cfg(feature = "client_certificate")]
 impl ClientCertificateCredential {
-    fn new(tenant_id: String, client_id: String, certificate: SecretBytes, options: Option<ClientCertificateCredentialOptions>) -> azure_core::Result<Arc<ClientCertificateCredential>>;
+    pub fn new(tenant_id: String, client_id: String, certificate: SecretBytes, options: Option<ClientCertificateCredentialOptions>) -> azure_core::Result<Arc<ClientCertificateCredential>>;
 }
 #[cfg(feature = "client_certificate")]
 impl Debug for ClientCertificateCredential {
@@ -125,7 +125,7 @@ impl Debug for ClientCertificateCredentialOptions {
 pub struct ClientSecretCredential {
 }
 impl ClientSecretCredential {
-    fn new(tenant_id: &str, client_id: String, secret: Secret, options: Option<ClientSecretCredentialOptions>) -> Result<Arc<Self>>;
+    pub fn new(tenant_id: &str, client_id: String, secret: Secret, options: Option<ClientSecretCredentialOptions>) -> Result<Arc<Self>>;
 }
 impl Debug for ClientSecretCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -144,7 +144,7 @@ impl Debug for ClientSecretCredentialOptions {
 pub struct DeveloperToolsCredential {
 }
 impl DeveloperToolsCredential {
-    fn new(options: Option<DeveloperToolsCredentialOptions>) -> azure_core::Result<Arc<DeveloperToolsCredential>>;
+    pub fn new(options: Option<DeveloperToolsCredentialOptions>) -> azure_core::Result<Arc<DeveloperToolsCredential>>;
 }
 impl Debug for DeveloperToolsCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -163,7 +163,7 @@ impl Debug for DeveloperToolsCredentialOptions {
 pub struct ManagedIdentityCredential {
 }
 impl ManagedIdentityCredential {
-    fn new(options: Option<ManagedIdentityCredentialOptions>) -> azure_core::Result<Arc<Self>>;
+    pub fn new(options: Option<ManagedIdentityCredentialOptions>) -> azure_core::Result<Arc<Self>>;
 }
 impl Debug for ManagedIdentityCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -188,7 +188,7 @@ pub struct TokenProxyClientOptions<'a> {
 }
 pub struct WorkloadIdentityCredential(/* private fields */);
 impl WorkloadIdentityCredential {
-    fn new(options: Option<WorkloadIdentityCredentialOptions>) -> azure_core::Result<Arc<Self>>;
+    pub fn new(options: Option<WorkloadIdentityCredentialOptions>) -> azure_core::Result<Arc<Self>>;
 }
 impl Debug for WorkloadIdentityCredential {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;

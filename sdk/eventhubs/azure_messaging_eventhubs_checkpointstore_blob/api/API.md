@@ -20,7 +20,7 @@ pub mod checkpoint_store {
     pub struct BlobCheckpointStore {
     }
     impl BlobCheckpointStore {
-        fn new(blob_container_client: BlobContainerClient) -> Arc<Self>;
+        pub fn new(blob_container_client: BlobContainerClient) -> Arc<Self>;
     }
     impl CheckpointStore for BlobCheckpointStore {
         #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]

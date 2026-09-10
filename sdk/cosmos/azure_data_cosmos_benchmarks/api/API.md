@@ -15,7 +15,7 @@ pub async fn setup_live() -> (std::sync::Arc<azure_data_cosmos_driver::CosmosDri
 #[derive(Debug)]
 pub struct MockHttpClientFactory;
 impl MockHttpClientFactory {
-    fn new() -> Self;
+    pub fn new() -> Self;
 }
 impl Default for MockHttpClientFactory {
     fn default() -> Self;
@@ -28,8 +28,8 @@ pub struct MockTransportClient {
     pub latency: std::time::Duration,
 }
 impl MockTransportClient {
-    fn new() -> Self;
-    fn with_latency(latency: std::time::Duration) -> Self;
+    pub fn new() -> Self;
+    pub fn with_latency(latency: std::time::Duration) -> Self;
 }
 impl Default for MockTransportClient {
     fn default() -> Self;
