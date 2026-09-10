@@ -12,7 +12,9 @@
       "test": "onlyCustomDiagnosticsHandler"
     }
   ],
-  "profile": "hostedEmulatorSmoke",
+  "profiles": [
+    "hostedEmulatorSmoke"
+  ],
   "tags": [
     "prSmoke",
     "diagnostics"
@@ -33,116 +35,5 @@
       "applicability": "supported",
       "fidelity": "full"
     }
-  },
-  "fixtures": [
-    {
-      "id": "hashV2",
-      "container": {
-        "partitionKey": {
-          "paths": [
-            "/pk"
-          ],
-          "kind": "Hash",
-          "version": 2
-        }
-      },
-      "items": [
-        {
-          "id": "existing",
-          "seed": true,
-          "partitionKeyValues": [
-            "A"
-          ],
-          "document": {
-            "id": "item-1",
-            "pk": "A",
-            "value": 1
-          }
-        }
-      ]
-    }
-  ],
-  "steps": [
-    {
-      "id": "successfulRead",
-      "action": {
-        "kind": "sdkOperation",
-        "operation": "readItem",
-        "input": {
-          "id": "item-1",
-          "pk": "A"
-        }
-      },
-      "expected": {
-        "outcome": "success",
-        "status": 200
-      },
-      "diagnostics": {
-        "operationName": {
-          "comparator": "exact",
-          "value": "read_item"
-        },
-        "activityId": {
-          "comparator": "present"
-        },
-        "effectiveStatus": {
-          "comparator": "exact",
-          "value": 200
-        },
-        "requestCount": {
-          "comparator": "atLeast",
-          "value": 1
-        },
-        "regionsContacted": {
-          "comparator": "contains",
-          "value": [
-            "eastus"
-          ]
-        }
-      }
-    },
-    {
-      "id": "missingRead",
-      "action": {
-        "kind": "sdkOperation",
-        "operation": "readItem",
-        "input": {
-          "id": "missing",
-          "pk": "A"
-        }
-      },
-      "expected": {
-        "outcome": "error",
-        "status": 404,
-        "subStatus": 0,
-        "errorCategory": "notFound"
-      },
-      "diagnostics": {
-        "operationName": {
-          "comparator": "exact",
-          "value": "read_item"
-        },
-        "activityId": {
-          "comparator": "present"
-        },
-        "effectiveStatus": {
-          "comparator": "exact",
-          "value": 404
-        },
-        "requestCount": {
-          "comparator": "atLeast",
-          "value": 1
-        },
-        "regionsContacted": {
-          "comparator": "contains",
-          "value": [
-            "eastus"
-          ]
-        }
-      }
-    }
-  ],
-  "cleanup": {
-    "deleteDatabase": true
   }
 }

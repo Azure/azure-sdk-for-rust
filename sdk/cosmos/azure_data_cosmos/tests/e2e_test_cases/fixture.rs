@@ -5,7 +5,10 @@ use azure_core::Uuid;
 use azure_data_cosmos::{
     clients::ContainerClient,
     models::{ContainerProperties, PartitionKeyDefinition},
-    options::{OperationOptions, ReadConsistencyStrategy, Region},
+    options::{
+        BinaryEncodingOptions, ConnectionPoolOptions, OperationOptions, PartitionFailoverOptions,
+        ReadConsistencyStrategy, Region,
+    },
     AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy,
 };
 
@@ -86,19 +89,28 @@ pub async fn build_client() -> TestResult<CosmosClient> {
 pub async fn build_client_with_routing(
     routing_strategy: RoutingStrategy,
 ) -> TestResult<CosmosClient> {
-    build_client_with_defaults(routing_strategy, None, None).await
+    build_client_with_defaults(routing_strategy, None, None, None, None, None).await
 }
 
 pub async fn build_client_with_defaults(
     routing_strategy: RoutingStrategy,
     runtime_strategy: Option<ReadConsistencyStrategy>,
     client_strategy: Option<ReadConsistencyStrategy>,
+    gateway_v2_enabled: Option<bool>,
+    ppcb_enabled: Option<bool>,
+    binary_encoding_enabled: Option<bool>,
 ) -> TestResult<CosmosClient> {
     let connection_string = std::env::var("AZURE_COSMOS_CONNECTION_STRING")?;
     let endpoint = connection_string_value(&connection_string, "AccountEndpoint")?;
     let key = connection_string_value(&connection_string, "AccountKey")?;
     let endpoint: AccountEndpoint = endpoint.parse()?;
     let mut runtime_builder = CosmosRuntime::builder();
+    if let Some(enabled) = gateway_v2_enabled {
+        let options = ConnectionPoolOptions::builder()
+            .with_gateway_v2_disabled(!enabled)
+            .build()?;
+        runtime_builder = runtime_builder.with_connection_pool(options);
+    }
     if let Some(strategy) = runtime_strategy {
         let mut options = OperationOptions::default();
         options.read_consistency_strategy = Some(strategy);
@@ -111,6 +123,16 @@ pub async fn build_client_with_defaults(
         let mut options = OperationOptions::default();
         options.read_consistency_strategy = Some(strategy);
         client_builder = client_builder.with_default_operation_options(options);
+    }
+    if let Some(enabled) = ppcb_enabled {
+        let options = PartitionFailoverOptions::builder()
+            .with_circuit_breaker_enabled(enabled)
+            .build()?;
+        client_builder = client_builder.with_partition_failover_options(options);
+    }
+    if let Some(enabled) = binary_encoding_enabled {
+        client_builder = client_builder
+            .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(enabled));
     }
     Ok(client_builder
         .build(

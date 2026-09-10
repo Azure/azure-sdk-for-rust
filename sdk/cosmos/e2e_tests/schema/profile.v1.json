@@ -5,6 +5,7 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "$schema",
     "specVersion",
     "id",
     "accounts",
@@ -13,7 +14,7 @@
   ],
   "properties": {
     "$schema": {
-      "type": "string"
+      "const": "../schema/profile.v1.json"
     },
     "specVersion": {
       "const": "1.0"

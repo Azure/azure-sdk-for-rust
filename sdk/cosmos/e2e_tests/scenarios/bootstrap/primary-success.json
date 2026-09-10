@@ -12,7 +12,9 @@
       "test": "item_crud"
     }
   ],
-  "profile": "hostedEmulatorSmoke",
+  "profiles": [
+    "hostedEmulatorSmoke"
+  ],
   "tags": [
     "prSmoke",
     "bootstrap"
@@ -33,39 +35,5 @@
       "applicability": "supported",
       "fidelity": "full"
     }
-  },
-  "fixtures": [
-    {
-      "id": "default",
-      "container": {
-        "partitionKey": {
-          "paths": [
-            "/pk"
-          ],
-          "kind": "Hash",
-          "version": 2
-        }
-      },
-      "items": []
-    }
-  ],
-  "steps": [
-    {
-      "id": "buildClient",
-      "action": {
-        "kind": "sdkOperation",
-        "operation": "buildClient"
-      },
-      "expected": {
-        "outcome": "success",
-        "status": 201,
-        "state": {
-          "firstOperationSucceeds": true
-        }
-      }
-    }
-  ],
-  "cleanup": {
-    "deleteDatabase": true
   }
 }

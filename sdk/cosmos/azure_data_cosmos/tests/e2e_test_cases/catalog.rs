@@ -3,18 +3,19 @@
 
 #![allow(dead_code)]
 
-use std::{
-    borrow::Cow,
-    collections::{BTreeMap, BTreeSet},
-};
+use std::collections::{BTreeMap, BTreeSet};
 
-use azure_data_cosmos::{
-    diagnostics::DiagnosticsContext,
-    models::{PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion},
-    PartitionKey,
-};
 use serde::Deserialize;
 use serde_json::Value;
+
+const DEFAULT_PROFILE: &str = "hostedEmulatorSmoke";
+const SCENARIO_SCHEMA_REFERENCE: &str = "../../schema/scenario.v1.json";
+const PROFILE_SCHEMA_REFERENCE: &str = "../schema/profile.v1.json";
+const BACKENDS: [&str; 3] = [
+    "azureLive",
+    "hostedEmulatorGatewayV1",
+    "hostedEmulatorGatewayV2",
+];
 
 const SCENARIOS: &[&str] = &[
     include_str!("../../../e2e_tests/scenarios/management/capabilities.json"),
@@ -37,152 +38,87 @@ const PROFILES: &[&str] = &[
     include_str!("../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"),
 ];
 
-const VOCABULARY: &str = include_str!("../../../e2e_tests/vocabulary/v1.json");
 const RUST_IMPLEMENTATIONS: &str = include_str!("../../../e2e_tests/implementations/rust.json");
+const CONSISTENCY_MATRIX: &str = include_str!("../../../e2e-consistency-matrix.json");
+const OVERRIDE_MATRIX: &str = include_str!("../../../e2e-read-consistency-override-matrix.json");
 const SCENARIO_SCHEMA: &str = include_str!("../../../e2e_tests/schema/scenario.v1.json");
 const PROFILE_SCHEMA: &str = include_str!("../../../e2e_tests/schema/profile.v1.json");
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct Scenario {
+struct Scenario {
     #[serde(rename = "$schema")]
     schema: String,
     spec_version: String,
-    pub id: String,
+    id: String,
     title: String,
     requirement: String,
-    maturity: String,
+    maturity: Maturity,
     precedents: Vec<Precedent>,
-    profile: Option<String>,
+    profiles: Vec<String>,
     tags: Vec<String>,
     backends: BTreeMap<String, Backend>,
-    pub fixtures: Vec<Fixture>,
-    #[serde(default)]
-    pub executions: Vec<Execution>,
-    pub steps: Vec<Step>,
-    cleanup: Cleanup,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+enum Maturity {
+    Candidate,
+    Stable,
+    Deprecated,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Precedent {
-    sdk: String,
+    sdk: ReferenceSdk,
     path: String,
     test: String,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum ReferenceSdk {
+    Service,
+    Rust,
+    Java,
+    Dotnet,
+    Python,
+}
+
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Backend {
-    applicability: String,
-    fidelity: String,
+    applicability: Applicability,
+    fidelity: Fidelity,
     reason: Option<String>,
     #[serde(default)]
-    requires: Vec<String>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct Fixture {
-    pub id: String,
-    container: ContainerSetup,
-    pub items: Vec<FixtureItem>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct ContainerSetup {
-    partition_key: PartitionKeySetup,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct PartitionKeySetup {
-    paths: Vec<String>,
-    kind: String,
-    version: u8,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct FixtureItem {
-    pub id: String,
-    pub seed: bool,
-    partition_key_values: Vec<Value>,
-    pub document: Value,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct Execution {
-    pub id: String,
-    pub profile: String,
-    pub account: String,
-    pub runtime: String,
-    pub client: String,
-    pub read_consistency_strategy: String,
-    pub read_region: String,
-    pub session_token: String,
-    pub expected_read: ExpectedRead,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct ExpectedRead {
-    pub acceptable_initial_statuses: Vec<ExpectedStatus>,
-    pub terminal_status: ExpectedStatus,
-    pub max_wait_ms: Option<u64>,
+    requires: Vec<Capability>,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct ExpectedStatus {
-    pub status_code: u16,
-    pub sub_status_code: Option<u16>,
+#[serde(rename_all = "camelCase")]
+enum Capability {
+    Capabilities,
+    GatewayV2,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+enum Applicability {
+    Required,
+    Supported,
+    Simulated,
+    NotApplicable,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct Step {
-    pub id: String,
-    action: Action,
-    pub expected: Expected,
-    pub diagnostics: Option<DiagnosticsExpectation>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Action {
-    kind: String,
-    operation: String,
-    input: Option<Value>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct Expected {
-    outcome: String,
-    pub status: u16,
-    pub sub_status: Option<u16>,
-    error_category: Option<String>,
-    state: Option<Value>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct DiagnosticsExpectation {
-    operation_name: Option<Comparison>,
-    activity_id: Option<Comparison>,
-    effective_status: Option<Comparison>,
-    request_count: Option<Comparison>,
-    regions_contacted: Option<Comparison>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Comparison {
-    comparator: String,
-    value: Option<Value>,
+#[serde(rename_all = "camelCase")]
+enum Fidelity {
+    Full,
+    Partial,
+    Simulated,
+    None,
 }
 
 #[derive(Debug, Deserialize)]
@@ -225,8 +161,8 @@ struct ReplicationDefinition {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct RuntimeDefinition {
     pub id: String,
-    gateway_v2: String,
-    ppcb: String,
+    pub gateway_v2: String,
+    pub ppcb: String,
     pub default_read_consistency_strategy: Option<String>,
 }
 
@@ -234,21 +170,9 @@ pub struct RuntimeDefinition {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ClientDefinition {
     pub id: String,
-    binary_encoding: String,
-    routing: String,
+    pub binary_encoding: String,
+    pub routing: String,
     pub default_read_consistency_strategy: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct Vocabulary {
-    spec_version: String,
-    backends: Vec<String>,
-    applicability: Vec<String>,
-    maturity: Vec<String>,
-    operations: Vec<String>,
-    error_categories: Vec<String>,
-    diagnostic_comparators: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -265,67 +189,15 @@ struct ImplementationMap {
 struct Implementation {
     id: String,
     test: String,
-    status: String,
+    status: ImplementationStatus,
 }
 
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct Cleanup {
-    delete_database: bool,
-}
-
-pub fn load_scenarios() -> Result<Vec<Scenario>, String> {
-    SCENARIOS
-        .iter()
-        .map(|json| serde_json::from_str(json).map_err(|error| error.to_string()))
-        .collect()
-}
-
-pub fn scenario(id: &str) -> Scenario {
-    load_scenarios()
-        .expect("E2E scenario catalog must deserialize")
-        .into_iter()
-        .find(|scenario| scenario.id == id)
-        .unwrap_or_else(|| panic!("E2E scenario '{id}' does not exist"))
-}
-
-pub fn profile(id: &str) -> Profile {
-    PROFILES
-        .iter()
-        .map(|json| serde_json::from_str::<Profile>(json).expect("E2E profile must deserialize"))
-        .find(|profile| profile.id == id)
-        .unwrap_or_else(|| panic!("E2E profile '{id}' does not exist"))
-}
-
-impl Scenario {
-    pub fn step(&self, id: &str) -> &Step {
-        self.steps
-            .iter()
-            .find(|step| step.id == id)
-            .unwrap_or_else(|| panic!("scenario '{}' has no step '{id}'", self.id))
-    }
-
-    pub fn fixture(&self, id: &str) -> &Fixture {
-        self.fixtures
-            .iter()
-            .find(|fixture| fixture.id == id)
-            .unwrap_or_else(|| panic!("scenario '{}' has no fixture '{id}'", self.id))
-    }
-
-    pub fn executions_for_configuration<'a>(
-        &'a self,
-        profile: &'a str,
-        account: &'a str,
-        runtime: &'a str,
-        client: &'a str,
-    ) -> impl Iterator<Item = &'a Execution> + 'a {
-        self.executions.iter().filter(move |execution| {
-            execution.profile == profile
-                && execution.account == account
-                && execution.runtime == runtime
-                && execution.client == client
-        })
-    }
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+enum ImplementationStatus {
+    Active,
+    Planned,
+    Unsupported,
 }
 
 impl Profile {
@@ -351,110 +223,39 @@ impl Profile {
     }
 }
 
-impl Fixture {
-    pub fn item(&self, id: &str) -> &FixtureItem {
-        self.items
-            .iter()
-            .find(|item| item.id == id)
-            .unwrap_or_else(|| panic!("fixture '{}' has no item '{id}'", self.id))
-    }
-
-    pub fn partition_key_definition(&self) -> Result<PartitionKeyDefinition, String> {
-        let kind = match self.container.partition_key.kind.as_str() {
-            "Hash" => PartitionKeyKind::Hash,
-            "MultiHash" => PartitionKeyKind::MultiHash,
-            kind => {
-                return Err(format!(
-                    "fixture '{}' has unknown PK kind '{kind}'",
-                    self.id
-                ))
-            }
-        };
-        let version = match self.container.partition_key.version {
-            1 => PartitionKeyVersion::V1,
-            2 => PartitionKeyVersion::V2,
-            version => return Err(format!("fixture '{}' has PK version {version}", self.id)),
-        };
-        Ok(PartitionKeyDefinition::new(
-            self.container
-                .partition_key
-                .paths
-                .iter()
-                .cloned()
-                .map(Cow::Owned)
-                .collect(),
-        )
-        .with_kind(kind)
-        .with_version(version))
-    }
+fn load_scenarios() -> Result<Vec<Scenario>, String> {
+    SCENARIOS
+        .iter()
+        .map(|json| serde_json::from_str(json).map_err(|error| error.to_string()))
+        .collect()
 }
 
-impl FixtureItem {
-    pub fn partition_key(&self) -> Result<PartitionKey, String> {
-        let values = self
-            .partition_key_values
-            .iter()
-            .map(partition_key_value)
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(PartitionKey::from(values))
-    }
-
-    pub fn document_id(&self) -> Result<&str, String> {
-        self.document
-            .get("id")
-            .and_then(Value::as_str)
-            .ok_or_else(|| format!("fixture item '{}' has no string document id", self.id))
-    }
+fn load_profiles() -> Result<Vec<Profile>, String> {
+    PROFILES
+        .iter()
+        .map(|json| serde_json::from_str(json).map_err(|error| error.to_string()))
+        .collect()
 }
 
-impl ExpectedStatus {
-    pub fn matches(&self, status_code: u16, sub_status_code: Option<u16>) -> bool {
-        self.status_code == status_code
-            && self
-                .sub_status_code
-                .is_none_or(|expected| expected == sub_status_code.unwrap_or(0))
+pub fn selected_profile_for(scenario_id: &str) -> Result<Option<Profile>, String> {
+    let selected =
+        std::env::var("AZURE_COSMOS_E2E_PROFILE").unwrap_or_else(|_| DEFAULT_PROFILE.to_owned());
+    let scenarios = load_scenarios()?;
+    let scenario = scenarios
+        .iter()
+        .find(|scenario| scenario.id == scenario_id)
+        .ok_or_else(|| format!("E2E scenario '{scenario_id}' does not exist"))?;
+    let profiles = load_profiles()?;
+    if !profiles.iter().any(|profile| profile.id == selected) {
+        return Err(format!("E2E profile '{selected}' does not exist"));
     }
-
-    fn overlaps(&self, other: &Self) -> bool {
-        self.status_code == other.status_code
-            && (self.sub_status_code.is_none()
-                || other.sub_status_code.is_none()
-                || self.sub_status_code == other.sub_status_code)
+    if !scenario.profiles.contains(&selected) {
+        return Ok(None);
     }
-}
-
-impl ExpectedRead {
-    pub fn is_terminal(&self, status_code: u16, sub_status_code: Option<u16>) -> bool {
-        self.terminal_status.matches(status_code, sub_status_code)
-    }
-
-    pub fn is_acceptable_initial(&self, status_code: u16, sub_status_code: Option<u16>) -> bool {
-        self.acceptable_initial_statuses
-            .iter()
-            .any(|expected| expected.matches(status_code, sub_status_code))
-    }
-}
-
-fn partition_key_value(value: &Value) -> Result<PartitionKeyValue, String> {
-    match value {
-        Value::String(value) => Ok(value.clone().into()),
-        Value::Number(value) => value
-            .as_f64()
-            .map(PartitionKeyValue::from)
-            .ok_or_else(|| format!("partition key number '{value}' is not finite")),
-        Value::Bool(value) => Ok((*value).into()),
-        Value::Null => Ok(PartitionKey::NULL),
-        value => Err(format!("unsupported partition key value '{value}'")),
-    }
+    Ok(profiles.into_iter().find(|profile| profile.id == selected))
 }
 
 pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
-    let vocabulary: Vocabulary =
-        serde_json::from_str(VOCABULARY).map_err(|error| error.to_string())?;
-    if vocabulary.spec_version != "1.0" {
-        return Err("unsupported vocabulary version".to_owned());
-    }
-
     for (name, schema) in [("scenario", SCENARIO_SCHEMA), ("profile", PROFILE_SCHEMA)] {
         let schema: Value = serde_json::from_str(schema)
             .map_err(|error| format!("{name} schema is not JSON: {error}"))?;
@@ -465,13 +266,14 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
         }
     }
 
-    let profiles: Vec<Profile> = PROFILES
-        .iter()
-        .map(|json| serde_json::from_str(json).map_err(|error| error.to_string()))
-        .collect::<Result<_, _>>()?;
+    let profiles = load_profiles()?;
     let mut profile_ids = BTreeSet::new();
     for profile in &profiles {
-        if profile.spec_version != "1.0" || !profile_ids.insert(profile.id.as_str()) {
+        if profile.schema != PROFILE_SCHEMA_REFERENCE
+            || profile.spec_version != "1.0"
+            || !valid_camel_id(&profile.id)
+            || !profile_ids.insert(profile.id.as_str())
+        {
             return Err(format!("invalid or duplicate profile '{}'", profile.id));
         }
         for (axis, ids) in [
@@ -511,6 +313,11 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
         for account in &profile.accounts {
             if account.regions.is_empty()
                 || account.replication.min_delay_ms > account.replication.max_delay_ms
+                || !matches!(account.write_mode.as_str(), "single" | "multi")
+                || !matches!(
+                    account.consistency.as_str(),
+                    "strong" | "boundedStaleness" | "session" | "consistentPrefix" | "eventual"
+                )
             {
                 return Err(format!(
                     "profile '{}' account '{}' has invalid regions or replication delay",
@@ -518,12 +325,51 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
                 ));
             }
         }
+        if profile.runtimes.iter().any(|runtime| {
+            !matches!(
+                runtime.gateway_v2.as_str(),
+                "enabled" | "disabled" | "backendDefault"
+            ) || !matches!(runtime.ppcb.as_str(), "enabled" | "disabled" | "sdkDefault")
+                || !valid_optional_read_strategy(
+                    runtime.default_read_consistency_strategy.as_deref(),
+                )
+        }) || profile.clients.iter().any(|client| {
+            !matches!(
+                client.binary_encoding.as_str(),
+                "enabled" | "disabled" | "sdkDefault"
+            ) || !matches!(
+                client.routing.as_str(),
+                "proximity" | "preferredRegions" | "accountOrder"
+            ) || !valid_optional_read_strategy(client.default_read_consistency_strategy.as_deref())
+        }) {
+            return Err(format!(
+                "profile '{}' has invalid setup options",
+                profile.id
+            ));
+        }
     }
+    validate_pipeline_matrix(
+        CONSISTENCY_MATRIX,
+        profiles
+            .iter()
+            .find(|profile| profile.id == "lifecycleConsistencyMatrix")
+            .expect("consistency profile must be registered"),
+    )?;
+    validate_pipeline_matrix(
+        OVERRIDE_MATRIX,
+        profiles
+            .iter()
+            .find(|profile| profile.id == "readConsistencyOverrideMatrix")
+            .expect("override profile must be registered"),
+    )?;
 
     let scenarios = load_scenarios()?;
     let mut scenario_ids = BTreeSet::new();
     for scenario in &scenarios {
-        if scenario.spec_version != "1.0" {
+        if scenario.schema != SCENARIO_SCHEMA_REFERENCE
+            || scenario.spec_version != "1.0"
+            || !valid_scenario_id(&scenario.id)
+        {
             return Err(format!(
                 "scenario '{}' has an unsupported version",
                 scenario.id
@@ -532,321 +378,69 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
         if !scenario_ids.insert(scenario.id.as_str()) {
             return Err(format!("duplicate scenario id '{}'", scenario.id));
         }
-        if let Some(profile) = &scenario.profile {
-            if !profile_ids.contains(profile.as_str()) {
-                return Err(format!(
-                    "scenario '{}' references unknown profile '{}'",
-                    scenario.id, profile
-                ));
-            }
-        }
-        if scenario.profile.is_some() != scenario.executions.is_empty() {
-            return Err(format!(
-                "scenario '{}' must declare either one profile or an execution matrix",
-                scenario.id
-            ));
-        }
-        if !vocabulary.maturity.contains(&scenario.maturity) {
-            return Err(format!("scenario '{}' has unknown maturity", scenario.id));
-        }
-        if scenario.precedents.is_empty()
+        if scenario.title.is_empty()
+            || scenario.requirement.is_empty()
+            || scenario.precedents.is_empty()
+            || scenario.profiles.is_empty()
             || scenario.tags.is_empty()
-            || scenario.fixtures.is_empty()
-            || scenario.steps.is_empty()
+            || scenario
+                .precedents
+                .iter()
+                .any(|precedent| precedent.path.is_empty() || precedent.test.is_empty())
         {
             return Err(format!(
-                "scenario '{}' is missing required evidence",
+                "scenario '{}' is missing required metadata",
                 scenario.id
             ));
         }
-        let mut fixture_ids = BTreeSet::new();
-        for fixture in &scenario.fixtures {
-            if !fixture_ids.insert(fixture.id.as_str()) {
-                return Err(format!(
-                    "scenario '{}' has duplicate fixture '{}'",
-                    scenario.id, fixture.id
-                ));
-            }
-            let definition = fixture.partition_key_definition()?;
-            let path_count = definition.paths().len();
-            if path_count == 0
-                || (definition.kind() == PartitionKeyKind::Hash && path_count != 1)
-                || (definition.kind() == PartitionKeyKind::MultiHash
-                    && (path_count < 2 || definition.version() != PartitionKeyVersion::V2))
-            {
-                return Err(format!(
-                    "scenario '{}' fixture '{}' has an invalid partition key definition",
-                    scenario.id, fixture.id
-                ));
-            }
-            let mut item_ids = BTreeSet::new();
-            for item in &fixture.items {
-                if !item_ids.insert(item.id.as_str()) {
-                    return Err(format!(
-                        "scenario '{}' fixture '{}' has duplicate item '{}'",
-                        scenario.id, fixture.id, item.id
-                    ));
-                }
-                if item.partition_key_values.len() != path_count {
-                    return Err(format!(
-                        "scenario '{}' fixture '{}' item '{}' has {} partition-key values for {} paths",
-                        scenario.id,
-                        fixture.id,
-                        item.id,
-                        item.partition_key_values.len(),
-                        path_count
-                    ));
-                }
-                item.partition_key()?;
-                item.document_id()?;
-            }
+        let selected_profiles: BTreeSet<_> = scenario.profiles.iter().map(String::as_str).collect();
+        let tags: BTreeSet<_> = scenario.tags.iter().map(String::as_str).collect();
+        if selected_profiles.len() != scenario.profiles.len()
+            || !selected_profiles.is_subset(&profile_ids)
+            || tags.len() != scenario.tags.len()
+        {
+            return Err(format!(
+                "scenario '{}' references an unknown or duplicate profile",
+                scenario.id
+            ));
         }
-        let mut execution_ids = BTreeSet::new();
-        for execution in &scenario.executions {
-            if !execution_ids.insert(execution.id.as_str()) {
-                return Err(format!(
-                    "scenario '{}' has duplicate execution '{}'",
-                    scenario.id, execution.id
-                ));
-            }
-            if !profile_ids.contains(execution.profile.as_str()) {
-                return Err(format!(
-                    "scenario '{}' execution '{}' references unknown profile '{}'",
-                    scenario.id, execution.id, execution.profile
-                ));
-            }
-            let selected_profile = profiles
-                .iter()
-                .find(|profile| profile.id == execution.profile)
-                .expect("profile existence checked above");
-            if !selected_profile
-                .accounts
-                .iter()
-                .any(|definition| definition.id == execution.account)
-                || !selected_profile
-                    .runtimes
-                    .iter()
-                    .any(|definition| definition.id == execution.runtime)
-                || !selected_profile
-                    .clients
-                    .iter()
-                    .any(|definition| definition.id == execution.client)
-            {
-                return Err(format!(
-                    "scenario '{}' execution '{}' references a missing profile matrix cell",
-                    scenario.id, execution.id
-                ));
-            }
-            let expected = &execution.expected_read;
-            let unique_initial_statuses: BTreeSet<_> =
-                expected.acceptable_initial_statuses.iter().collect();
-            if unique_initial_statuses.len() != expected.acceptable_initial_statuses.len()
-                || expected
-                    .acceptable_initial_statuses
-                    .iter()
-                    .enumerate()
-                    .any(|(index, status)| {
-                        expected.acceptable_initial_statuses[index + 1..]
-                            .iter()
-                            .any(|other| status.overlaps(other))
-                    })
-                || expected
-                    .acceptable_initial_statuses
-                    .iter()
-                    .chain(std::iter::once(&expected.terminal_status))
-                    .any(|status| !(100..=599).contains(&status.status_code))
-                || expected
-                    .acceptable_initial_statuses
-                    .iter()
-                    .any(|status| status.overlaps(&expected.terminal_status))
-            {
-                return Err(format!(
-                    "scenario '{}' execution '{}' has invalid or overlapping status expectations",
-                    scenario.id, execution.id
-                ));
-            }
-            if expected.acceptable_initial_statuses.is_empty() {
-                if expected.max_wait_ms.is_some() {
-                    return Err(format!(
-                        "scenario '{}' execution '{}' declares a wait without transient statuses",
-                        scenario.id, execution.id
-                    ));
-                }
-            } else if expected.max_wait_ms.is_none() {
-                return Err(format!(
-                    "scenario '{}' execution '{}' must bound retries for transient statuses",
-                    scenario.id, execution.id
-                ));
-            }
-            let selected_account = selected_profile
-                .accounts
-                .iter()
-                .find(|definition| definition.id == execution.account)
-                .expect("account existence checked above");
-            if execution.read_consistency_strategy == "GlobalStrong"
-                && selected_account.consistency != "strong"
-                && (!expected.acceptable_initial_statuses.is_empty()
-                    || !expected.is_terminal(400, None))
-            {
-                return Err(format!(
-                    "scenario '{}' execution '{}' must reject GlobalStrong on a non-Strong profile",
-                    scenario.id, execution.id
-                ));
-            }
-        }
-        if scenario.id == "item.lifecycle" {
-            let required_strategies: BTreeSet<_> = [
-                "Default",
-                "Eventual",
-                "Session",
-                "LatestCommitted",
-                "GlobalStrong",
-            ]
-            .into_iter()
-            .collect();
-            for account in [
-                "strong",
-                "boundedStaleness",
-                "session",
-                "consistentPrefix",
-                "eventual",
-            ] {
-                let actual: BTreeSet<_> = scenario
-                    .executions_for_configuration(
-                        "lifecycleConsistencyMatrix",
-                        account,
-                        "unset",
-                        "unset",
-                    )
-                    .map(|execution| execution.read_consistency_strategy.as_str())
-                    .collect();
-                if actual != required_strategies {
-                    return Err(format!(
-                        "item.lifecycle account '{account}' must cover every read consistency strategy; got {actual:?}"
-                    ));
-                }
-            }
-            let override_profile = profiles
-                .iter()
-                .find(|profile| profile.id == "readConsistencyOverrideMatrix")
-                .expect("override profile must exist");
-            for runtime in &override_profile.runtimes {
-                for client in &override_profile.clients {
-                    let actual: BTreeSet<_> = scenario
-                        .executions_for_configuration(
-                            "readConsistencyOverrideMatrix",
-                            "session",
-                            &runtime.id,
-                            &client.id,
-                        )
-                        .map(|execution| execution.read_consistency_strategy.as_str())
-                        .collect();
-                    let required: BTreeSet<_> =
-                        ["Inherit", "Default", "Eventual"].into_iter().collect();
-                    if actual != required {
-                        return Err(format!(
-                            "item.lifecycle override cell runtime='{}' client='{}' has incomplete operation coverage: {actual:?}",
-                            runtime.id, client.id
-                        ));
-                    }
-                }
-            }
-        }
-        if scenario.backends.len() != vocabulary.backends.len() {
+        let backend_names: BTreeSet<_> = scenario.backends.keys().map(String::as_str).collect();
+        if backend_names != BACKENDS.into_iter().collect() {
             return Err(format!(
                 "scenario '{}' has incomplete backend applicability",
                 scenario.id
             ));
         }
-        for backend_name in &vocabulary.backends {
-            let backend = scenario.backends.get(backend_name).ok_or_else(|| {
-                format!("scenario '{}' omits backend '{backend_name}'", scenario.id)
-            })?;
-            if !vocabulary.applicability.contains(&backend.applicability) {
-                return Err(format!(
-                    "scenario '{}' has unknown applicability",
-                    scenario.id
-                ));
-            }
-            if backend.applicability == "notApplicable" && backend.reason.is_none() {
+        for (backend_name, backend) in &scenario.backends {
+            if backend.applicability == Applicability::NotApplicable && backend.reason.is_none() {
                 return Err(format!(
                     "scenario '{}' must explain why '{backend_name}' is not applicable",
                     scenario.id
                 ));
             }
-        }
-
-        let mut step_ids = BTreeSet::new();
-        for step in &scenario.steps {
-            if !step_ids.insert(step.id.as_str()) {
+            let requirements: BTreeSet<_> = backend.requires.iter().collect();
+            if requirements.len() != backend.requires.len() {
                 return Err(format!(
-                    "scenario '{}' has duplicate step '{}'",
-                    scenario.id, step.id
-                ));
-            }
-            if !vocabulary.operations.contains(&step.action.operation) {
-                return Err(format!(
-                    "scenario '{}' uses unknown operation '{}'",
-                    scenario.id, step.action.operation
-                ));
-            }
-            for item_ref in [
-                step.action
-                    .input
-                    .as_ref()
-                    .and_then(|input| input.get("itemRef"))
-                    .and_then(Value::as_str),
-                step.expected
-                    .state
-                    .as_ref()
-                    .and_then(|state| state.get("itemRef"))
-                    .and_then(Value::as_str),
-            ]
-            .into_iter()
-            .flatten()
-            {
-                for fixture in &scenario.fixtures {
-                    if !fixture.items.iter().any(|item| item.id == item_ref) {
-                        return Err(format!(
-                            "scenario '{}' step '{}' references missing item '{}' in fixture '{}'",
-                            scenario.id, step.id, item_ref, fixture.id
-                        ));
-                    }
-                }
-            }
-            if step.expected.outcome == "error"
-                && step
-                    .expected
-                    .error_category
-                    .as_ref()
-                    .is_some_and(|category| !vocabulary.error_categories.contains(category))
-            {
-                return Err(format!(
-                    "scenario '{}' has unknown error category",
+                    "scenario '{}' has duplicate requirements for '{backend_name}'",
                     scenario.id
                 ));
             }
-            if let Some(diagnostics) = &step.diagnostics {
-                for comparison in diagnostics.comparisons() {
-                    if !vocabulary
-                        .diagnostic_comparators
-                        .contains(&comparison.comparator)
-                    {
-                        return Err(format!(
-                            "scenario '{}' uses unknown diagnostics comparator '{}'",
-                            scenario.id, comparison.comparator
-                        ));
-                    }
-                    let needs_value =
-                        !matches!(comparison.comparator.as_str(), "present" | "absent");
-                    if needs_value != comparison.value.is_some() {
-                        return Err(format!(
-                            "scenario '{}' comparator '{}' has an invalid value",
-                            scenario.id, comparison.comparator
-                        ));
-                    }
-                }
-            }
+        }
+    }
+    let referenced_profiles: BTreeSet<_> = scenarios
+        .iter()
+        .flat_map(|scenario| scenario.profiles.iter().map(String::as_str))
+        .collect();
+    if let Ok(selected_profile) = std::env::var("AZURE_COSMOS_E2E_PROFILE") {
+        if !profile_ids.contains(selected_profile.as_str()) {
+            return Err(format!(
+                "selected E2E profile '{selected_profile}' does not exist"
+            ));
+        }
+        if !referenced_profiles.contains(selected_profile.as_str()) {
+            return Err(format!(
+                "selected E2E profile '{selected_profile}' has no active scenarios"
+            ));
         }
     }
 
@@ -873,7 +467,8 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
                 implementation.id
             ));
         }
-        if implementation.status == "active" && !known_tests.contains(implementation.test.as_str())
+        if implementation.status == ImplementationStatus::Active
+            && !known_tests.contains(implementation.test.as_str())
         {
             return Err(format!(
                 "scenario '{}' references missing test '{}'",
@@ -887,194 +482,114 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
     Ok(())
 }
 
-impl DiagnosticsExpectation {
-    fn comparisons(&self) -> impl Iterator<Item = &Comparison> {
-        [
-            self.operation_name.as_ref(),
-            self.activity_id.as_ref(),
-            self.effective_status.as_ref(),
-            self.request_count.as_ref(),
-            self.regions_contacted.as_ref(),
-        ]
-        .into_iter()
-        .flatten()
-    }
-}
-
-pub fn assert_status(step: &Step, actual: u16, sub_status: Option<u16>) {
-    assert_eq!(
-        actual, step.expected.status,
-        "status for step '{}'",
-        step.id
-    );
-    if let Some(expected) = step.expected.sub_status {
-        assert_eq!(
-            sub_status.unwrap_or(0),
-            expected,
-            "substatus for step '{}'",
-            step.id
-        );
-    }
-}
-
-pub fn assert_diagnostics(step: &Step, diagnostics: &DiagnosticsContext) {
-    let Some(contract) = &step.diagnostics else {
-        return;
-    };
-    if let Some(expected) = &contract.operation_name {
-        assert_string(
-            expected,
-            diagnostics.operation_name(),
-            "operationName",
-            &step.id,
-        );
-    }
-    if let Some(expected) = &contract.activity_id {
-        let actual = diagnostics.activity_id().to_string();
-        assert_string(expected, Some(actual.as_str()), "activityId", &step.id);
-    }
-    if let Some(expected) = &contract.effective_status {
-        let actual = diagnostics
-            .effective_status()
-            .map(|status| u16::from(status.status_code()));
-        assert_number(expected, actual.map(u64::from), "effectiveStatus", &step.id);
-    }
-    if let Some(expected) = &contract.request_count {
-        assert_number(
-            expected,
-            Some(diagnostics.request_count() as u64),
-            "requestCount",
-            &step.id,
-        );
-    }
-    if let Some(expected) = &contract.regions_contacted {
-        let contacted_regions = diagnostics.regions_contacted();
-        let regions: Vec<_> = contacted_regions
-            .iter()
-            .map(|region| region.as_str())
-            .collect();
-        let expected_regions = expected
-            .value
-            .as_ref()
-            .and_then(Value::as_array)
-            .expect("region comparison requires an array");
-        if expected.comparator == "contains" {
-            for region in expected_regions {
-                let region = region.as_str().expect("region must be a string");
-                assert!(
-                    regions.contains(&region),
-                    "diagnostics field regionsContacted for step '{}' did not contain '{region}': {regions:?}",
-                    step.id
-                );
-            }
-        }
-    }
-}
-
-fn assert_string(expected: &Comparison, actual: Option<&str>, field: &str, step: &str) {
-    match expected.comparator.as_str() {
-        "present" => assert!(
-            actual.is_some_and(|value| !value.is_empty()),
-            "{field} for step '{step}' must be present"
-        ),
-        "absent" => assert!(actual.is_none(), "{field} for step '{step}' must be absent"),
-        "exact" => assert_eq!(
-            actual,
-            expected.value.as_ref().and_then(Value::as_str),
-            "diagnostics field {field} for step '{step}'"
-        ),
-        comparator => panic!("unsupported string comparator '{comparator}' for {field}"),
-    }
-}
-
-fn assert_number(expected: &Comparison, actual: Option<u64>, field: &str, step: &str) {
-    let value = expected.value.as_ref().and_then(Value::as_u64);
-    match expected.comparator.as_str() {
-        "present" => assert!(
-            actual.is_some(),
-            "{field} for step '{step}' must be present"
-        ),
-        "absent" => assert!(actual.is_none(), "{field} for step '{step}' must be absent"),
-        "exact" => assert_eq!(actual, value, "diagnostics field {field} for step '{step}'"),
-        "atLeast" => assert!(
-            actual.zip(value).is_some_and(|(actual, expected)| actual >= expected),
-            "diagnostics field {field} for step '{step}' must be at least {value:?}, got {actual:?}"
-        ),
-        "atMost" => {
-            assert!(
-            actual.zip(value).is_some_and(|(actual, expected)| actual <= expected),
-            "diagnostics field {field} for step '{step}' must be at most {value:?}, got {actual:?}"
+fn valid_optional_read_strategy(strategy: Option<&str>) -> bool {
+    strategy.is_none_or(|strategy| {
+        matches!(
+            strategy,
+            "Default" | "Eventual" | "Session" | "LatestCommitted" | "GlobalStrong"
         )
-        }
-        comparator => panic!("unsupported numeric comparator '{comparator}' for {field}"),
-    }
+    })
 }
 
-#[cfg(test)]
-mod tests {
-    use super::{ExpectedRead, ExpectedStatus};
-
-    #[test]
-    fn status_without_expected_substatus_matches_any_substatus() {
-        let status = ExpectedStatus {
-            status_code: 200,
-            sub_status_code: None,
-        };
-
-        assert!(status.matches(200, None));
-        assert!(status.matches(200, Some(1002)));
-        assert!(!status.matches(404, None));
+fn validate_pipeline_matrix(json: &str, profile: &Profile) -> Result<(), String> {
+    let document: Value = serde_json::from_str(json).map_err(|error| error.to_string())?;
+    let matrix = document
+        .get("matrix")
+        .and_then(Value::as_object)
+        .ok_or("pipeline matrix must contain an object named 'matrix'")?;
+    let actual_profiles = matrix_axis(matrix, "AZURE_COSMOS_E2E_PROFILE")?;
+    if actual_profiles != BTreeSet::from([profile.id.as_str()]) {
+        return Err(format!(
+            "pipeline matrix must select only profile '{}'",
+            profile.id
+        ));
     }
-
-    #[test]
-    fn explicit_zero_substatus_matches_missing_response_substatus() {
-        let status = ExpectedStatus {
-            status_code: 404,
-            sub_status_code: Some(0),
-        };
-
-        assert!(status.matches(404, None));
-        assert!(status.matches(404, Some(0)));
-        assert!(!status.matches(404, Some(1002)));
+    for (axis, actual, expected) in [
+        (
+            "account",
+            matrix_axis(matrix, "AZURE_COSMOS_E2E_ACCOUNT")?,
+            profile
+                .accounts
+                .iter()
+                .map(|definition| definition.id.as_str())
+                .collect(),
+        ),
+        (
+            "runtime",
+            matrix_axis(matrix, "AZURE_COSMOS_E2E_RUNTIME")?,
+            profile
+                .runtimes
+                .iter()
+                .map(|definition| definition.id.as_str())
+                .collect(),
+        ),
+        (
+            "client",
+            matrix_axis(matrix, "AZURE_COSMOS_E2E_CLIENT")?,
+            profile
+                .clients
+                .iter()
+                .map(|definition| definition.id.as_str())
+                .collect(),
+        ),
+    ] {
+        if actual != expected {
+            return Err(format!(
+                "pipeline matrix for '{}' does not cover its {axis} axis: expected {expected:?}, got {actual:?}",
+                profile.id
+            ));
+        }
     }
-
-    #[test]
-    fn status_overlap_accounts_for_wildcard_substatus() {
-        let wildcard = ExpectedStatus {
-            status_code: 404,
-            sub_status_code: None,
-        };
-        let explicit = ExpectedStatus {
-            status_code: 404,
-            sub_status_code: Some(1002),
-        };
-        let other_status = ExpectedStatus {
-            status_code: 200,
-            sub_status_code: None,
-        };
-
-        assert!(wildcard.overlaps(&explicit));
-        assert!(explicit.overlaps(&wildcard));
-        assert!(!wildcard.overlaps(&other_status));
+    let flavors = matrix_axis(matrix, "AZURE_COSMOS_EMULATOR_FLAVOR")?;
+    if flavors != BTreeSet::from(["inmemory-v1", "inmemory-v2"]) {
+        return Err(format!(
+            "pipeline matrix for '{}' must cover Gateway V1 and Gateway V2",
+            profile.id
+        ));
     }
+    Ok(())
+}
 
-    #[test]
-    fn read_expectation_distinguishes_transient_and_terminal_statuses() {
-        let expected = ExpectedRead {
-            acceptable_initial_statuses: vec![ExpectedStatus {
-                status_code: 404,
-                sub_status_code: Some(1002),
-            }],
-            terminal_status: ExpectedStatus {
-                status_code: 200,
-                sub_status_code: None,
-            },
-            max_wait_ms: Some(5_000),
-        };
+fn matrix_axis<'a>(
+    matrix: &'a serde_json::Map<String, Value>,
+    name: &str,
+) -> Result<BTreeSet<&'a str>, String> {
+    matrix
+        .get(name)
+        .and_then(Value::as_array)
+        .ok_or_else(|| format!("pipeline matrix is missing '{name}'"))?
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| format!("pipeline matrix axis '{name}' must contain strings"))
+        })
+        .collect()
+}
 
-        assert!(expected.is_acceptable_initial(404, Some(1002)));
-        assert!(!expected.is_terminal(404, Some(1002)));
-        assert!(expected.is_terminal(200, None));
-        assert!(!expected.is_acceptable_initial(200, None));
-    }
+fn valid_camel_id(value: &str) -> bool {
+    value
+        .chars()
+        .next()
+        .is_some_and(|first| first.is_ascii_lowercase())
+        && value
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric())
+}
+
+fn valid_scenario_id(value: &str) -> bool {
+    let mut segments = value.split('.');
+    let first = segments.next();
+    let rest: Vec<_> = segments.collect();
+    first.is_some_and(valid_slug) && !rest.is_empty() && rest.into_iter().all(valid_slug)
+}
+
+fn valid_slug(value: &str) -> bool {
+    value
+        .chars()
+        .next()
+        .is_some_and(|first| first.is_ascii_lowercase())
+        && value.chars().all(|character| {
+            character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
+        })
 }

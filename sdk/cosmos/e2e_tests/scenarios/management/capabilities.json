@@ -12,7 +12,9 @@
       "test": "capabilities_report_configured_protocols"
     }
   ],
-  "profile": "hostedEmulatorSmoke",
+  "profiles": [
+    "hostedEmulatorSmoke"
+  ],
   "tags": [
     "prSmoke",
     "management"
@@ -38,40 +40,5 @@
       "fidelity": "none",
       "reason": "The capability document is specific to emulator E2E test orchestration."
     }
-  },
-  "fixtures": [
-    {
-      "id": "default",
-      "container": {
-        "partitionKey": {
-          "paths": [
-            "/pk"
-          ],
-          "kind": "Hash",
-          "version": 2
-        }
-      },
-      "items": []
-    }
-  ],
-  "steps": [
-    {
-      "id": "readCapabilities",
-      "action": {
-        "kind": "managementRequest",
-        "operation": "readCapabilities"
-      },
-      "expected": {
-        "outcome": "success",
-        "status": 200,
-        "state": {
-          "apiVersion": 1,
-          "gatewayV1": true
-        }
-      }
-    }
-  ],
-  "cleanup": {
-    "deleteDatabase": false
   }
 }
