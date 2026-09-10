@@ -34,8 +34,8 @@
 //! data: they wrap `Arc`-shared Rust state that cannot be safely round-
 //! tripped as plain `#[repr(C)]` bytes.
 
+use crate::string::{optional_text, required_text, validate_array, CosmosStringView};
 use std::collections::HashMap;
-use std::ffi::{c_char, CStr};
 use std::num::{NonZeroU16, NonZeroU32, NonZeroU8};
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
@@ -293,15 +293,15 @@ impl CosmosContentResponseOnWriteOpt {
 // cosmos_header_kv_t
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// A single custom request/operation header. Both pointers are
-/// NUL-terminated UTF-8 and borrowed for the duration of the submit call;
+/// A single custom request/operation header. Both views are
+/// counted UTF-8 and borrowed for the duration of the submit call;
 /// the wrapper copies them before returning.
 #[repr(C)]
 pub struct CosmosHeaderKv {
-    /// Header name (NUL-terminated UTF-8).
-    pub name: *const c_char,
-    /// Header value (NUL-terminated UTF-8).
-    pub value: *const c_char,
+    /// Required header name (counted UTF-8, non-NULL and nonempty).
+    pub name: CosmosStringView,
+    /// Required header value (counted UTF-8, non-NULL; empty is allowed).
+    pub value: CosmosStringView,
 }
 
 /// Decodes a `(ptr, len)` header array into a driver `HashMap`. NULL / `0`
@@ -316,29 +316,33 @@ pub struct CosmosHeaderKv {
 ///
 /// # Safety
 ///
-/// `headers` must either be NULL or point at `len` initialized
-/// [`CosmosHeaderKv`] entries whose `name`/`value` pointers are valid
-/// NUL-terminated UTF-8 for the duration of the call.
+/// `headers` must be NULL/0 or point at `len` initialized entries in one allocation.
+/// Each view follows [`CosmosStringView`]'s allocation contract.
 unsafe fn decode_headers(
     headers: *const CosmosHeaderKv,
     len: usize,
 ) -> Result<Option<HashMap<HeaderName, HeaderValue>>, CosmosErrorCode> {
-    if headers.is_null() || len == 0 {
+    validate_array(headers, len)?;
+    if headers.is_null() {
         return Ok(None);
+    }
+    if len == 0 {
+        return Ok(Some(HashMap::new()));
     }
     // SAFETY: caller contract above.
     let slice = unsafe { std::slice::from_raw_parts(headers, len) };
     let mut map = HashMap::with_capacity(len);
     for kv in slice {
-        let name = cstr_to_str(kv.name)?;
-        let value = cstr_to_str(kv.value)?;
-        if !header_name_is_valid(name) || !header_value_is_valid(value) {
+        // SAFETY: header views remain readable throughout the call.
+        let name =
+            unsafe { required_text(kv.name, CosmosErrorCode::CosmosErrorCodeInvalidHeader) }?;
+        // SAFETY: header views remain readable throughout the call.
+        let value =
+            unsafe { required_text(kv.value, CosmosErrorCode::CosmosErrorCodeInvalidHeader) }?;
+        if !header_name_is_valid(&name) || !header_value_is_valid(&value) {
             return Err(CosmosErrorCode::CosmosErrorCodeInvalidHeader);
         }
-        map.insert(
-            HeaderName::from(name.to_owned()),
-            HeaderValue::from(value.to_owned()),
-        );
+        map.insert(HeaderName::from(name), HeaderValue::from(value));
     }
     Ok(Some(map))
 }
@@ -419,11 +423,11 @@ pub struct CosmosOperationOptions {
     pub end_to_end_timeout_ms: i64,
     /// Endpoint unavailability TTL (milliseconds). `< 0` = unset.
     pub endpoint_unavailability_ttl_ms: i64,
-    /// Throughput control group name (NUL-terminated UTF-8). NULL = unset.
-    pub throughput_control_group: *const c_char,
-    /// Excluded regions — array of NUL-terminated UTF-8 region ids.
+    /// Throughput control group name (counted UTF-8). NULL/0 = unset.
+    pub throughput_control_group: CosmosStringView,
+    /// Excluded regions — array of counted UTF-8 region ids.
     /// NULL / `0` length = unset; non-NULL with `0` length is rejected.
-    pub excluded_regions: *const *const c_char,
+    pub excluded_regions: *const CosmosStringView,
     /// Number of entries in `excluded_regions`.
     pub excluded_regions_len: usize,
     /// Custom headers added to every request for the operation.
@@ -484,9 +488,8 @@ impl CosmosOperationOptions {
     ///
     /// # Safety
     ///
-    /// All non-NULL string / array pointers must reference valid
-    /// NUL-terminated UTF-8 (and, for arrays, the declared number of
-    /// elements) for the duration of the call.
+    /// All views follow [`CosmosStringView`]'s allocation contract; arrays
+    /// contain the declared number of initialized elements in one allocation.
     pub(crate) unsafe fn to_driver(&self) -> Result<OperationOptions, CosmosErrorCode> {
         let mut opts = OperationOptions::default();
 
@@ -512,10 +515,15 @@ impl CosmosOperationOptions {
             ));
         }
 
-        if !self.throughput_control_group.is_null() {
-            let name = cstr_to_str(self.throughput_control_group)?;
+        // SAFETY: view remains readable throughout the call.
+        if let Some(name) = unsafe {
+            optional_text(
+                self.throughput_control_group,
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+            )
+        }? {
             let mut throughput_control = ThroughputControlOptions::default();
-            throughput_control.group_name = Some(ThroughputControlGroupName::from(name.to_owned()));
+            throughput_control.group_name = Some(ThroughputControlGroupName::from(name));
             opts.throughput_control = Some(throughput_control);
         }
 
@@ -559,12 +567,13 @@ impl CosmosOperationOptions {
 ///
 /// # Safety
 ///
-/// `regions` must either be NULL or point at `len` valid NUL-terminated
-/// UTF-8 string pointers for the duration of the call.
+/// `regions` must be NULL/0 or point at `len` initialized views in one allocation.
+/// Each view follows [`CosmosStringView`]'s allocation contract.
 unsafe fn decode_regions(
-    regions: *const *const c_char,
+    regions: *const CosmosStringView,
     len: usize,
 ) -> Result<Option<ExcludedRegions>, CosmosErrorCode> {
+    validate_array(regions, len)?;
     if regions.is_null() {
         return Ok(None);
     }
@@ -577,8 +586,9 @@ unsafe fn decode_regions(
     let slice = unsafe { std::slice::from_raw_parts(regions, len) };
     let mut out = Vec::with_capacity(len);
     for &p in slice {
-        let s = cstr_to_str(p)?;
-        out.push(Region::from(s.to_owned()));
+        // SAFETY: each region view remains readable throughout the call.
+        let s = unsafe { required_text(p, CosmosErrorCode::CosmosErrorCodeInvalidOptionValue) }?;
+        out.push(Region::from(s));
     }
     Ok(Some(ExcludedRegions(out)))
 }
@@ -600,7 +610,7 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
         max_session_retry_count: -1,
         end_to_end_timeout_ms: -1,
         endpoint_unavailability_ttl_ms: -1,
-        throughput_control_group: std::ptr::null(),
+        throughput_control_group: CosmosStringView::default(),
         excluded_regions: std::ptr::null(),
         excluded_regions_len: 0,
         custom_headers: std::ptr::null(),
@@ -776,12 +786,12 @@ pub struct CosmosOperationRequest {
     /// Container reference. Required for container/item-scope kinds; otherwise NULL.
     pub container: *const ContainerRefHandle,
 
-    /// Item id (NUL-terminated UTF-8). Required for item-scope kinds that
+    /// Item id (counted UTF-8). Required for item-scope kinds that
     /// address a specific document; otherwise NULL.
-    pub item_id: *const c_char,
-    /// Offer resource link (NUL-terminated UTF-8). Required for the offer
+    pub item_id: CosmosStringView,
+    /// Offer resource link (counted UTF-8). Required for the offer
     /// kinds; otherwise NULL.
-    pub resource_link: *const c_char,
+    pub resource_link: CosmosStringView,
 
     /// Partition key handle. Required for item-scope, `read_all_items`, and
     /// `batch` (unless the inline `partition_key_components` array is supplied
@@ -808,14 +818,14 @@ pub struct CosmosOperationRequest {
     /// Number of bytes addressable from `body`. `0` = no body.
     pub body_len: usize,
 
-    /// Session token override (NUL-terminated UTF-8). NULL = unset.
-    pub session_token: *const c_char,
-    /// Activity id override (NUL-terminated UTF-8). NULL = auto-generate.
-    pub activity_id: *const c_char,
-    /// Continuation token to resume a feed (NUL-terminated UTF-8). NULL = none.
+    /// Session token override (counted UTF-8). NULL/0 = unset.
+    pub session_token: CosmosStringView,
+    /// Activity id override (counted UTF-8). NULL/0 = auto-generate.
+    pub activity_id: CosmosStringView,
+    /// Continuation token to resume a feed (counted UTF-8). NULL/0 = none.
     /// Only meaningful for feed kinds dispatched through
     /// `cosmos_submit_operation`.
-    pub continuation_token: *const c_char,
+    pub continuation_token: CosmosStringView,
 
     /// Max item count hint for feeds. `< 0` = unset.
     pub max_item_count: i32,
@@ -838,15 +848,15 @@ pub struct CosmosOperationRequest {
     /// discriminant. Stored as a raw `i32` so an out-of-range host value is
     /// validated (not UB) before use.
     pub precondition_kind: i32,
-    /// ETag for the precondition (NUL-terminated UTF-8). Required iff
+    /// ETag for the precondition (counted UTF-8). Required iff
     /// `precondition_kind` is not `None`.
-    pub precondition_etag: *const c_char,
+    pub precondition_etag: CosmosStringView,
 
     /// Per-call options. NULL = use driver/runtime defaults.
     pub options: *const CosmosOperationOptions,
-    /// Stable PATCH tracking UUID (NUL-terminated UTF-8). NULL = generate one
+    /// Stable PATCH tracking UUID (counted UTF-8). NULL/0 = generate one
     /// for this invocation.
-    pub patch_tracking_id: *const c_char,
+    pub patch_tracking_id: CosmosStringView,
     /// Maximum number of PATCH tracking entries retained on the item. The
     /// oldest entry is evicted when full. `0` = use the driver default.
     pub patch_tracking_capacity: u16,
@@ -891,13 +901,17 @@ pub(crate) unsafe fn build_request(
     // SAFETY: non-NULL checked; caller guarantees a valid struct.
     let req = unsafe { &*request };
 
+    // SAFETY: request fields satisfy the caller's allocation contract.
     let operation = unsafe { build_operation(req)? };
-    let operation = apply_patch_tracking_fields(
-        operation,
-        req.patch_tracking_id,
-        req.patch_tracking_capacity,
-        req.patch_tracking_retention_seconds,
-    )?;
+    // SAFETY: tracking view satisfies the caller's allocation contract.
+    let operation = unsafe {
+        apply_patch_tracking_fields(
+            operation,
+            req.patch_tracking_id,
+            req.patch_tracking_capacity,
+            req.patch_tracking_retention_seconds,
+        )
+    }?;
     let (operation, patch_tracking_id) = resolve_patch_tracking_id(operation);
 
     let options = if req.options.is_null() {
@@ -907,12 +921,14 @@ pub(crate) unsafe fn build_request(
         unsafe { (*req.options).to_driver()? }
     };
 
-    let continuation = if req.continuation_token.is_null() {
-        None
-    } else {
-        let token = require_cstr(req.continuation_token)?;
-        Some(ContinuationToken::from_string(token.to_owned()))
-    };
+    // SAFETY: continuation view remains readable for this call.
+    let continuation = unsafe {
+        optional_text(
+            req.continuation_token,
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+        )
+    }?
+    .map(ContinuationToken::from_string);
 
     // A `max_fan_out` of 0 means "unset": fall back to the driver default. A
     // non-zero value opts into a broader (or narrower) fan-out.
@@ -995,12 +1011,14 @@ unsafe fn build_operation(
         }
         K::CosmosOperationKindQueryOffers => CosmosOperation::query_offers(require_account(req)?),
         K::CosmosOperationKindReadOffer => {
-            let link = require_cstr(req.resource_link)?;
-            CosmosOperation::read_offer(require_account(req)?, link.to_owned())
+            // SAFETY: resource link is readable for this call.
+            let link = unsafe { require_text(req.resource_link) }?;
+            CosmosOperation::read_offer(require_account(req)?, link)
         }
         K::CosmosOperationKindReplaceOffer => {
-            let link = require_cstr(req.resource_link)?;
-            CosmosOperation::replace_offer(require_account(req)?, link.to_owned())
+            // SAFETY: resource link is readable for this call.
+            let link = unsafe { require_text(req.resource_link) }?;
+            CosmosOperation::replace_offer(require_account(req)?, link)
         }
 
         // ── Database-scope ───────────────────────────────────────────────
@@ -1060,12 +1078,30 @@ unsafe fn build_operation(
         }
 
         // ── Item-scope ───────────────────────────────────────────────────
-        K::CosmosOperationKindCreateItem => CosmosOperation::create_item(require_item_ref(req)?),
-        K::CosmosOperationKindReadItem => CosmosOperation::read_item(require_item_ref(req)?),
-        K::CosmosOperationKindUpsertItem => CosmosOperation::upsert_item(require_item_ref(req)?),
-        K::CosmosOperationKindReplaceItem => CosmosOperation::replace_item(require_item_ref(req)?),
-        K::CosmosOperationKindDeleteItem => CosmosOperation::delete_item(require_item_ref(req)?),
-        K::CosmosOperationKindPatchItem => CosmosOperation::patch_item(require_item_ref(req)?),
+        // SAFETY: request fields are readable for this call.
+        K::CosmosOperationKindCreateItem => {
+            CosmosOperation::create_item(unsafe { require_item_ref(req) }?)
+        }
+        // SAFETY: request fields are readable for this call.
+        K::CosmosOperationKindReadItem => {
+            CosmosOperation::read_item(unsafe { require_item_ref(req) }?)
+        }
+        // SAFETY: request fields are readable for this call.
+        K::CosmosOperationKindUpsertItem => {
+            CosmosOperation::upsert_item(unsafe { require_item_ref(req) }?)
+        }
+        // SAFETY: request fields are readable for this call.
+        K::CosmosOperationKindReplaceItem => {
+            CosmosOperation::replace_item(unsafe { require_item_ref(req) }?)
+        }
+        // SAFETY: request fields are readable for this call.
+        K::CosmosOperationKindDeleteItem => {
+            CosmosOperation::delete_item(unsafe { require_item_ref(req) }?)
+        }
+        // SAFETY: request fields are readable for this call.
+        K::CosmosOperationKindPatchItem => {
+            CosmosOperation::patch_item(unsafe { require_item_ref(req) }?)
+        }
     };
 
     // SAFETY: caller contract on the request's pointer fields.
@@ -1098,15 +1134,25 @@ unsafe fn apply_inline_mutators(
     }
 
     // Session token.
-    if !req.session_token.is_null() {
-        let token = require_cstr(req.session_token)?;
-        op = op.with_session_token(SessionToken::new(token.to_owned()));
+    // SAFETY: view remains readable throughout the call.
+    if let Some(token) = unsafe {
+        optional_text(
+            req.session_token,
+            CosmosErrorCode::CosmosErrorCodeInvalidHeader,
+        )
+    }? {
+        op = op.with_session_token(SessionToken::new(token));
     }
 
     // Activity id.
-    if !req.activity_id.is_null() {
-        let aid = require_cstr(req.activity_id)?;
-        op = op.with_activity_id(ActivityId::from_string(aid.to_owned()));
+    // SAFETY: view remains readable throughout the call.
+    if let Some(aid) = unsafe {
+        optional_text(
+            req.activity_id,
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+        )
+    }? {
+        op = op.with_activity_id(ActivityId::from_string(aid));
     }
 
     // Max item count (`< 0` = unset; `0` rejected — driver enforces NonZeroU32).
@@ -1125,12 +1171,24 @@ unsafe fn apply_inline_mutators(
     match CosmosPreconditionKind::from_i32(req.precondition_kind)? {
         CosmosPreconditionKind::CosmosPreconditionKindNone => {}
         CosmosPreconditionKind::CosmosPreconditionKindIfMatch => {
-            let etag = require_cstr(req.precondition_etag)?;
-            op = op.with_precondition(Precondition::if_match(Etag::from(etag.to_owned())));
+            // SAFETY: view remains readable throughout the call.
+            let etag = unsafe {
+                required_text(
+                    req.precondition_etag,
+                    CosmosErrorCode::CosmosErrorCodeInvalidHeader,
+                )
+            }?;
+            op = op.with_precondition(Precondition::if_match(Etag::from(etag)));
         }
         CosmosPreconditionKind::CosmosPreconditionKindIfNoneMatch => {
-            let etag = require_cstr(req.precondition_etag)?;
-            op = op.with_precondition(Precondition::if_none_match(Etag::from(etag.to_owned())));
+            // SAFETY: view remains readable throughout the call.
+            let etag = unsafe {
+                required_text(
+                    req.precondition_etag,
+                    CosmosErrorCode::CosmosErrorCodeInvalidHeader,
+                )
+            }?;
+            op = op.with_precondition(Precondition::if_none_match(Etag::from(etag)));
         }
     }
 
@@ -1152,20 +1210,22 @@ unsafe fn apply_inline_mutators(
     Ok(op)
 }
 
-fn apply_patch_tracking_fields(
+unsafe fn apply_patch_tracking_fields(
     mut operation: CosmosOperation,
-    tracking_id: *const c_char,
+    tracking_id: CosmosStringView,
     tracking_capacity: u16,
     tracking_retention_seconds: u32,
 ) -> Result<CosmosOperation, CosmosErrorCode> {
-    if tracking_id.is_null() && tracking_capacity == 0 && tracking_retention_seconds == 0 {
+    if tracking_id.is_unset() && tracking_capacity == 0 && tracking_retention_seconds == 0 {
         return Ok(operation);
     }
     if operation.operation_type() != OperationType::Patch {
         return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
     }
-    let fields =
-        parse_patch_tracking_fields(tracking_id, tracking_capacity, tracking_retention_seconds)?;
+    // SAFETY: tracking view remains readable for this call.
+    let fields = unsafe {
+        parse_patch_tracking_fields(tracking_id, tracking_capacity, tracking_retention_seconds)
+    }?;
     if let Some(tracking_id) = fields.tracking_id {
         operation = operation.with_patch_tracking_id(tracking_id);
     }
@@ -1185,16 +1245,17 @@ struct ParsedPatchTrackingFields {
     tracking_retention_seconds: Option<std::num::NonZeroU32>,
 }
 
-fn parse_patch_tracking_fields(
-    tracking_id: *const c_char,
+unsafe fn parse_patch_tracking_fields(
+    tracking_id: CosmosStringView,
     tracking_capacity: u16,
     tracking_retention_seconds: u32,
 ) -> Result<ParsedPatchTrackingFields, CosmosErrorCode> {
-    let tracking_id = if tracking_id.is_null() {
+    let tracking_id = if tracking_id.is_unset() {
         None
     } else {
         Some(
-            require_cstr(tracking_id)?
+            // SAFETY: tracking view remains readable for this call.
+            unsafe { require_text(tracking_id) }?
                 .parse::<PatchTrackingId>()
                 .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)?,
         )
@@ -1255,37 +1316,31 @@ fn require_partition_key(req: &CosmosOperationRequest) -> Result<PartitionKey, C
 
 /// Builds an [`ItemReference`] from `container` + `partition_key` + `item_id`,
 /// rejecting a NULL in any of the three.
-fn require_item_ref(req: &CosmosOperationRequest) -> Result<ItemReference, CosmosErrorCode> {
+unsafe fn require_item_ref(req: &CosmosOperationRequest) -> Result<ItemReference, CosmosErrorCode> {
     let container = require_container(req)?;
     let pk = require_partition_key(req)?;
-    let item_id = require_cstr(req.item_id)?;
-    Ok(ItemReference::from_name(&container, pk, item_id.to_owned()))
+    // SAFETY: request input view remains readable for this call.
+    let item_id = unsafe { require_text(req.item_id) }?;
+    Ok(ItemReference::from_name(&container, pk, item_id))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // String helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Borrows a NUL-terminated UTF-8 string from a non-NULL pointer.
-fn cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
-    if p.is_null() {
-        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-    }
-    // SAFETY: non-NULL checked; caller guarantees NUL-terminated UTF-8.
-    let cstr = unsafe { CStr::from_ptr(p) };
-    cstr.to_str()
-        .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidUtf8)
-}
-
-/// Like [`cstr_to_str`] but returns `INVALID_ARGUMENT` on NULL — used where
-/// the string is mandatory for the chosen `kind` / precondition.
-fn require_cstr<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
-    cstr_to_str(p)
+/// Copies required identifiers or protocol tokens, rejecting embedded NUL.
+unsafe fn require_text(view: CosmosStringView) -> Result<String, CosmosErrorCode> {
+    // SAFETY: caller guarantees the view remains readable throughout the call.
+    unsafe { required_text(view, CosmosErrorCode::CosmosErrorCodeInvalidOptionValue) }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::partition_key::{
+        CosmosPartitionKeyComponentKind, CosmosPartitionKeyComponentValue, CosmosStringView,
+    };
+    use crate::string::view;
     use azure_data_cosmos_driver::models::PatchOperation;
 
     #[test]
@@ -1301,7 +1356,9 @@ mod tests {
     fn patch_tracking_fields_map_to_driver_operation() {
         let tracking_id = std::ffi::CString::new("7f5241c9-d7c2-4071-97a3-43bdebf6ef8f").unwrap();
 
-        let parsed = parse_patch_tracking_fields(tracking_id.as_ptr(), 17, 23).unwrap();
+        // SAFETY: tracking_id remains alive throughout parsing.
+        let parsed =
+            unsafe { parse_patch_tracking_fields(view(tracking_id.as_bytes()), 17, 23) }.unwrap();
 
         assert_eq!(
             parsed.tracking_id.unwrap().to_string(),
@@ -1317,7 +1374,8 @@ mod tests {
     #[test]
     fn invalid_patch_tracking_id_is_rejected() {
         let tracking_id = std::ffi::CString::new("not-a-uuid").unwrap();
-        let result = parse_patch_tracking_fields(tracking_id.as_ptr(), 0, 0);
+        // SAFETY: tracking_id remains alive throughout parsing.
+        let result = unsafe { parse_patch_tracking_fields(view(tracking_id.as_bytes()), 0, 0) };
 
         assert_eq!(
             result.unwrap_err(),
@@ -1334,7 +1392,9 @@ mod tests {
             ),
         );
 
-        let result = apply_patch_tracking_fields(operation, std::ptr::null(), 17, 0);
+        // SAFETY: unset view has no allocation to read.
+        let result =
+            unsafe { apply_patch_tracking_fields(operation, CosmosStringView::default(), 17, 0) };
 
         assert_eq!(
             result.unwrap_err(),
@@ -1347,55 +1407,78 @@ mod tests {
     fn operation_request_abi_layout_is_stable() {
         use std::mem::{offset_of, size_of};
 
-        assert_eq!(size_of::<CosmosOperationRequest>(), 168);
+        assert_eq!(size_of::<CosmosOperationRequest>(), 224);
         assert_eq!(offset_of!(CosmosOperationRequest, kind), 0);
         assert_eq!(offset_of!(CosmosOperationRequest, account), 8);
         assert_eq!(offset_of!(CosmosOperationRequest, database), 16);
         assert_eq!(offset_of!(CosmosOperationRequest, container), 24);
         assert_eq!(offset_of!(CosmosOperationRequest, item_id), 32);
-        assert_eq!(offset_of!(CosmosOperationRequest, resource_link), 40);
-        assert_eq!(offset_of!(CosmosOperationRequest, partition_key), 48);
+        assert_eq!(offset_of!(CosmosOperationRequest, resource_link), 48);
+        assert_eq!(offset_of!(CosmosOperationRequest, partition_key), 64);
         assert_eq!(
             offset_of!(CosmosOperationRequest, partition_key_components),
-            56
+            72
         );
-        assert_eq!(offset_of!(CosmosOperationRequest, partition_key_len), 64);
-        assert_eq!(offset_of!(CosmosOperationRequest, feed_range), 72);
-        assert_eq!(offset_of!(CosmosOperationRequest, body), 80);
-        assert_eq!(offset_of!(CosmosOperationRequest, body_len), 88);
-        assert_eq!(offset_of!(CosmosOperationRequest, session_token), 96);
-        assert_eq!(offset_of!(CosmosOperationRequest, activity_id), 104);
-        assert_eq!(offset_of!(CosmosOperationRequest, continuation_token), 112);
-        assert_eq!(offset_of!(CosmosOperationRequest, max_item_count), 120);
-        assert_eq!(offset_of!(CosmosOperationRequest, max_fan_out), 124);
-        assert_eq!(offset_of!(CosmosOperationRequest, patch_max_attempts), 128);
+        assert_eq!(offset_of!(CosmosOperationRequest, partition_key_len), 80);
+        assert_eq!(offset_of!(CosmosOperationRequest, feed_range), 88);
+        assert_eq!(offset_of!(CosmosOperationRequest, body), 96);
+        assert_eq!(offset_of!(CosmosOperationRequest, body_len), 104);
+        assert_eq!(offset_of!(CosmosOperationRequest, session_token), 112);
+        assert_eq!(offset_of!(CosmosOperationRequest, activity_id), 128);
+        assert_eq!(offset_of!(CosmosOperationRequest, continuation_token), 144);
+        assert_eq!(offset_of!(CosmosOperationRequest, max_item_count), 160);
+        assert_eq!(offset_of!(CosmosOperationRequest, max_fan_out), 164);
+        assert_eq!(offset_of!(CosmosOperationRequest, patch_max_attempts), 168);
         assert_eq!(
             offset_of!(CosmosOperationRequest, populate_index_metrics),
-            129
+            169
         );
         assert_eq!(
             offset_of!(CosmosOperationRequest, populate_query_metrics),
-            130
+            170
         );
-        assert_eq!(offset_of!(CosmosOperationRequest, precondition_kind), 132);
-        assert_eq!(offset_of!(CosmosOperationRequest, precondition_etag), 136);
-        assert_eq!(offset_of!(CosmosOperationRequest, options), 144);
-        assert_eq!(offset_of!(CosmosOperationRequest, patch_tracking_id), 152);
+        assert_eq!(offset_of!(CosmosOperationRequest, precondition_kind), 172);
+        assert_eq!(offset_of!(CosmosOperationRequest, precondition_etag), 176);
+        assert_eq!(offset_of!(CosmosOperationRequest, options), 192);
+        assert_eq!(offset_of!(CosmosOperationRequest, patch_tracking_id), 200);
         assert_eq!(
             offset_of!(CosmosOperationRequest, patch_tracking_capacity),
-            160
+            216
         );
         assert_eq!(
             offset_of!(CosmosOperationRequest, patch_tracking_retention_seconds),
-            164
+            220
         );
     }
-
     #[test]
     fn tristate_bool_decodes_sentinels() {
         assert_eq!(decode_tristate_bool(TRISTATE_UNSET), Ok(None));
         assert_eq!(decode_tristate_bool(TRISTATE_FALSE), Ok(Some(false)));
         assert_eq!(decode_tristate_bool(TRISTATE_TRUE), Ok(Some(true)));
+    }
+
+    #[test]
+    fn inline_partition_key_preserves_embedded_nul() {
+        let bytes = b"tenant\0admin";
+        let components = [CosmosPartitionKeyComponent {
+            kind: CosmosPartitionKeyComponentKind::STRING.0,
+            value: CosmosPartitionKeyComponentValue {
+                string_value: CosmosStringView {
+                    data: bytes.as_ptr(),
+                    len: bytes.len(),
+                },
+            },
+        }];
+        // SAFETY: all-zero bit patterns are valid for this pointer-and-integer
+        // FFI input struct. The fields read by `require_partition_key` are set below.
+        let mut request: CosmosOperationRequest = unsafe { std::mem::zeroed() };
+        request.partition_key_components = components.as_ptr();
+        request.partition_key_len = components.len();
+
+        assert_eq!(
+            require_partition_key(&request),
+            Ok(PartitionKey::from("tenant\0admin".to_owned()))
+        );
     }
 
     #[test]
@@ -1680,7 +1763,7 @@ mod tests {
         assert_eq!(o.max_session_retry_count, -1);
         assert_eq!(o.end_to_end_timeout_ms, -1);
         assert_eq!(o.endpoint_unavailability_ttl_ms, -1);
-        assert!(o.throughput_control_group.is_null());
+        assert!(o.throughput_control_group.is_unset());
         assert!(o.excluded_regions.is_null());
         assert_eq!(o.excluded_regions_len, 0);
         assert!(o.custom_headers.is_null());
@@ -1714,7 +1797,7 @@ mod tests {
     fn operation_options_abi_layout_is_stable() {
         use std::mem::{offset_of, size_of};
 
-        assert_eq!(size_of::<CosmosOperationOptions>(), 88);
+        assert_eq!(size_of::<CosmosOperationOptions>(), 96);
         assert_eq!(
             offset_of!(CosmosOperationOptions, read_consistency_strategy),
             0
@@ -1730,16 +1813,16 @@ mod tests {
         );
         assert_eq!(
             offset_of!(CosmosOperationOptions, binary_encoding_enabled),
-            80
+            88
         );
         assert_eq!(
             offset_of!(
                 CosmosOperationOptions,
                 binary_encoding_request_text_response
             ),
-            81
+            89
         );
-        assert_eq!(offset_of!(CosmosOperationOptions, query_plan_mode), 84);
+        assert_eq!(offset_of!(CosmosOperationOptions, query_plan_mode), 92);
     }
 
     #[test]
@@ -1807,10 +1890,273 @@ mod tests {
     }
 
     #[test]
-    fn cstr_to_str_rejects_null() {
+    fn required_text_rejects_null() {
         assert_eq!(
-            cstr_to_str(std::ptr::null()),
+            // SAFETY: NULL is rejected before reading.
+            unsafe { require_text(CosmosStringView::default()) },
             Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument)
         );
+    }
+
+    #[test]
+    fn headers_validate_complete_values_and_own_copies() {
+        let header_error = CosmosErrorCode::CosmosErrorCodeInvalidHeader;
+        for (bytes, expected) in [
+            (&b"abc\0invalid"[..], header_error),
+            (
+                &b"abc\0\xff"[..],
+                CosmosErrorCode::CosmosErrorCodeInvalidUtf8,
+            ),
+        ] {
+            for name_is_invalid in [true, false] {
+                let headers = [CosmosHeaderKv {
+                    name: view(if name_is_invalid { bytes } else { b"x-custom" }),
+                    value: view(if name_is_invalid { b"value" } else { bytes }),
+                }];
+                // SAFETY: header array and bytes remain live throughout decoding.
+                assert_eq!(
+                    unsafe { decode_headers(headers.as_ptr(), 1) }.unwrap_err(),
+                    expected
+                );
+            }
+        }
+        let headers = {
+            let name = b"x-custom".to_vec();
+            let value = b"full-value".to_vec();
+            let entries = [CosmosHeaderKv {
+                name: view(&name),
+                value: view(&value),
+            }];
+            // SAFETY: array and both buffers remain live throughout decoding.
+            unsafe { decode_headers(entries.as_ptr(), 1) }
+                .unwrap()
+                .unwrap()
+        };
+        assert_eq!(
+            headers.get(&HeaderName::from("x-custom")).unwrap(),
+            &HeaderValue::from("full-value")
+        );
+        let empty: [CosmosHeaderKv; 0] = [];
+        // SAFETY: zero-length arrays are not dereferenced; oversized metadata is rejected.
+        unsafe {
+            assert!(decode_headers(std::ptr::null(), 0).unwrap().is_none());
+            assert!(decode_headers(empty.as_ptr(), 0)
+                .unwrap()
+                .unwrap()
+                .is_empty());
+            assert_eq!(
+                decode_headers(std::ptr::null(), 1).unwrap_err(),
+                CosmosErrorCode::CosmosErrorCodeInvalidArgument
+            );
+            assert_eq!(
+                decode_headers(empty.as_ptr(), usize::MAX).unwrap_err(),
+                CosmosErrorCode::CosmosErrorCodeInvalidArgument
+            );
+        }
+    }
+
+    #[test]
+    fn excluded_regions_validate_every_entry_before_normalization() {
+        for (input, expected) in [
+            (
+                view(b"East US\0invalid"),
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+            ),
+            (
+                view(b"East US\0\xff"),
+                CosmosErrorCode::CosmosErrorCodeInvalidUtf8,
+            ),
+            (
+                CosmosStringView::default(),
+                CosmosErrorCode::CosmosErrorCodeInvalidArgument,
+            ),
+        ] {
+            let regions = [view(b"West US"), input];
+            // SAFETY: both views and the array remain live.
+            assert_eq!(
+                unsafe { decode_regions(regions.as_ptr(), 2) }.unwrap_err(),
+                expected
+            );
+        }
+        let regions = [view(b"East US")];
+        // SAFETY: malformed metadata is rejected without reading.
+        unsafe {
+            assert_eq!(
+                decode_regions(std::ptr::null(), 1).unwrap_err(),
+                CosmosErrorCode::CosmosErrorCodeInvalidArgument
+            );
+            assert_eq!(
+                decode_regions(regions.as_ptr(), usize::MAX).unwrap_err(),
+                CosmosErrorCode::CosmosErrorCodeInvalidArgument
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn built_request_owns_text_before_async_execution() {
+        let built = {
+            let account = AccountRefHandle {
+                inner: azure_data_cosmos_driver::models::AccountReference::with_master_key(
+                    azure_core::http::Url::parse("https://localhost").unwrap(),
+                    "key",
+                ),
+            };
+            let session = b"session-value".to_vec();
+            let continuation = "é-continuation".as_bytes().to_vec();
+            let group = b"throughput-group".to_vec();
+            let region = b"East US".to_vec();
+            let regions = [view(&region)];
+            let mut options = cosmos_operation_options_default();
+            options.throughput_control_group = view(&group);
+            options.excluded_regions = regions.as_ptr();
+            options.excluded_regions_len = 1;
+            // SAFETY: all-zero representation is valid for this integer-and-pointer request.
+            let mut request: CosmosOperationRequest = unsafe { std::mem::zeroed() };
+            request.kind = CosmosOperationKind::CosmosOperationKindReadAllDatabases as i32;
+            request.account = &account;
+            request.session_token = view(&session);
+            request.continuation_token = view(&continuation);
+            request.max_item_count = -1;
+            request.options = &options;
+            // SAFETY: all request inputs remain live until build_request returns.
+            unsafe { build_request(&request) }.unwrap()
+        };
+        tokio::spawn(async move {
+            assert_eq!(built.continuation.unwrap().as_str(), "é-continuation");
+            assert_eq!(
+                built
+                    .operation
+                    .request_headers()
+                    .session_token
+                    .as_ref()
+                    .unwrap()
+                    .as_str(),
+                "session-value"
+            );
+            assert_eq!(
+                built
+                    .options
+                    .throughput_control
+                    .unwrap()
+                    .group_name
+                    .unwrap(),
+                ThroughputControlGroupName::from("throughput-group")
+            );
+            assert_eq!(
+                built.options.excluded_regions.unwrap().0,
+                vec![Region::from("East US")]
+            );
+        })
+        .await
+        .unwrap();
+    }
+
+    #[test]
+    fn offer_links_and_continuations_validate_complete_values() {
+        let account = AccountRefHandle {
+            inner: azure_data_cosmos_driver::models::AccountReference::with_master_key(
+                azure_core::http::Url::parse("https://localhost").unwrap(),
+                "key",
+            ),
+        };
+        for (bytes, expected) in [
+            (
+                &b"offers/valid\0suffix"[..],
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+            ),
+            (
+                &b"offers/valid\0\xff"[..],
+                CosmosErrorCode::CosmosErrorCodeInvalidUtf8,
+            ),
+        ] {
+            // SAFETY: all-zero representation is valid for this integer-and-pointer request.
+            let mut request: CosmosOperationRequest = unsafe { std::mem::zeroed() };
+            request.kind = CosmosOperationKind::CosmosOperationKindReadOffer as i32;
+            request.account = &account;
+            request.resource_link = view(bytes);
+            request.max_item_count = -1;
+            // SAFETY: request inputs remain live throughout construction.
+            assert!(matches!(unsafe { build_request(&request) }, Err(error) if error == expected));
+            request.kind = CosmosOperationKind::CosmosOperationKindReadAllDatabases as i32;
+            request.resource_link = CosmosStringView::default();
+            request.continuation_token = view(bytes);
+            // SAFETY: request inputs remain live throughout construction.
+            assert!(matches!(unsafe { build_request(&request) }, Err(error) if error == expected));
+        }
+    }
+
+    #[test]
+    fn request_tokens_reject_nul_suffixes_and_invalid_utf8() {
+        type SetText = fn(&mut CosmosOperationRequest, CosmosStringView);
+        let setters: [(SetText, CosmosErrorCode); 3] = [
+            (
+                |r, s| r.session_token = s,
+                CosmosErrorCode::CosmosErrorCodeInvalidHeader,
+            ),
+            (
+                |r, s| r.activity_id = s,
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+            ),
+            (
+                |r, s| {
+                    r.precondition_kind = 1;
+                    r.precondition_etag = s;
+                },
+                CosmosErrorCode::CosmosErrorCodeInvalidHeader,
+            ),
+        ];
+        for (set, nul_error) in setters {
+            for (bytes, expected) in [
+                (
+                    &b"7f5241c9-d7c2-4071-97a3-43bdebf6ef8f\0junk"[..],
+                    nul_error,
+                ),
+                (
+                    &b"valid\0\xff"[..],
+                    CosmosErrorCode::CosmosErrorCodeInvalidUtf8,
+                ),
+            ] {
+                // SAFETY: request consists only of integers and pointers.
+                let mut request: CosmosOperationRequest = unsafe { std::mem::zeroed() };
+                request.max_item_count = -1;
+                set(&mut request, view(bytes));
+                let operation = CosmosOperation::read_all_databases(
+                    azure_data_cosmos_driver::models::AccountReference::with_master_key(
+                        azure_core::http::Url::parse("https://localhost").unwrap(),
+                        "key",
+                    ),
+                );
+                // SAFETY: all active views reference live literals.
+                assert_eq!(
+                    unsafe { apply_inline_mutators(operation, &request) }.unwrap_err(),
+                    expected
+                );
+            }
+        }
+        // SAFETY: views reference live literals.
+        unsafe {
+            assert_eq!(
+                require_text(view(b"doc\0suffix")).unwrap_err(),
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
+            );
+            assert_eq!(
+                parse_patch_tracking_fields(
+                    view(b"7f5241c9-d7c2-4071-97a3-43bdebf6ef8f\0junk"),
+                    0,
+                    0
+                )
+                .unwrap_err(),
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
+            );
+            assert_eq!(
+                parse_patch_tracking_fields(
+                    view(b"7f5241c9-d7c2-4071-97a3-43bdebf6ef8f\0\xff"),
+                    0,
+                    0
+                )
+                .unwrap_err(),
+                CosmosErrorCode::CosmosErrorCodeInvalidUtf8
+            );
+        }
     }
 }

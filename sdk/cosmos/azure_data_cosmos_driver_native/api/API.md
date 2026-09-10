@@ -22,9 +22,9 @@ pub mod account_ref {
     #[no_mangle]
     pub extern "C" fn cosmos_account_ref_free(account: *mut AccountRefHandle);
     #[no_mangle]
-    pub extern "C" fn cosmos_account_ref_with_credential(endpoint: *const std::ffi::c_char, provider: crate::credential::CosmosTokenProvider, user_data: isize, out_account: *mut *mut AccountRefHandle, out_error: *mut *mut crate::error::CosmosError) -> crate::error::CosmosStatusCode;
+    pub extern "C" fn cosmos_account_ref_with_credential(endpoint: crate::string::CosmosStringView, provider: crate::credential::CosmosTokenProvider, user_data: isize, out_account: *mut *mut AccountRefHandle, out_error: *mut *mut crate::error::CosmosError) -> crate::error::CosmosStatusCode;
     #[no_mangle]
-    pub extern "C" fn cosmos_account_ref_with_master_key(endpoint: *const std::ffi::c_char, key: *const std::ffi::c_char, out_account: *mut *mut AccountRefHandle, out_error: *mut *mut crate::error::CosmosError) -> crate::error::CosmosStatusCode;
+    pub extern "C" fn cosmos_account_ref_with_master_key(endpoint: crate::string::CosmosStringView, key: crate::string::CosmosStringView, out_account: *mut *mut AccountRefHandle, out_error: *mut *mut crate::error::CosmosError) -> crate::error::CosmosStatusCode;
     pub struct AccountRefHandle {
     }
 }
@@ -133,7 +133,7 @@ pub mod container_ref {
     #[no_mangle]
     pub extern "C" fn cosmos_container_ref_free(container: *mut ContainerRefHandle);
     #[no_mangle]
-    pub extern "C" fn cosmos_driver_resolve_container_blocking(runtime: *const crate::runtime::RuntimeContext, driver: *const crate::driver::DriverHandle, database_id: *const std::ffi::c_char, container_id: *const std::ffi::c_char, out_container: *mut *mut ContainerRefHandle, out_error: *mut *mut crate::error::CosmosError) -> crate::error::CosmosStatusCode;
+    pub extern "C" fn cosmos_driver_resolve_container_blocking(runtime: *const crate::runtime::RuntimeContext, driver: *const crate::driver::DriverHandle, database_id: crate::string::CosmosStringView, container_id: crate::string::CosmosStringView, out_container: *mut *mut ContainerRefHandle, out_error: *mut *mut crate::error::CosmosError) -> crate::error::CosmosStatusCode;
     pub struct ContainerRefHandle {
     }
 }
@@ -157,7 +157,7 @@ pub mod credential {
 }
 pub mod database_ref {
     #[no_mangle]
-    pub extern "C" fn cosmos_database_ref_create(account: *const crate::account_ref::AccountRefHandle, database_id: *const std::ffi::c_char, out_database: *mut *mut DatabaseRefHandle) -> crate::error::CosmosStatusCode;
+    pub extern "C" fn cosmos_database_ref_create(account: *const crate::account_ref::AccountRefHandle, database_id: crate::string::CosmosStringView, out_database: *mut *mut DatabaseRefHandle) -> crate::error::CosmosStatusCode;
     #[no_mangle]
     pub extern "C" fn cosmos_database_ref_free(database: *mut DatabaseRefHandle);
     pub struct DatabaseRefHandle {
@@ -181,7 +181,7 @@ pub mod driver_options {
     #[derive(Clone, Copy)]
     #[repr(C)]
     pub struct CosmosDriverOptionsConfig {
-        pub preferred_regions: *const *const std::ffi::c_char,
+        pub preferred_regions: *const crate::string::CosmosStringView,
         pub preferred_regions_len: usize,
         pub operation_options: *const crate::op_request::CosmosOperationOptions,
     }
@@ -298,8 +298,8 @@ pub mod op_request {
     pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions;
     #[repr(C)]
     pub struct CosmosHeaderKv {
-        pub name: *const std::ffi::c_char,
-        pub value: *const std::ffi::c_char,
+        pub name: crate::string::CosmosStringView,
+        pub value: crate::string::CosmosStringView,
     }
     #[derive(Clone, Copy)]
     #[repr(C)]
@@ -312,8 +312,8 @@ pub mod op_request {
         pub max_session_retry_count: i32,
         pub end_to_end_timeout_ms: i64,
         pub endpoint_unavailability_ttl_ms: i64,
-        pub throughput_control_group: *const std::ffi::c_char,
-        pub excluded_regions: *const *const std::ffi::c_char,
+        pub throughput_control_group: crate::string::CosmosStringView,
+        pub excluded_regions: *const crate::string::CosmosStringView,
         pub excluded_regions_len: usize,
         pub custom_headers: *const CosmosHeaderKv,
         pub custom_headers_len: usize,
@@ -327,26 +327,26 @@ pub mod op_request {
         pub account: *const crate::account_ref::AccountRefHandle,
         pub database: *const crate::database_ref::DatabaseRefHandle,
         pub container: *const crate::container_ref::ContainerRefHandle,
-        pub item_id: *const std::ffi::c_char,
-        pub resource_link: *const std::ffi::c_char,
+        pub item_id: crate::string::CosmosStringView,
+        pub resource_link: crate::string::CosmosStringView,
         pub partition_key: *const crate::partition_key::PartitionKeyHandle,
         pub partition_key_components: *const crate::partition_key::CosmosPartitionKeyComponent,
         pub partition_key_len: usize,
         pub feed_range: *const crate::feed_range::FeedRangeHandle,
         pub body: *const u8,
         pub body_len: usize,
-        pub session_token: *const std::ffi::c_char,
-        pub activity_id: *const std::ffi::c_char,
-        pub continuation_token: *const std::ffi::c_char,
+        pub session_token: crate::string::CosmosStringView,
+        pub activity_id: crate::string::CosmosStringView,
+        pub continuation_token: crate::string::CosmosStringView,
         pub max_item_count: i32,
         pub max_fan_out: u32,
         pub patch_max_attempts: u8,
         pub populate_index_metrics: i8,
         pub populate_query_metrics: i8,
         pub precondition_kind: i32,
-        pub precondition_etag: *const std::ffi::c_char,
+        pub precondition_etag: crate::string::CosmosStringView,
         pub options: *const CosmosOperationOptions,
-        pub patch_tracking_id: *const std::ffi::c_char,
+        pub patch_tracking_id: crate::string::CosmosStringView,
         pub patch_tracking_capacity: u16,
         pub patch_tracking_retention_seconds: u32,
     }
@@ -421,6 +421,7 @@ pub mod op_request {
     }
 }
 pub mod partition_key {
+    pub use azurecosmosdriver::string::CosmosStringView;
     #[no_mangle]
     pub extern "C" fn cosmos_partition_key_component_count(pk: *const PartitionKeyHandle) -> usize;
     #[no_mangle]
@@ -452,7 +453,7 @@ pub mod partition_key {
     #[derive(Clone, Copy)]
     #[repr(C)]
     pub union CosmosPartitionKeyComponentValue {
-        pub string_value: *const std::ffi::c_char,
+        pub string_value: CosmosStringView,
         pub number_value: f64,
         pub bool_value: u8,
     }
@@ -530,9 +531,9 @@ pub mod runtime_builder {
     #[repr(C)]
     pub struct CosmosRuntimeOptions {
         pub workload_id: u8,
-        pub correlation_id: *const std::ffi::c_char,
-        pub user_agent_suffix: *const std::ffi::c_char,
-        pub wrapping_sdk_identifier: *const std::ffi::c_char,
+        pub correlation_id: crate::string::CosmosStringView,
+        pub user_agent_suffix: crate::string::CosmosStringView,
+        pub wrapping_sdk_identifier: crate::string::CosmosStringView,
         pub cpu_refresh_interval_ms: u64,
     }
 }
@@ -540,12 +541,21 @@ pub mod runtime_builder {
 pub mod string {
     #[no_mangle]
     pub extern "C" fn cosmos_string_free(s: *const std::os::raw::c_char);
+    #[derive(Clone, Copy, Debug)]
+    #[repr(C)]
+    pub struct CosmosStringView {
+        pub data: *const u8,
+        pub len: usize,
+    }
+    impl Default for CosmosStringView {
+        fn default() -> Self;
+    }
 }
 pub mod submit {
     #[no_mangle]
     pub extern "C" fn cosmos_driver_get_or_create_submit(runtime: *const crate::runtime::RuntimeContext, account: *const crate::account_ref::AccountRefHandle, options: *const crate::driver_options::DriverOptionsHandle, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]
-    pub extern "C" fn cosmos_driver_resolve_container_submit(driver: *const crate::driver::DriverHandle, database_id: *const std::os::raw::c_char, container_id: *const std::os::raw::c_char, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    pub extern "C" fn cosmos_driver_resolve_container_submit(driver: *const crate::driver::DriverHandle, database_id: crate::string::CosmosStringView, container_id: crate::string::CosmosStringView, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]
     pub extern "C" fn cosmos_submit_operation(driver: *const crate::driver::DriverHandle, request: *const crate::op_request::CosmosOperationRequest, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]

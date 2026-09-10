@@ -610,8 +610,8 @@ pub extern "C" fn cosmos_driver_get_or_create_submit(
 #[no_mangle]
 pub extern "C" fn cosmos_driver_resolve_container_submit(
     driver: *const DriverHandle,
-    database_id: *const std::os::raw::c_char,
-    container_id: *const std::os::raw::c_char,
+    database_id: crate::string::CosmosStringView,
+    container_id: crate::string::CosmosStringView,
     queue: *mut CompletionQueue,
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
@@ -629,14 +629,26 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
         write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
         return std::ptr::null_mut();
     };
-    let db_id = match try_cstr_to_string(database_id) {
+    // SAFETY: input view remains readable until submit returns.
+    let db_id = match unsafe {
+        crate::string::required_text(
+            database_id,
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+        )
+    } {
         Ok(s) => s,
         Err(code) => {
             write_err(code);
             return std::ptr::null_mut();
         }
     };
-    let container_id = match try_cstr_to_string(container_id) {
+    // SAFETY: input view remains readable until submit returns.
+    let container_id = match unsafe {
+        crate::string::required_text(
+            container_id,
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+        )
+    } {
         Ok(s) => s,
         Err(code) => {
             write_err(code);
@@ -673,17 +685,6 @@ pub extern "C" fn cosmos_driver_resolve_container_submit(
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-fn try_cstr_to_string(p: *const std::os::raw::c_char) -> Result<String, CosmosErrorCode> {
-    if p.is_null() {
-        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-    }
-    // SAFETY: caller contract.
-    let cstr = unsafe { std::ffi::CStr::from_ptr(p) };
-    cstr.to_str()
-        .map(|s| s.to_owned())
-        .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidUtf8)
-}
 
 #[cfg(test)]
 mod tests {
@@ -755,8 +756,8 @@ mod tests {
         let mut err: CosmosStatusCode = COSMOS_STATUS_SUCCESS;
         let h = cosmos_driver_resolve_container_submit(
             ptr::null(),
-            ptr::null(),
-            ptr::null(),
+            crate::string::CosmosStringView::default(),
+            crate::string::CosmosStringView::default(),
             ptr::null_mut(),
             0,
             &mut err,

@@ -46,7 +46,7 @@ static int make_runtime_and_cq(cosmos_runtime_t **out_runtime,
     *out_cq = NULL;
 
     cosmos_runtime_options_t opts = cosmos_runtime_options_default();
-    opts.user_agent_suffix = "abi-headers-c-tests";
+    opts.user_agent_suffix = SV("abi-headers-c-tests");
 
     cosmos_runtime_t *runtime = NULL;
     cosmos_error_t *err = NULL;

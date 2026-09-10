@@ -375,7 +375,7 @@ pub(crate) enum CosmosErrorCode {
     CosmosErrorCodeSuccess,
     /// A required pointer argument was `NULL`.
     CosmosErrorCodeInvalidArgument,
-    /// A `*const c_char` argument was not valid UTF-8.
+    /// A counted string input was not valid UTF-8.
     CosmosErrorCodeInvalidUtf8,
     /// A request header name or value contained non-ASCII or control
     /// characters.

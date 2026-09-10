@@ -5,6 +5,20 @@
 > **Target crate:** `sdk/cosmos/azure_data_cosmos_driver_native`
 > **Wraps:** [`azure_data_cosmos_driver`](https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver) (Layer 1 — driver crate)
 > **Supersedes:** `azure_data_cosmos_native` (removed in PR [#4103](https://github.com/Azure/azure-sdk-for-rust/pull/4103), commit `ccf43caae`), which wrapped the high-level `azure_data_cosmos` SDK.
+>
+> **Implemented native 0.1 ABI:** The declaration sketches below predate the
+> flat request and counted-text migration. The generated
+> `sdk/cosmos/azure_data_cosmos_driver_native/include/azurecosmosdriver.h` is
+> authoritative. All caller-provided text now uses `cosmos_string_view_t`
+> (`data`, pointer-sized UTF-8 byte `len`), including region-array entries and
+> custom-header names/values. NULL/0 is optional-unset; non-NULL/0 is explicit
+> empty; required text rejects NULL except partition-key strings. NULL/nonzero
+> is invalid. Embedded NUL is preserved for partition keys and explicitly
+> rejected for all other text before parsing or normalization. Retained inputs
+> are copied before returning, including asynchronous submits. Output C strings
+> and the credential bridge's existing counted buffers are unchanged.
+> Binding examples and full allocation/array contracts are maintained in
+> `sdk/cosmos/azure_data_cosmos_driver_native/README.md`.
 
 ---
 
