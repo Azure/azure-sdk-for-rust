@@ -476,7 +476,7 @@ fn clone_blob_client(client: &GeneratedBlobClient) -> GeneratedBlobClient {
 fn layout_request_from_options(
     options: &BlobClientDownloadOptions<'_>,
 ) -> Option<BlobClientListLayoutOptions<'static>> {
-    matches!(options.layout_aware_routing, LayoutAwareRouting::Enabled)
+    (!matches!(options.layout_aware_routing, LayoutAwareRouting::Disabled))
         .then(|| layout_options_from_download(options))
 }
 

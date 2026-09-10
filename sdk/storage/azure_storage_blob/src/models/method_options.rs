@@ -28,7 +28,7 @@ use crate::models::{
 pub enum LayoutAwareRouting {
     /// The locality-aware routing behavior is determined by the client library and
     /// may change in future releases. Currently equivalent to
-    /// [`LayoutAwareRouting::Disabled`].
+    /// [`LayoutAwareRouting::Enabled`].
     #[default]
     Auto,
 

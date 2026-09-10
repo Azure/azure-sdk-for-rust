@@ -1636,7 +1636,7 @@ async fn test_download_layout_aware_routing_routes_chunks() -> Result<(), Box<dy
 
     let body = blob_client
         .download(Some(BlobClientDownloadOptions {
-            layout_aware_routing: LayoutAwareRouting::Enabled,
+            layout_aware_routing: LayoutAwareRouting::Auto,
             partition_size: Some(NonZero::new(4).unwrap()),
             parallel: Some(NonZero::new(2).unwrap()),
             ..Default::default()
@@ -1680,6 +1680,67 @@ async fn test_download_layout_aware_routing_routes_chunks() -> Result<(), Box<dy
             other => panic!("unexpected data range: {other}"),
         }
     }
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_download_layout_aware_routing_skips_layout_for_complete_initial_range(
+) -> Result<(), Box<dyn Error>> {
+    const DATA: [u8; 8] = [10, 11, 12, 13, 14, 15, 16, 17];
+
+    let request_count = Arc::new(AtomicUsize::new(0));
+    let count_capture = request_count.clone();
+    let mock_client = Arc::new(MockHttpClient::new(move |request| {
+        assert_eq!(0, count_capture.fetch_add(1, Ordering::SeqCst));
+        assert!(!request
+            .url()
+            .query()
+            .is_some_and(|query| query.contains("comp=layout")));
+        assert_eq!(
+            Some("bytes=0-7"),
+            request.headers().get_optional_str(&"range".into())
+        );
+
+        let mut headers = Headers::new();
+        headers.insert("content-range", "bytes 0-7/8");
+        headers.insert("content-length", DATA.len().to_string());
+        headers.insert("etag", "\"complete-range-etag\"");
+        headers.insert("x-ms-download-hint", "layout");
+        async move {
+            Ok(AsyncRawResponse::from_bytes(
+                StatusCode::PartialContent,
+                headers,
+                Bytes::from_static(&DATA),
+            ))
+        }
+        .boxed()
+    }));
+
+    let blob_client = BlobClient::new(
+        Url::parse("https://acct.blob.core.windows.net/container/blob")?,
+        None,
+        Some(BlobClientOptions {
+            client_options: ClientOptions {
+                transport: Some(Transport::new(mock_client)),
+                ..Default::default()
+            },
+            ..Default::default()
+        }),
+    )?;
+
+    let body = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            layout_aware_routing: LayoutAwareRouting::Auto,
+            partition_size: Some(NonZero::new(DATA.len()).unwrap()),
+            ..Default::default()
+        }))
+        .await?
+        .body
+        .collect()
+        .await?;
+
+    assert_eq!(&body[..], &DATA[..]);
+    assert_eq!(request_count.load(Ordering::SeqCst), 1);
     Ok(())
 }
 
