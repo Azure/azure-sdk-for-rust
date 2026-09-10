@@ -772,8 +772,16 @@ fn validate_streaming_order_by_snapshot(
     let mut parsed = Vec::with_capacity(ranges.len());
     let mut prev_max: Option<EffectivePartitionKey> = None;
     for entry in ranges {
-        let min = EffectivePartitionKey::from(entry.min_epk);
-        let max = EffectivePartitionKey::from(entry.max_epk);
+        let min = parse_continuation_epk(
+            &entry.min_epk,
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+            "StreamingOrderedMerge min_epk",
+        )?;
+        let max = parse_continuation_epk(
+            &entry.max_epk,
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+            "StreamingOrderedMerge max_epk",
+        )?;
         if min >= max {
             return Err(order_by_state_invalid(format!(
                 "continuation token has an invalid range (min `{}` >= max `{}`)",
@@ -844,6 +852,22 @@ fn order_by_state_invalid(
         .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID)
         .with_message(message)
         .build()
+}
+
+fn parse_continuation_epk(
+    value: &str,
+    status: crate::error::CosmosStatus,
+    field: &str,
+) -> crate::error::Result<EffectivePartitionKey> {
+    EffectivePartitionKey::try_from_hex(value).ok_or_else(|| {
+        crate::error::CosmosError::builder()
+            .with_status(status)
+            .with_message(format!(
+                "continuation token {field} contains malformed EPK `{value}`; \
+                 EPK bounds must be even-length hexadecimal strings"
+            ))
+            .build()
+    })
 }
 
 /// Builds an [`UnorderedMerge`] pipeline for change feed operations.
@@ -1382,12 +1406,24 @@ fn validate_saved_snapshot(
     left_most_undrained_epk: String,
     active_tokens: Vec<RangedToken>,
 ) -> crate::error::Result<SavedSnapshot> {
-    let cursor = EffectivePartitionKey::from(left_most_undrained_epk);
+    let cursor = parse_continuation_epk(
+        &left_most_undrained_epk,
+        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+        "SequentialDrain left_most_undrained_epk",
+    )?;
 
     let mut parsed: Vec<SavedActiveToken> = Vec::with_capacity(active_tokens.len());
     for entry in active_tokens {
-        let min = EffectivePartitionKey::from(entry.min_epk);
-        let max = EffectivePartitionKey::from(entry.max_epk);
+        let min = parse_continuation_epk(
+            &entry.min_epk,
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "SequentialDrain active_tokens min_epk",
+        )?;
+        let max = parse_continuation_epk(
+            &entry.max_epk,
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "SequentialDrain active_tokens max_epk",
+        )?;
         if min > max {
             return Err(crate::error::CosmosError::builder()
                 .with_status(
@@ -1484,8 +1520,16 @@ fn validate_unordered_merge_tokens(
 ) -> crate::error::Result<Vec<SavedActiveToken>> {
     let mut parsed: Vec<SavedActiveToken> = Vec::with_capacity(active_tokens.len());
     for entry in active_tokens {
-        let min = EffectivePartitionKey::from(entry.min_epk);
-        let max = EffectivePartitionKey::from(entry.max_epk);
+        let min = parse_continuation_epk(
+            &entry.min_epk,
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "UnorderedMerge active_tokens min_epk",
+        )?;
+        let max = parse_continuation_epk(
+            &entry.max_epk,
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "UnorderedMerge active_tokens max_epk",
+        )?;
         if min >= max {
             return Err(crate::error::CosmosError::builder()
                 .with_status(
@@ -4425,6 +4469,49 @@ mod tests {
             Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "got: {err}"
         );
+    }
+
+    #[test]
+    fn continuation_validators_reject_malformed_epk_bounds() {
+        let streaming_error = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "query",
+            Some("query"),
+            vec![OrderByRangeToken {
+                min_epk: "40G0".to_owned(),
+                max_epk: "80".to_owned(),
+                server_continuation: None,
+                boundary: None,
+            }],
+        )
+        .err()
+        .expect("streaming ORDER BY must reject non-hex EPK bounds");
+        assert_eq!(
+            streaming_error.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID
+        );
+        assert!(streaming_error.to_string().contains("malformed EPK"));
+
+        let sequential_error = validate_saved_snapshot("408".to_owned(), Vec::new())
+            .expect_err("SequentialDrain must reject odd-length cursor EPKs");
+        assert_eq!(
+            sequential_error.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+        );
+        assert!(sequential_error.to_string().contains("malformed EPK"));
+
+        let unordered_error = validate_unordered_merge_tokens(vec![RangedToken {
+            min_epk: String::new(),
+            max_epk: "F".to_owned(),
+            server_continuation: "token".to_owned(),
+        }])
+        .expect_err("UnorderedMerge must reject odd-length range EPKs");
+        assert_eq!(
+            unordered_error.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+        );
+        assert!(unordered_error.to_string().contains("malformed EPK"));
     }
 
     /// A token minted under one feed scope must not resume under another.

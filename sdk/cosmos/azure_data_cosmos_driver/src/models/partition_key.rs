@@ -38,8 +38,15 @@ enum InnerPartitionKeyValue {
     Infinity,
 }
 
-/// Maximum number of string bytes to include when hashing (V1 truncation).
+/// Maximum number of string bytes to include in V1 hashing and binary encoding.
 const MAX_STRING_BYTES_TO_APPEND: usize = 100;
+
+/// Preserves the driver's existing byte-count V1 behavior without requiring
+/// the truncated prefix to be valid UTF-8.
+fn v1_string_prefix(value: &str) -> &[u8] {
+    let bytes = value.as_bytes();
+    &bytes[..bytes.len().min(MAX_STRING_BYTES_TO_APPEND)]
+}
 
 /// Byte markers for partition key value encoding.
 mod component {
@@ -65,11 +72,10 @@ impl InnerPartitionKeyValue {
             }
             InnerPartitionKeyValue::String(s) => {
                 writer.push(component::STRING);
-                let bytes = s.as_bytes();
-                if truncate && bytes.len() > MAX_STRING_BYTES_TO_APPEND {
-                    writer.extend_from_slice(&bytes[..MAX_STRING_BYTES_TO_APPEND]);
+                if truncate {
+                    writer.extend_from_slice(v1_string_prefix(s));
                 } else {
-                    writer.extend_from_slice(bytes);
+                    writer.extend_from_slice(s.as_bytes());
                 }
                 writer.push(string_suffix);
             }
@@ -87,19 +93,10 @@ impl InnerPartitionKeyValue {
             }
             InnerPartitionKeyValue::String(s) => {
                 writer.push(component::STRING);
-                let utf8 = s.as_bytes();
-                let short = utf8.len() <= MAX_STRING_BYTES_TO_APPEND;
-                let write_len = if short {
-                    utf8.len()
-                } else {
-                    std::cmp::min(utf8.len(), MAX_STRING_BYTES_TO_APPEND + 1)
-                };
-                for item in utf8.iter().take(write_len) {
+                for item in v1_string_prefix(s) {
                     writer.push(item.wrapping_add(1));
                 }
-                if short {
-                    writer.push(0x00);
-                }
+                writer.push(0x00);
             }
             InnerPartitionKeyValue::Null => writer.push(component::NULL),
             InnerPartitionKeyValue::Undefined => writer.push(component::UNDEFINED),
@@ -171,6 +168,9 @@ impl PartitionKeyValue {
     }
 
     /// Writes this value using V1 binary encoding for the EPK output string.
+    ///
+    /// Strings use the same first 100 UTF-8 bytes as V1 hashing. The prefix may
+    /// end inside a multi-byte character, so it is encoded directly from bytes.
     pub(crate) fn write_for_binary_encoding_v1(&self, writer: &mut Vec<u8>) {
         self.0.write_for_binary_encoding_v1(writer)
     }
@@ -178,23 +178,6 @@ impl PartitionKeyValue {
     /// Returns `true` if this value is the special Infinity sentinel.
     pub(crate) fn is_infinity(&self) -> bool {
         matches!(self.0, InnerPartitionKeyValue::Infinity)
-    }
-
-    /// Returns a truncated copy of this value for V1 binary encoding.
-    ///
-    /// String values longer than [`MAX_STRING_BYTES_TO_APPEND`] bytes are truncated
-    /// so that `write_for_binary_encoding_v1` sees them as "short" and appends the
-    /// `0x00` terminator, matching how the hashing step truncates strings.
-    pub(crate) fn truncated_for_v1_encoding(&self) -> PartitionKeyValue {
-        match &self.0 {
-            InnerPartitionKeyValue::String(s) if s.len() > MAX_STRING_BYTES_TO_APPEND => {
-                InnerPartitionKeyValue::String(Cow::Owned(
-                    s[..MAX_STRING_BYTES_TO_APPEND].to_string(),
-                ))
-                .into()
-            }
-            _ => self.clone(),
-        }
     }
 }
 
@@ -525,6 +508,25 @@ mod tests {
     fn null_partition_key_value() {
         let pk = PartitionKey::from(None::<String>);
         assert_eq!(pk.len(), 1);
+    }
+
+    #[test]
+    fn v1_string_encoding_uses_the_same_raw_byte_prefix_as_hashing() {
+        let value = PartitionKeyValue::from(format!("{}éz", "a".repeat(99)));
+
+        let mut hashing = Vec::new();
+        value.write_for_hashing_v1(&mut hashing);
+        assert_eq!(hashing.len(), 102);
+        assert_eq!(hashing[0], component::STRING);
+        assert_eq!(hashing[100], 0xC3);
+        assert_eq!(hashing[101], 0x00);
+
+        let mut binary = Vec::new();
+        value.write_for_binary_encoding_v1(&mut binary);
+        assert_eq!(binary.len(), 102);
+        assert_eq!(binary[0], component::STRING);
+        assert_eq!(binary[100], 0xC4);
+        assert_eq!(binary[101], 0x00);
     }
 
     #[test]
