@@ -52,5 +52,5 @@ pub use epk::Epk;
 pub use observer::RequestObserver;
 #[doc(hidden)]
 pub use response::headers as test_headers;
-pub use ru_model::RuChargingModel;
+pub use ru_model::RequestUnitChargingModel;
 pub use store::{EmulatorStore, ManualControlPlaneOperation};

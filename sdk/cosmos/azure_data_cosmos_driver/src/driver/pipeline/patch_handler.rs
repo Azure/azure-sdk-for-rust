@@ -1417,7 +1417,7 @@ mod tests {
         ] {
             let handle = diagnostics.start_request(
                 crate::diagnostics::ExecutionContext::Initial,
-                crate::diagnostics::PipelineType::DataPlane,
+                crate::diagnostics::PipelineKind::DataPlane,
                 crate::diagnostics::TransportSecurity::Secure,
                 crate::diagnostics::TransportKind::Gateway,
                 crate::diagnostics::TransportHttpVersion::Http11,
@@ -1692,7 +1692,7 @@ mod tests {
                 );
                 let handle = builder.start_request(
                     crate::diagnostics::ExecutionContext::Initial,
-                    crate::diagnostics::PipelineType::DataPlane,
+                    crate::diagnostics::PipelineKind::DataPlane,
                     crate::diagnostics::TransportSecurity::Secure,
                     crate::diagnostics::TransportKind::Gateway,
                     crate::diagnostics::TransportHttpVersion::Http11,
@@ -1919,7 +1919,7 @@ mod tests {
             );
             let handle = diagnostics.start_request(
                 crate::diagnostics::ExecutionContext::Initial,
-                crate::diagnostics::PipelineType::DataPlane,
+                crate::diagnostics::PipelineKind::DataPlane,
                 crate::diagnostics::TransportSecurity::Secure,
                 crate::diagnostics::TransportKind::Gateway,
                 crate::diagnostics::TransportHttpVersion::Http11,
@@ -3410,7 +3410,7 @@ mod tests {
                 );
                 let handle = diagnostics.start_request(
                     crate::diagnostics::ExecutionContext::Initial,
-                    crate::diagnostics::PipelineType::DataPlane,
+                    crate::diagnostics::PipelineKind::DataPlane,
                     crate::diagnostics::TransportSecurity::Secure,
                     crate::diagnostics::TransportKind::Gateway,
                     crate::diagnostics::TransportHttpVersion::Http11,

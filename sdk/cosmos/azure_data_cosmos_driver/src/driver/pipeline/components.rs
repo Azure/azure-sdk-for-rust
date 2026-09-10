@@ -206,7 +206,7 @@ pub(crate) struct OperationRetryState {
     pub can_use_multiple_write_locations: bool,
     /// Whether this operation is on the data-plane pipeline (vs metadata).
     ///
-    /// Load-bearing: set via `PipelineType::is_data_plane()` so non-exhaustive variants stay scoped out.
+    /// Load-bearing: set via `PipelineKind::is_data_plane()` so non-exhaustive variants stay scoped out.
     pub is_dataplane: bool,
     /// Hub-region-processing-only latch.
     ///
