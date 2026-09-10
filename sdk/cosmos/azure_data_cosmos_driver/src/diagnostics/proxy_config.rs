@@ -9,7 +9,7 @@
 /// [`Context`](azure_core::http::Context) so that policies and diagnostic
 /// consumers can identify when a proxy is in use.
 #[derive(Clone, Debug)]
-pub struct ProxyConfiguration {
+pub struct ProxyConfig {
     /// Whether proxy usage is allowed.
     pub proxy_allowed: bool,
     /// Whether `HTTPS_PROXY` (or `https_proxy`) was set at client creation time.
@@ -18,7 +18,7 @@ pub struct ProxyConfiguration {
     pub http_proxy_set: bool,
 }
 
-impl ProxyConfiguration {
+impl ProxyConfig {
     /// Snapshots the current proxy environment variables.
     pub fn from_env(proxy_allowed: bool) -> Self {
         let (https_proxy_set, http_proxy_set) = if proxy_allowed {

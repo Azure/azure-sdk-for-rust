@@ -33,7 +33,7 @@ use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntime,
     models::{AccountReference, PartitionKey, PartitionKeyVersion},
     options::DriverOptions,
-    testing::{
+    test::{
         ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
         TransportClient, TransportError,
     },
