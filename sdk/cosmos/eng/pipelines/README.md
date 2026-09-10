@@ -21,10 +21,11 @@ account endpoints and keys - stored once in an ADO secret - keep working
 indefinitely, with no per-run Azure authentication and no service-connection
 dependency at all for this leg.
 
-`Cosmos_live_test_aad` (the dedicated AAD/Entra ID leg) is **unaffected** by
-this change: it continues to deploy fresh accounts per run via
-`test-resources.bicep` against the existing service connection, exactly as
-before. Thin-client/GatewayV2 legs are also unaffected/out of scope.
+`Cosmos_live_test_aad` and `Cosmos_live_federated_aad` are intentionally not
+fixed-account jobs. They deploy fresh accounts through `test-resources.bicep`,
+set `disableLocalAuth`, and use the federated pipeline identity for both Cosmos
+data-plane RBAC and ARM resource management. Thin-client/GatewayV2 legs retain
+their existing configuration.
 
 ## How it fits together
 
@@ -74,12 +75,11 @@ before. Thin-client/GatewayV2 legs are also unaffected/out of scope.
    `eng/pipelines/templates/stages/archetype-sdk-client.yml` gained a
    `FixedAccountMatrixConfigs` parameter (a second, independent
    `LiveTestMatrixConfigs`-like list) so this only applies to the matrix
-   configs that opt in - `Cosmos_live_test_aad` keeps deploying real ARM
-   resources, unaffected.
+   configs that opt in. Federated AAD jobs keep deploying real ARM resources.
 9. `sdk/cosmos/ci.yml` wires `Cosmos_live_test` through
    `FixedAccountMatrixConfigs` with `PreTestRunSteps` pointing at
-   `resolve-test-account-steps.yml`, while `Cosmos_live_test_aad` remains on
-   `LiveTestMatrixConfigs` exactly as before.
+   `resolve-test-account-steps.yml`, while the AAD matrices remain on
+   `LiveTestMatrixConfigs`.
 
 ## Local testing
 
@@ -90,8 +90,8 @@ pwsh sdk/cosmos/eng/pipelines/resolve-cosmos-test-account.tests.ps1
 ```
 
 You can also invoke the resolver directly against the sample JSON. Dot-source
-it (note the leading `. `) so the resolved variables land directly in your
-current shell instead of just being printed:
+it (a leading `.` followed by a space) so the resolved variables land directly
+in your current shell instead of just being printed:
 
 ```powershell
 $env:COSMOS_ACCOUNTS_LOCAL = 'true'
@@ -106,9 +106,10 @@ See `account-provisioning/README.md`.
 
 ## What this does *not* solve
 
-This mechanism only covers **key-based** tests. AAD-specific behavior
-requires a real Entra ID identity/tenant to authenticate against; fixed
-accounts don't remove that requirement, they only remove it for the tests
-that don't need AAD in the first place. `Cosmos_live_test_aad` still depends
-on the ephemeral tenant and the `azure-sdk-tests-cosmos` service connection,
-exactly as it did before this change.
+This mechanism only covers **key-based** tests. The fixed-account job generator
+explicitly sets `UseFederatedAuth: false`, so it cannot run the AAD integration,
+binary round-trip, or partition-merge legs. Those jobs require a real Entra ID
+identity and remain on the per-run ARM path through the
+`azure-sdk-tests-cosmos` service connection. Partition merge additionally
+requires a preview-enabled account and an ARM token for the merge operation,
+which is why it is not assigned to a fixed account.

@@ -43,10 +43,9 @@ struct AadTestItem {
 
 /// Drives a full item CRUD round-trip through an AAD-authenticated client.
 ///
-/// Setup (database + container) and teardown run through the framework's
-/// key-auth client; only the item operations use the AAD client. On the
-/// emulator we additionally assert the bespoke fake-JWT credential was actually
-/// invoked for the Cosmos scope, guarding against silently exercising key auth.
+/// Live setup and teardown use the framework's ARM client; item operations use
+/// the AAD data-plane client. On the emulator we additionally assert the fake
+/// JWT credential was invoked for the Cosmos scope.
 #[tokio::test]
 #[cfg_attr(
     any(not(cosmos_aad_supported), test_category = "emulator_inmemory"),
@@ -55,7 +54,6 @@ struct AadTestItem {
 pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context: &TestRunContext, db_client| {
-            // Key client creates the container (management-plane operation).
             let container_id = format!("aad-container-{}", Uuid::new_v4());
             run_context
                 .create_container(
@@ -73,14 +71,12 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
                 .await?;
 
             // Metadata (5301) and name-based data (5302) authorize through
-            // separate RBAC paths. `run_context.create_container` above only
-            // warms the framework's key-auth client; this test's own
-            // freshly-built AAD client has never issued a data-plane
-            // request against this container, so its first item operation
-            // can still race and return
+            // separate RBAC paths. This freshly-built AAD client has not issued
+            // a data-plane request against the container, so its first item
+            // operation can still race and return
             // `403/5302 RbacUnauthorizedNameBasedDataRequest`. Probe this
             // client's data path before exercising real assertions.
-            probe_data_plane_ready("aad client", &aad_container).await?;
+            probe_data_plane_ready("aad client", &aad_container, 1).await?;
 
             let unique = Uuid::new_v4().to_string();
             let pk = format!("pk-{unique}");

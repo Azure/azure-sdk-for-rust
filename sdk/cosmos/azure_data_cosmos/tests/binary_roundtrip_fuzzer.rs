@@ -19,8 +19,11 @@
 //! RUSTFLAGS='--cfg test_category="binary_encoding"' \
 //!   cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection,control_plane -- --nocapture
 //!
-//! # Multi-day soak (millions of docs), release build:
-//! AZURE_COSMOS_CONNECTION_STRING='...' AZURE_COSMOS_FUZZ_ITERATIONS=5000000 \
+//! # Multi-day soak against a live account using federated Entra ID:
+//! AZURE_COSMOS_AUTH_MODE=aad ACCOUNT_HOST='https://<account>.documents.azure.com:443/' \
+//! COSMOS_SUBSCRIPTION_ID='<subscription>' COSMOS_RESOURCE_GROUP='<resource-group>' \
+//! COSMOS_ACCOUNT_NAME='<account>' \
+//! AZURE_COSMOS_FUZZ_ITERATIONS=5000000 \
 //! RUSTFLAGS='--cfg test_category="binary_encoding"' \
 //!   cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection,control_plane --release -- --nocapture
 //!
@@ -55,7 +58,13 @@ use serde_json::{Map, Number, Value};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
+#[path = "framework/mod.rs"]
+mod framework;
+
+use framework::CosmosArmClient;
+
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
+const AUTH_MODE_ENV_VAR: &str = "AZURE_COSMOS_AUTH_MODE";
 const ALLOW_INVALID_CERT_ENV_VAR: &str = "AZURE_COSMOS_ALLOW_INVALID_CERT";
 const DATABASE_NAME_ENV_VAR: &str = "AZURE_COSMOS_BINARY_TEST_DATABASE";
 const CONTAINER_NAME_ENV_VAR: &str = "AZURE_COSMOS_BINARY_TEST_CONTAINER";
@@ -1818,6 +1827,16 @@ fn run_configs() -> Vec<RunConfig> {
 async fn build_client(
     binary: &Option<BinaryEncodingOptions>,
 ) -> Result<CosmosClient, Box<dyn Error>> {
+    if uses_aad_auth() {
+        return Ok(framework::build_aad_client_from_env(
+            Region::EAST_US,
+            Vec::new(),
+            binary.clone(),
+        )
+        .await?
+        .0);
+    }
+
     let connection_string = std::env::var(CONNECTION_STRING_ENV_VAR).map_err(|_| {
         format!("{CONNECTION_STRING_ENV_VAR} must be set to a Cosmos DB connection string")
     })?;
@@ -1853,6 +1872,46 @@ async fn build_client(
         .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await?;
     Ok(client)
+}
+
+fn uses_aad_auth() -> bool {
+    std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad"))
+}
+
+async fn create_test_resources(
+    client: &CosmosClient,
+    arm_client: Option<&CosmosArmClient>,
+    database_name: &str,
+    container_name: &str,
+) -> Result<(), Box<dyn Error>> {
+    let properties = ContainerProperties::new(container_name.to_owned(), PARTITION_KEY_PATH.into());
+    if let Some(arm_client) = arm_client {
+        arm_client.create_database(database_name).await?;
+        arm_client
+            .create_or_update_container(database_name, container_name, &properties, None)
+            .await?;
+        let container = client
+            .database_client(database_name)
+            .container_client(container_name, None)
+            .await?;
+        framework::probe_data_plane_ready("binary fuzzer setup client", &container, 1).await?;
+    } else {
+        ignore_conflict(client.create_database(database_name, None).await)?;
+        let database = client.database_client(database_name);
+        ignore_conflict(database.create_container(properties, None).await)?;
+    }
+    Ok(())
+}
+
+async fn delete_test_resources(
+    _client: &CosmosClient,
+    arm_client: Option<&CosmosArmClient>,
+    database_name: &str,
+) -> Result<(), Box<dyn Error>> {
+    if let Some(arm_client) = arm_client {
+        arm_client.delete_database(database_name).await?;
+    }
+    Ok(())
 }
 
 fn ignore_conflict<T>(result: azure_data_cosmos::Result<T>) -> Result<(), Box<dyn Error>> {
@@ -2148,7 +2207,7 @@ fn assert_query_hit(
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "binary_encoding"),
-    ignore = "requires test_category 'binary_encoding' and a live account connection string"
+    ignore = "requires test_category 'binary_encoding' and a live account"
 )]
 async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
     let cfg = FuzzConfig::from_env();
@@ -2179,17 +2238,31 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
         .unwrap_or_else(|_| DEFAULT_CONTAINER_NAME.to_string());
 
     let setup_client = &clients[0].1;
-    ignore_conflict(setup_client.create_database(&database_name, None).await)?;
-    let setup_db = setup_client.database_client(&database_name);
-    ignore_conflict(
-        setup_db
-            .create_container(
-                ContainerProperties::new(container_name.clone(), PARTITION_KEY_PATH.into()),
-                None,
-            )
-            .await,
-    )?;
+    let arm_client = if uses_aad_auth() {
+        Some(CosmosArmClient::from_env(
+            azure_core_test::credentials::from_env(None)?,
+        )?)
+    } else {
+        None
+    };
+    create_test_resources(
+        setup_client,
+        arm_client.as_ref(),
+        &database_name,
+        &container_name,
+    )
+    .await?;
+    if uses_aad_auth() {
+        for (label, client) in clients.iter().skip(1) {
+            let container = client
+                .database_client(&database_name)
+                .container_client(&container_name, None)
+                .await?;
+            framework::probe_data_plane_ready(label, &container, 1).await?;
+        }
+    }
 
+    let test_result = async {
     let mut rng = SplitMix64::new(cfg.seed);
     let mut checked: u64 = 0;
 
@@ -2460,6 +2533,14 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
         configs.len(),
         cfg.seed
     );
+    Ok::<(), Box<dyn Error>>(())
+    }
+    .await;
+
+    let cleanup_result =
+        delete_test_resources(setup_client, arm_client.as_ref(), &database_name).await;
+    test_result?;
+    cleanup_result?;
     Ok(())
 }
 
@@ -2572,17 +2653,24 @@ async fn run_calibration() -> Result<(), Box<dyn Error>> {
     let container_name = std::env::var(CONTAINER_NAME_ENV_VAR)
         .unwrap_or_else(|_| DEFAULT_CONTAINER_NAME.to_string());
 
-    ignore_conflict(client.create_database(&database_name, None).await)?;
+    let arm_client = if uses_aad_auth() {
+        Some(CosmosArmClient::from_env(
+            azure_core_test::credentials::from_env(None)?,
+        )?)
+    } else {
+        None
+    };
+    create_test_resources(
+        &client,
+        arm_client.as_ref(),
+        &database_name,
+        &container_name,
+    )
+    .await?;
     let db = client.database_client(&database_name);
-    ignore_conflict(
-        db.create_container(
-            ContainerProperties::new(container_name.clone(), PARTITION_KEY_PATH.into()),
-            None,
-        )
-        .await,
-    )?;
     let container = db.container_client(&container_name, None).await?;
 
+    let calibration_result = async {
     println!(
         "{:<26} {:<24} {:<24} {:<24} {}",
         "probe", "sent-literal", "our-canonical", "backend-returned", "status"
@@ -2644,6 +2732,13 @@ async fn run_calibration() -> Result<(), Box<dyn Error>> {
             "CALIBRATION: {diffs} probe(s) DIFF — update `normalize_number` to match the backend-returned column above."
         );
     }
+    Ok::<(), Box<dyn Error>>(())
+    }
+    .await;
+
+    let cleanup_result = delete_test_resources(&client, arm_client.as_ref(), &database_name).await;
+    calibration_result?;
+    cleanup_result?;
     Ok(())
 }
 

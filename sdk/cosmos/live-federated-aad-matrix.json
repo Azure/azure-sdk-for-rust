@@ -1,0 +1,23 @@
+{
+  "displayNames": {
+    "aad": "aad_auth"
+  },
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": ["stable"],
+    "AZURE_COSMOS_AUTH_MODE": ["aad"],
+    "Account Settings": {
+      "Session SingleWrite BinaryEncodingRoundtripFuzz": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; disableLocalAuth = $true; testCategory = 'binary_encoding' }"
+      },
+      "Session Partition Merge Preview": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; enablePartitionMerge = $true; disableLocalAuth = $true; testCategory = 'merge' }"
+      }
+    }
+  }
+}

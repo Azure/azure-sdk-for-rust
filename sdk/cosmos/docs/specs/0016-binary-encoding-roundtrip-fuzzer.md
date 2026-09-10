@@ -10,7 +10,7 @@ golden vectors (`binary_json_vectors.json`)
 prove specific byte layouts and the in-tree fuzz suite hammers the *decoder* with
 malformed input, this harness exercises the **end-to-end path**:
 
-```
+```text
 generate JSON → Rust encode → wire → backend store+rewrite → wire → Rust decode → compare
 ```
 
@@ -62,7 +62,7 @@ intentionally excluded.
 sent keys: any *extra* field the round-trip introduced (e.g. a codec bug that
 invents a property) survives into the comparison and fails the assertion.
 
-> **Reserved fields are also stripped on the _send_ side.** Cosmos *owns* the
+> **Reserved fields are also stripped on the *send* side.** Cosmos *owns* the
 > `_rid`/`_self`/`_etag`/`_ts`/`_attachments` properties and overwrites any value
 > a client authors. Because the corpus shapes are modeled on real exported
 > service documents (which carry `_self`), and the free-form value generator
@@ -211,12 +211,12 @@ flowchart LR
 
 Two JSON texts are "the same value" if they canonicalize identically. Rules:
 
-| Aspect      | Rule |
-| ----------- | ---- |
-| Whitespace  | removed entirely |
+| Aspect | Rule |
+| --- | --- |
+| Whitespace | removed entirely |
 | Object keys | sorted lexicographically (by UTF-16 code unit, per RFC 8785) |
-| Strings     | minimally JSON-escaped (via `serde_json`) |
-| Arrays      | order preserved |
+| Strings | minimally JSON-escaped (via `serde_json`) |
+| Arrays | order preserved |
 | **Numbers** | **Cosmos-compatible normalization — see §3.1** |
 
 ### 3.1 Number normalization (the tuning surface)
@@ -342,17 +342,19 @@ build time):
 
 > **Not yet implemented:** running each document through a *second* account (to
 > cover dictionary encoding on/off) is a planned extension. The harness reads a
-> single `AZURE_COSMOS_CONNECTION_STRING`; there is no second-account lookup.
+> single `ACCOUNT_HOST`; there is no second-account lookup.
 
 ## 6. Running the harness
 
 In CI, the harness runs automatically on the **`binary_encoding` live leg**
-(`live-platform-matrix.json` → `Session SingleWrite BinaryEncodingRoundtripFuzz`, which sets
-`testCategory = 'binary_encoding'`). That leg's bicep emits
-`--cfg=test_category="binary_encoding"` into `RUSTFLAGS` and provides the live
-`AZURE_COSMOS_CONNECTION_STRING`, so `binary_encoding_roundtrip_fuzz` (and the
-sibling `binary_encoding` item tests) stop being ignored. The per-run iteration
-budget is set by `AZURE_COSMOS_FUZZ_ITERATIONS` in `sdk/cosmos/ci.yml`
+(`live-federated-aad-matrix.json` →
+`Session SingleWrite BinaryEncodingRoundtripFuzz`, which sets
+`testCategory = 'binary_encoding'`). That federated leg's bicep emits
+`--cfg=test_category="binary_encoding"` into `RUSTFLAGS`, disables local
+authentication on the account, and provides `ACCOUNT_HOST`. The fuzzer uses
+Entra ID for all data-plane operations and the shared typed ARM test client for
+database and container lifecycle. The per-run iteration budget is set by
+`AZURE_COSMOS_FUZZ_ITERATIONS` in `sdk/cosmos/ci.yml`
 (default 180 there). Live tests only run on the weekly schedule or when a build
 is queued with **Run live tests** enabled.
 
@@ -363,8 +365,12 @@ AZURE_COSMOS_ALLOW_INVALID_CERT=true \
 RUSTFLAGS='--cfg test_category="binary_encoding"' \
   cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection,control_plane -- --nocapture
 
-# Multi-day soak (millions of docs):
-AZURE_COSMOS_CONNECTION_STRING='...' \
+# Multi-day soak (millions of docs) with federated Entra ID:
+AZURE_COSMOS_AUTH_MODE=aad \
+ACCOUNT_HOST='https://<account>.documents.azure.com:443/' \
+COSMOS_SUBSCRIPTION_ID='<subscription>' \
+COSMOS_RESOURCE_GROUP='<resource-group>' \
+COSMOS_ACCOUNT_NAME='<account>' \
 AZURE_COSMOS_FUZZ_ITERATIONS=5000000 \
 AZURE_COSMOS_FUZZ_MAX_DEPTH=6 \
 RUSTFLAGS='--cfg test_category="binary_encoding"' \
@@ -374,7 +380,10 @@ RUSTFLAGS='--cfg test_category="binary_encoding"' \
 AZURE_COSMOS_FUZZ_SEED=12345678901234567890 ... cargo test ...
 
 # Calibrate number canonicalization against the account (prints a table, no assert):
-AZURE_COSMOS_CONNECTION_STRING='...' AZURE_COSMOS_FUZZ_CALIBRATE=true \
+AZURE_COSMOS_AUTH_MODE=aad ACCOUNT_HOST='https://<account>.documents.azure.com:443/' \
+COSMOS_SUBSCRIPTION_ID='<subscription>' COSMOS_RESOURCE_GROUP='<resource-group>' \
+COSMOS_ACCOUNT_NAME='<account>' \
+AZURE_COSMOS_FUZZ_CALIBRATE=true \
 RUSTFLAGS='--cfg test_category="binary_encoding"' \
   cargo test -p azure_data_cosmos --test binary_roundtrip_fuzzer --features key_auth,fault_injection,control_plane -- --nocapture
 ```
@@ -383,7 +392,10 @@ RUSTFLAGS='--cfg test_category="binary_encoding"' \
 
 | Variable | Default | Meaning |
 | -------- | ------- | ------- |
-| `AZURE_COSMOS_CONNECTION_STRING` | — (required) | live account (endpoint + key) |
+| `AZURE_COSMOS_AUTH_MODE` | key | set to `aad` for federated live runs |
+| `ACCOUNT_HOST` | — (required for AAD) | live account endpoint |
+| `COSMOS_SUBSCRIPTION_ID` / `COSMOS_RESOURCE_GROUP` / `COSMOS_ACCOUNT_NAME` | — (required for AAD) | ARM resource identity used for test lifecycle |
+| `AZURE_COSMOS_CONNECTION_STRING` | — (emulator/key mode only) | endpoint and key for local emulator runs |
 | `AZURE_COSMOS_ALLOW_INVALID_CERT` | false | accept emulator cert |
 | `AZURE_COSMOS_FUZZ_ITERATIONS` | 180 | number of generated docs |
 | `AZURE_COSMOS_FUZZ_SEED` | random | PRNG seed (for reproduction) |
@@ -438,7 +450,7 @@ The two most easily-confused layers are the **two fuzzers**. They sit at
 *opposite ends of the same pipeline* and answer different questions — neither
 replaces the other.
 
-```
+```text
                     round-trip fuzzer starts here (random JSON value)
                               │
    JSON value ──encode──► binary bytes ──wire──► service ──► bytes ──decode──► JSON value
@@ -485,8 +497,6 @@ point that a value generator alone does not fuzz the *protocol*.
   the in-tree `binary_json/fuzz_tests.rs` (`cargo test -p azure_data_cosmos_driver
   --lib fuzz`).
 
-
-
 ## 9. Enhancement plan (library-backed generator & canonicalizer)
 
 This section captures an agreed enhancement plan for the harness. The current harness uses a hand-rolled seeded generator (§4) and a hand-rolled canonicalizer (§3). Three well-maintained crates can replace the parts of that machinery that are pure boilerplate, while we **keep** the one part that is genuinely Cosmos-specific.
@@ -514,7 +524,7 @@ If we canonicalized numbers with raw JCS, a *faithful* round-trip would report *
 
 ### 9.3 Target pipeline
 
-```
+```text
 generate:      bytes ──ArbitraryValue──▶ Value
 normalize:     Value  ──our normalize_numbers (calibrated §3.1)──▶ Value′
 canonicalize:  Value′ ──json_canon (RFC 8785 structural)──▶ canonical String

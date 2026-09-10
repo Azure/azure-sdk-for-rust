@@ -37,6 +37,7 @@ uuid = { workspace = true, optional = true, features = ["v4", "fast-rng"] }
 # compile-time cost.
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
+azure_data_cosmos_test_support = { path = "../azure_data_cosmos_test_support" }
 # Re-declare the driver here with the internal test-only diagnostics-construction feature.
 # Putting it in dev-dependencies (instead of [dependencies]) means downstream consumers
 # of `azure_data_cosmos` do NOT compile with this feature enabled — the driver's

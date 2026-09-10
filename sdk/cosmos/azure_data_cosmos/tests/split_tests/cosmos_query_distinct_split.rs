@@ -36,7 +36,6 @@ use std::num::NonZeroU32;
 use std::time::Duration;
 
 use azure_data_cosmos::feed::{ContinuationToken, QueryPageIterator};
-use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::{
     clients::ContainerClient,
     feed::FeedScope,
@@ -208,11 +207,7 @@ pub async fn text_and_binary_distinct_queries_reuse_one_split() -> Result<(), Bo
                 ContainerProperties::new("DistinctAcrossSplit", "/partitionKey".into());
             let throughput = ThroughputProperties::manual(1000);
             let container_client = run_context
-                .create_container(
-                    db_client,
-                    properties,
-                    Some(CreateContainerOptions::default().with_throughput(throughput)),
-                )
+                .create_container(db_client, properties, Some(throughput))
                 .await?;
 
             println!(
@@ -258,8 +253,14 @@ pub async fn text_and_binary_distinct_queries_reuse_one_split() -> Result<(), Bo
             let (mut unordered_binary_pages, unordered_binary) =
                 start_query(&container_client, UNORDERED_QUERY, true, PAGE_SIZE).await?;
 
-            let partitions_after =
-                force_split_and_wait(&container_client, partitions_before).await?;
+            let partitions_after = force_split_and_wait(
+                run_context,
+                db_client,
+                &container_client,
+                "DistinctAcrossSplit",
+                partitions_before,
+            )
+            .await?;
             assert!(
                 partitions_after > partitions_before,
                 "split must increase partition count: before={partitions_before}, \

@@ -20,7 +20,7 @@ use azure_data_cosmos::{
         VectorDataType, VectorDistanceFunction, VectorEmbedding, VectorEmbeddingPolicy,
         VectorIndex, VectorIndexType,
     },
-    options::{CreateContainerOptions, MaxItemCountHint, QueryOptions},
+    options::{MaxItemCountHint, QueryOptions},
     Query,
 };
 use framework::{TestClient, TestOptions};
@@ -274,9 +274,7 @@ async fn seed_vector_container(
         ))
         .with_indexing_policy(indexing_policy);
 
-    let options = throughput.map(|throughput| {
-        CreateContainerOptions::default().with_throughput(ThroughputProperties::manual(throughput))
-    });
+    let options = throughput.map(ThroughputProperties::manual);
     let container = run_context
         .create_container(db_client, properties, options)
         .await?;
@@ -320,10 +318,9 @@ async fn seed_precomputed_vector_container(
         ContainerProperties::new("PrecomputedVectorQueryContainer", "/partitionKey".into())
             .with_vector_embedding_policy(embedding_policy)
             .with_indexing_policy(indexing_policy);
-    let options = CreateContainerOptions::default()
-        .with_throughput(ThroughputProperties::manual(CROSS_PARTITION_THROUGHPUT));
+    let throughput = ThroughputProperties::manual(CROSS_PARTITION_THROUGHPUT);
     let container = run_context
-        .create_container(db_client, properties, Some(options))
+        .create_container(db_client, properties, Some(throughput))
         .await?;
 
     for (index, document) in fixture.documents.iter().enumerate() {

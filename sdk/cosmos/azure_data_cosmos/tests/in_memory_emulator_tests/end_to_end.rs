@@ -262,6 +262,7 @@ async fn read_item_with_503_retry(
 
 const EMULATOR_GATEWAY_URL: &str = "https://eastus.emulator.local";
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
+const AUTH_MODE_ENV_VAR: &str = "AZURE_COSMOS_AUTH_MODE";
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 
 struct SdkDualBackend {
@@ -1860,6 +1861,10 @@ async fn resolve_real_client_with_fault_injection(
     use azure_data_cosmos_driver::fault_injection::FaultInjectionRuleBuilder;
     use std::sync::Arc;
 
+    if std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad")) {
+        return Ok(None);
+    }
+
     let mode = std::env::var(TEST_MODE_ENV_VAR)
         .unwrap_or_default()
         .to_lowercase();
@@ -1908,6 +1913,10 @@ async fn resolve_real_client_with_fault_injection(
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
 async fn resolve_real_client() -> Result<Option<CosmosClient>, Box<dyn Error>> {
+    if std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad")) {
+        return Ok(None);
+    }
+
     let mode = std::env::var(TEST_MODE_ENV_VAR)
         .unwrap_or_default()
         .to_lowercase();

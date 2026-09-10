@@ -587,6 +587,7 @@ dependencies = [
  "azure_core 1.1.0",
  "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "azure_data_cosmos_driver",
+ "azure_data_cosmos_test_support",
  "azure_identity 1.0.0",
  "base64",
  "clap",
@@ -630,7 +631,9 @@ dependencies = [
  "async-lock",
  "async-trait",
  "azure_core 1.1.0",
+ "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "azure_data_cosmos_macros 0.2.0",
+ "azure_data_cosmos_test_support",
  "azure_identity 1.0.0",
  "backtrace",
  "base64",
@@ -753,6 +756,16 @@ dependencies = [
  "tokio-metrics",
  "tracing-subscriber",
  "uuid",
+]
+
+[[package]]
+name = "azure_data_cosmos_test_support"
+version = "0.0.0"
+dependencies = [
+ "azure_core 1.1.0",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
