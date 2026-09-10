@@ -518,9 +518,11 @@ impl DistributedTransactionResponse {
         self.inner.request_charge.map(|charge| charge.value())
     }
 
-    /// Returns the retry-after hint in milliseconds, when present.
-    pub fn retry_after_ms(&self) -> Option<u64> {
-        self.inner.retry_after_ms
+    /// Returns the retry-after hint, when present.
+    pub fn retry_after(&self) -> Option<std::time::Duration> {
+        self.inner
+            .retry_after_ms
+            .map(std::time::Duration::from_millis)
     }
 }
 
