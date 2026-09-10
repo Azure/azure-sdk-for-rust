@@ -7,7 +7,6 @@ use super::framework;
 use std::error::Error;
 
 use azure_data_cosmos::models::{ContainerProperties, ThroughputProperties};
-use azure_data_cosmos::options::CreateContainerOptions;
 use framework::{TestClient, TestOptions};
 
 #[tokio::test]
@@ -31,24 +30,11 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
             let throughput = ThroughputProperties::manual(400);
 
             let _container_client = run_context
-                .create_container(
-                    db_client,
-                    properties.clone(),
-                    Some(CreateContainerOptions::default().with_throughput(throughput)),
-                )
+                .create_container(db_client, properties.clone(), Some(throughput))
                 .await?;
 
-            // Throughput/offer operations are control-plane and are not covered
-            // by the data-plane RBAC role used on the AAD live leg, so route them
-            // through the management (key) client. In key mode this is the same
-            // credential as `container_client`.
-            let offer_client = run_context
-                .management_container_client(db_client, "TheContainer")
-                .await?;
-
-            // Read throughput
-            let current_throughput = offer_client
-                .read_throughput(None)
+            let current_throughput = run_context
+                .read_container_throughput(db_client, "TheContainer")
                 .await?
                 .expect("throughput should be present");
 
@@ -56,11 +42,9 @@ pub async fn container_throughput_crud_manual() -> Result<(), Box<dyn Error>> {
 
             // Replace throughput
             let new_throughput = ThroughputProperties::manual(500);
-            let throughput_response = offer_client
-                .begin_replace_throughput(new_throughput, None)
-                .await?
-                .await?
-                .into_model()?;
+            let throughput_response = run_context
+                .replace_container_throughput(db_client, "TheContainer", new_throughput)
+                .await?;
             assert_eq!(Some(500), throughput_response.throughput());
 
             Ok(())
@@ -95,23 +79,11 @@ pub async fn container_throughput_crud_autoscale() -> Result<(), Box<dyn Error>>
             let throughput = ThroughputProperties::autoscale(5000, Some(42));
 
             let _container_client = run_context
-                .create_container(
-                    db_client,
-                    properties.clone(),
-                    Some(CreateContainerOptions::default().with_throughput(throughput)),
-                )
+                .create_container(db_client, properties.clone(), Some(throughput))
                 .await?;
 
-            // Throughput/offer operations are control-plane and are not covered
-            // by the data-plane RBAC role used on the AAD live leg, so route them
-            // through the management (key) client.
-            let offer_client = run_context
-                .management_container_client(db_client, "TheContainer")
-                .await?;
-
-            // Read throughput
-            let current_throughput = offer_client
-                .read_throughput(None)
+            let current_throughput = run_context
+                .read_container_throughput(db_client, "TheContainer")
                 .await?
                 .expect("throughput should be present");
             assert_eq!(Some(500), current_throughput.throughput());

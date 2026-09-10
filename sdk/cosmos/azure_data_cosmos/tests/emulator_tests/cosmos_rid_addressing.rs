@@ -11,7 +11,6 @@ use azure_data_cosmos::{
     clients::ContainerClient,
     feed::FeedScope,
     models::{ContainerProperties, ThroughputProperties},
-    options::CreateContainerOptions,
     CosmosStatus, Query, ResourceId,
 };
 use futures::TryStreamExt;
@@ -67,10 +66,7 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
                 .create_container(
                     db_client,
                     ContainerProperties::new(container_name.clone(), "/pk".into()),
-                    Some(
-                        CreateContainerOptions::default()
-                            .with_throughput(ThroughputProperties::manual(400)),
-                    ),
+                    Some(ThroughputProperties::manual(400)),
                 )
                 .await?;
 
@@ -114,20 +110,14 @@ pub async fn database_and_container_addressed_by_rid() -> Result<(), Box<dyn Err
             let read_back = rid_container.read(None).await?.into_model()?;
             assert_eq!(container_name, read_back.id);
 
-            // Throughput is reachable by RID. Reading an offer is a
-            // control-plane operation that the data-plane RBAC role used in
-            // AAD mode cannot perform, so route it through the management (key)
-            // client — still addressed purely by RID. In key mode the
-            // management client is the same as the primary client.
-            let mgmt_rid_container = run_context
-                .management_client()
-                .database_client(ResourceId::from(db_rid.clone()))
-                .container_client(ResourceId::from(container_rid.clone()), None)
-                .await?;
-            let throughput = mgmt_rid_container
-                .read_throughput(None)
-                .await?
-                .expect("throughput should be present");
+            let throughput = if run_context.arm_client().is_some() {
+                run_context
+                    .read_container_throughput(db_client, &container_name)
+                    .await?
+            } else {
+                rid_container.read_throughput(None).await?
+            }
+            .expect("throughput should be present");
             assert_eq!(Some(400), throughput.throughput());
 
             // Create an item through the RID-addressed container. Create POSTs
@@ -279,18 +269,9 @@ pub async fn container_rid_from_another_database_is_rejected() -> Result<(), Box
                 .resource_id
                 .expect("db1 read should return a _rid");
 
-            // db2 + a container in db2, created out of band. Database
-            // create/delete is management-plane and is not granted by the
-            // data-plane RBAC role used in AAD mode, so both go through the
-            // management (key) client.
             let db2_name = format!("rid-otherdb-{}", Uuid::new_v4());
-            let _ = run_context
-                .management_client()
-                .create_database(&db2_name, None)
-                .await?;
-            let db2_client = run_context
-                .management_client()
-                .database_client(db2_name.as_str());
+            run_context.create_database(&db2_name).await?;
+            let db2_client = run_context.client().database_client(db2_name.as_str());
             let container2_name = format!("rid-otherc-{}", Uuid::new_v4());
             let container2 = run_context
                 .create_container(
@@ -316,7 +297,7 @@ pub async fn container_rid_from_another_database_is_rejected() -> Result<(), Box
                 .await;
 
             // Clean up db2 regardless of the assertion outcome below.
-            db2_client.delete(None).await?;
+            run_context.delete_database(&db2_name).await?;
 
             let Err(err) = result else {
                 panic!("expected a container RID from another database to be rejected");

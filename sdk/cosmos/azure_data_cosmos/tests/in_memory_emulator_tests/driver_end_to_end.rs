@@ -1347,7 +1347,14 @@ async fn try_real_failover_comparison(
     };
     use std::sync::Arc;
 
-    let conn_str_raw = std::env::var("AZURE_COSMOS_CONNECTION_STRING").ok()?;
+    if std::env::var("AZURE_COSMOS_AUTH_MODE").is_ok_and(|value| value.eq_ignore_ascii_case("aad"))
+    {
+        return None;
+    }
+
+    let conn_str_raw = std::env::var("AZURE_COSMOS_CONNECTION_STRING")
+        .ok()
+        .filter(|value| !value.trim().is_empty())?;
     let mode = std::env::var("AZURE_COSMOS_TEST_MODE")
         .unwrap_or_default()
         .to_lowercase();

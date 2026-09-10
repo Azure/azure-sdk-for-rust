@@ -43,6 +43,7 @@ use super::validation::{
 
 /// Environment variable for the real-account connection string.
 const CONNECTION_STRING_ENV_VAR: &str = "AZURE_COSMOS_CONNECTION_STRING";
+const AUTH_MODE_ENV_VAR: &str = "AZURE_COSMOS_AUTH_MODE";
 
 /// Environment variable controlling test mode.
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
@@ -500,6 +501,10 @@ impl DualBackend {
 /// Returns `Ok(None)` when the env var is unset and mode is not `required`.
 async fn resolve_real_account(
 ) -> Result<Option<(Arc<CosmosDriver>, AccountReference)>, Box<dyn Error>> {
+    if std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad")) {
+        return Ok(None);
+    }
+
     let mode = std::env::var(TEST_MODE_ENV_VAR)
         .unwrap_or_default()
         .to_lowercase();

@@ -32,9 +32,9 @@ extends:
   template: /eng/pipelines/templates/stages/archetype-sdk-client.yml
   parameters:
     ServiceDirectory: cosmos
-    # macOS/Windows live-test legs need ~63-65 min; raise from the 60-min default
-    # so they finish instead of being cancelled at the agent cap.
-    TestTimeoutInMinutes: 90
+    # Existing live legs need ~63-65 min, while partition merge may spend up to
+    # 150 min waiting for split, ARM merge, and topology convergence after setup.
+    TestTimeoutInMinutes: 180
     RunLiveTests: ${{ or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}
     Artifacts:
     - name: azure_data_cosmos_macros
@@ -51,7 +51,7 @@ extends:
       RUST_BACKTRACE: '1'
       # Live budget for the binary-encoding round-trip fuzzer
       # (azure_data_cosmos/tests/binary_roundtrip_fuzzer.rs). Only consumed on
-      # the `binary_encoding` live leg (live-legacy-arm-matrix.json); a no-op
+      # the `binary_encoding` live leg (live-federated-aad-matrix.json); a no-op
       # elsewhere. Each iteration exercises 3 encoding configs; every config runs
       # 4 point ops + 1 single-partition query + 1 cross-partition ORDER BY
       # query, and the pure-`binary` config adds a typed wide-integer probe of
@@ -144,25 +144,37 @@ extends:
         parameters:
           AccountSelector: $(AccountSelector)
     LiveTestMatrixConfigs:
-      # Legs that still use ARM-deployed per-run Cosmos accounts (not migrated
-      # to fixed self-owned accounts):
+      # Gateway V2 legs keep their existing ARM-deployed primary account and
+      # secret-backed thin-client endpoint/key configuration.
       #   * Thin-client (GatewayV2) legs use $(thinclient-test-endpoint)/
       #     $(thinclient-test-key) for the thin-client itself, but their primary
       #     client still needs an ARM-provisioned account.
-      #   * Binary-encoding round-trip fuzz leg exercises encoding boundaries
-      #     against a fresh account and is short-lived.
-      # Left on the legacy per-run path intentionally.
       - Name: Cosmos_live_arm
         Path: sdk/cosmos/live-legacy-arm-matrix.json
+        Selection: all
+        GenerateVMJobs: true
+      # Binary encoding and partition merge require fresh, dedicated accounts
+      # but authenticate exclusively with the federated pipeline identity. The
+      # resource template disables local auth, grants Cosmos data-plane RBAC,
+      # and the tests use their typed ARM helper for resource lifecycle.
+      #
+      # Partition merge intentionally stays on this per-run ARM path rather
+      # than FixedAccountMatrixConfigs: the fixed-account generator forces
+      # UseFederatedAuth=false, while merge needs both the preview account
+      # property and an ARM token to invoke partitionMerge.
+      - Name: Cosmos_live_federated_aad
+        Path: sdk/cosmos/live-federated-aad-matrix.json
         Selection: all
         GenerateVMJobs: true
       # Dedicated live leg that runs the full integration suite with the primary
       # (data-plane) client authenticated via Entra ID (AAD) instead of the
       # account key. `AZURE_COSMOS_AUTH_MODE=aad` surfaces as a job env var and
       # is read by the test framework (tests/framework/test_client.rs), which
-      # then uses AAD for data-plane operations and the account key only for
-      # database create/delete. Pinned to a single consistency config on Linux
-      # to bound live-account cost.
+      # then uses AAD for data-plane operations and the typed ARM test helper for
+      # database, container, and throughput lifecycle. Local authentication is
+      # disabled on every account in this matrix, proving no account-key fallback
+      # is possible. Pinned to a single consistency config on Linux to bound
+      # live-account cost.
       - Name: Cosmos_live_test_aad
         Path: sdk/cosmos/live-aad-platform-matrix.json
         Selection: all

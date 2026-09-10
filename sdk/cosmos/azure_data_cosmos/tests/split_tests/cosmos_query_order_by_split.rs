@@ -32,7 +32,6 @@ use std::time::Duration;
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::feed::ContinuationToken;
-use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::{
     clients::ContainerClient,
     feed::FeedScope,
@@ -243,11 +242,7 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
             let throughput = ThroughputProperties::manual(1000);
             let container_client = std::sync::Arc::new(
                 run_context
-                    .create_container(
-                        db_client,
-                        properties,
-                        Some(CreateContainerOptions::default().with_throughput(throughput)),
-                    )
+                    .create_container(db_client, properties, Some(throughput))
                     .await?,
             );
 
@@ -326,8 +321,14 @@ pub async fn order_by_query_resume_across_split_preserves_global_order(
                 str_asc_first.len(),
                 str_desc_first.len(),
             );
-            let partitions_after =
-                force_split_and_wait(&container_client, partitions_before).await?;
+            let partitions_after = force_split_and_wait(
+                run_context,
+                db_client,
+                &container_client,
+                "OrderByResumeAcrossSplit",
+                partitions_before,
+            )
+            .await?;
             assert!(
                 partitions_after > partitions_before,
                 "split must increase partition count: before={partitions_before}, \
@@ -563,10 +564,7 @@ pub async fn order_by_live_mixed_types_and_join_resume_matrix() -> Result<(), Bo
                 .create_container(
                     db_client,
                     properties,
-                    Some(
-                        CreateContainerOptions::default()
-                            .with_throughput(ThroughputProperties::manual(1000)),
-                    ),
+                    Some(ThroughputProperties::manual(1000)),
                 )
                 .await?;
 
