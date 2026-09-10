@@ -1,0 +1,23 @@
+{
+  "displayNames": {},
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": ["stable"],
+    "Account Settings": {
+      "Session SingleRegion GatewayV2": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; testCategory = 'gateway_v2' }"
+      },
+      "Session MultiRegion GatewayV2": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableMultipleRegions = $true; testCategory = 'gateway_v2_multi_region' }"
+      },
+      "Session SingleWrite BinaryEncodingRoundtripFuzz": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'binary_encoding' }"
+      }
+    }
+  }
+}

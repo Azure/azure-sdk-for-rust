@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 #![doc = include_str!("../README.md")]
+// Nightly sanitizer builds need deeper trait evaluation for container-recreation futures.
+#![cfg_attr(fuzzing, recursion_limit = "256")]
 
 //! Azure Cosmos DB Driver - Core Implementation Layer
 //!
@@ -43,12 +45,16 @@ pub mod options;
 // `#[doc(hidden)]` test-only surface (`__test_only_generate_query_plan_for_pk_paths`,
 // `__TEST_ONLY_SUPPORTED_QUERY_FEATURES`) so cross-crate gateway-comparison
 // tests can drive the local plan generator without depending on internal types;
-// otherwise the module is `pub(crate)` and nothing leaks out of the crate.
+// otherwise the module is `pub(crate)` and nothing leaks out of the crate. The
+// module itself is also `#[doc(hidden)]` since its only public members are
+// already `#[doc(hidden)]`, so it would otherwise appear as an empty public
+// module in generated API surfaces (e.g. APIView with `--all-features`).
 // Keep both arms in sync if you add another item under `mod query`.
 //
 // TODO(local-plan-wire-up): drop `allow(dead_code)` once the driver wires the
 // local plan generator into the query execution path.
 #[cfg(any(test, feature = "__internal_testing"))]
+#[doc(hidden)]
 #[allow(dead_code)]
 pub mod query;
 #[cfg(not(any(test, feature = "__internal_testing")))]

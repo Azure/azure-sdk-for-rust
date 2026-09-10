@@ -75,8 +75,11 @@ azure-cosmos-driver/
 └── SHA256SUMS
 ```
 
-The pipeline-owned `_manifest` root contains the complete evidence directory
-produced while publishing the combined artifact. Each module contains a
+The pipeline-owned `_manifest/spdx_2.2` root contains only the minimum signed
+evidence bundle: `manifest.spdx.json`, `manifest.spdx.json.sha256`,
+`manifest.spdx.cose`, `manifest.cat`, `bsi.json`, and `bsi.cose`. Verbose 1ES
+and ESRP diagnostic logs may remain in the downloaded pipeline artifact, but
+are excluded when staging the downstream repository. Each module contains a
 `go.mod`, generated cgo linker files, the C header, and the matching static
 library. The root also carries a consolidated `provenance.json` binding the
 release identity (see [provenance.json](#provenancejson)). The Windows linker
@@ -231,13 +234,13 @@ before it can run.
 The publication stage runs only for a successful non-pull-request build of
 `refs/heads/main`. It uses the existing Azure SDK Automation GitHub App to clone
 the downstream repository and open a draft pull request.
-`Prepare-GoDriverPullRequest.ps1` verifies every checksum, requires the standard
-SPDX manifest, rejects unexpected payload paths, and replaces the pipeline-owned
-`_manifest`, `windows`, `linux`, and `darwin` roots with the exact generated
-artifact. It validates the resulting paths and hashes and rejects changes
-elsewhere in the repository. This stages retired generated files as deletions
-while preserving hand-maintained repository files. The target repository then
-requires one approval and code-owner approval before merge.
+`Prepare-GoDriverPullRequest.ps1` verifies every checksum, requires all six
+evidence bundle files, ignores other `_manifest` files during export, and
+replaces the pipeline-owned `windows`, `linux`, `darwin`, and filtered
+`_manifest` roots. It validates the resulting paths and hashes and rejects
+changes elsewhere in the repository. This stages retired generated files as
+deletions while preserving hand-maintained repository files. The target
+repository then requires one approval and code-owner approval before merge.
 
 ## Local integration test
 

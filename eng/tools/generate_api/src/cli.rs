@@ -54,6 +54,7 @@ pub(crate) enum OutputFormat {
 
 /// File name of the patch that adds documentation comments back to `API.md`.
 pub(crate) const COMMENTS_PATCH_FILE_NAME: &str = "API.comments.patch";
+pub(crate) const MARKDOWN_METADATA_FILE_NAME: &str = "API.metadata.yml";
 pub(crate) const SOURCE_MAP_FILE_NAME: &str = "API.md.map";
 
 impl OutputFormat {

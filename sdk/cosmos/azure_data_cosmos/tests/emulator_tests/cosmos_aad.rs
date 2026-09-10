@@ -12,11 +12,12 @@
 //! mirrors the data-plane RBAC role provisioned in `test-resources.bicep`, which
 //! grants item/metadata data actions but **not** management-plane permissions.
 //!
-//! Because the standard `test_category="emulator"` gate is used, the same tests
-//! run against the local emulator (Build stage, with the emulator started using
-//! `/enableaadauthentication`) and against live accounts (LiveTest stage), where
-//! the framework selects a real Entra ID credential via
-//! `azure_core_test::credentials::from_env`.
+//! Because these tests need AAD data-plane access, they gate on the
+//! `cosmos_aad_supported` cfg (set by the local emulator setup when started
+//! with `/enableaadauthentication`, and by bicep-provisioned live accounts
+//! that include the Cosmos data-plane role assignment). Fixed self-owned live
+//! accounts without that role assignment do not set this cfg, so these tests
+//! are skipped on those legs.
 
 use super::framework;
 
@@ -25,7 +26,7 @@ use azure_core::Uuid;
 use azure_data_cosmos::feed::FeedScope;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::{PartitionKey, Query};
-use framework::{TestClient, TestRunContext};
+use framework::{probe_data_plane_ready, TestClient, TestRunContext};
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -48,16 +49,8 @@ struct AadTestItem {
 /// invoked for the Cosmos scope, guarding against silently exercising key auth.
 #[tokio::test]
 #[cfg_attr(
-    not(any(
-        test_category = "emulator",
-        test_category = "emulator_vnext",
-        test_category = "emulator_inmemory"
-    )),
-    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_inmemory",
-    ignore = "hosted in-memory emulator authentication is deferred to PR3"
+    any(not(cosmos_aad_supported), test_category = "emulator_inmemory"),
+    ignore = "requires an AAD-enabled Cosmos target (emulator with /enableaadauthentication, or a live account with the Cosmos data-plane role assignment); hosted in-memory emulator authentication is deferred to a follow-up PR"
 )]
 pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
@@ -78,6 +71,16 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
                 .database_client(db_client.id())
                 .container_client(&container_id, None)
                 .await?;
+
+            // Metadata (5301) and name-based data (5302) authorize through
+            // separate RBAC paths. `run_context.create_container` above only
+            // warms the framework's key-auth client; this test's own
+            // freshly-built AAD client has never issued a data-plane
+            // request against this container, so its first item operation
+            // can still race and return
+            // `403/5302 RbacUnauthorizedNameBasedDataRequest`. Probe this
+            // client's data path before exercising real assertions.
+            probe_data_plane_ready("aad client", &aad_container).await?;
 
             let unique = Uuid::new_v4().to_string();
             let pk = format!("pk-{unique}");
@@ -157,16 +160,8 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
 /// the `readMetadata` data action the SDK requires on its first request.
 #[tokio::test]
 #[cfg_attr(
-    not(any(
-        test_category = "emulator",
-        test_category = "emulator_vnext",
-        test_category = "emulator_inmemory"
-    )),
-    ignore = "requires test_category 'emulator', 'emulator_vnext', or 'emulator_inmemory'"
-)]
-#[cfg_attr(
-    test_category = "emulator_inmemory",
-    ignore = "hosted in-memory emulator authentication is deferred to PR3"
+    any(not(cosmos_aad_supported), test_category = "emulator_inmemory"),
+    ignore = "requires an AAD-enabled Cosmos target (emulator with /enableaadauthentication, or a live account with the Cosmos data-plane role assignment); hosted in-memory emulator authentication is deferred to a follow-up PR"
 )]
 pub async fn aad_read_container_metadata() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(

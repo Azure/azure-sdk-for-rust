@@ -54,6 +54,9 @@ tracing.workspace = true
 url.workspace = true
 uuid = { workspace = true, features = ["v4", "fast-rng"] }
 
+[build-dependencies]
+rustc_version.workspace = true
+
 [dev-dependencies]
 azure_identity.workspace = true
 quick-xml.workspace = true
@@ -65,7 +68,7 @@ tokio = { workspace = true, features = [
   "test-util",
 ] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
-uuid = { workspace = true, features = ["v4", "fast-rng"] }
+uuid = { workspace = true, features = ["v4", "v7", "fast-rng"] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { workspace = true, features = [
@@ -96,7 +99,7 @@ preview_dtx = [] # Enables preview Distributed Transaction APIs. Disabled by def
 # `__internal_in_memory_emulator` exposes the in-memory query evaluator
 # (`crate::query::eval`, `crate::query::value`) used by the in-memory Cosmos DB
 # emulator. The evaluator intentionally trades full Cosmos parity for emulator
-# usability (see `docs/IN_MEMORY_EMULATOR_SPEC.md` and the doc comments on the
+# usability (see `sdk/cosmos/docs/specs/0021-in-memory-emulator.md` and the doc comments on the
 # `eval` module). Production code MUST NOT enable this feature; it is not
 # covered by SemVer and may change or disappear at any time.
 __internal_in_memory_emulator = [
