@@ -2,6 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+if (!(Get-Command New-PipelineIssueBudget -ErrorAction SilentlyContinue)) {
+  . ([System.IO.Path]::Combine($PSScriptRoot, 'Diagnostics.ps1'))
+}
+
 function Get-ActiveRustToolchain(
   [string]$ExecutePath
 ) {
@@ -29,6 +33,256 @@ function Test-IsNightlyRustToolchain(
   [string]$ExecutePath
 ) {
   return (Get-ResolvedRustToolchain -Toolchain $Toolchain -ExecutePath $ExecutePath) -match '^nightly(?:$|[-])'
+}
+
+function Get-CargoArgumentsWithJsonMessages([string[]]$ArgumentList) {
+  if ($ArgumentList -match '^--message-format(?:=|$)') {
+    return $ArgumentList
+  }
+
+  $separatorIndex = [Array]::IndexOf($ArgumentList, '--')
+  if ($separatorIndex -lt 0) {
+    return @($ArgumentList) + @('--message-format=json')
+  }
+
+  return @($ArgumentList[0..($separatorIndex - 1)]) +
+    @('--message-format=json') +
+    @($ArgumentList[$separatorIndex..($ArgumentList.Count - 1)])
+}
+
+function Get-JsonPropertyValue(
+  $Object,
+  [string]$Name
+) {
+  if (!$Object) {
+    return $null
+  }
+
+  $property = $Object.PSObject.Properties[$Name]
+  if ($property) {
+    return $property.Value
+  }
+  return $null
+}
+
+function Get-RustTestFailuresFromOutput([string[]]$Output) {
+  $failures = @()
+  $name = $null
+  $details = [System.Collections.Generic.List[string]]::new()
+
+  foreach ($line in $Output) {
+    if ($line -match '^---- (.+) stdout ----$') {
+      if ($name) {
+        $failures += [pscustomobject]@{
+          Name = $name
+          Output = ($details -join [Environment]::NewLine).Trim()
+        }
+      }
+      $name = $Matches[1]
+      $details.Clear()
+      continue
+    }
+
+    if ($name -and $line -eq 'failures:') {
+      $failures += [pscustomobject]@{
+        Name = $name
+        Output = ($details -join [Environment]::NewLine).Trim()
+      }
+      $name = $null
+      $details.Clear()
+      continue
+    }
+
+    if ($name) {
+      $details.Add($line)
+    }
+  }
+
+  if ($name) {
+    $failures += [pscustomobject]@{
+      Name = $name
+      Output = ($details -join [Environment]::NewLine).Trim()
+    }
+  }
+
+  return $failures
+}
+
+function Write-CargoCompilerDiagnostic(
+  $CargoMessage,
+  $IssueBudget
+) {
+  $diagnostic = Get-JsonPropertyValue $CargoMessage 'message'
+  $renderedValue = Get-JsonPropertyValue $diagnostic 'rendered'
+  $messageValue = Get-JsonPropertyValue $diagnostic 'message'
+  $rendered = if ($renderedValue) { "$renderedValue".TrimEnd() } else { "$messageValue" }
+  Write-Host $rendered
+
+  if ((Get-JsonPropertyValue $diagnostic 'level') -ne 'error') {
+    return $false
+  }
+
+  $spans = @(Get-JsonPropertyValue $diagnostic 'spans')
+  $primarySpan = @($spans | Where-Object { Get-JsonPropertyValue $_ 'is_primary' } | Select-Object -First 1)
+  $sourcePath = $null
+  $lineNumber = 0
+  $columnNumber = 0
+  if ($primarySpan.Count -gt 0) {
+    $sourcePath = Get-JsonPropertyValue $primarySpan[0] 'file_name'
+    $lineNumber = Get-JsonPropertyValue $primarySpan[0] 'line_start'
+    $columnNumber = Get-JsonPropertyValue $primarySpan[0] 'column_start'
+  }
+
+  $diagnosticCode = Get-JsonPropertyValue $diagnostic 'code'
+  $code = Get-JsonPropertyValue $diagnosticCode 'code'
+  Write-BudgetedPipelineIssue `
+    -Budget $IssueBudget `
+    -Type error `
+    -Message $rendered `
+    -SourcePath $sourcePath `
+    -LineNumber $lineNumber `
+    -ColumnNumber $columnNumber `
+    -Code $code
+  return $true
+}
+
+function Write-RustTestFailure(
+  [string]$Name,
+  [string]$Output,
+  $IssueBudget
+) {
+  $message = "Test '$Name' failed."
+  if ($Output) {
+    $message += [Environment]::NewLine + $Output.Trim()
+  }
+  Write-BudgetedPipelineIssue -Budget $IssueBudget -Type error -Message $message
+}
+
+function Write-RustJsonTestEvent(
+  $TestEvent,
+  $IssueBudget
+) {
+  if ((Get-JsonPropertyValue $TestEvent 'type') -ne 'test' -or (Get-JsonPropertyValue $TestEvent 'event') -ne 'failed') {
+    return $false
+  }
+
+  $testOutput = @(
+    Get-JsonPropertyValue $TestEvent 'message'
+    Get-JsonPropertyValue $TestEvent 'reason'
+    Get-JsonPropertyValue $TestEvent 'stdout'
+  ) |
+    Where-Object { $_ } |
+    ForEach-Object { "$_".Trim() }
+  Write-RustTestFailure `
+    -Name (Get-JsonPropertyValue $TestEvent 'name') `
+    -Output ($testOutput -join [Environment]::NewLine) `
+    -IssueBudget $IssueBudget
+  return $true
+}
+
+function Invoke-CargoCommandWithDiagnostics {
+  [CmdletBinding()]
+  param(
+    [Parameter(Mandatory = $true)]
+    [string[]]$ArgumentList,
+    [switch]$GroupOutput,
+    [switch]$DoNotExitOnFailedExitCode,
+    [switch]$ParseJsonTestOutput,
+    [switch]$ParseHumanTestOutput,
+    [string]$TestOutputFile,
+    [int]$MaximumIssues = 50
+  )
+
+  $cargoArguments = Get-CargoArgumentsWithJsonMessages $ArgumentList
+  $command = "cargo $($cargoArguments -join ' ')"
+  $startTime = Get-Date
+  $issueBudget = New-PipelineIssueBudget -Maximum $MaximumIssues
+  $humanTestOutput = [System.Collections.Generic.List[string]]::new()
+  $jsonTestOutput = [System.Collections.Generic.List[string]]::new()
+
+  if ($GroupOutput) {
+    LogGroupStart $command
+  }
+  else {
+    Write-Host "> $command"
+  }
+
+  try {
+    & cargo @cargoArguments 2>&1 | ForEach-Object {
+      $line = "$_"
+      $json = $null
+      if ($line.TrimStart().StartsWith('{')) {
+        try {
+          $json = $line | ConvertFrom-Json -Depth 100 -ErrorAction Stop
+        }
+        catch {
+          $json = $null
+        }
+      }
+
+      $reason = Get-JsonPropertyValue $json 'reason'
+      $type = Get-JsonPropertyValue $json 'type'
+      $event = Get-JsonPropertyValue $json 'event'
+      if ($reason -eq 'compiler-message') {
+        [void](Write-CargoCompilerDiagnostic -CargoMessage $json -IssueBudget $issueBudget)
+      }
+      elseif ($ParseJsonTestOutput -and $type -and $event) {
+        $jsonTestOutput.Add($line)
+        [void](Write-RustJsonTestEvent -TestEvent $json -IssueBudget $issueBudget)
+      }
+      elseif ($reason) {
+        # Cargo artifact and build-script records are intentionally omitted.
+      }
+      else {
+        Write-Host $line
+        if ($ParseHumanTestOutput) {
+          $humanTestOutput.Add($line)
+        }
+      }
+    }
+    $exitCode = $LASTEXITCODE
+  }
+  finally {
+    if ($GroupOutput) {
+      LogGroupEnd
+    }
+  }
+
+  if ($TestOutputFile) {
+    [System.IO.File]::WriteAllLines($TestOutputFile, $jsonTestOutput)
+  }
+
+  if ($exitCode -ne 0 -and $ParseHumanTestOutput) {
+    foreach ($failure in (Get-RustTestFailuresFromOutput $humanTestOutput)) {
+      Write-RustTestFailure -Name $failure.Name -Output $failure.Output -IssueBudget $issueBudget
+    }
+  }
+
+  $duration = (Get-Date) - $startTime
+  if ($exitCode -ne 0) {
+    if ($issueBudget.Emitted -eq 0) {
+      Write-BudgetedPipelineIssue `
+        -Budget $issueBudget `
+        -Type error `
+        -Message "Command failed to execute ($duration): $command"
+    }
+    Write-Host "Command failed to execute ($duration): $command"
+  }
+  else {
+    Write-Host "Command succeeded ($duration)`n"
+  }
+
+  Complete-PipelineIssueBudget $issueBudget
+
+  if ($exitCode -ne 0 -and !$DoNotExitOnFailedExitCode) {
+    exit $exitCode
+  }
+
+  return [pscustomobject]@{
+    ExitCode = $exitCode
+    IssueCount = $issueBudget.Emitted
+    SuppressedIssueCount = $issueBudget.Suppressed
+  }
 }
 
 function Get-CargoMetadata() {

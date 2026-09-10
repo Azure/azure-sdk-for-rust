@@ -22,36 +22,43 @@ $cargoFeatureArgs = if ($FeatureSet -eq 'All') { @('--all-features') } else { @(
 # Helper function to run cargo test, capturing JSON output only when the active
 # toolchain supports `--format json -Z unstable-options`.
 function Invoke-CargoTest (
-  [string]$TestParams,
+  [string[]]$TestParams,
   [string]$PackageName,
   [string]$ManifestPath,
-  [string]$OutputFile
+  [string]$OutputFile,
+  [switch]$DisableJsonOutput
 ) {
   Write-Host "Running tests for $PackageName"
-  $commandParts = @('cargo', 'test', $TestParams, '--manifest-path', $ManifestPath) + $cargoFeatureArgs + @('--no-fail-fast')
-  $command = $commandParts -join ' '
+  $commandArgs = @('test') + $TestParams + @('--manifest-path', $ManifestPath) + $cargoFeatureArgs + @('--no-fail-fast')
+  $captureJson = $usesJsonTestOutput -and !$DisableJsonOutput
 
-  if ($usesJsonTestOutput) {
-    $result = Invoke-LoggedCommand `
-      "$command -- --format json -Z unstable-options" `
+  if ($captureJson) {
+    $result = Invoke-CargoCommandWithDiagnostics `
+      -ArgumentList ($commandArgs + @('--', '--format', 'json', '-Z', 'unstable-options')) `
       -GroupOutput `
-      -DoNotExitOnFailedExitCode
+      -DoNotExitOnFailedExitCode `
+      -ParseJsonTestOutput `
+      -TestOutputFile $OutputFile
 
     LogGroupStart 'Test result JSON'
-    $result | Tee-Object -FilePath $OutputFile
+    Get-Content $OutputFile | Write-Host
     LogGroupEnd
   }
   else {
-    Invoke-LoggedCommand $command -GroupOutput -DoNotExitOnFailedExitCode
+    $result = Invoke-CargoCommandWithDiagnostics `
+      -ArgumentList $commandArgs `
+      -GroupOutput `
+      -DoNotExitOnFailedExitCode `
+      -ParseHumanTestOutput
   }
 
-  if ($LASTEXITCODE) {
+  if ($result.ExitCode) {
     $message = "Tests failed for $PackageName."
-    if ($usesJsonTestOutput) {
+    if ($captureJson) {
       $message += " For more information see the pipeline Tests tab."
     }
-    LogError $message
-    exit $LASTEXITCODE
+    Write-Host $message
+    exit $result.ExitCode
   }
 }
 
@@ -113,8 +120,9 @@ foreach ($package in $packagesToTest) {
 
   Write-Host "`n`nTesting package: '$($package.Name)'`n"
 
-  $buildCommand = (@('cargo', 'build') + $cargoFeatureArgs + @('--keep-going')) -join ' '
-  Invoke-LoggedCommand $buildCommand -GroupOutput
+  [void](Invoke-CargoCommandWithDiagnostics `
+    -ArgumentList (@('build') + $cargoFeatureArgs + @('--keep-going')) `
+    -GroupOutput)
   Write-Host "`n`n"
 
   $manifestPath = [System.IO.Path]::Combine($packageDirectory, 'Cargo.toml')
@@ -122,20 +130,23 @@ foreach ($package in $packagesToTest) {
 
   $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-doctest-$timestamp.json"))
   Invoke-CargoTest `
-    -TestParams "--doc" `
+    -TestParams @('--doc') `
     -PackageName $package.Name `
     -ManifestPath $manifestPath `
     -OutputFile $docTestOutput
 
   $allTargetsOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-alltargets-$timestamp.json"))
   Invoke-CargoTest `
-    -TestParams "--lib --bins --tests --examples" `
+    -TestParams @('--lib', '--bins', '--tests', '--examples') `
     -PackageName $package.Name `
     -ManifestPath $manifestPath `
     -OutputFile $allTargetsOutput
 
-  $benchCommand = (@('cargo', 'test', '--benches', '--manifest-path', $manifestPath) + $cargoFeatureArgs + @('--no-fail-fast')) -join ' '
-  Invoke-LoggedCommand $benchCommand -GroupOutput
+  Invoke-CargoTest `
+    -TestParams @('--benches') `
+    -PackageName $package.Name `
+    -ManifestPath $manifestPath `
+    -DisableJsonOutput
 
   $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
   if (Test-Path $cleanupScript) {

@@ -38,6 +38,12 @@ jobs:
 
   - template: /eng/common/pipelines/templates/steps/save-package-properties.yml
 
+  - task: PowerShell@2
+    displayName: Validate pipeline diagnostic parsers
+    inputs:
+      pwsh: true
+      filePath: $(Build.SourcesDirectory)/eng/scripts/tests/Test-Diagnostics.ps1
+
   # Always skip audit. Audit requires contact with restricted endpoints and is
   # excluded from use in internal builds. Instead, teams must check on the state
   # of the Audit in GitHub Actions.
@@ -53,6 +59,13 @@ jobs:
         -Audit:$false
         -Deny
 
-  - template: /eng/common/pipelines/templates/steps/check-spelling.yml
-    parameters:
-      ContinueOnError: false
+  - ${{ if eq(variables['Build.Reason'], 'PullRequest') }}:
+    - template: /eng/common/pipelines/templates/steps/create-authenticated-npmrc.yml
+
+    - task: PowerShell@2
+      displayName: Check spelling (cspell)
+      condition: and(succeeded(), ne(variables['Skip.SpellCheck'],'true'))
+      inputs:
+        pwsh: true
+        filePath: $(Build.SourcesDirectory)/eng/scripts/Check-Spelling.ps1
+        arguments: -ExitWithError
