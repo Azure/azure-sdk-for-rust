@@ -15,11 +15,28 @@
         "Pool": "env:LINUXPOOL"
       }
     },
-    "RustToolchainName": ["stable"],
-    "AZURE_COSMOS_EMULATOR_FLAVOR": ["inmemory-v1", "inmemory-v2"],
-    "AZURE_COSMOS_E2E_PROFILE": ["lifecycleConsistencyMatrix"],
-    "AZURE_COSMOS_E2E_ACCOUNT": ["strong", "boundedStaleness", "session", "consistentPrefix", "eventual"],
-    "AZURE_COSMOS_E2E_RUNTIME": ["unset"],
-    "AZURE_COSMOS_E2E_CLIENT": ["unset"]
+    "RustToolchainName": [
+      "stable"
+    ],
+    "AZURE_COSMOS_EMULATOR_FLAVOR": [
+      "inmemory-v1",
+      "inmemory-v2"
+    ],
+    "AZURE_COSMOS_E2E_PROFILE": [
+      "lifecycleConsistencyMatrix"
+    ],
+    "AZURE_COSMOS_E2E_ACCOUNT": [
+      "strong",
+      "boundedStaleness",
+      "session",
+      "consistentPrefix",
+      "eventual"
+    ],
+    "AZURE_COSMOS_E2E_RUNTIME": [
+      "unset"
+    ],
+    "AZURE_COSMOS_E2E_CLIENT": [
+      "unset"
+    ]
   }
 }

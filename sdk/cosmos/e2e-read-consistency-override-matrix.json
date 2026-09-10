@@ -1,24 +1,40 @@
 {
-  "displayNames": {
-    "inmemory-v1": "gateway_v1",
-    "inmemory-v2": "gateway_v2",
-    "unset": "unset",
-    "eventual": "eventual",
-    "session": "session",
-    "latestCommitted": "latest_committed"
-  },
-  "matrix": {
-    "Agent": {
-      "ubuntu": {
-        "OSVmImage": "env:LINUXVMIMAGE",
-        "Pool": "env:LINUXPOOL"
-      }
+    "displayNames": {
+        "inmemory-v1": "gateway_v1",
+        "inmemory-v2": "gateway_v2",
+        "unset": "unset",
+        "eventual": "eventual",
+        "session": "session",
+        "latestCommitted": "latest_committed"
     },
-    "RustToolchainName": ["stable"],
-    "AZURE_COSMOS_EMULATOR_FLAVOR": ["inmemory-v1", "inmemory-v2"],
-    "AZURE_COSMOS_E2E_PROFILE": ["readConsistencyOverrideMatrix"],
-    "AZURE_COSMOS_E2E_ACCOUNT": ["session"],
-    "AZURE_COSMOS_E2E_RUNTIME": ["unset", "eventual", "session"],
-    "AZURE_COSMOS_E2E_CLIENT": ["unset", "latestCommitted"]
-  }
+    "matrix": {
+        "Agent": {
+            "ubuntu": {
+                "OSVmImage": "env:LINUXVMIMAGE",
+                "Pool": "env:LINUXPOOL"
+            }
+        },
+        "RustToolchainName": [
+            "stable"
+        ],
+        "AZURE_COSMOS_EMULATOR_FLAVOR": [
+            "inmemory-v1",
+            "inmemory-v2"
+        ],
+        "AZURE_COSMOS_E2E_PROFILE": [
+            "readConsistencyOverrideMatrix"
+        ],
+        "AZURE_COSMOS_E2E_ACCOUNT": [
+            "session"
+        ],
+        "AZURE_COSMOS_E2E_RUNTIME": [
+            "unset",
+            "eventual",
+            "session"
+        ],
+        "AZURE_COSMOS_E2E_CLIENT": [
+            "unset",
+            "latestCommitted"
+        ]
+    }
 }
