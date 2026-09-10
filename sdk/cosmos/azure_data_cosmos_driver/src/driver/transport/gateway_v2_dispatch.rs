@@ -241,6 +241,22 @@ pub(crate) fn wrap_request_for_gateway_v2(
     {
         metadata.push(Token::query_version(version.to_owned()));
     }
+    // SupportedSerializationFormats (0x00C4, Byte): forward the binary-response
+    // negotiation from the `x-ms-cosmos-supported-serialization-formats` header
+    // (a string accept-list) as its equivalent RNTBD flags byte. Skip empty or
+    // unrecognized (byte 0) values so nothing changes when binary is off.
+    let supported_serialization_formats_header =
+        HeaderName::from_static(request_header_names::SUPPORTED_SERIALIZATION_FORMATS);
+    if let Some(value) = request
+        .headers
+        .get_optional_str(&supported_serialization_formats_header)
+        .filter(|v| !v.is_empty())
+    {
+        let flags = parse_supported_serialization_formats(value);
+        if flags != 0 {
+            metadata.push(Token::supported_serialization_formats(flags));
+        }
+    }
     // Rule 1+5: when RCS is non-Default on a read, emit the RNTBD
     // ReadConsistencyStrategy token (0x00FE) and DROP the ConsistencyLevel token.
     // Otherwise, emit ConsistencyLevel as before (Default => transparent on wire
@@ -754,6 +770,36 @@ fn hex_nibble(c: u8) -> Option<u8> {
         b'A'..=b'F' => Some(c - b'A' + 10),
         _ => None,
     }
+}
+
+/// `RntbdSupportedSerializationFormats` flag bits (OR-combined), matching the
+/// server-side enum.
+mod supported_serialization_format_flags {
+    pub(super) const JSON_TEXT: u8 = 0x01;
+    pub(super) const COSMOS_BINARY: u8 = 0x02;
+    pub(super) const HYBRID_ROW: u8 = 0x04;
+}
+
+/// Parses the `x-ms-cosmos-supported-serialization-formats` accept-list into the
+/// RNTBD flags byte.
+///
+/// The header is a comma-separated, case-insensitive list of format names. Any
+/// `+`-suffixed feature (e.g. `CosmosBinary+UInt64`) rides a separate token, so
+/// only the base name is matched; unknown entries are skipped (result `0`).
+fn parse_supported_serialization_formats(value: &str) -> u8 {
+    use supported_serialization_format_flags::{COSMOS_BINARY, HYBRID_ROW, JSON_TEXT};
+    let mut flags = 0u8;
+    for entry in value.split(',') {
+        let name = entry.trim().split('+').next().unwrap_or("").trim();
+        if name.eq_ignore_ascii_case("JsonText") {
+            flags |= JSON_TEXT;
+        } else if name.eq_ignore_ascii_case("CosmosBinary") {
+            flags |= COSMOS_BINARY;
+        } else if name.eq_ignore_ascii_case("HybridRow") {
+            flags |= HYBRID_ROW;
+        }
+    }
+    flags
 }
 
 #[cfg(test)]
@@ -1404,6 +1450,97 @@ mod tests {
         assert!(!parse_wrapped_request(&wrapped_empty, 0)
             .tokens
             .contains_key(&0x0005));
+    }
+
+    #[test]
+    fn wrap_emits_supported_serialization_formats_token_from_header() {
+        // `JsonText,CosmosBinary` header => 0x01 | 0x02 token.
+        let mut request = signed_request(None);
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::SUPPORTED_SERIALIZATION_FORMATS),
+            "JsonText,CosmosBinary",
+        );
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            request,
+            &wrap_inputs(&auth_context, OperationType::Query, None),
+        )
+        .unwrap();
+        assert_eq!(
+            parse_wrapped_request(&wrapped, 0).tokens[&0x00C4],
+            ParsedTokenValue::Byte(0x03),
+            "SupportedSerializationFormats (0x00C4) must be the OR of the accepted format flags"
+        );
+
+        // Point-op sends `CosmosBinary` alone => 0x02.
+        let mut point = signed_request(None);
+        point.headers.insert(
+            HeaderName::from_static(request_header_names::SUPPORTED_SERIALIZATION_FORMATS),
+            "CosmosBinary",
+        );
+        let wrapped_point = wrap_request_for_gateway_v2(
+            point,
+            &wrap_inputs(&auth_context, OperationType::Read, None),
+        )
+        .unwrap();
+        assert_eq!(
+            parse_wrapped_request(&wrapped_point, 0).tokens[&0x00C4],
+            ParsedTokenValue::Byte(0x02),
+        );
+    }
+
+    #[test]
+    fn wrap_omits_supported_serialization_formats_token_when_absent_or_unknown() {
+        // No header => no token.
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            signed_request(None),
+            &wrap_inputs(&auth_context, OperationType::Read, None),
+        )
+        .unwrap();
+        assert!(!parse_wrapped_request(&wrapped, 0)
+            .tokens
+            .contains_key(&0x00C4));
+
+        // An unrecognized value emits nothing, not a zero-flag token.
+        let mut unknown = signed_request(None);
+        unknown.headers.insert(
+            HeaderName::from_static(request_header_names::SUPPORTED_SERIALIZATION_FORMATS),
+            "SomethingElse",
+        );
+        let wrapped_unknown = wrap_request_for_gateway_v2(
+            unknown,
+            &wrap_inputs(&auth_context, OperationType::Read, None),
+        )
+        .unwrap();
+        assert!(!parse_wrapped_request(&wrapped_unknown, 0)
+            .tokens
+            .contains_key(&0x00C4));
+    }
+
+    #[test]
+    fn parse_supported_serialization_formats_maps_names_to_flags() {
+        assert_eq!(parse_supported_serialization_formats("JsonText"), 0x01);
+        assert_eq!(parse_supported_serialization_formats("CosmosBinary"), 0x02);
+        assert_eq!(
+            parse_supported_serialization_formats("JsonText,CosmosBinary"),
+            0x03
+        );
+        assert_eq!(parse_supported_serialization_formats("HybridRow"), 0x04);
+        // Case-insensitive, whitespace-tolerant, `+feature` stripped.
+        assert_eq!(
+            parse_supported_serialization_formats(" cosmosbinary+UInt64 , jsontext "),
+            0x03
+        );
+        assert_eq!(parse_supported_serialization_formats("nonsense"), 0x00);
     }
 
     #[test]

@@ -625,13 +625,18 @@ non-binary work · **N/A** out of scope by design.
 
 | # | Item | Why it matters | Size |
 |---|---|---|---|
-| 1 | **Gateway 2.0 / thin client** — carry `SupportedSerializationFormats` as an RNTBD metadata token | Customer-visible. The thin-client path re-encodes requests as an RNTBD token list with no such token, so the header is dropped and the service returns **text** — reintroducing the integral-`Double`→integer divergence (#5028) this feature exists to fix. A wide integer that round-trips on the standard gateway can still fail typed deserialization on a thin-client account. | Medium |
-| 2 | **`parse_envelope_page` on binary (perf + fidelity)** — see below | Efficiency and byte fidelity only; no correctness gap | Medium–Large |
-| 3 | **`delete` negotiation** — add to `supports_binary_response` to match .NET | Wire-scope parity; low impact (no request body, usually no response body) | Small |
-| 4 | **Cross-implementation vectors** — validate against captured real .NET / Java binary output | Our encoder emits none of the compact forms (reference dedup, system strings), so emulator-based tests never exercise them. A slice-based reader would pass every test we have and still corrupt real service data. | Medium |
-| 5 | **Aggregate / GROUP BY / DISTINCT** | **Blocked, not pending.** `validate_query_info` rejects all three cross-partition in *any* encoding, so there is no merge to make binary-aware. Whoever builds the engine owns the binary path with it — ideally on a format-agnostic value model (like .NET's `CosmosElement`) so binary is inherent, not retrofitted. Single-partition DISTINCT is a passthrough drain and already round-trips binary. | — |
+| 1 | **`parse_envelope_page` on binary (perf + fidelity)** — see below | Efficiency and byte fidelity only; no correctness gap | Medium–Large |
+| 2 | **`delete` negotiation** — add to `supports_binary_response` to match .NET | Wire-scope parity; low impact (no request body, usually no response body) | Small |
+| 3 | **Cross-implementation vectors** — validate against captured real .NET / Java binary output | Our encoder emits none of the compact forms (reference dedup, system strings), so emulator-based tests never exercise them. A slice-based reader would pass every test we have and still corrupt real service data. | Medium |
+| 4 | **Aggregate / GROUP BY / DISTINCT** | **Blocked, not pending.** `validate_query_info` rejects all three cross-partition in *any* encoding, so there is no merge to make binary-aware. Whoever builds the engine owns the binary path with it — ideally on a format-agnostic value model (like .NET's `CosmosElement`) so binary is inherent, not retrofitted. Single-partition DISTINCT is a passthrough drain and already round-trips binary. | — |
 
-#### Detail: item 2, binary-aware `parse_envelope_page`
+> **Gateway 2.0 / thin client** binary response negotiation is now **Done**: the
+> `x-ms-cosmos-supported-serialization-formats` header is forwarded on the
+> thin-client path as the RNTBD `SupportedSerializationFormats` token (`0x00C4`,
+> Byte flags), so point item ops and `query_items` receive `0x80`-prefixed
+> binary responses on Gateway 2.0 accounts just as on the standard gateway.
+
+#### Detail: item 1, binary-aware `parse_envelope_page`
 
 A binary page is currently transcoded roughly three times per document: whole-page
 binary&rarr;text, `serde_json` envelope parse, then a per-item text&rarr;binary
@@ -699,10 +704,9 @@ decode** (auto-detected by the `0x80` first byte).
 | # | Difference | Detail | Severity |
 |---|---|---|---|
 | 1 | Aggregate / GROUP BY / DISTINCT cross-partition | .NET runs them; its merge is on the format-agnostic `CosmosElement` model, so binary works for free. Rust's `validate_query_info` **rejects them in any encoding** — the engine does not exist yet. | Real capability gap (not binary-specific) |
-| 2 | `delete` negotiation | .NET's `IsPointOperationSupportedForBinaryEncoding` includes `Delete`; Rust's `supports_binary_request_body` / `supports_binary_response` exclude it. | Minor — pending item 3 |
-| 3 | Gateway 2.0 negotiation | Honored on the standard gateway only; the thin-client path drops the header and the service returns text. | Real gap — pending item 1 |
-| 4 | Patch mechanism | .NET Patch is a real server op, not binary-negotiated. Rust Patch is a client-side read-modify-write, so its internal read/replace **are** encoded when enabled. Both functionally correct. | Cosmetic / architectural |
-| 5 | Negotiation header value | Matched. Query = `"JsonText,CosmosBinary"`, point ops = `"CosmosBinary"` on both SDKs. | None |
+| 2 | `delete` negotiation | .NET's `IsPointOperationSupportedForBinaryEncoding` includes `Delete`; Rust's `supports_binary_request_body` / `supports_binary_response` exclude it. | Minor — pending item 2 |
+| 3 | Patch mechanism | .NET Patch is a real server op, not binary-negotiated. Rust Patch is a client-side read-modify-write, so its internal read/replace **are** encoded when enabled. Both functionally correct. | Cosmetic / architectural |
+| 4 | Negotiation header value | Matched. Query = `"JsonText,CosmosBinary"`, point ops = `"CosmosBinary"` on both SDKs. | None |
 
 ### Matched by design
 
@@ -718,7 +722,9 @@ decode** (auto-detected by the `0x80` first byte).
 For point operations, single-partition queries, and every cross-partition query
 shape Rust currently supports, the two SDKs are **functionally equivalent** on
 binary encoding. Divergence #1 is a missing query engine rather than a binary
-issue; #2 and #3 are the actionable binary items.
+issue; #2 is the remaining actionable binary item. Gateway 2.0 / thin-client
+negotiation is now at parity — the `SupportedSerializationFormats` RNTBD token
+(`0x00C4`, Byte) carries the header on the thin-client path.
 
 ### .NET source references
 
