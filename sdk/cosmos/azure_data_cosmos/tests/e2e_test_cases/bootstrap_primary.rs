@@ -5,7 +5,7 @@ use azure_core::http::StatusCode;
 
 use crate::e2e_test_cases::{
     fixture::{build_client, TestResult},
-    support::{hosted_only, should_run},
+    support::should_run,
 };
 
 #[tokio::test]
@@ -14,13 +14,12 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn bootstrap_primary_endpoint() -> TestResult {
-    if !should_run("bootstrap.primary-success")? {
+    if !should_run("bootstrap.primary-success").await? {
         return Ok(());
     }
 
     // Building the public SDK client against the reachable primary endpoint succeeds.
     let client = build_client().await?;
-    assert!(hosted_only());
 
     // The initialized client can complete its first account operation.
     let database_id = format!("e2e-bootstrap-{}", azure_core::Uuid::new_v4());

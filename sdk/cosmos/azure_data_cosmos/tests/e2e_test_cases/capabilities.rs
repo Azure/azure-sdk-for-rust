@@ -11,7 +11,7 @@ use crate::e2e_test_cases::{fixture::TestResult, support::should_run};
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn capability_document_is_versioned() -> TestResult {
-    if !should_run("management.capabilities")? {
+    if !should_run("management.capabilities").await? {
         return Ok(());
     }
 

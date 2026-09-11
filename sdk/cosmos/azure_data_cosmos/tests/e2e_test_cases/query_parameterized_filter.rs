@@ -15,7 +15,7 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn parameterized_query_filters_and_orders() -> TestResult {
-    if !should_run("query.parameterized-filter")? {
+    if !should_run("query.parameterized-filter").await? {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {

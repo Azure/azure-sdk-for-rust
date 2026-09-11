@@ -4367,7 +4367,7 @@ fn session_consistency_strategy_for_operation(
     operation: &CosmosOperation,
     read_consistency_strategy: ReadConsistencyStrategy,
 ) -> ReadConsistencyStrategy {
-    if operation.is_read_only() {
+    if operation.is_read_only() || read_consistency_strategy == ReadConsistencyStrategy::Session {
         read_consistency_strategy
     } else {
         ReadConsistencyStrategy::Default
@@ -4757,7 +4757,7 @@ mod tests {
     }
 
     #[test]
-    fn writes_ignore_read_consistency_strategy_for_session_capture() {
+    fn writes_ignore_non_session_read_consistency_strategy_for_session_capture() {
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let write = CosmosOperation::create_item(item.clone()).with_body(b"{}".to_vec());
         let read = CosmosOperation::read_item(item);
@@ -4768,6 +4768,13 @@ mod tests {
                 crate::options::ReadConsistencyStrategy::LatestCommitted,
             ),
             crate::options::ReadConsistencyStrategy::Default
+        );
+        assert_eq!(
+            super::session_consistency_strategy_for_operation(
+                &write,
+                crate::options::ReadConsistencyStrategy::Session,
+            ),
+            crate::options::ReadConsistencyStrategy::Session
         );
         assert_eq!(
             super::session_consistency_strategy_for_operation(

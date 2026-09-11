@@ -20,7 +20,7 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn duplicate_create_preserves_original() -> TestResult {
-    if !should_run("item.create-conflict")? {
+    if !should_run("item.create-conflict").await? {
         return Ok(());
     }
     for case in duplicate_create_cases() {

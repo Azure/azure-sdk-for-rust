@@ -201,17 +201,23 @@ knobs.
 The pipeline computes, per attempt:
 
 ```text
+session_consistency_strategy =
+  read_consistency_strategy                         if operation is a read
+  Session                                           if strategy is Session
+  Default                                           otherwise
+
 automatic_session_management_effective =
     partition_key_range_cache_enabled
     && !session_capturing_disabled
-    && read_consistency_strategy.is_session_effective(account_default)
+  && session_consistency_strategy.is_session_effective(account_default)
 ```
 
 `is_session_effective` is true when the strategy is `Session`, or when the
 strategy is `Default` and the account default consistency level is `Session`.
 `Eventual`, `LatestCommitted`, and `GlobalStrong` deliberately leave the session
-lane, so the pipeline neither resolves cached tokens nor captures response
-tokens.
+lane for reads. Writes ignore those read-only strategies and use the account
+default, while an explicit `Session` strategy continues to resolve and capture
+write tokens so a subsequent Session read can enforce read-your-writes.
 
 `session_capturing_disabled` is a single switch that turns off *both* automatic
 halves — no cache-based attach and no capture. Explicit per-operation tokens

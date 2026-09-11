@@ -13,11 +13,12 @@ use azure_data_cosmos::{
 };
 
 use crate::e2e_test_cases::{
-    catalog::{
-        selected_profile_for, AccountDefinition, ClientDefinition, Profile, RuntimeDefinition,
+    catalog::{AccountDefinition, ClientDefinition, Profile, RuntimeDefinition},
+    fixture::{build_client_with_defaults, ClientSetup, E2eTestFixture, TestResult},
+    support::{
+        assert_critical_diagnostics, item, selected_scenario_profile, write_options_with_content,
+        Item,
     },
-    fixture::{build_client_with_defaults, E2eTestFixture, TestResult},
-    support::{assert_critical_diagnostics, item, write_options_with_content, Item},
 };
 
 const REPLICATION_TIMEOUT: Duration = Duration::from_secs(5);
@@ -34,8 +35,8 @@ const RETRY_DELAY: Duration = Duration::from_millis(50);
     not(any(test_category = "emulator_inmemory", test_category = "e2e")),
     ignore = "requires the externally hosted in-memory emulator"
 )]
-async fn item_lifecycle() -> TestResult {
-    let Some(profile) = selected_profile_for("item.lifecycle")? else {
+async fn crud_lifecycle() -> TestResult {
+    let Some(profile) = selected_scenario_profile("item.lifecycle").await? else {
         return Ok(());
     };
     let setup = SelectedLifecycleSetup::from_profile(&profile)?;
@@ -379,18 +380,11 @@ impl<'a> SelectedLifecycleSetup<'a> {
     }
 
     async fn build_client(&self) -> TestResult<azure_data_cosmos::CosmosClient> {
-        build_client_with_defaults(
+        build_client_with_defaults(ClientSetup::from_profile(
+            self.runtime,
+            self.client,
             self.routing.clone(),
-            parse_optional_read_consistency(
-                self.runtime.default_read_consistency_strategy.as_deref(),
-            )?,
-            parse_optional_read_consistency(
-                self.client.default_read_consistency_strategy.as_deref(),
-            )?,
-            parse_setup_switch(&self.runtime.gateway_v2, "backendDefault")?,
-            parse_setup_switch(&self.runtime.ppcb, "sdkDefault")?,
-            parse_setup_switch(&self.client.binary_encoding, "sdkDefault")?,
-        )
+        )?)
         .await
     }
 
@@ -711,23 +705,8 @@ fn selected_axis<'a>(environment_variable: &str, available: &'a [&str]) -> TestR
     }
 }
 
-fn parse_optional_read_consistency(
-    value: Option<&str>,
-) -> TestResult<Option<ReadConsistencyStrategy>> {
-    value.map(parse_read_consistency).transpose()
-}
-
 fn parse_read_consistency(value: &str) -> TestResult<ReadConsistencyStrategy> {
     value.parse::<ReadConsistencyStrategy>().map_err(Into::into)
-}
-
-fn parse_setup_switch(value: &str, default: &str) -> TestResult<Option<bool>> {
-    match value {
-        "enabled" => Ok(Some(true)),
-        "disabled" => Ok(Some(false)),
-        value if value == default => Ok(None),
-        value => Err(format!("unsupported setup switch '{value}'").into()),
-    }
 }
 
 #[cfg(test)]

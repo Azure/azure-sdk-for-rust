@@ -16,7 +16,7 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn upsert_creates_then_updates() -> TestResult {
-    if !should_run("item.upsert-create-update")? {
+    if !should_run("item.upsert-create-update").await? {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {

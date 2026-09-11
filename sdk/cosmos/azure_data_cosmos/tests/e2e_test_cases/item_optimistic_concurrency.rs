@@ -15,7 +15,7 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn stale_etag_preserves_successful_update() -> TestResult {
-    if !should_run("item.optimistic-concurrency")? {
+    if !should_run("item.optimistic-concurrency").await? {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {
