@@ -31,7 +31,10 @@ function New-CosmosE2eEmulatorConfig {
         [string] $ProfileId,
 
         [Parameter(Mandatory)]
-        [bool] $GatewayV2Enabled
+        [bool] $GatewayV2Enabled,
+
+        [Parameter(Mandatory)]
+        [string] $OutputDirectory
     )
 
     if ($ProfileId -notmatch '^[a-zA-Z][a-zA-Z0-9]*$') {
@@ -85,7 +88,7 @@ function New-CosmosE2eEmulatorConfig {
         databases = @()
     }
     $mode = if ($GatewayV2Enabled) { 'v2' } else { 'v1' }
-    $path = ([System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "azure-cosmos-e2e-$ProfileId-$($accountDefinition.id)-$mode.json"))
+    $path = ([System.IO.Path]::Combine($OutputDirectory, "azure-cosmos-e2e-$ProfileId-$($accountDefinition.id)-$mode.json"))
     $configuration | ConvertTo-Json -Depth 10 | Set-Content $path
     return [pscustomobject]@{
         Path = $path
@@ -146,6 +149,16 @@ if ($env:AZURE_COSMOS_E2E_PROFILE -and
 
 if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     $repoRoot = (Resolve-Path ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', '..', '..'))).Path
+    $runDirectory = if ($env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY) {
+        $env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY
+    }
+    else {
+        ([System.IO.Path]::Combine(
+                [System.IO.Path]::GetTempPath(),
+                "azure-data-cosmos-emulator-$([System.Guid]::NewGuid().ToString('N'))"))
+    }
+    New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
+    $env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY = $runDirectory
     $configuration = if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'inmemory-v2') {
         [System.IO.Path]::Combine($repoRoot, 'sdk', 'cosmos', 'azure_data_cosmos_emulator', 'config', 'ci-gateway-v2.json')
     }
@@ -158,14 +171,16 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     if ($env:AZURE_COSMOS_E2E_PROFILE) {
         $e2eConfiguration = New-CosmosE2eEmulatorConfig `
             -ProfileId $env:AZURE_COSMOS_E2E_PROFILE `
-            -GatewayV2Enabled $expectedGateway20
+            -GatewayV2Enabled $expectedGateway20 `
+            -OutputDirectory $runDirectory
         $configuration = $e2eConfiguration.Path
         $expectedAccountId = $e2eConfiguration.AccountId
     }
     else {
         $e2eConfiguration = New-CosmosE2eEmulatorConfig `
             -ProfileId 'hostedEmulatorSmoke' `
-            -GatewayV2Enabled $expectedGateway20
+            -GatewayV2Enabled $expectedGateway20 `
+            -OutputDirectory $runDirectory
         $configuration = $e2eConfiguration.Path
         $expectedAccountId = $e2eConfiguration.AccountId
     }
@@ -190,7 +205,11 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
 
     if (-not $ready) {
-        Get-Process azure_data_cosmos_emulator -ErrorAction SilentlyContinue | Stop-Process -Force
+        if ($env:AZURE_COSMOS_INMEMORY_EMULATOR_PID) {
+            Get-Process -Id ([int]$env:AZURE_COSMOS_INMEMORY_EMULATOR_PID) -ErrorAction SilentlyContinue |
+            Stop-Process -Force -ErrorAction SilentlyContinue
+            $env:AZURE_COSMOS_INMEMORY_EMULATOR_PID = $null
+        }
     }
 
     if (-not $ready) {
@@ -212,8 +231,8 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
             'azure_data_cosmos_emulator'
         }
         $executable = [System.IO.Path]::Combine($repoRoot, 'target', 'debug', $executableName)
-        $stdout = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'azure-data-cosmos-emulator.out.log')
-        $stderr = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), 'azure-data-cosmos-emulator.err.log')
+        $stdout = [System.IO.Path]::Combine($runDirectory, 'stdout.log')
+        $stderr = [System.IO.Path]::Combine($runDirectory, 'stderr.log')
         Remove-Item $stdout, $stderr -Force -ErrorAction SilentlyContinue
 
         LogGroupStart "Starting hosted Cosmos DB in-memory emulator"

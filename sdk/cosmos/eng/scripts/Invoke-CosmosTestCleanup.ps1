@@ -12,11 +12,14 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
         $hostProcess = Get-Process -Id ([int]$env:AZURE_COSMOS_INMEMORY_EMULATOR_PID) -ErrorAction SilentlyContinue
     }
     else {
-        $hostProcess = Get-Process azure_data_cosmos_emulator -ErrorAction SilentlyContinue
+        $hostProcess = $null
     }
     if ($hostProcess) {
         $hostProcess | Stop-Process -Force -ErrorAction SilentlyContinue
         $hostProcess | Wait-Process -Timeout 10 -ErrorAction SilentlyContinue
+    }
+    if ($env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY) {
+        Remove-Item $env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -98,6 +101,7 @@ $env:AZURE_COSMOS_EMULATOR_HOST = $null
 $env:AZURE_COSMOS_INMEMORY_EMULATOR_PID = $null
 $env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT = $null
 $env:AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT = $null
+$env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY = $null
 # Remove any --cfg=test_category="..." flag added by Test-Setup.ps1 or COSMOS_RUSTFLAGS.
 # The next package's setup will re-add the correct flag from COSMOS_RUSTFLAGS
 # (or from AZURE_COSMOS_EMULATOR_FLAVOR=vnext when running the vnext stage).
