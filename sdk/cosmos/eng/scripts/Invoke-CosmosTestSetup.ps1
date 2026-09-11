@@ -13,15 +13,31 @@ function Test-CosmosE2eScenarioDocuments {
     $scenarioSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'scenario.v1.json'))
     $profileSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'profile.v1.json'))
 
-    Get-ChildItem ([System.IO.Path]::Combine($e2eTestRoot, 'scenarios')) -Recurse -Filter '*.json' | ForEach-Object {
+    $scenarioDocuments = @(Get-ChildItem ([System.IO.Path]::Combine($e2eTestRoot, 'scenarios')) -Recurse -Filter '*.json' | ForEach-Object {
         if (-not (Get-Content $_.FullName -Raw | Test-Json -SchemaFile $scenarioSchema)) {
             throw "Cosmos E2E scenario failed schema validation: $($_.FullName)"
         }
-    }
-    Get-ChildItem ([System.IO.Path]::Combine($e2eTestRoot, 'profiles')) -Filter '*.json' | ForEach-Object {
+        Get-Content $_.FullName -Raw | ConvertFrom-Json
+    })
+    $profileDocuments = @(Get-ChildItem ([System.IO.Path]::Combine($e2eTestRoot, 'profiles')) -Filter '*.json' | ForEach-Object {
         if (-not (Get-Content $_.FullName -Raw | Test-Json -SchemaFile $profileSchema)) {
             throw "Cosmos E2E profile failed schema validation: $($_.FullName)"
         }
+        Get-Content $_.FullName -Raw | ConvertFrom-Json
+    })
+
+    $implementationPath = ([System.IO.Path]::Combine($e2eTestRoot, 'implementations', 'rust.json'))
+    $implementation = Get-Content $implementationPath -Raw | ConvertFrom-Json
+    $scenarioIds = @($scenarioDocuments.id | Sort-Object -Unique)
+    $implementationIds = @($implementation.scenarios.id | Sort-Object -Unique)
+    if (Compare-Object $scenarioIds $implementationIds) {
+        throw 'Cosmos E2E scenario files and Rust implementation mappings must contain identical scenario IDs.'
+    }
+
+    $profileIds = @($profileDocuments.id | Sort-Object -Unique)
+    $referencedProfileIds = @($scenarioDocuments.profiles | Sort-Object -Unique)
+    if (Compare-Object $profileIds $referencedProfileIds) {
+        throw 'Cosmos E2E profile files and scenario profile references must contain identical profile IDs.'
     }
 }
 
@@ -62,7 +78,7 @@ function New-CosmosE2eEmulatorConfig {
     $accountDefinition = $accountDefinition[0]
     $regions = @($accountDefinition.regions | ForEach-Object {
             $region = [ordered]@{
-                name = [string]$_.name
+                name        = [string]$_.name
                 gatewayPort = 0
             }
             if ($GatewayV2Enabled) {
@@ -71,27 +87,27 @@ function New-CosmosE2eEmulatorConfig {
             [pscustomobject]$region
         })
     $configuration = [ordered]@{
-        account = [ordered]@{
-            id = "e2e-$ProfileId-$($accountDefinition.id)"
-            writeMode = [string]$accountDefinition.writeMode
-            consistency = [string]$accountDefinition.consistency
+        account    = [ordered]@{
+            id                   = "e2e-$ProfileId-$($accountDefinition.id)"
+            writeMode            = [string]$accountDefinition.writeMode
+            consistency          = [string]$accountDefinition.consistency
             perPartitionFailover = [bool]$accountDefinition.perPartitionFailover
-            throttling = $false
-            regions = $regions
-            replication = [ordered]@{
-                minDelayMs = [uint64]$accountDefinition.replication.minDelayMs
-                maxDelayMs = [uint64]$accountDefinition.replication.maxDelayMs
+            throttling           = $false
+            regions              = $regions
+            replication          = [ordered]@{
+                minDelayMs              = [uint64]$accountDefinition.replication.minDelayMs
+                maxDelayMs              = [uint64]$accountDefinition.replication.maxDelayMs
                 maxBufferedReplications = 10000
             }
         }
         management = @{ port = 0 }
-        databases = @()
+        databases  = @()
     }
     $mode = if ($GatewayV2Enabled) { 'v2' } else { 'v1' }
     $path = ([System.IO.Path]::Combine($OutputDirectory, "azure-cosmos-e2e-$ProfileId-$($accountDefinition.id)-$mode.json"))
     $configuration | ConvertTo-Json -Depth 10 | Set-Content $path
     return [pscustomobject]@{
-        Path = $path
+        Path      = $path
         AccountId = $configuration.account.id
     }
 }
@@ -154,8 +170,8 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
     else {
         ([System.IO.Path]::Combine(
-                [System.IO.Path]::GetTempPath(),
-                "azure-data-cosmos-emulator-$([System.Guid]::NewGuid().ToString('N'))"))
+            [System.IO.Path]::GetTempPath(),
+            "azure-data-cosmos-emulator-$([System.Guid]::NewGuid().ToString('N'))"))
     }
     New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
     $env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY = $runDirectory

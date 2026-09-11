@@ -15,7 +15,7 @@
     },
     {
       "id": "item.lifecycle",
-      "test": "lifecycle::item_lifecycle",
+      "test": "item_lifecycle::crud_lifecycle",
       "status": "active"
     },
     {

@@ -36,7 +36,7 @@ const RETRY_DELAY: Duration = Duration::from_millis(50);
     not(any(test_category = "emulator_inmemory", test_category = "e2e")),
     ignore = "requires the externally hosted in-memory emulator"
 )]
-async fn item_lifecycle() -> TestResult {
+async fn crud_lifecycle() -> TestResult {
     let Some(profile) = selected_scenario_profile("item.lifecycle").await? else {
         return Ok(());
     };
