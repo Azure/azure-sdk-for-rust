@@ -57,38 +57,78 @@ if ($PackageInfoDirectory -and !(Test-Path -Path $PackageInfoDirectory -PathType
   $packageInfoPath = $null
 }
 
-$packagesToAnalyze = Get-CargoSelectedPackages `
-  -PackageName $PackageName `
+$workspacePackages = Get-CargoPackages
+$resolvedPackageName = $PackageName
+$resolvedPackageInfoPath = $packageInfoPath
+if (!$resolvedPackageName -and !$ManifestDir -and $resolvedPackageInfoPath) {
+  $packageInfoPackages = @(Get-PackagesFromPackageInfo $resolvedPackageInfoPath)
+
+  if (!$packageInfoPackages) {
+    $resolvedPackageName = Get-CanaryPackageNames
+    $resolvedPackageInfoPath = $null
+    Write-Host "No service crates were identified. Falling back to '$($resolvedPackageName -join "', '")'."
+  }
+}
+
+$selectedManifestPaths = Get-CargoManifestPaths `
+  -PackageName $resolvedPackageName `
   -ManifestDir $ManifestDir `
-  -PackageInfoDirectory $packageInfoPath
+  -PackageInfoDirectory $resolvedPackageInfoPath `
+  -WorkspacePackages $workspacePackages
+$packagesToAnalyze = Get-CargoPackagesFromManifestPaths `
+  -ManifestPath $selectedManifestPaths `
+  -WorkspacePackages $workspacePackages
 $workspaceManifestPath = [System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')
 $exportApiScript = [System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'Export-API.ps1')
-$packageArgs = if ($PackageName -or $ManifestDir) {
-  '--package ' + ($packagesToAnalyze.name -join ' --package ')
+$hasPackageSelection = $resolvedPackageName -or $ManifestDir -or $resolvedPackageInfoPath
+$azureCoreManifestPath = (
+  Get-CargoPackageByName `
+    -WorkspacePackages $workspacePackages `
+    -PackageName azure_core
+).manifest_path
+$checkManifestPaths = if ($hasPackageSelection) {
+  @($packagesToAnalyze.manifest_path) + $azureCoreManifestPath | Select-Object -Unique
+}
+else {
+  @($azureCoreManifestPath)
+}
+$clippyManifestPaths = if ($hasPackageSelection) {
+  $checkManifestPaths
+}
+else {
+  @($workspaceManifestPath)
 }
 
 if ($Audit) {
   Invoke-LoggedCommand "cargo audit" -GroupOutput
 }
 
-Invoke-LoggedCommand "cargo check --manifest-path sdk/core/azure_core/Cargo.toml $packageArgs --all-features --all-targets --keep-going" -GroupOutput
+foreach ($manifestPath in $checkManifestPaths) {
+  Invoke-LoggedCommand "cargo check --manifest-path '$manifestPath' --all-features --all-targets --keep-going" -GroupOutput
+}
 
-if ($packageArgs) {
-  Invoke-LoggedCommand "cargo fmt --manifest-path '$workspaceManifestPath' $packageArgs -- --check" -GroupOutput
+if (!$hasPackageSelection) {
+  Invoke-LoggedCommand "cargo fmt --manifest-path '$workspaceManifestPath' --all -- --check" -GroupOutput
 }
 else {
-  Invoke-LoggedCommand "cargo fmt --manifest-path '$workspaceManifestPath' --all -- --check" -GroupOutput
+  foreach ($manifestPath in $selectedManifestPaths) {
+    Invoke-LoggedCommand "cargo fmt --manifest-path '$manifestPath' -- --check" -GroupOutput
+  }
 }
 
 Invoke-LoggedCommand "taplo format --check"
 
-Invoke-LoggedCommand "cargo clippy --manifest-path '$workspaceManifestPath' $packageArgs --all-features --all-targets --keep-going --no-deps" -GroupOutput
+foreach ($manifestPath in $clippyManifestPaths) {
+  Invoke-LoggedCommand "cargo clippy --manifest-path '$manifestPath' --all-features --all-targets --keep-going --no-deps" -GroupOutput
+}
 
 if ($Deny) {
   Invoke-LoggedCommand "cargo deny --manifest-path '$workspaceManifestPath' --all-features check bans licenses sources" -GroupOutput
 }
 
-Invoke-LoggedCommand "cargo doc --manifest-path '$workspaceManifestPath' $packageArgs --no-deps --all-features" -GroupOutput
+foreach ($manifestPath in $selectedManifestPaths) {
+  Invoke-LoggedCommand "cargo doc --manifest-path '$manifestPath' --no-deps --all-features" -GroupOutput
+}
 
 # Verify package dependencies and keywords
 $verifyDependenciesScript = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'verify-dependencies.rs'))
@@ -100,19 +140,24 @@ if (!$SkipPackageAnalysis) {
   $exportApiParams = @{
     Check = $true
   }
-  if ($PackageName) {
-    $exportApiParams['PackageName'] = $PackageName
+  if ($resolvedPackageName) {
+    $exportApiParams['PackageName'] = $resolvedPackageName
   }
   elseif ($ManifestDir) {
     $exportApiParams['ManifestDir'] = $ManifestDir
   }
-  elseif ($packageInfoPath) {
-    $exportApiParams['PackageInfoDirectory'] = $packageInfoPath
+  elseif ($resolvedPackageInfoPath) {
+    $exportApiParams['PackageInfoDirectory'] = $resolvedPackageInfoPath
   }
 
-  & $exportApiScript @exportApiParams
+  $exportApiArgs = @('-Check')
+  foreach ($entry in $exportApiParams.GetEnumerator() | Where-Object Key -NE 'Check') {
+    $values = @($entry.Value) | ForEach-Object { "'$_'" }
+    $exportApiArgs += "-$($entry.Key)", ($values -join ',')
+  }
+  Invoke-LoggedCommand "& '$exportApiScript' $($exportApiArgs -join ' ')" -GroupOutput
 
-  if (!$PackageName -and !$ManifestDir -and !$packageInfoPath) {
+  if (!$resolvedPackageName -and !$ManifestDir -and !$resolvedPackageInfoPath) {
     Write-Host "Analyzing workspace`n"
     Invoke-LoggedCommand "&$verifyDependenciesScript $workspaceManifestPath" -GroupOutput
     Invoke-LoggedCommand "&$verifyKeywordsScript $workspaceManifestPath" -GroupOutput

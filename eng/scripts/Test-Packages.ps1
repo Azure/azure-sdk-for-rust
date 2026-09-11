@@ -19,6 +19,20 @@ $activeToolchain = Get-ResolvedRustToolchain
 $usesJsonTestOutput = Test-IsNightlyRustToolchain
 $cargoFeatureArgs = if ($FeatureSet -eq 'All') { @('--all-features') } else { @() }
 
+function Get-TestPackagesFromCargoPackages(
+  $CargoPackages
+) {
+  return @(
+    foreach ($package in $CargoPackages) {
+      $packageDirectory = Split-Path -Path $package.manifest_path -Parent
+      [PSCustomObject]@{
+        Name = $package.name
+        DirectoryPath = [System.IO.Path]::GetRelativePath($RepoRoot, $packageDirectory).Replace('\', '/')
+      }
+    }
+  )
+}
+
 # Helper function to run cargo test, capturing JSON output only when the active
 # toolchain supports `--format json -Z unstable-options`.
 function Invoke-CargoTest (
@@ -28,7 +42,7 @@ function Invoke-CargoTest (
   [string]$OutputFile
 ) {
   Write-Host "Running tests for $PackageName"
-  $commandParts = @('cargo', 'test', $TestParams, '--manifest-path', $ManifestPath) + $cargoFeatureArgs + @('--no-fail-fast')
+  $commandParts = @('cargo', 'test', $TestParams, '--manifest-path', "'$ManifestPath'") + $cargoFeatureArgs + @('--no-fail-fast')
   $command = $commandParts -join ' '
 
   if ($usesJsonTestOutput) {
@@ -85,9 +99,13 @@ if ($PackageInfoDirectory) {
     exit 1
   }
 
-  $packagesToTest = Get-ChildItem $PackageInfoDirectory -Filter "*.json" -Recurse
-  | Get-Content -Raw
-  | ConvertFrom-Json
+  $packagesToTest = @(Get-PackagesFromPackageInfo $PackageInfoDirectory)
+  if (!$packagesToTest) {
+    $fallbackPackageNames = Get-CanaryPackageNames
+    Write-Host "No service crates were identified. Falling back to '$($fallbackPackageNames -join "', '")'."
+    $packagesToTest = Get-TestPackagesFromCargoPackages `
+      -CargoPackages (Get-CargoSelectedPackages -PackageName $fallbackPackageNames)
+  }
 }
 else {
   $packagesToTest = Get-AllPackageInfoFromRepo
@@ -113,11 +131,11 @@ foreach ($package in $packagesToTest) {
 
   Write-Host "`n`nTesting package: '$($package.Name)'`n"
 
-  $buildCommand = (@('cargo', 'build') + $cargoFeatureArgs + @('--keep-going')) -join ' '
+  $manifestPath = [System.IO.Path]::Combine($packageDirectory, 'Cargo.toml')
+  $buildCommand = (@('cargo', 'build', '--manifest-path', "'$manifestPath'") + $cargoFeatureArgs + @('--keep-going')) -join ' '
   Invoke-LoggedCommand $buildCommand -GroupOutput
   Write-Host "`n`n"
 
-  $manifestPath = [System.IO.Path]::Combine($packageDirectory, 'Cargo.toml')
   $timestamp = Get-Date -Format "yyyyMMdd-HHmmss-fff"
 
   $docTestOutput = ([System.IO.Path]::Combine($testResultsDir, "$($package.Name)-doctest-$timestamp.json"))
@@ -134,7 +152,7 @@ foreach ($package in $packagesToTest) {
     -ManifestPath $manifestPath `
     -OutputFile $allTargetsOutput
 
-  $benchCommand = (@('cargo', 'test', '--benches', '--manifest-path', $manifestPath) + $cargoFeatureArgs + @('--no-fail-fast')) -join ' '
+  $benchCommand = (@('cargo', 'test', '--benches', '--manifest-path', "'$manifestPath'") + $cargoFeatureArgs + @('--no-fail-fast')) -join ' '
   Invoke-LoggedCommand $benchCommand -GroupOutput
 
   $cleanupScript = ([System.IO.Path]::Combine($packageDirectory, 'Test-Cleanup.ps1'))
