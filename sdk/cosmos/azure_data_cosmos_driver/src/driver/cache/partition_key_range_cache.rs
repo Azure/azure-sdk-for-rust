@@ -13,7 +13,10 @@ use crate::models::{
     ContainerReference, PartitionKey,
 };
 
-use super::{container_routing_map::ContainerRoutingMap, AsyncCache};
+use super::{
+    container_routing_map::{ContainerRoutingMap, RoutingMapError},
+    AsyncCache,
+};
 
 /// Result of a single partition key range fetch from the service.
 ///
@@ -324,10 +327,11 @@ fn without_orphaned_continuation(previous: &ContainerRoutingMap) -> ContainerRou
 ///
 /// 1. Start from the previous map's continuation token (or `None` for fresh fetch).
 /// 2. Continue fetching without a client-side iteration cap until the service
-///    returns 304 Not Modified.
+///    returns 304 Not Modified (see [`drain_change_feed`]).
 /// 3. Accumulate all fetched ranges.
 /// 4. If a previous map exists, merge via [`ContainerRoutingMap::try_combine`];
-///    otherwise create a fresh routing map.
+///    otherwise create a fresh routing map, with bounded retries for a
+///    transient split snapshot (see [`build_complete_map_with_retry`]).
 ///
 /// A chain resumed from an inherited continuation is region-pinned by the fetch
 /// closure. If such a chain fails, the continuation is discarded and the fetch is
@@ -337,6 +341,13 @@ fn without_orphaned_continuation(previous: &ContainerRoutingMap) -> ContainerRou
 /// Every fallback that returns the previous map *after* a cold retry has run
 /// goes through [`without_orphaned_continuation`], so the pin and the token it
 /// protects are never left half-alive.
+///
+/// An empty, incomplete, or overlapping routing map is never returned here as a usable
+/// result of a cold fetch: [`build_complete_map_with_retry`] retries a bounded
+/// number of times first, and [`PartitionKeyRangeCache::try_lookup`] evicts
+/// the cache entry and returns `None` if the map is still empty afterward, so
+/// a split that has not converged can never be cached or handed to a caller as
+/// "successful but empty".
 async fn fetch_and_build_routing_map<F, Fut>(
     container: ContainerReference,
     previous_routing_map: Option<Arc<ContainerRoutingMap>>,
@@ -346,7 +357,25 @@ where
     F: Fn(ContainerReference, Option<String>) -> Fut,
     Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
 {
-    let mut all_ranges = HashMap::new();
+    fetch_and_build_routing_map_inner(
+        container,
+        previous_routing_map,
+        fetch_pk_ranges,
+        MAX_INCREMENTAL_MERGE_RETRIES,
+    )
+    .await
+}
+
+async fn fetch_and_build_routing_map_inner<F, Fut>(
+    container: ContainerReference,
+    previous_routing_map: Option<Arc<ContainerRoutingMap>>,
+    fetch_pk_ranges: F,
+    incremental_merge_retries_remaining: u32,
+) -> ContainerRoutingMap
+where
+    F: Fn(ContainerReference, Option<String>) -> Fut,
+    Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+{
     // A continuation inherited from the cached map is region-affine: the fetch
     // closure pins every page of a resumed chain to the region that served the
     // page before it. That pin is keyed off "this chain carries a continuation",
@@ -357,8 +386,154 @@ where
         .as_ref()
         .and_then(|m| m.change_feed_next_if_none_match.clone());
     let resumed_pinned_chain = inherited_continuation.is_some();
-    let mut continuation = inherited_continuation;
-    let mut iterations_completed = 0;
+
+    let (fetch_pk_ranges, drained) =
+        drain_change_feed(&container, inherited_continuation, fetch_pk_ranges).await;
+    let Some((all_ranges, continuation)) = drained else {
+        // Falling back to the previously cached map (when one exists) mirrors
+        // the merge branch below and avoids regressing the cache to empty on
+        // a single transient fetch failure.
+        tracing::warn!(
+            "Failed to fetch partition key ranges from service; \
+             falling back to previous routing map if available"
+        );
+        if resumed_pinned_chain {
+            // This chain resumed an inherited continuation, so the fetch
+            // closure pinned it to the region that served the cached
+            // page. Keeping that continuation would re-pin every later
+            // force-refresh to the same — quite possibly unavailable —
+            // region, so a split could never be discovered from a
+            // healthy one. Retry once as a cold chain instead: "cold" is
+            // defined identically in both layers as "carries no
+            // continuation", so dropping the continuation here also
+            // clears the pin. The two pieces of state are invalidated
+            // together by construction.
+            //
+            // Recursion is bounded: the retry passes no previous map, so
+            // `resumed_pinned_chain` is `false` inside it and it takes
+            // the plain fallback below.
+            tracing::debug!(
+                "Region-pinned partition key range refresh failed; \
+                 discarding the pinned continuation and retrying cold"
+            );
+            let refreshed = Box::pin(fetch_and_build_routing_map_inner(
+                container,
+                None,
+                fetch_pk_ranges,
+                0,
+            ))
+            .await;
+            if !refreshed.ranges().is_empty() {
+                return refreshed;
+            }
+            // Both the pinned and the cold attempt failed. Keep serving
+            // the previously cached ranges, but drop the continuation.
+            return previous_routing_map
+                .as_deref()
+                .map(without_orphaned_continuation)
+                .unwrap_or_else(ContainerRoutingMap::empty);
+        }
+        return previous_routing_map
+            .map(|p| (*p).clone())
+            .unwrap_or_else(ContainerRoutingMap::empty);
+    };
+
+    // Incremental refresh: merge new ranges into the previous routing map.
+    if let Some(prev) = previous_routing_map {
+        if all_ranges.is_empty() {
+            let mut unchanged = (*prev).clone();
+            unchanged.change_feed_next_if_none_match = continuation;
+            return unchanged;
+        }
+        match prev.try_combine(all_ranges.into_values().collect(), continuation) {
+            Ok(Some(map)) => return map,
+            Ok(None) => {
+                tracing::warn!(
+                    retries_remaining = incremental_merge_retries_remaining,
+                    "Incremental routing map merge incomplete"
+                );
+            }
+            Err(e) => {
+                tracing::warn!(
+                    retries_remaining = incremental_merge_retries_remaining,
+                    error = %e,
+                    "Incremental routing map merge failed"
+                );
+            }
+        }
+
+        if incremental_merge_retries_remaining > 0 {
+            tracing::debug!(
+                "Retrying incremental partition key range refresh before falling back to full refresh"
+            );
+            return Box::pin(fetch_and_build_routing_map_inner(
+                container,
+                Some(prev),
+                fetch_pk_ranges,
+                incremental_merge_retries_remaining - 1,
+            ))
+            .await;
+        }
+
+        tracing::warn!(
+            "Incremental routing map merge remained invalid after retry; \
+             falling back to full refresh"
+        );
+        let refreshed = Box::pin(fetch_and_build_routing_map_inner(
+            container,
+            None,
+            fetch_pk_ranges,
+            0,
+        ))
+        .await;
+        return if refreshed.ranges().is_empty() {
+            without_orphaned_continuation(&prev)
+        } else {
+            refreshed
+        };
+    }
+
+    // Full (non-incremental) creation. Bounded-retry on invalid or empty
+    // snapshots so transient partition metadata gets a short chance to
+    // converge instead of being cached or returned as a usable map (see
+    // `build_complete_map_with_retry`).
+    build_complete_map_with_retry((all_ranges, continuation), container, fetch_pk_ranges).await
+}
+
+/// Runs one full change-feed drain starting from `start_continuation` (`None`
+/// for a cold start), following continuation links until the service returns
+/// HTTP 304 Not Modified or a page fetch fails outright.
+///
+/// Returns the accumulated ranges (keyed by range ID; last write wins, so a
+/// cascading split's later pages override any stale duplicate seen earlier in
+/// the same drain) and the final continuation token, or `None` if any page
+/// fetch failed.
+///
+/// `fetch_pk_ranges` is threaded through by value and handed back to the
+/// caller alongside the result (rather than borrowed) so a bounded retry loop
+/// can call this more than once without requiring `F: Clone` or `F: Sync` —
+/// the fetch closures built by [`crate::driver::cosmos_driver::CosmosDriver`]
+/// are `Send` but not necessarily `Sync`, and holding a `&F` across an
+/// `.await` would require the latter.
+async fn drain_change_feed<F, Fut>(
+    container: &ContainerReference,
+    start_continuation: Option<String>,
+    fetch_pk_ranges: F,
+) -> (
+    F,
+    Option<(
+        HashMap<String, crate::models::partition_key_range::PartitionKeyRange>,
+        Option<String>,
+    )>,
+)
+where
+    F: Fn(ContainerReference, Option<String>) -> Fut,
+    Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+{
+    let mut all_ranges = HashMap::new();
+    let mut continuation = start_continuation;
+    let mut iterations_completed = 0u32;
+
     loop {
         let iteration = iterations_completed;
         iterations_completed += 1;
@@ -369,56 +544,10 @@ where
             "Fetching partition key ranges"
         );
 
-        let result = match fetch_pk_ranges(container.clone(), continuation.clone()).await {
+        let fetch = fetch_pk_ranges(container.clone(), continuation.clone());
+        let result = match fetch.await {
             Some(r) => r,
-            None => {
-                // Falling back to the previously cached map (when one exists)
-                // mirrors the merge branch below and avoids regressing the
-                // cache to empty on a single transient fetch failure.
-                tracing::warn!(
-                    "Failed to fetch partition key ranges from service (iteration {}); \
-                     falling back to previous routing map if available",
-                    iteration
-                );
-                if resumed_pinned_chain {
-                    // This chain resumed an inherited continuation, so the fetch
-                    // closure pinned it to the region that served the cached
-                    // page. Keeping that continuation would re-pin every later
-                    // force-refresh to the same — quite possibly unavailable —
-                    // region, so a split could never be discovered from a
-                    // healthy one. Retry once as a cold chain instead: "cold" is
-                    // defined identically in both layers as "carries no
-                    // continuation", so dropping the continuation here also
-                    // clears the pin. The two pieces of state are invalidated
-                    // together by construction.
-                    //
-                    // Recursion is bounded: the retry passes no previous map, so
-                    // `resumed_pinned_chain` is `false` inside it and it takes
-                    // the plain fallback below.
-                    tracing::debug!(
-                        "Region-pinned partition key range refresh failed; \
-                         discarding the pinned continuation and retrying cold"
-                    );
-                    let refreshed = Box::pin(fetch_and_build_routing_map(
-                        container,
-                        None,
-                        fetch_pk_ranges,
-                    ))
-                    .await;
-                    if !refreshed.ranges().is_empty() {
-                        return refreshed;
-                    }
-                    // Both the pinned and the cold attempt failed. Keep serving
-                    // the previously cached ranges, but drop the continuation.
-                    return previous_routing_map
-                        .as_deref()
-                        .map(without_orphaned_continuation)
-                        .unwrap_or_else(ContainerRoutingMap::empty);
-                }
-                return previous_routing_map
-                    .map(|p| (*p).clone())
-                    .unwrap_or_else(ContainerRoutingMap::empty);
-            }
+            None => return (fetch_pk_ranges, None),
         };
 
         if result.not_modified {
@@ -448,63 +577,95 @@ where
         "Partition key range fetch loop completed"
     );
 
-    // Incremental refresh: merge new ranges into the previous routing map.
-    if let Some(prev) = previous_routing_map {
-        if all_ranges.is_empty() {
-            let mut unchanged = (*prev).clone();
-            unchanged.change_feed_next_if_none_match = continuation;
-            return unchanged;
-        }
-        return match prev.try_combine(all_ranges.into_values().collect(), continuation) {
-            Ok(Some(map)) => map,
-            Ok(None) => {
-                tracing::warn!(
-                    "Incremental routing map merge incomplete; falling back to full refresh"
-                );
-                let refreshed = Box::pin(fetch_and_build_routing_map(
-                    container,
-                    None,
-                    fetch_pk_ranges,
-                ))
-                .await;
-                if refreshed.ranges().is_empty() {
-                    without_orphaned_continuation(&prev)
-                } else {
-                    refreshed
-                }
-            }
-            Err(e) => {
-                tracing::warn!(
-                    "Incremental routing map merge failed: {}; falling back to full refresh",
-                    e
-                );
-                let refreshed = Box::pin(fetch_and_build_routing_map(
-                    container,
-                    None,
-                    fetch_pk_ranges,
-                ))
-                .await;
-                if refreshed.ranges().is_empty() {
-                    without_orphaned_continuation(&prev)
-                } else {
-                    refreshed
-                }
-            }
+    (fetch_pk_ranges, Some((all_ranges, continuation)))
+}
+
+/// Number of extra incremental attempts before falling back to a cold refresh.
+///
+/// Retrying once allows a lagging change-feed snapshot to converge without
+/// immediately paying for a full routing-map read.
+const MAX_INCREMENTAL_MERGE_RETRIES: u32 = 1;
+
+/// Bounded number of attempts to build a complete routing map from a cold
+/// fetch when the freshly retrieved ranges are empty, incomplete, or
+/// overlapping. During split propagation a gateway can briefly expose
+/// incompatible metadata generations; invalid snapshots are never published,
+/// but a retry gives the metadata a short chance to converge.
+const MAX_TRANSIENT_SNAPSHOT_ATTEMPTS: u32 = 3;
+
+/// Base delay before an invalid-snapshot retry attempt; scaled by the attempt
+/// number (50ms, then 100ms) to give a split slightly more time to settle on
+/// successive tries without stalling the caller for long.
+const TRANSIENT_SNAPSHOT_RETRY_BASE_DELAY_MS: i64 = 50;
+
+/// Builds a routing map from a cold (non-incremental) fetch, retrying a
+/// bounded number of times when the assembled ranges are empty, incomplete,
+/// or overlapping. Gaps and overlaps are both invalid, non-cacheable maps, but
+/// either can be a transient view of different metadata generations while a
+/// partition split propagates.
+///
+/// `first_attempt` is the `(ranges, continuation)` pair the caller already
+/// fetched, so the common case (a complete map on the first try) makes no
+/// extra requests. `Ok(None)` (an empty range set) is retried the same as
+/// invalid range snapshots. No invalid map is ever returned as usable.
+async fn build_complete_map_with_retry<F, Fut>(
+    first_attempt: (
+        HashMap<String, crate::models::partition_key_range::PartitionKeyRange>,
+        Option<String>,
+    ),
+    container: ContainerReference,
+    mut fetch_pk_ranges: F,
+) -> ContainerRoutingMap
+where
+    F: Fn(ContainerReference, Option<String>) -> Fut,
+    Fut: std::future::Future<Output = Option<PkRangeFetchResult>>,
+{
+    let mut pending = Some(first_attempt);
+
+    for attempt in 1..=MAX_TRANSIENT_SNAPSHOT_ATTEMPTS {
+        let Some((ranges, continuation)) = pending.take() else {
+            // The retry re-fetch itself failed outright; nothing left to try.
+            break;
         };
+
+        match ContainerRoutingMap::try_create(ranges.into_values().collect(), None, continuation) {
+            Ok(Some(map)) => return map,
+            Ok(None) => {
+                tracing::warn!(attempt, "Partition key range fetch returned empty set");
+            }
+            Err(RoutingMapError::IncompleteRanges) => {
+                tracing::debug!(
+                    attempt,
+                    max_attempts = MAX_TRANSIENT_SNAPSHOT_ATTEMPTS,
+                    "Partition key ranges incomplete (transient split snapshot)"
+                );
+            }
+            Err(RoutingMapError::OverlappingRanges) => {
+                tracing::warn!(
+                    attempt,
+                    max_attempts = MAX_TRANSIENT_SNAPSHOT_ATTEMPTS,
+                    "Partition key ranges overlap (transient metadata snapshot)"
+                );
+            }
+        }
+
+        if attempt < MAX_TRANSIENT_SNAPSHOT_ATTEMPTS {
+            azure_core::sleep(azure_core::time::Duration::milliseconds(
+                TRANSIENT_SNAPSHOT_RETRY_BASE_DELAY_MS * i64::from(attempt),
+            ))
+            .await;
+            let (fp, drained) = drain_change_feed(&container, None, fetch_pk_ranges).await;
+            fetch_pk_ranges = fp;
+            pending = drained;
+        }
     }
 
-    // Full (non-incremental) creation.
-    match ContainerRoutingMap::try_create(all_ranges.into_values().collect(), None, continuation) {
-        Ok(Some(map)) => map,
-        Ok(None) => {
-            tracing::warn!("Partition key range fetch returned empty set");
-            ContainerRoutingMap::empty()
-        }
-        Err(e) => {
-            tracing::warn!("Partition key ranges invalid: {}", e);
-            ContainerRoutingMap::empty()
-        }
-    }
+    tracing::warn!(
+        attempts = MAX_TRANSIENT_SNAPSHOT_ATTEMPTS,
+        "Partition key ranges still invalid or empty after bounded retries; \
+         likely lingering partition metadata propagation"
+    );
+    ContainerRoutingMap::empty()
 }
 
 /// Parses a pkranges REST response body into partition key ranges.
@@ -1322,7 +1483,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn unknown_incremental_parent_falls_back_to_full_refresh() {
+    async fn unknown_incremental_parent_can_converge_on_incremental_retry() {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
@@ -1338,6 +1499,7 @@ mod tests {
                 async move {
                     Some(match count.fetch_add(1, Ordering::SeqCst) {
                         0 => {
+                            assert_eq!(continuation.as_deref(), Some("etag-previous"));
                             let mut child = PkRange::new("child".into(), "", "FF");
                             child.parents = Some(vec!["ghost-parent".to_string()]);
                             PkRangeFetchResult {
@@ -1346,19 +1508,38 @@ mod tests {
                                 not_modified: false,
                             }
                         }
-                        1 | 3 => PkRangeFetchResult {
-                            ranges: vec![],
-                            continuation,
-                            not_modified: true,
-                        },
-                        2 => PkRangeFetchResult {
-                            ranges: vec![
-                                PkRange::new("full-left".into(), "", "80"),
-                                PkRange::new("full-right".into(), "80", "FF"),
-                            ],
-                            continuation: Some("etag-full".to_string()),
-                            not_modified: false,
-                        },
+                        1 => {
+                            assert_eq!(continuation.as_deref(), Some("etag-child"));
+                            PkRangeFetchResult {
+                                ranges: vec![],
+                                continuation,
+                                not_modified: true,
+                            }
+                        }
+                        2 => {
+                            assert_eq!(
+                                continuation.as_deref(),
+                                Some("etag-previous"),
+                                "the first merge failure must retry the inherited incremental ETag"
+                            );
+                            let mut left = PkRange::new("left".into(), "", "80");
+                            left.parents = Some(vec!["0".to_string()]);
+                            let mut right = PkRange::new("right".into(), "80", "FF");
+                            right.parents = Some(vec!["0".to_string()]);
+                            PkRangeFetchResult {
+                                ranges: vec![left, right],
+                                continuation: Some("etag-child-retry".to_string()),
+                                not_modified: false,
+                            }
+                        }
+                        3 => {
+                            assert_eq!(continuation.as_deref(), Some("etag-child-retry"));
+                            PkRangeFetchResult {
+                                ranges: vec![],
+                                continuation,
+                                not_modified: true,
+                            }
+                        }
                         call => panic!("unexpected fetch call: {call}"),
                     })
                 }
@@ -1366,11 +1547,11 @@ mod tests {
         )
         .await;
 
-        assert_eq!(result.ranges()[0].id, "full-left");
-        assert_eq!(result.ranges()[1].id, "full-right");
+        assert_eq!(result.ranges()[0].id, "left");
+        assert_eq!(result.ranges()[1].id, "right");
         assert_eq!(
             result.change_feed_next_if_none_match.as_deref(),
-            Some("etag-full")
+            Some("etag-child-retry")
         );
         assert_eq!(call_count.load(Ordering::SeqCst), 4);
     }
@@ -1414,7 +1595,21 @@ mod tests {
                             continuation,
                             not_modified: true,
                         }),
-                        2 => None,
+                        2 => {
+                            let mut child = PkRange::new("child".into(), "", "FF");
+                            child.parents = Some(vec!["ghost-parent".to_string()]);
+                            Some(PkRangeFetchResult {
+                                ranges: vec![child],
+                                continuation: Some("etag-child-retry".to_string()),
+                                not_modified: false,
+                            })
+                        }
+                        3 => Some(PkRangeFetchResult {
+                            ranges: vec![],
+                            continuation,
+                            not_modified: true,
+                        }),
+                        4 => None,
                         call => panic!("unexpected fetch call: {call}"),
                     }
                 }
@@ -1428,11 +1623,11 @@ mod tests {
             "the cold retry released the pin, so its continuation is orphaned \
              and must be dropped with it",
         );
-        assert_eq!(call_count.load(Ordering::SeqCst), 3);
+        assert_eq!(call_count.load(Ordering::SeqCst), 5);
     }
 
     #[tokio::test]
-    async fn overlapping_incremental_page_falls_back_to_full_refresh() {
+    async fn overlapping_incremental_page_retries_once_before_full_refresh() {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
@@ -1447,23 +1642,23 @@ mod tests {
                 let count = count.clone();
                 async move {
                     Some(match count.fetch_add(1, Ordering::SeqCst) {
-                        0 => {
+                        0 | 2 => {
                             let mut left = PkRange::new("left".into(), "", "AA");
                             left.parents = Some(vec!["0".to_string()]);
                             let mut right = PkRange::new("right".into(), "80", "FF");
                             right.parents = Some(vec!["0".to_string()]);
                             PkRangeFetchResult {
                                 ranges: vec![left, right],
-                                continuation: Some("etag-overlap".to_string()),
+                                continuation: Some(format!("etag-overlap-{continuation:?}")),
                                 not_modified: false,
                             }
                         }
-                        1 | 3 => PkRangeFetchResult {
+                        1 | 3 | 5 => PkRangeFetchResult {
                             ranges: vec![],
                             continuation,
                             not_modified: true,
                         },
-                        2 => PkRangeFetchResult {
+                        4 => PkRangeFetchResult {
                             ranges: vec![
                                 PkRange::new("full-left".into(), "", "80"),
                                 PkRange::new("full-right".into(), "80", "FF"),
@@ -1484,7 +1679,7 @@ mod tests {
             result.change_feed_next_if_none_match.as_deref(),
             Some("etag-full")
         );
-        assert_eq!(call_count.load(Ordering::SeqCst), 4);
+        assert_eq!(call_count.load(Ordering::SeqCst), 6);
     }
 
     #[tokio::test]
@@ -1537,7 +1732,7 @@ mod tests {
         assert_eq!(second_page_attempts.load(Ordering::SeqCst), 2);
     }
 
-    #[tokio::test]
+    #[tokio::test(start_paused = true)]
     async fn empty_routing_map_is_not_cached() {
         use std::sync::{
             atomic::{AtomicUsize, Ordering},
@@ -1560,6 +1755,11 @@ mod tests {
             }
         };
 
+        // A consistently empty result is retried up to
+        // `MAX_TRANSIENT_SNAPSHOT_ATTEMPTS` times per lookup (bounded convergence
+        // for a transient split snapshot) before the lookup gives up, so each
+        // `try_lookup` call makes that many fetches — but the map is still
+        // never cached as a usable result.
         assert!(cache
             .try_lookup(&container, false, empty_fetch.clone())
             .await
@@ -1568,7 +1768,202 @@ mod tests {
             .try_lookup(&container, false, empty_fetch)
             .await
             .is_none());
-        assert_eq!(call_count.load(Ordering::SeqCst), 2);
+        assert_eq!(
+            call_count.load(Ordering::SeqCst),
+            2 * MAX_TRANSIENT_SNAPSHOT_ATTEMPTS as usize
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn cold_fetch_retries_incomplete_snapshot_until_it_converges() {
+        // A partition split can leave `/pkranges` structurally incomplete for
+        // a brief window (parent gone, children not yet visible). The first
+        // cold drain here only sees the left half of the space; the second
+        // cold drain (triggered by the bounded retry) sees the full space,
+        // once the split has settled.
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cold_entries = Arc::new(AtomicUsize::new(0));
+        let entries = cold_entries.clone();
+
+        let result =
+            fetch_and_build_routing_map(container, None, move |_container, continuation| {
+                let entries = entries.clone();
+                async move {
+                    if continuation.is_some() {
+                        return Some(PkRangeFetchResult {
+                            ranges: vec![],
+                            continuation,
+                            not_modified: true,
+                        });
+                    }
+                    let entry = entries.fetch_add(1, Ordering::SeqCst);
+                    Some(if entry == 0 {
+                        // First cold attempt: transient split snapshot missing
+                        // the right half of the EPK space.
+                        PkRangeFetchResult {
+                            ranges: vec![PkRange::new("0".into(), "", "80")],
+                            continuation: Some("etag-incomplete".to_string()),
+                            not_modified: false,
+                        }
+                    } else {
+                        // Retry: the split has settled and the full space is covered.
+                        PkRangeFetchResult {
+                            ranges: vec![
+                                PkRange::new("0".into(), "", "80"),
+                                PkRange::new("1".into(), "80", "FF"),
+                            ],
+                            continuation: Some("etag-complete".to_string()),
+                            not_modified: false,
+                        }
+                    })
+                }
+            })
+            .await;
+
+        assert_eq!(result.ranges().len(), 2);
+        // Converged on the second cold attempt, well within the bound.
+        assert_eq!(cold_entries.load(Ordering::SeqCst), 2);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn cold_fetch_gives_up_after_bounded_retries_when_still_incomplete() {
+        // If the snapshot never converges (e.g. a stuck split), the cache
+        // must give up after a bounded number of attempts rather than
+        // retrying forever, and must never cache or return the incomplete
+        // result as a usable map.
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cold_entries = Arc::new(AtomicUsize::new(0));
+        let entries = cold_entries.clone();
+
+        let still_incomplete_fetch =
+            move |_container: ContainerReference, continuation: Option<String>| {
+                let entries = entries.clone();
+                async move {
+                    if continuation.is_some() {
+                        return Some(PkRangeFetchResult {
+                            ranges: vec![],
+                            continuation,
+                            not_modified: true,
+                        });
+                    }
+                    entries.fetch_add(1, Ordering::SeqCst);
+                    Some(PkRangeFetchResult {
+                        ranges: vec![PkRange::new("0".into(), "", "80")],
+                        continuation: Some("etag-incomplete".to_string()),
+                        not_modified: false,
+                    })
+                }
+            };
+
+        let routing_map = cache
+            .try_lookup(&container, false, still_incomplete_fetch)
+            .await;
+
+        assert!(routing_map.is_none());
+        assert_eq!(
+            cold_entries.load(Ordering::SeqCst),
+            MAX_TRANSIENT_SNAPSHOT_ATTEMPTS as usize
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn cold_fetch_retries_overlapping_snapshot_until_it_converges() {
+        // Lagging split metadata can briefly expose incompatible generations.
+        // The overlap remains invalid and is never published, but the next cold
+        // snapshot can converge to a complete, non-overlapping topology.
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cold_entries = Arc::new(AtomicUsize::new(0));
+        let entries = cold_entries.clone();
+
+        let result =
+            fetch_and_build_routing_map(container, None, move |_container, continuation| {
+                let entries = entries.clone();
+                async move {
+                    if continuation.is_some() {
+                        return Some(PkRangeFetchResult {
+                            ranges: vec![],
+                            continuation,
+                            not_modified: true,
+                        });
+                    }
+                    let entry = entries.fetch_add(1, Ordering::SeqCst);
+                    Some(if entry == 0 {
+                        // "0" covers ["", "90") and "1" covers ["80", "FF"), so
+                        // ["80", "90") is double-covered.
+                        PkRangeFetchResult {
+                            ranges: vec![
+                                PkRange::new("0".into(), "", "90"),
+                                PkRange::new("1".into(), "80", "FF"),
+                            ],
+                            continuation: Some("etag-overlap".to_string()),
+                            not_modified: false,
+                        }
+                    } else {
+                        PkRangeFetchResult {
+                            ranges: vec![
+                                PkRange::new("0".into(), "", "80"),
+                                PkRange::new("1".into(), "80", "FF"),
+                            ],
+                            continuation: Some("etag-converged".to_string()),
+                            not_modified: false,
+                        }
+                    })
+                }
+            })
+            .await;
+
+        assert_eq!(result.ranges().len(), 2);
+        assert_eq!(cold_entries.load(Ordering::SeqCst), 2);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn cold_fetch_gives_up_after_bounded_retries_when_still_overlapping() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        let cold_entries = Arc::new(AtomicUsize::new(0));
+        let entries = cold_entries.clone();
+
+        let still_overlapping_fetch =
+            move |_container: ContainerReference, continuation: Option<String>| {
+                let entries = entries.clone();
+                async move {
+                    if continuation.is_some() {
+                        return Some(PkRangeFetchResult {
+                            ranges: vec![],
+                            continuation,
+                            not_modified: true,
+                        });
+                    }
+                    entries.fetch_add(1, Ordering::SeqCst);
+                    Some(PkRangeFetchResult {
+                        ranges: vec![
+                            PkRange::new("0".into(), "", "90"),
+                            PkRange::new("1".into(), "80", "FF"),
+                        ],
+                        continuation: Some("etag-overlap".to_string()),
+                        not_modified: false,
+                    })
+                }
+            };
+
+        let routing_map = cache
+            .try_lookup(&container, false, still_overlapping_fetch)
+            .await;
+
+        assert!(routing_map.is_none());
+        assert_eq!(
+            cold_entries.load(Ordering::SeqCst),
+            MAX_TRANSIENT_SNAPSHOT_ATTEMPTS as usize
+        );
     }
 
     #[tokio::test]

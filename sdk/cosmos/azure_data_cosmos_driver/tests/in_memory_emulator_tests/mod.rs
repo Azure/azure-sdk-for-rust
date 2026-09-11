@@ -28,6 +28,7 @@ pub mod metadata_hedging_stress;
 pub mod multi_region;
 pub mod offers;
 pub mod order_by;
+pub mod partition_key_range_cache_lifecycle;
 #[cfg(feature = "fault_injection")]
 pub mod patch_retry_faults;
 pub mod patch_strategy;
