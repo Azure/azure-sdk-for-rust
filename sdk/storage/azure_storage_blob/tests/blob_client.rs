@@ -1636,7 +1636,7 @@ async fn test_download_layout_aware_routing_routes_chunks() -> Result<(), Box<dy
 
     let body = blob_client
         .download(Some(BlobClientDownloadOptions {
-            layout_aware_routing: LayoutAwareRouting::Auto,
+            layout_aware_routing: LayoutAwareRouting::Enabled,
             partition_size: Some(NonZero::new(4).unwrap()),
             parallel: Some(NonZero::new(2).unwrap()),
             ..Default::default()
@@ -1676,6 +1676,138 @@ async fn test_download_layout_aware_routing_routes_chunks() -> Result<(), Box<dy
                     request.host_header.as_deref(),
                     Some("acct.blob.core.windows.net")
                 );
+            }
+            other => panic!("unexpected data range: {other}"),
+        }
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_download_layout_aware_routing_routes_chunks_for_path_style_endpoint(
+) -> Result<(), Box<dyn Error>> {
+    const DATA: [u8; 12] = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+    const LAYOUT: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
+<BlobLayout>
+  <Endpoints>
+    <Endpoint Index="0" Value="node-a.storage.local:20000" />
+    <Endpoint Index="1" Value="node-b.storage.local:20000" />
+    <Endpoint Index="2" Value="node-c.storage.local:20000" />
+  </Endpoints>
+  <Ranges>
+    <Range Start="0" End="3" EndpointIndex="0" />
+    <Range Start="4" End="7" EndpointIndex="1" />
+    <Range Start="8" End="11" EndpointIndex="2" />
+  </Ranges>
+</BlobLayout>"#;
+
+    struct Seen {
+        is_layout: bool,
+        url: Url,
+        host_header: Option<String>,
+        range: Option<String>,
+    }
+
+    let seen = Arc::new(Mutex::new(Vec::<Seen>::new()));
+    let seen_capture = seen.clone();
+    let mock_client = Arc::new(MockHttpClient::new(move |request| {
+        let is_layout = request
+            .url()
+            .query()
+            .is_some_and(|query| query.contains("comp=layout"));
+        let host_header = request
+            .headers()
+            .get_optional_str(&"host".into())
+            .map(str::to_owned);
+        let range = request
+            .headers()
+            .get_optional_str(&"range".into())
+            .map(str::to_owned);
+        seen_capture.lock().unwrap().push(Seen {
+            is_layout,
+            url: request.url().clone(),
+            host_header,
+            range: range.clone(),
+        });
+
+        let response = if is_layout {
+            let mut headers = Headers::new();
+            headers.insert("etag", "\"path-style-etag\"");
+            AsyncRawResponse::from_bytes(StatusCode::Ok, headers, Bytes::from_static(LAYOUT))
+        } else {
+            let range = range.expect("data request must carry a range header");
+            let (start, end) = parse_bytes_range(&range);
+            let slice = DATA[start..=end].to_vec();
+            let mut headers = Headers::new();
+            headers.insert(
+                "content-range",
+                format!("bytes {start}-{end}/{}", DATA.len()),
+            );
+            headers.insert("content-length", slice.len().to_string());
+            headers.insert("etag", "\"path-style-etag\"");
+            headers.insert("x-ms-download-hint", "layout");
+            AsyncRawResponse::from_bytes(StatusCode::PartialContent, headers, Bytes::from(slice))
+        };
+        async move { Ok(response) }.boxed()
+    }));
+
+    let blob_client = BlobClient::new(
+        Url::parse("http://127.0.0.1:10000/devstoreaccount1/container/blob")?,
+        None,
+        Some(BlobClientOptions {
+            client_options: ClientOptions {
+                transport: Some(Transport::new(mock_client)),
+                ..Default::default()
+            },
+            ..Default::default()
+        }),
+    )?;
+
+    let body = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            layout_aware_routing: LayoutAwareRouting::Enabled,
+            partition_size: Some(NonZero::new(4).unwrap()),
+            parallel: Some(NonZero::new(2).unwrap()),
+            ..Default::default()
+        }))
+        .await?
+        .body
+        .collect()
+        .await?;
+
+    assert_eq!(&body[..], &DATA[..]);
+    let seen = seen.lock().unwrap();
+    let layout_requests: Vec<&Seen> = seen.iter().filter(|request| request.is_layout).collect();
+    let data_requests: Vec<&Seen> = seen.iter().filter(|request| !request.is_layout).collect();
+
+    assert_eq!(layout_requests.len(), 1);
+    assert_eq!(layout_requests[0].url.host_str(), Some("127.0.0.1"));
+
+    assert_eq!(data_requests.len(), 3);
+    for request in &data_requests {
+        let range = request.range.as_deref().expect("range header");
+        // Rerouting must not disturb the emulator's scheme or its account path segment.
+        assert_eq!(request.url.scheme(), "http");
+        assert_eq!(request.url.path(), "/devstoreaccount1/container/blob");
+        match range {
+            "bytes=0-3" => {
+                assert_eq!(
+                    request.url.host_str(),
+                    Some("127.0.0.1"),
+                    "the initial chunk should not be routed"
+                );
+                assert_eq!(request.url.port(), Some(10000));
+                assert_eq!(request.host_header, None);
+            }
+            "bytes=4-7" | "bytes=8-11" => {
+                let expected = if range == "bytes=4-7" {
+                    "node-b.storage.local"
+                } else {
+                    "node-c.storage.local"
+                };
+                assert_eq!(request.url.host_str(), Some(expected));
+                assert_eq!(request.url.port(), Some(20000));
+                assert_eq!(request.host_header.as_deref(), Some("127.0.0.1:10000"));
             }
             other => panic!("unexpected data range: {other}"),
         }
@@ -1730,7 +1862,7 @@ async fn test_download_layout_aware_routing_skips_layout_for_complete_initial_ra
 
     let body = blob_client
         .download(Some(BlobClientDownloadOptions {
-            layout_aware_routing: LayoutAwareRouting::Auto,
+            layout_aware_routing: LayoutAwareRouting::Enabled,
             partition_size: Some(NonZero::new(DATA.len()).unwrap()),
             ..Default::default()
         }))
