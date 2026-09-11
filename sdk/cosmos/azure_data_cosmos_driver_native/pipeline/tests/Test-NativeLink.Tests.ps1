@@ -45,7 +45,7 @@ Describe 'Test-NativeLink target validation' {
         })
         $MetadataPath = Join-Path $TargetRoot 'rust-driver-native-interface-metadata.json'
         Write-TestJson -Path $MetadataPath -Value ([ordered]@{
-            schema_version = 3
+            schema_version = 4
             artifact_id = 'test-target'
             goos = 'windows'
             goarch = 'amd64'
@@ -53,6 +53,14 @@ Describe 'Test-NativeLink target validation' {
             triple = 'x86_64-pc-windows-gnu'
             rustc_native_static_libs = @('-lsystem')
             native_static_libs = @('-lsystem')
+            toolchain = [ordered]@{
+                provider = 'microsoft'
+                manager = [ordered]@{
+                    executable = 'msrustup'
+                }
+                channel = 'ms-prod-1.95'
+                target = 'x86_64-pc-windows-gnu'
+            }
         })
 
         Mock go {
@@ -86,6 +94,24 @@ Describe 'Test-NativeLink target validation' {
                 -CCompiler 'pwsh' `
                 -MatrixPath $MatrixPath
         } | Should -Throw "*metadata 'goarch' does not match*"
+
+        Should -Invoke go -Exactly 0
+    }
+
+    It 'rejects upstream Rust metadata before invoking Go' {
+        $metadata = Get-Content $MetadataPath -Raw | ConvertFrom-Json
+        $metadata.toolchain.provider = 'upstream'
+        $metadata.toolchain.manager.executable = 'rustup'
+        $metadata.toolchain.channel = 'stable'
+        Write-TestJson -Path $MetadataPath -Value $metadata
+
+        {
+            & $ScriptPath `
+                -TargetId 'test-target' `
+                -ArtifactRoot $ArtifactRoot `
+                -CCompiler 'pwsh' `
+                -MatrixPath $MatrixPath
+        } | Should -Throw '*toolchain provider is not Microsoft Rust*'
 
         Should -Invoke go -Exactly 0
     }

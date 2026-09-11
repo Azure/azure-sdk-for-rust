@@ -15,9 +15,15 @@ not connected to a CI or release definition yet. After an owner registers it in
 the internal Azure SDK project, a successful manual main-branch build can open a
 draft pull request in `Azure/azure-cosmos-driver`.
 
-## What this pull request supports
+Production jobs install the centrally pinned Microsoft Rust toolchain from
+`eng/templates/ms-rust-toolchain.toml` through the internal `RustInstaller@1`
+feed. The native build invokes Cargo and rustc with the explicit pinned
+toolchain selector and rejects an upstream compiler, a different or unpinned
+channel, and targets that `msrustup` cannot install.
 
-The active build targets are:
+## Configured release matrix
+
+The intended build targets are:
 
 - Windows AMD64
 - Linux AMD64 using glibc
@@ -25,6 +31,10 @@ The active build targets are:
 - Linux AMD64 using musl
 - Linux ARM64 using musl
 - macOS ARM64
+
+This matrix is configured but not yet claimed as available. A manual run in the
+internal Azure DevOps project must confirm that the private Microsoft Rust feed
+supplies every target; unsupported targets fail closed.
 
 Windows ARM64 and Intel macOS are outside the supported matrix. Dynamic libraries
 for .NET, Java, and Python are also outside this pull request.
@@ -38,8 +48,10 @@ This prevents the final Go application from requiring a separately distributed
 | File | Purpose |
 | ---- | ------- |
 | `build-matrix.json` | Lists supported Rust targets and their Go module paths. |
+| `../../../../eng/templates/ms-rust-toolchain.toml` | Pins the Microsoft Rust release channel and required Rust targets. |
+| `../../../../eng/pipelines/templates/steps/use-ms-rust.yml` | Provides the opt-in internal Microsoft Rust installer path without changing ordinary Rust jobs. |
 | `New-NativeJobMatrix.ps1` | Converts the canonical target list into the standard Azure Pipelines matrix-generator format. |
-| `Build-NativeMatrix.ps1` | Builds each static library, records required system libraries, and writes release metadata. |
+| `Build-NativeMatrix.ps1` | Verifies Microsoft Rust, builds each static library, and writes schema 4 release metadata. |
 | `Test-NativeLink.ps1` | Cross-links a minimal Go/cgo program against each target archive before publication. |
 | `New-GoModules.ps1` | Creates the `Azure/azure-cosmos-driver` directory layout, Go module files, cgo linker files, headers, and static libraries. |
 | `Prepare-GoDriverPullRequest.ps1` | Verifies the artifact, synchronizes the downstream generated roots, validates the Go modules, and stages the changes. |
@@ -54,7 +66,7 @@ This prevents the final Go application from requiring a separately distributed
 ## Production flow
 
 ```text
-Pinned azure-sdk-for-rust commit
+Pinned azure-sdk-for-rust commit and Microsoft Rust channel
     |
     v
 Generate jobs from build-matrix.json using the shared matrix infrastructure
@@ -86,6 +98,12 @@ pipeline uses the repository's standard `1ES.PublishPipelineArtifact@1` wrapper
 with SBOM generation enabled rather than implementing a second, pipeline-local
 signature verifier.
 
+Each target artifact includes schema 4 metadata with the selected toolchain
+manager, pinned Microsoft Rust channel, manager and Cargo versions, complete
+`rustc -Vv` output, target triple, and linker command, resolved path, and version
+output. `New-GoModules.ps1` rejects missing or mixed toolchain identities before
+writing schema 2 `provenance.json`.
+
 The native-driver pipeline is not part of the automatic pull-request pipeline.
 Authorized reviewers can run its registered pipeline definition against a pull
 request with an `/azp run` comment.
@@ -110,6 +128,10 @@ Run the complete local test on Windows AMD64:
 ```powershell
 ./Invoke-LocalSupplyChain.ps1
 ```
+
+The local machine must already have access to the internal Microsoft Rust feed,
+and the pinned channel installed through `msrustup`. Build commands select that
+channel explicitly; there is no fallback to an upstream Rust installation.
 
 The script:
 
@@ -169,9 +191,10 @@ the appropriate driver module, so users do not need a custom musl build tag.
   `1es-redirect.yml` selects the official 1ES template.
 - Confirm with the central security owners that the official 1ES template is the
   approved trust boundary for these static libraries.
-- Provision every cross-compiler named by the build matrix. In particular, the
-  managed Ubuntu image does not include the ARM64 musl compiler required by
-  `linux-arm64-musl`; this must be resolved before registering the pipeline.
+- Run the registered pipeline manually in the internal project and confirm that
+  `ms-prod-1.95` supplies all six required targets. The checked-in configuration
+  intentionally fails closed if the private feed does not yet provide one; local
+  tests do not establish target availability.
 - Confirm that the Azure SDK Automation GitHub App installation includes the
   private `Azure/azure-cosmos-driver` repository and that this pipeline may use
   the `AzureSDKEngKeyVault Secrets` service connection.

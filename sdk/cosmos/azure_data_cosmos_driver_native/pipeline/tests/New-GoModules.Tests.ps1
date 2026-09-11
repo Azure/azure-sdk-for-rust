@@ -7,6 +7,13 @@ BeforeAll {
     $ScriptPath = Join-Path $PipelineDirectory 'New-GoModules.ps1'
     $MatrixPath = Join-Path $PipelineDirectory 'build-matrix.json'
     $Matrix = Get-Content $MatrixPath -Raw | ConvertFrom-Json
+    $RepositoryRoot = (Resolve-Path (Join-Path $PipelineDirectory '../../../..')).Path
+    $MicrosoftRustConfigPath = Join-Path $RepositoryRoot 'eng/templates/ms-rust-toolchain.toml'
+    $MicrosoftRustConfig = Get-Content $MicrosoftRustConfigPath -Raw
+    $MicrosoftRustChannel = [regex]::Match(
+        $MicrosoftRustConfig,
+        '(?m)^\s*channel\s*=\s*"([^"]+)"\s*$'
+    ).Groups[1].Value
 
     function Write-TestFile {
         param(
@@ -45,7 +52,7 @@ BeforeAll {
             Write-TestFile -Path $libraryPath -Content "archive-$($row.id)"
 
             $metadata = [ordered]@{
-                schema_version = 3
+                schema_version = 4
                 artifact_id = $row.id
                 goos = $row.goos
                 goarch = $row.goarch
@@ -74,9 +81,35 @@ BeforeAll {
                 } else {
                     @('-lsystem')
                 }
+                toolchain = [ordered]@{
+                    provider = 'microsoft'
+                    manager = [ordered]@{
+                        executable = 'msrustup'
+                        version = 'msrustup 1.0.0'
+                    }
+                    channel = $MicrosoftRustChannel
+                    selected_toolchain = $MicrosoftRustChannel
+                    rustc_verbose_version = @"
+rustc 1.95.0 (microsoft 012345678 2026-08-01)
+binary: rustc
+commit-hash: 0123456789abcdef0123456789abcdef01234567
+commit-date: 2026-08-01
+host: test-host
+release: 1.95.0
+LLVM version: 21.1.0
+"@
+                    rustc_release = '1.95.0'
+                    cargo_version = 'cargo 1.95.0'
+                    target = $row.triple
+                    linker = [ordered]@{
+                        command = $row.c_compiler
+                        executable = "/tools/$($row.c_compiler)"
+                        version = "$($row.c_compiler) 1.0.0"
+                    }
+                }
             }
             $metadataPath = Join-Path $targetRoot 'rust-driver-native-interface-metadata.json'
-            $metadata | ConvertTo-Json -Depth 6 | Set-Content $metadataPath -Encoding utf8
+            $metadata | ConvertTo-Json -Depth 8 | Set-Content $metadataPath -Encoding utf8
         }
     }
 
@@ -95,7 +128,7 @@ BeforeAll {
         $path = Join-Path $Root $TargetId 'rust-driver-native-interface-metadata.json'
         $metadata = Get-Content $path -Raw | ConvertFrom-Json
         & $Update $metadata
-        $metadata | ConvertTo-Json -Depth 6 | Set-Content $path -Encoding utf8
+        $metadata | ConvertTo-Json -Depth 8 | Set-Content $path -Encoding utf8
     }
 }
 
@@ -132,18 +165,30 @@ BeforeEach {
         Test-Path $provenancePath | Should -BeTrue
 
         $provenance = Get-Content $provenancePath -Raw | ConvertFrom-Json
-        $provenance.schema_version | Should -Be 1
+        $provenance.schema_version | Should -Be 2
         $provenance.source_commit | Should -Be '0123456789abcdef0123456789abcdef01234567'
         $provenance.rust_driver_crate | Should -Be $Matrix.rust_driver_crate
         $provenance.rust_driver_version | Should -Be '0.7.0'
         $provenance.native_interface_crate | Should -Be $Matrix.native_interface_crate
         $provenance.native_interface_version | Should -Be '0.1.0'
+        $provenance.rust_toolchain.provider | Should -Be 'microsoft'
+        $provenance.rust_toolchain.manager | Should -Be 'msrustup'
+        $provenance.rust_toolchain.manager_version | Should -Be 'msrustup 1.0.0'
+        $provenance.rust_toolchain.channel | Should -Be $MicrosoftRustChannel
+        $provenance.rust_toolchain.rustc_release | Should -Be '1.95.0'
+        $provenance.rust_toolchain.cargo_version | Should -Be 'cargo 1.95.0'
 
         @($provenance.targets).Count | Should -Be @($Matrix.targets).Count
         $windowsEntry = @($provenance.targets | Where-Object { $_.id -eq 'windows-amd64' })
         $windowsEntry.Count | Should -Be 1
         $windowsEntry[0].static_library_sha256 | Should -Match '^[0-9a-f]{64}$'
         $windowsEntry[0].header_sha256 | Should -Match '^[0-9a-f]{64}$'
+        $windowsEntry[0].toolchain.selected_toolchain | Should -Be $MicrosoftRustChannel
+        $windowsEntry[0].toolchain.rustc_verbose_version | Should -Match 'release: 1\.95\.0'
+        $windowsEntry[0].toolchain.target | Should -Be 'x86_64-pc-windows-gnu'
+        $windowsEntry[0].toolchain.linker.command | Should -Be 'gcc'
+        $windowsEntry[0].toolchain.linker.executable | Should -Be '/tools/gcc'
+        $windowsEntry[0].toolchain.linker.version | Should -Be 'gcc 1.0.0'
     }
 
     It 'generates only the selected standalone musl module' {
@@ -198,6 +243,96 @@ BeforeEach {
 
         { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
             Should -Throw "*release identity 'rust_driver_version' mismatch*"
+    }
+
+    It 'rejects metadata without Microsoft Rust provenance' {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+            param($metadata)
+            $metadata.PSObject.Properties.Remove('toolchain')
+        }
+
+        { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
+            Should -Throw "*metadata is missing 'toolchain'*"
+    }
+
+    It 'rejects metadata produced through upstream rustup' {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+            param($metadata)
+            $metadata.toolchain.provider = 'upstream'
+            $metadata.toolchain.manager.executable = 'rustup'
+            $metadata.toolchain.channel = 'stable'
+            $metadata.toolchain.selected_toolchain = 'stable'
+        }
+
+        { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
+            Should -Throw "*toolchain provider must be 'microsoft'*"
+    }
+
+    It 'rejects metadata produced by an upstream rustc' {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+            param($metadata)
+            $metadata.toolchain.rustc_verbose_version = @'
+rustc 1.95.0 (012345678 2026-08-01)
+binary: rustc
+commit-hash: 0123456789abcdef0123456789abcdef01234567
+commit-date: 2026-08-01
+host: x86_64-pc-windows-msvc
+release: 1.95.0
+LLVM version: 21.1.0
+'@
+        }
+
+        { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
+            Should -Throw '*rustc identity is not Microsoft Rust*'
+    }
+
+    It 'rejects an unpinned Microsoft Rust identity' {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+            param($metadata)
+            $metadata.toolchain.channel = 'ms-prod'
+            $metadata.toolchain.selected_toolchain = 'ms-prod'
+        }
+
+        { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
+            Should -Throw '*Microsoft Rust channel*not explicitly pinned*'
+    }
+
+    It 'rejects a Microsoft compiler release that differs from the pinned channel' {
+        foreach ($row in $Matrix.targets) {
+            Update-TestMetadata -Root $ArtifactRoot -TargetId $row.id -Update {
+                param($metadata)
+                $metadata.toolchain.rustc_release = '1.96.0'
+                $metadata.toolchain.rustc_verbose_version = $metadata.toolchain.rustc_verbose_version `
+                    -replace 'rustc 1\.95\.0', 'rustc 1.96.0' `
+                    -replace 'release: 1\.95\.0', 'release: 1.96.0'
+            }
+        }
+
+        { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
+            Should -Throw "*Microsoft Rust release '1.96.0' does not match pinned channel*"
+    }
+
+    It 'rejects a rustc identity that contradicts its release field' {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+            param($metadata)
+            $metadata.toolchain.rustc_verbose_version = $metadata.toolchain.rustc_verbose_version `
+                -replace 'release: 1\.95\.0', 'release: 1.95.1'
+        }
+
+        { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
+            Should -Throw "*rustc release '1.95.0' does not match rustc identity release '1.95.1'*"
+    }
+
+    It 'rejects targets carrying mixed Microsoft Rust releases' {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'linux-amd64-glibc' -Update {
+            param($metadata)
+            $metadata.toolchain.rustc_release = '1.95.1'
+            $metadata.toolchain.rustc_verbose_version = $metadata.toolchain.rustc_verbose_version `
+                -replace 'release: 1\.95\.0', 'release: 1.95.1'
+        }
+
+        { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
+            Should -Throw "*release identity 'rustc_release' mismatch*"
     }
 
     It 'rejects a static archive whose bytes do not match metadata' {

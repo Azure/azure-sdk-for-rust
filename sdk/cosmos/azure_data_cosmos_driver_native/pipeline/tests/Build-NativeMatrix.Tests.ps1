@@ -11,9 +11,18 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $BuildJobTemplatePath = Join-Path $PipelineDirectory 'native-driver-build-job.yml'
         $RepositoryRoot = (Resolve-Path (Join-Path $PipelineDirectory '../../../..')).Path
         $OneEsRedirectPath = Join-Path $RepositoryRoot 'eng/pipelines/templates/stages/1es-redirect.yml'
+        $UseRustTemplatePath = Join-Path $RepositoryRoot 'eng/pipelines/templates/steps/use-rust.yml'
+        $MicrosoftRustTemplatePath = Join-Path $RepositoryRoot 'eng/pipelines/templates/steps/use-ms-rust.yml'
+        $MicrosoftRustConfigPath = Join-Path $RepositoryRoot 'eng/templates/ms-rust-toolchain.toml'
         $Matrix = Get-Content $MatrixPath -Raw | ConvertFrom-Json
+        $MicrosoftRustConfig = Get-Content $MicrosoftRustConfigPath -Raw
+        $MicrosoftRustChannel = [regex]::Match(
+            $MicrosoftRustConfig,
+            '(?m)^\s*channel\s*=\s*"([^"]+)"\s*$'
+        ).Groups[1].Value
         $CargoLinkerVariable = 'CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER'
         $CcVariable = 'CC_x86_64_pc_windows_gnu'
+        function msrustup {}
     }
 
     BeforeEach {
@@ -21,6 +30,17 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $global:ObservedCc = $null
         $global:ObservedBuildCargoLinker = $null
         $global:ObservedBuildCc = $null
+        $global:ObservedCargoArguments = @()
+        $global:ObservedRustcArguments = @()
+        $global:MicrosoftRustManagerAvailable = $true
+        $global:InstalledMicrosoftRustTargets = @(
+            'x86_64-pc-windows-gnu'
+            'x86_64-unknown-linux-musl'
+        )
+        $global:MicrosoftRustTargetAddExitCode = 0
+        $global:InstallMicrosoftRustTarget = $true
+        $global:UseUpstreamRustc = $false
+        $global:MicrosoftRustRelease = '1.95.0'
         $global:CompilerLibraryPath = Join-Path $TestDrive 'libgcc_eh.a'
         Set-Content $global:CompilerLibraryPath 'archive'
 
@@ -28,11 +48,59 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             $global:LASTEXITCODE = 0
             '0123456789abcdef0123456789abcdef01234567'
         }
-        Mock rustup {
+        Mock Get-Command {
+            if ($global:MicrosoftRustManagerAvailable) {
+                [pscustomobject]@{
+                    Name = 'msrustup'
+                    Source = $null
+                }
+            }
+        } -ParameterFilter { $Name -eq 'msrustup' }
+        Mock msrustup {
+            switch ("$args") {
+                '--version' {
+                    $global:LASTEXITCODE = 0
+                    'msrustup 1.0.0'
+                }
+                "target list --installed --toolchain $MicrosoftRustChannel" {
+                    $global:LASTEXITCODE = 0
+                    $global:InstalledMicrosoftRustTargets
+                }
+                default {
+                    if ($args[0] -eq 'target' -and $args[1] -eq 'add') {
+                        $global:LASTEXITCODE = $global:MicrosoftRustTargetAddExitCode
+                        if ($global:LASTEXITCODE -eq 0 -and $global:InstallMicrosoftRustTarget) {
+                            $global:InstalledMicrosoftRustTargets += $args[2]
+                        }
+                    }
+                    else {
+                        throw "Unexpected msrustup arguments: $args"
+                    }
+                }
+            }
+        }
+        Mock rustc {
+            $global:ObservedRustcArguments = @($args)
             $global:LASTEXITCODE = 0
+            if ($global:UseUpstreamRustc) {
+                return @(
+                    'rustc 1.95.0 (012345678 2026-08-01)'
+                    'binary: rustc'
+                    'commit-hash: 0123456789abcdef0123456789abcdef01234567'
+                    'commit-date: 2026-08-01'
+                    'host: x86_64-pc-windows-msvc'
+                    'release: 1.95.0'
+                    'LLVM version: 21.1.0'
+                )
+            }
             @(
-                'x86_64-pc-windows-gnu'
-                'x86_64-unknown-linux-musl'
+                "rustc $global:MicrosoftRustRelease (microsoft 012345678 2026-08-01)"
+                'binary: rustc'
+                'commit-hash: 0123456789abcdef0123456789abcdef01234567'
+                'commit-date: 2026-08-01'
+                'host: x86_64-pc-windows-msvc'
+                "release: $global:MicrosoftRustRelease"
+                'LLVM version: 21.1.0'
             )
         }
         Mock pwsh {
@@ -45,8 +113,9 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             }
         }
         Mock cargo {
+            $global:ObservedCargoArguments += ,@($args)
             $global:LASTEXITCODE = 0
-            switch ($args[0]) {
+            switch ($args[1]) {
                 'metadata' {
                     [ordered]@{
                         packages = @(
@@ -117,10 +186,27 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             $metadataPath = Join-Path $TestDrive `
                 'artifacts/windows-amd64/rust-driver-native-interface-metadata.json'
             $metadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
-            $metadata.schema_version | Should -Be 3
+            $metadata.schema_version | Should -Be 4
             @($metadata.rustc_native_static_libs) | Should -Be @('-lsystem')
             @($metadata.native_static_libs) | Should -Be @('-lsystem')
-            $metadata.toolchains.c_compiler | Should -Be 'pwsh'
+            $metadata.toolchain.provider | Should -Be 'microsoft'
+            $metadata.toolchain.manager.executable | Should -Be 'msrustup'
+            $metadata.toolchain.channel | Should -Be $MicrosoftRustChannel
+            $metadata.toolchain.selected_toolchain | Should -Be $MicrosoftRustChannel
+            $metadata.toolchain.rustc_verbose_version | Should -Match 'release: 1\.95\.0'
+            $metadata.toolchain.rustc_release | Should -Be '1.95.0'
+            $metadata.toolchain.cargo_version | Should -Be 'cargo 1.0.0'
+            $metadata.toolchain.target | Should -Be 'x86_64-pc-windows-gnu'
+            $metadata.toolchain.linker.command | Should -Be 'pwsh'
+            $metadata.toolchain.linker.executable | Should -Not -BeNullOrEmpty
+            $metadata.toolchain.linker.version | Should -Be 'PowerShell 7.0.0'
+            $global:ObservedRustcArguments | Should -Be @(
+                "+$MicrosoftRustChannel"
+                '-Vv'
+            )
+            foreach ($invocation in $global:ObservedCargoArguments) {
+                $invocation[0] | Should -Be "+$MicrosoftRustChannel"
+            }
         }
         finally {
             [Environment]::SetEnvironmentVariable($CargoLinkerVariable, $savedCargoLinker, 'Process')
@@ -179,6 +265,86 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         Should -Invoke cargo -Exactly 0
     }
 
+    It 'rejects a missing Microsoft Rust manager selection' {
+        $global:MicrosoftRustManagerAvailable = $false
+
+        {
+            & $ScriptPath `
+                -TargetId 'windows-amd64' `
+                -OutputRoot (Join-Path $TestDrive 'artifacts') `
+                -CCompiler 'pwsh' `
+                -SkipBuild
+        } | Should -Throw '*msrustup is not installed or is not available on PATH*'
+    }
+
+    It 'rejects an upstream rustc fallback' {
+        $global:UseUpstreamRustc = $true
+
+        {
+            & $ScriptPath `
+                -TargetId 'windows-amd64' `
+                -OutputRoot (Join-Path $TestDrive 'artifacts') `
+                -CCompiler 'pwsh' `
+                -SkipBuild
+        } | Should -Throw '*does not identify a Microsoft Rust compiler*'
+    }
+
+    It 'rejects a Microsoft compiler release that differs from the pinned channel' {
+        $global:MicrosoftRustRelease = '1.96.0'
+
+        {
+            & $ScriptPath `
+                -TargetId 'windows-amd64' `
+                -OutputRoot (Join-Path $TestDrive 'artifacts') `
+                -CCompiler 'pwsh' `
+                -SkipBuild
+        } | Should -Throw "*does not match pinned channel '$MicrosoftRustChannel'*"
+    }
+
+    It 'rejects an unpinned Microsoft Rust channel' {
+        $toolchainConfig = Join-Path $TestDrive 'ms-rust-toolchain.toml'
+        Set-Content $toolchainConfig @'
+[toolchain]
+channel = "ms-prod"
+targets = ["x86_64-pc-windows-gnu"]
+'@
+
+        {
+            & $ScriptPath `
+                -TargetId 'windows-amd64' `
+                -OutputRoot (Join-Path $TestDrive 'artifacts') `
+                -CCompiler 'pwsh' `
+                -ToolchainConfigPath $toolchainConfig `
+                -SkipBuild
+        } | Should -Throw '*not an explicit pinned ms-prod channel*'
+    }
+
+    It 'fails closed when msrustup cannot install a required target' {
+        $global:InstalledMicrosoftRustTargets = @('x86_64-pc-windows-gnu')
+        $global:MicrosoftRustTargetAddExitCode = 1
+
+        {
+            & $ScriptPath `
+                -TargetId 'linux-amd64-musl' `
+                -OutputRoot (Join-Path $TestDrive 'artifacts') `
+                -CCompiler 'pwsh' `
+                -SkipBuild
+        } | Should -Throw '*msrustup target add failed for x86_64-unknown-linux-musl*'
+    }
+
+    It 'fails closed when a target remains unavailable after msrustup succeeds' {
+        $global:InstalledMicrosoftRustTargets = @('x86_64-pc-windows-gnu')
+        $global:InstallMicrosoftRustTarget = $false
+
+        {
+            & $ScriptPath `
+                -TargetId 'linux-amd64-musl' `
+                -OutputRoot (Join-Path $TestDrive 'artifacts') `
+                -CCompiler 'pwsh' `
+                -SkipBuild
+        } | Should -Throw "*did not install required target 'x86_64-unknown-linux-musl'*"
+    }
+
     It 'generates one shared job-matrix row for every active build target' {
         $outputPath = Join-Path $TestDrive 'native-driver-job-matrix.json'
         & $JobMatrixScriptPath -MatrixPath $MatrixPath -OutputPath $outputPath
@@ -225,12 +391,35 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $buildJobTemplate = Get-Content $BuildJobTemplatePath -Raw
         $buildJobTemplate | Should -Match 'name:\s+\$\(Pool\)'
         $buildJobTemplate | Should -Match ([regex]::Escape(
-            'template: /eng/pipelines/templates/steps/use-rust.yml@self'
+            'template: /eng/pipelines/templates/steps/use-ms-rust.yml@self'
         ))
         $buildJobTemplate | Should -Match ([regex]::Escape(
             "C:\msys64\mingw64\bin"
         ))
         $buildJobTemplate | Should -Match ([regex]::Escape('-StaticOnly'))
+    }
+
+    It 'keeps Microsoft Rust installation opt-in and centrally pinned' {
+        $template = Get-Content $MicrosoftRustTemplatePath -Raw
+        $useRustTemplate = Get-Content $UseRustTemplatePath -Raw
+
+        $template | Should -Match 'task:\s+RustInstaller@1'
+        $template | Should -Match ([regex]::Escape(
+            'https://pkgs.dev.azure.com/azure-sdk/internal/_packaging/ms-rust-tools/nuget/v3/index.json'
+        ))
+        $template | Should -Match ([regex]::Escape(
+            'eng/templates/ms-rust-toolchain.toml'
+        ))
+        $template | Should -Not -Match 'RUSTUP_EXE'
+        $template | Should -Match 'InstallToolchain:\s+false'
+        $useRustTemplate | Should -Match '(?s)name:\s+InstallToolchain.*?default:\s+true'
+        $MicrosoftRustChannel | Should -Match '^ms-prod-\d+(?:\.\d+)+$'
+        $MicrosoftRustConfig | Should -Not -Match '"rust-std"'
+        foreach ($target in $Matrix.targets) {
+            $MicrosoftRustConfig | Should -Match ([regex]::Escape(
+                "`"$($target.triple)`""
+            ))
+        }
     }
 
     It 'provisions Linux compilers from Ubuntu or checksum-pinned Microsoft prior art' {

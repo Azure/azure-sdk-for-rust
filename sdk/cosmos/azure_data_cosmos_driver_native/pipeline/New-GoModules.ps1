@@ -48,7 +48,8 @@ param(
     [string]   $OutputRoot,
     [string[]] $TargetId,
     [switch]   $SkipNativeCopy,
-    [string]   $MatrixPath = (Join-Path $PSScriptRoot 'build-matrix.json')
+    [string]   $MatrixPath = (Join-Path $PSScriptRoot 'build-matrix.json'),
+    [string]   $ToolchainConfigPath
 )
 
 Set-StrictMode -Version 3.0
@@ -56,6 +57,20 @@ $ErrorActionPreference = 'Stop'
 
 $PipelineDir = $PSScriptRoot
 $MetadataFilename = 'rust-driver-native-interface-metadata.json'
+$CrateDir = Split-Path -Parent $PipelineDir
+$RepoRoot = (Resolve-Path (Join-Path $CrateDir '..' '..' '..')).Path
+. ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'shared', 'common.ps1'))
+
+if (-not $ToolchainConfigPath) {
+    $ToolchainConfigPath = [System.IO.Path]::Combine(
+        $RepoRoot,
+        'eng',
+        'templates',
+        'ms-rust-toolchain.toml'
+    )
+}
+$microsoftRustConfig = Get-MicrosoftRustToolchainConfiguration -Path $ToolchainConfigPath
+
 if (-not $ArtifactRoot) { $ArtifactRoot = Join-Path $PipelineDir 'artifacts' }
 if (-not $OutputRoot)   { $OutputRoot   = Join-Path $PipelineDir 'generated' 'azure-cosmos-driver' }
 
@@ -109,6 +124,28 @@ function Assert-MetadataValue {
     if ([string]$actual -cne [string]$Expected) {
         throw "[$TargetId] metadata '$Name' mismatch: expected '$Expected', found '$actual'."
     }
+}
+
+function Get-RequiredMetadataString {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$TargetId,
+
+        [Parameter(Mandatory = $true)]
+        [object]$Object,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    if (
+        -not (Test-Property -Object $Object -Name $Name) -or
+        [string]::IsNullOrWhiteSpace([string]$Object.$Name)
+    ) {
+        throw "[$TargetId] metadata is missing non-empty '$Name'."
+    }
+
+    return [string]$Object.$Name
 }
 
 function Get-FileSha256 {
@@ -169,7 +206,7 @@ foreach ($row in $rows) {
     }
 
     $metadata = Get-Content $manifestPath -Raw | ConvertFrom-Json
-    Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'schema_version' -Expected 3
+    Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'schema_version' -Expected 4
     Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'artifact_id' -Expected $row.id
     Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'triple' -Expected $row.triple
     Assert-MetadataValue -TargetId $row.id -Metadata $metadata -Name 'goos' -Expected $row.goos
@@ -185,7 +222,8 @@ foreach ($row in $rows) {
         'rustc_native_static_libs',
         'native_static_libs',
         'static_library',
-        'header'
+        'header',
+        'toolchain'
     )) {
         if (-not (Test-Property -Object $metadata -Name $name)) {
             throw "[$($row.id)] metadata is missing '$name'."
@@ -197,6 +235,102 @@ foreach ($row in $rows) {
     if (-not $metadata.native_interface_version -or -not $metadata.rust_driver_version) {
         throw "[$($row.id)] metadata package versions must not be empty."
     }
+
+    $toolchain = $metadata.toolchain
+    $provider = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain `
+        -Name 'provider'
+    if ($provider -cne 'microsoft') {
+        throw "[$($row.id)] metadata toolchain provider must be 'microsoft', found '$provider'."
+    }
+
+    if (-not (Test-Property -Object $toolchain -Name 'manager')) {
+        throw "[$($row.id)] metadata toolchain is missing 'manager'."
+    }
+    $managerExecutable = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain.manager `
+        -Name 'executable'
+    $managerName = [System.IO.Path]::GetFileNameWithoutExtension($managerExecutable)
+    if ($managerName -cne 'msrustup') {
+        throw "[$($row.id)] metadata toolchain manager must be msrustup, found '$managerExecutable'."
+    }
+    $managerVersion = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain.manager `
+        -Name 'version'
+
+    $channel = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain `
+        -Name 'channel'
+    if ($channel -notmatch '^ms-prod-\d+(?:\.\d+)+$') {
+        throw "[$($row.id)] metadata Microsoft Rust channel '$channel' is not explicitly pinned."
+    }
+    if ($channel -cne $microsoftRustConfig.Channel) {
+        throw "[$($row.id)] metadata Microsoft Rust channel mismatch: expected '$($microsoftRustConfig.Channel)', found '$channel'."
+    }
+
+    $selectedToolchain = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain `
+        -Name 'selected_toolchain'
+    if ($selectedToolchain -cne $channel) {
+        throw "[$($row.id)] metadata selected toolchain '$selectedToolchain' does not match '$channel'."
+    }
+
+    $rustcVerboseVersion = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain `
+        -Name 'rustc_verbose_version'
+    if ($rustcVerboseVersion -notmatch '(?im)^rustc\s+.*\bmicrosoft\b') {
+        throw "[$($row.id)] metadata rustc identity is not Microsoft Rust."
+    }
+    $rustcRelease = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain `
+        -Name 'rustc_release'
+    $verboseReleaseMatches = [regex]::Matches(
+        $rustcVerboseVersion,
+        '(?m)^release:\s*(\S+)\s*$'
+    )
+    if ($verboseReleaseMatches.Count -ne 1) {
+        throw "[$($row.id)] metadata rustc identity must report exactly one release."
+    }
+    $verboseRustcRelease = $verboseReleaseMatches[0].Groups[1].Value
+    if ($verboseRustcRelease -cne $rustcRelease) {
+        throw "[$($row.id)] metadata rustc release '$rustcRelease' does not match rustc identity release '$verboseRustcRelease'."
+    }
+    $channelRelease = $channel.Substring('ms-prod-'.Length)
+    if ($rustcRelease -notmatch "^$([regex]::Escape($channelRelease))(?:\.|$)") {
+        throw "[$($row.id)] metadata Microsoft Rust release '$rustcRelease' does not match pinned channel '$channel'."
+    }
+    $cargoVersion = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain `
+        -Name 'cargo_version'
+    Assert-MetadataValue `
+        -TargetId $row.id `
+        -Metadata $toolchain `
+        -Name 'target' `
+        -Expected $row.triple
+
+    if (-not (Test-Property -Object $toolchain -Name 'linker')) {
+        throw "[$($row.id)] metadata toolchain is missing 'linker'."
+    }
+    $linkerCommand = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain.linker `
+        -Name 'command'
+    $linkerExecutable = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain.linker `
+        -Name 'executable'
+    $linkerVersion = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain.linker `
+        -Name 'version'
 
     if (-not (Test-Property -Object $metadata.static_library -Name 'sha256')) {
         throw "[$($row.id)] metadata static library is missing 'sha256'."
@@ -231,6 +365,12 @@ foreach ($row in $rows) {
         source_commit = [string]$metadata.source_commit
         native_interface_version = [string]$metadata.native_interface_version
         rust_driver_version = [string]$metadata.rust_driver_version
+        rust_toolchain_provider = $provider
+        rust_toolchain_manager = $managerName
+        rust_toolchain_manager_version = $managerVersion
+        rust_toolchain_channel = $channel
+        rustc_release = $rustcRelease
+        cargo_version = $cargoVersion
     }
     if ($null -eq $releaseIdentity) {
         $releaseIdentity = $identity
@@ -253,6 +393,16 @@ foreach ($row in $rows) {
         Metadata = $metadata
         HeaderPath = $headerPath
         StaticLibraryPath = $staticLibraryPath
+        Toolchain = [ordered]@{
+            selected_toolchain    = $selectedToolchain
+            rustc_verbose_version = $rustcVerboseVersion
+            target                = [string]$toolchain.target
+            linker = [ordered]@{
+                command    = $linkerCommand
+                executable = $linkerExecutable
+                version    = $linkerVersion
+            }
+        }
     }
 }
 
@@ -349,20 +499,29 @@ $provenanceTargets = foreach ($row in $rows) {
         module_path           = [string]$row.module_path
         static_library_sha256 = ([string]$targetMetadata.static_library.sha256).ToLowerInvariant()
         header_sha256         = ([string]$targetMetadata.header.sha256).ToLowerInvariant()
+        toolchain              = $verifiedArtifacts[$row.id].Toolchain
     }
 }
 
 $provenance = [ordered]@{
-    schema_version           = 1
+    schema_version           = 2
     source_commit            = $releaseIdentity['source_commit']
     native_interface_crate   = [string]$matrix.native_interface_crate
     native_interface_version = $releaseIdentity['native_interface_version']
     rust_driver_crate        = [string]$matrix.rust_driver_crate
     rust_driver_version      = $releaseIdentity['rust_driver_version']
+    rust_toolchain = [ordered]@{
+        provider        = $releaseIdentity['rust_toolchain_provider']
+        manager         = $releaseIdentity['rust_toolchain_manager']
+        manager_version = $releaseIdentity['rust_toolchain_manager_version']
+        channel         = $releaseIdentity['rust_toolchain_channel']
+        rustc_release   = $releaseIdentity['rustc_release']
+        cargo_version   = $releaseIdentity['cargo_version']
+    }
     targets                  = @($provenanceTargets)
 }
 
-$provenanceJson = $provenance | ConvertTo-Json -Depth 6
+$provenanceJson = $provenance | ConvertTo-Json -Depth 8
 Write-GeneratedTextFile -Path (Join-Path $OutputRoot 'provenance.json') -Content $provenanceJson
 Write-Host "Wrote provenance.json (commit $($releaseIdentity['source_commit']), rust_driver v$($releaseIdentity['rust_driver_version']))"
 

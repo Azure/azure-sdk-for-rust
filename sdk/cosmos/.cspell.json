@@ -255,6 +255,7 @@
     "lwinpthread",
     "MACVMIMAGEM",
     "MSYS",
+    "msrustup",
     "osxcross",
     "pipefail",
     "prependpath",
