@@ -24,14 +24,14 @@ pub use azure_messaging_eventhubs::error::Result;
 pub struct BufferedProducerClient {
 }
 impl BufferedProducerClient {
-    async fn abort(&self) -> Result<()>;
-    fn buffered_event_count(&self, partition_id: &str) -> usize;
-    fn builder() -> builders::BufferedProducerClientBuilder;
-    async fn close(&self) -> Result<()>;
-    async fn enqueue_event<impl Into<EventData>: Into<EventData>>(&self, event: impl Into<EventData>, options: Option<EnqueueEventOptions>) -> Result<()>;
-    async fn enqueue_events<E, impl IntoIterator<Item = E>: IntoIterator<Item = E>>(&self, events: impl IntoIterator<Item = E>, options: Option<EnqueueEventOptions>) -> Result<()> where E: Into<EventData>;
-    async fn flush(&self) -> Result<()>;
-    fn total_buffered_event_count(&self) -> usize;
+    pub async fn abort(&self) -> Result<()>;
+    pub fn buffered_event_count(&self, partition_id: &str) -> usize;
+    pub fn builder() -> builders::BufferedProducerClientBuilder;
+    pub async fn close(&self) -> Result<()>;
+    pub async fn enqueue_event<impl Into<EventData>: Into<EventData>>(&self, event: impl Into<EventData>, options: Option<EnqueueEventOptions>) -> Result<()>;
+    pub async fn enqueue_events<E, impl IntoIterator<Item = E>: IntoIterator<Item = E>>(&self, events: impl IntoIterator<Item = E>, options: Option<EnqueueEventOptions>) -> Result<()> where E: Into<EventData>;
+    pub async fn flush(&self) -> Result<()>;
+    pub fn total_buffered_event_count(&self) -> usize;
 }
 impl Debug for BufferedProducerClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -60,11 +60,11 @@ impl TryFrom<&Secret> for ConnectionString {
 pub struct ConsumerClient {
 }
 impl ConsumerClient {
-    fn builder() -> builders::ConsumerClientBuilder;
-    async fn close(self) -> Result<()>;
-    async fn get_eventhub_properties(&self) -> Result<EventHubProperties>;
-    async fn get_partition_properties(&self, partition_id: &str) -> Result<EventHubPartitionProperties>;
-    async fn open_receiver_on_partition(&self, partition_id: String, options: Option<OpenReceiverOptions>) -> Result<EventReceiver>;
+    pub fn builder() -> builders::ConsumerClientBuilder;
+    pub async fn close(self) -> Result<()>;
+    pub async fn get_eventhub_properties(&self) -> Result<EventHubProperties>;
+    pub async fn get_partition_properties(&self, partition_id: &str) -> Result<EventHubPartitionProperties>;
+    pub async fn open_receiver_on_partition(&self, partition_id: String, options: Option<OpenReceiverOptions>) -> Result<EventReceiver>;
 }
 #[derive(Clone, Debug, Default)]
 pub struct EnqueueEventOptions {
@@ -74,11 +74,11 @@ pub struct EnqueueEventOptions {
 pub struct EventDataBatch<'a> {
 }
 impl<'a> EventDataBatch<'a> {
-    fn is_empty(&self) -> bool;
-    fn len(&self) -> usize;
-    fn size(&self) -> u64;
-    fn try_add_amqp_message<impl Into<AmqpMessage>: Into<AmqpMessage>>(&self, message: impl Into<AmqpMessage>, options: Option<AddEventDataOptions>) -> Result<bool>;
-    fn try_add_event_data<impl Into<EventData>: Into<EventData>>(&self, event_data: impl Into<EventData>, options: Option<AddEventDataOptions>) -> Result<bool>;
+    pub fn is_empty(&self) -> bool;
+    pub fn len(&self) -> usize;
+    pub fn size(&self) -> u64;
+    pub fn try_add_amqp_message<impl Into<AmqpMessage>: Into<AmqpMessage>>(&self, message: impl Into<AmqpMessage>, options: Option<AddEventDataOptions>) -> Result<bool>;
+    pub fn try_add_event_data<impl Into<EventData>: Into<EventData>>(&self, event_data: impl Into<EventData>, options: Option<AddEventDataOptions>) -> Result<bool>;
 }
 #[derive(Default)]
 pub struct EventDataBatchOptions {
@@ -89,11 +89,11 @@ pub struct EventDataBatchOptions {
 pub struct EventProcessor {
 }
 impl EventProcessor {
-    fn builder() -> builders::EventProcessorBuilder;
-    async fn close(self) -> Result<()>;
-    async fn next_partition_client(&self) -> Result<Arc<PartitionClient>>;
-    async fn run(&self) -> Result<()>;
-    async fn shutdown(&self) -> Result<()>;
+    pub fn builder() -> builders::EventProcessorBuilder;
+    pub async fn close(self) -> Result<()>;
+    pub async fn next_partition_client(&self) -> Result<Arc<PartitionClient>>;
+    pub async fn run(&self) -> Result<()>;
+    pub async fn shutdown(&self) -> Result<()>;
 }
 impl Send for EventProcessor {
 }
@@ -102,9 +102,9 @@ impl Sync for EventProcessor {
 pub struct EventReceiver {
 }
 impl EventReceiver {
-    async fn close(self) -> Result<()>;
-    fn partition_id(&self) -> &str;
-    fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_;
+    pub async fn close(self) -> Result<()>;
+    pub fn partition_id(&self) -> &str;
+    pub fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_;
 }
 impl Drop for EventReceiver {
     fn drop(&mut self);
@@ -114,8 +114,8 @@ pub struct InMemoryCheckpointStore {
 }
 #[cfg(feature = "in_memory_checkpoint_store")]
 impl InMemoryCheckpointStore {
-    fn new() -> Self;
-    fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership>;
+    pub fn new() -> Self;
+    pub fn update_ownership(&self, ownership: &Ownership) -> Result<Ownership>;
 }
 #[cfg(feature = "in_memory_checkpoint_store")]
 impl CheckpointStore for InMemoryCheckpointStore {
@@ -142,14 +142,14 @@ pub struct OpenReceiverOptions {
 pub struct ProducerClient {
 }
 impl ProducerClient {
-    fn builder() -> builders::ProducerClientBuilder;
-    async fn close(self) -> Result<()>;
-    async fn create_batch(&self, batch_options: Option<EventDataBatchOptions>) -> Result<EventDataBatch<'_>>;
-    async fn get_eventhub_properties(&self) -> Result<EventHubProperties>;
-    async fn get_partition_properties(&self, partition_id: &str) -> Result<EventHubPartitionProperties>;
-    async fn send_batch(&self, batch: EventDataBatch<'_>, options: Option<SendBatchOptions>) -> Result<()>;
-    async fn send_event<impl Into<EventData>: Into<EventData>>(&self, event: impl Into<EventData>, options: Option<SendEventOptions>) -> Result<()>;
-    async fn send_message<M>(&self, message: M, options: Option<SendMessageOptions>) -> Result<()> where M: Into<AmqpMessage> + Debug + Send;
+    pub fn builder() -> builders::ProducerClientBuilder;
+    pub async fn close(self) -> Result<()>;
+    pub async fn create_batch(&self, batch_options: Option<EventDataBatchOptions>) -> Result<EventDataBatch<'_>>;
+    pub async fn get_eventhub_properties(&self) -> Result<EventHubProperties>;
+    pub async fn get_partition_properties(&self, partition_id: &str) -> Result<EventHubPartitionProperties>;
+    pub async fn send_batch(&self, batch: EventDataBatch<'_>, options: Option<SendBatchOptions>) -> Result<()>;
+    pub async fn send_event<impl Into<EventData>: Into<EventData>>(&self, event: impl Into<EventData>, options: Option<SendEventOptions>) -> Result<()>;
+    pub async fn send_message<M>(&self, message: M, options: Option<SendMessageOptions>) -> Result<()> where M: Into<AmqpMessage> + Debug + Send;
 }
 #[derive(Clone, Debug)]
 pub struct RetryOptions {
@@ -222,15 +222,15 @@ pub mod builders {
     pub struct BufferedProducerClientBuilder {
     }
     impl BufferedProducerClientBuilder {
-        async fn open(self, fully_qualified_namespace: &str, eventhub: &str, credential: Arc<dyn azure_core::credentials::TokenCredential>) -> Result<BufferedProducerClient>;
-        async fn open_with_connection_string(self, connection_string: &str, eventhub: Option<&str>) -> Result<BufferedProducerClient>;
-        fn with_application_id(self, application_id: String) -> Self;
-        fn with_custom_endpoint(self, endpoint: String) -> Self;
-        fn with_max_buffered_event_count_per_partition(self, count: usize) -> Self;
-        fn with_max_wait_time(self, max_wait_time: Duration) -> Self;
-        fn with_on_send_failed<F, Fut>(self, handler: F) -> Self where F: Fn(SendBatchFailedContext) -> Fut + Send + Sync + 'static, Fut: Future<Output = ()> + Send + 'static;
-        fn with_on_send_succeeded<F, Fut>(self, handler: F) -> Self where F: Fn(SendBatchSucceededContext) -> Fut + Send + Sync + 'static, Fut: Future<Output = ()> + Send + 'static;
-        fn with_retry_options(self, retry_options: RetryOptions) -> Self;
+        pub async fn open(self, fully_qualified_namespace: &str, eventhub: &str, credential: Arc<dyn azure_core::credentials::TokenCredential>) -> Result<BufferedProducerClient>;
+        pub async fn open_with_connection_string(self, connection_string: &str, eventhub: Option<&str>) -> Result<BufferedProducerClient>;
+        pub fn with_application_id(self, application_id: String) -> Self;
+        pub fn with_custom_endpoint(self, endpoint: String) -> Self;
+        pub fn with_max_buffered_event_count_per_partition(self, count: usize) -> Self;
+        pub fn with_max_wait_time(self, max_wait_time: Duration) -> Self;
+        pub fn with_on_send_failed<F, Fut>(self, handler: F) -> Self where F: Fn(SendBatchFailedContext) -> Fut + Send + Sync + 'static, Fut: Future<Output = ()> + Send + 'static;
+        pub fn with_on_send_succeeded<F, Fut>(self, handler: F) -> Self where F: Fn(SendBatchSucceededContext) -> Fut + Send + Sync + 'static, Fut: Future<Output = ()> + Send + 'static;
+        pub fn with_retry_options(self, retry_options: RetryOptions) -> Self;
     }
     impl Default for BufferedProducerClientBuilder {
         fn default() -> Self;
@@ -239,37 +239,37 @@ pub mod builders {
     pub struct ConsumerClientBuilder {
     }
     impl ConsumerClientBuilder {
-        async fn open(self, fully_qualified_namespace: &str, eventhub_name: String, credential: Arc<dyn azure_core::credentials::TokenCredential>) -> Result<super::ConsumerClient>;
-        async fn open_with_connection_string(self, connection_string: &str, eventhub: Option<&str>) -> Result<super::ConsumerClient>;
-        fn with_application_id(self, application_id: String) -> Self;
-        fn with_consumer_group(self, consumer_group: String) -> Self;
-        fn with_custom_endpoint(self, endpoint: String) -> Self;
-        fn with_instance_id(self, instance_id: String) -> Self;
-        fn with_retry_options(self, retry_options: RetryOptions) -> Self;
-        fn with_transport(self, transport: AmqpTransport) -> Self;
+        pub async fn open(self, fully_qualified_namespace: &str, eventhub_name: String, credential: Arc<dyn azure_core::credentials::TokenCredential>) -> Result<super::ConsumerClient>;
+        pub async fn open_with_connection_string(self, connection_string: &str, eventhub: Option<&str>) -> Result<super::ConsumerClient>;
+        pub fn with_application_id(self, application_id: String) -> Self;
+        pub fn with_consumer_group(self, consumer_group: String) -> Self;
+        pub fn with_custom_endpoint(self, endpoint: String) -> Self;
+        pub fn with_instance_id(self, instance_id: String) -> Self;
+        pub fn with_retry_options(self, retry_options: RetryOptions) -> Self;
+        pub fn with_transport(self, transport: AmqpTransport) -> Self;
     }
     #[derive(Default)]
     pub struct EventProcessorBuilder {
     }
     impl EventProcessorBuilder {
-        async fn build(self, consumer_client: ConsumerClient, checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>) -> Result<Arc<EventProcessor>>;
-        fn with_load_balancing_strategy(self, load_balancing_strategy: super::ProcessorStrategy) -> Self;
-        fn with_max_partition_count(self, max_partition_count: usize) -> Self;
-        fn with_partition_expiration_duration(self, partition_expiration_duration: Duration) -> Self;
-        fn with_prefetch(self, prefetch: u32) -> Self;
-        fn with_start_positions(self, start_positions: StartPositions) -> Self;
-        fn with_update_interval(self, update_interval: Duration) -> Self;
+        pub async fn build(self, consumer_client: ConsumerClient, checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>) -> Result<Arc<EventProcessor>>;
+        pub fn with_load_balancing_strategy(self, load_balancing_strategy: super::ProcessorStrategy) -> Self;
+        pub fn with_max_partition_count(self, max_partition_count: usize) -> Self;
+        pub fn with_partition_expiration_duration(self, partition_expiration_duration: Duration) -> Self;
+        pub fn with_prefetch(self, prefetch: u32) -> Self;
+        pub fn with_start_positions(self, start_positions: StartPositions) -> Self;
+        pub fn with_update_interval(self, update_interval: Duration) -> Self;
     }
     #[derive(Default)]
     pub struct ProducerClientBuilder {
     }
     impl ProducerClientBuilder {
-        async fn open(self, fully_qualified_namespace: &str, eventhub: &str, credential: Arc<dyn azure_core::credentials::TokenCredential>) -> Result<ProducerClient>;
-        async fn open_with_connection_string(self, connection_string: &str, eventhub: Option<&str>) -> Result<ProducerClient>;
-        fn with_application_id(self, application_id: String) -> Self;
-        fn with_custom_endpoint(self, endpoint: String) -> Self;
-        fn with_retry_options(self, retry_options: RetryOptions) -> Self;
-        fn with_transport(self, transport: AmqpTransport) -> Self;
+        pub async fn open(self, fully_qualified_namespace: &str, eventhub: &str, credential: Arc<dyn azure_core::credentials::TokenCredential>) -> Result<ProducerClient>;
+        pub async fn open_with_connection_string(self, connection_string: &str, eventhub: Option<&str>) -> Result<ProducerClient>;
+        pub fn with_application_id(self, application_id: String) -> Self;
+        pub fn with_custom_endpoint(self, endpoint: String) -> Self;
+        pub fn with_retry_options(self, retry_options: RetryOptions) -> Self;
+        pub fn with_transport(self, transport: AmqpTransport) -> Self;
     }
 }
 pub mod error {
@@ -324,11 +324,11 @@ pub mod models {
         pub footer: Option<AmqpAnnotations>,
     }
     impl AmqpMessage {
-        fn add_message_annotation<impl Into<AmqpValue>: Into<AmqpValue>>(&mut self, name: AmqpSymbol, value: impl Into<AmqpValue>);
-        fn builder() -> builders::AmqpMessageBuilder;
-        fn serialize(message: &AmqpMessage) -> Result<Vec<u8>>;
-        fn set_message_body<impl Into<AmqpMessageBody>: Into<AmqpMessageBody>>(&mut self, body: impl Into<AmqpMessageBody>);
-        fn set_message_id<impl Into<AmqpMessageId>: Into<AmqpMessageId>>(&mut self, message_id: impl Into<AmqpMessageId>);
+        pub fn add_message_annotation<impl Into<AmqpValue>: Into<AmqpValue>>(&mut self, name: AmqpSymbol, value: impl Into<AmqpValue>);
+        pub fn builder() -> builders::AmqpMessageBuilder;
+        pub fn serialize(message: &AmqpMessage) -> Result<Vec<u8>>;
+        pub fn set_message_body<impl Into<AmqpMessageBody>: Into<AmqpMessageBody>>(&mut self, body: impl Into<AmqpMessageBody>);
+        pub fn set_message_id<impl Into<AmqpMessageId>: Into<AmqpMessageId>>(&mut self, message_id: impl Into<AmqpMessageId>);
     }
     impl AsRef<AmqpMessage> for AmqpMessage {
         fn as_ref(&self) -> &AmqpMessage;
@@ -383,19 +383,19 @@ pub mod models {
         pub sequence_number: Option<i64>,
     }
     impl Checkpoint {
-        fn get_checkpoint_blob_name(fully_qualified_namespace: &str, event_hub_name: &str, consumer_group: &str, partition_id: &str) -> Result<String>;
-        fn get_checkpoint_blob_prefix_name(fully_qualified_namespace: &str, event_hub_name: &str, consumer_group: &str) -> Result<String>;
+        pub fn get_checkpoint_blob_name(fully_qualified_namespace: &str, event_hub_name: &str, consumer_group: &str, partition_id: &str) -> Result<String>;
+        pub fn get_checkpoint_blob_prefix_name(fully_qualified_namespace: &str, event_hub_name: &str, consumer_group: &str) -> Result<String>;
     }
     #[derive(Clone, Debug, Default, PartialEq)]
     pub struct EventData {
     }
     impl EventData {
-        fn body(&self) -> Option<&[u8]>;
-        fn builder() -> builders::EventDataBuilder;
-        fn content_type(&self) -> Option<&str>;
-        fn correlation_id(&self) -> Option<&MessageId>;
-        fn message_id(&self) -> Option<&MessageId>;
-        fn properties(&self) -> Option<&HashMap<String, AmqpSimpleValue>>;
+        pub fn body(&self) -> Option<&[u8]>;
+        pub fn builder() -> builders::EventDataBuilder;
+        pub fn content_type(&self) -> Option<&str>;
+        pub fn correlation_id(&self) -> Option<&MessageId>;
+        pub fn message_id(&self) -> Option<&MessageId>;
+        pub fn properties(&self) -> Option<&HashMap<String, AmqpSimpleValue>>;
     }
     impl From<EventData> for crate::models::AmqpMessage {
         fn from(event_data: EventData) -> Self;
@@ -430,19 +430,19 @@ pub mod models {
         pub last_modified_time: Option<azure_core::time::OffsetDateTime>,
     }
     impl Ownership {
-        fn get_ownership_name(fully_qualified_namespace: &str, event_hub_name: &str, consumer_group: &str, partition_id: &str) -> Result<String>;
-        fn get_ownership_prefix_name(fully_qualified_namespace: &str, event_hub_name: &str, consumer_group: &str) -> Result<String>;
+        pub fn get_ownership_name(fully_qualified_namespace: &str, event_hub_name: &str, consumer_group: &str, partition_id: &str) -> Result<String>;
+        pub fn get_ownership_prefix_name(fully_qualified_namespace: &str, event_hub_name: &str, consumer_group: &str) -> Result<String>;
     }
     pub struct ReceivedEventData {
     }
     impl ReceivedEventData {
-        fn enqueued_time(&self) -> Option<SystemTime>;
-        fn event_data(&self) -> &EventData;
-        fn offset(&self) -> &Option<String>;
-        fn partition_key(&self) -> &Option<String>;
-        fn raw_amqp_message(&self) -> &AmqpMessage;
-        fn sequence_number(&self) -> Option<i64>;
-        fn system_properties(&self) -> &HashMap<String, AmqpValue>;
+        pub fn enqueued_time(&self) -> Option<SystemTime>;
+        pub fn event_data(&self) -> &EventData;
+        pub fn offset(&self) -> &Option<String>;
+        pub fn partition_key(&self) -> &Option<String>;
+        pub fn raw_amqp_message(&self) -> &AmqpMessage;
+        pub fn sequence_number(&self) -> Option<i64>;
+        pub fn system_properties(&self) -> &HashMap<String, AmqpValue>;
     }
     impl Debug for ReceivedEventData {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result;
@@ -1199,12 +1199,12 @@ pub mod models {
         pub struct EventDataBuilder {
         }
         impl EventDataBuilder {
-            fn add_property<impl Into<AmqpSimpleValue>: Into<AmqpSimpleValue>>(self, key: String, value: impl Into<AmqpSimpleValue>) -> Self;
-            fn build(self) -> EventData;
-            fn with_body<T>(self, body: T) -> Self where T: Into<Vec<u8>>;
-            fn with_content_type(self, content_type: String) -> Self;
-            fn with_correlation_id<impl Into<MessageId>: Into<MessageId>>(self, correlation_id: impl Into<MessageId>) -> Self;
-            fn with_message_id<impl Into<MessageId>: Into<MessageId>>(self, message_id: impl Into<MessageId>) -> Self;
+            pub fn add_property<impl Into<AmqpSimpleValue>: Into<AmqpSimpleValue>>(self, key: String, value: impl Into<AmqpSimpleValue>) -> Self;
+            pub fn build(self) -> EventData;
+            pub fn with_body<T>(self, body: T) -> Self where T: Into<Vec<u8>>;
+            pub fn with_content_type(self, content_type: String) -> Self;
+            pub fn with_correlation_id<impl Into<MessageId>: Into<MessageId>>(self, correlation_id: impl Into<MessageId>) -> Self;
+            pub fn with_message_id<impl Into<MessageId>: Into<MessageId>>(self, message_id: impl Into<MessageId>) -> Self;
         }
     }
 }
@@ -1212,10 +1212,10 @@ pub mod processor {
     pub struct PartitionClient {
     }
     impl PartitionClient {
-        async fn close(self) -> Result<()>;
-        fn get_partition_id(&self) -> &str;
-        fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_;
-        async fn update_checkpoint(&self, event_data: &ReceivedEventData) -> Result<()>;
+        pub async fn close(self) -> Result<()>;
+        pub fn get_partition_id(&self) -> &str;
+        pub fn stream_events(&self) -> impl Stream<Item = Result<ReceivedEventData>> + '_;
+        pub async fn update_checkpoint(&self, event_data: &ReceivedEventData) -> Result<()>;
     }
     impl Drop for PartitionClient {
         fn drop(&mut self);

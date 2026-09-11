@@ -23,28 +23,28 @@ pub mod error {
     pub struct Error {
     }
     impl Error {
-        fn downcast_mut<T: std::error::Error + 'static>(&mut self) -> Option<&mut T>;
-        fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T>;
-        fn get_mut(&mut self) -> Option<&mut dyn std::error::Error + Send + Sync + 'static>;
-        fn get_ref(&self) -> Option<&dyn std::error::Error + Send + Sync + 'static>;
+        pub fn downcast_mut<T: std::error::Error + 'static>(&mut self) -> Option<&mut T>;
+        pub fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T>;
+        pub fn get_mut(&mut self) -> Option<&mut dyn std::error::Error + Send + Sync + 'static>;
+        pub fn get_ref(&self) -> Option<&dyn std::error::Error + Send + Sync + 'static>;
         #[cfg(feature = "http")]
-        fn http_status(&self) -> Option<StatusCode>;
-        fn into_downcast<T: std::error::Error + 'static>(self) -> std::result::Result<T, Self>;
-        fn into_inner(self) -> std::result::Result<Box<dyn std::error::Error + Send + Sync>, Self>;
-        fn kind(&self) -> &ErrorKind;
-        fn new<E>(kind: ErrorKind, error: E) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>;
+        pub fn http_status(&self) -> Option<StatusCode>;
+        pub fn into_downcast<T: std::error::Error + 'static>(self) -> std::result::Result<T, Self>;
+        pub fn into_inner(self) -> std::result::Result<Box<dyn std::error::Error + Send + Sync>, Self>;
+        pub fn kind(&self) -> &ErrorKind;
+        pub fn new<E>(kind: ErrorKind, error: E) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>;
         #[must_use]
-        fn with_context<C>(self, message: C) -> Self where C: Into<Cow<'static, str>>;
+        pub fn with_context<C>(self, message: C) -> Self where C: Into<Cow<'static, str>>;
         #[must_use]
-        fn with_context_fn<F, C>(self, f: F) -> Self where F: FnOnce() -> C, C: Into<Cow<'static, str>>;
+        pub fn with_context_fn<F, C>(self, f: F) -> Self where F: FnOnce() -> C, C: Into<Cow<'static, str>>;
         #[must_use]
-        fn with_error<E, C>(kind: ErrorKind, error: E, message: C) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>, C: Into<Cow<'static, str>>;
+        pub fn with_error<E, C>(kind: ErrorKind, error: E, message: C) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>, C: Into<Cow<'static, str>>;
         #[must_use]
-        fn with_error_fn<E, F, C>(kind: ErrorKind, error: E, f: F) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>, F: FnOnce() -> C, C: Into<Cow<'static, str>>;
+        pub fn with_error_fn<E, F, C>(kind: ErrorKind, error: E, f: F) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>, F: FnOnce() -> C, C: Into<Cow<'static, str>>;
         #[must_use]
-        fn with_message<C>(kind: ErrorKind, message: C) -> Self where C: Into<Cow<'static, str>>;
+        pub fn with_message<C>(kind: ErrorKind, message: C) -> Self where C: Into<Cow<'static, str>>;
         #[must_use]
-        fn with_message_fn<F, C>(kind: ErrorKind, f: F) -> Self where F: FnOnce() -> C, C: Into<Cow<'static, str>>;
+        pub fn with_message_fn<F, C>(kind: ErrorKind, f: F) -> Self where F: FnOnce() -> C, C: Into<Cow<'static, str>>;
     }
     impl Debug for Error {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -90,7 +90,7 @@ pub mod error {
         Other,
     }
     impl ErrorKind {
-        fn into_error(self) -> Error;
+        pub fn into_error(self) -> Error;
     }
     impl Display for ErrorKind {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -175,12 +175,12 @@ pub mod http {
         UnknownValue(u16),
     }
     impl StatusCode {
-        fn canonical_reason(&self) -> Cow<'static, str>;
-        fn is_client_error(&self) -> bool;
-        fn is_informational(&self) -> bool;
-        fn is_redirection(&self) -> bool;
-        fn is_server_error(&self) -> bool;
-        fn is_success(&self) -> bool;
+        pub fn canonical_reason(&self) -> Cow<'static, str>;
+        pub fn is_client_error(&self) -> bool;
+        pub fn is_informational(&self) -> bool;
+        pub fn is_redirection(&self) -> bool;
+        pub fn is_server_error(&self) -> bool;
+        pub fn is_success(&self) -> bool;
     }
     impl Deref for StatusCode {
         type Target = u16;
@@ -213,10 +213,10 @@ pub mod http {
         pub struct HeaderName {
         }
         impl HeaderName {
-            fn as_str(&self) -> &str;
-            const fn from_static(s: &'static str) -> Self;
-            const fn from_static_standard(s: &'static str) -> Self;
-            fn is_standard(&self) -> bool;
+            pub fn as_str(&self) -> &str;
+            pub const fn from_static(s: &'static str) -> Self;
+            pub const fn from_static_standard(s: &'static str) -> Self;
+            pub fn is_standard(&self) -> bool;
         }
         impl From<&'static str> for HeaderName {
             fn from(s: &'static str) -> Self;
@@ -236,9 +236,9 @@ pub mod http {
         #[derive(Clone, Eq, PartialEq)]
         pub struct HeaderValue(/* private fields */);
         impl HeaderValue {
-            fn as_str(&self) -> &str;
-            fn from_cow<C>(c: C) -> Self where C: Into<Cow<'static, str>>;
-            const fn from_static(s: &'static str) -> Self;
+            pub fn as_str(&self) -> &str;
+            pub fn from_cow<C>(c: C) -> Self where C: Into<Cow<'static, str>>;
+            pub const fn from_static(s: &'static str) -> Self;
         }
         impl Debug for HeaderValue {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -255,20 +255,20 @@ pub mod http {
         #[derive(Clone, Default, Eq, PartialEq)]
         pub struct Headers(/* private fields */);
         impl Headers {
-            fn add<H>(&mut self, header: H) -> Result<(), <H as >::Error> where H: AsHeaders;
-            fn get<H: FromHeaders>(&self) -> crate::Result<H>;
-            fn get_as<V, E>(&self, key: &HeaderName) -> crate::Result<V> where V: FromStr<Err = E>, E: std::error::Error + Send + Sync + 'static;
-            fn get_optional<H: FromHeaders>(&self) -> Result<Option<H>, <H as >::Error>;
-            fn get_optional_as<V, E>(&self, key: &HeaderName) -> crate::Result<Option<V>> where V: FromStr<Err = E>, E: std::error::Error + Send + Sync + 'static;
-            fn get_optional_str(&self, key: &HeaderName) -> Option<&str>;
-            fn get_optional_string(&self, key: &HeaderName) -> Option<String>;
-            fn get_optional_with<'a, V, F, E>(&self, key: &HeaderName, parser: F) -> crate::Result<Option<V>> where F: FnOnce(&'a HeaderValue) -> Result<V, E>, E: std::error::Error + Send + Sync + 'static;
-            fn get_str(&self, key: &HeaderName) -> crate::Result<&str>;
-            fn get_with<'a, V, F, E>(&self, key: &HeaderName, parser: F) -> crate::Result<V> where F: FnOnce(&'a HeaderValue) -> Result<V, E>, E: std::error::Error + Send + Sync + 'static;
-            fn insert<K, V>(&mut self, key: K, value: V) where K: Into<HeaderName>, V: Into<HeaderValue>;
-            fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)>;
-            fn new() -> Self;
-            fn remove<K>(&mut self, key: K) -> Option<HeaderValue> where K: Into<HeaderName>;
+            pub fn add<H>(&mut self, header: H) -> Result<(), <H as >::Error> where H: AsHeaders;
+            pub fn get<H: FromHeaders>(&self) -> crate::Result<H>;
+            pub fn get_as<V, E>(&self, key: &HeaderName) -> crate::Result<V> where V: FromStr<Err = E>, E: std::error::Error + Send + Sync + 'static;
+            pub fn get_optional<H: FromHeaders>(&self) -> Result<Option<H>, <H as >::Error>;
+            pub fn get_optional_as<V, E>(&self, key: &HeaderName) -> crate::Result<Option<V>> where V: FromStr<Err = E>, E: std::error::Error + Send + Sync + 'static;
+            pub fn get_optional_str(&self, key: &HeaderName) -> Option<&str>;
+            pub fn get_optional_string(&self, key: &HeaderName) -> Option<String>;
+            pub fn get_optional_with<'a, V, F, E>(&self, key: &HeaderName, parser: F) -> crate::Result<Option<V>> where F: FnOnce(&'a HeaderValue) -> Result<V, E>, E: std::error::Error + Send + Sync + 'static;
+            pub fn get_str(&self, key: &HeaderName) -> crate::Result<&str>;
+            pub fn get_with<'a, V, F, E>(&self, key: &HeaderName, parser: F) -> crate::Result<V> where F: FnOnce(&'a HeaderValue) -> Result<V, E>, E: std::error::Error + Send + Sync + 'static;
+            pub fn insert<K, V>(&mut self, key: K, value: V) where K: Into<HeaderName>, V: Into<HeaderValue>;
+            pub fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)>;
+            pub fn new() -> Self;
+            pub fn remove<K>(&mut self, key: K) -> Option<HeaderValue> where K: Into<HeaderName>;
         }
         impl Debug for Headers {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -302,22 +302,22 @@ pub mod http {
         pub struct RawResponse {
         }
         impl RawResponse {
-            fn body(&self) -> &ResponseBody;
-            fn deconstruct(self) -> (StatusCode, Headers, ResponseBody);
-            fn from_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, body: impl Into<Bytes>) -> Self;
-            fn headers(&self) -> &Headers;
-            fn into_body(self) -> ResponseBody;
-            fn status(&self) -> StatusCode;
+            pub fn body(&self) -> &ResponseBody;
+            pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody);
+            pub fn from_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, body: impl Into<Bytes>) -> Self;
+            pub fn headers(&self) -> &Headers;
+            pub fn into_body(self) -> ResponseBody;
+            pub fn status(&self) -> StatusCode;
         }
         #[derive(Clone, Eq, PartialEq)]
         pub struct ResponseBody(/* private fields */);
         impl ResponseBody {
-            fn from_bytes<impl Into<Bytes>: Into<Bytes>>(bytes: impl Into<Bytes>) -> Self;
-            fn into_string(self) -> crate::Result<String>;
+            pub fn from_bytes<impl Into<Bytes>: Into<Bytes>>(bytes: impl Into<Bytes>) -> Self;
+            pub fn into_string(self) -> crate::Result<String>;
             #[cfg(feature = "json")]
-            fn json<T>(&self) -> crate::Result<T> where T: DeserializeOwned;
+            pub fn json<T>(&self) -> crate::Result<T> where T: DeserializeOwned;
             #[cfg(feature = "xml")]
-            fn xml<T>(&self) -> crate::Result<T> where T: DeserializeOwned;
+            pub fn xml<T>(&self) -> crate::Result<T> where T: DeserializeOwned;
         }
         impl AsRef<[u8]> for ResponseBody {
             #[inline]

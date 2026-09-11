@@ -1,4 +1,4 @@
-apiMdSha256: 055f649752ddbd67649e0488f973f80b11e9dd64af940ff36dcd81d3d08b9fc7
-packageVersion: 1.1.0-beta.2
-parserVersion: 2.2.1
+apiMdSha256: 5dd7f2c9bd2100bf40565c6e9a6cdc5aa3ad05b46a4ef4a5f68bc8fda8db3496
+packageVersion: 1.2.0-beta.1
+parserVersion: 2.2.2
 rustVersion: 1.97.0-nightly

@@ -52,28 +52,28 @@ pub async fn sleep(duration: crate::time::Duration);
 pub struct Error {
 }
 impl Error {
-    fn downcast_mut<T: std::error::Error + 'static>(&mut self) -> Option<&mut T>;
-    fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T>;
-    fn get_mut(&mut self) -> Option<&mut dyn std::error::Error + Send + Sync + 'static>;
-    fn get_ref(&self) -> Option<&dyn std::error::Error + Send + Sync + 'static>;
+    pub fn downcast_mut<T: std::error::Error + 'static>(&mut self) -> Option<&mut T>;
+    pub fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T>;
+    pub fn get_mut(&mut self) -> Option<&mut dyn std::error::Error + Send + Sync + 'static>;
+    pub fn get_ref(&self) -> Option<&dyn std::error::Error + Send + Sync + 'static>;
     #[cfg(feature = "http")]
-    fn http_status(&self) -> Option<StatusCode>;
-    fn into_downcast<T: std::error::Error + 'static>(self) -> std::result::Result<T, Self>;
-    fn into_inner(self) -> std::result::Result<Box<dyn std::error::Error + Send + Sync>, Self>;
-    fn kind(&self) -> &ErrorKind;
-    fn new<E>(kind: ErrorKind, error: E) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>;
+    pub fn http_status(&self) -> Option<StatusCode>;
+    pub fn into_downcast<T: std::error::Error + 'static>(self) -> std::result::Result<T, Self>;
+    pub fn into_inner(self) -> std::result::Result<Box<dyn std::error::Error + Send + Sync>, Self>;
+    pub fn kind(&self) -> &ErrorKind;
+    pub fn new<E>(kind: ErrorKind, error: E) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>;
     #[must_use]
-    fn with_context<C>(self, message: C) -> Self where C: Into<Cow<'static, str>>;
+    pub fn with_context<C>(self, message: C) -> Self where C: Into<Cow<'static, str>>;
     #[must_use]
-    fn with_context_fn<F, C>(self, f: F) -> Self where F: FnOnce() -> C, C: Into<Cow<'static, str>>;
+    pub fn with_context_fn<F, C>(self, f: F) -> Self where F: FnOnce() -> C, C: Into<Cow<'static, str>>;
     #[must_use]
-    fn with_error<E, C>(kind: ErrorKind, error: E, message: C) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>, C: Into<Cow<'static, str>>;
+    pub fn with_error<E, C>(kind: ErrorKind, error: E, message: C) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>, C: Into<Cow<'static, str>>;
     #[must_use]
-    fn with_error_fn<E, F, C>(kind: ErrorKind, error: E, f: F) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>, F: FnOnce() -> C, C: Into<Cow<'static, str>>;
+    pub fn with_error_fn<E, F, C>(kind: ErrorKind, error: E, f: F) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>, F: FnOnce() -> C, C: Into<Cow<'static, str>>;
     #[must_use]
-    fn with_message<C>(kind: ErrorKind, message: C) -> Self where C: Into<Cow<'static, str>>;
+    pub fn with_message<C>(kind: ErrorKind, message: C) -> Self where C: Into<Cow<'static, str>>;
     #[must_use]
-    fn with_message_fn<F, C>(kind: ErrorKind, f: F) -> Self where F: FnOnce() -> C, C: Into<Cow<'static, str>>;
+    pub fn with_message_fn<F, C>(kind: ErrorKind, f: F) -> Self where F: FnOnce() -> C, C: Into<Cow<'static, str>>;
 }
 impl Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -149,10 +149,10 @@ pub mod cloud {
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     pub struct Audiences(/* private fields */);
     impl Audiences {
-        fn get<T: 'static>(&self) -> Option<&str>;
-        fn insert<T: 'static>(&mut self, audience: String);
-        fn new() -> Self;
-        fn with<T: 'static>(self, audience: String) -> Self;
+        pub fn get<T: 'static>(&self) -> Option<&str>;
+        pub fn insert<T: 'static>(&mut self, audience: String);
+        pub fn new() -> Self;
+        pub fn with<T: 'static>(self, audience: String) -> Self;
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[non_exhaustive]
@@ -180,13 +180,13 @@ pub mod credentials {
         pub expires_on: typespec_client_core::time::OffsetDateTime,
     }
     impl AccessToken {
-        fn new<T>(token: T, expires_on: OffsetDateTime) -> Self where T: Into<Secret>;
+        pub fn new<T>(token: T, expires_on: OffsetDateTime) -> Self where T: Into<Secret>;
     }
     #[derive(Clone, Eq, serde::Deserialize, serde::Serialize)]
     pub struct Secret(/* private fields */);
     impl Secret {
-        fn new<T>(access_token: T) -> Self where T: Into<Cow<'static, str>>;
-        fn secret(&self) -> &str;
+        pub fn new<T>(access_token: T) -> Self where T: Into<Cow<'static, str>>;
+        pub fn secret(&self) -> &str;
     }
     impl Debug for Secret {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -203,8 +203,8 @@ pub mod credentials {
     #[derive(Clone, Eq)]
     pub struct SecretBytes(/* private fields */);
     impl SecretBytes {
-        fn bytes(&self) -> &[u8];
-        fn new<impl Into<Vec<u8>>: Into<Vec<u8>>>(bytes: impl Into<Vec<u8>>) -> Self;
+        pub fn bytes(&self) -> &[u8];
+        pub fn new<impl Into<Vec<u8>>: Into<Vec<u8>>>(bytes: impl Into<Vec<u8>>) -> Self;
     }
     impl Debug for SecretBytes {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -243,28 +243,28 @@ pub mod error {
     pub struct Error {
     }
     impl Error {
-        fn downcast_mut<T: std::error::Error + 'static>(&mut self) -> Option<&mut T>;
-        fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T>;
-        fn get_mut(&mut self) -> Option<&mut dyn std::error::Error + Send + Sync + 'static>;
-        fn get_ref(&self) -> Option<&dyn std::error::Error + Send + Sync + 'static>;
+        pub fn downcast_mut<T: std::error::Error + 'static>(&mut self) -> Option<&mut T>;
+        pub fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T>;
+        pub fn get_mut(&mut self) -> Option<&mut dyn std::error::Error + Send + Sync + 'static>;
+        pub fn get_ref(&self) -> Option<&dyn std::error::Error + Send + Sync + 'static>;
         #[cfg(feature = "http")]
-        fn http_status(&self) -> Option<StatusCode>;
-        fn into_downcast<T: std::error::Error + 'static>(self) -> std::result::Result<T, Self>;
-        fn into_inner(self) -> std::result::Result<Box<dyn std::error::Error + Send + Sync>, Self>;
-        fn kind(&self) -> &ErrorKind;
-        fn new<E>(kind: ErrorKind, error: E) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>;
+        pub fn http_status(&self) -> Option<StatusCode>;
+        pub fn into_downcast<T: std::error::Error + 'static>(self) -> std::result::Result<T, Self>;
+        pub fn into_inner(self) -> std::result::Result<Box<dyn std::error::Error + Send + Sync>, Self>;
+        pub fn kind(&self) -> &ErrorKind;
+        pub fn new<E>(kind: ErrorKind, error: E) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>;
         #[must_use]
-        fn with_context<C>(self, message: C) -> Self where C: Into<Cow<'static, str>>;
+        pub fn with_context<C>(self, message: C) -> Self where C: Into<Cow<'static, str>>;
         #[must_use]
-        fn with_context_fn<F, C>(self, f: F) -> Self where F: FnOnce() -> C, C: Into<Cow<'static, str>>;
+        pub fn with_context_fn<F, C>(self, f: F) -> Self where F: FnOnce() -> C, C: Into<Cow<'static, str>>;
         #[must_use]
-        fn with_error<E, C>(kind: ErrorKind, error: E, message: C) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>, C: Into<Cow<'static, str>>;
+        pub fn with_error<E, C>(kind: ErrorKind, error: E, message: C) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>, C: Into<Cow<'static, str>>;
         #[must_use]
-        fn with_error_fn<E, F, C>(kind: ErrorKind, error: E, f: F) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>, F: FnOnce() -> C, C: Into<Cow<'static, str>>;
+        pub fn with_error_fn<E, F, C>(kind: ErrorKind, error: E, f: F) -> Self where E: Into<Box<dyn std::error::Error + Send + Sync>>, F: FnOnce() -> C, C: Into<Cow<'static, str>>;
         #[must_use]
-        fn with_message<C>(kind: ErrorKind, message: C) -> Self where C: Into<Cow<'static, str>>;
+        pub fn with_message<C>(kind: ErrorKind, message: C) -> Self where C: Into<Cow<'static, str>>;
         #[must_use]
-        fn with_message_fn<F, C>(kind: ErrorKind, f: F) -> Self where F: FnOnce() -> C, C: Into<Cow<'static, str>>;
+        pub fn with_message_fn<F, C>(kind: ErrorKind, f: F) -> Self where F: FnOnce() -> C, C: Into<Cow<'static, str>>;
     }
     impl Debug for Error {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -339,7 +339,7 @@ pub mod error {
         Other,
     }
     impl ErrorKind {
-        fn into_error(self) -> Error;
+        pub fn into_error(self) -> Error;
     }
     impl Display for ErrorKind {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -391,13 +391,13 @@ pub mod http {
     pub struct AsyncRawResponse {
     }
     impl AsyncRawResponse {
-        fn deconstruct(self) -> (StatusCode, Headers, AsyncResponseBody);
-        fn from_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self;
-        fn headers(&self) -> &Headers;
-        fn into_body(self) -> AsyncResponseBody;
-        fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self;
-        fn status(&self) -> StatusCode;
-        async fn try_into_raw_response(self) -> crate::Result<RawResponse>;
+        pub fn deconstruct(self) -> (StatusCode, Headers, AsyncResponseBody);
+        pub fn from_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self;
+        pub fn headers(&self) -> &Headers;
+        pub fn into_body(self) -> AsyncResponseBody;
+        pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self;
+        pub fn status(&self) -> StatusCode;
+        pub async fn try_into_raw_response(self) -> crate::Result<RawResponse>;
     }
     impl<T> From<AsyncRawResponse> for AsyncResponse<T> {
         fn from(raw: AsyncRawResponse) -> Self;
@@ -408,10 +408,10 @@ pub mod http {
     pub struct AsyncResponse<T = ()> {
     }
     impl<T> AsyncResponse<T> {
-        fn deconstruct(self) -> (StatusCode, Headers, AsyncResponseBody);
-        fn headers(&self) -> &Headers;
-        fn into_body(self) -> AsyncResponseBody;
-        fn status(&self) -> StatusCode;
+        pub fn deconstruct(self) -> (StatusCode, Headers, AsyncResponseBody);
+        pub fn headers(&self) -> &Headers;
+        pub fn into_body(self) -> AsyncResponseBody;
+        pub fn status(&self) -> StatusCode;
     }
     impl<T> Debug for AsyncResponse<T> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -419,9 +419,9 @@ pub mod http {
     #[pin_project]
     pub struct AsyncResponseBody(/* private fields */);
     impl AsyncResponseBody {
-        async fn collect(self) -> crate::Result<Bytes>;
-        async fn collect_into(self, buffer: &mut [u8]) -> crate::Result<usize>;
-        async fn collect_string(self) -> crate::Result<String>;
+        pub async fn collect(self) -> crate::Result<Bytes>;
+        pub async fn collect_into(self, buffer: &mut [u8]) -> crate::Result<usize>;
+        pub async fn collect_string(self) -> crate::Result<String>;
     }
     impl Debug for AsyncResponseBody {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -449,19 +449,19 @@ pub mod http {
     pub struct Context<'a> {
     }
     impl<'a> Context<'a> {
-        fn insert<E>(&mut self, entity: E) -> Option<Arc<E>> where E: Send + Sync + 'static;
-        fn into_owned(self) -> Context<'static>;
-        fn is_empty(&self) -> bool;
-        fn new() -> Self;
+        pub fn insert<E>(&mut self, entity: E) -> Option<Arc<E>> where E: Send + Sync + 'static;
+        pub fn into_owned(self) -> Context<'static>;
+        pub fn is_empty(&self) -> bool;
+        pub fn new() -> Self;
         #[must_use]
-        fn to_borrowed<'b>(&self) -> Context<'b> where 'a: 'b;
+        pub fn to_borrowed<'b>(&self) -> Context<'b> where 'a: 'b;
         #[must_use]
-        fn to_owned(&self) -> Context<'static>;
-        fn value<E>(&self) -> Option<&E> where E: Send + Sync + 'static;
+        pub fn to_owned(&self) -> Context<'static>;
+        pub fn value<E>(&self) -> Option<&E> where E: Send + Sync + 'static;
         #[must_use]
-        fn with_context<'b>(context: &'a Context<'_>) -> Context<'b> where 'a: 'b;
+        pub fn with_context<'b>(context: &'a Context<'_>) -> Context<'b> where 'a: 'b;
         #[must_use]
-        fn with_value<E>(self, entity: E) -> Self where E: Send + Sync + 'static;
+        pub fn with_value<E>(self, entity: E) -> Self where E: Send + Sync + 'static;
     }
     impl Default for Context<'_> {
         fn default() -> Self;
@@ -540,9 +540,9 @@ pub mod http {
     #[derive(Clone, Debug)]
     pub struct Pipeline(/* private fields */);
     impl Pipeline {
-        fn new(crate_name: Option<&'static str>, crate_version: Option<&'static str>, options: ClientOptions, per_call_policies: Vec<Arc<dyn Policy>>, per_try_policies: Vec<Arc<dyn Policy>>, pipeline_options: Option<PipelineOptions>) -> Self;
-        async fn send(&self, ctx: &http::Context<'_>, request: &mut http::Request, options: Option<PipelineSendOptions>) -> crate::Result<http::RawResponse>;
-        async fn stream(&self, ctx: &http::Context<'_>, request: &mut http::Request, options: Option<PipelineStreamOptions>) -> crate::Result<http::AsyncRawResponse>;
+        pub fn new(crate_name: Option<&'static str>, crate_version: Option<&'static str>, options: ClientOptions, per_call_policies: Vec<Arc<dyn Policy>>, per_try_policies: Vec<Arc<dyn Policy>>, pipeline_options: Option<PipelineOptions>) -> Self;
+        pub async fn send(&self, ctx: &http::Context<'_>, request: &mut http::Request, options: Option<PipelineSendOptions>) -> crate::Result<http::RawResponse>;
+        pub async fn stream(&self, ctx: &http::Context<'_>, request: &mut http::Request, options: Option<PipelineStreamOptions>) -> crate::Result<http::AsyncRawResponse>;
     }
     #[derive(Clone, Debug)]
     pub struct PipelineOptions {
@@ -565,43 +565,43 @@ pub mod http {
     pub struct QueryBuilder<'a> {
     }
     impl<'a> QueryBuilder<'a> {
-        fn append_key_only<impl Into<Cow<'a, str>>: Into<Cow<'a, str>>>(&mut self, key: impl Into<Cow<'a, str>>) -> &mut Self;
-        fn append_pair<impl Into<Cow<'a, str>>: Into<Cow<'a, str>>, impl Into<Cow<'a, str>>: Into<Cow<'a, str>>>(&mut self, key: impl Into<Cow<'a, str>>, value: impl Into<Cow<'a, str>>) -> &mut Self;
-        fn build(self);
-        fn set_pair<impl Into<Cow<'a, str>>: Into<Cow<'a, str>>, impl Into<Cow<'a, str>>: Into<Cow<'a, str>>>(&mut self, key: impl Into<Cow<'a, str>>, value: impl Into<Cow<'a, str>>) -> &mut Self;
+        pub fn append_key_only<impl Into<Cow<'a, str>>: Into<Cow<'a, str>>>(&mut self, key: impl Into<Cow<'a, str>>) -> &mut Self;
+        pub fn append_pair<impl Into<Cow<'a, str>>: Into<Cow<'a, str>>, impl Into<Cow<'a, str>>: Into<Cow<'a, str>>>(&mut self, key: impl Into<Cow<'a, str>>, value: impl Into<Cow<'a, str>>) -> &mut Self;
+        pub fn build(self);
+        pub fn set_pair<impl Into<Cow<'a, str>>: Into<Cow<'a, str>>, impl Into<Cow<'a, str>>: Into<Cow<'a, str>>>(&mut self, key: impl Into<Cow<'a, str>>, value: impl Into<Cow<'a, str>>) -> &mut Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     pub struct RawResponse {
     }
     impl RawResponse {
-        fn body(&self) -> &ResponseBody;
-        fn deconstruct(self) -> (StatusCode, Headers, ResponseBody);
-        fn from_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, body: impl Into<Bytes>) -> Self;
-        fn headers(&self) -> &Headers;
-        fn into_body(self) -> ResponseBody;
-        fn status(&self) -> StatusCode;
+        pub fn body(&self) -> &ResponseBody;
+        pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody);
+        pub fn from_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, body: impl Into<Bytes>) -> Self;
+        pub fn headers(&self) -> &Headers;
+        pub fn into_body(self) -> ResponseBody;
+        pub fn status(&self) -> StatusCode;
     }
     #[derive(Clone)]
     pub struct Request {
     }
     impl Request {
-        fn add_mandatory_header<T: Header>(&mut self, item: &T);
-        fn add_optional_header<T: Header>(&mut self, item: &Option<T>);
-        fn body(&self) -> &Body;
-        fn body_mut(&mut self) -> &mut Body;
-        fn headers(&self) -> &Headers;
-        fn headers_mut(&mut self) -> &mut Headers;
-        fn insert_header<K, V>(&mut self, key: K, value: V) where K: Into<HeaderName>, V: Into<HeaderValue>;
-        fn insert_headers<T: AsHeaders>(&mut self, headers: &T) -> Result<(), <T as >::Error>;
-        fn method(&self) -> Method;
-        fn new(url: Url, method: Method) -> Self;
-        fn path_and_query(&self) -> String;
-        fn set_body<impl Into<Body>: Into<Body>>(&mut self, body: impl Into<Body>);
+        pub fn add_mandatory_header<T: Header>(&mut self, item: &T);
+        pub fn add_optional_header<T: Header>(&mut self, item: &Option<T>);
+        pub fn body(&self) -> &Body;
+        pub fn body_mut(&mut self) -> &mut Body;
+        pub fn headers(&self) -> &Headers;
+        pub fn headers_mut(&mut self) -> &mut Headers;
+        pub fn insert_header<K, V>(&mut self, key: K, value: V) where K: Into<HeaderName>, V: Into<HeaderValue>;
+        pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) -> Result<(), <T as >::Error>;
+        pub fn method(&self) -> Method;
+        pub fn new(url: Url, method: Method) -> Self;
+        pub fn path_and_query(&self) -> String;
+        pub fn set_body<impl Into<Body>: Into<Body>>(&mut self, body: impl Into<Body>);
         #[cfg(feature = "json")]
-        fn set_json<T>(&mut self, data: &T) -> crate::Result<()> where T: ?Sized + Serialize;
-        fn set_method(&mut self, method: Method);
-        fn url(&self) -> &Url;
-        fn url_mut(&mut self) -> &mut Url;
+        pub fn set_json<T>(&mut self, data: &T) -> crate::Result<()> where T: ?Sized + Serialize;
+        pub fn set_method(&mut self, method: Method);
+        pub fn url(&self) -> &Url;
+        pub fn url_mut(&mut self) -> &mut Url;
     }
     impl Debug for Request {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -611,14 +611,14 @@ pub mod http {
     pub struct RequestContent<T, F = crate::http::JsonFormat> {
     }
     impl<T, F> RequestContent<T, F> {
-        fn body(&self) -> &Body;
-        fn from(body: Vec<u8>) -> Self;
-        fn from_reader<R>(reader: R, len: Option<u64>) -> Self where R: AsyncRead + Unpin + Send + Sync + 'static;
-        fn from_seekable_reader<R>(reader: R, len: Option<u64>) -> Self where R: AsyncRead + AsyncSeek + Unpin + Send + Sync + 'static;
-        fn from_slice(body: &[u8]) -> Self;
-        fn from_static(body: &'static [u8]) -> Self;
+        pub fn body(&self) -> &Body;
+        pub fn from(body: Vec<u8>) -> Self;
+        pub fn from_reader<R>(reader: R, len: Option<u64>) -> Self where R: AsyncRead + Unpin + Send + Sync + 'static;
+        pub fn from_seekable_reader<R>(reader: R, len: Option<u64>) -> Self where R: AsyncRead + AsyncSeek + Unpin + Send + Sync + 'static;
+        pub fn from_slice(body: &[u8]) -> Self;
+        pub fn from_static(body: &'static [u8]) -> Self;
         #[allow(clippy::should_implement_trait)]
-        fn from_str(body: &str) -> Self;
+        pub fn from_str(body: &str) -> Self;
     }
     impl<T, F> From<Box<dyn SeekableStream>> for RequestContent<T, F> {
         fn from(stream: Box<dyn SeekableStream>) -> Self;
@@ -744,15 +744,15 @@ pub mod http {
     pub struct Response<T, F = crate::http::JsonFormat> {
     }
     impl<T, F> Response<T, F> {
-        fn body(&self) -> &ResponseBody;
-        fn deconstruct(self) -> (StatusCode, Headers, ResponseBody);
-        fn headers(&self) -> &Headers;
-        fn into_body(self) -> ResponseBody;
-        fn status(&self) -> StatusCode;
-        fn to_raw_response(&self) -> RawResponse;
+        pub fn body(&self) -> &ResponseBody;
+        pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody);
+        pub fn headers(&self) -> &Headers;
+        pub fn into_body(self) -> ResponseBody;
+        pub fn status(&self) -> StatusCode;
+        pub fn to_raw_response(&self) -> RawResponse;
     }
     impl<T: DeserializeWith<F>, F: Format> Response<T, F> {
-        fn into_model(self) -> crate::Result<T>;
+        pub fn into_model(self) -> crate::Result<T>;
     }
     impl<T, F> Debug for Response<T, F> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -767,18 +767,18 @@ pub mod http {
     pub struct RetryOptions {
     }
     impl RetryOptions {
-        fn custom<T: RetryPolicy + 'static>(policy: Arc<T>) -> Self;
-        fn exponential(options: ExponentialRetryOptions) -> Self;
-        fn fixed(options: FixedRetryOptions) -> Self;
-        fn none() -> Self;
+        pub fn custom<T: RetryPolicy + 'static>(policy: Arc<T>) -> Self;
+        pub fn exponential(options: ExponentialRetryOptions) -> Self;
+        pub fn fixed(options: FixedRetryOptions) -> Self;
+        pub fn none() -> Self;
     }
     #[derive(Clone, Debug)]
     pub struct Transport {
     }
     impl Transport {
-        fn new(http_client: Arc<dyn HttpClient>) -> Self;
-        async fn send(&self, ctx: &Context<'_>, request: &mut Request) -> Result<AsyncRawResponse>;
-        fn with_policy(policy: Arc<dyn Policy>) -> Self;
+        pub fn new(http_client: Arc<dyn HttpClient>) -> Self;
+        pub async fn send(&self, ctx: &Context<'_>, request: &mut Request) -> Result<AsyncRawResponse>;
+        pub fn with_policy(policy: Arc<dyn Policy>) -> Self;
     }
     impl Default for Transport {
         fn default() -> Self;
@@ -800,10 +800,10 @@ pub mod http {
         SeekableStream(Box<dyn SeekableStream>),
     }
     impl Body {
-        fn is_empty(&self) -> Option<bool>;
-        fn len(&self) -> Option<u64>;
-        async fn reset(&mut self) -> crate::Result<()>;
-        fn take(&mut self) -> Body;
+        pub fn is_empty(&self) -> Option<bool>;
+        pub fn len(&self) -> Option<u64>;
+        pub async fn reset(&mut self) -> crate::Result<()>;
+        pub fn take(&mut self) -> Body;
     }
     impl Debug for Body {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -837,8 +837,8 @@ pub mod http {
         Put,
     }
     impl Method {
-        const fn as_str(&self) -> &'static str;
-        fn is_safe(&self) -> bool;
+        pub const fn as_str(&self) -> &'static str;
+        pub fn is_safe(&self) -> bool;
     }
     impl AsRef<str> for Method {
         fn as_ref(&self) -> &'static str;
@@ -926,12 +926,12 @@ pub mod http {
         UnknownValue(u16),
     }
     impl StatusCode {
-        fn canonical_reason(&self) -> Cow<'static, str>;
-        fn is_client_error(&self) -> bool;
-        fn is_informational(&self) -> bool;
-        fn is_redirection(&self) -> bool;
-        fn is_server_error(&self) -> bool;
-        fn is_success(&self) -> bool;
+        pub fn canonical_reason(&self) -> Cow<'static, str>;
+        pub fn is_client_error(&self) -> bool;
+        pub fn is_informational(&self) -> bool;
+        pub fn is_redirection(&self) -> bool;
+        pub fn is_server_error(&self) -> bool;
+        pub fn is_success(&self) -> bool;
     }
     impl Deref for StatusCode {
         type Target = u16;
@@ -988,10 +988,10 @@ pub mod http {
         pub struct HeaderName {
         }
         impl HeaderName {
-            fn as_str(&self) -> &str;
-            const fn from_static(s: &'static str) -> Self;
-            const fn from_static_standard(s: &'static str) -> Self;
-            fn is_standard(&self) -> bool;
+            pub fn as_str(&self) -> &str;
+            pub const fn from_static(s: &'static str) -> Self;
+            pub const fn from_static_standard(s: &'static str) -> Self;
+            pub fn is_standard(&self) -> bool;
         }
         impl From<&'static str> for HeaderName {
             fn from(s: &'static str) -> Self;
@@ -1011,9 +1011,9 @@ pub mod http {
         #[derive(Clone, Eq, PartialEq)]
         pub struct HeaderValue(/* private fields */);
         impl HeaderValue {
-            fn as_str(&self) -> &str;
-            fn from_cow<C>(c: C) -> Self where C: Into<Cow<'static, str>>;
-            const fn from_static(s: &'static str) -> Self;
+            pub fn as_str(&self) -> &str;
+            pub fn from_cow<C>(c: C) -> Self where C: Into<Cow<'static, str>>;
+            pub const fn from_static(s: &'static str) -> Self;
         }
         impl Debug for HeaderValue {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1030,20 +1030,20 @@ pub mod http {
         #[derive(Clone, Default, Eq, PartialEq)]
         pub struct Headers(/* private fields */);
         impl Headers {
-            fn add<H>(&mut self, header: H) -> Result<(), <H as >::Error> where H: AsHeaders;
-            fn get<H: FromHeaders>(&self) -> crate::Result<H>;
-            fn get_as<V, E>(&self, key: &HeaderName) -> crate::Result<V> where V: FromStr<Err = E>, E: std::error::Error + Send + Sync + 'static;
-            fn get_optional<H: FromHeaders>(&self) -> Result<Option<H>, <H as >::Error>;
-            fn get_optional_as<V, E>(&self, key: &HeaderName) -> crate::Result<Option<V>> where V: FromStr<Err = E>, E: std::error::Error + Send + Sync + 'static;
-            fn get_optional_str(&self, key: &HeaderName) -> Option<&str>;
-            fn get_optional_string(&self, key: &HeaderName) -> Option<String>;
-            fn get_optional_with<'a, V, F, E>(&self, key: &HeaderName, parser: F) -> crate::Result<Option<V>> where F: FnOnce(&'a HeaderValue) -> Result<V, E>, E: std::error::Error + Send + Sync + 'static;
-            fn get_str(&self, key: &HeaderName) -> crate::Result<&str>;
-            fn get_with<'a, V, F, E>(&self, key: &HeaderName, parser: F) -> crate::Result<V> where F: FnOnce(&'a HeaderValue) -> Result<V, E>, E: std::error::Error + Send + Sync + 'static;
-            fn insert<K, V>(&mut self, key: K, value: V) where K: Into<HeaderName>, V: Into<HeaderValue>;
-            fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)>;
-            fn new() -> Self;
-            fn remove<K>(&mut self, key: K) -> Option<HeaderValue> where K: Into<HeaderName>;
+            pub fn add<H>(&mut self, header: H) -> Result<(), <H as >::Error> where H: AsHeaders;
+            pub fn get<H: FromHeaders>(&self) -> crate::Result<H>;
+            pub fn get_as<V, E>(&self, key: &HeaderName) -> crate::Result<V> where V: FromStr<Err = E>, E: std::error::Error + Send + Sync + 'static;
+            pub fn get_optional<H: FromHeaders>(&self) -> Result<Option<H>, <H as >::Error>;
+            pub fn get_optional_as<V, E>(&self, key: &HeaderName) -> crate::Result<Option<V>> where V: FromStr<Err = E>, E: std::error::Error + Send + Sync + 'static;
+            pub fn get_optional_str(&self, key: &HeaderName) -> Option<&str>;
+            pub fn get_optional_string(&self, key: &HeaderName) -> Option<String>;
+            pub fn get_optional_with<'a, V, F, E>(&self, key: &HeaderName, parser: F) -> crate::Result<Option<V>> where F: FnOnce(&'a HeaderValue) -> Result<V, E>, E: std::error::Error + Send + Sync + 'static;
+            pub fn get_str(&self, key: &HeaderName) -> crate::Result<&str>;
+            pub fn get_with<'a, V, F, E>(&self, key: &HeaderName, parser: F) -> crate::Result<V> where F: FnOnce(&'a HeaderValue) -> Result<V, E>, E: std::error::Error + Send + Sync + 'static;
+            pub fn insert<K, V>(&mut self, key: K, value: V) where K: Into<HeaderName>, V: Into<HeaderValue>;
+            pub fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)>;
+            pub fn new() -> Self;
+            pub fn remove<K>(&mut self, key: K) -> Option<HeaderValue> where K: Into<HeaderName>;
         }
         impl Debug for Headers {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1099,10 +1099,10 @@ pub mod http {
         pub struct ItemIterator<P> where P: Page + Send {
         }
         impl<P> ItemIterator<P> where P: Page + Send {
-            fn continuation(&self) -> Option<&PagerContinuation>;
-            fn into_continuation(self) -> Option<PagerContinuation>;
-            fn into_pages(self) -> PageIterator<P>;
-            fn new<F: Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + Send + 'static>(make_request: F, options: Option<PagerOptions<'static>>) -> Self;
+            pub fn continuation(&self) -> Option<&PagerContinuation>;
+            pub fn into_continuation(self) -> Option<PagerContinuation>;
+            pub fn into_pages(self) -> PageIterator<P>;
+            pub fn new<F: Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + Send + 'static>(make_request: F, options: Option<PagerOptions<'static>>) -> Self;
         }
         impl<P> Debug for ItemIterator<P> where P: Page + Send {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1119,9 +1119,9 @@ pub mod http {
         pub struct PageIterator<P> where P: Send {
         }
         impl<P> PageIterator<P> where P: Send {
-            fn continuation(&self) -> Option<&PagerContinuation>;
-            fn into_continuation(self) -> Option<PagerContinuation>;
-            fn new<F: Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + Send + 'static>(make_request: F, options: Option<PagerOptions<'static>>) -> Self;
+            pub fn continuation(&self) -> Option<&PagerContinuation>;
+            pub fn into_continuation(self) -> Option<PagerContinuation>;
+            pub fn new<F: Fn(PagerState, PagerOptions<'static>) -> PagerResultFuture<P> + Send + 'static>(make_request: F, options: Option<PagerOptions<'static>>) -> Self;
         }
         impl<P> Debug for PageIterator<P> where P: Send {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1168,7 +1168,7 @@ pub mod http {
             Done { response: P },
         }
         impl<P, F> PagerResult<crate::http::response::Response<P, F>> {
-            fn from_response_header(response: Response<P, F>, header_name: &HeaderName) -> Self;
+            pub fn from_response_header(response: Response<P, F>, header_name: &HeaderName) -> Self;
         }
         impl<P> Debug for PagerResult<P> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1195,8 +1195,8 @@ pub mod http {
         #[derive(Debug)]
         pub struct ClientRequestIdPolicy(/* private fields */);
         impl ClientRequestIdPolicy {
-            const fn new() -> Self;
-            const fn with_header_name(header: &'static str) -> Self;
+            pub const fn new() -> Self;
+            pub const fn with_header_name(header: &'static str) -> Self;
         }
         impl Default for ClientRequestIdPolicy {
             fn default() -> Self;
@@ -1212,7 +1212,7 @@ pub mod http {
         pub struct PublicApiInstrumentationInformation {
         }
         impl PublicApiInstrumentationInformation {
-            fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(api_name: impl Into<Cow<'static, str>>, attributes: Vec<Attribute>) -> Self;
+            pub fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(api_name: impl Into<Cow<'static, str>>, attributes: Vec<Attribute>) -> Self;
         }
         #[derive(Clone, Debug, Default, Eq, PartialEq)]
         pub struct RetryHeaders {
@@ -1227,7 +1227,7 @@ pub mod http {
         pub struct TransportPolicy {
         }
         impl TransportPolicy {
-            fn new(transport: Transport) -> Self;
+            pub fn new(transport: Transport) -> Self;
         }
         impl Policy for TransportPolicy {
             #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
@@ -1237,7 +1237,7 @@ pub mod http {
         pub struct UserAgentPolicy {
         }
         impl<'a> UserAgentPolicy {
-            fn new(crate_name: Option<&'a str>, crate_version: Option<&'a str>, options: &UserAgentOptions) -> Self;
+            pub fn new(crate_name: Option<&'a str>, crate_version: Option<&'a str>, options: &UserAgentOptions) -> Self;
         }
         impl Policy for UserAgentPolicy {
             #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
@@ -1263,9 +1263,9 @@ pub mod http {
             pub struct BearerTokenAuthorizationPolicy {
             }
             impl BearerTokenAuthorizationPolicy {
-                fn new<A, B>(credential: Arc<dyn TokenCredential>, scopes: A) -> Self where A: IntoIterator<Item = B>, B: Into<String>;
-                fn with_on_challenge(self, on_challenge: Arc<dyn OnChallenge>) -> Self;
-                fn with_on_request(self, on_request: Arc<dyn OnRequest>) -> Self;
+                pub fn new<A, B>(credential: Arc<dyn TokenCredential>, scopes: A) -> Self where A: IntoIterator<Item = B>, B: Into<String>;
+                pub fn with_on_challenge(self, on_challenge: Arc<dyn OnChallenge>) -> Self;
+                pub fn with_on_request(self, on_request: Arc<dyn OnRequest>) -> Self;
             }
             impl Policy for BearerTokenAuthorizationPolicy {
                 #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
@@ -1295,7 +1295,7 @@ pub mod http {
         pub struct Poller<M, F = crate::http::JsonFormat> where M: StatusMonitor, F: Format {
         }
         impl<M, F> Poller<M, F> where M: StatusMonitor, F: Format + Send {
-            fn new<Fun>(make_request: Fun, options: Option<PollerOptions<'static>>) -> Self where M: Send + 'static, <M as >::Output: Send + 'static, <M as >::Format: Send + 'static, Fun: Fn(PollerState, PollerOptions<'static>) -> PollerResultFuture<M, F> + Send + 'static;
+            pub fn new<Fun>(make_request: Fun, options: Option<PollerOptions<'static>>) -> Self where M: Send + 'static, <M as >::Output: Send + 'static, <M as >::Format: Send + 'static, Fun: Fn(PollerState, PollerOptions<'static>) -> PollerResultFuture<M, F> + Send + 'static;
         }
         impl<M, F> Debug for Poller<M, F> where M: StatusMonitor, F: Format {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1316,7 +1316,7 @@ pub mod http {
         }
         impl<'a> PollerOptions<'a> {
             #[must_use]
-            fn into_owned(self) -> PollerOptions<'static>;
+            pub fn into_owned(self) -> PollerOptions<'static>;
         }
         impl Default for PollerOptions<'_> {
             fn default() -> Self;
@@ -1374,23 +1374,23 @@ pub mod http {
         pub struct Request {
         }
         impl Request {
-            fn add_mandatory_header<T: Header>(&mut self, item: &T);
-            fn add_optional_header<T: Header>(&mut self, item: &Option<T>);
-            fn body(&self) -> &Body;
-            fn body_mut(&mut self) -> &mut Body;
-            fn headers(&self) -> &Headers;
-            fn headers_mut(&mut self) -> &mut Headers;
-            fn insert_header<K, V>(&mut self, key: K, value: V) where K: Into<HeaderName>, V: Into<HeaderValue>;
-            fn insert_headers<T: AsHeaders>(&mut self, headers: &T) -> Result<(), <T as >::Error>;
-            fn method(&self) -> Method;
-            fn new(url: Url, method: Method) -> Self;
-            fn path_and_query(&self) -> String;
-            fn set_body<impl Into<Body>: Into<Body>>(&mut self, body: impl Into<Body>);
+            pub fn add_mandatory_header<T: Header>(&mut self, item: &T);
+            pub fn add_optional_header<T: Header>(&mut self, item: &Option<T>);
+            pub fn body(&self) -> &Body;
+            pub fn body_mut(&mut self) -> &mut Body;
+            pub fn headers(&self) -> &Headers;
+            pub fn headers_mut(&mut self) -> &mut Headers;
+            pub fn insert_header<K, V>(&mut self, key: K, value: V) where K: Into<HeaderName>, V: Into<HeaderValue>;
+            pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) -> Result<(), <T as >::Error>;
+            pub fn method(&self) -> Method;
+            pub fn new(url: Url, method: Method) -> Self;
+            pub fn path_and_query(&self) -> String;
+            pub fn set_body<impl Into<Body>: Into<Body>>(&mut self, body: impl Into<Body>);
             #[cfg(feature = "json")]
-            fn set_json<T>(&mut self, data: &T) -> crate::Result<()> where T: ?Sized + Serialize;
-            fn set_method(&mut self, method: Method);
-            fn url(&self) -> &Url;
-            fn url_mut(&mut self) -> &mut Url;
+            pub fn set_json<T>(&mut self, data: &T) -> crate::Result<()> where T: ?Sized + Serialize;
+            pub fn set_method(&mut self, method: Method);
+            pub fn url(&self) -> &Url;
+            pub fn url_mut(&mut self) -> &mut Url;
         }
         impl Debug for Request {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1400,14 +1400,14 @@ pub mod http {
         pub struct RequestContent<T, F = crate::http::JsonFormat> {
         }
         impl<T, F> RequestContent<T, F> {
-            fn body(&self) -> &Body;
-            fn from(body: Vec<u8>) -> Self;
-            fn from_reader<R>(reader: R, len: Option<u64>) -> Self where R: AsyncRead + Unpin + Send + Sync + 'static;
-            fn from_seekable_reader<R>(reader: R, len: Option<u64>) -> Self where R: AsyncRead + AsyncSeek + Unpin + Send + Sync + 'static;
-            fn from_slice(body: &[u8]) -> Self;
-            fn from_static(body: &'static [u8]) -> Self;
+            pub fn body(&self) -> &Body;
+            pub fn from(body: Vec<u8>) -> Self;
+            pub fn from_reader<R>(reader: R, len: Option<u64>) -> Self where R: AsyncRead + Unpin + Send + Sync + 'static;
+            pub fn from_seekable_reader<R>(reader: R, len: Option<u64>) -> Self where R: AsyncRead + AsyncSeek + Unpin + Send + Sync + 'static;
+            pub fn from_slice(body: &[u8]) -> Self;
+            pub fn from_static(body: &'static [u8]) -> Self;
             #[allow(clippy::should_implement_trait)]
-            fn from_str(body: &str) -> Self;
+            pub fn from_str(body: &str) -> Self;
         }
         impl<T, F> From<Box<dyn SeekableStream>> for RequestContent<T, F> {
             fn from(stream: Box<dyn SeekableStream>) -> Self;
@@ -1535,10 +1535,10 @@ pub mod http {
             SeekableStream(Box<dyn SeekableStream>),
         }
         impl Body {
-            fn is_empty(&self) -> Option<bool>;
-            fn len(&self) -> Option<u64>;
-            async fn reset(&mut self) -> crate::Result<()>;
-            fn take(&mut self) -> Body;
+            pub fn is_empty(&self) -> Option<bool>;
+            pub fn len(&self) -> Option<u64>;
+            pub async fn reset(&mut self) -> crate::Result<()>;
+            pub fn take(&mut self) -> Body;
         }
         impl Debug for Body {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1565,8 +1565,8 @@ pub mod http {
             #[derive(Clone, Debug)]
             pub struct ClientRequestId(/* private fields */);
             impl ClientRequestId {
-                const fn from_static(s: &'static str) -> Self;
-                fn new<S>(s: S) -> Self where S: Into<std::borrow::Cow<'static, str>>;
+                pub const fn from_static(s: &'static str) -> Self;
+                pub fn new<S>(s: S) -> Self where S: Into<std::borrow::Cow<'static, str>>;
             }
             impl Header for ClientRequestId {
                 fn name(&self) -> $crate::http::headers::HeaderName;
@@ -1578,8 +1578,8 @@ pub mod http {
             #[derive(Clone, Debug)]
             pub struct ContentType(/* private fields */);
             impl ContentType {
-                const fn from_static(s: &'static str) -> Self;
-                fn new<S>(s: S) -> Self where S: Into<std::borrow::Cow<'static, str>>;
+                pub const fn from_static(s: &'static str) -> Self;
+                pub fn new<S>(s: S) -> Self where S: Into<std::borrow::Cow<'static, str>>;
             }
             impl ContentType {
                 const APPLICATION_JSON: ContentType = _;
@@ -1596,8 +1596,8 @@ pub mod http {
             #[derive(Clone, Debug)]
             pub struct ContentType(/* private fields */);
             impl ContentType {
-                const fn from_static(s: &'static str) -> Self;
-                fn new<S>(s: S) -> Self where S: Into<std::borrow::Cow<'static, str>>;
+                pub const fn from_static(s: &'static str) -> Self;
+                pub fn new<S>(s: S) -> Self where S: Into<std::borrow::Cow<'static, str>>;
             }
             impl ContentType {
                 const APPLICATION_JSON: ContentType = _;
@@ -1616,13 +1616,13 @@ pub mod http {
         pub struct AsyncRawResponse {
         }
         impl AsyncRawResponse {
-            fn deconstruct(self) -> (StatusCode, Headers, AsyncResponseBody);
-            fn from_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self;
-            fn headers(&self) -> &Headers;
-            fn into_body(self) -> AsyncResponseBody;
-            fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self;
-            fn status(&self) -> StatusCode;
-            async fn try_into_raw_response(self) -> crate::Result<RawResponse>;
+            pub fn deconstruct(self) -> (StatusCode, Headers, AsyncResponseBody);
+            pub fn from_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, bytes: impl Into<Bytes>) -> Self;
+            pub fn headers(&self) -> &Headers;
+            pub fn into_body(self) -> AsyncResponseBody;
+            pub fn new(status: StatusCode, headers: Headers, stream: PinnedStream) -> Self;
+            pub fn status(&self) -> StatusCode;
+            pub async fn try_into_raw_response(self) -> crate::Result<RawResponse>;
         }
         impl<T> From<AsyncRawResponse> for AsyncResponse<T> {
             fn from(raw: AsyncRawResponse) -> Self;
@@ -1633,10 +1633,10 @@ pub mod http {
         pub struct AsyncResponse<T = ()> {
         }
         impl<T> AsyncResponse<T> {
-            fn deconstruct(self) -> (StatusCode, Headers, AsyncResponseBody);
-            fn headers(&self) -> &Headers;
-            fn into_body(self) -> AsyncResponseBody;
-            fn status(&self) -> StatusCode;
+            pub fn deconstruct(self) -> (StatusCode, Headers, AsyncResponseBody);
+            pub fn headers(&self) -> &Headers;
+            pub fn into_body(self) -> AsyncResponseBody;
+            pub fn status(&self) -> StatusCode;
         }
         impl<T> Debug for AsyncResponse<T> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1644,9 +1644,9 @@ pub mod http {
         #[pin_project]
         pub struct AsyncResponseBody(/* private fields */);
         impl AsyncResponseBody {
-            async fn collect(self) -> crate::Result<Bytes>;
-            async fn collect_into(self, buffer: &mut [u8]) -> crate::Result<usize>;
-            async fn collect_string(self) -> crate::Result<String>;
+            pub async fn collect(self) -> crate::Result<Bytes>;
+            pub async fn collect_into(self, buffer: &mut [u8]) -> crate::Result<usize>;
+            pub async fn collect_string(self) -> crate::Result<String>;
         }
         impl Debug for AsyncResponseBody {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1659,26 +1659,26 @@ pub mod http {
         pub struct RawResponse {
         }
         impl RawResponse {
-            fn body(&self) -> &ResponseBody;
-            fn deconstruct(self) -> (StatusCode, Headers, ResponseBody);
-            fn from_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, body: impl Into<Bytes>) -> Self;
-            fn headers(&self) -> &Headers;
-            fn into_body(self) -> ResponseBody;
-            fn status(&self) -> StatusCode;
+            pub fn body(&self) -> &ResponseBody;
+            pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody);
+            pub fn from_bytes<impl Into<Bytes>: Into<Bytes>>(status: StatusCode, headers: Headers, body: impl Into<Bytes>) -> Self;
+            pub fn headers(&self) -> &Headers;
+            pub fn into_body(self) -> ResponseBody;
+            pub fn status(&self) -> StatusCode;
         }
         #[cfg(feature = "json")]
         pub struct Response<T, F = crate::http::JsonFormat> {
         }
         impl<T, F> Response<T, F> {
-            fn body(&self) -> &ResponseBody;
-            fn deconstruct(self) -> (StatusCode, Headers, ResponseBody);
-            fn headers(&self) -> &Headers;
-            fn into_body(self) -> ResponseBody;
-            fn status(&self) -> StatusCode;
-            fn to_raw_response(&self) -> RawResponse;
+            pub fn body(&self) -> &ResponseBody;
+            pub fn deconstruct(self) -> (StatusCode, Headers, ResponseBody);
+            pub fn headers(&self) -> &Headers;
+            pub fn into_body(self) -> ResponseBody;
+            pub fn status(&self) -> StatusCode;
+            pub fn to_raw_response(&self) -> RawResponse;
         }
         impl<T: DeserializeWith<F>, F: Format> Response<T, F> {
-            fn into_model(self) -> crate::Result<T>;
+            pub fn into_model(self) -> crate::Result<T>;
         }
         impl<T, F> Debug for Response<T, F> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1692,12 +1692,12 @@ pub mod http {
         #[derive(Clone, Eq, PartialEq)]
         pub struct ResponseBody(/* private fields */);
         impl ResponseBody {
-            fn from_bytes<impl Into<Bytes>: Into<Bytes>>(bytes: impl Into<Bytes>) -> Self;
-            fn into_string(self) -> crate::Result<String>;
+            pub fn from_bytes<impl Into<Bytes>: Into<Bytes>>(bytes: impl Into<Bytes>) -> Self;
+            pub fn into_string(self) -> crate::Result<String>;
             #[cfg(feature = "json")]
-            fn json<T>(&self) -> crate::Result<T> where T: DeserializeOwned;
+            pub fn json<T>(&self) -> crate::Result<T> where T: DeserializeOwned;
             #[cfg(feature = "xml")]
-            fn xml<T>(&self) -> crate::Result<T> where T: DeserializeOwned;
+            pub fn xml<T>(&self) -> crate::Result<T> where T: DeserializeOwned;
         }
         impl AsRef<[u8]> for ResponseBody {
             #[inline]
@@ -1730,8 +1730,8 @@ pub mod stream {
     pub struct BytesStream {
     }
     impl BytesStream {
-        fn new<impl Into<Bytes>: Into<Bytes>>(bytes: impl Into<Bytes>) -> Self;
-        fn new_empty() -> Self;
+        pub fn new<impl Into<Bytes>: Into<Bytes>>(bytes: impl Into<Bytes>) -> Self;
+        pub fn new_empty() -> Self;
     }
     impl AsyncRead for BytesStream {
         fn poll_read(self: Pin<&mut Self>, _cx: &mut std::task::Context<'_>, buf: &mut [u8]) -> Poll<std::io::Result<usize>>;
@@ -1757,7 +1757,7 @@ pub mod stream {
     pub struct ReadStream<R> {
     }
     impl<R> ReadStream<R> {
-        fn new(reader: R, len: Option<u64>) -> Self;
+        pub fn new(reader: R, len: Option<u64>) -> Self;
     }
     impl<R> AsyncRead for ReadStream<R> where R: AsyncRead + Unpin {
         fn poll_read(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8]) -> Poll<std::io::Result<usize>>;
@@ -1776,7 +1776,7 @@ pub mod stream {
     pub struct SeekableReadStream<R> {
     }
     impl<R> SeekableReadStream<R> {
-        fn new(reader: R, len: Option<u64>) -> Self;
+        pub fn new(reader: R, len: Option<u64>) -> Self;
     }
     impl<R> AsyncRead for SeekableReadStream<R> where R: AsyncRead + AsyncSeek + Unpin {
         fn poll_read(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8]) -> Poll<std::io::Result<usize>>;
@@ -1837,8 +1837,8 @@ pub mod test {
         Live,
     }
     impl TestMode {
-        fn current() -> typespec::Result<Self>;
-        fn current_opt() -> typespec::Result<Option<Self>>;
+        pub fn current() -> typespec::Result<Self>;
+        pub fn current_opt() -> typespec::Result<Option<Self>>;
     }
     impl Debug for TestMode {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;

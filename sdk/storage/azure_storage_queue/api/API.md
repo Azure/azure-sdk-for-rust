@@ -20,23 +20,23 @@ pub mod clients {
     pub struct QueueClient {
     }
     impl QueueClient {
-        async fn clear(&self, options: Option<QueueClientClearOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn create(&self, options: Option<QueueClientCreateOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn delete(&self, options: Option<QueueClientDeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn delete_message(&self, message_id: &str, pop_receipt: &str, options: Option<QueueClientDeleteMessageOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn get_access_policy(&self, options: Option<QueueClientGetAccessPolicyOptions<'_>>) -> Result<Response<SignedIdentifiers, XmlFormat>>;
-        async fn get_properties(&self, options: Option<QueueClientGetPropertiesOptions<'_>>) -> Result<Response<QueueClientGetPropertiesResult, NoFormat>>;
-        async fn peek_messages(&self, options: Option<QueueClientPeekMessagesOptions<'_>>) -> Result<Response<PeekedMessages, XmlFormat>>;
-        async fn receive_messages(&self, options: Option<QueueClientReceiveMessagesOptions<'_>>) -> Result<Response<ReceivedMessages, XmlFormat>>;
-        async fn send_message(&self, queue_message: RequestContent<QueueMessage, XmlFormat>, options: Option<QueueClientSendMessageOptions<'_>>) -> Result<Response<ListOfSentMessage, XmlFormat>>;
-        async fn set_access_policy(&self, queue_acl: RequestContent<SignedIdentifiers, XmlFormat>, options: Option<QueueClientSetAccessPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn set_metadata(&self, metadata: &HashMap<String, String>, options: Option<QueueClientSetMetadataOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn update_message(&self, message_id: &str, pop_receipt: &str, visibility_timeout: i32, options: Option<QueueClientUpdateMessageOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn clear(&self, options: Option<QueueClientClearOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn create(&self, options: Option<QueueClientCreateOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn delete(&self, options: Option<QueueClientDeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn delete_message(&self, message_id: &str, pop_receipt: &str, options: Option<QueueClientDeleteMessageOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn get_access_policy(&self, options: Option<QueueClientGetAccessPolicyOptions<'_>>) -> Result<Response<SignedIdentifiers, XmlFormat>>;
+        pub async fn get_properties(&self, options: Option<QueueClientGetPropertiesOptions<'_>>) -> Result<Response<QueueClientGetPropertiesResult, NoFormat>>;
+        pub async fn peek_messages(&self, options: Option<QueueClientPeekMessagesOptions<'_>>) -> Result<Response<PeekedMessages, XmlFormat>>;
+        pub async fn receive_messages(&self, options: Option<QueueClientReceiveMessagesOptions<'_>>) -> Result<Response<ReceivedMessages, XmlFormat>>;
+        pub async fn send_message(&self, queue_message: RequestContent<QueueMessage, XmlFormat>, options: Option<QueueClientSendMessageOptions<'_>>) -> Result<Response<ListOfSentMessage, XmlFormat>>;
+        pub async fn set_access_policy(&self, queue_acl: RequestContent<SignedIdentifiers, XmlFormat>, options: Option<QueueClientSetAccessPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn set_metadata(&self, metadata: &HashMap<String, String>, options: Option<QueueClientSetMetadataOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn update_message(&self, message_id: &str, pop_receipt: &str, visibility_timeout: i32, options: Option<QueueClientUpdateMessageOptions<'_>>) -> Result<Response<(), NoFormat>>;
     }
     impl QueueClient {
-        async fn exists(&self) -> Result<bool>;
-        fn new(queue_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<QueueClientOptions>) -> Result<Self>;
-        fn url(&self) -> &Url;
+        pub async fn exists(&self) -> Result<bool>;
+        pub fn new(queue_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<QueueClientOptions>) -> Result<Self>;
+        pub fn url(&self) -> &Url;
     }
     #[derive(Clone, Debug)]
     pub struct QueueClientOptions {
@@ -49,16 +49,16 @@ pub mod clients {
     pub struct QueueServiceClient {
     }
     impl QueueServiceClient {
-        async fn get_properties(&self, options: Option<QueueServiceClientGetPropertiesOptions<'_>>) -> Result<Response<QueueServiceProperties, XmlFormat>>;
-        async fn get_statistics(&self, options: Option<QueueServiceClientGetStatisticsOptions<'_>>) -> Result<Response<QueueServiceStats, XmlFormat>>;
-        async fn get_user_delegation_key(&self, key_info: RequestContent<KeyInfo, XmlFormat>, options: Option<QueueServiceClientGetUserDelegationKeyOptions<'_>>) -> Result<Response<UserDelegationKey, XmlFormat>>;
-        fn list_queues(&self, options: Option<QueueServiceClientListQueuesOptions<'_>>) -> Result<Pager<ListQueuesResponse, XmlFormat>>;
-        async fn set_properties(&self, queue_service_properties: RequestContent<QueueServiceProperties, XmlFormat>, options: Option<QueueServiceClientSetPropertiesOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn get_properties(&self, options: Option<QueueServiceClientGetPropertiesOptions<'_>>) -> Result<Response<QueueServiceProperties, XmlFormat>>;
+        pub async fn get_statistics(&self, options: Option<QueueServiceClientGetStatisticsOptions<'_>>) -> Result<Response<QueueServiceStats, XmlFormat>>;
+        pub async fn get_user_delegation_key(&self, key_info: RequestContent<KeyInfo, XmlFormat>, options: Option<QueueServiceClientGetUserDelegationKeyOptions<'_>>) -> Result<Response<UserDelegationKey, XmlFormat>>;
+        pub fn list_queues(&self, options: Option<QueueServiceClientListQueuesOptions<'_>>) -> Result<Pager<ListQueuesResponse, XmlFormat>>;
+        pub async fn set_properties(&self, queue_service_properties: RequestContent<QueueServiceProperties, XmlFormat>, options: Option<QueueServiceClientSetPropertiesOptions<'_>>) -> Result<Response<(), NoFormat>>;
     }
     impl QueueServiceClient {
-        fn new(service_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<QueueServiceClientOptions>) -> Result<Self>;
-        fn queue_client(&self, queue_name: &str) -> Result<QueueClient>;
-        fn url(&self) -> &Url;
+        pub fn new(service_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<QueueServiceClientOptions>) -> Result<Self>;
+        pub fn queue_client(&self, queue_name: &str) -> Result<QueueClient>;
+        pub fn url(&self) -> &Url;
     }
     #[derive(Clone, Debug)]
     pub struct QueueServiceClientOptions {
@@ -131,7 +131,7 @@ pub mod models {
         pub items: Option<Vec<SentMessage>>,
     }
     impl ListOfSentMessage {
-        fn into_message(self) -> Result<SentMessage>;
+        pub fn into_message(self) -> Result<SentMessage>;
     }
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -314,7 +314,7 @@ pub mod models {
         pub timeout: Option<i32>,
     }
     impl QueueServiceClientListQueuesOptions<'_> {
-        fn into_owned(self) -> QueueServiceClientListQueuesOptions<'static>;
+        pub fn into_owned(self) -> QueueServiceClientListQueuesOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct QueueServiceClientSetPropertiesOptions<'a> {

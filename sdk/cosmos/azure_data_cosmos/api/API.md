@@ -46,8 +46,8 @@ pub use azure_data_cosmos::models::transactional_batch::TransactionalBatch;
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AccountEndpoint(/* private fields */);
 impl AccountEndpoint {
-    fn into_url(self) -> Url;
-    fn url(&self) -> &Url;
+    pub fn into_url(self) -> Url;
+    pub fn url(&self) -> &Url;
 }
 impl Display for AccountEndpoint {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -65,24 +65,24 @@ pub struct AccountReference {
 }
 impl AccountReference {
     #[cfg(feature = "key_auth")]
-    fn with_authentication_key<impl Into<Secret>: Into<Secret>>(endpoint: AccountEndpoint, key: impl Into<Secret>) -> Self;
-    fn with_credential(endpoint: AccountEndpoint, credential: Arc<dyn TokenCredential>) -> Self;
+    pub fn with_authentication_key<impl Into<Secret>: Into<Secret>>(endpoint: AccountEndpoint, key: impl Into<Secret>) -> Self;
+    pub fn with_credential(endpoint: AccountEndpoint, credential: Arc<dyn TokenCredential>) -> Self;
 }
 #[derive(Clone, Debug)]
 pub struct CosmosRuntime(/* private fields */);
 impl CosmosRuntime {
-    fn builder() -> CosmosRuntimeBuilder;
+    pub fn builder() -> CosmosRuntimeBuilder;
 }
 #[derive(Clone, Debug, Default)]
 pub struct CosmosRuntimeBuilder(/* private fields */);
 impl CosmosRuntimeBuilder {
-    async fn build(self) -> crate::Result<CosmosRuntime>;
-    fn new() -> Self;
-    fn with_connection_pool(self, options: ConnectionPoolOptions) -> Self;
-    fn with_cpu_refresh_interval(self, interval: Duration) -> Self;
-    fn with_default_operation_options(self, options: OperationOptions) -> Self;
-    fn with_diagnostics_options(self, options: DiagnosticsOptions) -> Self;
-    fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
+    pub async fn build(self) -> crate::Result<CosmosRuntime>;
+    pub fn new() -> Self;
+    pub fn with_connection_pool(self, options: ConnectionPoolOptions) -> Self;
+    pub fn with_cpu_refresh_interval(self, interval: Duration) -> Self;
+    pub fn with_default_operation_options(self, options: OperationOptions) -> Self;
+    pub fn with_diagnostics_options(self, options: DiagnosticsOptions) -> Self;
+    pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
 }
 impl From<CosmosDriverRuntimeBuilder> for CosmosRuntimeBuilder {
     fn from(value: CosmosDriverRuntimeBuilder) -> Self;
@@ -93,9 +93,9 @@ pub struct PartitionKey(/* private fields */);
 impl PartitionKey {
     const NULL: PartitionKeyValue = PartitionKeyValue::NULL;
     const UNDEFINED: PartitionKeyValue = PartitionKeyValue::UNDEFINED;
-    fn is_empty(&self) -> bool;
-    fn len(&self) -> usize;
-    fn values(&self) -> &[PartitionKeyValue];
+    pub fn is_empty(&self) -> bool;
+    pub fn len(&self) -> usize;
+    pub fn values(&self) -> &[PartitionKeyValue];
 }
 impl AsHeaders for PartitionKey {
     type Error = CosmosError;
@@ -117,7 +117,7 @@ impl<T: Into<PartitionKeyValue>> From<T> for PartitionKey {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ResourceId(/* private fields */);
 impl ResourceId {
-    fn as_str(&self) -> &str;
+    pub fn as_str(&self) -> &str;
 }
 impl AsRef<str> for ResourceId {
     fn as_ref(&self) -> &str;
@@ -161,7 +161,7 @@ pub enum ResourceIdentity {
     Rid(ResourceId),
 }
 impl ResourceIdentity {
-    fn is_rid(&self) -> bool;
+    pub fn is_rid(&self) -> bool;
 }
 impl From<&ResourceIdentity> for ResourceIdentity {
     fn from(identity: &ResourceIdentity) -> Self;
@@ -181,81 +181,81 @@ pub mod clients {
     }
     impl ContainerClient {
         #[cfg(feature = "control_plane")]
-        async fn begin_replace_throughput(&self, throughput: ThroughputProperties, options: Option<ThroughputOptions>) -> crate::Result<ThroughputPoller>;
-        async fn create_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, item: T, options: Option<ItemWriteOptions>) -> crate::Result<ItemResponse>;
+        pub async fn begin_replace_throughput(&self, throughput: ThroughputProperties, options: Option<ThroughputOptions>) -> crate::Result<ThroughputPoller>;
+        pub async fn create_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, item: T, options: Option<ItemWriteOptions>) -> crate::Result<ItemResponse>;
         #[cfg(feature = "control_plane")]
-        async fn delete(&self, options: Option<DeleteContainerOptions>) -> crate::Result<ResourceResponse<()>>;
-        async fn delete_item<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, options: Option<ItemWriteOptions>) -> crate::Result<ItemResponse>;
-        async fn execute_transactional_batch(&self, batch: TransactionalBatch, options: Option<BatchOptions>) -> crate::Result<BatchResponse>;
-        async fn feed_range_from_partition_key<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, options: Option<ReadFeedRangesOptions>) -> crate::Result<Vec<FeedRange>>;
-        fn get_latest_session_token(&self, feed_ranges_to_session_tokens: &[(FeedRange, SessionToken)], target_feed_range: &FeedRange) -> crate::Result<SessionToken>;
+        pub async fn delete(&self, options: Option<DeleteContainerOptions>) -> crate::Result<ResourceResponse<()>>;
+        pub async fn delete_item<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, options: Option<ItemWriteOptions>) -> crate::Result<ItemResponse>;
+        pub async fn execute_transactional_batch(&self, batch: TransactionalBatch, options: Option<BatchOptions>) -> crate::Result<BatchResponse>;
+        pub async fn feed_range_from_partition_key<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, options: Option<ReadFeedRangesOptions>) -> crate::Result<Vec<FeedRange>>;
+        pub fn get_latest_session_token(&self, feed_ranges_to_session_tokens: &[(FeedRange, SessionToken)], target_feed_range: &FeedRange) -> crate::Result<SessionToken>;
         #[cfg(feature = "preview_patch")]
-        async fn patch_item<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, patch: PatchInstructions, options: Option<PatchItemOptions>) -> crate::Result<ItemResponse>;
-        async fn query_change_feed<T: DeserializeOwned + Send + 'static>(&self, scope: FeedScope, start_from: ChangeFeedStartFrom, options: Option<ChangeFeedOptions>) -> crate::Result<ChangeFeedPageIterator<ChangeFeedItem<T>>>;
-        async fn query_items<T: DeserializeOwned + Send + 'static, impl Into<Query>: Into<Query>>(&self, query: impl Into<Query>, scope: FeedScope, options: Option<QueryOptions>) -> crate::Result<QueryItemIterator<T>>;
-        async fn read(&self, options: Option<ReadContainerOptions>) -> crate::Result<ResourceResponse<ContainerProperties>>;
-        async fn read_feed_ranges(&self, options: Option<ReadFeedRangesOptions>) -> crate::Result<Vec<FeedRange>>;
-        async fn read_item<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, options: Option<ItemReadOptions>) -> crate::Result<ItemResponse>;
+        pub async fn patch_item<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, patch: PatchInstructions, options: Option<PatchItemOptions>) -> crate::Result<ItemResponse>;
+        pub async fn query_change_feed<T: DeserializeOwned + Send + 'static>(&self, scope: FeedScope, start_from: ChangeFeedStartFrom, options: Option<ChangeFeedOptions>) -> crate::Result<ChangeFeedPageIterator<ChangeFeedItem<T>>>;
+        pub async fn query_items<T: DeserializeOwned + Send + 'static, impl Into<Query>: Into<Query>>(&self, query: impl Into<Query>, scope: FeedScope, options: Option<QueryOptions>) -> crate::Result<QueryItemIterator<T>>;
+        pub async fn read(&self, options: Option<ReadContainerOptions>) -> crate::Result<ResourceResponse<ContainerProperties>>;
+        pub async fn read_feed_ranges(&self, options: Option<ReadFeedRangesOptions>) -> crate::Result<Vec<FeedRange>>;
+        pub async fn read_item<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, options: Option<ItemReadOptions>) -> crate::Result<ItemResponse>;
         #[cfg(feature = "control_plane")]
-        async fn read_throughput(&self, options: Option<ThroughputOptions>) -> crate::Result<Option<ThroughputProperties>>;
+        pub async fn read_throughput(&self, options: Option<ThroughputOptions>) -> crate::Result<Option<ThroughputProperties>>;
         #[cfg(feature = "control_plane")]
-        async fn replace(&self, properties: ContainerProperties, options: Option<ReplaceContainerOptions>) -> crate::Result<ResourceResponse<ContainerProperties>>;
-        async fn replace_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, item: T, options: Option<ItemWriteOptions>) -> crate::Result<ItemResponse>;
-        async fn upsert_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, item: T, options: Option<ItemWriteOptions>) -> crate::Result<ItemResponse>;
+        pub async fn replace(&self, properties: ContainerProperties, options: Option<ReplaceContainerOptions>) -> crate::Result<ResourceResponse<ContainerProperties>>;
+        pub async fn replace_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, item: T, options: Option<ItemWriteOptions>) -> crate::Result<ItemResponse>;
+        pub async fn upsert_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, item: T, options: Option<ItemWriteOptions>) -> crate::Result<ItemResponse>;
     }
     #[derive(Clone, Debug)]
     pub struct CosmosClient {
     }
     impl CosmosClient {
-        fn builder() -> CosmosClientBuilder;
+        pub fn builder() -> CosmosClientBuilder;
         #[cfg(feature = "preview_dtx")]
-        async fn commit_distributed_write(&self, transaction: crate::clients::DistributedWriteTransaction) -> crate::Result<crate::clients::DistributedTransactionResponse>;
+        pub async fn commit_distributed_write(&self, transaction: crate::clients::DistributedWriteTransaction) -> crate::Result<crate::clients::DistributedTransactionResponse>;
         #[cfg(feature = "control_plane")]
-        async fn create_database(&self, id: &str, options: Option<CreateDatabaseOptions>) -> crate::Result<ResourceResponse<DatabaseProperties>>;
-        fn database_client<impl Into<ResourceIdentity>: Into<ResourceIdentity>>(&self, database: impl Into<ResourceIdentity>) -> DatabaseClient;
-        fn endpoint(&self) -> &Url;
+        pub async fn create_database(&self, id: &str, options: Option<CreateDatabaseOptions>) -> crate::Result<ResourceResponse<DatabaseProperties>>;
+        pub fn database_client<impl Into<ResourceIdentity>: Into<ResourceIdentity>>(&self, database: impl Into<ResourceIdentity>) -> DatabaseClient;
+        pub fn endpoint(&self) -> &Url;
         #[cfg(feature = "preview_dtx")]
-        async fn execute_distributed_read(&self, transaction: crate::clients::DistributedReadTransaction) -> crate::Result<crate::clients::DistributedTransactionResponse>;
+        pub async fn execute_distributed_read(&self, transaction: crate::clients::DistributedReadTransaction) -> crate::Result<crate::clients::DistributedTransactionResponse>;
         #[cfg(feature = "control_plane")]
-        async fn query_databases<impl Into<Query>: Into<Query>>(&self, query: impl Into<Query>, options: Option<QueryDatabasesOptions>) -> crate::Result<QueryItemIterator<DatabaseProperties>>;
+        pub async fn query_databases<impl Into<Query>: Into<Query>>(&self, query: impl Into<Query>, options: Option<QueryDatabasesOptions>) -> crate::Result<QueryItemIterator<DatabaseProperties>>;
     }
     #[derive(Default)]
     pub struct CosmosClientBuilder {
     }
     impl CosmosClientBuilder {
-        async fn build(self, account: AccountReference, routing_strategy: RoutingStrategy) -> crate::Result<CosmosClient>;
-        fn new() -> Self;
-        fn register_throughput_control_group(self, group: ThroughputControlGroupOptions) -> crate::Result<Self>;
-        fn with_backup_endpoints(self, endpoints: Vec<crate::AccountEndpoint>) -> Self;
-        fn with_binary_encoding_options(self, options: BinaryEncodingOptions) -> Self;
-        fn with_default_operation_options(self, options: OperationOptions) -> Self;
-        fn with_diagnostics_handler(self, handler: Arc<dyn DiagnosticsHandler>) -> Self;
+        pub async fn build(self, account: AccountReference, routing_strategy: RoutingStrategy) -> crate::Result<CosmosClient>;
+        pub fn new() -> Self;
+        pub fn register_throughput_control_group(self, group: ThroughputControlGroupOptions) -> crate::Result<Self>;
+        pub fn with_backup_endpoints(self, endpoints: Vec<crate::AccountEndpoint>) -> Self;
+        pub fn with_binary_encoding_options(self, options: BinaryEncodingOptions) -> Self;
+        pub fn with_default_operation_options(self, options: OperationOptions) -> Self;
+        pub fn with_diagnostics_handler(self, handler: Arc<dyn DiagnosticsHandler>) -> Self;
         #[cfg(feature = "fault_injection")]
-        fn with_fault_injection_rules(self, rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>) -> crate::Result<Self>;
-        fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
-        fn with_partition_key_range_cache_enabled(self, enabled: bool) -> Self;
-        fn with_runtime(self, runtime: CosmosRuntime) -> Self;
-        fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
+        pub fn with_fault_injection_rules(self, rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>) -> crate::Result<Self>;
+        pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
+        pub fn with_partition_key_range_cache_enabled(self, enabled: bool) -> Self;
+        pub fn with_runtime(self, runtime: CosmosRuntime) -> Self;
+        pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
     pub struct DatabaseClient {
     }
     impl DatabaseClient {
         #[cfg(feature = "control_plane")]
-        async fn begin_replace_throughput(&self, throughput: ThroughputProperties, options: Option<ThroughputOptions>) -> crate::Result<ThroughputPoller>;
-        async fn container_client<impl Into<ResourceIdentity>: Into<ResourceIdentity>>(&self, container: impl Into<ResourceIdentity>, options: Option<ContainerClientOptions>) -> crate::Result<ContainerClient>;
+        pub async fn begin_replace_throughput(&self, throughput: ThroughputProperties, options: Option<ThroughputOptions>) -> crate::Result<ThroughputPoller>;
+        pub async fn container_client<impl Into<ResourceIdentity>: Into<ResourceIdentity>>(&self, container: impl Into<ResourceIdentity>, options: Option<ContainerClientOptions>) -> crate::Result<ContainerClient>;
         #[cfg(feature = "control_plane")]
-        async fn create_container(&self, properties: ContainerProperties, options: Option<CreateContainerOptions>) -> crate::Result<ResourceResponse<ContainerProperties>>;
+        pub async fn create_container(&self, properties: ContainerProperties, options: Option<CreateContainerOptions>) -> crate::Result<ResourceResponse<ContainerProperties>>;
         #[cfg(feature = "control_plane")]
-        async fn delete(&self, options: Option<DeleteDatabaseOptions>) -> crate::Result<ResourceResponse<()>>;
-        fn id(&self) -> &ResourceIdentity;
-        fn name(&self) -> Option<&str>;
+        pub async fn delete(&self, options: Option<DeleteDatabaseOptions>) -> crate::Result<ResourceResponse<()>>;
+        pub fn id(&self) -> &ResourceIdentity;
+        pub fn name(&self) -> Option<&str>;
         #[cfg(feature = "control_plane")]
-        async fn query_containers<impl Into<Query>: Into<Query>>(&self, query: impl Into<Query>, options: Option<QueryContainersOptions>) -> crate::Result<QueryItemIterator<ContainerProperties>>;
+        pub async fn query_containers<impl Into<Query>: Into<Query>>(&self, query: impl Into<Query>, options: Option<QueryContainersOptions>) -> crate::Result<QueryItemIterator<ContainerProperties>>;
         #[cfg(feature = "control_plane")]
-        async fn read(&self, options: Option<ReadDatabaseOptions>) -> crate::Result<ResourceResponse<DatabaseProperties>>;
+        pub async fn read(&self, options: Option<ReadDatabaseOptions>) -> crate::Result<ResourceResponse<DatabaseProperties>>;
         #[cfg(feature = "control_plane")]
-        async fn read_throughput(&self, options: Option<ThroughputOptions>) -> crate::Result<Option<ThroughputProperties>>;
-        fn rid(&self) -> Option<&ResourceId>;
+        pub async fn read_throughput(&self, options: Option<ThroughputOptions>) -> crate::Result<Option<ThroughputProperties>>;
+        pub fn rid(&self) -> Option<&ResourceId>;
     }
     #[cfg(feature = "preview_dtx")]
     #[derive(Clone, Debug)]
@@ -263,8 +263,8 @@ pub mod clients {
     }
     #[cfg(feature = "preview_dtx")]
     impl DistributedReadTransaction {
-        fn new() -> Self;
-        fn read_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, options: Option<DistributedTransactionOperationOptions>) -> Self;
+        pub fn new() -> Self;
+        pub fn read_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, options: Option<DistributedTransactionOperationOptions>) -> Self;
     }
     #[cfg(feature = "preview_dtx")]
     impl Default for DistributedReadTransaction {
@@ -279,8 +279,8 @@ pub mod clients {
     }
     #[cfg(feature = "preview_dtx")]
     impl DistributedTransactionOperationOptions {
-        fn with_precondition(self, precondition: Precondition) -> Self;
-        fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
+        pub fn with_precondition(self, precondition: Precondition) -> Self;
+        pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
     }
     #[cfg(feature = "preview_dtx")]
     #[derive(Clone, Copy, Debug)]
@@ -288,16 +288,16 @@ pub mod clients {
     }
     #[cfg(feature = "preview_dtx")]
     impl DistributedTransactionOperationResult<'_> {
-        fn etag(&self) -> Option<&azure_core::http::Etag>;
-        fn index(&self) -> usize;
-        fn is_completed_status_code(&self) -> bool;
-        fn is_success_status_code(&self) -> bool;
-        fn partition_key_range_id(&self) -> Option<&str>;
-        fn request_charge(&self) -> Option<f64>;
-        fn resource<T: DeserializeOwned>(&self) -> crate::Result<Option<T>>;
-        fn session_token(&self) -> Option<&SessionToken>;
-        fn status_code(&self) -> azure_core::http::StatusCode;
-        fn sub_status_code(&self) -> Option<crate::SubStatusCode>;
+        pub fn etag(&self) -> Option<&azure_core::http::Etag>;
+        pub fn index(&self) -> usize;
+        pub fn is_completed_status_code(&self) -> bool;
+        pub fn is_success_status_code(&self) -> bool;
+        pub fn partition_key_range_id(&self) -> Option<&str>;
+        pub fn request_charge(&self) -> Option<f64>;
+        pub fn resource<T: DeserializeOwned>(&self) -> crate::Result<Option<T>>;
+        pub fn session_token(&self) -> Option<&SessionToken>;
+        pub fn status_code(&self) -> azure_core::http::StatusCode;
+        pub fn sub_status_code(&self) -> Option<crate::SubStatusCode>;
     }
     #[cfg(feature = "preview_dtx")]
     #[derive(Clone, Default)]
@@ -309,9 +309,9 @@ pub mod clients {
     }
     #[cfg(feature = "preview_dtx")]
     impl DistributedTransactionPatchOperationOptions {
-        fn with_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
-        fn with_precondition(self, precondition: Precondition) -> Self;
-        fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
+        pub fn with_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
+        pub fn with_precondition(self, precondition: Precondition) -> Self;
+        pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
     }
     #[cfg(feature = "preview_dtx")]
     #[derive(Clone, Debug)]
@@ -319,21 +319,21 @@ pub mod clients {
     }
     #[cfg(feature = "preview_dtx")]
     impl DistributedTransactionResponse {
-        fn activity_id(&self) -> Option<&str>;
-        fn diagnostic_string(&self) -> Option<&str>;
-        fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>>;
-        fn error_message(&self) -> Option<&str>;
-        fn headers(&self) -> &ResponseHeaders;
-        fn idempotency_token(&self) -> String;
-        fn is_completed_status_code(&self) -> bool;
-        fn is_empty(&self) -> bool;
-        fn is_retriable(&self) -> bool;
-        fn is_success_status_code(&self) -> bool;
-        fn len(&self) -> usize;
-        fn operation_result(&self, index: usize) -> Option<DistributedTransactionOperationResult<'_>>;
-        fn request_charge(&self) -> Option<f64>;
-        fn retry_after_ms(&self) -> Option<u64>;
-        fn status(&self) -> crate::CosmosStatus;
+        pub fn activity_id(&self) -> Option<&str>;
+        pub fn diagnostic_string(&self) -> Option<&str>;
+        pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>>;
+        pub fn error_message(&self) -> Option<&str>;
+        pub fn headers(&self) -> &ResponseHeaders;
+        pub fn idempotency_token(&self) -> String;
+        pub fn is_completed_status_code(&self) -> bool;
+        pub fn is_empty(&self) -> bool;
+        pub fn is_retriable(&self) -> bool;
+        pub fn is_success_status_code(&self) -> bool;
+        pub fn len(&self) -> usize;
+        pub fn operation_result(&self, index: usize) -> Option<DistributedTransactionOperationResult<'_>>;
+        pub fn request_charge(&self) -> Option<f64>;
+        pub fn retry_after_ms(&self) -> Option<u64>;
+        pub fn status(&self) -> crate::CosmosStatus;
     }
     #[cfg(feature = "preview_dtx")]
     #[derive(Clone, Debug)]
@@ -341,12 +341,12 @@ pub mod clients {
     }
     #[cfg(feature = "preview_dtx")]
     impl DistributedWriteTransaction {
-        fn create_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
-        fn delete_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, options: Option<DistributedTransactionOperationOptions>) -> Self;
-        fn new() -> Self;
-        fn patch_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, patch: PatchInstructions, options: Option<DistributedTransactionPatchOperationOptions>) -> crate::Result<Self>;
-        fn replace_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
-        fn upsert_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
+        pub fn create_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
+        pub fn delete_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, options: Option<DistributedTransactionOperationOptions>) -> Self;
+        pub fn new() -> Self;
+        pub fn patch_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, patch: PatchInstructions, options: Option<DistributedTransactionPatchOperationOptions>) -> crate::Result<Self>;
+        pub fn replace_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
+        pub fn upsert_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
     }
     #[cfg(feature = "preview_dtx")]
     impl Default for DistributedWriteTransaction {
@@ -375,7 +375,7 @@ pub mod diagnostics {
     pub struct ClientLifetimeToken {
     }
     impl ClientLifetimeToken {
-        fn new<impl FnOnce() + Send + Sync + 'static: FnOnce() + Send + Sync + 'static>(on_drop: impl FnOnce() + Send + Sync + 'static) -> Self;
+        pub fn new<impl FnOnce() + Send + Sync + 'static: FnOnce() + Send + Sync + 'static>(on_drop: impl FnOnce() + Send + Sync + 'static) -> Self;
     }
     impl Debug for ClientLifetimeToken {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -387,46 +387,46 @@ pub mod diagnostics {
     pub struct CosmosClientInfo {
     }
     impl CosmosClientInfo {
-        fn server_address(&self) -> Option<&str>;
-        fn server_port(&self) -> Option<u16>;
+        pub fn server_address(&self) -> Option<&str>;
+        pub fn server_port(&self) -> Option<u16>;
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     pub struct CosmosOperationContext {
     }
     impl CosmosOperationContext {
-        fn connection_mode(&self) -> Option<&str>;
-        fn consistency_level(&self) -> Option<&str>;
-        fn container_name(&self) -> Option<&str>;
-        fn database_name(&self) -> Option<&str>;
-        fn new() -> Self;
-        fn operation_name(&self) -> Option<&str>;
-        fn returned_item_count(&self) -> Option<u64>;
-        fn server_address(&self) -> Option<&str>;
+        pub fn connection_mode(&self) -> Option<&str>;
+        pub fn consistency_level(&self) -> Option<&str>;
+        pub fn container_name(&self) -> Option<&str>;
+        pub fn database_name(&self) -> Option<&str>;
+        pub fn new() -> Self;
+        pub fn operation_name(&self) -> Option<&str>;
+        pub fn returned_item_count(&self) -> Option<u64>;
+        pub fn server_address(&self) -> Option<&str>;
         #[must_use]
-        fn with_connection_mode<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, mode: impl Into<Cow<'static, str>>) -> Self;
+        pub fn with_connection_mode<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, mode: impl Into<Cow<'static, str>>) -> Self;
         #[must_use]
-        fn with_consistency_level<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, level: impl Into<Cow<'static, str>>) -> Self;
+        pub fn with_consistency_level<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, level: impl Into<Cow<'static, str>>) -> Self;
         #[must_use]
-        fn with_container_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, name: impl Into<Cow<'static, str>>) -> Self;
+        pub fn with_container_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, name: impl Into<Cow<'static, str>>) -> Self;
         #[must_use]
-        fn with_database_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, name: impl Into<Cow<'static, str>>) -> Self;
+        pub fn with_database_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, name: impl Into<Cow<'static, str>>) -> Self;
         #[must_use]
-        fn with_operation_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, name: impl Into<Cow<'static, str>>) -> Self;
+        pub fn with_operation_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, name: impl Into<Cow<'static, str>>) -> Self;
         #[must_use]
-        fn with_returned_item_count(self, count: u64) -> Self;
+        pub fn with_returned_item_count(self, count: u64) -> Self;
         #[must_use]
-        fn with_server_address<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, address: impl Into<Cow<'static, str>>) -> Self;
+        pub fn with_server_address<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, address: impl Into<Cow<'static, str>>) -> Self;
     }
     #[cfg(feature = "distributed_tracing")]
     pub struct CosmosTracingHandler {
     }
     #[cfg(feature = "distributed_tracing")]
     impl CosmosTracingHandler {
-        fn new() -> Self;
-        fn should_emit(&self, diagnostics: &DiagnosticsContext) -> bool;
-        fn thresholds(&self) -> &DiagnosticsThresholds;
-        fn with_thresholds(thresholds: DiagnosticsThresholds) -> Self;
-        fn with_thresholds_and_rate_limit(thresholds: DiagnosticsThresholds, rate_limit: RateLimiterConfig) -> Self;
+        pub fn new() -> Self;
+        pub fn should_emit(&self, diagnostics: &DiagnosticsContext) -> bool;
+        pub fn thresholds(&self) -> &DiagnosticsThresholds;
+        pub fn with_thresholds(thresholds: DiagnosticsThresholds) -> Self;
+        pub fn with_thresholds_and_rate_limit(thresholds: DiagnosticsThresholds, rate_limit: RateLimiterConfig) -> Self;
     }
     #[cfg(feature = "distributed_tracing")]
     impl Default for CosmosTracingHandler {
@@ -442,32 +442,32 @@ pub mod diagnostics {
     }
     #[doc(inline)]
     impl DiagnosticsContext {
-        fn activity_id(&self) -> &ActivityId;
-        fn compaction(&self) -> Option<&CompactionInfo>;
-        fn duration(&self) -> Duration;
-        fn effective_status(&self) -> Option<CosmosStatus>;
-        fn fault_injection_enabled(&self) -> bool;
-        fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
-        fn hedging_started(&self) -> bool;
-        fn is_completed(&self) -> bool;
-        fn is_failure(&self) -> bool;
-        fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool;
-        fn is_threshold_violated_for(&self, thresholds: &DiagnosticsThresholds, operation_name: Option<&str>) -> bool;
-        fn machine_id(&self) -> Option<&str>;
-        fn operation_name(&self) -> Option<&str>;
-        fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
-        fn regions_contacted(&self) -> Vec<Region>;
-        fn request_count(&self) -> usize;
-        fn requested_regions(&self) -> Vec<RequestedRegion>;
-        fn requests(&self) -> Arc<Vec<RequestDiagnostics>>;
-        fn responded_regions(&self) -> Vec<&Region>;
-        fn retained_request_count(&self) -> usize;
-        fn status(&self) -> Option<&CosmosStatus>;
-        fn threshold_breach_for(&self, thresholds: &DiagnosticsThresholds, operation_name: Option<&str>) -> Option<ThresholdBreach>;
-        fn to_json_string(&self, verbosity: Option<DiagnosticsVerbosity>) -> &str;
-        fn total_request_charge(&self) -> RequestCharge;
-        fn total_requested_regions(&self) -> usize;
-        fn total_responded_regions(&self) -> usize;
+        pub fn activity_id(&self) -> &ActivityId;
+        pub fn compaction(&self) -> Option<&CompactionInfo>;
+        pub fn duration(&self) -> Duration;
+        pub fn effective_status(&self) -> Option<CosmosStatus>;
+        pub fn fault_injection_enabled(&self) -> bool;
+        pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
+        pub fn hedging_started(&self) -> bool;
+        pub fn is_completed(&self) -> bool;
+        pub fn is_failure(&self) -> bool;
+        pub fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool;
+        pub fn is_threshold_violated_for(&self, thresholds: &DiagnosticsThresholds, operation_name: Option<&str>) -> bool;
+        pub fn machine_id(&self) -> Option<&str>;
+        pub fn operation_name(&self) -> Option<&str>;
+        pub fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
+        pub fn regions_contacted(&self) -> Vec<Region>;
+        pub fn request_count(&self) -> usize;
+        pub fn requested_regions(&self) -> Vec<RequestedRegion>;
+        pub fn requests(&self) -> Arc<Vec<RequestDiagnostics>>;
+        pub fn responded_regions(&self) -> Vec<&Region>;
+        pub fn retained_request_count(&self) -> usize;
+        pub fn status(&self) -> Option<&CosmosStatus>;
+        pub fn threshold_breach_for(&self, thresholds: &DiagnosticsThresholds, operation_name: Option<&str>) -> Option<ThresholdBreach>;
+        pub fn to_json_string(&self, verbosity: Option<DiagnosticsVerbosity>) -> &str;
+        pub fn total_request_charge(&self) -> RequestCharge;
+        pub fn total_requested_regions(&self) -> usize;
+        pub fn total_responded_regions(&self) -> usize;
     }
     #[doc(inline)]
     impl Clone for DiagnosticsContext {
@@ -492,13 +492,13 @@ pub mod diagnostics {
     pub struct DiagnosticsHandlerChain {
     }
     impl DiagnosticsHandlerChain {
-        fn from_handlers(handlers: Vec<Arc<dyn DiagnosticsHandler>>) -> Self;
-        fn handlers(&self) -> &[Arc<dyn DiagnosticsHandler>];
-        fn is_empty(&self) -> bool;
-        fn len(&self) -> usize;
-        fn new() -> Self;
+        pub fn from_handlers(handlers: Vec<Arc<dyn DiagnosticsHandler>>) -> Self;
+        pub fn handlers(&self) -> &[Arc<dyn DiagnosticsHandler>];
+        pub fn is_empty(&self) -> bool;
+        pub fn len(&self) -> usize;
+        pub fn new() -> Self;
         #[must_use]
-        fn with_handler(&self, handler: Arc<dyn DiagnosticsHandler>) -> Self;
+        pub fn with_handler(&self, handler: Arc<dyn DiagnosticsHandler>) -> Self;
     }
     impl Debug for DiagnosticsHandlerChain {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -513,19 +513,19 @@ pub mod diagnostics {
     }
     #[doc(inline)]
     impl DiagnosticsThresholds {
-        fn new() -> Self;
-        fn non_point_operation_latency(&self) -> Duration;
-        fn payload_size(&self) -> u64;
-        fn point_operation_latency(&self) -> Duration;
-        fn request_charge(&self) -> f64;
+        pub fn new() -> Self;
+        pub fn non_point_operation_latency(&self) -> Duration;
+        pub fn payload_size(&self) -> u64;
+        pub fn point_operation_latency(&self) -> Duration;
+        pub fn request_charge(&self) -> f64;
         #[must_use]
-        fn with_non_point_operation_latency(self, latency: Duration) -> Self;
+        pub fn with_non_point_operation_latency(self, latency: Duration) -> Self;
         #[must_use]
-        fn with_payload_size(self, payload_size: u64) -> Self;
+        pub fn with_payload_size(self, payload_size: u64) -> Self;
         #[must_use]
-        fn with_point_operation_latency(self, latency: Duration) -> Self;
+        pub fn with_point_operation_latency(self, latency: Duration) -> Self;
         #[must_use]
-        fn with_request_charge(self, request_charge: f64) -> Self;
+        pub fn with_request_charge(self, request_charge: f64) -> Self;
     }
     #[doc(inline)]
     impl Default for DiagnosticsThresholds {
@@ -553,14 +553,14 @@ pub mod diagnostics {
     pub struct SamplingLogHandler {
     }
     impl SamplingLogHandler {
-        fn new() -> Self;
-        fn should_log(&self, diagnostics: &DiagnosticsContext) -> bool;
-        fn thresholds(&self) -> &DiagnosticsThresholds;
-        fn with_handler(inner: Arc<dyn DiagnosticsHandler>) -> Self;
-        fn with_thresholds(thresholds: DiagnosticsThresholds) -> Self;
-        fn with_thresholds_and_handler(thresholds: DiagnosticsThresholds, inner: Arc<dyn DiagnosticsHandler>) -> Self;
-        fn with_thresholds_and_rate_limit(thresholds: DiagnosticsThresholds, rate_limit: RateLimiterConfig) -> Self;
-        fn with_thresholds_rate_limit_and_handler(thresholds: DiagnosticsThresholds, rate_limit: RateLimiterConfig, inner: Arc<dyn DiagnosticsHandler>) -> Self;
+        pub fn new() -> Self;
+        pub fn should_log(&self, diagnostics: &DiagnosticsContext) -> bool;
+        pub fn thresholds(&self) -> &DiagnosticsThresholds;
+        pub fn with_handler(inner: Arc<dyn DiagnosticsHandler>) -> Self;
+        pub fn with_thresholds(thresholds: DiagnosticsThresholds) -> Self;
+        pub fn with_thresholds_and_handler(thresholds: DiagnosticsThresholds, inner: Arc<dyn DiagnosticsHandler>) -> Self;
+        pub fn with_thresholds_and_rate_limit(thresholds: DiagnosticsThresholds, rate_limit: RateLimiterConfig) -> Self;
+        pub fn with_thresholds_rate_limit_and_handler(thresholds: DiagnosticsThresholds, rate_limit: RateLimiterConfig, inner: Arc<dyn DiagnosticsHandler>) -> Self;
     }
     impl Default for SamplingLogHandler {
         fn default() -> Self;
@@ -571,7 +571,7 @@ pub mod diagnostics {
     #[derive(Clone, Copy, Debug, Default)]
     pub struct TracingLogHandler;
     impl TracingLogHandler {
-        fn new() -> Self;
+        pub fn new() -> Self;
     }
     impl DiagnosticsHandler for TracingLogHandler {
         fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
@@ -608,9 +608,9 @@ pub mod diagnostics {
     }
     #[doc(inline)]
     impl TransportKind {
-        fn as_str(self) -> &'static str;
-        fn is_gateway(self) -> bool;
-        fn is_gateway_v2(self) -> bool;
+        pub fn as_str(self) -> &'static str;
+        pub fn is_gateway(self) -> bool;
+        pub fn is_gateway_v2(self) -> bool;
     }
     #[doc(inline)]
     impl AsRef<str> for TransportKind {
@@ -629,10 +629,10 @@ pub mod diagnostics {
         pub struct CosmosMetricsHandler {
         }
         impl CosmosMetricsHandler {
-            fn new() -> Self;
-            fn with_meter(meter: Meter) -> Self;
-            fn with_meter_and_options(meter: Meter, options: MetricsOptions) -> Self;
-            fn with_options(options: MetricsOptions) -> Self;
+            pub fn new() -> Self;
+            pub fn with_meter(meter: Meter) -> Self;
+            pub fn with_meter_and_options(meter: Meter, options: MetricsOptions) -> Self;
+            pub fn with_options(options: MetricsOptions) -> Self;
         }
         impl Debug for CosmosMetricsHandler {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -648,22 +648,22 @@ pub mod diagnostics {
         pub struct MetricsOptions {
         }
         impl MetricsOptions {
-            fn active_instance_metric_enabled(&self) -> bool;
-            fn extended_attributes_enabled(&self) -> bool;
-            fn hedged_metric_enabled(&self) -> bool;
-            fn new() -> Self;
-            fn request_charge_metric_enabled(&self) -> bool;
-            fn returned_rows_metric_enabled(&self) -> bool;
+            pub fn active_instance_metric_enabled(&self) -> bool;
+            pub fn extended_attributes_enabled(&self) -> bool;
+            pub fn hedged_metric_enabled(&self) -> bool;
+            pub fn new() -> Self;
+            pub fn request_charge_metric_enabled(&self) -> bool;
+            pub fn returned_rows_metric_enabled(&self) -> bool;
             #[must_use]
-            fn with_active_instance_metric(self, enabled: bool) -> Self;
+            pub fn with_active_instance_metric(self, enabled: bool) -> Self;
             #[must_use]
-            fn with_extended_attributes(self, enabled: bool) -> Self;
+            pub fn with_extended_attributes(self, enabled: bool) -> Self;
             #[must_use]
-            fn with_hedged_metric(self, enabled: bool) -> Self;
+            pub fn with_hedged_metric(self, enabled: bool) -> Self;
             #[must_use]
-            fn with_request_charge_metric(self, enabled: bool) -> Self;
+            pub fn with_request_charge_metric(self, enabled: bool) -> Self;
             #[must_use]
-            fn with_returned_rows_metric(self, enabled: bool) -> Self;
+            pub fn with_returned_rows_metric(self, enabled: bool) -> Self;
         }
         pub mod attributes {
             pub const ATTR_CONNECTION_MODE: &str = attributes::CONNECTION_MODE;
@@ -703,11 +703,11 @@ pub mod error {
     #[repr(transparent)]
     pub struct CosmosError(/* private fields */);
     impl CosmosError {
-        fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>>;
+        pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>>;
         #[cfg(feature = "preview_patch")]
-        fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
-        fn response(&self) -> Option<&CosmosResponse>;
-        fn status(&self) -> CosmosStatus;
+        pub fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
+        pub fn response(&self) -> Option<&CosmosResponse>;
+        pub fn status(&self) -> CosmosStatus;
     }
     impl Debug for CosmosError {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -743,9 +743,9 @@ pub mod fault_injection {
     }
     #[doc(inline)]
     impl CustomResponse {
-        fn body(&self) -> &[u8];
-        fn headers(&self) -> &Headers;
-        fn status_code(&self) -> StatusCode;
+        pub fn body(&self) -> &[u8];
+        pub fn headers(&self) -> &Headers;
+        pub fn status_code(&self) -> StatusCode;
     }
     #[doc(inline)]
     #[non_exhaustive]
@@ -753,11 +753,11 @@ pub mod fault_injection {
     }
     #[doc(inline)]
     impl CustomResponseBuilder {
-        fn build(self) -> CustomResponse;
-        fn new(status_code: StatusCode) -> Self;
-        fn with_body<impl Into<Vec<u8>>: Into<Vec<u8>>>(self, body: impl Into<Vec<u8>>) -> Self;
-        fn with_header<impl Into<HeaderName>: Into<HeaderName>, impl Into<HeaderValue>: Into<HeaderValue>>(self, name: impl Into<HeaderName>, value: impl Into<HeaderValue>) -> Self;
-        fn with_sub_status(self, code: u16) -> Self;
+        pub fn build(self) -> CustomResponse;
+        pub fn new(status_code: StatusCode) -> Self;
+        pub fn with_body<impl Into<Vec<u8>>: Into<Vec<u8>>>(self, body: impl Into<Vec<u8>>) -> Self;
+        pub fn with_header<impl Into<HeaderName>: Into<HeaderName>, impl Into<HeaderValue>: Into<HeaderValue>>(self, name: impl Into<HeaderName>, value: impl Into<HeaderValue>) -> Self;
+        pub fn with_sub_status(self, code: u16) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Default)]
@@ -766,10 +766,10 @@ pub mod fault_injection {
     }
     #[doc(inline)]
     impl FaultInjectionCondition {
-        fn container_id(&self) -> Option<&str>;
-        fn operation_type(&self) -> Option<FaultOperationType>;
-        fn region(&self) -> Option<&Region>;
-        fn transport_kind(&self) -> Option<TransportKind>;
+        pub fn container_id(&self) -> Option<&str>;
+        pub fn operation_type(&self) -> Option<FaultOperationType>;
+        pub fn region(&self) -> Option<&Region>;
+        pub fn transport_kind(&self) -> Option<TransportKind>;
     }
     #[doc(inline)]
     #[derive(Default)]
@@ -778,12 +778,12 @@ pub mod fault_injection {
     }
     #[doc(inline)]
     impl FaultInjectionConditionBuilder {
-        fn build(self) -> FaultInjectionCondition;
-        fn new() -> Self;
-        fn with_container_id<impl Into<String>: Into<String>>(self, container_id: impl Into<String>) -> Self;
-        fn with_operation_type(self, operation_type: FaultOperationType) -> Self;
-        fn with_region(self, region: Region) -> Self;
-        fn with_transport_kind(self, transport_kind: TransportKind) -> Self;
+        pub fn build(self) -> FaultInjectionCondition;
+        pub fn new() -> Self;
+        pub fn with_container_id<impl Into<String>: Into<String>>(self, container_id: impl Into<String>) -> Self;
+        pub fn with_operation_type(self, operation_type: FaultOperationType) -> Self;
+        pub fn with_region(self, region: Region) -> Self;
+        pub fn with_transport_kind(self, transport_kind: TransportKind) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug)]
@@ -792,10 +792,10 @@ pub mod fault_injection {
     }
     #[doc(inline)]
     impl FaultInjectionResult {
-        fn custom_response(&self) -> Option<&CustomResponse>;
-        fn delay(&self) -> Option<Duration>;
-        fn error_type(&self) -> Option<FaultInjectionErrorType>;
-        fn probability(&self) -> f32;
+        pub fn custom_response(&self) -> Option<&CustomResponse>;
+        pub fn delay(&self) -> Option<Duration>;
+        pub fn error_type(&self) -> Option<FaultInjectionErrorType>;
+        pub fn probability(&self) -> f32;
     }
     #[doc(inline)]
     #[non_exhaustive]
@@ -803,12 +803,12 @@ pub mod fault_injection {
     }
     #[doc(inline)]
     impl FaultInjectionResultBuilder {
-        fn build(self) -> FaultInjectionResult;
-        fn new() -> Self;
-        fn with_custom_response(self, response: CustomResponse) -> Self;
-        fn with_delay(self, delay: Duration) -> Self;
-        fn with_error(self, error_type: FaultInjectionErrorType) -> Self;
-        fn with_probability(self, probability: f32) -> Self;
+        pub fn build(self) -> FaultInjectionResult;
+        pub fn new() -> Self;
+        pub fn with_custom_response(self, response: CustomResponse) -> Self;
+        pub fn with_delay(self, delay: Duration) -> Self;
+        pub fn with_error(self, error_type: FaultInjectionErrorType) -> Self;
+        pub fn with_probability(self, probability: f32) -> Self;
     }
     #[doc(inline)]
     impl Default for FaultInjectionResultBuilder {
@@ -821,16 +821,16 @@ pub mod fault_injection {
     }
     #[doc(inline)]
     impl FaultInjectionRule {
-        fn condition(&self) -> &FaultInjectionCondition;
-        fn disable(&self);
-        fn enable(&self);
-        fn end_time(&self) -> Option<Instant>;
-        fn hit_count(&self) -> u32;
-        fn hit_limit(&self) -> Option<u32>;
-        fn id(&self) -> &str;
-        fn is_enabled(&self) -> bool;
-        fn result(&self) -> &FaultInjectionResult;
-        fn start_time(&self) -> Option<Instant>;
+        pub fn condition(&self) -> &FaultInjectionCondition;
+        pub fn disable(&self);
+        pub fn enable(&self);
+        pub fn end_time(&self) -> Option<Instant>;
+        pub fn hit_count(&self) -> u32;
+        pub fn hit_limit(&self) -> Option<u32>;
+        pub fn id(&self) -> &str;
+        pub fn is_enabled(&self) -> bool;
+        pub fn result(&self) -> &FaultInjectionResult;
+        pub fn start_time(&self) -> Option<Instant>;
     }
     #[doc(inline)]
     #[non_exhaustive]
@@ -838,14 +838,14 @@ pub mod fault_injection {
     }
     #[doc(inline)]
     impl FaultInjectionRuleBuilder {
-        fn build(self) -> FaultInjectionRule;
-        fn new<impl Into<String>: Into<String>>(id: impl Into<String>, result: FaultInjectionResult) -> Self;
-        fn with_condition(self, condition: FaultInjectionCondition) -> Self;
-        fn with_end_time(self, end_time: Instant) -> Self;
-        fn with_hit_limit(self, hit_limit: u32) -> Self;
-        fn with_result(self, result: FaultInjectionResult) -> Self;
-        fn with_shared_state(self, enabled: Arc<AtomicBool>, hit_count: Arc<AtomicU32>) -> Self;
-        fn with_start_time(self, start_time: Instant) -> Self;
+        pub fn build(self) -> FaultInjectionRule;
+        pub fn new<impl Into<String>: Into<String>>(id: impl Into<String>, result: FaultInjectionResult) -> Self;
+        pub fn with_condition(self, condition: FaultInjectionCondition) -> Self;
+        pub fn with_end_time(self, end_time: Instant) -> Self;
+        pub fn with_hit_limit(self, hit_limit: u32) -> Self;
+        pub fn with_result(self, result: FaultInjectionResult) -> Self;
+        pub fn with_shared_state(self, enabled: Arc<AtomicBool>, hit_count: Arc<AtomicU32>) -> Self;
+        pub fn with_start_time(self, start_time: Instant) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -893,8 +893,8 @@ pub mod fault_injection {
     }
     #[doc(inline)]
     impl FaultOperationType {
-        fn as_str(&self) -> &'static str;
-        fn from_operation_and_resource(operation_type: &OperationType, resource_type: &ResourceType) -> Option<Self>;
+        pub fn as_str(&self) -> &'static str;
+        pub fn from_operation_and_resource(operation_type: &OperationType, resource_type: &ResourceType) -> Option<Self>;
     }
     #[doc(inline)]
     impl Display for FaultOperationType {
@@ -914,9 +914,9 @@ pub mod fault_injection {
         GatewayV2,
     }
     impl TransportKind {
-        fn as_str(self) -> &'static str;
-        fn is_gateway(self) -> bool;
-        fn is_gateway_v2(self) -> bool;
+        pub fn as_str(self) -> &'static str;
+        pub fn is_gateway(self) -> bool;
+        pub fn is_gateway_v2(self) -> bool;
     }
     impl AsRef<str> for TransportKind {
         fn as_ref(&self) -> &str;
@@ -930,7 +930,7 @@ pub mod feed {
     pub struct ChangeFeedPageIterator<T: Send> {
     }
     impl<T: Send + DeserializeOwned + 'static> ChangeFeedPageIterator<T> {
-        fn to_continuation_token(&self) -> crate::Result<ContinuationToken>;
+        pub fn to_continuation_token(&self) -> crate::Result<ContinuationToken>;
     }
     impl<T: Send + DeserializeOwned + 'static> Stream for ChangeFeedPageIterator<T> {
         type Item = Result<FeedPage<T>, CosmosError>;
@@ -941,8 +941,8 @@ pub mod feed {
     pub struct ContinuationToken(/* private fields */);
     #[doc(inline)]
     impl ContinuationToken {
-        fn as_str(&self) -> &str;
-        fn from_string(token: String) -> Self;
+        pub fn as_str(&self) -> &str;
+        pub fn from_string(token: String) -> Self;
     }
     #[doc(inline)]
     impl Serialize for ContinuationToken {
@@ -956,24 +956,24 @@ pub mod feed {
     pub struct FeedPage<T> {
     }
     impl<T> FeedPage<T> {
-        fn diagnostics(&self) -> Arc<DiagnosticsContext>;
-        fn headers(&self) -> &ResponseHeaders;
-        fn into_items(self) -> Vec<T>;
-        fn items(&self) -> &[T];
+        pub fn diagnostics(&self) -> Arc<DiagnosticsContext>;
+        pub fn headers(&self) -> &ResponseHeaders;
+        pub fn into_items(self) -> Vec<T>;
+        pub fn items(&self) -> &[T];
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     pub struct FeedRange(/* private fields */);
     #[doc(inline)]
     impl FeedRange {
-        fn for_partition(partition_key: PartitionKey, definition: &PartitionKeyDefinition) -> Self;
-        fn full() -> Self;
-        fn is_logical_partition(&self) -> bool;
-        fn is_subset_of(&self, other: &FeedRange) -> bool;
-        fn max_exclusive(&self) -> &EffectivePartitionKey;
-        fn min_inclusive(&self) -> &EffectivePartitionKey;
-        fn new(min_inclusive: EffectivePartitionKey, max_exclusive: EffectivePartitionKey) -> crate::error::Result<Self>;
-        fn overlaps(&self, other: &FeedRange) -> bool;
+        pub fn for_partition(partition_key: PartitionKey, definition: &PartitionKeyDefinition) -> Self;
+        pub fn full() -> Self;
+        pub fn is_logical_partition(&self) -> bool;
+        pub fn is_subset_of(&self, other: &FeedRange) -> bool;
+        pub fn max_exclusive(&self) -> &EffectivePartitionKey;
+        pub fn min_inclusive(&self) -> &EffectivePartitionKey;
+        pub fn new(min_inclusive: EffectivePartitionKey, max_exclusive: EffectivePartitionKey) -> crate::error::Result<Self>;
+        pub fn overlaps(&self, other: &FeedRange) -> bool;
     }
     #[doc(inline)]
     impl Display for FeedRange {
@@ -1001,9 +1001,9 @@ pub mod feed {
     pub struct Query {
     }
     impl Query {
-        fn append_text(self, text: &str) -> Self;
-        fn with_parameter<impl Into<String>: Into<String>, impl Serialize: Serialize>(self, name: impl Into<String>, value: impl Serialize) -> crate::Result<Self>;
-        fn with_text<impl Into<String>: Into<String>>(self, text: impl Into<String>) -> Self;
+        pub fn append_text(self, text: &str) -> Self;
+        pub fn with_parameter<impl Into<String>: Into<String>, impl Serialize: Serialize>(self, name: impl Into<String>, value: impl Serialize) -> crate::Result<Self>;
+        pub fn with_text<impl Into<String>: Into<String>>(self, text: impl Into<String>) -> Self;
     }
     impl<T: Into<String>> From<T> for Query {
         fn from(value: T) -> Self;
@@ -1012,19 +1012,19 @@ pub mod feed {
     pub struct QueryFeedPage<T> {
     }
     impl<T> QueryFeedPage<T> {
-        fn as_feed_page(&self) -> &FeedPage<T>;
-        fn diagnostics(&self) -> Arc<DiagnosticsContext>;
-        fn headers(&self) -> &ResponseHeaders;
-        fn index_metrics(&self) -> Option<&str>;
-        fn into_items(self) -> Vec<T>;
-        fn items(&self) -> &[T];
-        fn query_metrics(&self) -> Option<&str>;
+        pub fn as_feed_page(&self) -> &FeedPage<T>;
+        pub fn diagnostics(&self) -> Arc<DiagnosticsContext>;
+        pub fn headers(&self) -> &ResponseHeaders;
+        pub fn index_metrics(&self) -> Option<&str>;
+        pub fn into_items(self) -> Vec<T>;
+        pub fn items(&self) -> &[T];
+        pub fn query_metrics(&self) -> Option<&str>;
     }
     #[pin_project]
     pub struct QueryItemIterator<T: Send> {
     }
     impl<T: Send + DeserializeOwned + 'static> QueryItemIterator<T> {
-        fn into_pages(self) -> QueryPageIterator<T>;
+        pub fn into_pages(self) -> QueryPageIterator<T>;
     }
     impl<T: Send + DeserializeOwned + 'static> Stream for QueryItemIterator<T> {
         type Item = Result<T, CosmosError>;
@@ -1034,7 +1034,7 @@ pub mod feed {
     pub struct QueryPageIterator<T: Send> {
     }
     impl<T: Send + DeserializeOwned + 'static> QueryPageIterator<T> {
-        fn to_continuation_token(&self) -> crate::Result<ContinuationToken>;
+        pub fn to_continuation_token(&self) -> crate::Result<ContinuationToken>;
     }
     impl<T: Send + DeserializeOwned + 'static> Stream for QueryPageIterator<T> {
         type Item = Result<QueryFeedPage<T>, CosmosError>;
@@ -1047,9 +1047,9 @@ pub mod feed {
         Range(azure_data_cosmos_driver::models::FeedRange),
     }
     impl FeedScope {
-        fn full_container() -> Self;
-        fn partition<impl Into<PartitionKey>: Into<PartitionKey>>(pk: impl Into<PartitionKey>) -> Self;
-        fn range<impl Into<FeedRange>: Into<FeedRange>>(fr: impl Into<FeedRange>) -> Self;
+        pub fn full_container() -> Self;
+        pub fn partition<impl Into<PartitionKey>: Into<PartitionKey>>(pk: impl Into<PartitionKey>) -> Self;
+        pub fn range<impl Into<FeedRange>: Into<FeedRange>>(fr: impl Into<FeedRange>) -> Self;
     }
 }
 pub mod models {
@@ -1058,21 +1058,21 @@ pub mod models {
     pub struct BatchResponse {
     }
     impl BatchResponse {
-        fn diagnostics(&self) -> Arc<DiagnosticsContext>;
-        fn headers(&self) -> &ResponseHeaders;
-        fn into_body(self) -> ResponseBody;
-        fn into_model(self) -> crate::Result<TransactionalBatchResponse>;
-        fn status(&self) -> CosmosStatus;
+        pub fn diagnostics(&self) -> Arc<DiagnosticsContext>;
+        pub fn headers(&self) -> &ResponseHeaders;
+        pub fn into_body(self) -> ResponseBody;
+        pub fn into_model(self) -> crate::Result<TransactionalBatchResponse>;
+        pub fn status(&self) -> CosmosStatus;
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct ChangeFeedItem<T> {
     }
     impl<T> ChangeFeedItem<T> {
-        fn current(&self) -> Option<&T>;
-        fn metadata(&self) -> Option<&ChangeFeedMetadata>;
-        fn operation_type(&self) -> Option<ChangeFeedOperationType>;
-        fn previous(&self) -> Option<&T>;
+        pub fn current(&self) -> Option<&T>;
+        pub fn metadata(&self) -> Option<&ChangeFeedMetadata>;
+        pub fn operation_type(&self) -> Option<ChangeFeedOperationType>;
+        pub fn previous(&self) -> Option<&T>;
     }
     impl<'de, T> Deserialize<'de> for ChangeFeedItem<T> where T: DeserializeOwned {
         fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: Deserializer<'de>;
@@ -1082,21 +1082,21 @@ pub mod models {
     pub struct ChangeFeedMetadata {
     }
     impl ChangeFeedMetadata {
-        fn conflict_resolution_timestamp(&self) -> Option<Duration>;
-        fn id(&self) -> Option<&str>;
-        fn lsn(&self) -> Option<LogicalSequenceNumber>;
-        fn operation_type(&self) -> Option<ChangeFeedOperationType>;
-        fn partition_key(&self) -> Option<&serde_json::Value>;
-        fn previous_image_lsn(&self) -> Option<LogicalSequenceNumber>;
-        fn time_to_live_expired(&self) -> Option<bool>;
+        pub fn conflict_resolution_timestamp(&self) -> Option<Duration>;
+        pub fn id(&self) -> Option<&str>;
+        pub fn lsn(&self) -> Option<LogicalSequenceNumber>;
+        pub fn operation_type(&self) -> Option<ChangeFeedOperationType>;
+        pub fn partition_key(&self) -> Option<&serde_json::Value>;
+        pub fn previous_image_lsn(&self) -> Option<LogicalSequenceNumber>;
+        pub fn time_to_live_expired(&self) -> Option<bool>;
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub struct ChangeFeedPolicy {
     }
     impl ChangeFeedPolicy {
-        fn retention_duration(&self) -> Option<Duration>;
-        fn with_retention_duration(self, retention: Duration) -> Self;
+        pub fn retention_duration(&self) -> Option<Duration>;
+        pub fn with_retention_duration(self, retention: Duration) -> Self;
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1105,7 +1105,7 @@ pub mod models {
         pub properties: Vec<CompositeIndexProperty>,
     }
     impl CompositeIndex {
-        fn with_property(self, property: CompositeIndexProperty) -> Self;
+        pub fn with_property(self, property: CompositeIndexProperty) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1115,9 +1115,9 @@ pub mod models {
         pub order: CompositeIndexOrder,
     }
     impl CompositeIndexProperty {
-        fn new<impl Into<String>: Into<String>>(path: impl Into<String>, order: CompositeIndexOrder) -> Self;
-        fn with_order(self, order: CompositeIndexOrder) -> Self;
-        fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
+        pub fn new<impl Into<String>: Into<String>>(path: impl Into<String>, order: CompositeIndexOrder) -> Self;
+        pub fn with_order(self, order: CompositeIndexOrder) -> Self;
+        pub fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1130,9 +1130,9 @@ pub mod models {
         pub resolution_procedure: String,
     }
     impl ConflictResolutionPolicy {
-        fn new(mode: ConflictResolutionMode) -> Self;
-        fn with_resolution_path<impl Into<String>: Into<String>>(self, resolution_path: impl Into<String>) -> Self;
-        fn with_resolution_procedure<impl Into<String>: Into<String>>(self, resolution_procedure: impl Into<String>) -> Self;
+        pub fn new(mode: ConflictResolutionMode) -> Self;
+        pub fn with_resolution_path<impl Into<String>: Into<String>>(self, resolution_path: impl Into<String>) -> Self;
+        pub fn with_resolution_procedure<impl Into<String>: Into<String>>(self, resolution_procedure: impl Into<String>) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1162,15 +1162,15 @@ pub mod models {
         pub system_properties: crate::models::SystemProperties,
     }
     impl ContainerProperties {
-        fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(id: impl Into<Cow<'static, str>>, partition_key: PartitionKeyDefinition) -> Self;
-        fn with_analytical_storage_ttl<impl Into<TimeToLive>: Into<TimeToLive>>(self, analytical_storage_ttl: impl Into<TimeToLive>) -> Self;
-        fn with_change_feed_policy(self, change_feed_policy: ChangeFeedPolicy) -> Self;
-        fn with_conflict_resolution_policy(self, conflict_resolution_policy: ConflictResolutionPolicy) -> Self;
-        fn with_default_ttl<impl Into<TimeToLive>: Into<TimeToLive>>(self, default_ttl: impl Into<TimeToLive>) -> Self;
-        fn with_full_text_policy(self, full_text_policy: FullTextPolicy) -> Self;
-        fn with_indexing_policy(self, indexing_policy: IndexingPolicy) -> Self;
-        fn with_unique_key_policy(self, unique_key_policy: UniqueKeyPolicy) -> Self;
-        fn with_vector_embedding_policy(self, vector_embedding_policy: VectorEmbeddingPolicy) -> Self;
+        pub fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(id: impl Into<Cow<'static, str>>, partition_key: PartitionKeyDefinition) -> Self;
+        pub fn with_analytical_storage_ttl<impl Into<TimeToLive>: Into<TimeToLive>>(self, analytical_storage_ttl: impl Into<TimeToLive>) -> Self;
+        pub fn with_change_feed_policy(self, change_feed_policy: ChangeFeedPolicy) -> Self;
+        pub fn with_conflict_resolution_policy(self, conflict_resolution_policy: ConflictResolutionPolicy) -> Self;
+        pub fn with_default_ttl<impl Into<TimeToLive>: Into<TimeToLive>>(self, default_ttl: impl Into<TimeToLive>) -> Self;
+        pub fn with_full_text_policy(self, full_text_policy: FullTextPolicy) -> Self;
+        pub fn with_indexing_policy(self, indexing_policy: IndexingPolicy) -> Self;
+        pub fn with_unique_key_policy(self, unique_key_policy: UniqueKeyPolicy) -> Self;
+        pub fn with_vector_embedding_policy(self, vector_embedding_policy: VectorEmbeddingPolicy) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug)]
@@ -1178,16 +1178,16 @@ pub mod models {
     pub struct ContainerReference(/* private fields */);
     #[doc(inline)]
     impl ContainerReference {
-        fn account(&self) -> &AccountReference;
-        fn base_path(&self) -> &str;
-        fn database_name(&self) -> Option<&str>;
-        fn database_rid(&self) -> &str;
-        fn is_by_rid(&self) -> bool;
-        fn name(&self) -> &str;
-        fn name_based_path(&self) -> Option<&str>;
-        fn partition_key_definition(&self) -> &crate::models::PartitionKeyDefinition;
-        fn rid(&self) -> &str;
-        fn rid_based_path(&self) -> &str;
+        pub fn account(&self) -> &AccountReference;
+        pub fn base_path(&self) -> &str;
+        pub fn database_name(&self) -> Option<&str>;
+        pub fn database_rid(&self) -> &str;
+        pub fn is_by_rid(&self) -> bool;
+        pub fn name(&self) -> &str;
+        pub fn name_based_path(&self) -> Option<&str>;
+        pub fn partition_key_definition(&self) -> &crate::models::PartitionKeyDefinition;
+        pub fn rid(&self) -> &str;
+        pub fn rid_based_path(&self) -> &str;
     }
     #[doc(inline)]
     impl Eq for ContainerReference {
@@ -1292,29 +1292,29 @@ pub mod models {
         const TRANSPORT_HTTP2_INCOMPATIBLE: CosmosStatus = _;
         const TRANSPORT_IO_FAILED: CosmosStatus = _;
         const WRITE_FORBIDDEN: CosmosStatus = _;
-        fn is_bad_request(&self) -> bool;
-        fn is_conflict(&self) -> bool;
-        fn is_database_account_not_found(&self) -> bool;
-        fn is_forbidden(&self) -> bool;
-        fn is_gone(&self) -> bool;
-        fn is_not_found(&self) -> bool;
-        fn is_partition_key_range_gone(&self) -> bool;
-        fn is_precondition_failed(&self) -> bool;
-        fn is_read_session_not_available(&self) -> bool;
-        fn is_retry_with(&self) -> bool;
-        fn is_service_unavailable(&self) -> bool;
-        fn is_success(&self) -> bool;
-        fn is_throttled(&self) -> bool;
-        fn is_timeout(&self) -> bool;
-        fn is_transient(&self) -> bool;
-        fn is_transport_generated_503(&self) -> bool;
-        fn is_unauthorized(&self) -> bool;
-        fn is_write_forbidden(&self) -> bool;
-        fn name(&self) -> Option<&'static str>;
-        fn new(status_code: StatusCode) -> Self;
-        fn status_code(&self) -> StatusCode;
-        fn sub_status(&self) -> Option<SubStatusCode>;
-        fn with_sub_status(self, sub_status_code: u16) -> Self;
+        pub fn is_bad_request(&self) -> bool;
+        pub fn is_conflict(&self) -> bool;
+        pub fn is_database_account_not_found(&self) -> bool;
+        pub fn is_forbidden(&self) -> bool;
+        pub fn is_gone(&self) -> bool;
+        pub fn is_not_found(&self) -> bool;
+        pub fn is_partition_key_range_gone(&self) -> bool;
+        pub fn is_precondition_failed(&self) -> bool;
+        pub fn is_read_session_not_available(&self) -> bool;
+        pub fn is_retry_with(&self) -> bool;
+        pub fn is_service_unavailable(&self) -> bool;
+        pub fn is_success(&self) -> bool;
+        pub fn is_throttled(&self) -> bool;
+        pub fn is_timeout(&self) -> bool;
+        pub fn is_transient(&self) -> bool;
+        pub fn is_transport_generated_503(&self) -> bool;
+        pub fn is_unauthorized(&self) -> bool;
+        pub fn is_write_forbidden(&self) -> bool;
+        pub fn name(&self) -> Option<&'static str>;
+        pub fn new(status_code: StatusCode) -> Self;
+        pub fn status_code(&self) -> StatusCode;
+        pub fn sub_status(&self) -> Option<SubStatusCode>;
+        pub fn with_sub_status(self, sub_status_code: u16) -> Self;
     }
     #[doc(inline)]
     impl Debug for CosmosStatus {
@@ -1361,7 +1361,7 @@ pub mod models {
     impl EffectivePartitionKey {
         const MAX: Self = _;
         const MIN: Self = _;
-        fn to_hex(&self) -> String;
+        pub fn to_hex(&self) -> String;
     }
     #[doc(inline)]
     impl Display for EffectivePartitionKey {
@@ -1414,8 +1414,8 @@ pub mod models {
         pub path: String,
     }
     impl FullTextIndex {
-        fn new<impl Into<String>: Into<String>>(path: impl Into<String>) -> Self;
-        fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
+        pub fn new<impl Into<String>: Into<String>>(path: impl Into<String>) -> Self;
+        pub fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
     }
     impl<T: Into<String>> From<T> for FullTextIndex {
         fn from(value: T) -> Self;
@@ -1430,9 +1430,9 @@ pub mod models {
         pub language: Option<String>,
     }
     impl FullTextPath {
-        fn new<impl Into<String>: Into<String>>(path: impl Into<String>) -> Self;
-        fn with_language<impl Into<String>: Into<String>>(self, language: impl Into<String>) -> Self;
-        fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
+        pub fn new<impl Into<String>: Into<String>>(path: impl Into<String>) -> Self;
+        pub fn with_language<impl Into<String>: Into<String>>(self, language: impl Into<String>) -> Self;
+        pub fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
     }
     impl<T: Into<String>> From<T> for FullTextPath {
         fn from(value: T) -> Self;
@@ -1449,9 +1449,9 @@ pub mod models {
         pub full_text_paths: Vec<FullTextPath>,
     }
     impl FullTextPolicy {
-        fn new<impl Into<String>: Into<String>>(default_language: impl Into<String>) -> Self;
-        fn with_default_language<impl Into<String>: Into<String>>(self, default_language: impl Into<String>) -> Self;
-        fn with_full_text_path<impl Into<FullTextPath>: Into<FullTextPath>>(self, full_text_path: impl Into<FullTextPath>) -> Self;
+        pub fn new<impl Into<String>: Into<String>>(default_language: impl Into<String>) -> Self;
+        pub fn with_default_language<impl Into<String>: Into<String>>(self, default_language: impl Into<String>) -> Self;
+        pub fn with_full_text_path<impl Into<FullTextPath>: Into<FullTextPath>>(self, full_text_path: impl Into<FullTextPath>) -> Self;
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1482,32 +1482,32 @@ pub mod models {
         pub full_text_indexes: Vec<FullTextIndex>,
     }
     impl IndexingPolicy {
-        fn with_composite_index(self, composite_index: CompositeIndex) -> Self;
-        fn with_excluded_path<impl Into<PropertyPath>: Into<PropertyPath>>(self, excluded_path: impl Into<PropertyPath>) -> Self;
-        fn with_full_text_index<impl Into<FullTextIndex>: Into<FullTextIndex>>(self, full_text_index: impl Into<FullTextIndex>) -> Self;
-        fn with_included_path<impl Into<PropertyPath>: Into<PropertyPath>>(self, included_path: impl Into<PropertyPath>) -> Self;
-        fn with_indexing_mode(self, indexing_mode: IndexingMode) -> Self;
-        fn with_spatial_index(self, spatial_index: SpatialIndex) -> Self;
-        fn with_vector_index(self, vector_index: VectorIndex) -> Self;
+        pub fn with_composite_index(self, composite_index: CompositeIndex) -> Self;
+        pub fn with_excluded_path<impl Into<PropertyPath>: Into<PropertyPath>>(self, excluded_path: impl Into<PropertyPath>) -> Self;
+        pub fn with_full_text_index<impl Into<FullTextIndex>: Into<FullTextIndex>>(self, full_text_index: impl Into<FullTextIndex>) -> Self;
+        pub fn with_included_path<impl Into<PropertyPath>: Into<PropertyPath>>(self, included_path: impl Into<PropertyPath>) -> Self;
+        pub fn with_indexing_mode(self, indexing_mode: IndexingMode) -> Self;
+        pub fn with_spatial_index(self, spatial_index: SpatialIndex) -> Self;
+        pub fn with_vector_index(self, vector_index: VectorIndex) -> Self;
     }
     #[derive(Debug)]
     #[non_exhaustive]
     pub struct ItemResponse {
     }
     impl ItemResponse {
-        fn diagnostics(&self) -> Arc<DiagnosticsContext>;
-        fn headers(&self) -> &ResponseHeaders;
-        fn into_body(self) -> ResponseBody;
-        fn into_model<T: DeserializeOwned>(self) -> crate::Result<T>;
+        pub fn diagnostics(&self) -> Arc<DiagnosticsContext>;
+        pub fn headers(&self) -> &ResponseHeaders;
+        pub fn into_body(self) -> ResponseBody;
+        pub fn into_model<T: DeserializeOwned>(self) -> crate::Result<T>;
         #[cfg(feature = "preview_patch")]
-        fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
-        fn status(&self) -> CosmosStatus;
+        pub fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
+        pub fn status(&self) -> CosmosStatus;
     }
     #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, serde::Deserialize)]
     #[serde(transparent)]
     pub struct LogicalSequenceNumber(/* private fields */);
     impl LogicalSequenceNumber {
-        fn value(&self) -> i64;
+        pub fn value(&self) -> i64;
     }
     impl From<LogicalSequenceNumber> for i64 {
         fn from(value: LogicalSequenceNumber) -> Self;
@@ -1523,9 +1523,9 @@ pub mod models {
     impl PartitionKey {
         const NULL: PartitionKeyValue = PartitionKeyValue::NULL;
         const UNDEFINED: PartitionKeyValue = PartitionKeyValue::UNDEFINED;
-        fn is_empty(&self) -> bool;
-        fn len(&self) -> usize;
-        fn values(&self) -> &[PartitionKeyValue];
+        pub fn is_empty(&self) -> bool;
+        pub fn len(&self) -> usize;
+        pub fn values(&self) -> &[PartitionKeyValue];
     }
     #[doc(inline)]
     impl AsHeaders for PartitionKey {
@@ -1557,13 +1557,13 @@ pub mod models {
     }
     #[doc(inline)]
     impl PartitionKeyDefinition {
-        fn is_complete(&self, pk: &PartitionKey) -> bool;
-        fn kind(&self) -> PartitionKeyKind;
-        fn new(paths: Vec<Cow<'static, str>>) -> Self;
-        fn paths(&self) -> &[Cow<'static, str>];
-        fn version(&self) -> PartitionKeyVersion;
-        fn with_kind(self, kind: PartitionKeyKind) -> Self;
-        fn with_version(self, version: PartitionKeyVersion) -> Self;
+        pub fn is_complete(&self, pk: &PartitionKey) -> bool;
+        pub fn kind(&self) -> PartitionKeyKind;
+        pub fn new(paths: Vec<Cow<'static, str>>) -> Self;
+        pub fn paths(&self) -> &[Cow<'static, str>];
+        pub fn version(&self) -> PartitionKeyVersion;
+        pub fn with_kind(self, kind: PartitionKeyKind) -> Self;
+        pub fn with_version(self, version: PartitionKeyVersion) -> Self;
     }
     #[doc(inline)]
     impl From<&str> for PartitionKeyDefinition {
@@ -1675,9 +1675,9 @@ pub mod models {
     }
     #[doc(inline)]
     impl PatchInstructions {
-        fn is_retry_safe(&self) -> bool;
-        fn new() -> Self;
-        fn with_operation(self, operation: PatchOperation) -> Self;
+        pub fn is_retry_safe(&self) -> bool;
+        pub fn new() -> Self;
+        pub fn with_operation(self, operation: PatchOperation) -> Self;
     }
     #[doc(inline)]
     impl From<Vec<PatchOperation>> for PatchInstructions {
@@ -1688,8 +1688,8 @@ pub mod models {
     pub struct PatchTrackingId(/* private fields */);
     #[cfg(feature = "preview_patch")]
     impl PatchTrackingId {
-        fn as_uuid(&self) -> Uuid;
-        fn new() -> Self;
+        pub fn as_uuid(&self) -> Uuid;
+        pub fn new() -> Self;
     }
     #[cfg(feature = "preview_patch")]
     impl Default for PatchTrackingId {
@@ -1723,7 +1723,7 @@ pub mod models {
         pub path: String,
     }
     impl PropertyPath {
-        fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
+        pub fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
     }
     impl<T: Into<String>> From<T> for PropertyPath {
         fn from(value: T) -> Self;
@@ -1733,22 +1733,22 @@ pub mod models {
     pub struct ResourceResponse<T> {
     }
     impl<T: DeserializeOwned> ResourceResponse<T> {
-        fn into_model(self) -> crate::Result<T>;
+        pub fn into_model(self) -> crate::Result<T>;
     }
     impl<T> ResourceResponse<T> {
-        fn diagnostics(&self) -> Arc<DiagnosticsContext>;
-        fn headers(&self) -> &ResponseHeaders;
-        fn into_body(self) -> ResponseBody;
-        fn status(&self) -> CosmosStatus;
+        pub fn diagnostics(&self) -> Arc<DiagnosticsContext>;
+        pub fn headers(&self) -> &ResponseHeaders;
+        pub fn into_body(self) -> ResponseBody;
+        pub fn status(&self) -> CosmosStatus;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct ResponseBody(/* private fields */);
     impl ResponseBody {
-        fn into_single<T: DeserializeOwned>(self) -> crate::Result<T>;
-        fn is_empty(&self) -> bool;
-        fn items(self) -> crate::Result<Vec<Bytes>>;
-        fn single(self) -> crate::Result<Bytes>;
+        pub fn into_single<T: DeserializeOwned>(self) -> crate::Result<T>;
+        pub fn is_empty(&self) -> bool;
+        pub fn items(self) -> crate::Result<Vec<Bytes>>;
+        pub fn single(self) -> crate::Result<Bytes>;
     }
     impl From<ResponseBody> for ResponseBody {
         fn from(inner: DriverResponseBody) -> Self;
@@ -1757,32 +1757,32 @@ pub mod models {
     #[non_exhaustive]
     pub struct ResponseHeaders(/* private fields */);
     impl ResponseHeaders {
-        fn activity_id(&self) -> Option<&ActivityId>;
-        fn collection_index_transformation_progress(&self) -> Option<i64>;
-        fn collection_lazy_indexing_progress(&self) -> Option<i64>;
-        fn continuation(&self) -> Option<&str>;
-        fn correlated_activity_id(&self) -> Option<&str>;
-        fn etag(&self) -> Option<&Etag>;
-        fn gateway_version(&self) -> Option<&str>;
-        fn global_committed_lsn(&self) -> Option<i64>;
-        fn index_metrics(&self) -> Option<&str>;
-        fn internal_partition_id(&self) -> Option<&str>;
-        fn item_count(&self) -> Option<u32>;
-        fn item_local_lsn(&self) -> Option<u64>;
-        fn item_lsn(&self) -> Option<u64>;
-        fn local_lsn(&self) -> Option<u64>;
-        fn lsn(&self) -> Option<u64>;
-        fn offer_replace_pending(&self) -> Option<bool>;
-        fn partition_key_range_id(&self) -> Option<&str>;
-        fn query_metrics(&self) -> Option<&str>;
-        fn request_charge(&self) -> Option<&RequestCharge>;
-        fn resource_quota(&self) -> Option<&str>;
-        fn resource_usage(&self) -> Option<&str>;
-        fn retry_after_ms(&self) -> Option<u64>;
-        fn server_duration_ms(&self) -> Option<f64>;
-        fn session_token(&self) -> Option<&SessionToken>;
-        fn substatus(&self) -> Option<&SubStatusCode>;
-        fn transport_request_id(&self) -> Option<u32>;
+        pub fn activity_id(&self) -> Option<&ActivityId>;
+        pub fn collection_index_transformation_progress(&self) -> Option<i64>;
+        pub fn collection_lazy_indexing_progress(&self) -> Option<i64>;
+        pub fn continuation(&self) -> Option<&str>;
+        pub fn correlated_activity_id(&self) -> Option<&str>;
+        pub fn etag(&self) -> Option<&Etag>;
+        pub fn gateway_version(&self) -> Option<&str>;
+        pub fn global_committed_lsn(&self) -> Option<i64>;
+        pub fn index_metrics(&self) -> Option<&str>;
+        pub fn internal_partition_id(&self) -> Option<&str>;
+        pub fn item_count(&self) -> Option<u32>;
+        pub fn item_local_lsn(&self) -> Option<u64>;
+        pub fn item_lsn(&self) -> Option<u64>;
+        pub fn local_lsn(&self) -> Option<u64>;
+        pub fn lsn(&self) -> Option<u64>;
+        pub fn offer_replace_pending(&self) -> Option<bool>;
+        pub fn partition_key_range_id(&self) -> Option<&str>;
+        pub fn query_metrics(&self) -> Option<&str>;
+        pub fn request_charge(&self) -> Option<&RequestCharge>;
+        pub fn resource_quota(&self) -> Option<&str>;
+        pub fn resource_usage(&self) -> Option<&str>;
+        pub fn retry_after_ms(&self) -> Option<u64>;
+        pub fn server_duration_ms(&self) -> Option<f64>;
+        pub fn session_token(&self) -> Option<&SessionToken>;
+        pub fn substatus(&self) -> Option<&SubStatusCode>;
+        pub fn transport_request_id(&self) -> Option<u32>;
     }
     impl From<CosmosResponseHeaders> for ResponseHeaders {
         fn from(inner: DriverCosmosResponseHeaders) -> Self;
@@ -1795,8 +1795,8 @@ pub mod models {
         pub types: Vec<SpatialType>,
     }
     impl SpatialIndex {
-        fn new<impl Into<String>: Into<String>>(path: impl Into<String>) -> Self;
-        fn with_type(self, spatial_type: SpatialType) -> Self;
+        pub fn new<impl Into<String>: Into<String>>(path: impl Into<String>) -> Self;
+        pub fn with_type(self, spatial_type: SpatialType) -> Self;
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1826,23 +1826,23 @@ pub mod models {
     }
     #[cfg(feature = "control_plane")]
     impl ThroughputProperties {
-        fn autoscale(starting_maximum_throughput: usize, increment_percent: Option<usize>) -> ThroughputProperties;
-        fn autoscale_increment(&self) -> Option<usize>;
-        fn autoscale_maximum(&self) -> Option<usize>;
-        fn manual(throughput: usize) -> ThroughputProperties;
-        fn throughput(&self) -> Option<usize>;
+        pub fn autoscale(starting_maximum_throughput: usize, increment_percent: Option<usize>) -> ThroughputProperties;
+        pub fn autoscale_increment(&self) -> Option<usize>;
+        pub fn autoscale_maximum(&self) -> Option<usize>;
+        pub fn manual(throughput: usize) -> ThroughputProperties;
+        pub fn throughput(&self) -> Option<usize>;
     }
     #[derive(Clone, Debug)]
     pub struct TransactionalBatch {
     }
     impl TransactionalBatch {
-        fn create_item<T: Serialize>(self, item: T) -> crate::Result<Self>;
-        fn delete_item<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, item_id: impl Into<Cow<'static, str>>, options: Option<BatchDeleteOptions>) -> Self;
-        fn new<impl Into<PartitionKey>: Into<PartitionKey>>(partition_key: impl Into<PartitionKey>) -> Self;
-        fn partition_key(&self) -> &PartitionKey;
-        fn read_item<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, item_id: impl Into<Cow<'static, str>>, options: Option<BatchReadOptions>) -> Self;
-        fn replace_item<T: Serialize, impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, item_id: impl Into<Cow<'static, str>>, item: T, options: Option<BatchReplaceOptions>) -> crate::Result<Self>;
-        fn upsert_item<T: Serialize>(self, item: T, options: Option<BatchUpsertOptions>) -> crate::Result<Self>;
+        pub fn create_item<T: Serialize>(self, item: T) -> crate::Result<Self>;
+        pub fn delete_item<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, item_id: impl Into<Cow<'static, str>>, options: Option<BatchDeleteOptions>) -> Self;
+        pub fn new<impl Into<PartitionKey>: Into<PartitionKey>>(partition_key: impl Into<PartitionKey>) -> Self;
+        pub fn partition_key(&self) -> &PartitionKey;
+        pub fn read_item<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, item_id: impl Into<Cow<'static, str>>, options: Option<BatchReadOptions>) -> Self;
+        pub fn replace_item<T: Serialize, impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, item_id: impl Into<Cow<'static, str>>, item: T, options: Option<BatchReplaceOptions>) -> crate::Result<Self>;
+        pub fn upsert_item<T: Serialize>(self, item: T, options: Option<BatchUpsertOptions>) -> crate::Result<Self>;
     }
     #[derive(Clone, Debug, serde::Deserialize)]
     #[non_exhaustive]
@@ -1850,21 +1850,21 @@ pub mod models {
     pub struct TransactionalBatchOperationResult {
     }
     impl TransactionalBatchOperationResult {
-        fn etag(&self) -> Option<&str>;
-        fn into_model<T: serde::de::DeserializeOwned>(&self) -> crate::Result<Option<T>>;
-        fn is_success(&self) -> bool;
-        fn request_charge(&self) -> Option<f64>;
-        fn resource_body(&self) -> Option<&serde_json::value::RawValue>;
-        fn retry_after_milliseconds(&self) -> Option<u64>;
-        fn status_code(&self) -> u16;
-        fn substatus_code(&self) -> Option<u32>;
+        pub fn etag(&self) -> Option<&str>;
+        pub fn into_model<T: serde::de::DeserializeOwned>(&self) -> crate::Result<Option<T>>;
+        pub fn is_success(&self) -> bool;
+        pub fn request_charge(&self) -> Option<f64>;
+        pub fn resource_body(&self) -> Option<&serde_json::value::RawValue>;
+        pub fn retry_after_milliseconds(&self) -> Option<u64>;
+        pub fn status_code(&self) -> u16;
+        pub fn substatus_code(&self) -> Option<u32>;
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct TransactionalBatchResponse {
     }
     impl TransactionalBatchResponse {
-        fn results(&self) -> &[TransactionalBatchOperationResult];
+        pub fn results(&self) -> &[TransactionalBatchOperationResult];
     }
     impl<'de> Deserialize<'de> for TransactionalBatchResponse {
         fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: serde::Deserializer<'de>;
@@ -1876,7 +1876,7 @@ pub mod models {
         pub paths: Vec<String>,
     }
     impl UniqueKey {
-        fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
+        pub fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1885,7 +1885,7 @@ pub mod models {
         pub unique_keys: Vec<UniqueKey>,
     }
     impl UniqueKeyPolicy {
-        fn with_unique_key(self, unique_key: UniqueKey) -> Self;
+        pub fn with_unique_key(self, unique_key: UniqueKey) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1897,11 +1897,11 @@ pub mod models {
         pub distance_function: VectorDistanceFunction,
     }
     impl VectorEmbedding {
-        fn new<impl Into<String>: Into<String>>(path: impl Into<String>, data_type: VectorDataType, dimensions: u32, distance_function: VectorDistanceFunction) -> Self;
-        fn with_data_type(self, data_type: VectorDataType) -> Self;
-        fn with_dimensions(self, dimensions: u32) -> Self;
-        fn with_distance_function(self, distance_function: VectorDistanceFunction) -> Self;
-        fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
+        pub fn new<impl Into<String>: Into<String>>(path: impl Into<String>, data_type: VectorDataType, dimensions: u32, distance_function: VectorDistanceFunction) -> Self;
+        pub fn with_data_type(self, data_type: VectorDataType) -> Self;
+        pub fn with_dimensions(self, dimensions: u32) -> Self;
+        pub fn with_distance_function(self, distance_function: VectorDistanceFunction) -> Self;
+        pub fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1911,7 +1911,7 @@ pub mod models {
         pub embeddings: Vec<VectorEmbedding>,
     }
     impl VectorEmbeddingPolicy {
-        fn with_embedding(self, embedding: VectorEmbedding) -> Self;
+        pub fn with_embedding(self, embedding: VectorEmbedding) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -1934,13 +1934,13 @@ pub mod models {
         pub vector_index_shard_key: Vec<String>,
     }
     impl VectorIndex {
-        fn new<impl Into<String>: Into<String>>(path: impl Into<String>, index_type: VectorIndexType) -> Self;
-        fn with_index_type(self, index_type: VectorIndexType) -> Self;
-        fn with_indexing_search_list_size(self, indexing_search_list_size: u32) -> Self;
-        fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
-        fn with_quantization_byte_size(self, quantization_byte_size: u32) -> Self;
-        fn with_quantizer_type(self, quantizer_type: QuantizerType) -> Self;
-        fn with_shard_key_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
+        pub fn new<impl Into<String>: Into<String>>(path: impl Into<String>, index_type: VectorIndexType) -> Self;
+        pub fn with_index_type(self, index_type: VectorIndexType) -> Self;
+        pub fn with_indexing_search_list_size(self, indexing_search_list_size: u32) -> Self;
+        pub fn with_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
+        pub fn with_quantization_byte_size(self, quantization_byte_size: u32) -> Self;
+        pub fn with_quantizer_type(self, quantizer_type: QuantizerType) -> Self;
+        pub fn with_shard_key_path<impl Into<String>: Into<String>>(self, path: impl Into<String>) -> Self;
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Deserialize)]
     #[non_exhaustive]
@@ -2015,7 +2015,7 @@ pub mod models {
     }
     #[doc(inline)]
     impl PartitionKeyVersion {
-        const fn value(self) -> u32;
+        pub const fn value(self) -> u32;
     }
     #[doc(inline)]
     impl From<PartitionKeyVersion> for u32 {
@@ -2041,13 +2041,13 @@ pub mod models {
     }
     #[doc(inline)]
     impl PatchOperation {
-        fn add<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
-        fn increment<impl Into<String>: Into<String>, impl Into<CosmosNumber>: Into<CosmosNumber>>(path: impl Into<String>, value: impl Into<CosmosNumber>) -> Self;
-        fn move_value<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(from: impl Into<String>, path: impl Into<String>) -> Self;
-        fn path(&self) -> &str;
-        fn remove<impl Into<String>: Into<String>>(path: impl Into<String>) -> Self;
-        fn replace<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
-        fn set<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
+        pub fn add<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
+        pub fn increment<impl Into<String>: Into<String>, impl Into<CosmosNumber>: Into<CosmosNumber>>(path: impl Into<String>, value: impl Into<CosmosNumber>) -> Self;
+        pub fn move_value<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(from: impl Into<String>, path: impl Into<String>) -> Self;
+        pub fn path(&self) -> &str;
+        pub fn remove<impl Into<String>: Into<String>>(path: impl Into<String>) -> Self;
+        pub fn replace<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
+        pub fn set<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -2074,7 +2074,7 @@ pub mod models {
         Seconds(u32),
     }
     impl TimeToLive {
-        fn is_forever(&self) -> bool;
+        pub fn is_forever(&self) -> bool;
     }
     impl From<u32> for TimeToLive {
         fn from(n: u32) -> Self;
@@ -2125,7 +2125,7 @@ pub mod options {
         pub precondition: Option<azure_data_cosmos_driver::models::Precondition>,
     }
     impl BatchDeleteOptions {
-        fn with_precondition(self, precondition: Precondition) -> Self;
+        pub fn with_precondition(self, precondition: Precondition) -> Self;
     }
     #[derive(Clone, Default)]
     #[non_exhaustive]
@@ -2134,8 +2134,8 @@ pub mod options {
         pub session_token: Option<azure_data_cosmos_driver::models::SessionToken>,
     }
     impl BatchOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
-        fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -2143,7 +2143,7 @@ pub mod options {
         pub precondition: Option<azure_data_cosmos_driver::models::Precondition>,
     }
     impl BatchReadOptions {
-        fn with_precondition(self, precondition: Precondition) -> Self;
+        pub fn with_precondition(self, precondition: Precondition) -> Self;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -2151,7 +2151,7 @@ pub mod options {
         pub precondition: Option<azure_data_cosmos_driver::models::Precondition>,
     }
     impl BatchReplaceOptions {
-        fn with_precondition(self, precondition: Precondition) -> Self;
+        pub fn with_precondition(self, precondition: Precondition) -> Self;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -2159,7 +2159,7 @@ pub mod options {
         pub precondition: Option<azure_data_cosmos_driver::models::Precondition>,
     }
     impl BatchUpsertOptions {
-        fn with_precondition(self, precondition: Precondition) -> Self;
+        pub fn with_precondition(self, precondition: Precondition) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -2170,9 +2170,9 @@ pub mod options {
     }
     #[doc(inline)]
     impl BinaryEncodingOptions {
-        fn new() -> Self;
-        fn with_enabled(self, enabled: bool) -> Self;
-        fn with_request_text_response(self, request_text_response: bool) -> Self;
+        pub fn new() -> Self;
+        pub fn with_enabled(self, enabled: bool) -> Self;
+        pub fn with_request_text_response(self, request_text_response: bool) -> Self;
     }
     #[doc(inline)]
     impl Default for BinaryEncodingOptions {
@@ -2187,12 +2187,12 @@ pub mod options {
         pub mode: ChangeFeedMode,
     }
     impl ChangeFeedOptions {
-        fn with_continuation_token(self, token: ContinuationToken) -> Self;
-        fn with_feed_options(self, feed: FeedOptions) -> Self;
-        fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
-        fn with_mode(self, mode: ChangeFeedMode) -> Self;
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
-        fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, token: impl Into<SessionToken>) -> Self;
+        pub fn with_continuation_token(self, token: ContinuationToken) -> Self;
+        pub fn with_feed_options(self, feed: FeedOptions) -> Self;
+        pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
+        pub fn with_mode(self, mode: ChangeFeedMode) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, token: impl Into<SessionToken>) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug)]
@@ -2201,35 +2201,35 @@ pub mod options {
     }
     #[doc(inline)]
     impl ConnectionPoolOptions {
-        fn builder() -> ConnectionPoolOptionsBuilder;
-        fn gateway_v2_disabled(&self) -> bool;
-        fn http2_consecutive_failure_threshold(&self) -> u32;
-        fn http2_eviction_grace_period(&self) -> Duration;
-        fn http2_fan_out_threshold_percent(&self) -> u8;
-        fn http2_health_check_interval(&self) -> Duration;
-        fn http2_keep_alive_interval(&self) -> Duration;
-        fn http2_keep_alive_timeout(&self) -> Duration;
-        fn idle_connection_timeout(&self) -> Option<Duration>;
-        fn idle_http2_client_timeout(&self) -> Duration;
-        fn is_http2_allowed(&self) -> bool;
-        fn local_address(&self) -> Option<IpAddr>;
-        fn max_connect_timeout(&self) -> Duration;
-        fn max_dataplane_request_timeout(&self) -> Duration;
-        fn max_http2_connections_per_endpoint(&self) -> usize;
-        fn max_http2_streams_per_client(&self) -> u32;
-        fn max_idle_connections_per_endpoint(&self) -> usize;
-        fn max_metadata_request_timeout(&self) -> Duration;
-        fn min_connect_timeout(&self) -> Duration;
-        fn min_dataplane_request_timeout(&self) -> Duration;
-        fn min_http2_connections_per_endpoint(&self) -> usize;
-        fn min_metadata_request_timeout(&self) -> Duration;
-        fn proxy_allowed(&self) -> bool;
-        fn server_certificate_validation(&self) -> ServerCertificateValidation;
-        fn tcp_keepalive_interval(&self) -> Option<Duration>;
-        fn tcp_keepalive_retries(&self) -> Option<u32>;
-        fn tcp_keepalive_time(&self) -> Option<Duration>;
+        pub fn builder() -> ConnectionPoolOptionsBuilder;
+        pub fn gateway_v2_disabled(&self) -> bool;
+        pub fn http2_consecutive_failure_threshold(&self) -> u32;
+        pub fn http2_eviction_grace_period(&self) -> Duration;
+        pub fn http2_fan_out_threshold_percent(&self) -> u8;
+        pub fn http2_health_check_interval(&self) -> Duration;
+        pub fn http2_keep_alive_interval(&self) -> Duration;
+        pub fn http2_keep_alive_timeout(&self) -> Duration;
+        pub fn idle_connection_timeout(&self) -> Option<Duration>;
+        pub fn idle_http2_client_timeout(&self) -> Duration;
+        pub fn is_http2_allowed(&self) -> bool;
+        pub fn local_address(&self) -> Option<IpAddr>;
+        pub fn max_connect_timeout(&self) -> Duration;
+        pub fn max_dataplane_request_timeout(&self) -> Duration;
+        pub fn max_http2_connections_per_endpoint(&self) -> usize;
+        pub fn max_http2_streams_per_client(&self) -> u32;
+        pub fn max_idle_connections_per_endpoint(&self) -> usize;
+        pub fn max_metadata_request_timeout(&self) -> Duration;
+        pub fn min_connect_timeout(&self) -> Duration;
+        pub fn min_dataplane_request_timeout(&self) -> Duration;
+        pub fn min_http2_connections_per_endpoint(&self) -> usize;
+        pub fn min_metadata_request_timeout(&self) -> Duration;
+        pub fn proxy_allowed(&self) -> bool;
+        pub fn server_certificate_validation(&self) -> ServerCertificateValidation;
+        pub fn tcp_keepalive_interval(&self) -> Option<Duration>;
+        pub fn tcp_keepalive_retries(&self) -> Option<u32>;
+        pub fn tcp_keepalive_time(&self) -> Option<Duration>;
         #[cfg(feature = "rustls")]
-        fn tls_backend(&self) -> TlsBackend;
+        pub fn tls_backend(&self) -> TlsBackend;
     }
     #[doc(inline)]
     impl Default for ConnectionPoolOptions {
@@ -2243,41 +2243,41 @@ pub mod options {
     #[doc(inline)]
     #[automatically_derived]
     impl ConnectionPoolOptionsBuilder {
-        fn from_env() -> Self;
-        fn from_env_override() -> Self;
+        pub fn from_env() -> Self;
+        pub fn from_env_override() -> Self;
     }
     #[doc(inline)]
     impl ConnectionPoolOptionsBuilder {
-        fn build(self) -> crate::error::Result<ConnectionPoolOptions>;
-        fn new() -> Self;
-        fn with_gateway_v2_disabled(self, value: bool) -> Self;
-        fn with_http2_consecutive_failure_threshold(self, value: u32) -> Self;
-        fn with_http2_eviction_grace_period(self, timeout: Duration) -> Self;
-        fn with_http2_fan_out_threshold_percent(self, value: u8) -> Self;
-        fn with_http2_health_check_interval(self, timeout: Duration) -> Self;
-        fn with_http2_keep_alive_interval(self, timeout: Duration) -> Self;
-        fn with_http2_keep_alive_timeout(self, timeout: Duration) -> Self;
-        fn with_idle_connection_timeout(self, timeout: Duration) -> Self;
-        fn with_idle_http2_client_timeout(self, timeout: Duration) -> Self;
-        fn with_is_http2_allowed(self, value: bool) -> Self;
-        fn with_local_address(self, addr: IpAddr) -> Self;
-        fn with_max_connect_timeout(self, timeout: Duration) -> Self;
-        fn with_max_dataplane_request_timeout(self, timeout: Duration) -> Self;
-        fn with_max_http2_connections_per_endpoint(self, value: usize) -> Self;
-        fn with_max_http2_streams_per_client(self, value: u32) -> Self;
-        fn with_max_idle_connections_per_endpoint(self, count: usize) -> Self;
-        fn with_max_metadata_request_timeout(self, timeout: Duration) -> Self;
-        fn with_min_connect_timeout(self, timeout: Duration) -> Self;
-        fn with_min_dataplane_request_timeout(self, timeout: Duration) -> Self;
-        fn with_min_http2_connections_per_endpoint(self, value: usize) -> Self;
-        fn with_min_metadata_request_timeout(self, timeout: Duration) -> Self;
-        fn with_proxy_allowed(self, value: bool) -> Self;
-        fn with_server_certificate_validation(self, value: ServerCertificateValidation) -> Self;
-        fn with_tcp_keepalive_interval(self, timeout: Duration) -> Self;
-        fn with_tcp_keepalive_retries(self, value: u32) -> Self;
-        fn with_tcp_keepalive_time(self, timeout: Duration) -> Self;
+        pub fn build(self) -> crate::error::Result<ConnectionPoolOptions>;
+        pub fn new() -> Self;
+        pub fn with_gateway_v2_disabled(self, value: bool) -> Self;
+        pub fn with_http2_consecutive_failure_threshold(self, value: u32) -> Self;
+        pub fn with_http2_eviction_grace_period(self, timeout: Duration) -> Self;
+        pub fn with_http2_fan_out_threshold_percent(self, value: u8) -> Self;
+        pub fn with_http2_health_check_interval(self, timeout: Duration) -> Self;
+        pub fn with_http2_keep_alive_interval(self, timeout: Duration) -> Self;
+        pub fn with_http2_keep_alive_timeout(self, timeout: Duration) -> Self;
+        pub fn with_idle_connection_timeout(self, timeout: Duration) -> Self;
+        pub fn with_idle_http2_client_timeout(self, timeout: Duration) -> Self;
+        pub fn with_is_http2_allowed(self, value: bool) -> Self;
+        pub fn with_local_address(self, addr: IpAddr) -> Self;
+        pub fn with_max_connect_timeout(self, timeout: Duration) -> Self;
+        pub fn with_max_dataplane_request_timeout(self, timeout: Duration) -> Self;
+        pub fn with_max_http2_connections_per_endpoint(self, value: usize) -> Self;
+        pub fn with_max_http2_streams_per_client(self, value: u32) -> Self;
+        pub fn with_max_idle_connections_per_endpoint(self, count: usize) -> Self;
+        pub fn with_max_metadata_request_timeout(self, timeout: Duration) -> Self;
+        pub fn with_min_connect_timeout(self, timeout: Duration) -> Self;
+        pub fn with_min_dataplane_request_timeout(self, timeout: Duration) -> Self;
+        pub fn with_min_http2_connections_per_endpoint(self, value: usize) -> Self;
+        pub fn with_min_metadata_request_timeout(self, timeout: Duration) -> Self;
+        pub fn with_proxy_allowed(self, value: bool) -> Self;
+        pub fn with_server_certificate_validation(self, value: ServerCertificateValidation) -> Self;
+        pub fn with_tcp_keepalive_interval(self, timeout: Duration) -> Self;
+        pub fn with_tcp_keepalive_retries(self, value: u32) -> Self;
+        pub fn with_tcp_keepalive_time(self, timeout: Duration) -> Self;
         #[cfg(feature = "rustls")]
-        fn with_tls_backend(self, value: TlsBackend) -> Self;
+        pub fn with_tls_backend(self, value: TlsBackend) -> Self;
     }
     #[derive(Clone, Default)]
     #[non_exhaustive]
@@ -2290,9 +2290,9 @@ pub mod options {
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
     }
     impl CosmosClientOptions {
-        fn with_diagnostics_handler(self, handler: Arc<dyn DiagnosticsHandler>) -> Self;
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
-        fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
+        pub fn with_diagnostics_handler(self, handler: Arc<dyn DiagnosticsHandler>) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
     #[cfg(feature = "control_plane")]
     #[derive(Clone, Default)]
@@ -2302,8 +2302,8 @@ pub mod options {
     }
     #[cfg(feature = "control_plane")]
     impl CreateContainerOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
-        fn with_throughput(self, throughput: ThroughputProperties) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_throughput(self, throughput: ThroughputProperties) -> Self;
     }
     #[cfg(feature = "control_plane")]
     #[derive(Clone, Default)]
@@ -2313,7 +2313,7 @@ pub mod options {
     }
     #[cfg(feature = "control_plane")]
     impl CreateDatabaseOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
     #[cfg(feature = "control_plane")]
     #[derive(Clone, Default)]
@@ -2323,7 +2323,7 @@ pub mod options {
     }
     #[cfg(feature = "control_plane")]
     impl DeleteContainerOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
     #[cfg(feature = "control_plane")]
     #[derive(Clone, Default)]
@@ -2333,7 +2333,7 @@ pub mod options {
     }
     #[cfg(feature = "control_plane")]
     impl DeleteDatabaseOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -2342,10 +2342,10 @@ pub mod options {
     }
     #[doc(inline)]
     impl DiagnosticsOptions {
-        fn builder() -> DiagnosticsOptionsBuilder;
-        fn default_verbosity(&self) -> DiagnosticsVerbosity;
-        fn max_request_diagnostics(&self) -> usize;
-        fn max_summary_size_bytes(&self) -> usize;
+        pub fn builder() -> DiagnosticsOptionsBuilder;
+        pub fn default_verbosity(&self) -> DiagnosticsVerbosity;
+        pub fn max_request_diagnostics(&self) -> usize;
+        pub fn max_summary_size_bytes(&self) -> usize;
     }
     #[doc(inline)]
     impl Default for DiagnosticsOptions {
@@ -2359,15 +2359,15 @@ pub mod options {
     #[doc(inline)]
     #[automatically_derived]
     impl DiagnosticsOptionsBuilder {
-        fn from_env() -> Self;
+        pub fn from_env() -> Self;
     }
     #[doc(inline)]
     impl DiagnosticsOptionsBuilder {
-        fn build(self) -> crate::error::Result<DiagnosticsOptions>;
-        fn new() -> Self;
-        fn with_default_verbosity(self, verbosity: DiagnosticsVerbosity) -> Self;
-        fn with_max_request_diagnostics(self, max: usize) -> Self;
-        fn with_max_summary_size_bytes(self, size: usize) -> Self;
+        pub fn build(self) -> crate::error::Result<DiagnosticsOptions>;
+        pub fn new() -> Self;
+        pub fn with_default_verbosity(self, verbosity: DiagnosticsVerbosity) -> Self;
+        pub fn with_max_request_diagnostics(self, max: usize) -> Self;
+        pub fn with_max_summary_size_bytes(self, size: usize) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -2376,8 +2376,8 @@ pub mod options {
     }
     #[doc(inline)]
     impl EndToEndOperationLatencyPolicy {
-        fn new(timeout: Duration) -> Self;
-        fn timeout(&self) -> Duration;
+        pub fn new(timeout: Duration) -> Self;
+        pub fn timeout(&self) -> Duration;
     }
     #[doc(inline)]
     impl From<Duration> for EndToEndOperationLatencyPolicy {
@@ -2388,11 +2388,11 @@ pub mod options {
     pub struct ExcludedRegions(pub Vec<crate::options::Region>);
     #[doc(inline)]
     impl ExcludedRegions {
-        fn is_empty(&self) -> bool;
-        fn iter(&self) -> impl Iterator<Item = &Region>;
-        fn len(&self) -> usize;
-        fn new() -> Self;
-        fn with_region<impl Into<Region>: Into<Region>>(self, region: impl Into<Region>) -> Self;
+        pub fn is_empty(&self) -> bool;
+        pub fn iter(&self) -> impl Iterator<Item = &Region>;
+        pub fn len(&self) -> usize;
+        pub fn new() -> Self;
+        pub fn with_region<impl Into<Region>: Into<Region>>(self, region: impl Into<Region>) -> Self;
     }
     #[doc(inline)]
     impl<T: Into<crate::options::Region>> FromIterator<T> for ExcludedRegions {
@@ -2406,17 +2406,17 @@ pub mod options {
         pub max_fan_out: Option<u32>,
     }
     impl FeedOptions {
-        fn with_continuation_token(self, continuation_token: ContinuationToken) -> Self;
-        fn with_max_fan_out(self, max_fan_out: u32) -> Self;
-        fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
+        pub fn with_continuation_token(self, continuation_token: ContinuationToken) -> Self;
+        pub fn with_max_fan_out(self, max_fan_out: u32) -> Self;
+        pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     pub struct HedgeThreshold(/* private fields */);
     #[doc(inline)]
     impl HedgeThreshold {
-        const fn get(self) -> Duration;
-        const fn new(duration: Duration) -> Option<Self>;
+        pub const fn get(self) -> Duration;
+        pub const fn new(duration: Duration) -> Option<Self>;
     }
     #[doc(inline)]
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -2425,8 +2425,8 @@ pub mod options {
     }
     #[doc(inline)]
     impl HedgingStrategy {
-        const fn new(threshold: HedgeThreshold) -> Self;
-        const fn threshold(&self) -> HedgeThreshold;
+        pub const fn new(threshold: HedgeThreshold) -> Self;
+        pub const fn threshold(&self) -> HedgeThreshold;
     }
     #[derive(Clone, Default)]
     #[non_exhaustive]
@@ -2436,9 +2436,9 @@ pub mod options {
         pub precondition: Option<azure_data_cosmos_driver::models::Precondition>,
     }
     impl ItemReadOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
-        fn with_precondition(self, precondition: Precondition) -> Self;
-        fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_precondition(self, precondition: Precondition) -> Self;
+        pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
     }
     #[derive(Clone, Default)]
     #[non_exhaustive]
@@ -2448,9 +2448,9 @@ pub mod options {
         pub precondition: Option<azure_data_cosmos_driver::models::Precondition>,
     }
     impl ItemWriteOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
-        fn with_precondition(self, precondition: Precondition) -> Self;
-        fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_precondition(self, precondition: Precondition) -> Self;
+        pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Default)]
@@ -2476,8 +2476,8 @@ pub mod options {
     #[doc(inline)]
     #[automatically_derived]
     impl OperationOptions {
-        fn from_env() -> Self;
-        fn from_env_override() -> Self;
+        pub fn from_env() -> Self;
+        pub fn from_env_override() -> Self;
     }
     #[doc(inline)]
     #[automatically_derived]
@@ -2487,24 +2487,24 @@ pub mod options {
     #[automatically_derived]
     impl OperationOptionsBuilder {
         #[must_use]
-        fn build(self) -> OperationOptions;
-        fn new() -> Self;
-        fn with_availability_strategy(self, value: AvailabilityStrategy) -> Self;
-        fn with_binary_encoding(self, value: BinaryEncodingOptions) -> Self;
-        fn with_content_response_on_write(self, value: ContentResponseOnWrite) -> Self;
-        fn with_custom_headers(self, value: HashMap<HeaderName, HeaderValue>) -> Self;
-        fn with_end_to_end_latency_policy(self, value: EndToEndOperationLatencyPolicy) -> Self;
-        fn with_endpoint_unavailability_ttl(self, value: Duration) -> Self;
-        fn with_excluded_regions(self, value: ExcludedRegions) -> Self;
-        fn with_hedging_enabled(self, value: bool) -> Self;
-        fn with_max_failover_retry_count(self, value: u32) -> Self;
-        fn with_max_session_retry_count(self, value: u32) -> Self;
-        fn with_patch_strategy(self, value: PatchStrategy) -> Self;
-        fn with_query_plan_mode(self, value: QueryPlanMode) -> Self;
-        fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
-        fn with_session_capturing_disabled(self, value: bool) -> Self;
-        fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
-        fn with_throughput_control(self, value: ThroughputControlOptions) -> Self;
+        pub fn build(self) -> OperationOptions;
+        pub fn new() -> Self;
+        pub fn with_availability_strategy(self, value: AvailabilityStrategy) -> Self;
+        pub fn with_binary_encoding(self, value: BinaryEncodingOptions) -> Self;
+        pub fn with_content_response_on_write(self, value: ContentResponseOnWrite) -> Self;
+        pub fn with_custom_headers(self, value: HashMap<HeaderName, HeaderValue>) -> Self;
+        pub fn with_end_to_end_latency_policy(self, value: EndToEndOperationLatencyPolicy) -> Self;
+        pub fn with_endpoint_unavailability_ttl(self, value: Duration) -> Self;
+        pub fn with_excluded_regions(self, value: ExcludedRegions) -> Self;
+        pub fn with_hedging_enabled(self, value: bool) -> Self;
+        pub fn with_max_failover_retry_count(self, value: u32) -> Self;
+        pub fn with_max_session_retry_count(self, value: u32) -> Self;
+        pub fn with_patch_strategy(self, value: PatchStrategy) -> Self;
+        pub fn with_query_plan_mode(self, value: QueryPlanMode) -> Self;
+        pub fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
+        pub fn with_session_capturing_disabled(self, value: bool) -> Self;
+        pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
+        pub fn with_throughput_control(self, value: ThroughputControlOptions) -> Self;
     }
     #[doc(inline)]
     #[automatically_derived]
@@ -2513,24 +2513,24 @@ pub mod options {
     #[doc(inline)]
     #[automatically_derived]
     impl<'a> OperationOptionsView<'a> {
-        fn availability_strategy(&self) -> Option<&AvailabilityStrategy>;
-        fn binary_encoding(&self) -> Option<&BinaryEncodingOptions>;
-        fn content_response_on_write(&self) -> Option<&ContentResponseOnWrite>;
-        fn custom_headers(&self) -> Option<&HashMap<HeaderName, HeaderValue>>;
-        fn end_to_end_latency_policy(&self) -> Option<&EndToEndOperationLatencyPolicy>;
-        fn endpoint_unavailability_ttl(&self) -> Option<&Duration>;
-        fn excluded_regions(&self) -> Option<&ExcludedRegions>;
-        fn hedging_enabled(&self) -> Option<&bool>;
-        fn max_failover_retry_count(&self) -> Option<&u32>;
-        fn max_session_retry_count(&self) -> Option<&u32>;
-        fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
-        fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
-        fn patch_strategy(&self) -> Option<&PatchStrategy>;
-        fn query_plan_mode(&self) -> Option<&QueryPlanMode>;
-        fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
-        fn session_capturing_disabled(&self) -> Option<&bool>;
-        fn throttling_retry_options(&self) -> ThrottlingRetryOptionsView<'_>;
-        fn throughput_control(&self) -> ThroughputControlOptionsView<'_>;
+        pub fn availability_strategy(&self) -> Option<&AvailabilityStrategy>;
+        pub fn binary_encoding(&self) -> Option<&BinaryEncodingOptions>;
+        pub fn content_response_on_write(&self) -> Option<&ContentResponseOnWrite>;
+        pub fn custom_headers(&self) -> Option<&HashMap<HeaderName, HeaderValue>>;
+        pub fn end_to_end_latency_policy(&self) -> Option<&EndToEndOperationLatencyPolicy>;
+        pub fn endpoint_unavailability_ttl(&self) -> Option<&Duration>;
+        pub fn excluded_regions(&self) -> Option<&ExcludedRegions>;
+        pub fn hedging_enabled(&self) -> Option<&bool>;
+        pub fn max_failover_retry_count(&self) -> Option<&u32>;
+        pub fn max_session_retry_count(&self) -> Option<&u32>;
+        pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
+        pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
+        pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
+        pub fn query_plan_mode(&self) -> Option<&QueryPlanMode>;
+        pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
+        pub fn session_capturing_disabled(&self) -> Option<&bool>;
+        pub fn throttling_retry_options(&self) -> ThrottlingRetryOptionsView<'_>;
+        pub fn throughput_control(&self) -> ThroughputControlOptionsView<'_>;
     }
     #[doc(inline)]
     #[derive(Clone, Debug)]
@@ -2539,14 +2539,14 @@ pub mod options {
     }
     #[doc(inline)]
     impl PartitionFailoverOptions {
-        fn builder() -> PartitionFailoverOptionsBuilder;
-        fn circuit_breaker_enabled(&self) -> bool;
-        fn consecutive_hedge_win_threshold(&self) -> u32;
-        fn counter_reset_window(&self) -> Duration;
-        fn failback_sweep_interval(&self) -> Duration;
-        fn partition_unavailability_duration(&self) -> Duration;
-        fn read_failure_threshold(&self) -> u32;
-        fn write_failure_threshold(&self) -> u32;
+        pub fn builder() -> PartitionFailoverOptionsBuilder;
+        pub fn circuit_breaker_enabled(&self) -> bool;
+        pub fn consecutive_hedge_win_threshold(&self) -> u32;
+        pub fn counter_reset_window(&self) -> Duration;
+        pub fn failback_sweep_interval(&self) -> Duration;
+        pub fn partition_unavailability_duration(&self) -> Duration;
+        pub fn read_failure_threshold(&self) -> u32;
+        pub fn write_failure_threshold(&self) -> u32;
     }
     #[doc(inline)]
     impl Default for PartitionFailoverOptions {
@@ -2559,15 +2559,15 @@ pub mod options {
     }
     #[doc(inline)]
     impl PartitionFailoverOptionsBuilder {
-        fn build(self) -> crate::error::Result<PartitionFailoverOptions>;
-        fn new() -> Self;
-        fn with_circuit_breaker_enabled(self, value: bool) -> Self;
-        fn with_consecutive_hedge_win_threshold(self, value: u32) -> Self;
-        fn with_counter_reset_window(self, value: Duration) -> Self;
-        fn with_failback_sweep_interval(self, value: Duration) -> Self;
-        fn with_partition_unavailability_duration(self, value: Duration) -> Self;
-        fn with_read_failure_threshold(self, value: u32) -> Self;
-        fn with_write_failure_threshold(self, value: u32) -> Self;
+        pub fn build(self) -> crate::error::Result<PartitionFailoverOptions>;
+        pub fn new() -> Self;
+        pub fn with_circuit_breaker_enabled(self, value: bool) -> Self;
+        pub fn with_consecutive_hedge_win_threshold(self, value: u32) -> Self;
+        pub fn with_counter_reset_window(self, value: Duration) -> Self;
+        pub fn with_failback_sweep_interval(self, value: Duration) -> Self;
+        pub fn with_partition_unavailability_duration(self, value: Duration) -> Self;
+        pub fn with_read_failure_threshold(self, value: u32) -> Self;
+        pub fn with_write_failure_threshold(self, value: u32) -> Self;
     }
     #[cfg(feature = "preview_patch")]
     #[derive(Clone, Default)]
@@ -2584,14 +2584,14 @@ pub mod options {
     }
     #[cfg(feature = "preview_patch")]
     impl PatchItemOptions {
-        fn with_max_attempts(self, max_attempts: std::num::NonZeroU8) -> Self;
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
-        fn with_precondition(self, precondition: Precondition) -> Self;
-        fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
-        fn with_strategy(self, strategy: PatchStrategy) -> Self;
-        fn with_tracking_capacity(self, capacity: std::num::NonZeroU16) -> Self;
-        fn with_tracking_id(self, tracking_id: PatchTrackingId) -> Self;
-        fn with_tracking_retention_seconds(self, retention_seconds: std::num::NonZeroU32) -> Self;
+        pub fn with_max_attempts(self, max_attempts: std::num::NonZeroU8) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_precondition(self, precondition: Precondition) -> Self;
+        pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
+        pub fn with_strategy(self, strategy: PatchStrategy) -> Self;
+        pub fn with_tracking_capacity(self, capacity: std::num::NonZeroU16) -> Self;
+        pub fn with_tracking_id(self, tracking_id: PatchTrackingId) -> Self;
+        pub fn with_tracking_retention_seconds(self, retention_seconds: std::num::NonZeroU32) -> Self;
     }
     #[cfg(feature = "control_plane")]
     #[derive(Clone, Default)]
@@ -2601,7 +2601,7 @@ pub mod options {
     }
     #[cfg(feature = "control_plane")]
     impl QueryContainersOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
     #[cfg(feature = "control_plane")]
     #[derive(Clone, Default)]
@@ -2611,7 +2611,7 @@ pub mod options {
     }
     #[cfg(feature = "control_plane")]
     impl QueryDatabasesOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
     #[derive(Clone, Default)]
     #[non_exhaustive]
@@ -2623,13 +2623,13 @@ pub mod options {
         pub populate_query_metrics: Option<bool>,
     }
     impl QueryOptions {
-        fn with_continuation_token(self, continuation_token: ContinuationToken) -> Self;
-        fn with_feed_options(self, feed: FeedOptions) -> Self;
-        fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
-        fn with_populate_index_metrics(self, enable: bool) -> Self;
-        fn with_populate_query_metrics(self, enable: bool) -> Self;
-        fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
+        pub fn with_continuation_token(self, continuation_token: ContinuationToken) -> Self;
+        pub fn with_feed_options(self, feed: FeedOptions) -> Self;
+        pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_populate_index_metrics(self, enable: bool) -> Self;
+        pub fn with_populate_query_metrics(self, enable: bool) -> Self;
+        pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
     }
     #[derive(Clone, Default)]
     #[non_exhaustive]
@@ -2637,7 +2637,7 @@ pub mod options {
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
     }
     impl ReadContainerOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
     #[cfg(feature = "control_plane")]
     #[derive(Clone, Default)]
@@ -2647,7 +2647,7 @@ pub mod options {
     }
     #[cfg(feature = "control_plane")]
     impl ReadDatabaseOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -2655,8 +2655,8 @@ pub mod options {
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
     }
     impl ReadFeedRangesOptions {
-        fn with_force_refresh(self, force_refresh: bool) -> Self;
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_force_refresh(self, force_refresh: bool) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, serde::Serialize)]
@@ -2778,9 +2778,9 @@ pub mod options {
         const WEST_US: Region = _;
         const WEST_US_2: Region = _;
         const WEST_US_3: Region = _;
-        fn as_str(&self) -> &str;
-        fn display_name(&self) -> &str;
-        fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(name: impl Into<Cow<'static, str>>) -> Self;
+        pub fn as_str(&self) -> &str;
+        pub fn display_name(&self) -> &str;
+        pub fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(name: impl Into<Cow<'static, str>>) -> Self;
     }
     #[doc(inline)]
     impl AsRef<str> for Region {
@@ -2810,16 +2810,16 @@ pub mod options {
     }
     #[cfg(feature = "control_plane")]
     impl ReplaceContainerOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     pub struct SessionToken(pub std::borrow::Cow<'static, str>);
     #[doc(inline)]
     impl SessionToken {
-        fn as_str(&self) -> &str;
-        fn merge(&self, other: &Self) -> crate::error::Result<Self>;
-        fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(value: impl Into<Cow<'static, str>>) -> Self;
+        pub fn as_str(&self) -> &str;
+        pub fn merge(&self, other: &Self) -> crate::error::Result<Self>;
+        pub fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(value: impl Into<Cow<'static, str>>) -> Self;
     }
     #[doc(inline)]
     impl AsRef<str> for SessionToken {
@@ -2843,7 +2843,7 @@ pub mod options {
     #[doc(inline)]
     #[automatically_derived]
     impl ThrottlingRetryOptions {
-        fn from_env() -> Self;
+        pub fn from_env() -> Self;
     }
     #[doc(inline)]
     #[automatically_derived]
@@ -2853,10 +2853,10 @@ pub mod options {
     #[automatically_derived]
     impl ThrottlingRetryOptionsBuilder {
         #[must_use]
-        fn build(self) -> ThrottlingRetryOptions;
-        fn new() -> Self;
-        fn with_max_retry_count(self, value: u32) -> Self;
-        fn with_max_retry_wait_time(self, value: Duration) -> Self;
+        pub fn build(self) -> ThrottlingRetryOptions;
+        pub fn new() -> Self;
+        pub fn with_max_retry_count(self, value: u32) -> Self;
+        pub fn with_max_retry_wait_time(self, value: Duration) -> Self;
     }
     #[doc(inline)]
     #[automatically_derived]
@@ -2865,17 +2865,17 @@ pub mod options {
     #[doc(inline)]
     #[automatically_derived]
     impl<'a> ThrottlingRetryOptionsView<'a> {
-        fn max_retry_count(&self) -> Option<&u32>;
-        fn max_retry_wait_time(&self) -> Option<&Duration>;
-        fn new(env: Option<::std::sync::Arc<ThrottlingRetryOptions>>, runtime: Option<::std::sync::Arc<ThrottlingRetryOptions>>, account: Option<::std::sync::Arc<ThrottlingRetryOptions>>, operation: Option<&'a ThrottlingRetryOptions>) -> Self;
+        pub fn max_retry_count(&self) -> Option<&u32>;
+        pub fn max_retry_wait_time(&self) -> Option<&Duration>;
+        pub fn new(env: Option<::std::sync::Arc<ThrottlingRetryOptions>>, runtime: Option<::std::sync::Arc<ThrottlingRetryOptions>>, account: Option<::std::sync::Arc<ThrottlingRetryOptions>>, operation: Option<&'a ThrottlingRetryOptions>) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     pub struct ThroughputControlGroupName(pub std::borrow::Cow<'static, str>);
     #[doc(inline)]
     impl ThroughputControlGroupName {
-        fn as_str(&self) -> &str;
-        fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(name: impl Into<Cow<'static, str>>) -> Self;
+        pub fn as_str(&self) -> &str;
+        pub fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(name: impl Into<Cow<'static, str>>) -> Self;
     }
     #[doc(inline)]
     impl AsRef<str> for ThroughputControlGroupName {
@@ -2904,16 +2904,16 @@ pub mod options {
     }
     #[doc(inline)]
     impl ThroughputControlGroupOptions {
-        fn container(&self) -> &ContainerReference;
-        fn is_default(&self) -> bool;
-        fn name(&self) -> &ThroughputControlGroupName;
-        fn new<impl Into<ThroughputControlGroupName>: Into<ThroughputControlGroupName>>(name: impl Into<ThroughputControlGroupName>, container: ContainerReference, is_default: bool) -> Self;
-        fn priority_level(&self) -> Option<PriorityLevel>;
-        fn set_priority_level(&self, level: PriorityLevel);
-        fn set_throughput_bucket(&self, bucket: u32);
-        fn throughput_bucket(&self) -> Option<u32>;
-        fn with_priority_level(self, level: PriorityLevel) -> Self;
-        fn with_throughput_bucket(self, bucket: u32) -> Self;
+        pub fn container(&self) -> &ContainerReference;
+        pub fn is_default(&self) -> bool;
+        pub fn name(&self) -> &ThroughputControlGroupName;
+        pub fn new<impl Into<ThroughputControlGroupName>: Into<ThroughputControlGroupName>>(name: impl Into<ThroughputControlGroupName>, container: ContainerReference, is_default: bool) -> Self;
+        pub fn priority_level(&self) -> Option<PriorityLevel>;
+        pub fn set_priority_level(&self, level: PriorityLevel);
+        pub fn set_throughput_bucket(&self, bucket: u32);
+        pub fn throughput_bucket(&self) -> Option<u32>;
+        pub fn with_priority_level(self, level: PriorityLevel) -> Self;
+        pub fn with_throughput_bucket(self, bucket: u32) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Default)]
@@ -2931,11 +2931,11 @@ pub mod options {
     #[automatically_derived]
     impl ThroughputControlOptionsBuilder {
         #[must_use]
-        fn build(self) -> ThroughputControlOptions;
-        fn new() -> Self;
-        fn with_group_name(self, value: ThroughputControlGroupName) -> Self;
-        fn with_priority_level(self, value: PriorityLevel) -> Self;
-        fn with_throughput_bucket(self, value: u32) -> Self;
+        pub fn build(self) -> ThroughputControlOptions;
+        pub fn new() -> Self;
+        pub fn with_group_name(self, value: ThroughputControlGroupName) -> Self;
+        pub fn with_priority_level(self, value: PriorityLevel) -> Self;
+        pub fn with_throughput_bucket(self, value: u32) -> Self;
     }
     #[doc(inline)]
     #[automatically_derived]
@@ -2944,10 +2944,10 @@ pub mod options {
     #[doc(inline)]
     #[automatically_derived]
     impl<'a> ThroughputControlOptionsView<'a> {
-        fn group_name(&self) -> Option<&ThroughputControlGroupName>;
-        fn new(env: Option<::std::sync::Arc<ThroughputControlOptions>>, runtime: Option<::std::sync::Arc<ThroughputControlOptions>>, account: Option<::std::sync::Arc<ThroughputControlOptions>>, operation: Option<&'a ThroughputControlOptions>) -> Self;
-        fn priority_level(&self) -> Option<&PriorityLevel>;
-        fn throughput_bucket(&self) -> Option<&u32>;
+        pub fn group_name(&self) -> Option<&ThroughputControlGroupName>;
+        pub fn new(env: Option<::std::sync::Arc<ThroughputControlOptions>>, runtime: Option<::std::sync::Arc<ThroughputControlOptions>>, account: Option<::std::sync::Arc<ThroughputControlOptions>>, operation: Option<&'a ThroughputControlOptions>) -> Self;
+        pub fn priority_level(&self) -> Option<&PriorityLevel>;
+        pub fn throughput_bucket(&self) -> Option<&u32>;
     }
     #[cfg(feature = "control_plane")]
     #[derive(Clone, Default)]
@@ -2957,7 +2957,7 @@ pub mod options {
     }
     #[cfg(feature = "control_plane")]
     impl ThroughputOptions {
-        fn with_operation_options(self, operation: OperationOptions) -> Self;
+        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -2965,9 +2965,9 @@ pub mod options {
     #[doc(inline)]
     impl UserAgentSuffix {
         const MAX_LENGTH: usize = 25;
-        fn as_str(&self) -> &str;
-        fn new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Self;
-        fn try_new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Option<Self>;
+        pub fn as_str(&self) -> &str;
+        pub fn new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Self;
+        pub fn try_new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Option<Self>;
     }
     #[doc(inline)]
     impl AsRef<str> for UserAgentSuffix {
@@ -3045,7 +3045,7 @@ pub mod options {
     }
     #[doc(inline)]
     impl DiagnosticsVerbosity {
-        fn as_str(&self) -> &'static str;
+        pub fn as_str(&self) -> &'static str;
     }
     #[doc(inline)]
     impl AsRef<str> for DiagnosticsVerbosity {
@@ -3080,7 +3080,7 @@ pub mod options {
     #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl PatchStrategy {
-        fn as_str(&self) -> &'static str;
+        pub fn as_str(&self) -> &'static str;
     }
     #[cfg(feature = "preview_patch")]
     #[doc(inline)]
@@ -3102,12 +3102,12 @@ pub mod options {
     }
     #[doc(inline)]
     impl Precondition {
-        fn as_if_match(&self) -> Option<&Etag>;
-        fn as_if_none_match(&self) -> Option<&Etag>;
-        fn if_match<impl Into<Etag>: Into<Etag>>(etag: impl Into<Etag>) -> Self;
-        fn if_none_match<impl Into<Etag>: Into<Etag>>(etag: impl Into<Etag>) -> Self;
-        fn is_if_match(&self) -> bool;
-        fn is_if_none_match(&self) -> bool;
+        pub fn as_if_match(&self) -> Option<&Etag>;
+        pub fn as_if_none_match(&self) -> Option<&Etag>;
+        pub fn if_match<impl Into<Etag>: Into<Etag>>(etag: impl Into<Etag>) -> Self;
+        pub fn if_none_match<impl Into<Etag>: Into<Etag>>(etag: impl Into<Etag>) -> Self;
+        pub fn is_if_match(&self) -> bool;
+        pub fn is_if_none_match(&self) -> bool;
     }
     #[doc(inline)]
     #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
@@ -3119,7 +3119,7 @@ pub mod options {
     }
     #[doc(inline)]
     impl PriorityLevel {
-        fn as_str(&self) -> &'static str;
+        pub fn as_str(&self) -> &'static str;
     }
     #[doc(inline)]
     impl Display for PriorityLevel {
@@ -3140,7 +3140,7 @@ pub mod options {
     }
     #[doc(inline)]
     impl QueryPlanMode {
-        fn as_str(self) -> &'static str;
+        pub fn as_str(self) -> &'static str;
     }
     #[doc(inline)]
     impl Display for QueryPlanMode {
@@ -3163,7 +3163,7 @@ pub mod options {
     }
     #[doc(inline)]
     impl ReadConsistencyStrategy {
-        fn as_str(&self) -> &'static str;
+        pub fn as_str(&self) -> &'static str;
     }
     #[doc(inline)]
     impl Display for ReadConsistencyStrategy {

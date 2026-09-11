@@ -39,37 +39,37 @@ pub mod clients {
     pub struct KeyClient {
     }
     impl KeyClient {
-        fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<KeyClientOptions>) -> Result<Self>;
+        pub fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<KeyClientOptions>) -> Result<Self>;
     }
     impl KeyClient {
-        async fn backup_key(&self, key_name: &str, options: Option<KeyClientBackupKeyOptions<'_>>) -> Result<Response<BackupKeyResult>>;
-        async fn create_key(&self, key_name: &str, parameters: RequestContent<CreateKeyParameters>, options: Option<KeyClientCreateKeyOptions<'_>>) -> Result<Response<Key>>;
-        async fn decrypt(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeyOperationParameters>, options: Option<KeyClientDecryptOptions<'_>>) -> Result<Response<KeyOperationResult>>;
-        async fn delete_key(&self, key_name: &str, options: Option<KeyClientDeleteKeyOptions<'_>>) -> Result<Response<DeletedKey>>;
-        async fn encrypt(&self, key_name: &str, parameters: RequestContent<KeyOperationParameters>, options: Option<KeyClientEncryptOptions<'_>>) -> Result<Response<KeyOperationResult>>;
-        fn endpoint(&self) -> &Url;
-        async fn get_deleted_key(&self, key_name: &str, options: Option<KeyClientGetDeletedKeyOptions<'_>>) -> Result<Response<DeletedKey>>;
-        async fn get_key(&self, key_name: &str, options: Option<KeyClientGetKeyOptions<'_>>) -> Result<Response<Key>>;
-        async fn get_key_attestation(&self, key_name: &str, options: Option<KeyClientGetKeyAttestationOptions<'_>>) -> Result<Response<Key>>;
-        async fn get_key_rotation_policy(&self, key_name: &str, options: Option<KeyClientGetKeyRotationPolicyOptions<'_>>) -> Result<Response<KeyRotationPolicy>>;
-        async fn get_random_bytes(&self, parameters: RequestContent<GetRandomBytesParameters>, options: Option<KeyClientGetRandomBytesOptions<'_>>) -> Result<Response<RandomBytes>>;
-        async fn import_key(&self, key_name: &str, parameters: RequestContent<ImportKeyParameters>, options: Option<KeyClientImportKeyOptions<'_>>) -> Result<Response<Key>>;
-        fn list_deleted_key_properties(&self, options: Option<KeyClientListDeletedKeyPropertiesOptions<'_>>) -> Result<Pager<ListDeletedKeyPropertiesResult>>;
-        fn list_key_properties(&self, options: Option<KeyClientListKeyPropertiesOptions<'_>>) -> Result<Pager<ListKeyPropertiesResult>>;
-        fn list_key_properties_versions(&self, key_name: &str, options: Option<KeyClientListKeyPropertiesVersionsOptions<'_>>) -> Result<Pager<ListKeyPropertiesResult>>;
-        async fn purge_deleted_key(&self, key_name: &str, options: Option<KeyClientPurgeDeletedKeyOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn recover_deleted_key(&self, key_name: &str, options: Option<KeyClientRecoverDeletedKeyOptions<'_>>) -> Result<Response<Key>>;
-        async fn release(&self, key_name: &str, parameters: RequestContent<ReleaseParameters>, options: Option<KeyClientReleaseOptions<'_>>) -> Result<Response<KeyReleaseResult>>;
-        async fn restore_key(&self, parameters: RequestContent<RestoreKeyParameters>, options: Option<KeyClientRestoreKeyOptions<'_>>) -> Result<Response<Key>>;
-        async fn rotate_key(&self, key_name: &str, options: Option<KeyClientRotateKeyOptions<'_>>) -> Result<Response<Key>>;
-        async fn secure_unwrap_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<SecureKeyUnWrapOperationParameters>, options: Option<KeyClientSecureUnwrapKeyOptions<'_>>) -> Result<Response<SecureKeyOperationResult>>;
-        async fn secure_wrap_key(&self, key_name: &str, parameters: RequestContent<SecureKeyWrapOperationParameters>, options: Option<KeyClientSecureWrapKeyOptions<'_>>) -> Result<Response<SecureKeyOperationResult>>;
-        async fn sign(&self, key_name: &str, parameters: RequestContent<SignParameters>, options: Option<KeyClientSignOptions<'_>>) -> Result<Response<KeyOperationResult>>;
-        async fn unwrap_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeyOperationParameters>, options: Option<KeyClientUnwrapKeyOptions<'_>>) -> Result<Response<KeyOperationResult>>;
-        async fn update_key_properties(&self, key_name: &str, parameters: RequestContent<UpdateKeyPropertiesParameters>, options: Option<KeyClientUpdateKeyPropertiesOptions<'_>>) -> Result<Response<Key>>;
-        async fn update_key_rotation_policy(&self, key_name: &str, key_rotation_policy: RequestContent<KeyRotationPolicy>, options: Option<KeyClientUpdateKeyRotationPolicyOptions<'_>>) -> Result<Response<KeyRotationPolicy>>;
-        async fn verify(&self, key_name: &str, key_version: &str, parameters: RequestContent<VerifyParameters>, options: Option<KeyClientVerifyOptions<'_>>) -> Result<Response<KeyVerifyResult>>;
-        async fn wrap_key(&self, key_name: &str, parameters: RequestContent<KeyOperationParameters>, options: Option<KeyClientWrapKeyOptions<'_>>) -> Result<Response<KeyOperationResult>>;
+        pub async fn backup_key(&self, key_name: &str, options: Option<KeyClientBackupKeyOptions<'_>>) -> Result<Response<BackupKeyResult>>;
+        pub async fn create_key(&self, key_name: &str, parameters: RequestContent<CreateKeyParameters>, options: Option<KeyClientCreateKeyOptions<'_>>) -> Result<Response<Key>>;
+        pub async fn decrypt(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeyOperationParameters>, options: Option<KeyClientDecryptOptions<'_>>) -> Result<Response<KeyOperationResult>>;
+        pub async fn delete_key(&self, key_name: &str, options: Option<KeyClientDeleteKeyOptions<'_>>) -> Result<Response<DeletedKey>>;
+        pub async fn encrypt(&self, key_name: &str, parameters: RequestContent<KeyOperationParameters>, options: Option<KeyClientEncryptOptions<'_>>) -> Result<Response<KeyOperationResult>>;
+        pub fn endpoint(&self) -> &Url;
+        pub async fn get_deleted_key(&self, key_name: &str, options: Option<KeyClientGetDeletedKeyOptions<'_>>) -> Result<Response<DeletedKey>>;
+        pub async fn get_key(&self, key_name: &str, options: Option<KeyClientGetKeyOptions<'_>>) -> Result<Response<Key>>;
+        pub async fn get_key_attestation(&self, key_name: &str, options: Option<KeyClientGetKeyAttestationOptions<'_>>) -> Result<Response<Key>>;
+        pub async fn get_key_rotation_policy(&self, key_name: &str, options: Option<KeyClientGetKeyRotationPolicyOptions<'_>>) -> Result<Response<KeyRotationPolicy>>;
+        pub async fn get_random_bytes(&self, parameters: RequestContent<GetRandomBytesParameters>, options: Option<KeyClientGetRandomBytesOptions<'_>>) -> Result<Response<RandomBytes>>;
+        pub async fn import_key(&self, key_name: &str, parameters: RequestContent<ImportKeyParameters>, options: Option<KeyClientImportKeyOptions<'_>>) -> Result<Response<Key>>;
+        pub fn list_deleted_key_properties(&self, options: Option<KeyClientListDeletedKeyPropertiesOptions<'_>>) -> Result<Pager<ListDeletedKeyPropertiesResult>>;
+        pub fn list_key_properties(&self, options: Option<KeyClientListKeyPropertiesOptions<'_>>) -> Result<Pager<ListKeyPropertiesResult>>;
+        pub fn list_key_properties_versions(&self, key_name: &str, options: Option<KeyClientListKeyPropertiesVersionsOptions<'_>>) -> Result<Pager<ListKeyPropertiesResult>>;
+        pub async fn purge_deleted_key(&self, key_name: &str, options: Option<KeyClientPurgeDeletedKeyOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn recover_deleted_key(&self, key_name: &str, options: Option<KeyClientRecoverDeletedKeyOptions<'_>>) -> Result<Response<Key>>;
+        pub async fn release(&self, key_name: &str, parameters: RequestContent<ReleaseParameters>, options: Option<KeyClientReleaseOptions<'_>>) -> Result<Response<KeyReleaseResult>>;
+        pub async fn restore_key(&self, parameters: RequestContent<RestoreKeyParameters>, options: Option<KeyClientRestoreKeyOptions<'_>>) -> Result<Response<Key>>;
+        pub async fn rotate_key(&self, key_name: &str, options: Option<KeyClientRotateKeyOptions<'_>>) -> Result<Response<Key>>;
+        pub async fn secure_unwrap_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<SecureKeyUnWrapOperationParameters>, options: Option<KeyClientSecureUnwrapKeyOptions<'_>>) -> Result<Response<SecureKeyOperationResult>>;
+        pub async fn secure_wrap_key(&self, key_name: &str, parameters: RequestContent<SecureKeyWrapOperationParameters>, options: Option<KeyClientSecureWrapKeyOptions<'_>>) -> Result<Response<SecureKeyOperationResult>>;
+        pub async fn sign(&self, key_name: &str, parameters: RequestContent<SignParameters>, options: Option<KeyClientSignOptions<'_>>) -> Result<Response<KeyOperationResult>>;
+        pub async fn unwrap_key(&self, key_name: &str, key_version: &str, parameters: RequestContent<KeyOperationParameters>, options: Option<KeyClientUnwrapKeyOptions<'_>>) -> Result<Response<KeyOperationResult>>;
+        pub async fn update_key_properties(&self, key_name: &str, parameters: RequestContent<UpdateKeyPropertiesParameters>, options: Option<KeyClientUpdateKeyPropertiesOptions<'_>>) -> Result<Response<Key>>;
+        pub async fn update_key_rotation_policy(&self, key_name: &str, key_rotation_policy: RequestContent<KeyRotationPolicy>, options: Option<KeyClientUpdateKeyRotationPolicyOptions<'_>>) -> Result<Response<KeyRotationPolicy>>;
+        pub async fn verify(&self, key_name: &str, key_version: &str, parameters: RequestContent<VerifyParameters>, options: Option<KeyClientVerifyOptions<'_>>) -> Result<Response<KeyVerifyResult>>;
+        pub async fn wrap_key(&self, key_name: &str, parameters: RequestContent<KeyOperationParameters>, options: Option<KeyClientWrapKeyOptions<'_>>) -> Result<Response<KeyOperationResult>>;
     }
     #[derive(Clone, Debug)]
     pub struct KeyClientOptions {
@@ -321,7 +321,7 @@ pub mod models {
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
     }
     impl KeyClientListDeletedKeyPropertiesOptions<'_> {
-        fn into_owned(self) -> KeyClientListDeletedKeyPropertiesOptions<'static>;
+        pub fn into_owned(self) -> KeyClientListDeletedKeyPropertiesOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyClientListKeyPropertiesOptions<'a> {
@@ -329,7 +329,7 @@ pub mod models {
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
     }
     impl KeyClientListKeyPropertiesOptions<'_> {
-        fn into_owned(self) -> KeyClientListKeyPropertiesOptions<'static>;
+        pub fn into_owned(self) -> KeyClientListKeyPropertiesOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyClientListKeyPropertiesVersionsOptions<'a> {
@@ -337,7 +337,7 @@ pub mod models {
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
     }
     impl KeyClientListKeyPropertiesVersionsOptions<'_> {
-        fn into_owned(self) -> KeyClientListKeyPropertiesVersionsOptions<'static>;
+        pub fn into_owned(self) -> KeyClientListKeyPropertiesVersionsOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct KeyClientPurgeDeletedKeyOptions<'a> {
