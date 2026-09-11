@@ -206,6 +206,22 @@ async fn build_client_with_binary_encoding(
     Ok(client)
 }
 
+/// Like [`build_client_with_binary_encoding`] but explicitly **disables** binary
+/// encoding. Set explicitly because the resolved default is binary-on.
+async fn build_client_with_binary_disabled(
+    endpoint: &str,
+    key: &str,
+) -> Result<CosmosClient, Box<dyn std::error::Error>> {
+    let endpoint: AccountEndpoint = normalize_gateway_v2_endpoint(endpoint).parse()?;
+    let account_ref =
+        AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
+    let client = CosmosClient::builder()
+        .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(false))
+        .build(account_ref, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .await?;
+    Ok(client)
+}
+
 /// Like [`build_client`] but disables the per-partition circuit breaker (PPCB)
 /// at the client level.
 ///
@@ -899,6 +915,107 @@ pub async fn gateway_v2_binary_encoding_rich_document_round_trip(
     );
 
     drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+/// Proves the response is **actually received in Cosmos binary** on the wire,
+/// not merely that data round-trips.
+///
+/// A round-trip alone can't tell binary from text (the driver decodes either),
+/// so we read the *raw* body and check its first byte: binary starts with the
+/// `0x80` preamble, text JSON with `{`. Both reads hit the same item over
+/// Gateway 2.0, so the only variable is negotiation.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_binary_encoding_wire_format_differential(
+) -> Result<(), Box<dyn std::error::Error>> {
+    // Cosmos binary JSON payloads begin with this preamble byte.
+    const COSMOS_BINARY_PREAMBLE: u8 = 0x80;
+
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    // Provision inline so both clients can address the same container by name.
+    let binary_client = build_client_with_binary_encoding(&endpoint, &key).await?;
+    let unique = azure_core::Uuid::new_v4();
+    let db_name = format!("gw_v2-test-db-{unique}");
+    let container_name = format!("gw_v2-test-container-{unique}");
+
+    if let Err(error) = binary_client.create_database(&db_name, None).await {
+        if error.status().status_code() != StatusCode::Conflict {
+            return Err(error.into());
+        }
+    }
+    let db_client = binary_client.database_client(&db_name);
+    let pk_def: PartitionKeyDefinition = "/pk".into();
+    let properties = ContainerProperties::new(container_name.clone(), pk_def);
+    if let Err(error) = db_client.create_container(properties, None).await {
+        if error.status().status_code() != StatusCode::Conflict {
+            return Err(error.into());
+        }
+    }
+    let binary_container = wait_for_container_ready(&db_client, &container_name).await?;
+
+    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+    let item_id = format!("wire-{}", azure_core::Uuid::new_v4());
+    let item = GwV2TestItem {
+        id: item_id.clone(),
+        pk: pk_value.clone(),
+        value: 42,
+        label: "wire".into(),
+    };
+    create_seed_item(&binary_container, &pk_value, &item_id, &item).await?;
+
+    // Binary path: raw body must carry the 0x80 preamble and still decode.
+    let binary_read = binary_container
+        .read_item(&pk_value, &item_id, None)
+        .await?;
+    assert_transport_kind(&binary_read.diagnostics(), TransportKind::GatewayV2);
+    let binary_body = binary_read.into_body().single()?;
+    assert_eq!(
+        binary_body.first(),
+        Some(&COSMOS_BINARY_PREAMBLE),
+        "a binary-negotiated Gateway 2.0 read must return a Cosmos binary body (0x80 preamble), got first byte {:?}",
+        binary_body.first(),
+    );
+    let decoded: GwV2TestItem = binary_container
+        .read_item(&pk_value, &item_id, None)
+        .await?
+        .into_model()?;
+    assert_eq!(
+        decoded, item,
+        "the binary body must decode back to the written item",
+    );
+
+    // Text path: binary explicitly disabled must yield text JSON for the same
+    // item over the same transport.
+    let text_client = build_client_with_binary_disabled(&endpoint, &key).await?;
+    let text_container = text_client
+        .database_client(&db_name)
+        .container_client(&container_name, None)
+        .await?;
+    let text_read = text_container.read_item(&pk_value, &item_id, None).await?;
+    assert_transport_kind(&text_read.diagnostics(), TransportKind::GatewayV2);
+    let text_body = text_read.into_body().single()?;
+    assert_ne!(
+        text_body.first(),
+        Some(&COSMOS_BINARY_PREAMBLE),
+        "a text-negotiated read must NOT return a Cosmos binary body",
+    );
+    let text_item: GwV2TestItem = serde_json::from_slice(&text_body)?;
+    assert_eq!(
+        text_item, item,
+        "the text body must parse as JSON back to the written item",
+    );
+
+    drop_database(&binary_client, &db_name).await;
     Ok(())
 }
 
