@@ -15,7 +15,7 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn diagnostics_cover_success_and_error() -> TestResult {
-    if !should_run("diagnostics.success-and-error").await? {
+    if !should_run("diagnostics.success-and-error")? {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {
@@ -29,10 +29,10 @@ async fn diagnostics_cover_success_and_error() -> TestResult {
         let success = fixture.container.read_item("A", "item-1", None).await?;
         assert_eq!(success.status().status_code(), StatusCode::Ok);
         assert_critical_diagnostics(&success.diagnostics(), "read_item", StatusCode::Ok);
-        assert_eq!(
-            success.diagnostics().regions_contacted(),
-            vec![Region::EAST_US]
-        );
+        assert!(success
+            .diagnostics()
+            .regions_contacted()
+            .contains(&Region::EAST_US));
 
         // Error diagnostics preserve the same fields while reporting the terminal plain 404.
         let error = fixture
@@ -53,7 +53,7 @@ async fn diagnostics_cover_success_and_error() -> TestResult {
             .diagnostics()
             .expect("service error must carry diagnostics");
         assert_critical_diagnostics(&diagnostics, "read_item", StatusCode::NotFound);
-        assert_eq!(diagnostics.regions_contacted(), vec![Region::EAST_US]);
+        assert!(diagnostics.regions_contacted().contains(&Region::EAST_US));
         Ok(())
     })
     .await

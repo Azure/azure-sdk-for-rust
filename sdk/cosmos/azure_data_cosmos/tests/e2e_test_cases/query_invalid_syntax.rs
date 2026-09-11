@@ -16,7 +16,7 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn invalid_query_is_not_an_empty_feed() -> TestResult {
-    if !should_run("query.invalid-syntax").await? {
+    if !should_run("query.invalid-syntax")? {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {

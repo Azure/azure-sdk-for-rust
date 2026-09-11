@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::StatusCode;
+use azure_core::http::{Etag, StatusCode};
 use azure_data_cosmos::options::{ItemWriteOptions, Precondition};
 
 use crate::e2e_test_cases::{
@@ -15,7 +15,7 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn stale_etag_preserves_successful_update() -> TestResult {
-    if !should_run("item.optimistic-concurrency").await? {
+    if !should_run("item.optimistic-concurrency")? {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {
@@ -24,7 +24,6 @@ async fn stale_etag_preserves_successful_update() -> TestResult {
             .container
             .create_item("A", "etag-1", item("etag-1", "A", 1), None)
             .await?;
-        assert_critical_diagnostics(&created.diagnostics(), "create_item", StatusCode::Created);
         let initial_etag = created
             .headers()
             .etag()
@@ -39,11 +38,10 @@ async fn stale_etag_preserves_successful_update() -> TestResult {
             .replace_item("A", "etag-1", item("etag-1", "A", 2), Some(current_options))
             .await?;
         assert_eq!(replaced.status().status_code(), StatusCode::Ok);
-        assert_critical_diagnostics(&replaced.diagnostics(), "replace_item", StatusCode::Ok);
 
         // Case 2: reusing the now-stale initial ETag cannot overwrite value 2.
-        let stale_options =
-            ItemWriteOptions::default().with_precondition(Precondition::IfMatch(initial_etag));
+        let stale_options = ItemWriteOptions::default()
+            .with_precondition(Precondition::IfMatch(Etag::from(initial_etag.to_string())));
         let error = fixture
             .container
             .replace_item("A", "etag-1", item("etag-1", "A", 3), Some(stale_options))

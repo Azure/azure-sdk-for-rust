@@ -14,17 +14,17 @@ function Test-CosmosE2eScenarioDocuments {
     $profileSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'profile.v1.json'))
 
     $scenarioDocuments = @(Get-ChildItem ([System.IO.Path]::Combine($e2eTestRoot, 'scenarios')) -Recurse -Filter '*.json' | ForEach-Object {
-        if (-not (Get-Content $_.FullName -Raw | Test-Json -SchemaFile $scenarioSchema)) {
-            throw "Cosmos E2E scenario failed schema validation: $($_.FullName)"
-        }
-        Get-Content $_.FullName -Raw | ConvertFrom-Json
-    })
+            if (-not (Get-Content $_.FullName -Raw | Test-Json -SchemaFile $scenarioSchema)) {
+                throw "Cosmos E2E scenario failed schema validation: $($_.FullName)"
+            }
+            Get-Content $_.FullName -Raw | ConvertFrom-Json
+        })
     $profileDocuments = @(Get-ChildItem ([System.IO.Path]::Combine($e2eTestRoot, 'profiles')) -Filter '*.json' | ForEach-Object {
-        if (-not (Get-Content $_.FullName -Raw | Test-Json -SchemaFile $profileSchema)) {
-            throw "Cosmos E2E profile failed schema validation: $($_.FullName)"
-        }
-        Get-Content $_.FullName -Raw | ConvertFrom-Json
-    })
+            if (-not (Get-Content $_.FullName -Raw | Test-Json -SchemaFile $profileSchema)) {
+                throw "Cosmos E2E profile failed schema validation: $($_.FullName)"
+            }
+            Get-Content $_.FullName -Raw | ConvertFrom-Json
+        })
 
     $implementationPath = ([System.IO.Path]::Combine($e2eTestRoot, 'implementations', 'rust.json'))
     $implementation = Get-Content $implementationPath -Raw | ConvertFrom-Json

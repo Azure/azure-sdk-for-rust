@@ -11,15 +11,13 @@ use azure_data_cosmos::{
     },
     RoutingStrategy,
 };
-use futures::FutureExt;
 
 use crate::e2e_test_cases::{
-    catalog::{AccountDefinition, ClientDefinition, Profile, RuntimeDefinition},
-    fixture::{build_client_with_defaults, ClientSetup, E2eTestFixture, TestResult},
-    support::{
-        assert_critical_diagnostics, item, selected_scenario_profile, write_options_with_content,
-        Item,
+    catalog::{
+        selected_profile_for, AccountDefinition, ClientDefinition, Profile, RuntimeDefinition,
     },
+    fixture::{build_client_with_defaults, E2eTestFixture, TestResult},
+    support::{assert_critical_diagnostics, item, write_options_with_content, Item},
 };
 
 const REPLICATION_TIMEOUT: Duration = Duration::from_secs(5);
@@ -36,8 +34,8 @@ const RETRY_DELAY: Duration = Duration::from_millis(50);
     not(any(test_category = "emulator_inmemory", test_category = "e2e")),
     ignore = "requires the externally hosted in-memory emulator"
 )]
-async fn crud_lifecycle() -> TestResult {
-    let Some(profile) = selected_scenario_profile("item.lifecycle").await? else {
+async fn item_lifecycle() -> TestResult {
+    let Some(profile) = selected_profile_for("item.lifecycle")? else {
         return Ok(());
     };
     let setup = SelectedLifecycleSetup::from_profile(&profile)?;
@@ -57,128 +55,78 @@ async fn run_lifecycle_case(
 ) -> TestResult {
     let execution = setup.execution_name(read_case.name);
     let client = setup.build_client().await?;
-    let deterministic_delay = matches!(
-        read_case.expectation,
-        ReadExpectation::EventuallySucceeds { .. }
-    );
-    if deterministic_delay {
-        set_replication_paused(true).await?;
-    }
 
-    let outcome = std::panic::AssertUnwindSafe(E2eTestFixture::run_with_client(
-        client,
-        "/pk".into(),
-        async |fixture| {
-            let item_id = format!("lifecycle-{}", execution.replace('/', "-"));
+    E2eTestFixture::run_with_client(client, "/pk".into(), async |fixture| {
+        let item_id = format!("lifecycle-{}", execution.replace('/', "-"));
 
-            // Create an item and capture the session token used by explicit Session reads.
-            let created = fixture
-                .container
-                .create_item("A", &item_id, item(&item_id, "A", 1), None)
-                .await?;
-            assert_eq!(created.status().status_code(), StatusCode::Created);
-            assert_critical_diagnostics(&created.diagnostics(), "create_item", StatusCode::Created);
-            let create_session_token = created
-                .headers()
-                .session_token()
-                .map(|token| token.as_str().to_owned());
-
-            // Read the created item using this case's operation-level consistency behavior.
-            let read_outcome = read_created_item(
-                &fixture.container,
-                &item_id,
-                create_session_token,
-                read_case,
-                &execution,
-            )
+        // Create an item and capture the session token used by explicit Session reads.
+        let created = fixture
+            .container
+            .create_item("A", &item_id, item(&item_id, "A", 1), None)
             .await?;
-            match read_outcome {
-                PostCreateReadOutcome::Item(actual) => assert_eq!(
-                    actual,
-                    item(&item_id, "A", 1),
-                    "read returned the wrong item for '{execution}'"
-                ),
-                PostCreateReadOutcome::RejectedBeforeTransport => assert_eq!(
-                    read_case.expectation,
-                    ReadExpectation::RejectedBeforeTransport,
-                    "read was rejected unexpectedly for '{execution}'"
-                ),
-            }
+        assert_eq!(created.status().status_code(), StatusCode::Created);
+        assert_critical_diagnostics(&created.diagnostics(), "create_item", StatusCode::Created);
+        let create_session_token = created
+            .headers()
+            .session_token()
+            .map(|token| token.as_str().to_owned());
 
-            // Replace the item and verify the returned model.
-            let replaced = fixture
-                .container
-                .replace_item(
-                    "A",
-                    &item_id,
-                    item(&item_id, "A", 2),
-                    Some(write_options_with_content()),
-                )
-                .await?;
-            assert_eq!(replaced.status().status_code(), StatusCode::Ok);
-            assert_critical_diagnostics(&replaced.diagnostics(), "replace_item", StatusCode::Ok);
-            assert_eq!(replaced.into_model::<Item>()?, item(&item_id, "A", 2));
-
-            // Delete the item, then verify a plain 404/0 under this case's read strategy.
-            let deleted = fixture.container.delete_item("A", &item_id, None).await?;
-            assert_eq!(deleted.status().status_code(), StatusCode::NoContent);
-            assert_critical_diagnostics(
-                &deleted.diagnostics(),
-                "delete_item",
-                StatusCode::NoContent,
-            );
-            let delete_session_token = deleted
-                .headers()
-                .session_token()
-                .map(|token| token.as_str().to_owned())
-                .ok_or("delete response must carry a session token")?;
-            assert_item_deleted(
-                &fixture.container,
-                &item_id,
-                delete_session_token,
-                read_case,
-                &execution,
-            )
-            .await?;
-
-            Ok(())
-        },
-    ))
-    .catch_unwind()
-    .await;
-    let resume = if deterministic_delay {
-        set_replication_paused(false).await
-    } else {
-        Ok(())
-    };
-    match outcome {
-        Ok(result) => {
-            result?;
-            resume
-        }
-        Err(panic) => {
-            if let Err(error) = resume {
-                eprintln!("resuming E2E replication after panic failed: {error}");
-            }
-            std::panic::resume_unwind(panic)
-        }
-    }
-}
-
-async fn set_replication_paused(paused: bool) -> TestResult {
-    let management_endpoint = std::env::var("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT")?;
-    let action = if paused { "pause" } else { "resume" };
-    reqwest::Client::builder()
-        .timeout(REPLICATION_TIMEOUT)
-        .build()?
-        .post(
-            url::Url::parse(&management_endpoint)?
-                .join(&format!("regions/West%20US/replication/{action}"))?,
+        // Read the created item using this case's operation-level consistency behavior.
+        let read_outcome = read_created_item(
+            &fixture.container,
+            &item_id,
+            create_session_token,
+            read_case,
+            &execution,
         )
-        .send()
-        .await?
-        .error_for_status()?;
-    Ok(())
+        .await?;
+        match read_outcome {
+            PostCreateReadOutcome::Item(actual) => assert_eq!(
+                actual,
+                item(&item_id, "A", 1),
+                "read returned the wrong item for '{execution}'"
+            ),
+            PostCreateReadOutcome::RejectedBeforeTransport => assert_eq!(
+                read_case.expectation,
+                ReadExpectation::RejectedBeforeTransport,
+                "read was rejected unexpectedly for '{execution}'"
+            ),
+        }
+
+        // Replace the item and verify the returned model.
+        let replaced = fixture
+            .container
+            .replace_item(
+                "A",
+                &item_id,
+                item(&item_id, "A", 2),
+                Some(write_options_with_content()),
+            )
+            .await?;
+        assert_eq!(replaced.status().status_code(), StatusCode::Ok);
+        assert_critical_diagnostics(&replaced.diagnostics(), "replace_item", StatusCode::Ok);
+        assert_eq!(replaced.into_model::<Item>()?, item(&item_id, "A", 2));
+
+        // Delete the item, then use the delete session token to verify a plain 404/0.
+        let deleted = fixture.container.delete_item("A", &item_id, None).await?;
+        assert_eq!(deleted.status().status_code(), StatusCode::NoContent);
+        assert_critical_diagnostics(&deleted.diagnostics(), "delete_item", StatusCode::NoContent);
+        let delete_session_token = deleted
+            .headers()
+            .session_token()
+            .map(|token| token.as_str().to_owned())
+            .ok_or("delete response must carry a session token")?;
+        assert_item_deleted(
+            &fixture.container,
+            &item_id,
+            delete_session_token,
+            &execution,
+        )
+        .await?;
+
+        Ok(())
+    })
+    .await
 }
 
 // Operation cases -------------------------------------------------------------
@@ -341,14 +289,9 @@ fn read_cases_for_default_precedence(
     }
     // Effective precedence is operation > client > runtime > account. These cases vary only the
     // operation value; the JSON profile supplies the selected client and runtime defaults.
-    let inherited_strategy = match client_default {
-        Some(strategy) => Some(parse_read_consistency(strategy)?),
-        None => runtime_default.map(parse_read_consistency).transpose()?,
-    };
-    let inherited_uses_session = match inherited_strategy {
-        Some(ReadConsistencyStrategy::Default) | None => account.consistency == "session",
-        Some(ReadConsistencyStrategy::Session) => true,
-        Some(_) => false,
+    let inherited_uses_session = match client_default.or(runtime_default) {
+        Some(strategy) => parse_read_consistency(strategy)? == ReadConsistencyStrategy::Session,
+        None => account.consistency == "session",
     };
     let inherited_expectation = if inherited_uses_session {
         eventually_succeeds_after(TransientReadStatus::SessionNotAvailable)
@@ -371,7 +314,7 @@ fn read_cases_for_default_precedence(
         PostCreateReadCase::new(
             "default_override_restores_account_consistency",
             Some(ReadConsistencyStrategy::Default),
-            SessionTokenBehavior::SdkManaged,
+            SessionTokenBehavior::ExplicitCreateResponse,
             eventually_succeeds_after(TransientReadStatus::SessionNotAvailable),
         ),
         PostCreateReadCase::new(
@@ -404,9 +347,25 @@ struct SelectedLifecycleSetup<'a> {
 
 impl<'a> SelectedLifecycleSetup<'a> {
     fn from_profile(profile: &'a Profile) -> TestResult<Self> {
-        let account = profile.selected_account()?;
-        let runtime = profile.selected_runtime()?;
-        let client = profile.selected_client()?;
+        let account_ids: Vec<_> = profile
+            .accounts
+            .iter()
+            .map(|definition| definition.id.as_str())
+            .collect();
+        let runtime_ids: Vec<_> = profile
+            .runtimes
+            .iter()
+            .map(|definition| definition.id.as_str())
+            .collect();
+        let client_ids: Vec<_> = profile
+            .clients
+            .iter()
+            .map(|definition| definition.id.as_str())
+            .collect();
+
+        let account = profile.account(selected_axis("AZURE_COSMOS_E2E_ACCOUNT", &account_ids)?);
+        let runtime = profile.runtime(selected_axis("AZURE_COSMOS_E2E_RUNTIME", &runtime_ids)?);
+        let client = profile.client(selected_axis("AZURE_COSMOS_E2E_CLIENT", &client_ids)?);
         let read_region = lifecycle_read_region(profile)?;
         let routing = lifecycle_routing(client, &read_region)?;
 
@@ -420,11 +379,18 @@ impl<'a> SelectedLifecycleSetup<'a> {
     }
 
     async fn build_client(&self) -> TestResult<azure_data_cosmos::CosmosClient> {
-        build_client_with_defaults(ClientSetup::from_profile(
-            self.runtime,
-            self.client,
+        build_client_with_defaults(
             self.routing.clone(),
-        )?)
+            parse_optional_read_consistency(
+                self.runtime.default_read_consistency_strategy.as_deref(),
+            )?,
+            parse_optional_read_consistency(
+                self.client.default_read_consistency_strategy.as_deref(),
+            )?,
+            parse_setup_switch(&self.runtime.gateway_v2, "backendDefault")?,
+            parse_setup_switch(&self.runtime.ppcb, "sdkDefault")?,
+            parse_setup_switch(&self.client.binary_encoding, "sdkDefault")?,
+        )
         .await
     }
 
@@ -518,17 +484,13 @@ async fn read_created_item(
                     status_code: response.status().status_code(),
                     substatus: response.status().sub_status().map(|value| value.value()),
                 };
-                record_request_statuses_or_outer(
-                    &response.diagnostics(),
-                    status,
-                    &mut observed_statuses,
-                );
+                record_request_statuses(&response.diagnostics(), &mut observed_statuses);
+                observed_statuses.push(status);
                 if read_case
                     .expectation
                     .terminal_status()
                     .matches(status.status_code, status.substatus)
                 {
-                    validate_observed_statuses(read_case, &observed_statuses, execution)?;
                     assert_critical_diagnostics(
                         &response.diagnostics(),
                         "read_item",
@@ -550,16 +512,14 @@ async fn read_created_item(
                     substatus: error.status().sub_status().map(|value| value.value()),
                 };
                 if let Some(diagnostics) = error.diagnostics() {
-                    record_request_statuses_or_outer(&diagnostics, status, &mut observed_statuses);
-                } else {
-                    observed_statuses.push(status);
+                    record_request_statuses(&diagnostics, &mut observed_statuses);
                 }
+                observed_statuses.push(status);
                 if read_case
                     .expectation
                     .terminal_status()
                     .matches(status.status_code, status.substatus)
                 {
-                    validate_observed_statuses(read_case, &observed_statuses, execution)?;
                     if read_case.expectation == ReadExpectation::RejectedBeforeTransport {
                         assert!(
                             error.response().is_none(),
@@ -583,91 +543,24 @@ async fn read_created_item(
                     execution,
                     &observed_statuses,
                 )?;
-                if matches!(
-                    read_case.expectation,
-                    ReadExpectation::EventuallySucceeds { .. }
-                ) {
-                    set_replication_paused(false).await?;
-                }
             }
         }
         tokio::time::sleep(RETRY_DELAY).await;
     }
 }
 
-fn record_request_statuses_or_outer(
-    diagnostics: &azure_data_cosmos::diagnostics::DiagnosticsContext,
-    outer_status: ActualHttpStatus,
-    statuses: &mut Vec<ActualHttpStatus>,
-) {
-    let previous_len = statuses.len();
-    record_request_statuses(diagnostics, statuses);
-    if statuses.len() == previous_len {
-        statuses.push(outer_status);
-    }
-}
-
-fn validate_observed_statuses(
-    read_case: &PostCreateReadCase,
-    observed_statuses: &[ActualHttpStatus],
-    execution: &str,
-) -> TestResult {
-    let terminal = read_case.expectation.terminal_status();
-    let allowed = read_case.expectation.allowed_transient_statuses();
-    if observed_statuses.iter().any(|actual| {
-        !terminal.matches(actual.status_code, actual.substatus)
-            && !allowed.iter().any(|expected| {
-                expected
-                    .http_status()
-                    .matches(actual.status_code, actual.substatus)
-            })
-    }) {
-        return Err(format!(
-            "'{execution}' observed statuses outside its contract: {observed_statuses:?}"
-        )
-        .into());
-    }
-    if matches!(
-        read_case.expectation,
-        ReadExpectation::EventuallySucceeds { .. }
-    ) && !observed_statuses.iter().any(|actual| {
-        allowed.iter().any(|expected| {
-            expected
-                .http_status()
-                .matches(actual.status_code, actual.substatus)
-        })
-    }) {
-        return Err(format!(
-            "'{execution}' did not observe the expected delayed-read transient; observed {observed_statuses:?}"
-        )
-        .into());
-    }
-    Ok(())
-}
-
 async fn assert_item_deleted(
     container: &ContainerClient,
     item_id: &str,
     delete_session_token: String,
-    read_case: &PostCreateReadCase,
     execution: &str,
 ) -> TestResult {
     let mut operation = OperationOptions::default();
-    operation.read_consistency_strategy =
-        if read_case.expectation == ReadExpectation::RejectedBeforeTransport {
-            // GlobalStrong cannot verify resource state on a non-Strong account. Its rejection was
-            // already asserted above, so use the strongest valid deletion check for this cell.
-            Some(ReadConsistencyStrategy::Session)
-        } else {
-            read_case.consistency_override
-        };
+    operation.read_consistency_strategy = Some(ReadConsistencyStrategy::Session);
     operation.availability_strategy = Some(AvailabilityStrategy::Disabled);
-    let mut options = ItemReadOptions::default().with_operation_options(operation);
-    if read_case.session_token == SessionTokenBehavior::ExplicitCreateResponse
-        || read_case.expectation == ReadExpectation::RejectedBeforeTransport
-    {
-        options = options.with_session_token(delete_session_token);
-    }
+    let options = ItemReadOptions::default()
+        .with_operation_options(operation)
+        .with_session_token(delete_session_token);
     let deadline = tokio::time::Instant::now() + REPLICATION_TIMEOUT;
 
     loop {
@@ -688,21 +581,12 @@ async fn assert_item_deleted(
                     error.status().status_code(),
                     error.status().sub_status().map(|value| value.value()),
                 ) && tokio::time::Instant::now() < deadline => {}
-            Ok(_)
-                if matches!(
-                    read_case.expectation,
-                    ReadExpectation::EventuallySucceeds { .. }
-                ) && read_case.session_token == SessionTokenBehavior::Omitted
-                    && tokio::time::Instant::now() < deadline => {}
-            Ok(response) => {
-                let diagnostics = response.diagnostics();
-                let actual = response.into_model::<Item>()?;
+            Ok(_) if tokio::time::Instant::now() < deadline => {}
+            Ok(_) => {
                 return Err(format!(
-                    "deleted item for '{execution}' remained visible despite the delete session token: {actual:?}; regions: {:?}; requests: {:?}",
-                    diagnostics.regions_contacted(),
-                    diagnostics.requests()
+                    "deleted item for '{execution}' remained visible after {REPLICATION_TIMEOUT:?}"
                 )
-                .into());
+                .into())
             }
             Err(error) => return Err(error.into()),
         }
@@ -810,8 +694,40 @@ fn lifecycle_routing(
     }
 }
 
+fn selected_axis<'a>(environment_variable: &str, available: &'a [&str]) -> TestResult<&'a str> {
+    match std::env::var(environment_variable) {
+        Ok(selected) => available
+            .iter()
+            .copied()
+            .find(|candidate| *candidate == selected)
+            .ok_or_else(|| {
+                format!("{environment_variable}='{selected}' is not one of {available:?}").into()
+            }),
+        Err(_) if available.len() == 1 => Ok(available[0]),
+        Err(_) => Err(format!(
+            "{environment_variable} is required because this profile defines {available:?}"
+        )
+        .into()),
+    }
+}
+
+fn parse_optional_read_consistency(
+    value: Option<&str>,
+) -> TestResult<Option<ReadConsistencyStrategy>> {
+    value.map(parse_read_consistency).transpose()
+}
+
 fn parse_read_consistency(value: &str) -> TestResult<ReadConsistencyStrategy> {
     value.parse::<ReadConsistencyStrategy>().map_err(Into::into)
+}
+
+fn parse_setup_switch(value: &str, default: &str) -> TestResult<Option<bool>> {
+    match value {
+        "enabled" => Ok(Some(true)),
+        "disabled" => Ok(Some(false)),
+        value if value == default => Ok(None),
+        value => Err(format!("unsupported setup switch '{value}'").into()),
+    }
 }
 
 #[cfg(test)]
@@ -936,53 +852,24 @@ mod tests {
         ))
         .expect("override profile must deserialize");
         let account = profile.account("session");
-        let inherited_expectations = [
-            (
-                "unset",
-                "unset",
-                SessionTokenBehavior::SdkManaged,
-                TransientReadStatus::SessionNotAvailable,
-            ),
-            (
-                "eventual",
-                "unset",
-                SessionTokenBehavior::Omitted,
-                TransientReadStatus::PlainNotFound,
-            ),
-            (
-                "session",
-                "unset",
-                SessionTokenBehavior::SdkManaged,
-                TransientReadStatus::SessionNotAvailable,
-            ),
-            (
-                "unset",
-                "latestCommitted",
-                SessionTokenBehavior::Omitted,
-                TransientReadStatus::PlainNotFound,
-            ),
-            (
-                "eventual",
-                "latestCommitted",
-                SessionTokenBehavior::Omitted,
-                TransientReadStatus::PlainNotFound,
-            ),
-            (
-                "session",
-                "latestCommitted",
-                SessionTokenBehavior::Omitted,
-                TransientReadStatus::PlainNotFound,
-            ),
-        ];
 
         for runtime in &profile.runtimes {
             for client in &profile.clients {
-                let (_, _, inherited_token, inherited_transient) = inherited_expectations
-                    .iter()
-                    .find(|(runtime_id, client_id, _, _)| {
-                        *runtime_id == runtime.id && *client_id == client.id
-                    })
-                    .expect("every override profile cell must have a hard-coded expectation");
+                let inherited_uses_session = client
+                    .default_read_consistency_strategy
+                    .as_deref()
+                    .or(runtime.default_read_consistency_strategy.as_deref())
+                    .is_none_or(|strategy| strategy == "Session");
+                let inherited_expectation = if inherited_uses_session {
+                    eventually_succeeds_after(TransientReadStatus::SessionNotAvailable)
+                } else {
+                    eventually_succeeds_after(TransientReadStatus::PlainNotFound)
+                };
+                let inherited_token = if inherited_uses_session {
+                    SessionTokenBehavior::SdkManaged
+                } else {
+                    SessionTokenBehavior::Omitted
+                };
 
                 let actual = read_cases_for_default_precedence(
                     account,
@@ -994,13 +881,13 @@ mod tests {
                     PostCreateReadCase::new(
                         "inherits_client_then_runtime_then_account_default",
                         None,
-                        *inherited_token,
-                        eventually_succeeds_after(*inherited_transient),
+                        inherited_token,
+                        inherited_expectation,
                     ),
                     PostCreateReadCase::new(
                         "default_override_restores_account_consistency",
                         Some(ReadConsistencyStrategy::Default),
-                        SessionTokenBehavior::SdkManaged,
+                        SessionTokenBehavior::ExplicitCreateResponse,
                         eventually_succeeds_after(TransientReadStatus::SessionNotAvailable),
                     ),
                     PostCreateReadCase::new(
@@ -1017,18 +904,6 @@ mod tests {
                 );
             }
         }
-
-        let client_default =
-            read_cases_for_default_precedence(account, Some("Eventual"), Some("Default"))
-                .expect("client Default must be valid");
-        assert_eq!(
-            client_default[0].session_token,
-            SessionTokenBehavior::SdkManaged
-        );
-        assert_eq!(
-            client_default[0].expectation,
-            eventually_succeeds_after(TransientReadStatus::SessionNotAvailable)
-        );
     }
 
     #[test]
