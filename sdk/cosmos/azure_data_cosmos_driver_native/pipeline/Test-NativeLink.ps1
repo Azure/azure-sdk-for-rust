@@ -90,7 +90,7 @@ else {
     @()
 }
 $linkerFlags = @(
-    '-L${SRCDIR}/native'
+    '-L${SRCDIR}'
     "-l$($matrix.lib_basename)"
     $runtimeFlags
     @($metadata.native_static_libs)
@@ -108,7 +108,7 @@ $source = @"
 
 package main
 
-// #cgo CFLAGS: -I`${SRCDIR}/native
+// #cgo CFLAGS: -I`${SRCDIR}
 // #cgo LDFLAGS: $($linkerFlags -join ' ')
 // #include "$($matrix.header_filename)"
 import "C"
@@ -126,9 +126,8 @@ $savedEnvironment = @{
     GOOS = $env:GOOS
 }
 try {
-    $nativeRoot = Join-Path $workRoot 'native'
-    New-Item -ItemType Directory -Path $nativeRoot -Force | Out-Null
-    Copy-Item $libraryPath, $headerPath -Destination $nativeRoot -Force
+    New-Item -ItemType Directory -Path $workRoot -Force | Out-Null
+    Copy-Item $libraryPath, $headerPath -Destination $workRoot -Force
     [IO.File]::WriteAllText(
         (Join-Path $workRoot 'go.mod'),
         "module native-link-smoke`n`ngo $($matrix.go_version)`n",
