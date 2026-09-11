@@ -88,7 +88,7 @@ BeforeAll {
                         version = 'msrustup 1.0.0'
                     }
                     channel = $MicrosoftRustChannel
-                    active_toolchain = "$MicrosoftRustChannel-test-host"
+                    selected_toolchain = $MicrosoftRustChannel
                     rustc_verbose_version = @"
 rustc 1.95.0 (microsoft 012345678 2026-08-01)
 binary: rustc
@@ -183,7 +183,7 @@ BeforeEach {
         $windowsEntry.Count | Should -Be 1
         $windowsEntry[0].static_library_sha256 | Should -Match '^[0-9a-f]{64}$'
         $windowsEntry[0].header_sha256 | Should -Match '^[0-9a-f]{64}$'
-        $windowsEntry[0].toolchain.active_toolchain | Should -Be "$MicrosoftRustChannel-test-host"
+        $windowsEntry[0].toolchain.selected_toolchain | Should -Be $MicrosoftRustChannel
         $windowsEntry[0].toolchain.rustc_verbose_version | Should -Match 'release: 1\.95\.0'
         $windowsEntry[0].toolchain.target | Should -Be 'x86_64-pc-windows-gnu'
         $windowsEntry[0].toolchain.linker.command | Should -Be 'gcc'
@@ -261,7 +261,7 @@ BeforeEach {
             $metadata.toolchain.provider = 'upstream'
             $metadata.toolchain.manager.executable = 'rustup'
             $metadata.toolchain.channel = 'stable'
-            $metadata.toolchain.active_toolchain = 'stable-test-host'
+            $metadata.toolchain.selected_toolchain = 'stable'
         }
 
         { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
@@ -290,11 +290,37 @@ LLVM version: 21.1.0
         Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
             param($metadata)
             $metadata.toolchain.channel = 'ms-prod'
-            $metadata.toolchain.active_toolchain = 'ms-prod-test-host'
+            $metadata.toolchain.selected_toolchain = 'ms-prod'
         }
 
         { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
             Should -Throw '*Microsoft Rust channel*not explicitly pinned*'
+    }
+
+    It 'rejects a Microsoft compiler release that differs from the pinned channel' {
+        foreach ($row in $Matrix.targets) {
+            Update-TestMetadata -Root $ArtifactRoot -TargetId $row.id -Update {
+                param($metadata)
+                $metadata.toolchain.rustc_release = '1.96.0'
+                $metadata.toolchain.rustc_verbose_version = $metadata.toolchain.rustc_verbose_version `
+                    -replace 'rustc 1\.95\.0', 'rustc 1.96.0' `
+                    -replace 'release: 1\.95\.0', 'release: 1.96.0'
+            }
+        }
+
+        { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
+            Should -Throw "*Microsoft Rust release '1.96.0' does not match pinned channel*"
+    }
+
+    It 'rejects a rustc identity that contradicts its release field' {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+            param($metadata)
+            $metadata.toolchain.rustc_verbose_version = $metadata.toolchain.rustc_verbose_version `
+                -replace 'release: 1\.95\.0', 'release: 1.95.1'
+        }
+
+        { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
+            Should -Throw "*rustc release '1.95.0' does not match rustc identity release '1.95.1'*"
     }
 
     It 'rejects targets carrying mixed Microsoft Rust releases' {

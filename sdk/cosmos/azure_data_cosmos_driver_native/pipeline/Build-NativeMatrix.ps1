@@ -10,7 +10,7 @@
 
 .DESCRIPTION
     For each row in build-matrix.json this script:
-      1. Ensures the Rust target triple is installed (rustup).
+      1. Ensures the Rust target triple is installed with msrustup.
       2. Captures the exact rustc syslib link line PROGRAMMATICALLY via
          `cargo rustc ... -- --print native-static-libs`, then applies declared
          target-specific ABI-compatible compiler-library replacements.
@@ -140,7 +140,7 @@ function Invoke-RequiredToolOutput(
 function Get-NativeStaticLibs([string] $triple) {
     Push-Location $CrateDir
     try {
-        $out = & cargo rustc --release --quiet `
+        $out = & cargo $cargoToolchainArgument rustc --release --quiet `
             -p $matrix.native_interface_crate `
             --target $triple `
             -- --print native-static-libs 2>&1
@@ -210,52 +210,41 @@ function Resolve-ConsumerNativeStaticLibs(
 
 function Test-TripleInstalled([string] $triple) {
     $installedTargets = @(
-        (& $rustupExecutable target list --installed 2>&1) |
+        (& $msrustupExecutable target list --installed `
+            --toolchain $microsoftRustConfig.Channel 2>&1) |
             Where-Object { $_ -match '\S' -and $_ -notmatch '^\s*(INFO|WARN)\b' } |
             ForEach-Object { ([string]$_).Trim() }
     )
     if ($LASTEXITCODE -ne 0) {
-        throw "$rustupExecutable target list --installed failed with exit code $LASTEXITCODE."
+        throw "msrustup target list failed for '$($microsoftRustConfig.Channel)' with exit code $LASTEXITCODE."
     }
 
     return $installedTargets -contains $triple
 }
 
-$rustupExecutable = Get-RustupExecutable
-$rustupName = [System.IO.Path]::GetFileNameWithoutExtension($rustupExecutable)
-if ($rustupName -cne 'msrustup') {
-    throw "Microsoft Rust is required: RUSTUP_EXE must resolve to msrustup, found '$rustupExecutable'."
+$msrustupCommand = Get-Command 'msrustup' -ErrorAction SilentlyContinue
+if (-not $msrustupCommand) {
+    throw 'Microsoft Rust is required: msrustup is not installed or is not available on PATH.'
 }
+$msrustupExecutable = if ($msrustupCommand.Source) {
+    $msrustupCommand.Source
+}
+else {
+    $msrustupCommand.Name
+}
+$cargoToolchainArgument = "+$($microsoftRustConfig.Channel)"
 
 $managerVersion = Invoke-RequiredToolOutput `
-    -Executable $rustupExecutable `
+    -Executable $msrustupExecutable `
     -Arguments @('--version') `
     -Description 'Microsoft Rust toolchain manager'
-$activeToolchainOutput = Invoke-RequiredToolOutput `
-    -Executable $rustupExecutable `
-    -Arguments @('show', 'active-toolchain') `
-    -Description 'Microsoft Rust active toolchain query'
-$activeToolchain = (
-    $activeToolchainOutput -split "`r?`n" |
-        Where-Object { $_ -match '\S' -and $_ -notmatch '^\s*(INFO|WARN)\b' } |
-        Select-Object -First 1
-)
-if (
-    -not $activeToolchain -or
-    -not (Test-MicrosoftRustActiveToolchain `
-        -ActiveToolchain $activeToolchain.Trim() `
-        -Channel $microsoftRustConfig.Channel)
-) {
-    throw "Active Rust toolchain '$activeToolchain' does not match pinned Microsoft channel '$($microsoftRustConfig.Channel)'."
-}
-$activeToolchain = $activeToolchain.Trim()
 
 $rustcVerboseVersion = Invoke-RequiredToolOutput `
     -Executable 'rustc' `
-    -Arguments @('-Vv') `
-    -Description 'rustc -Vv'
+    -Arguments @($cargoToolchainArgument, '-Vv') `
+    -Description "rustc $cargoToolchainArgument -Vv"
 if ($rustcVerboseVersion -notmatch '(?im)^rustc\s+.*\bmicrosoft\b') {
-    throw "rustc -Vv does not identify a Microsoft Rust compiler; refusing a possible upstream fallback."
+    throw "rustc $cargoToolchainArgument -Vv does not identify a Microsoft Rust compiler; refusing a possible upstream fallback."
 }
 $rustcReleaseMatch = [regex]::Match(
     $rustcVerboseVersion,
@@ -265,15 +254,19 @@ if (-not $rustcReleaseMatch.Success) {
     throw "rustc -Vv did not report a release identity."
 }
 $rustcRelease = $rustcReleaseMatch.Groups[1].Value
+$channelRelease = $microsoftRustConfig.Channel.Substring('ms-prod-'.Length)
+if ($rustcRelease -notmatch "^$([regex]::Escape($channelRelease))(?:\.|$)") {
+    throw "Microsoft Rust release '$rustcRelease' does not match pinned channel '$($microsoftRustConfig.Channel)'."
+}
 $cargoVersion = Invoke-RequiredToolOutput `
     -Executable 'cargo' `
-    -Arguments @('--version') `
-    -Description 'cargo --version'
+    -Arguments @($cargoToolchainArgument, '--version') `
+    -Description "cargo $cargoToolchainArgument --version"
 
 $sourceCommit = (& git -C $RepoRoot rev-parse HEAD 2>$null)
 if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve the source commit.' }
 
-$cargoMetadataJson = & cargo metadata --format-version 1 --no-deps `
+$cargoMetadataJson = & cargo $cargoToolchainArgument metadata --format-version 1 --no-deps `
     --manifest-path (Join-Path $CrateDir 'Cargo.toml') 2>&1
 if ($LASTEXITCODE -ne 0) {
     throw "cargo metadata failed with exit code $LASTEXITCODE`n$($cargoMetadataJson -join "`n")"
@@ -305,13 +298,14 @@ foreach ($row in $rows) {
     }
 
     if (-not (Test-TripleInstalled $row.triple)) {
-        Write-Host "    target not installed; attempting '$rustupExecutable target add $($row.triple)'"
-        & $rustupExecutable target add $row.triple *> $null
+        Write-Host "    target not installed; attempting 'msrustup target add $($row.triple) --toolchain $($microsoftRustConfig.Channel)'"
+        & $msrustupExecutable target add $row.triple `
+            --toolchain $microsoftRustConfig.Channel *> $null
         if ($LASTEXITCODE -ne 0) {
-            throw "$rustupExecutable target add failed for $($row.triple) with exit code $LASTEXITCODE"
+            throw "msrustup target add failed for $($row.triple) with exit code $LASTEXITCODE"
         }
         if (-not (Test-TripleInstalled $row.triple)) {
-            throw "$rustupExecutable did not install required target '$($row.triple)'."
+            throw "msrustup did not install required target '$($row.triple)' for '$($microsoftRustConfig.Channel)'."
         }
     }
     $targetOut = Join-Path $OutputRoot $row.id
@@ -362,8 +356,8 @@ foreach ($row in $rows) {
                     '--config', 'profile.release.codegen-units=1',
                     '--config', 'profile.release.strip="symbols"'
                 )
-                if ($NoAuditable) { & cargo @buildArgs }
-                else              { & cargo auditable @buildArgs }
+                if ($NoAuditable) { & cargo $cargoToolchainArgument @buildArgs }
+                else              { & cargo $cargoToolchainArgument auditable @buildArgs }
                 if ($LASTEXITCODE -ne 0) {
                     throw "$builtWith build failed for $($row.triple) with exit code $LASTEXITCODE"
                 }
@@ -445,11 +439,11 @@ foreach ($row in $rows) {
         toolchain = [ordered]@{
             provider = 'microsoft'
             manager = [ordered]@{
-                executable = $rustupExecutable
+                executable = $msrustupExecutable
                 version    = $managerVersion
             }
             channel               = $microsoftRustConfig.Channel
-            active_toolchain      = $activeToolchain
+            selected_toolchain    = $microsoftRustConfig.Channel
             rustc_verbose_version = $rustcVerboseVersion
             rustc_release         = $rustcRelease
             cargo_version         = $cargoVersion

@@ -272,12 +272,12 @@ foreach ($row in $rows) {
         throw "[$($row.id)] metadata Microsoft Rust channel mismatch: expected '$($microsoftRustConfig.Channel)', found '$channel'."
     }
 
-    $activeToolchain = Get-RequiredMetadataString `
+    $selectedToolchain = Get-RequiredMetadataString `
         -TargetId $row.id `
         -Object $toolchain `
-        -Name 'active_toolchain'
-    if (-not (Test-MicrosoftRustActiveToolchain -ActiveToolchain $activeToolchain -Channel $channel)) {
-        throw "[$($row.id)] metadata active toolchain '$activeToolchain' does not match '$channel'."
+        -Name 'selected_toolchain'
+    if ($selectedToolchain -cne $channel) {
+        throw "[$($row.id)] metadata selected toolchain '$selectedToolchain' does not match '$channel'."
     }
 
     $rustcVerboseVersion = Get-RequiredMetadataString `
@@ -291,6 +291,21 @@ foreach ($row in $rows) {
         -TargetId $row.id `
         -Object $toolchain `
         -Name 'rustc_release'
+    $verboseReleaseMatches = [regex]::Matches(
+        $rustcVerboseVersion,
+        '(?m)^release:\s*(\S+)\s*$'
+    )
+    if ($verboseReleaseMatches.Count -ne 1) {
+        throw "[$($row.id)] metadata rustc identity must report exactly one release."
+    }
+    $verboseRustcRelease = $verboseReleaseMatches[0].Groups[1].Value
+    if ($verboseRustcRelease -cne $rustcRelease) {
+        throw "[$($row.id)] metadata rustc release '$rustcRelease' does not match rustc identity release '$verboseRustcRelease'."
+    }
+    $channelRelease = $channel.Substring('ms-prod-'.Length)
+    if ($rustcRelease -notmatch "^$([regex]::Escape($channelRelease))(?:\.|$)") {
+        throw "[$($row.id)] metadata Microsoft Rust release '$rustcRelease' does not match pinned channel '$channel'."
+    }
     $cargoVersion = Get-RequiredMetadataString `
         -TargetId $row.id `
         -Object $toolchain `
@@ -379,7 +394,7 @@ foreach ($row in $rows) {
         HeaderPath = $headerPath
         StaticLibraryPath = $staticLibraryPath
         Toolchain = [ordered]@{
-            active_toolchain      = $activeToolchain
+            selected_toolchain    = $selectedToolchain
             rustc_verbose_version = $rustcVerboseVersion
             target                = [string]$toolchain.target
             linker = [ordered]@{

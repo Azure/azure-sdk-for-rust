@@ -15,12 +15,18 @@ commands are documented in `pipeline/README.md`.
 
 ## Scope
 
-This pull request produces `libazurecosmosdriver.a` for:
+This pull request configures `libazurecosmosdriver.a` builds for the following
+intended release matrix:
 
 - Windows AMD64
 - Linux AMD64 and ARM64 using glibc
 - Linux AMD64 and ARM64 using musl
 - macOS ARM64
+
+Availability of all six target standard libraries in the private Microsoft Rust
+feed remains unverified until the pipeline completes a manual internal Azure
+DevOps run. A missing target fails the build rather than falling back to
+upstream Rust.
 
 The Go SDK links this static library into the customer's final executable.
 
@@ -51,8 +57,8 @@ The metadata records:
 - the Rust target;
 - the source repository commit;
 - the native-interface and driver versions;
-- the `msrustup` executable, manager version, and active pinned Microsoft Rust
-  channel;
+- the `msrustup` executable and manager version, plus the explicitly selected
+  pinned Microsoft Rust channel;
 - the complete `rustc -Vv` output and Cargo version;
 - the linker command, resolved executable path, and version output;
 - the operating-system libraries required by the Go linker; and
@@ -125,11 +131,14 @@ required by the release matrix. It does not list `rust-std` as a host component;
 cross-target standard libraries are installed through the toolchain target
 mechanism.
 
-`Build-NativeMatrix.ps1` requires `RUSTUP_EXE` to select `msrustup`, validates the
-active channel against the centralized pin, and checks each target with
-`msrustup target list --installed`. A missing target is installed only through
-`msrustup` and verified again. Any missing manager, upstream fallback, channel
-mismatch, or unsupported target stops the build before Cargo runs.
+`Build-NativeMatrix.ps1` uses `msrustup` only to manage the pinned toolchain and
+its targets. Every compiler and build command selects that toolchain explicitly
+with `+ms-prod-1.95`, using the repository's existing Cargo toolchain-selection
+model rather than redirecting Cargo or rustup through an environment variable.
+Each target is checked with `msrustup target list --installed --toolchain` and a
+missing target is installed only through `msrustup` and verified again. Any
+missing manager, upstream compiler fallback, unpinned channel, or unsupported
+target stops the build.
 
 The target list must still be exercised by a manual build in the internal Azure
 DevOps project. Local tests verify the fail-closed behavior but cannot prove that
@@ -278,7 +287,7 @@ repository then requires one approval and code-owner approval before merge.
 
 `Invoke-LocalSupplyChain.ps1` exercises the mechanics on a developer machine
 that already has the pinned Microsoft Rust toolchain installed through
-`msrustup` and selects it with `RUSTUP_EXE=msrustup`. It:
+`msrustup`. Build commands select the pinned channel explicitly. It:
 
 1. builds the native libraries;
 2. applies a disposable test signature to the Windows DLL;

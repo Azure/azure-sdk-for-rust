@@ -17,12 +17,13 @@ draft pull request in `Azure/azure-cosmos-driver`.
 
 Production jobs install the centrally pinned Microsoft Rust toolchain from
 `eng/templates/ms-rust-toolchain.toml` through the internal `RustInstaller@1`
-feed. The native build rejects ordinary `rustup`, a different or unpinned
+feed. The native build invokes Cargo and rustc with the explicit pinned
+toolchain selector and rejects an upstream compiler, a different or unpinned
 channel, and targets that `msrustup` cannot install.
 
-## What this pull request supports
+## Configured release matrix
 
-The active build targets are:
+The intended build targets are:
 
 - Windows AMD64
 - Linux AMD64 using glibc
@@ -30,6 +31,10 @@ The active build targets are:
 - Linux AMD64 using musl
 - Linux ARM64 using musl
 - macOS ARM64
+
+This matrix is configured but not yet claimed as available. A manual run in the
+internal Azure DevOps project must confirm that the private Microsoft Rust feed
+supplies every target; unsupported targets fail closed.
 
 Windows ARM64 and Intel macOS are outside the supported matrix. Dynamic libraries
 for .NET, Java, and Python are also outside this pull request.
@@ -94,7 +99,7 @@ with SBOM generation enabled rather than implementing a second, pipeline-local
 signature verifier.
 
 Each target artifact includes schema 4 metadata with the selected toolchain
-manager, active Microsoft Rust channel, manager and Cargo versions, complete
+manager, pinned Microsoft Rust channel, manager and Cargo versions, complete
 `rustc -Vv` output, target triple, and linker command, resolved path, and version
 output. `New-GoModules.ps1` rejects missing or mixed toolchain identities before
 writing schema 2 `provenance.json`.
@@ -125,8 +130,8 @@ Run the complete local test on Windows AMD64:
 ```
 
 The local machine must already have access to the internal Microsoft Rust feed,
-the pinned channel installed through `msrustup`, and `RUSTUP_EXE=msrustup`.
-There is no fallback to an upstream Rust installation.
+and the pinned channel installed through `msrustup`. Build commands select that
+channel explicitly; there is no fallback to an upstream Rust installation.
 
 The script:
 

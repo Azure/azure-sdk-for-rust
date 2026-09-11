@@ -44,16 +44,3 @@ function Get-MicrosoftRustToolchainConfiguration(
     Targets = $targets
   }
 }
-
-function Test-MicrosoftRustActiveToolchain(
-  [Parameter(Mandatory = $true)]
-  [string] $ActiveToolchain,
-
-  [Parameter(Mandatory = $true)]
-  [string] $Channel
-) {
-  return (
-    $ActiveToolchain -ceq $Channel -or
-    $ActiveToolchain.StartsWith("$Channel-", [StringComparison]::Ordinal)
-  )
-}
