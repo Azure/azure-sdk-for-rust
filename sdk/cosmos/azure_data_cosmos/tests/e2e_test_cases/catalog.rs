@@ -314,6 +314,9 @@ pub(super) fn required_capabilities_for(
 }
 
 pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
+    // Full JSON Schema evaluation is owned by Test-CosmosE2eScenarioDocuments in
+    // Invoke-CosmosTestSetup.ps1. Keep these repository-native semantic checks aligned with
+    // schema constraints that they intentionally duplicate.
     for (name, schema) in [("scenario", SCENARIO_SCHEMA), ("profile", PROFILE_SCHEMA)] {
         let schema: Value = serde_json::from_str(schema)
             .map_err(|error| format!("{name} schema is not JSON: {error}"))?;
@@ -370,6 +373,7 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
         }
         for account in &profile.accounts {
             if account.regions.is_empty()
+                || account.regions.iter().any(|region| region.name.is_empty())
                 || account.replication.min_delay_ms > account.replication.max_delay_ms
                 || !matches!(account.write_mode.as_str(), "single" | "multi")
                 || !matches!(
@@ -645,7 +649,19 @@ fn valid_scenario_id(value: &str) -> bool {
     let mut segments = value.split('.');
     let first = segments.next();
     let rest: Vec<_> = segments.collect();
-    first.is_some_and(valid_slug) && !rest.is_empty() && rest.into_iter().all(valid_slug)
+    first.is_some_and(valid_first_scenario_segment)
+        && !rest.is_empty()
+        && rest.into_iter().all(valid_slug)
+}
+
+fn valid_first_scenario_segment(value: &str) -> bool {
+    value
+        .chars()
+        .next()
+        .is_some_and(|first| first.is_ascii_lowercase())
+        && value
+            .chars()
+            .all(|character| character.is_ascii_lowercase() || character.is_ascii_digit())
 }
 
 fn valid_slug(value: &str) -> bool {
@@ -656,4 +672,16 @@ fn valid_slug(value: &str) -> bool {
         && value.chars().all(|character| {
             character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::valid_scenario_id;
+
+    #[test]
+    fn scenario_id_matches_schema_segment_rules() {
+        assert!(valid_scenario_id("changefeed.all-versions"));
+        assert!(!valid_scenario_id("change-feed.all-versions"));
+        assert!(!valid_scenario_id("changefeed."));
+    }
 }
