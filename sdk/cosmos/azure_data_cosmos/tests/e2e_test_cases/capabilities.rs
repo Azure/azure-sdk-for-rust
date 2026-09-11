@@ -11,13 +11,15 @@ use crate::e2e_test_cases::{fixture::TestResult, support::should_run};
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn capability_document_is_versioned() -> TestResult {
-    if !should_run("management.capabilities")? {
+    if !should_run("management.capabilities").await? {
         return Ok(());
     }
 
     // Read the emulator's public management document without using Rust internals.
     let management_endpoint = std::env::var("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT")?;
-    let response = reqwest::Client::new()
+    let response = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()?
         .get(url::Url::parse(&management_endpoint)?.join("capabilities")?)
         .send()
         .await?;

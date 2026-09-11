@@ -2,6 +2,8 @@
   "displayNames": {
     "inmemory-v1": "gateway_v1",
     "inmemory-v2": "gateway_v2",
+    "lifecycleConsistencyMatrix": "consistency",
+    "unset": "default",
     "strong": "strong_2_regions",
     "boundedStaleness": "bounded_staleness_2_regions_delayed",
     "session": "session_2_regions_delayed",

@@ -451,9 +451,11 @@ pub(crate) async fn execute_operation_pipeline(
         .unwrap_or(ReadConsistencyStrategy::Default);
     let effective_consistency =
         resolve_effective_consistency(read_consistency_strategy, account_default_consistency);
+    let session_consistency_strategy =
+        session_consistency_strategy_for_operation(operation, read_consistency_strategy);
     let session_consistency_active = partition_key_range_cache_enabled
         && !session_capturing_disabled
-        && read_consistency_strategy.is_session_effective(account_default_consistency);
+        && session_consistency_strategy.is_session_effective(account_default_consistency);
 
     // Rule 4 (RCS validation): GlobalStrong is
     // valid only on reads against accounts whose default consistency is Strong.
@@ -466,13 +468,7 @@ pub(crate) async fn execute_operation_pipeline(
     ) && operation.is_read_only()
         && account_default_consistency != DefaultConsistencyLevel::Strong
     {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
-            .with_message(
-                "ReadConsistencyStrategy::GlobalStrong is only valid against accounts whose \
-                 default consistency level is Strong",
-            )
-            .build());
+        return Err(global_strong_account_validation_error(diagnostics));
     }
     let max_session_retries = options
         .max_session_retry_count()
@@ -591,9 +587,14 @@ pub(crate) async fn execute_operation_pipeline(
             attempt_read_consistency_strategy,
             account_default_consistency,
         );
+        let attempt_session_consistency_strategy = session_consistency_strategy_for_operation(
+            operation,
+            attempt_read_consistency_strategy,
+        );
         let attempt_session_consistency_active = partition_key_range_cache_enabled
             && !session_capturing_disabled
-            && attempt_read_consistency_strategy.is_session_effective(account_default_consistency);
+            && attempt_session_consistency_strategy
+                .is_session_effective(account_default_consistency);
 
         // Emit one structured debug record per attempt with the chosen
         // routing decision. Tests and SREs filter on this to verify which
@@ -4362,6 +4363,32 @@ async fn execute_hedged(
     }
 }
 
+fn session_consistency_strategy_for_operation(
+    operation: &CosmosOperation,
+    read_consistency_strategy: ReadConsistencyStrategy,
+) -> ReadConsistencyStrategy {
+    if operation.is_read_only() {
+        read_consistency_strategy
+    } else {
+        ReadConsistencyStrategy::Default
+    }
+}
+
+fn global_strong_account_validation_error(
+    mut diagnostics: DiagnosticsContextBuilder,
+) -> crate::error::CosmosError {
+    let status = crate::error::CosmosStatus::CLIENT_BAD_REQUEST;
+    diagnostics.set_operation_status(status.status_code(), status.sub_status());
+    crate::error::CosmosError::builder()
+        .with_status(status)
+        .with_message(
+            "ReadConsistencyStrategy::GlobalStrong is only valid against accounts whose \
+             default consistency level is Strong",
+        )
+        .with_diagnostics(Arc::new(diagnostics.complete()))
+        .build()
+}
+
 /// Generic "both sides transient" error carried inside
 /// [`HedgedRaceResult::BothTransient`] when neither leg produced a
 /// final response and the deadline has not elapsed. The surrounding
@@ -4727,6 +4754,28 @@ mod tests {
             &patch_read,
             &overrides
         ));
+    }
+
+    #[test]
+    fn writes_ignore_read_consistency_strategy_for_session_capture() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let write = CosmosOperation::create_item(item.clone()).with_body(b"{}".to_vec());
+        let read = CosmosOperation::read_item(item);
+
+        assert_eq!(
+            super::session_consistency_strategy_for_operation(
+                &write,
+                crate::options::ReadConsistencyStrategy::LatestCommitted,
+            ),
+            crate::options::ReadConsistencyStrategy::Default
+        );
+        assert_eq!(
+            super::session_consistency_strategy_for_operation(
+                &read,
+                crate::options::ReadConsistencyStrategy::LatestCommitted,
+            ),
+            crate::options::ReadConsistencyStrategy::LatestCommitted
+        );
     }
 
     #[test]
@@ -10276,6 +10325,27 @@ mod tests {
             crate::models::ActivityId::from_string("test-deadline".to_owned()),
             std::sync::Arc::new(crate::options::DiagnosticsOptions::default()),
         )
+    }
+
+    #[test]
+    fn global_strong_account_validation_preserves_zero_request_diagnostics() {
+        let error = super::global_strong_account_validation_error(test_diagnostics());
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+        );
+        assert!(error.response().is_none());
+        let diagnostics = error
+            .diagnostics()
+            .expect("client-side validation must preserve diagnostics");
+        assert_eq!(diagnostics.request_count(), 0);
+        assert_eq!(
+            diagnostics
+                .effective_status()
+                .map(|status| status.status_code()),
+            Some(azure_core::http::StatusCode::BadRequest)
+        );
     }
 
     #[test]

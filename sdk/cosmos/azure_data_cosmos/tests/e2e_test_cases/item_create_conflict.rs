@@ -20,7 +20,7 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn duplicate_create_preserves_original() -> TestResult {
-    if !should_run("item.create-conflict")? {
+    if !should_run("item.create-conflict").await? {
         return Ok(());
     }
     for case in duplicate_create_cases() {
@@ -74,24 +74,26 @@ async fn duplicate_create_preserves_original() -> TestResult {
                 StatusCode::Conflict,
             );
 
-            // The failed duplicate create leaves every original field unchanged.
-            let stored: Value = fixture
+            // The failed duplicate create leaves the complete user document unchanged.
+            let mut stored: Value = fixture
                 .container
                 .read_item(case.partition_key.clone(), document_id, None)
                 .await?
                 .into_model()?;
-            for (name, expected) in case
-                .original
-                .as_object()
-                .expect("original document must be an object")
-            {
-                assert_eq!(
-                    stored.get(name),
-                    Some(expected),
-                    "fixture '{}' field '{name}' changed after duplicate create",
-                    case.id
-                );
+            let stored = stored
+                .as_object_mut()
+                .expect("stored document must be an object");
+            for system_property in ["_rid", "_self", "_etag", "_attachments", "_ts"] {
+                stored.remove(system_property);
             }
+            assert_eq!(
+                stored,
+                case.original
+                    .as_object()
+                    .expect("original document must be an object"),
+                "fixture '{}' changed after duplicate create",
+                case.id
+            );
             Ok(())
         })
         .await?;
@@ -117,7 +119,7 @@ fn duplicate_create_cases() -> Vec<DuplicateCreateCase> {
             .with_version(version),
         partition_key: PartitionKey::from("A"),
         original: json!({ "id": "duplicate-1", "pk": "A", "value": 1 }),
-        duplicate: json!({ "id": "duplicate-1", "pk": "A", "value": 2 }),
+        duplicate: json!({ "id": "duplicate-1", "pk": "A", "value": 2, "injected": true }),
     };
 
     vec![
@@ -145,7 +147,8 @@ fn duplicate_create_cases() -> Vec<DuplicateCreateCase> {
                 "id": "duplicate-1",
                 "tenant": "tenant-a",
                 "user": "user-1",
-                "value": 2
+                "value": 2,
+                "injected": true
             }),
         },
     ]

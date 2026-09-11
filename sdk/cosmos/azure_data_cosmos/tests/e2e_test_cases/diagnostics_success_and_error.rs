@@ -15,7 +15,7 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn diagnostics_cover_success_and_error() -> TestResult {
-    if !should_run("diagnostics.success-and-error")? {
+    if !should_run("diagnostics.success-and-error").await? {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {

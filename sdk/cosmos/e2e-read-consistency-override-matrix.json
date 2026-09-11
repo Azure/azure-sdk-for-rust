@@ -2,7 +2,8 @@
     "displayNames": {
         "inmemory-v1": "gateway_v1",
         "inmemory-v2": "gateway_v2",
-        "unset": "unset",
+        "readConsistencyOverrideMatrix": "rcs_override",
+        "unset": "default",
         "eventual": "eventual",
         "session": "session",
         "latestCommitted": "latest_committed"

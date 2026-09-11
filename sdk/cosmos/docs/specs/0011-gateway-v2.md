@@ -376,7 +376,11 @@ Sources, highest precedence first:
 4. Client-level `ConsistencyLevel`
 5. Account default consistency (no header / no token emitted; backend applies its default)
 
-`ReadConsistencyStrategy::Default` at any level is a pass-through — falls through to the next source. Write operations skip steps 1 and 3 entirely (RCS is read-only); writes resolve from steps 2/4/5.
+An absent `ReadConsistencyStrategy` value falls through to the next source. An explicitly
+configured `ReadConsistencyStrategy::Default` terminates strategy resolution at that layer and
+resets the read to consistency-level or account behavior; it masks lower-precedence RCS values
+without emitting an RCS header or token. Write operations skip steps 1 and 3 entirely (RCS is
+read-only); writes resolve from steps 2/4/5.
 
 ##### Dual-header rejection rule
 

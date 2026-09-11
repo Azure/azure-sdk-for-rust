@@ -15,7 +15,7 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn parameterized_query_filters_and_orders() -> TestResult {
-    if !should_run("query.parameterized-filter")? {
+    if !should_run("query.parameterized-filter").await? {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {
@@ -26,6 +26,11 @@ async fn parameterized_query_filters_and_orders() -> TestResult {
             value.score = Some(score);
             fixture.container.create_item("A", &id, value, None).await?;
         }
+        let literal_id = "it's-2\" OR 1=1 --";
+        fixture
+            .container
+            .create_item("A", literal_id, item(literal_id, "A", 0), None)
+            .await?;
 
         // Bind values as parameters and restrict execution to partition A.
         let query = Query::from(
@@ -47,6 +52,17 @@ async fn parameterized_query_filters_and_orders() -> TestResult {
                 .collect::<Vec<_>>(),
             ["item-2", "item-3"]
         );
+
+        // Quotes and predicate syntax remain literal parameter data rather than query text.
+        let literal_query =
+            Query::from("SELECT * FROM c WHERE c.id = @id").with_parameter("@id", literal_id)?;
+        let literal_items: Vec<Item> = fixture
+            .container
+            .query_items::<Item>(literal_query, FeedScope::partition("A"), None)
+            .await?
+            .try_collect()
+            .await?;
+        assert_eq!(literal_items, [item(literal_id, "A", 0)]);
         Ok(())
     })
     .await

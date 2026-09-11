@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use azure_core::http::StatusCode;
-
 use crate::e2e_test_cases::{
-    fixture::{build_client, TestResult},
-    support::{hosted_only, should_run},
+    fixture::{E2eTestFixture, TestResult},
+    support::{item, should_run, Item},
 };
 
 #[tokio::test]
@@ -14,21 +12,23 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn bootstrap_primary_endpoint() -> TestResult {
-    if !should_run("bootstrap.primary-success")? {
+    if !should_run("bootstrap.primary-success").await? {
         return Ok(());
     }
 
-    // Building the public SDK client against the reachable primary endpoint succeeds.
-    let client = build_client().await?;
-    assert!(hosted_only());
-
-    // The initialized client can complete its first account operation.
-    let database_id = format!("e2e-bootstrap-{}", azure_core::Uuid::new_v4());
-    let response = client.create_database(&database_id, None).await?;
-    assert_eq!(response.status().status_code(), StatusCode::Created);
-    response.into_model()?;
-
-    // Remove the resource created only to prove successful bootstrap.
-    client.database_client(&database_id).delete(None).await?;
-    Ok(())
+    E2eTestFixture::run(async |fixture| {
+        let expected = item("bootstrap-1", "A", 1);
+        fixture
+            .container
+            .create_item("A", &expected.id, &expected, None)
+            .await?;
+        let actual = fixture
+            .container
+            .read_item("A", &expected.id, None)
+            .await?
+            .into_model::<Item>()?;
+        assert_eq!(actual, expected);
+        Ok(())
+    })
+    .await
 }

@@ -32,8 +32,6 @@ const SCENARIOS: &[&str] = &[
 
 const PROFILES: &[&str] = &[
     include_str!("../../../e2e_tests/profiles/hostedEmulatorSmoke.json"),
-    include_str!("../../../e2e_tests/profiles/targetDefault.json"),
-    include_str!("../../../e2e_tests/profiles/legacyGatewayV1.json"),
     include_str!("../../../e2e_tests/profiles/lifecycleConsistencyMatrix.json"),
     include_str!("../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"),
 ];
@@ -96,9 +94,9 @@ struct Backend {
     requires: Vec<Capability>,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "camelCase")]
-enum Capability {
+pub(super) enum Capability {
     Capabilities,
     GatewayV2,
 }
@@ -221,6 +219,49 @@ impl Profile {
             .find(|definition| definition.id == id)
             .unwrap_or_else(|| panic!("profile '{}' has no client '{id}'", self.id))
     }
+
+    pub fn selected_account(&self) -> Result<&AccountDefinition, String> {
+        let ids: Vec<_> = self
+            .accounts
+            .iter()
+            .map(|definition| definition.id.as_str())
+            .collect();
+        Ok(self.account(selected_axis("AZURE_COSMOS_E2E_ACCOUNT", &ids)?))
+    }
+
+    pub fn selected_runtime(&self) -> Result<&RuntimeDefinition, String> {
+        let ids: Vec<_> = self
+            .runtimes
+            .iter()
+            .map(|definition| definition.id.as_str())
+            .collect();
+        Ok(self.runtime(selected_axis("AZURE_COSMOS_E2E_RUNTIME", &ids)?))
+    }
+
+    pub fn selected_client(&self) -> Result<&ClientDefinition, String> {
+        let ids: Vec<_> = self
+            .clients
+            .iter()
+            .map(|definition| definition.id.as_str())
+            .collect();
+        Ok(self.client(selected_axis("AZURE_COSMOS_E2E_CLIENT", &ids)?))
+    }
+}
+
+fn selected_axis<'a>(environment_variable: &str, available: &'a [&str]) -> Result<&'a str, String> {
+    match std::env::var(environment_variable) {
+        Ok(selected) => available
+            .iter()
+            .copied()
+            .find(|candidate| *candidate == selected)
+            .ok_or_else(|| {
+                format!("{environment_variable}='{selected}' is not one of {available:?}")
+            }),
+        Err(_) if available.len() == 1 => Ok(available[0]),
+        Err(_) => Err(format!(
+            "{environment_variable} is required because this profile defines {available:?}"
+        )),
+    }
 }
 
 fn load_scenarios() -> Result<Vec<Scenario>, String> {
@@ -253,6 +294,23 @@ pub fn selected_profile_for(scenario_id: &str) -> Result<Option<Profile>, String
         return Ok(None);
     }
     Ok(profiles.into_iter().find(|profile| profile.id == selected))
+}
+
+pub(super) fn required_capabilities_for(
+    scenario_id: &str,
+    backend: &str,
+) -> Result<Vec<Capability>, String> {
+    let scenarios = load_scenarios()?;
+    let scenario = scenarios
+        .iter()
+        .find(|scenario| scenario.id == scenario_id)
+        .ok_or_else(|| format!("E2E scenario '{scenario_id}' does not exist"))?;
+    Ok(scenario
+        .backends
+        .get(backend)
+        .ok_or_else(|| format!("E2E scenario '{scenario_id}' has no backend '{backend}'"))?
+        .requires
+        .clone())
 }
 
 pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
@@ -442,6 +500,12 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
                 "selected E2E profile '{selected_profile}' has no active scenarios"
             ));
         }
+        let selected_scenarios: Vec<_> = scenarios
+            .iter()
+            .filter(|scenario| scenario.profiles.contains(&selected_profile))
+            .map(|scenario| scenario.id.as_str())
+            .collect();
+        eprintln!("E2E profile '{selected_profile}' selects scenarios: {selected_scenarios:?}");
     }
 
     let implementations: ImplementationMap =

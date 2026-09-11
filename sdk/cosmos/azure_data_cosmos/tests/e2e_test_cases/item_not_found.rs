@@ -14,7 +14,7 @@ use crate::e2e_test_cases::{
     ignore = "requires the externally hosted in-memory emulator"
 )]
 async fn not_found_does_not_cross_partition_keys() -> TestResult {
-    if !should_run("item.not-found-wrong-partition-key")? {
+    if !should_run("item.not-found-wrong-partition-key").await? {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {

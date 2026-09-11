@@ -28,8 +28,9 @@ use crate::models::DefaultConsistencyLevel;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum ReadConsistencyStrategy {
-    /// Use the default read behavior for the consistency level applied to the operation,
-    /// the client, or the account. No RCS header / token is emitted on the wire.
+    /// Reset to the default consistency-level or account behavior at the layer where this
+    /// value is explicitly configured. Unlike an absent value, an explicit `Default` masks
+    /// lower-precedence read consistency strategies. No RCS header / token is emitted.
     Default,
 
     /// Eventual consistency guarantees that reads will return a subset of writes.
