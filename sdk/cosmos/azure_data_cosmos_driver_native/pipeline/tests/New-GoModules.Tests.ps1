@@ -31,6 +31,22 @@ BeforeAll {
         (Get-FileHash $Path -Algorithm SHA256).Hash.ToLowerInvariant()
     }
 
+    function Get-TreeSnapshot {
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]$Root
+        )
+
+        @(
+            Get-ChildItem $Root -Recurse -File |
+                Sort-Object FullName |
+                ForEach-Object {
+                    $relativePath = [IO.Path]::GetRelativePath($Root, $_.FullName).Replace('\', '/')
+                    "$relativePath|$(Get-TestHash -Path $_.FullName)"
+                }
+        )
+    }
+
     function New-TestArtifacts {
         param(
             [Parameter(Mandatory = $true)]
@@ -107,22 +123,74 @@ BeforeEach {
 }
 
     It 'generates modules when all target artifacts agree with their metadata' {
+        Write-TestFile `
+            -Path (Join-Path $OutputRoot 'windows/amd64/native/libazurecosmosdriver.a') `
+            -Content 'obsolete nested archive'
+        Write-TestFile `
+            -Path (Join-Path $OutputRoot 'windows/amd64/libazurecosmosdriver.syso') `
+            -Content 'obsolete syso archive'
+
         & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot
 
-        Test-Path (Join-Path $OutputRoot 'windows/amd64/native/libazurecosmosdriver.a') |
-            Should -BeTrue
-        Test-Path (Join-Path $OutputRoot 'linux/amd64/native/libazurecosmosdriver.a') |
-            Should -BeTrue
-        Test-Path (Join-Path $OutputRoot 'linux/amd64-musl/native/libazurecosmosdriver.a') |
-            Should -BeTrue
-        Get-Content (Join-Path $OutputRoot 'linux/amd64-musl/go.mod') -Raw |
-            Should -Match 'module github\.com/Azure/azure-cosmos-driver/linux/amd64-musl'
-        Get-Content (Join-Path $OutputRoot 'linux/amd64-musl/link_linux_amd64.go') -Raw |
-            Should -Not -Match 'cosmos_musl'
-        Get-Content (Join-Path $OutputRoot 'linux/amd64-musl/link_linux_amd64.go') -Raw |
-            Should -Match ([regex]::Escape('-lgcc_eh -lc'))
-        Get-Content (Join-Path $OutputRoot 'linux/amd64-musl/link_linux_amd64.go') -Raw |
-            Should -Not -Match ([regex]::Escape('-lunwind'))
+        @($Matrix.targets).Count | Should -Be 6
+        @($Matrix.targets.module_path | Sort-Object -Unique).Count | Should -Be 6
+        foreach ($row in $Matrix.targets) {
+            $moduleRoot = Join-Path $OutputRoot $row.module_path
+            $linkSuffix = if ($row.native_subdir) { "_$($row.native_subdir)" } else { '' }
+            $linkName = "link_$($row.goos)_$($row.goarch)$linkSuffix.go"
+            $expectedFiles = @(
+                'azurecosmosdriver.h'
+                'go.mod'
+                'libazurecosmosdriver.a'
+                $linkName
+            ) | Sort-Object
+            $actualFiles = @(
+                Get-ChildItem $moduleRoot -File |
+                    ForEach-Object Name |
+                    Sort-Object
+            )
+            ($actualFiles -join '|') | Should -Be ($expectedFiles -join '|')
+            @(Get-ChildItem $moduleRoot -Directory).Count | Should -Be 0
+            Test-Path (Join-Path $moduleRoot 'native/libazurecosmosdriver.a') |
+                Should -BeFalse
+            Test-Path (Join-Path $moduleRoot 'libazurecosmosdriver.syso') |
+                Should -BeFalse
+
+            $goMod = Get-Content (Join-Path $moduleRoot 'go.mod') -Raw
+            $goMod | Should -Match ([regex]::Escape(
+                "module $($Matrix.module_root)/$($row.module_path)"
+            ))
+
+            $tag = "cgo && $($row.goos) && $($row.goarch)"
+            if ($row.build_tag_extra) {
+                $tag += " && $($row.build_tag_extra)"
+            }
+            $linkContent = Get-Content (Join-Path $moduleRoot $linkName) -Raw
+            $linkContent | Should -Match ([regex]::Escape("//go:build $tag"))
+            $linkContent | Should -Match ([regex]::Escape(
+                "-L`${SRCDIR} -l$($Matrix.lib_basename)"
+            ))
+            $linkContent | Should -Not -Match ([regex]::Escape('`${SRCDIR}/native'))
+            foreach ($systemLibrary in @(
+                (Get-Content (Join-Path $ArtifactRoot $row.id `
+                    'rust-driver-native-interface-metadata.json') -Raw |
+                    ConvertFrom-Json).native_static_libs
+            )) {
+                $linkContent | Should -Match ([regex]::Escape($systemLibrary))
+            }
+            foreach ($runtimeFlag in @($row.static_runtime_ldflags)) {
+                $linkContent | Should -Match ([regex]::Escape($runtimeFlag))
+            }
+        }
+
+        $generatedContents = Get-ChildItem $OutputRoot -Recurse -File |
+            ForEach-Object { Get-Content $_.FullName -Raw }
+        $generatedContents | Should -Not -Match ([regex]::Escape('`${SRCDIR}/native'))
+
+        $secondOutputRoot = Join-Path $TestDrive 'second-output'
+        & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $secondOutputRoot
+        (Get-TreeSnapshot -Root $OutputRoot) |
+            Should -Be (Get-TreeSnapshot -Root $secondOutputRoot)
     }
 
     It 'writes a consolidated provenance manifest binding the release identity' {
@@ -142,6 +210,8 @@ BeforeEach {
         @($provenance.targets).Count | Should -Be @($Matrix.targets).Count
         $windowsEntry = @($provenance.targets | Where-Object { $_.id -eq 'windows-amd64' })
         $windowsEntry.Count | Should -Be 1
+        $windowsEntry[0].static_library_path |
+            Should -Be 'windows/amd64/libazurecosmosdriver.a'
         $windowsEntry[0].static_library_sha256 | Should -Match '^[0-9a-f]{64}$'
         $windowsEntry[0].header_sha256 | Should -Match '^[0-9a-f]{64}$'
     }
@@ -153,6 +223,8 @@ BeforeEach {
             -TargetId 'linux-amd64-musl'
 
         Test-Path (Join-Path $OutputRoot 'linux/amd64-musl/go.mod') | Should -BeTrue
+        Test-Path (Join-Path $OutputRoot 'linux/amd64-musl/libazurecosmosdriver.a') |
+            Should -BeTrue
         Test-Path (Join-Path $OutputRoot 'linux/amd64/go.mod') | Should -BeFalse
 
         $provenance = Get-Content (Join-Path $OutputRoot 'provenance.json') -Raw | ConvertFrom-Json

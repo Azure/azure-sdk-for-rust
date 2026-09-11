@@ -106,6 +106,7 @@ $modulePaths = @(
 )
 $expectedFiles = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 $expectedLibraries = [Collections.Generic.List[string]]::new()
+$expectedProvenanceTargets = @{}
 $requiredLinkerFlags = @{}
 foreach ($managedRootFile in $managedRootFiles) {
     [void]$expectedFiles.Add($managedRootFile)
@@ -122,19 +123,22 @@ foreach ($modulePath in $modulePaths) {
 foreach ($target in $matrix.targets) {
     $modulePath = $target.module_path.Replace('\', '/')
     $nativeSubdir = [string]$target.native_subdir
-    $nativePath = if ($nativeSubdir) { "$modulePath/native/$nativeSubdir" } else { "$modulePath/native" }
     $linkSuffix = if ($nativeSubdir) { "_$nativeSubdir" } else { '' }
 
-    $libraryPath = "$nativePath/$($matrix.static_lib_filename)"
-    $headerPath = "$nativePath/$($matrix.header_filename)"
+    $libraryPath = "$modulePath/$($matrix.static_lib_filename)"
     $linkPath = "$modulePath/link_$($target.goos)_$($target.goarch)$linkSuffix.go"
-    foreach ($path in @($libraryPath, $headerPath, $linkPath)) {
+    foreach ($path in @($libraryPath, $linkPath)) {
         [void]$expectedFiles.Add($path)
     }
     if ($target.PSObject.Properties.Name -contains 'static_runtime_ldflags') {
         $requiredLinkerFlags[$linkPath] = @($target.static_runtime_ldflags) -join ' '
     }
     $expectedLibraries.Add($libraryPath)
+    $expectedProvenanceTargets[[string]$target.id] = [pscustomobject]@{
+        Triple = [string]$target.triple
+        ModulePath = $modulePath
+        StaticLibraryPath = $libraryPath
+    }
 }
 
 $linkedArtifactPaths = @(
@@ -173,6 +177,22 @@ foreach ($entry in $requiredLinkerFlags.GetEnumerator()) {
     if (-not $linkFileContents.Contains($entry.Value)) {
         throw "Generated linker file '$($entry.Key)' is missing required static runtime flags: $($entry.Value)"
     }
+    foreach ($target in $matrix.targets) {
+        $modulePath = $target.module_path.Replace('\', '/')
+        $nativeSubdir = [string]$target.native_subdir
+        $linkSuffix = if ($nativeSubdir) { "_$nativeSubdir" } else { '' }
+        $linkPath = "$modulePath/link_$($target.goos)_$($target.goarch)$linkSuffix.go"
+        $linkFile = Join-Path $generatedRootPath $linkPath
+        $linkFileContents = Get-Content $linkFile -Raw
+        $rootLinkerDirective = "-L`${SRCDIR} -l$($matrix.lib_basename)"
+        if (-not $linkFileContents.Contains($rootLinkerDirective)) {
+            throw "Generated linker file '$linkPath' does not link from its module root."
+        }
+        if ($linkFileContents.Contains('`${SRCDIR}/native') -or
+            $linkFileContents.Contains('${SRCDIR}/native')) {
+            throw "Generated linker file '$linkPath' references the removed native directory."
+        }
+    }
 }
 
 $checksumPath = Join-Path $generatedRootPath 'SHA256SUMS'
@@ -206,6 +226,52 @@ $missingChecksums = @($expectedLibraries | Where-Object { -not $verifiedLibrarie
 $unexpectedChecksums = @($verifiedLibraries | Where-Object { $_ -notin $expectedLibraries })
 if ($missingChecksums.Count -gt 0 -or $unexpectedChecksums.Count -gt 0) {
     throw "SHA256SUMS does not match the generated libraries. Missing: [$($missingChecksums -join ', ')]; unexpected: [$($unexpectedChecksums -join ', ')]."
+}
+
+$provenancePath = Join-Path $generatedRootPath 'provenance.json'
+$provenance = Get-Content $provenancePath -Raw | ConvertFrom-Json
+if ($provenance.schema_version -ne 1) {
+    throw "Unsupported provenance.json schema version: '$($provenance.schema_version)'."
+}
+$verifiedProvenanceTargets = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+foreach ($target in @($provenance.targets)) {
+    $targetId = [string]$target.id
+    if (-not $expectedProvenanceTargets.ContainsKey($targetId)) {
+        throw "provenance.json contains an unknown target: '$targetId'."
+    }
+    if (-not $verifiedProvenanceTargets.Add($targetId)) {
+        throw "provenance.json contains a duplicate target: '$targetId'."
+    }
+
+    $expectedTarget = $expectedProvenanceTargets[$targetId]
+    foreach ($field in @(
+        @{ Name = 'triple'; Expected = $expectedTarget.Triple },
+        @{ Name = 'module_path'; Expected = $expectedTarget.ModulePath },
+        @{ Name = 'static_library_path'; Expected = $expectedTarget.StaticLibraryPath }
+    )) {
+        if ([string]$target.($field.Name) -cne [string]$field.Expected) {
+            throw "provenance.json target '$targetId' has an invalid $($field.Name)."
+        }
+    }
+
+    $libraryPath = Join-Path $generatedRootPath $expectedTarget.StaticLibraryPath
+    $libraryHash = (Get-FileHash $libraryPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ([string]$target.static_library_sha256 -cne $libraryHash) {
+        throw "provenance.json target '$targetId' has an invalid static_library_sha256."
+    }
+
+    $headerPath = Join-Path $generatedRootPath "$($expectedTarget.ModulePath)/$($matrix.header_filename)"
+    $headerHash = (Get-FileHash $headerPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ([string]$target.header_sha256 -cne $headerHash) {
+        throw "provenance.json target '$targetId' has an invalid header_sha256."
+    }
+}
+$missingProvenanceTargets = @(
+    $expectedProvenanceTargets.Keys |
+        Where-Object { -not $verifiedProvenanceTargets.Contains($_) }
+)
+if ($missingProvenanceTargets.Count -gt 0) {
+    throw "provenance.json is missing targets: $($missingProvenanceTargets -join ', ')."
 }
 
 foreach ($root in $managedRoots) {

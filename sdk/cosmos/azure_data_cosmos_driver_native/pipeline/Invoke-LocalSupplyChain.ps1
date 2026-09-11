@@ -15,7 +15,7 @@
 
     The script also generates the Azure/azure-cosmos-driver module layout. With
     PrepareGoPr enabled, it clones that repository, creates a local branch,
-    overlays the generated files, runs the target Go test, and creates a
+    overlays the generated files, runs the target Go validation, and creates a
     local-only commit and PR preview. It never pushes or opens a remote PR.
 
     Local SBOMs and signatures demonstrate mechanics only. They do
@@ -312,17 +312,13 @@ Copy-Item $metadataPath, $sha256Path, $signingEvidencePath `
 Copy-Item $auditDir, ([System.IO.Path]::Combine($TargetArtifactDir, '_manifest')) `
     -Destination $releaseMetadataDir -Recurse -Force
 
-$moduleDir = ([System.IO.Path]::Combine(
-    $GoOutputRoot,
-    ($row.module_path -replace '/', [System.IO.Path]::DirectorySeparatorChar)
-))
-$goTestArgs = @('test', './...')
-Push-Location $moduleDir
-try {
-    $env:CGO_ENABLED = '1'
-    Invoke-Checked 'go' $goTestArgs
+& ([System.IO.Path]::Combine($PipelineDir, 'Test-GoModuleConsumer.ps1')) `
+    -GeneratedRoot $GoOutputRoot `
+    -TargetId $TargetId `
+    -CCompiler $cCompiler
+if ($LASTEXITCODE -ne 0) {
+    throw "Test-GoModuleConsumer.ps1 failed with exit code $LASTEXITCODE"
 }
-finally { Pop-Location }
 
 $prPreviewPath = ([System.IO.Path]::Combine($RunRoot, 'LOCAL_PR_PREVIEW.md'))
 if ($PrepareGoPr) {
@@ -345,7 +341,7 @@ if ($PrepareGoPr) {
         ($row.module_path -replace '/', [System.IO.Path]::DirectorySeparatorChar)
     ))
     try {
-        Invoke-Checked 'go' $goTestArgs
+        Invoke-Checked 'go' @('test', './...')
     }
     finally { Pop-Location }
 

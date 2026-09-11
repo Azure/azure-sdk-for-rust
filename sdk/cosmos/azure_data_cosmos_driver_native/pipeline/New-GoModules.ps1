@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+# cspell:ignore syso
 
 #Requires -Version 7.0
 
@@ -15,8 +16,8 @@
 
         <module_path>/go.mod
         <module_path>/link_<goos>_<goarch>.go
-        <module_path>/native/libazurecosmosdriver.a
-        <module_path>/native/azurecosmosdriver.h
+        <module_path>/libazurecosmosdriver.a
+        <module_path>/azurecosmosdriver.h
 
     The captured `native-static-libs` from each metadata file and any
     target-specific static runtime flags from build-matrix.json are spliced into
@@ -40,7 +41,7 @@
 
 .PARAMETER SkipNativeCopy
     Skip copying the static archive (e.g. when it is fetched separately in CI).
-    The header and per-target metadata remain required and are still copied.
+    The header and per-target metadata remain required.
 #>
 [CmdletBinding()]
 param(
@@ -264,6 +265,16 @@ foreach ($row in $rows) {
     $verifiedArtifact = $verifiedArtifacts[$row.id]
     $moduleDir = Join-Path $OutputRoot ($row.module_path -replace '/', [IO.Path]::DirectorySeparatorChar)
     New-Item -ItemType Directory -Force -Path $moduleDir | Out-Null
+    $obsoleteNativeDirectory = Join-Path $moduleDir 'native'
+    if (Test-Path $obsoleteNativeDirectory) {
+        Remove-Item $obsoleteNativeDirectory -Recurse -Force
+    }
+    $obsoleteSyso = Join-Path $moduleDir (
+        [IO.Path]::GetFileNameWithoutExtension($matrix.static_lib_filename) + '.syso'
+    )
+    if (Test-Path $obsoleteSyso) {
+        Remove-Item $obsoleteSyso -Force
+    }
 
     # go.mod is written once per module_path.
     if (-not $writtenGoMods.ContainsKey($row.module_path)) {
@@ -277,22 +288,15 @@ go $($matrix.go_version)
         $writtenGoMods[$row.module_path] = $true
     }
 
-    # Native destination is normally native/. native_subdir remains available
-    # for any future target that needs multiple archives in one module.
-    $nativeRel = if ($row.native_subdir) { "native/$($row.native_subdir)" } else { 'native' }
-    $nativeDir = Join-Path $moduleDir ($nativeRel -replace '/', [IO.Path]::DirectorySeparatorChar)
-    New-Item -ItemType Directory -Force -Path $nativeDir | Out-Null
-
     $aSrc = $verifiedArtifact.StaticLibraryPath
     $hSrc = $verifiedArtifact.HeaderPath
-    Copy-Item $hSrc $nativeDir -Force
     if (-not $writtenModuleHeaders.ContainsKey($row.module_path)) {
         Copy-Item $hSrc $moduleDir -Force
         $writtenModuleHeaders[$row.module_path] = $true
     }
 
     if (-not $SkipNativeCopy) {
-        Copy-Item $aSrc $nativeDir -Force
+        Copy-Item $aSrc $moduleDir -Force
     }
 
     # Build constraint + cgo link file.
@@ -306,7 +310,7 @@ go $($matrix.go_version)
         ''
     }
     $ldflags = @(
-        "-L`${SRCDIR}/$nativeRel"
+        '-L${SRCDIR}'
         "-l$($matrix.lib_basename)"
         $staticRuntimeLdflags
         $syslibs
@@ -347,6 +351,7 @@ $provenanceTargets = foreach ($row in $rows) {
         id                    = [string]$row.id
         triple                = [string]$row.triple
         module_path           = [string]$row.module_path
+        static_library_path   = "$($row.module_path)/$($matrix.static_lib_filename)"
         static_library_sha256 = ([string]$targetMetadata.static_library.sha256).ToLowerInvariant()
         header_sha256         = ([string]$targetMetadata.header.sha256).ToLowerInvariant()
     }

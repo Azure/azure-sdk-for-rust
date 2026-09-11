@@ -64,20 +64,12 @@ go $($Matrix.go_version)
                     -Content "int azure_cosmos_test(void);`n"
             }
 
-            $checksumLines = foreach ($target in $Matrix.targets) {
+            $checksumLines = [Collections.Generic.List[string]]::new()
+            $provenanceTargets = [Collections.Generic.List[object]]::new()
+            foreach ($target in $Matrix.targets) {
                 $moduleRoot = Join-Path $Root $target.module_path
-                $nativeRelativePath = if ($target.native_subdir) {
-                    "native/$($target.native_subdir)"
-                }
-                else {
-                    'native'
-                }
-                $nativeRoot = Join-Path $moduleRoot $nativeRelativePath
-                $libraryPath = Join-Path $nativeRoot $Matrix.static_lib_filename
+                $libraryPath = Join-Path $moduleRoot $Matrix.static_lib_filename
                 Write-TestFile -Path $libraryPath -Content "archive-$($target.id)"
-                Write-TestFile `
-                    -Path (Join-Path $nativeRoot $Matrix.header_filename) `
-                    -Content "int azure_cosmos_test(void);`n"
 
                 $tag = "cgo && $($target.goos) && $($target.goarch)"
                 if ($target.build_tag_extra) {
@@ -99,18 +91,40 @@ go $($Matrix.go_version)
 
 package driver
 
-// #cgo LDFLAGS: -L`${SRCDIR}/$nativeRelativePath -l$($Matrix.lib_basename)$runtimeFlags
+// #cgo LDFLAGS: -L`${SRCDIR} -l$($Matrix.lib_basename)$runtimeFlags
 // #include "$($Matrix.header_filename)"
 import "C"
 "@
                 Write-TestFile -Path $linkPath -Content "$linkContent`n"
 
-                $relativeLibraryPath = "$($target.module_path)/$nativeRelativePath/$($Matrix.static_lib_filename)"
+                $relativeLibraryPath = "$($target.module_path)/$($Matrix.static_lib_filename)"
                 $hash = (Get-FileHash $libraryPath -Algorithm SHA256).Hash.ToLowerInvariant()
-                "$hash  $relativeLibraryPath"
+                $checksumLines.Add("$hash  $relativeLibraryPath")
+                $headerHash = (Get-FileHash `
+                    (Join-Path $moduleRoot $Matrix.header_filename) `
+                    -Algorithm SHA256).Hash.ToLowerInvariant()
+                $provenanceTargets.Add([ordered]@{
+                    id = [string]$target.id
+                    triple = [string]$target.triple
+                    module_path = [string]$target.module_path
+                    static_library_path = $relativeLibraryPath
+                    static_library_sha256 = $hash
+                    header_sha256 = $headerHash
+                })
             }
             Write-TestFile -Path (Join-Path $Root 'SHA256SUMS') -Content ($checksumLines -join "`n")
-            Write-TestFile -Path (Join-Path $Root 'provenance.json') -Content "{`n  `"schema_version`": 1`n}`n"
+            $provenance = [ordered]@{
+                schema_version = 1
+                source_commit = '0123456789abcdef0123456789abcdef01234567'
+                native_interface_crate = $Matrix.native_interface_crate
+                native_interface_version = '0.1.0'
+                rust_driver_crate = $Matrix.rust_driver_crate
+                rust_driver_version = '0.7.0'
+                targets = @($provenanceTargets)
+            }
+            Write-TestFile `
+                -Path (Join-Path $Root 'provenance.json') `
+                -Content ($provenance | ConvertTo-Json -Depth 6)
         }
     }
 
@@ -163,6 +177,10 @@ import "C"
         $stagedChanges = @(& git -C $CheckoutRoot diff --cached --name-status)
         $stagedChanges | Should -Contain "D`tlinux/arm64/retired-link.go"
         $stagedChanges | Should -Contain "D`twindows/arm64/native/libazurecosmosdriver.a"
+        $stagedChanges | Should -Contain "A`twindows/amd64/libazurecosmosdriver.a"
+        $stagedChanges | Where-Object {
+            $_ -match '^A\t.+/native/(libazurecosmosdriver\.a|azurecosmosdriver\.h)$'
+        } | Should -BeNullOrEmpty
         Get-Content (Join-Path $CheckoutRoot 'README.md') -Raw | Should -Be "hand maintained`n"
         $stagedChanges | Where-Object { $_ -match 'README\.md$' } | Should -BeNullOrEmpty
         $publishedEvidence = @(
@@ -182,6 +200,23 @@ import "C"
             $stagedChanges | Should -Contain "A`t_manifest/spdx_2.2/$evidenceFile"
         }
         $stagedChanges | Should -Contain "A`tprovenance.json"
+    }
+
+    It 'rejects a provenance archive path that differs from the module layout' {
+        $provenancePath = Join-Path $GeneratedRoot 'provenance.json'
+        $provenance = Get-Content $provenancePath -Raw | ConvertFrom-Json
+        $provenance.targets[0].static_library_path =
+            "$($provenance.targets[0].module_path)/native/libazurecosmosdriver.a"
+        Write-TestFile `
+            -Path $provenancePath `
+            -Content ($provenance | ConvertTo-Json -Depth 6)
+
+        {
+            & $ScriptPath `
+                -GeneratedRoot $GeneratedRoot `
+                -CheckoutRoot $CheckoutRoot `
+                -MatrixPath $MatrixPath
+        } | Should -Throw '*invalid static_library_path*'
     }
 
     It 'rejects unexpected files outside the managed roots' {

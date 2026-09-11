@@ -92,13 +92,33 @@ extends:
                   $(pipelineDir)/New-GoModules.ps1
                   -ArtifactRoot $(Pipeline.Workspace)/native
                   -OutputRoot   $(Build.ArtifactStagingDirectory)/azure-cosmos-driver
-                displayName: Emit go.mod + link_*.go + native/
+                displayName: Emit Go modules with root archives
               - pwsh: |
                   $root = "$(Build.ArtifactStagingDirectory)/azure-cosmos-driver"
                   Get-ChildItem -Recurse -Filter libazurecosmosdriver.a $root |
-                    ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.FullName.Substring($root.Length+1))" } |
+                    Sort-Object FullName |
+                    ForEach-Object {
+                      $relativePath = $_.FullName.Substring($root.Length + 1).Replace('\', '/')
+                      "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $relativePath"
+                    } |
                     Set-Content "$root/SHA256SUMS"
                 displayName: Write SHA256SUMS (published out of the trusted build)
+              - pwsh: |
+                  $matrix = Get-Content -Raw "$(pipelineDir)/build-matrix.json" | ConvertFrom-Json
+                  Write-Host "##vso[task.setvariable variable=GoVersion]$($matrix.go_toolchain_version)"
+                displayName: Read Go version from build matrix
+              - task: GoTool@0
+                displayName: Install Go $(GoVersion)
+                inputs:
+                  version: $(GoVersion)
+              - pwsh: >
+                  $(pipelineDir)/Test-GoModuleConsumer.ps1
+                  -GeneratedRoot $(Build.ArtifactStagingDirectory)/azure-cosmos-driver
+                  -TargetId linux-amd64-glibc
+                  -CCompiler gcc
+                displayName: Build direct and vendored Go consumers
+                env:
+                  GOTOOLCHAIN: local
               - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
                 parameters:
                   ArtifactName: azure-cosmos-driver-modules
