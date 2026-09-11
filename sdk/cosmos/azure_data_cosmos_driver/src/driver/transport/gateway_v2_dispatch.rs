@@ -47,6 +47,8 @@ const X_MS_MAX_ITEM_COUNT: HeaderName =
     HeaderName::from_static(request_header_names::MAX_ITEM_COUNT);
 const IF_MATCH: HeaderName = HeaderName::from_static(request_header_names::IF_MATCH);
 const IF_NONE_MATCH: HeaderName = HeaderName::from_static(request_header_names::IF_NONE_MATCH);
+const IF_MODIFIED_SINCE: HeaderName =
+    HeaderName::from_static(request_header_names::IF_MODIFIED_SINCE);
 const X_MS_VERSION: HeaderName = HeaderName::from_static(request_header_names::VERSION);
 const CACHE_CONTROL: HeaderName = HeaderName::from_static(request_header_names::CACHE_CONTROL);
 
@@ -304,6 +306,13 @@ pub(crate) fn wrap_request_for_gateway_v2(
         .filter(|s| !s.is_empty())
     {
         metadata.push(Token::match_condition(value.to_owned()));
+    }
+    if let Some(value) = request
+        .headers
+        .get_optional_str(&IF_MODIFIED_SINCE)
+        .filter(|s| !s.is_empty())
+    {
+        metadata.push(Token::if_modified_since(value.to_owned()));
     }
 
     // Debug-only visibility into exactly which RNTBD metadata tokens are
@@ -1525,6 +1534,38 @@ mod tests {
             parse_wrapped_request(&wrapped, 0).tokens[&0x0008],
             ParsedTokenValue::String("\"etag-7\"".into()),
             "Match (0x0008) on a read must come from If-None-Match"
+        );
+    }
+
+    #[test]
+    fn wrap_emits_point_in_time_with_continuation_on_read_feed() {
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs",
+        );
+        let mut request = signed_request(None);
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::IF_NONE_MATCH),
+            "\"etag-7\"",
+        );
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::IF_MODIFIED_SINCE),
+            "Mon, 01 Jan 2024 00:00:00 GMT",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            request,
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+        assert_eq!(
+            parsed.tokens[&0x0008],
+            ParsedTokenValue::String("\"etag-7\"".into())
+        );
+        assert_eq!(
+            parsed.tokens[&0x0047],
+            ParsedTokenValue::String("Mon, 01 Jan 2024 00:00:00 GMT".into())
         );
     }
 
