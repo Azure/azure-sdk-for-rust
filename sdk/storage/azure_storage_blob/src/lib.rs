@@ -9,6 +9,7 @@
 
 #[cfg(feature = "arrow")]
 mod arrow;
+mod blob_layout;
 pub(crate) mod buffers;
 pub mod clients;
 #[allow(unused_imports)]
