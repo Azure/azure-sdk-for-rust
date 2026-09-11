@@ -119,7 +119,7 @@ async fn run_lifecycle_case(
             assert_critical_diagnostics(&replaced.diagnostics(), "replace_item", StatusCode::Ok);
             assert_eq!(replaced.into_model::<Item>()?, item(&item_id, "A", 2));
 
-            // Delete the item, then use the delete session token to verify a plain 404/0.
+            // Delete the item, then verify a plain 404/0 under this case's read strategy.
             let deleted = fixture.container.delete_item("A", &item_id, None).await?;
             assert_eq!(deleted.status().status_code(), StatusCode::NoContent);
             assert_critical_diagnostics(
@@ -136,6 +136,7 @@ async fn run_lifecycle_case(
                 &fixture.container,
                 &item_id,
                 delete_session_token,
+                read_case,
                 &execution,
             )
             .await?;
@@ -648,14 +649,25 @@ async fn assert_item_deleted(
     container: &ContainerClient,
     item_id: &str,
     delete_session_token: String,
+    read_case: &PostCreateReadCase,
     execution: &str,
 ) -> TestResult {
     let mut operation = OperationOptions::default();
-    operation.read_consistency_strategy = Some(ReadConsistencyStrategy::Session);
+    operation.read_consistency_strategy =
+        if read_case.expectation == ReadExpectation::RejectedBeforeTransport {
+            // GlobalStrong cannot verify resource state on a non-Strong account. Its rejection was
+            // already asserted above, so use the strongest valid deletion check for this cell.
+            Some(ReadConsistencyStrategy::Session)
+        } else {
+            read_case.consistency_override
+        };
     operation.availability_strategy = Some(AvailabilityStrategy::Disabled);
-    let options = ItemReadOptions::default()
-        .with_operation_options(operation)
-        .with_session_token(delete_session_token);
+    let mut options = ItemReadOptions::default().with_operation_options(operation);
+    if read_case.session_token == SessionTokenBehavior::ExplicitCreateResponse
+        || read_case.expectation == ReadExpectation::RejectedBeforeTransport
+    {
+        options = options.with_session_token(delete_session_token);
+    }
     let deadline = tokio::time::Instant::now() + REPLICATION_TIMEOUT;
 
     loop {
@@ -676,6 +688,12 @@ async fn assert_item_deleted(
                     error.status().status_code(),
                     error.status().sub_status().map(|value| value.value()),
                 ) && tokio::time::Instant::now() < deadline => {}
+            Ok(_)
+                if matches!(
+                    read_case.expectation,
+                    ReadExpectation::EventuallySucceeds { .. }
+                ) && read_case.session_token == SessionTokenBehavior::Omitted
+                    && tokio::time::Instant::now() < deadline => {}
             Ok(response) => {
                 let diagnostics = response.diagnostics();
                 let actual = response.into_model::<Item>()?;

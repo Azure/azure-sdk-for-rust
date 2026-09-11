@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![allow(dead_code)]
-
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde::Deserialize;
@@ -51,6 +49,10 @@ struct Scenario {
     id: String,
     title: String,
     requirement: String,
+    #[expect(
+        dead_code,
+        reason = "typed schema metadata is validated during deserialization"
+    )]
     maturity: Maturity,
     precedents: Vec<Precedent>,
     profiles: Vec<String>,
@@ -69,6 +71,10 @@ enum Maturity {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Precedent {
+    #[expect(
+        dead_code,
+        reason = "typed schema metadata is validated during deserialization"
+    )]
     sdk: ReferenceSdk,
     path: String,
     test: String,
@@ -88,6 +94,10 @@ enum ReferenceSdk {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Backend {
     applicability: Applicability,
+    #[expect(
+        dead_code,
+        reason = "typed schema metadata is validated during deserialization"
+    )]
     fidelity: Fidelity,
     reason: Option<String>,
     #[serde(default)]
@@ -139,6 +149,10 @@ pub struct AccountDefinition {
     pub consistency: String,
     regions: Vec<RegionDefinition>,
     replication: ReplicationDefinition,
+    #[expect(
+        dead_code,
+        reason = "profile metadata is consumed by external orchestration"
+    )]
     per_partition_failover: bool,
 }
 
