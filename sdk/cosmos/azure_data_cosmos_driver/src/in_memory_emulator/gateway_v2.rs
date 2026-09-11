@@ -387,6 +387,11 @@ fn decode_metadata(
             RntbdRequestToken::QueryVersion => {
                 metadata.query_version = Some(expect_small_string(kind, token.value)?)
             }
+            RntbdRequestToken::SupportedSerializationFormats => {
+                // Emulator doesn't model binary negotiation: validate the wire
+                // type, ignore the value, always reply text.
+                expect_byte(kind, token.value)?;
+            }
             RntbdRequestToken::AllowTentativeWrites => {
                 metadata.allow_tentative_writes = expect_byte(kind, token.value)? != 0
             }

@@ -252,6 +252,26 @@ mod tests {
         assert_eq!(parsed, frame);
     }
 
+    #[test]
+    fn supported_serialization_formats_token_round_trips() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::Query,
+            activity_id: Uuid::nil(),
+            metadata: vec![Token::supported_serialization_formats(0x03)],
+            body: None,
+        };
+
+        let bytes = serialize(&frame).unwrap();
+        let parsed = RntbdRequestFrame::read(&bytes).unwrap();
+
+        assert_eq!(parsed, frame);
+        assert_eq!(
+            parsed.metadata[0],
+            Token::new(0x00C4, TokenValue::Byte(0x03)),
+        );
+    }
+
     /// Regression: the Gateway 2.0 proxy's RNTBD reader treats `LengthInBytes`
     /// as the header-section length. We previously wrote `total_frame_length`
     /// into that field, which the proxy then interpreted as a giant token

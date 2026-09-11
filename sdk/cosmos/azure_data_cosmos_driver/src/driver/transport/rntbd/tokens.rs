@@ -444,6 +444,17 @@ impl Token {
         )
     }
 
+    /// `SupportedSerializationFormats` (ID 0x00C4, Byte). Flags byte of the
+    /// response formats the client accepts (`JsonText = 0x01`,
+    /// `CosmosBinary = 0x02`, `HybridRow = 0x04`; OR-combinable), forwarded from
+    /// the `x-ms-cosmos-supported-serialization-formats` header.
+    pub(crate) fn supported_serialization_formats(value: u8) -> Self {
+        Self::new(
+            RntbdRequestToken::SupportedSerializationFormats,
+            TokenValue::Byte(value),
+        )
+    }
+
     /// `StartEpkHash` (ID 0x00D2, Bytes). Per-partition routing key for
     /// thin-client cross-partition queries. The partition's `minInclusive` hex
     /// string is converted to bytes and emitted alongside `EndEpkHash`.
@@ -588,6 +599,7 @@ pub(crate) enum RntbdRequestToken {
     SDKSupportedCapabilities,
     GlobalDatabaseAccountName,
     ReadConsistencyStrategy,
+    SupportedSerializationFormats,
     SupportedQueryFeatures,
     QueryVersion,
     StartEpkHash,
@@ -621,6 +633,7 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x0082 => Ok(Self::ReturnPreference),
             0x00A2 => Ok(Self::SDKSupportedCapabilities),
             0x00CE => Ok(Self::GlobalDatabaseAccountName),
+            0x00C4 => Ok(Self::SupportedSerializationFormats),
             0x00FE => Ok(Self::ReadConsistencyStrategy),
             0x00FF => Ok(Self::SupportedQueryFeatures),
             0x0100 => Ok(Self::QueryVersion),
@@ -656,6 +669,7 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::ReturnPreference => 0x0082,
             RntbdRequestToken::SDKSupportedCapabilities => 0x00A2,
             RntbdRequestToken::GlobalDatabaseAccountName => 0x00CE,
+            RntbdRequestToken::SupportedSerializationFormats => 0x00C4,
             RntbdRequestToken::ReadConsistencyStrategy => 0x00FE,
             RntbdRequestToken::SupportedQueryFeatures => 0x00FF,
             RntbdRequestToken::QueryVersion => 0x0100,

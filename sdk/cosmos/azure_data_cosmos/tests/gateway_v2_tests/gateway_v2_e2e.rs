@@ -12,9 +12,9 @@ use azure_data_cosmos::models::{
     ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions, ItemWriteOptions,
-    MaxItemCountHint, OperationOptionsBuilder, PartitionFailoverOptions, Precondition,
-    QueryOptions, ReadConsistencyStrategy, Region,
+    BinaryEncodingOptions, ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions,
+    ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder, PartitionFailoverOptions,
+    Precondition, QueryOptions, ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
@@ -181,6 +181,43 @@ async fn build_client_for_region(
         AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
     let client = CosmosClient::builder()
         .build(account_ref, RoutingStrategy::ProximityTo(region))
+        .await?;
+    Ok(client)
+}
+
+/// Like [`build_client`] but enables Cosmos **binary JSON** encoding at the
+/// client level.
+///
+/// With this on, each operation transcodes its item body to binary and
+/// advertises `x-ms-cosmos-supported-serialization-formats`; on Gateway 2.0 that
+/// header rides as the RNTBD `SupportedSerializationFormats` (`0x00C4`, `Byte`)
+/// token, so these tests prove the negotiation works over the thin client.
+async fn build_client_with_binary_encoding(
+    endpoint: &str,
+    key: &str,
+) -> Result<CosmosClient, Box<dyn std::error::Error>> {
+    let endpoint: AccountEndpoint = normalize_gateway_v2_endpoint(endpoint).parse()?;
+    let account_ref =
+        AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
+    let client = CosmosClient::builder()
+        .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(true))
+        .build(account_ref, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .await?;
+    Ok(client)
+}
+
+/// Like [`build_client_with_binary_encoding`] but explicitly **disables** binary
+/// encoding. Set explicitly because the resolved default is binary-on.
+async fn build_client_with_binary_disabled(
+    endpoint: &str,
+    key: &str,
+) -> Result<CosmosClient, Box<dyn std::error::Error>> {
+    let endpoint: AccountEndpoint = normalize_gateway_v2_endpoint(endpoint).parse()?;
+    let account_ref =
+        AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
+    let client = CosmosClient::builder()
+        .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(false))
+        .build(account_ref, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await?;
     Ok(client)
 }
@@ -438,6 +475,113 @@ struct GwV2TestItem {
     label: String,
 }
 
+/// A rich, deeply-nested reddit-style document spanning every JSON value shape
+/// the binary encoder must round-trip: nested objects, arrays of objects and
+/// scalars, empty arrays, signed / unsigned / floating-point numbers, booleans,
+/// explicit `null`s (via `None`), and multi-byte Unicode.
+///
+/// Floating-point fields use exactly-representable values so bit-exact
+/// `PartialEq` is not at the mercy of decimal rounding.
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+struct RichBinaryDoc {
+    id: String,
+    pk: String,
+    title: String,
+    score: i64,
+    #[serde(rename = "upvoteRatio")]
+    upvote_ratio: f64,
+    #[serde(rename = "createdUtc")]
+    created_utc: u64,
+    #[serde(rename = "over18")]
+    over_18: bool,
+    edited: bool,
+    /// Serializes to an explicit JSON `null` when absent.
+    #[serde(rename = "removedBy")]
+    removed_by: Option<String>,
+    tags: Vec<String>,
+    scores: Vec<i64>,
+    author: RichAuthor,
+    comments: Vec<RichComment>,
+    media: Option<RichMedia>,
+    #[serde(rename = "emptyList")]
+    empty_list: Vec<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+struct RichAuthor {
+    name: String,
+    karma: i64,
+    verified: bool,
+    #[serde(rename = "flairText")]
+    flair_text: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+struct RichComment {
+    id: String,
+    body: String,
+    score: i64,
+    replies: Vec<RichComment>,
+}
+
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
+struct RichMedia {
+    kind: String,
+    width: u32,
+    height: u32,
+    #[serde(rename = "durationSeconds")]
+    duration_seconds: f64,
+}
+
+/// Builds one realistic, nested [`RichBinaryDoc`] for the given id/partition.
+fn sample_rich_document(id: &str, pk: &str) -> RichBinaryDoc {
+    RichBinaryDoc {
+        id: id.to_string(),
+        pk: pk.to_string(),
+        title: "café ☃ — Rust ⇄ Cosmos binary JSON round-trip 🎉".into(),
+        score: 15234,
+        upvote_ratio: 0.875,
+        created_utc: 1_700_000_000,
+        over_18: false,
+        edited: true,
+        removed_by: None,
+        tags: vec!["rust".into(), "cosmos".into(), "binary".into()],
+        scores: vec![-3, 0, 7, 42, 1024],
+        author: RichAuthor {
+            name: "u/binaryフレンド".into(),
+            karma: 98765,
+            verified: true,
+            flair_text: Some("SDK maintainer".into()),
+        },
+        comments: vec![
+            RichComment {
+                id: "c1".into(),
+                body: "first! नमस्ते".into(),
+                score: 12,
+                replies: vec![RichComment {
+                    id: "c1.1".into(),
+                    body: "nested reply".into(),
+                    score: -1,
+                    replies: vec![],
+                }],
+            },
+            RichComment {
+                id: "c2".into(),
+                body: "no replies here".into(),
+                score: 0,
+                replies: vec![],
+            },
+        ],
+        media: Some(RichMedia {
+            kind: "video".into(),
+            width: 1920,
+            height: 1080,
+            duration_seconds: 30.5,
+        }),
+        empty_list: vec![],
+    }
+}
+
 /// Point-reads `item_id` (partition `pk`) through a client whose proximity
 /// routing is pinned to `region`, retrying past the brief cross-region
 /// replication / `404 NotFound` window that can follow a write on a
@@ -557,6 +701,321 @@ pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error
     assert!(!delete_resp.diagnostics().activity_id().as_str().is_empty());
 
     drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+/// Point CRUD round-trip (create → read → replace → read → delete) over Gateway
+/// 2.0 with **binary encoding enabled**.
+///
+/// End-to-end proof of the fix: the client advertises
+/// `x-ms-cosmos-supported-serialization-formats`, Gateway 2.0 forwards it as the
+/// RNTBD `SupportedSerializationFormats` (`0x00C4`, `Byte`) token, and the
+/// service replies in binary. Each read decoding back to what was written shows
+/// both the binary request and response legs survive the thin-client hop.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_binary_encoding_point_crud_round_trip(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client_with_binary_encoding(&endpoint, &key).await?;
+    let (db_name, container) = provision_database_and_container(&client).await?;
+
+    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+    let item_id = format!("item-{}", azure_core::Uuid::new_v4());
+    let mut item = GwV2TestItem {
+        id: item_id.clone(),
+        pk: pk_value.clone(),
+        value: 1,
+        label: "initial".into(),
+    };
+
+    let create_resp = create_seed_item(&container, &pk_value, &item_id, &item).await?;
+    assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
+
+    let read_resp = container.read_item(&pk_value, &item_id, None).await?;
+    assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
+    let read_item: GwV2TestItem = read_resp.into_model()?;
+    assert_eq!(
+        read_item, item,
+        "a binary-negotiated read over Gateway 2.0 must decode back to the written item",
+    );
+
+    item.value = 2;
+    item.label = "updated".into();
+    let replace_resp = container
+        .replace_item(&pk_value, &item_id, &item, None)
+        .await?;
+    assert_transport_kind(&replace_resp.diagnostics(), TransportKind::GatewayV2);
+
+    // Read again to prove the replaced (binary-encoded) body round-trips too.
+    let reread_resp = container.read_item(&pk_value, &item_id, None).await?;
+    assert_transport_kind(&reread_resp.diagnostics(), TransportKind::GatewayV2);
+    let reread_item: GwV2TestItem = reread_resp.into_model()?;
+    assert_eq!(
+        reread_item, item,
+        "the replaced item must decode back unchanged under binary encoding",
+    );
+
+    let delete_resp = container.delete_item(&pk_value, &item_id, None).await?;
+    assert_transport_kind(&delete_resp.diagnostics(), TransportKind::GatewayV2);
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+/// A `SELECT *` query over Gateway 2.0 with **binary encoding enabled** must
+/// return every seeded item, decoded correctly.
+///
+/// Queries advertise a `JsonText,CosmosBinary` accept-list, so the feed returns
+/// binary. Exercises the query leg: the same `0x00C4` token rides the request
+/// and the binary feed decodes item-by-item back to the typed model.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_binary_encoding_query_round_trip() -> Result<(), Box<dyn std::error::Error>>
+{
+    use std::collections::HashSet;
+
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client_with_binary_encoding(&endpoint, &key).await?;
+    let (db_name, container) = provision_database_and_container(&client).await?;
+
+    // A single logical partition keeps the query deterministic.
+    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+    let total_items: usize = 8;
+    let mut expected_ids: HashSet<String> = HashSet::new();
+    for i in 0..total_items {
+        let id = format!("bin-q-item-{i:02}");
+        let item = GwV2TestItem {
+            id: id.clone(),
+            pk: pk_value.clone(),
+            value: i as i64,
+            label: format!("row-{i}"),
+        };
+        create_seed_item(&container, &pk_value, &id, &item).await?;
+        expected_ids.insert(id);
+    }
+
+    let seen_ids = retry_query_owner_not_found(|| async {
+        let query = Query::from("SELECT * FROM c");
+        let mut pages = container
+            .query_items::<GwV2TestItem>(query, FeedScope::partition(pk_value.clone()), None)
+            .await?
+            .into_pages();
+
+        let mut seen_ids: HashSet<String> = HashSet::new();
+        while let Some(page) = pages.next().await {
+            let page = page?;
+            assert!(
+                !page.diagnostics().activity_id().as_str().is_empty(),
+                "every binary-negotiated Gateway 2.0 query page must surface an activity-id",
+            );
+            for item in page.items() {
+                assert!(
+                    seen_ids.insert(item.id.clone()),
+                    "binary query returned item {} twice",
+                    item.id,
+                );
+                // Each item's label must match its value, proving a correct decode.
+                assert_eq!(
+                    item.label,
+                    format!("row-{}", item.value),
+                    "binary-decoded item {} has mismatched fields",
+                    item.id,
+                );
+            }
+        }
+        Ok(seen_ids)
+    })
+    .await?;
+
+    assert_eq!(
+        seen_ids, expected_ids,
+        "a binary-negotiated query over Gateway 2.0 must return every seeded item exactly once",
+    );
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+/// Writes a **rich, deeply-nested** document (see [`RichBinaryDoc`]) over
+/// Gateway 2.0 with binary encoding enabled, then reads it back and asserts it
+/// is byte-for-byte equal.
+///
+/// Where the point-CRUD test proves negotiation survives the hop, this proves
+/// the binary **codec** preserves the full JSON type spectrum across a real
+/// encode → thin-client wire → decode round-trip against a live account.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_binary_encoding_rich_document_round_trip(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client_with_binary_encoding(&endpoint, &key).await?;
+    let (db_name, container) = provision_database_and_container(&client).await?;
+
+    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+    let item_id = format!("rich-{}", azure_core::Uuid::new_v4());
+    let doc = sample_rich_document(&item_id, &pk_value);
+
+    let create_resp = create_seed_item(&container, &pk_value, &item_id, &doc).await?;
+    assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
+
+    // Read back and require an exact match.
+    let read_resp = container.read_item(&pk_value, &item_id, None).await?;
+    assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
+    let read_doc: RichBinaryDoc = read_resp.into_model()?;
+    assert_eq!(
+        read_doc, doc,
+        "the rich nested document must survive the binary encode/decode round-trip \
+         over Gateway 2.0 unchanged",
+    );
+
+    // Read untyped too, to catch fields the typed struct might silently drop.
+    let raw_resp = container.read_item(&pk_value, &item_id, None).await?;
+    let raw: serde_json::Value = raw_resp.into_model()?;
+    assert_eq!(
+        raw["comments"][0]["replies"][0]["id"], "c1.1",
+        "a deeply-nested field must decode from the binary body intact",
+    );
+    assert!(
+        raw.get("removedBy").is_some_and(|v| v.is_null()),
+        "an explicit null must round-trip through binary as JSON null, got {:?}",
+        raw.get("removedBy"),
+    );
+    assert_eq!(
+        raw["emptyList"],
+        serde_json::json!([]),
+        "an empty array must round-trip through binary as an empty JSON array",
+    );
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
+/// Proves the response is **actually received in Cosmos binary** on the wire,
+/// not merely that data round-trips.
+///
+/// A round-trip alone can't tell binary from text (the driver decodes either),
+/// so we read the *raw* body and check its first byte: binary starts with the
+/// `0x80` preamble, text JSON with `{`. Both reads hit the same item over
+/// Gateway 2.0, so the only variable is negotiation.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_binary_encoding_wire_format_differential(
+) -> Result<(), Box<dyn std::error::Error>> {
+    // Cosmos binary JSON payloads begin with this preamble byte.
+    const COSMOS_BINARY_PREAMBLE: u8 = 0x80;
+
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    // Provision inline so both clients can address the same container by name.
+    let binary_client = build_client_with_binary_encoding(&endpoint, &key).await?;
+    let unique = azure_core::Uuid::new_v4();
+    let db_name = format!("gw_v2-test-db-{unique}");
+    let container_name = format!("gw_v2-test-container-{unique}");
+
+    if let Err(error) = binary_client.create_database(&db_name, None).await {
+        if error.status().status_code() != StatusCode::Conflict {
+            return Err(error.into());
+        }
+    }
+    let db_client = binary_client.database_client(&db_name);
+    let pk_def: PartitionKeyDefinition = "/pk".into();
+    let properties = ContainerProperties::new(container_name.clone(), pk_def);
+    if let Err(error) = db_client.create_container(properties, None).await {
+        if error.status().status_code() != StatusCode::Conflict {
+            return Err(error.into());
+        }
+    }
+    let binary_container = wait_for_container_ready(&db_client, &container_name).await?;
+
+    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
+    let item_id = format!("wire-{}", azure_core::Uuid::new_v4());
+    let item = GwV2TestItem {
+        id: item_id.clone(),
+        pk: pk_value.clone(),
+        value: 42,
+        label: "wire".into(),
+    };
+    create_seed_item(&binary_container, &pk_value, &item_id, &item).await?;
+
+    // Binary path: raw body must carry the 0x80 preamble and still decode.
+    let binary_read = binary_container
+        .read_item(&pk_value, &item_id, None)
+        .await?;
+    assert_transport_kind(&binary_read.diagnostics(), TransportKind::GatewayV2);
+    let binary_body = binary_read.into_body().single()?;
+    assert_eq!(
+        binary_body.first(),
+        Some(&COSMOS_BINARY_PREAMBLE),
+        "a binary-negotiated Gateway 2.0 read must return a Cosmos binary body (0x80 preamble), got first byte {:?}",
+        binary_body.first(),
+    );
+    let decoded: GwV2TestItem = binary_container
+        .read_item(&pk_value, &item_id, None)
+        .await?
+        .into_model()?;
+    assert_eq!(
+        decoded, item,
+        "the binary body must decode back to the written item",
+    );
+
+    // Text path: binary explicitly disabled must yield text JSON for the same
+    // item over the same transport.
+    let text_client = build_client_with_binary_disabled(&endpoint, &key).await?;
+    let text_container = text_client
+        .database_client(&db_name)
+        .container_client(&container_name, None)
+        .await?;
+    let text_read = text_container.read_item(&pk_value, &item_id, None).await?;
+    assert_transport_kind(&text_read.diagnostics(), TransportKind::GatewayV2);
+    let text_body = text_read.into_body().single()?;
+    assert_ne!(
+        text_body.first(),
+        Some(&COSMOS_BINARY_PREAMBLE),
+        "a text-negotiated read must NOT return a Cosmos binary body",
+    );
+    let text_item: GwV2TestItem = serde_json::from_slice(&text_body)?;
+    assert_eq!(
+        text_item, item,
+        "the text body must parse as JSON back to the written item",
+    );
+
+    drop_database(&binary_client, &db_name).await;
     Ok(())
 }
 

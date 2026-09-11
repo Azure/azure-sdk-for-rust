@@ -68,7 +68,7 @@ text-equivalent results.
 | ------------------------------------------- | :----------: | :-----------: | --------- |
 | `read_item`                                 |      —       |    decode     | ✅ done |
 | `create_item` / `upsert_item` / `replace_item` |   encode  |    decode     | ✅ done |
-| `query_items`                               |  — (text spec) |    decode     | ✅ done (response negotiated, standard gateway) |
+| `query_items`                               |  — (text spec) |    decode     | ✅ done (response negotiated, standard gateway + Gateway 2.0) |
 | `delete_item`                               |      —       |      —        | n/a |
 | `patch_item`                                |   deferred   |   deferred    | deferred |
 | transactional batch / bulk                  |   deferred   |   deferred    | deferred |
@@ -79,17 +79,13 @@ response envelopes. A query now also **advertises** a binary response via the
 `application/query+json` query spec (not a document) and intentionally stays
 text — there is no query request-body encoding to do.
 
-> **Gateway 2.0 limitation (follow-up).** Response negotiation is honored on the
-> **standard gateway** path only. On the Gateway 2.0 / thin-client path the
-> request is re-encoded as an RNTBD metadata token list, and there is no
-> `SupportedSerializationFormats` token, so the header cannot survive the
-> thin-client wrapping — a query against a Gateway 2.0 account silently returns
-> **text**. This is a **customer-visible limitation, not benign**: the whole
-> point of query binary negotiation is to fix the integral-`Double`→integer
-> divergence (#5028), so a wide integer that round-trips over binary on the
-> standard gateway can still fail typed deserialization over a thin-client
-> account. Adding the RNTBD `SupportedSerializationFormats` token is tracked as a
-> follow-up.
+Response negotiation is honored on **both** the standard gateway and the
+Gateway 2.0 / thin-client path. On Gateway 2.0 the request is re-encoded as an
+RNTBD metadata token list; the `x-ms-cosmos-supported-serialization-formats`
+header is forwarded as the RNTBD `SupportedSerializationFormats` token
+(`0x00C4`, Byte flags: `JsonText = 0x01`, `CosmosBinary = 0x02`,
+`HybridRow = 0x04`), so the negotiation survives thin-client wrapping and the
+service returns binary just as it does on the standard gateway.
 
 ## 3. Background: the .NET reference
 
