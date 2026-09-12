@@ -14,7 +14,7 @@ use azure_core::{
 };
 use std::{
     net::{Ipv4Addr, Ipv6Addr},
-    sync::{Arc, OnceLock},
+    sync::Arc,
 };
 
 use crate::{
@@ -43,20 +43,46 @@ pub use page_blob_client::{PageBlobClient, PageBlobClientOptions};
 /// The OAuth scope used for Entra ID authentication against Storage.
 const STORAGE_SCOPE: &str = "https://storage.azure.com/.default";
 
-fn default_transport() -> &'static Transport {
-    static DEFAULT_TRANSPORT: OnceLock<Transport> = OnceLock::new();
-    DEFAULT_TRANSPORT.get_or_init(|| {
-        Transport::new(new_http_client(Some(HttpClientOptions {
-            automatic_decompression: false,
-        })))
-    })
+/// The shape shared by every generated `*ClientOptions` type, which have no common type of their own.
+trait GeneratedClientOptions {
+    fn client_options(&self) -> &ClientOptions;
+    fn version(&self) -> &str;
 }
 
-fn apply_client_defaults(options: &mut ClientOptions) {
+macro_rules! impl_generated_client_options {
+    ($($t:ty),+ $(,)?) => {
+        $(impl GeneratedClientOptions for $t {
+            fn client_options(&self) -> &ClientOptions {
+                &self.client_options
+            }
+
+            fn version(&self) -> &str {
+                &self.version
+            }
+        })+
+    };
+}
+
+impl_generated_client_options!(
+    AppendBlobClientOptions,
+    BlobClientOptions,
+    BlobContainerClientOptions,
+    BlobServiceClientOptions,
+    BlockBlobClientOptions,
+    PageBlobClientOptions,
+);
+
+/// Returns a copy of `options` with Storage defaults applied: a transport that does
+/// not transparently decompress blob content, and the Storage logging allow lists.
+fn with_client_defaults(options: &ClientOptions) -> ClientOptions {
+    let mut options = options.clone();
     if options.transport.is_none() {
-        options.transport = Some(default_transport().clone())
+        options.transport = Some(Transport::new(new_http_client(Some(HttpClientOptions {
+            automatic_decompression: false,
+        }))));
     }
-    apply_storage_logging_defaults(options);
+    apply_storage_logging_defaults(&mut options);
+    options
 }
 
 /// Builds a client pipeline, sharing the configured transport with the session
@@ -65,24 +91,22 @@ fn build_pipeline(
     endpoint: &Url,
     credential: Option<Arc<dyn TokenCredential>>,
     session_options: Option<&SessionOptions>,
-    client_options: &mut ClientOptions,
-    version: &str,
+    options: &impl GeneratedClientOptions,
 ) -> Result<Pipeline> {
-    apply_client_defaults(client_options);
-    let default_session_options = SessionOptions::default();
-    let session_options = session_options.unwrap_or(&default_session_options);
+    let client_options = with_client_defaults(options.client_options());
+    // The session provider clones these, so it must get the defaulted copy rather than the raw options, or it ends up on a different transport than this pipeline.
     let per_retry_policies = build_auth_policies(
         endpoint,
         credential,
         session_options,
-        client_options,
-        version,
+        &client_options,
+        options.version(),
     )?;
 
     Ok(Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
         option_env!("CARGO_PKG_VERSION"),
-        client_options.clone(),
+        client_options,
         Vec::default(),
         per_retry_policies,
         None,
@@ -106,7 +130,7 @@ fn build_pipeline(
 fn build_auth_policies(
     endpoint: &Url,
     credential: Option<Arc<dyn TokenCredential>>,
-    session_options: &SessionOptions,
+    session_options: Option<&SessionOptions>,
     client_options: &ClientOptions,
     version: &str,
 ) -> Result<Vec<Arc<dyn Policy>>> {
@@ -120,7 +144,7 @@ fn build_auth_policies(
     if !endpoint.scheme().starts_with("https") {
         return Err(azure_core::Error::with_message(
             azure_core::error::ErrorKind::Other,
-            format!("{endpoint} must use https"),
+            format!("{endpoint} must use HTTPS."),
         ));
     }
 
@@ -130,10 +154,10 @@ fn build_auth_policies(
     ));
 
     // Use the existing bearer-only path when sessions are disabled.
-    if !session_options.is_enabled() {
+    let Some(session_options) = session_options.filter(|options| options.is_enabled()) else {
         per_retry_policies.push(bearer);
         return Ok(per_retry_policies);
-    }
+    };
 
     // Session signing requires a storage account name. If sessions were explicitly
     // enabled, fail when it cannot be resolved; otherwise, preserve bearer authentication.
@@ -143,14 +167,14 @@ fn build_auth_policies(
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
                 format!(
-                    "session authentication requires a storage account name, but one could not \
-                     be determined from {endpoint}; set SessionOptions::account_name"
+                    "Session authentication requires a storage account name, but one could not \
+                     be determined from {endpoint}. Set `SessionOptions::account_name`."
                 ),
             ));
         }
         tracing::warn!(
             %endpoint,
-            "session authentication unavailable because the storage account name could not be determined; falling back to bearer authentication"
+            "Session authentication is unavailable because the storage account name could not be determined. Falling back to bearer authentication."
         );
         per_retry_policies.push(bearer);
         return Ok(per_retry_policies);
@@ -162,7 +186,6 @@ fn build_auth_policies(
         None => {
             let service_options = BlobServiceClientOptions {
                 client_options: client_options.clone(),
-                session_options: None,
                 version: version.to_string(),
             };
             let provider: Arc<dyn SessionProvider> =
@@ -325,16 +348,11 @@ mod tests {
     }
 
     #[test]
-    fn default_transport_is_shared() {
-        assert!(std::ptr::eq(default_transport(), default_transport()));
-    }
-
-    #[test]
     fn no_credential_yields_no_auth_policy() {
         let policies = build_auth_policies(
             &endpoint(),
             None,
-            &SessionOptions::default(),
+            Some(&SessionOptions::default()),
             &ClientOptions::default(),
             "2026-02-06",
         )
@@ -354,7 +372,7 @@ mod tests {
         let policies = build_auth_policies(
             &endpoint(),
             Some(credential),
-            &session_options,
+            Some(&session_options),
             &ClientOptions::default(),
             "2026-02-06",
         )
@@ -377,7 +395,7 @@ mod tests {
         let policies = build_auth_policies(
             &endpoint(),
             Some(credential),
-            &session_options,
+            Some(&session_options),
             &options_with_create_session_mock(),
             "2026-02-06",
         )
@@ -510,7 +528,7 @@ mod tests {
         let policies = build_auth_policies(
             &endpoint(),
             Some(credential),
-            &session_options,
+            Some(&session_options),
             &ClientOptions::default(),
             "2026-02-06",
         )

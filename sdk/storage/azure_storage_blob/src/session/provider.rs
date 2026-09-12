@@ -61,7 +61,7 @@ impl SessionTokenInfo {
         let missing = |field: &'static str| {
             Error::with_message(
                 ErrorKind::DataConversion,
-                format!("create session response is missing required field: {field}"),
+                format!("Create Session response is missing required field: {field}."),
             )
         };
 
@@ -255,7 +255,7 @@ impl SessionProvider for ContainerSessionProvider {
         let container = container_name(request.url()).ok_or_else(|| {
             Error::with_message(
                 ErrorKind::Other,
-                "could not determine the container name from the request URL",
+                "Could not determine the container name from the request URL.",
             )
         })?;
         self.cache_for(&container).get().await

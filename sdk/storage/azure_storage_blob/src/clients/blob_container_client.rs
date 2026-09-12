@@ -9,7 +9,7 @@ use crate::{
         BlobContainerClientListBlobsOptions, ListBlobsHierarchicalResponse, ListBlobsResponse,
         StorageErrorCode,
     },
-    BlobClient,
+    BlobClient, SessionOptions,
 };
 use azure_core::{
     credentials::TokenCredential,
@@ -46,23 +46,55 @@ impl BlobContainerClient {
         if container_url.cannot_be_a_base() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                format!("{container_url} is not a valid base URL"),
+                format!("{container_url} is not a valid base URL."),
             ));
         }
 
-        let mut options = options.unwrap_or_default();
+        let options = options.unwrap_or_default();
+        let pipeline = super::build_pipeline(&container_url, credential, None, &options)?;
+
+        Ok(Self {
+            endpoint: container_url,
+            pipeline,
+            version: options.version,
+        })
+    }
+
+    /// Creates a new BlobContainerClient that authenticates eligible blob downloads with session tokens.
+    ///
+    /// # Arguments
+    ///
+    /// * `container_url` - The full URL of the container, for example `https://myaccount.blob.core.windows.net/mycontainer`.
+    ///   The caller is responsible for percent-encoding the URL correctly; it will be used as-is.
+    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `session_options` - Configuration for session token authentication.
+    /// * `options` - Optional configuration for the client.
+    #[tracing::new("Storage.Blob.Container")]
+    pub fn new_with_session(
+        container_url: Url,
+        credential: Arc<dyn TokenCredential>,
+        session_options: SessionOptions,
+        options: Option<BlobContainerClientOptions>,
+    ) -> Result<Self> {
+        // Storage endpoints must be base URLs.
+        if container_url.cannot_be_a_base() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{container_url} is not a valid base URL."),
+            ));
+        }
+
+        let options = options.unwrap_or_default();
         let pipeline = super::build_pipeline(
             &container_url,
-            credential,
-            options.session_options.as_ref(),
-            &mut options.client_options,
-            &options.version,
+            Some(credential),
+            Some(&session_options),
+            &options,
         )?;
 
         Ok(Self {
             endpoint: container_url,
             pipeline,
-            session_options: options.session_options,
             version: options.version,
         })
     }
@@ -83,7 +115,6 @@ impl BlobContainerClient {
         BlobClient {
             endpoint: blob_url,
             pipeline: self.pipeline.clone(),
-            session_options: self.session_options.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         }
@@ -130,7 +161,6 @@ impl BlobContainerClient {
         let client = Arc::new(BlobContainerClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
-            session_options: self.session_options.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         });
@@ -188,7 +218,6 @@ impl BlobContainerClient {
         let client = Arc::new(BlobContainerClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
-            session_options: self.session_options.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         });

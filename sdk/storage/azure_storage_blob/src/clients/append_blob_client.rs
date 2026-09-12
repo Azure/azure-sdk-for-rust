@@ -25,23 +25,16 @@ impl AppendBlobClient {
         if blob_url.cannot_be_a_base() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                format!("{blob_url} is not a valid base URL"),
+                format!("{blob_url} is not a valid base URL."),
             ));
         }
 
-        let mut options = options.unwrap_or_default();
-        let pipeline = super::build_pipeline(
-            &blob_url,
-            credential,
-            options.session_options.as_ref(),
-            &mut options.client_options,
-            &options.version,
-        )?;
+        let options = options.unwrap_or_default();
+        let pipeline = super::build_pipeline(&blob_url, credential, None, &options)?;
 
         Ok(Self {
             endpoint: blob_url,
             pipeline,
-            session_options: options.session_options,
             version: options.version,
         })
     }

@@ -55,11 +55,11 @@ fn compute_signature(session_key: &str, string_to_sign: &str) -> Result<String> 
     let key = STANDARD.decode(session_key).map_err(|e| {
         Error::with_message(
             ErrorKind::DataConversion,
-            format!("session key is not valid base64: {e}"),
+            format!("Session key is not valid base64: {e}"),
         )
     })?;
     let mut mac = Hmac::<Sha256>::new_from_slice(&key).map_err(|e| {
-        Error::with_message(ErrorKind::Other, format!("invalid session key length: {e}"))
+        Error::with_message(ErrorKind::Other, format!("Invalid session key length: {e}"))
     })?;
     mac.update(string_to_sign.as_bytes());
     Ok(STANDARD.encode(mac.finalize().into_bytes()))

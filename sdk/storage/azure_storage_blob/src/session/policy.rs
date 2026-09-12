@@ -53,7 +53,7 @@ impl SessionAuthenticationPolicy {
     /// authorization header.
     fn sign_request(&self, request: &mut Request, session: &SessionTokenInfo) -> Result<()> {
         let (token, key) = session.credentials().ok_or_else(|| {
-            Error::with_message(ErrorKind::Other, "session is missing credentials")
+            Error::with_message(ErrorKind::Other, "Session is missing credentials.")
         })?;
 
         // x-ms-date participates in the string-to-sign, so set it before signing.

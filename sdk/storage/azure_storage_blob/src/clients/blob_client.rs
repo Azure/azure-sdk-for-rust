@@ -13,7 +13,7 @@ use crate::{
         StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
-    AppendBlobClient, BlockBlobClient, PageBlobClient,
+    AppendBlobClient, BlockBlobClient, PageBlobClient, SessionOptions,
 };
 use async_trait::async_trait;
 use azure_core::{
@@ -43,23 +43,55 @@ impl BlobClient {
         if blob_url.cannot_be_a_base() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                format!("{blob_url} is not a valid base URL"),
+                format!("{blob_url} is not a valid base URL."),
             ));
         }
 
-        let mut options = options.unwrap_or_default();
+        let options = options.unwrap_or_default();
+        let pipeline = super::build_pipeline(&blob_url, credential, None, &options)?;
+
+        Ok(Self {
+            endpoint: blob_url,
+            pipeline,
+            version: options.version,
+        })
+    }
+
+    /// Creates a new BlobClient that authenticates eligible downloads with session tokens.
+    ///
+    /// # Arguments
+    ///
+    /// * `blob_url` - The full URL of the blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    ///   The caller is responsible for percent-encoding the URL correctly; it will be used as-is.
+    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `session_options` - Configuration for session token authentication.
+    /// * `options` - Optional configuration for the client.
+    #[tracing::new("Storage.Blob.Blob")]
+    pub fn new_with_session(
+        blob_url: Url,
+        credential: Arc<dyn TokenCredential>,
+        session_options: SessionOptions,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        // Storage endpoints must be base URLs.
+        if blob_url.cannot_be_a_base() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{blob_url} is not a valid base URL."),
+            ));
+        }
+
+        let options = options.unwrap_or_default();
         let pipeline = super::build_pipeline(
             &blob_url,
-            credential,
-            options.session_options.as_ref(),
-            &mut options.client_options,
-            &options.version,
+            Some(credential),
+            Some(&session_options),
+            &options,
         )?;
 
         Ok(Self {
             endpoint: blob_url,
             pipeline,
-            session_options: options.session_options,
             version: options.version,
         })
     }
@@ -69,7 +101,6 @@ impl BlobClient {
         AppendBlobClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
-            session_options: self.session_options.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         }
@@ -80,7 +111,6 @@ impl BlobClient {
         BlockBlobClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
-            session_options: self.session_options.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         }
@@ -91,7 +121,6 @@ impl BlobClient {
         PageBlobClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
-            session_options: self.session_options.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         }
@@ -118,7 +147,6 @@ impl BlobClient {
         Ok(Self {
             endpoint: versioned_endpoint,
             pipeline: self.pipeline.clone(),
-            session_options: self.session_options.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         })
@@ -140,7 +168,6 @@ impl BlobClient {
         Ok(Self {
             endpoint: snapshot_endpoint,
             pipeline: self.pipeline.clone(),
-            session_options: self.session_options.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         })
@@ -184,7 +211,6 @@ impl BlobClient {
         let inner_client = GeneratedBlobClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
-            session_options: self.session_options.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         };
@@ -229,7 +255,6 @@ impl BlobClient {
         let inner_client = GeneratedBlobClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
-            session_options: self.session_options.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         };
