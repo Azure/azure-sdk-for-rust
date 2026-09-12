@@ -39,22 +39,22 @@ pub mod clients {
     pub struct SecretClient {
     }
     impl SecretClient {
-        fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<SecretClientOptions>) -> Result<Self>;
+        pub fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<SecretClientOptions>) -> Result<Self>;
     }
     impl SecretClient {
-        async fn backup_secret(&self, secret_name: &str, options: Option<SecretClientBackupSecretOptions<'_>>) -> Result<Response<BackupSecretResult>>;
-        async fn delete_secret(&self, secret_name: &str, options: Option<SecretClientDeleteSecretOptions<'_>>) -> Result<Response<DeletedSecret>>;
-        fn endpoint(&self) -> &Url;
-        async fn get_deleted_secret(&self, secret_name: &str, options: Option<SecretClientGetDeletedSecretOptions<'_>>) -> Result<Response<DeletedSecret>>;
-        async fn get_secret(&self, secret_name: &str, options: Option<SecretClientGetSecretOptions<'_>>) -> Result<Response<Secret>>;
-        fn list_deleted_secret_properties(&self, options: Option<SecretClientListDeletedSecretPropertiesOptions<'_>>) -> Result<Pager<ListDeletedSecretPropertiesResult>>;
-        fn list_secret_properties(&self, options: Option<SecretClientListSecretPropertiesOptions<'_>>) -> Result<Pager<ListSecretPropertiesResult>>;
-        fn list_secret_properties_versions(&self, secret_name: &str, options: Option<SecretClientListSecretPropertiesVersionsOptions<'_>>) -> Result<Pager<ListSecretPropertiesResult>>;
-        async fn purge_deleted_secret(&self, secret_name: &str, options: Option<SecretClientPurgeDeletedSecretOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn recover_deleted_secret(&self, secret_name: &str, options: Option<SecretClientRecoverDeletedSecretOptions<'_>>) -> Result<Response<Secret>>;
-        async fn restore_secret(&self, parameters: RequestContent<RestoreSecretParameters>, options: Option<SecretClientRestoreSecretOptions<'_>>) -> Result<Response<Secret>>;
-        async fn set_secret(&self, secret_name: &str, parameters: RequestContent<SetSecretParameters>, options: Option<SecretClientSetSecretOptions<'_>>) -> Result<Response<Secret>>;
-        async fn update_secret_properties(&self, secret_name: &str, parameters: RequestContent<UpdateSecretPropertiesParameters>, options: Option<SecretClientUpdateSecretPropertiesOptions<'_>>) -> Result<Response<Secret>>;
+        pub async fn backup_secret(&self, secret_name: &str, options: Option<SecretClientBackupSecretOptions<'_>>) -> Result<Response<BackupSecretResult>>;
+        pub async fn delete_secret(&self, secret_name: &str, options: Option<SecretClientDeleteSecretOptions<'_>>) -> Result<Response<DeletedSecret>>;
+        pub fn endpoint(&self) -> &Url;
+        pub async fn get_deleted_secret(&self, secret_name: &str, options: Option<SecretClientGetDeletedSecretOptions<'_>>) -> Result<Response<DeletedSecret>>;
+        pub async fn get_secret(&self, secret_name: &str, options: Option<SecretClientGetSecretOptions<'_>>) -> Result<Response<Secret>>;
+        pub fn list_deleted_secret_properties(&self, options: Option<SecretClientListDeletedSecretPropertiesOptions<'_>>) -> Result<Pager<ListDeletedSecretPropertiesResult>>;
+        pub fn list_secret_properties(&self, options: Option<SecretClientListSecretPropertiesOptions<'_>>) -> Result<Pager<ListSecretPropertiesResult>>;
+        pub fn list_secret_properties_versions(&self, secret_name: &str, options: Option<SecretClientListSecretPropertiesVersionsOptions<'_>>) -> Result<Pager<ListSecretPropertiesResult>>;
+        pub async fn purge_deleted_secret(&self, secret_name: &str, options: Option<SecretClientPurgeDeletedSecretOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn recover_deleted_secret(&self, secret_name: &str, options: Option<SecretClientRecoverDeletedSecretOptions<'_>>) -> Result<Response<Secret>>;
+        pub async fn restore_secret(&self, parameters: RequestContent<RestoreSecretParameters>, options: Option<SecretClientRestoreSecretOptions<'_>>) -> Result<Response<Secret>>;
+        pub async fn set_secret(&self, secret_name: &str, parameters: RequestContent<SetSecretParameters>, options: Option<SecretClientSetSecretOptions<'_>>) -> Result<Response<Secret>>;
+        pub async fn update_secret_properties(&self, secret_name: &str, parameters: RequestContent<UpdateSecretPropertiesParameters>, options: Option<SecretClientUpdateSecretPropertiesOptions<'_>>) -> Result<Response<Secret>>;
     }
     #[derive(Clone, Debug)]
     pub struct SecretClientOptions {
@@ -231,7 +231,7 @@ pub mod models {
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
     }
     impl SecretClientListDeletedSecretPropertiesOptions<'_> {
-        fn into_owned(self) -> SecretClientListDeletedSecretPropertiesOptions<'static>;
+        pub fn into_owned(self) -> SecretClientListDeletedSecretPropertiesOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct SecretClientListSecretPropertiesOptions<'a> {
@@ -239,7 +239,7 @@ pub mod models {
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
     }
     impl SecretClientListSecretPropertiesOptions<'_> {
-        fn into_owned(self) -> SecretClientListSecretPropertiesOptions<'static>;
+        pub fn into_owned(self) -> SecretClientListSecretPropertiesOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct SecretClientListSecretPropertiesVersionsOptions<'a> {
@@ -247,7 +247,7 @@ pub mod models {
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
     }
     impl SecretClientListSecretPropertiesVersionsOptions<'_> {
-        fn into_owned(self) -> SecretClientListSecretPropertiesVersionsOptions<'static>;
+        pub fn into_owned(self) -> SecretClientListSecretPropertiesVersionsOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct SecretClientPurgeDeletedSecretOptions<'a> {

@@ -83,6 +83,10 @@ function Get-PackageNamesFromPackageInfo($packageInfoDirectory) {
   $packages.name
 }
 
+function Get-CanaryPackageNames() {
+  return @('azure_canary', 'azure_canary_core')
+}
+
 function Get-CargoPackageByName(
   $WorkspacePackages,
   [string] $PackageName

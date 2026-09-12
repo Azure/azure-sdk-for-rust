@@ -344,7 +344,7 @@ pub(crate) fn response_with_charge(body: &[u8], request_charge: f64) -> CosmosRe
 /// records, so tests can assert on attempt counts surviving aggregation.
 pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosResponse {
     use crate::diagnostics::{
-        ExecutionContext, PipelineType, TransportHttpVersion, TransportKind, TransportSecurity,
+        ExecutionContext, PipelineKind, TransportHttpVersion, TransportKind, TransportSecurity,
     };
 
     let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -357,7 +357,7 @@ pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosRespon
     for _ in 0..requests {
         let _ = diagnostics.start_request(
             ExecutionContext::Initial,
-            PipelineType::DataPlane,
+            PipelineKind::DataPlane,
             TransportSecurity::Secure,
             TransportKind::Gateway,
             TransportHttpVersion::Http11,

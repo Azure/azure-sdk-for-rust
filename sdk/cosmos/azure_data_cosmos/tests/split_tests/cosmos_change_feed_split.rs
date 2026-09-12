@@ -48,7 +48,7 @@ const EMPTY_STREAK_TO_STOP: usize = 5;
 /// poll cap is reached, returning the post-change document (`current`) of every
 /// item seen. These baseline/post-split writes are all creates, so `current` is
 /// always present.
-async fn drain_changes(
+pub(crate) async fn drain_changes(
     iterator: &mut ChangeFeedPageIterator<ChangeFeedItem<MockItem>>,
 ) -> Result<Vec<MockItem>, Box<dyn Error>> {
     let mut collected = Vec::new();

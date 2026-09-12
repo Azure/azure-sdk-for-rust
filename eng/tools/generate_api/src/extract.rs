@@ -1935,7 +1935,7 @@ fn extract_trait_impl(
         declaration_path_references: collect_trait_impl_declaration_path_references(
             krate, impl_block,
         ),
-        members: extract_impl_items(krate, &impl_block.items),
+        members: extract_impl_items(krate, &impl_block.items, false),
     })
 }
 
@@ -1965,7 +1965,7 @@ fn extract_inherent_impl(
     impl_block: &Impl,
 ) -> Option<ApiItem> {
     let self_type = render_type(&impl_block.for_);
-    let members = extract_impl_items(krate, &impl_block.items);
+    let members = extract_impl_items(krate, &impl_block.items, true);
     if members.is_empty() {
         return None;
     }
@@ -2027,12 +2027,16 @@ fn inherent_impl_type_arg_classes(type_: &Type) -> Vec<u8> {
     }
 }
 
-fn extract_impl_items(krate: &Crate, item_ids: &[Id]) -> Vec<ApiMember> {
+fn extract_impl_items(
+    krate: &Crate,
+    item_ids: &[Id],
+    functions_are_public: bool,
+) -> Vec<ApiMember> {
     item_ids
         .iter()
         .filter_map(|item_id| krate.index.get(item_id))
         .filter(|item| is_visible(item))
-        .filter_map(|item| extract_associated_member(krate, item))
+        .filter_map(|item| extract_associated_member(krate, item, functions_are_public))
         .collect()
 }
 
@@ -2041,7 +2045,7 @@ fn extract_trait_members(krate: &Crate, trait_item: &Trait) -> Vec<ApiMember> {
         .items
         .iter()
         .filter_map(|item_id| krate.index.get(item_id))
-        .filter_map(|item| extract_associated_member(krate, item))
+        .filter_map(|item| extract_associated_member(krate, item, false))
         .collect()
 }
 
@@ -2196,7 +2200,11 @@ fn text_member(name: impl Into<String>, declaration: impl Into<String>) -> ApiMe
     }
 }
 
-fn extract_associated_member(krate: &Crate, item: &Item) -> Option<ApiMember> {
+fn extract_associated_member(
+    krate: &Crate,
+    item: &Item,
+    function_is_public: bool,
+) -> Option<ApiMember> {
     match &item.inner {
         ItemEnum::Function(function) => Some(api_member(
             krate,
@@ -2205,7 +2213,7 @@ fn extract_associated_member(krate: &Crate, item: &Item) -> Option<ApiMember> {
             render_function_declaration(
                 item.name.as_deref().unwrap_or("unknown_fn"),
                 function,
-                false,
+                function_is_public,
             ),
         )),
         ItemEnum::AssocConst { type_, value } => Some(api_member(

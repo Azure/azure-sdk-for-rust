@@ -11,9 +11,11 @@
 ### Breaking Changes
 
 - `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
+- Renamed several types for naming consistency: `diagnostics::PipelineType` is now `diagnostics::PipelineKind` (following the `Kind`-over-`Type` convention), `diagnostics::ProxyConfiguration` is now `diagnostics::ProxyConfig` (matching the `Config` naming used elsewhere), and `in_memory_emulator::RuChargingModel` is now `in_memory_emulator::RequestUnitChargingModel` (expanding the `RU` acronym). The unstable `testing` module (`__internal_mocking` feature) was renamed to `test`. ([#5203](https://github.com/Azure/azure-sdk-for-rust/pull/5203))
 
 ### Bugs Fixed
 
+- Added partition-merge routing support, advertised the merge capability bits, and retained point-in-time change feed filtering across merged partitions on Gateway V1 and Gateway V2. ([#4122](https://github.com/Azure/azure-sdk-for-rust/issues/4122))
 - Cosmos driver user agents now include the build-time Rust compiler version instead of `rustc/unknown`. ([#5201](https://github.com/Azure/azure-sdk-for-rust/pull/5201))
 - Name-addressed container operations now refresh metadata and retry once after container recreation, clearing generation-specific session and partition-routing state before targeting the replacement. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
 
