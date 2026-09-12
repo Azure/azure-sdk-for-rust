@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 # cSpell:ignore noui noexplorer disableratelimiting enableaadauthentication partitioncount LASTEXITCODE TEAMPROJECTID
+#Requires -Version 7.4
 
 # Load common ES scripts
 . "$PSScriptRoot\..\..\..\..\eng\common\scripts\common.ps1"
@@ -36,8 +37,9 @@ function Test-CosmosE2eScenarioDocuments {
 
     $profileIds = @($profileDocuments.id | Sort-Object -Unique)
     $referencedProfileIds = @($scenarioDocuments.profiles | Sort-Object -Unique)
-    if (Compare-Object $profileIds $referencedProfileIds) {
-        throw 'Cosmos E2E profile files and scenario profile references must contain identical profile IDs.'
+    $unknownProfileIds = @($referencedProfileIds | Where-Object { $_ -notin $profileIds })
+    if ($unknownProfileIds.Count -gt 0) {
+        throw "Cosmos E2E scenarios reference unknown profile IDs: $($unknownProfileIds -join ', ')."
     }
 }
 
@@ -165,16 +167,23 @@ if ($env:AZURE_COSMOS_E2E_PROFILE -and
 
 if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     $repoRoot = (Resolve-Path ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', '..', '..'))).Path
-    $runDirectory = if ($env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY) {
+    $runDirectoryRoot = if ($env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY) {
         $env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY
     }
     else {
-        ([System.IO.Path]::Combine(
-            [System.IO.Path]::GetTempPath(),
-            "azure-data-cosmos-emulator-$([System.Guid]::NewGuid().ToString('N'))"))
+        [System.IO.Path]::GetTempPath()
     }
+    $runId = [System.Guid]::NewGuid().ToString('N')
+    $runDirectory = ([System.IO.Path]::Combine(
+        $runDirectoryRoot,
+        "azure-data-cosmos-emulator-$runId"))
     New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
+    Set-Content `
+        -LiteralPath ([System.IO.Path]::Combine($runDirectory, '.azure-data-cosmos-emulator-run')) `
+        -Value $runId `
+        -NoNewline
     $env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY = $runDirectory
+    $env:AZURE_COSMOS_INMEMORY_RUN_ID = $runId
     $configuration = if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'inmemory-v2') {
         [System.IO.Path]::Combine($repoRoot, 'sdk', 'cosmos', 'azure_data_cosmos_emulator', 'config', 'ci-gateway-v2.json')
     }
@@ -187,14 +196,6 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     if ($env:AZURE_COSMOS_E2E_PROFILE) {
         $e2eConfiguration = New-CosmosE2eEmulatorConfig `
             -ProfileId $env:AZURE_COSMOS_E2E_PROFILE `
-            -GatewayV2Enabled $expectedGateway20 `
-            -OutputDirectory $runDirectory
-        $configuration = $e2eConfiguration.Path
-        $expectedAccountId = $e2eConfiguration.AccountId
-    }
-    else {
-        $e2eConfiguration = New-CosmosE2eEmulatorConfig `
-            -ProfileId 'hostedEmulatorSmoke' `
             -GatewayV2Enabled $expectedGateway20 `
             -OutputDirectory $runDirectory
         $configuration = $e2eConfiguration.Path

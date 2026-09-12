@@ -9,7 +9,7 @@
         {
             "sdk": "rust",
             "path": "sdk/cosmos/azure_data_cosmos_driver/tests/in_memory_emulator_tests/error_cases.rs",
-            "test": "read_item_not_found"
+            "test": "read_nonexistent_404"
         }
     ],
     "profiles": [

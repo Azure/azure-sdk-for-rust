@@ -97,6 +97,13 @@ async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
         .await?
         .error_for_status()?;
     let capabilities: CapabilityDocument = serde_json::from_slice(&response.bytes().await?)?;
+    if capabilities.api_version != 1 {
+        return Err(format!(
+            "scenario '{scenario_id}' requires capabilities API version 1, got {}",
+            capabilities.api_version
+        )
+        .into());
+    }
     let backend = match std::env::var("AZURE_COSMOS_EMULATOR_FLAVOR")
         .ok()
         .as_deref()
@@ -115,13 +122,6 @@ async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
     let requirements = required_capabilities_for(scenario_id, backend)?;
     if requirements.is_empty() {
         return Ok(());
-    }
-    if capabilities.api_version != 1 {
-        return Err(format!(
-            "scenario '{scenario_id}' requires capabilities API version 1, got {}",
-            capabilities.api_version
-        )
-        .into());
     }
     for requirement in requirements {
         let available = match requirement {

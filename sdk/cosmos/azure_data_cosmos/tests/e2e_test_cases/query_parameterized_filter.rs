@@ -19,12 +19,11 @@ async fn parameterized_query_filters_and_orders() -> TestResult {
         return Ok(());
     }
     E2eTestFixture::run(async |fixture| {
-        // Arrange three ordered scores in one logical partition.
-        for score in 1..=3 {
-            let id = format!("item-{score}");
-            let mut value = item(&id, "A", score);
+        // Arrange IDs and scores in different orders so ORDER BY is observable.
+        for (id, score) in [("a", 3), ("b", 1), ("c", 2)] {
+            let mut value = item(id, "A", score);
             value.score = Some(score);
-            fixture.container.create_item("A", &id, value, None).await?;
+            fixture.container.create_item("A", id, value, None).await?;
         }
 
         // Bind values as parameters and restrict execution to partition A.
@@ -39,13 +38,32 @@ async fn parameterized_query_filters_and_orders() -> TestResult {
             .await?;
         let items: Vec<Item> = results.by_ref().try_collect().await?;
 
-        // The filter excludes score 1 and ORDER BY preserves score 2 before score 3.
+        // The filter excludes score 1 and ordering differs from ID/insertion order.
         assert_eq!(
             items
                 .iter()
                 .map(|item| item.id.as_str())
                 .collect::<Vec<_>>(),
-            ["item-2", "item-3"]
+            ["c", "a"]
+        );
+
+        let descending = Query::from(
+            "SELECT * FROM c WHERE c.pk = @pk AND c.score >= @min ORDER BY c.score DESC",
+        )
+        .with_parameter("@pk", "A")?
+        .with_parameter("@min", 2)?;
+        let descending_items: Vec<Item> = fixture
+            .container
+            .query_items::<Item>(descending, FeedScope::partition("A"), None)
+            .await?
+            .try_collect()
+            .await?;
+        assert_eq!(
+            descending_items
+                .iter()
+                .map(|item| item.id.as_str())
+                .collect::<Vec<_>>(),
+            ["a", "c"]
         );
         Ok(())
     })

@@ -182,10 +182,18 @@ struct Harness {
 
 impl Harness {
     async fn setup() -> Self {
-        Self::setup_with_partition_key_range_cache(true).await
+        Self::setup_with_options(true, ConsistencyLevel::Session, None).await
     }
 
     async fn setup_with_partition_key_range_cache(enabled: bool) -> Self {
+        Self::setup_with_options(enabled, ConsistencyLevel::Session, None).await
+    }
+
+    async fn setup_with_options(
+        partition_key_range_cache_enabled: bool,
+        account_consistency: ConsistencyLevel,
+        read_consistency_strategy: Option<ReadConsistencyStrategy>,
+    ) -> Self {
         let observer = RecordingObserver::new();
 
         let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
@@ -193,7 +201,7 @@ impl Harness {
             Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
         )])
         .unwrap()
-        .with_consistency(ConsistencyLevel::Session);
+        .with_consistency(account_consistency);
 
         let emulator = Arc::new(
             InMemoryEmulatorHttpClient::new(config).with_request_observer(observer.clone()),
@@ -219,14 +227,16 @@ impl Harness {
             Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
             EMULATOR_KEY,
         );
-        let driver = runtime
-            .create_driver(
-                DriverOptions::builder(account)
-                    .with_partition_key_range_cache_enabled(enabled)
+        let mut driver_options = DriverOptions::builder(account)
+            .with_partition_key_range_cache_enabled(partition_key_range_cache_enabled);
+        if let Some(strategy) = read_consistency_strategy {
+            driver_options = driver_options.with_operation_options(
+                OperationOptionsBuilder::new()
+                    .with_read_consistency_strategy(strategy)
                     .build(),
-            )
-            .await
-            .unwrap();
+            );
+        }
+        let driver = runtime.create_driver(driver_options.build()).await.unwrap();
 
         let container = driver
             .resolve_container(
@@ -295,6 +305,47 @@ impl Harness {
             .as_ref()
             .map(|t| t.as_str().to_string())
     }
+}
+
+#[tokio::test]
+async fn session_strategy_on_eventual_account_captures_write_token_for_read() {
+    let h = Harness::setup_with_options(
+        true,
+        ConsistencyLevel::Eventual,
+        Some(ReadConsistencyStrategy::Session),
+    )
+    .await;
+
+    h.observer.clear();
+    let create_token = h
+        .create("pk1", "item-1", 1)
+        .await
+        .expect("create should return a session token");
+    let create_writes: Vec<RequestSnapshot> = h
+        .observer
+        .snapshots()
+        .into_iter()
+        .filter(|snapshot| snapshot.is_item_request() && snapshot.method == Method::Post)
+        .collect();
+    assert_eq!(create_writes.len(), 1);
+    assert_eq!(
+        create_writes[0].session_token, None,
+        "read consistency must not automatically attach cached tokens to writes"
+    );
+
+    h.observer.clear();
+    h.driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(h.item_ref("pk1", "item-1")),
+            OperationOptionsBuilder::new().build(),
+        )
+        .await
+        .expect("Session read should succeed");
+    assert_eq!(
+        h.observer.single_item_read().session_token.as_deref(),
+        Some(create_token.as_str()),
+        "read must carry the token captured from the preceding write"
+    );
 }
 
 #[tokio::test]

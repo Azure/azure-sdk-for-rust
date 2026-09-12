@@ -79,6 +79,7 @@ async fn run_lifecycle_case(
             create_session_token,
             read_case,
             &execution,
+            &setup.read_region,
         )
         .await?;
         match read_outcome {
@@ -343,30 +344,15 @@ struct SelectedLifecycleSetup<'a> {
     account: &'a AccountDefinition,
     runtime: &'a RuntimeDefinition,
     client: &'a ClientDefinition,
+    read_region: Region,
     routing: RoutingStrategy,
 }
 
 impl<'a> SelectedLifecycleSetup<'a> {
     fn from_profile(profile: &'a Profile) -> TestResult<Self> {
-        let account_ids: Vec<_> = profile
-            .accounts
-            .iter()
-            .map(|definition| definition.id.as_str())
-            .collect();
-        let runtime_ids: Vec<_> = profile
-            .runtimes
-            .iter()
-            .map(|definition| definition.id.as_str())
-            .collect();
-        let client_ids: Vec<_> = profile
-            .clients
-            .iter()
-            .map(|definition| definition.id.as_str())
-            .collect();
-
-        let account = profile.account(selected_axis("AZURE_COSMOS_E2E_ACCOUNT", &account_ids)?);
-        let runtime = profile.runtime(selected_axis("AZURE_COSMOS_E2E_RUNTIME", &runtime_ids)?);
-        let client = profile.client(selected_axis("AZURE_COSMOS_E2E_CLIENT", &client_ids)?);
+        let account = profile.selected_account()?;
+        let runtime = profile.selected_runtime()?;
+        let client = profile.selected_client()?;
         let read_region = lifecycle_read_region(profile)?;
         let routing = lifecycle_routing(client, &read_region)?;
 
@@ -375,6 +361,7 @@ impl<'a> SelectedLifecycleSetup<'a> {
             account,
             runtime,
             client,
+            read_region,
             routing,
         })
     }
@@ -455,6 +442,7 @@ async fn read_created_item(
     create_session_token: Option<String>,
     read_case: &PostCreateReadCase,
     execution: &str,
+    expected_region: &Region,
 ) -> TestResult<PostCreateReadOutcome> {
     let mut operation = OperationOptions::default();
     operation.read_consistency_strategy = read_case.consistency_override;
@@ -480,6 +468,8 @@ async fn read_created_item(
                 };
                 record_request_statuses(&response.diagnostics(), &mut observed_statuses);
                 observed_statuses.push(status);
+                verify_observed_statuses(read_case, execution, &observed_statuses)?;
+                assert_initial_read_region(&response.diagnostics(), expected_region, execution);
                 if read_case
                     .expectation
                     .terminal_status()
@@ -507,8 +497,12 @@ async fn read_created_item(
                 };
                 if let Some(diagnostics) = error.diagnostics() {
                     record_request_statuses(&diagnostics, &mut observed_statuses);
+                    if diagnostics.request_count() > 0 {
+                        assert_initial_read_region(&diagnostics, expected_region, execution);
+                    }
                 }
                 observed_statuses.push(status);
+                verify_observed_statuses(read_case, execution, &observed_statuses)?;
                 if read_case
                     .expectation
                     .terminal_status()
@@ -558,33 +552,65 @@ async fn assert_item_deleted(
     let deadline = tokio::time::Instant::now() + REPLICATION_TIMEOUT;
 
     loop {
-        match container
+        let result = container
             .read_item("A", item_id, Some(options.clone()))
-            .await
-        {
-            Err(error)
-                if PLAIN_NOT_FOUND.matches(
-                    error.status().status_code(),
-                    error.status().sub_status().map(|value| value.value()),
-                ) =>
-            {
-                return Ok(());
-            }
-            Err(error)
-                if SESSION_NOT_AVAILABLE.matches(
-                    error.status().status_code(),
-                    error.status().sub_status().map(|value| value.value()),
-                ) && tokio::time::Instant::now() < deadline => {}
-            Ok(_) if tokio::time::Instant::now() < deadline => {}
-            Ok(_) => {
+            .await;
+        let status = match &result {
+            Ok(response) => ActualHttpStatus {
+                status_code: response.status().status_code(),
+                substatus: response.status().sub_status().map(|value| value.value()),
+            },
+            Err(error) => ActualHttpStatus {
+                status_code: error.status().status_code(),
+                substatus: error.status().sub_status().map(|value| value.value()),
+            },
+        };
+        match deleted_read_action(status, tokio::time::Instant::now() < deadline) {
+            DeletedReadAction::Deleted => return Ok(()),
+            DeletedReadAction::Retry => {}
+            DeletedReadAction::SessionViolation => {
                 return Err(format!(
-                    "deleted item for '{execution}' remained visible after {REPLICATION_TIMEOUT:?}"
+                    "deleted item for '{execution}' was served despite its explicit Session token"
                 )
                 .into())
             }
-            Err(error) => return Err(error.into()),
+            DeletedReadAction::TimedOut => {
+                return Err(format!(
+                    "read for '{execution}' remained at 404/1002 after {REPLICATION_TIMEOUT:?}"
+                )
+                .into())
+            }
+            DeletedReadAction::Unexpected => match result {
+                Err(error) => return Err(error.into()),
+                Ok(_) => unreachable!("successful reads are session violations"),
+            },
         }
         tokio::time::sleep(RETRY_DELAY).await;
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DeletedReadAction {
+    Deleted,
+    Retry,
+    SessionViolation,
+    TimedOut,
+    Unexpected,
+}
+
+fn deleted_read_action(status: ActualHttpStatus, before_deadline: bool) -> DeletedReadAction {
+    if PLAIN_NOT_FOUND.matches(status.status_code, status.substatus) {
+        DeletedReadAction::Deleted
+    } else if SESSION_NOT_AVAILABLE.matches(status.status_code, status.substatus) {
+        if before_deadline {
+            DeletedReadAction::Retry
+        } else {
+            DeletedReadAction::TimedOut
+        }
+    } else if READ_SUCCEEDED.matches(status.status_code, status.substatus) {
+        DeletedReadAction::SessionViolation
+    } else {
+        DeletedReadAction::Unexpected
     }
 }
 
@@ -643,6 +669,44 @@ fn verify_transient_status(
     Ok(())
 }
 
+fn verify_observed_statuses(
+    read_case: &PostCreateReadCase,
+    execution: &str,
+    observed_statuses: &[ActualHttpStatus],
+) -> TestResult {
+    let terminal = read_case.expectation.terminal_status();
+    let allowed = read_case.expectation.allowed_transient_statuses();
+    if let Some(unexpected) = observed_statuses.iter().find(|actual| {
+        !terminal.matches(actual.status_code, actual.substatus)
+            && !allowed.iter().any(|expected| {
+                expected
+                    .http_status()
+                    .matches(actual.status_code, actual.substatus)
+            })
+    }) {
+        return Err(format!(
+            "'{execution}' observed unexpected internal read status {unexpected:?}; expected transient {allowed:?} or terminal {terminal:?}; observed {observed_statuses:?}"
+        )
+        .into());
+    }
+    Ok(())
+}
+
+fn assert_initial_read_region(
+    diagnostics: &azure_data_cosmos::diagnostics::DiagnosticsContext,
+    expected_region: &Region,
+    execution: &str,
+) {
+    assert_eq!(
+        diagnostics
+            .requests()
+            .first()
+            .and_then(|request| request.region()),
+        Some(expected_region),
+        "'{execution}' must begin its read in the selected region"
+    );
+}
+
 fn record_request_statuses(
     diagnostics: &azure_data_cosmos::diagnostics::DiagnosticsContext,
     observed: &mut Vec<ActualHttpStatus>,
@@ -685,23 +749,6 @@ fn lifecycle_routing(
         }
         "accountOrder" => Ok(RoutingStrategy::PreferredRegions(Vec::new())),
         routing => Err(format!("unsupported lifecycle routing strategy '{routing}'").into()),
-    }
-}
-
-fn selected_axis<'a>(environment_variable: &str, available: &'a [&str]) -> TestResult<&'a str> {
-    match std::env::var(environment_variable) {
-        Ok(selected) => available
-            .iter()
-            .copied()
-            .find(|candidate| *candidate == selected)
-            .ok_or_else(|| {
-                format!("{environment_variable}='{selected}' is not one of {available:?}").into()
-            }),
-        Err(_) if available.len() == 1 => Ok(available[0]),
-        Err(_) => Err(format!(
-            "{environment_variable} is required because this profile defines {available:?}"
-        )
-        .into()),
     }
 }
 
@@ -892,5 +939,47 @@ mod tests {
         assert!(PLAIN_NOT_FOUND.matches(StatusCode::NotFound, Some(0)));
         assert!(!PLAIN_NOT_FOUND.matches(StatusCode::NotFound, Some(1002)));
         assert!(SESSION_NOT_AVAILABLE.matches(StatusCode::NotFound, Some(1002)));
+    }
+
+    #[test]
+    fn successful_read_after_delete_is_a_session_violation() {
+        let success = ActualHttpStatus {
+            status_code: StatusCode::Ok,
+            substatus: None,
+        };
+        assert_eq!(
+            deleted_read_action(success, true),
+            DeletedReadAction::SessionViolation
+        );
+    }
+
+    #[test]
+    fn internal_attempts_must_match_the_case_allowlist() {
+        let case = PostCreateReadCase::new(
+            "plain-not-found-only",
+            Some(ReadConsistencyStrategy::Eventual),
+            SessionTokenBehavior::Omitted,
+            eventually_succeeds_after(TransientReadStatus::PlainNotFound),
+        );
+        let allowed = [
+            ActualHttpStatus {
+                status_code: StatusCode::NotFound,
+                substatus: Some(0),
+            },
+            ActualHttpStatus {
+                status_code: StatusCode::Ok,
+                substatus: None,
+            },
+        ];
+        assert!(verify_observed_statuses(&case, "allowed", &allowed).is_ok());
+
+        let disallowed = [
+            ActualHttpStatus {
+                status_code: StatusCode::NotFound,
+                substatus: Some(1002),
+            },
+            allowed[1],
+        ];
+        assert!(verify_observed_statuses(&case, "disallowed", &disallowed).is_err());
     }
 }
