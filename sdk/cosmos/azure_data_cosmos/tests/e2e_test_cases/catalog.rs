@@ -1,7 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::PathBuf,
+};
 
 use serde::Deserialize;
 use serde_json::Value;
@@ -9,6 +13,7 @@ use serde_json::Value;
 const DEFAULT_PROFILE: &str = "hostedEmulatorSmoke";
 const SCENARIO_SCHEMA_REFERENCE: &str = "../../schema/scenario.v1.json";
 const PROFILE_SCHEMA_REFERENCE: &str = "../schema/profile.v1.json";
+const SCENARIO_DIRECTORY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../e2e_tests/scenarios");
 const BACKENDS: [&str; 3] = [
     "azureLive",
     "hostedEmulatorGatewayV1",
@@ -285,6 +290,44 @@ fn load_scenarios() -> Result<Vec<Scenario>, String> {
         .collect()
 }
 
+fn scenario_ids_on_disk() -> Result<BTreeSet<String>, String> {
+    let mut directories = vec![PathBuf::from(SCENARIO_DIRECTORY)];
+    let mut documents = Vec::new();
+    while let Some(directory) = directories.pop() {
+        let entries = fs::read_dir(&directory)
+            .map_err(|error| format!("failed to read '{}': {error}", directory.display()))?;
+        for entry in entries {
+            let path = entry.map_err(|error| error.to_string())?.path();
+            if path.is_dir() {
+                directories.push(path);
+            } else if path
+                .extension()
+                .and_then(std::ffi::OsStr::to_str)
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("json"))
+            {
+                documents.push(path);
+            }
+        }
+    }
+    documents.sort();
+
+    let mut ids = BTreeSet::new();
+    for path in documents {
+        let json = fs::read_to_string(&path)
+            .map_err(|error| format!("failed to read '{}': {error}", path.display()))?;
+        let document: Value = serde_json::from_str(&json)
+            .map_err(|error| format!("invalid scenario '{}': {error}", path.display()))?;
+        let id = document
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| format!("scenario '{}' has no string id", path.display()))?;
+        if !ids.insert(id.to_owned()) {
+            return Err(format!("duplicate scenario id '{id}' on disk"));
+        }
+    }
+    Ok(ids)
+}
+
 fn load_profiles() -> Result<Vec<Profile>, String> {
     PROFILES
         .iter()
@@ -502,6 +545,22 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
                 ));
             }
         }
+    }
+    let registered_scenario_ids: BTreeSet<_> =
+        scenario_ids.iter().map(|id| (*id).to_owned()).collect();
+    let discovered_scenario_ids = scenario_ids_on_disk()?;
+    if registered_scenario_ids != discovered_scenario_ids {
+        let unregistered: Vec<_> = discovered_scenario_ids
+            .difference(&registered_scenario_ids)
+            .cloned()
+            .collect();
+        let missing: Vec<_> = registered_scenario_ids
+            .difference(&discovered_scenario_ids)
+            .cloned()
+            .collect();
+        return Err(format!(
+            "scenario inventory differs from e2e_tests/scenarios; unregistered: {unregistered:?}, missing: {missing:?}"
+        ));
     }
     let referenced_profiles: BTreeSet<_> = scenarios
         .iter()

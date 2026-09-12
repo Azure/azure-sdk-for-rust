@@ -475,6 +475,7 @@ async fn read_created_item(
                     .terminal_status()
                     .matches(status.status_code, status.substatus)
                 {
+                    verify_required_transient_observed(read_case, execution, &observed_statuses)?;
                     assert_critical_diagnostics(
                         &response.diagnostics(),
                         "read_item",
@@ -508,6 +509,7 @@ async fn read_created_item(
                     .terminal_status()
                     .matches(status.status_code, status.substatus)
                 {
+                    verify_required_transient_observed(read_case, execution, &observed_statuses)?;
                     if read_case.expectation == ReadExpectation::RejectedBeforeTransport {
                         assert!(
                             error.response().is_none(),
@@ -686,6 +688,29 @@ fn verify_observed_statuses(
     }) {
         return Err(format!(
             "'{execution}' observed unexpected internal read status {unexpected:?}; expected transient {allowed:?} or terminal {terminal:?}; observed {observed_statuses:?}"
+        )
+        .into());
+    }
+    Ok(())
+}
+
+fn verify_required_transient_observed(
+    read_case: &PostCreateReadCase,
+    execution: &str,
+    observed_statuses: &[ActualHttpStatus],
+) -> TestResult {
+    let allowed = read_case.expectation.allowed_transient_statuses();
+    if !allowed.is_empty()
+        && !observed_statuses.iter().any(|actual| {
+            allowed.iter().any(|expected| {
+                expected
+                    .http_status()
+                    .matches(actual.status_code, actual.substatus)
+            })
+        })
+    {
+        return Err(format!(
+            "'{execution}' reached terminal status without observing required transient {allowed:?}; observed {observed_statuses:?}"
         )
         .into());
     }
@@ -981,5 +1006,29 @@ mod tests {
             allowed[1],
         ];
         assert!(verify_observed_statuses(&case, "disallowed", &disallowed).is_err());
+    }
+
+    #[test]
+    fn eventual_success_requires_an_expected_transient() {
+        let case = PostCreateReadCase::new(
+            "session-not-available-first",
+            Some(ReadConsistencyStrategy::Session),
+            SessionTokenBehavior::ExplicitCreateResponse,
+            eventually_succeeds_after(TransientReadStatus::SessionNotAvailable),
+        );
+        let success = ActualHttpStatus {
+            status_code: StatusCode::Ok,
+            substatus: None,
+        };
+        assert!(verify_required_transient_observed(&case, "missing", &[success]).is_err());
+
+        let observed = [
+            ActualHttpStatus {
+                status_code: StatusCode::NotFound,
+                substatus: Some(1002),
+            },
+            success,
+        ];
+        assert!(verify_required_transient_observed(&case, "observed", &observed).is_ok());
     }
 }
