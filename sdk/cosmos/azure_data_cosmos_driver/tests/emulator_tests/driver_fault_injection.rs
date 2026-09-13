@@ -1119,11 +1119,13 @@ pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
             .build(),
         );
 
-        // Pin the throttle-retry budget at the runtime layer of the option
-        // view. A generous cumulative-wait budget keeps the attempt count the
-        // sole limiter for these small retry counts. No end-to-end latency
-        // policy is set, so the transport request carries no deadline and the
-        // forced-final retry is immediate.
+        // Pin the throttle-retry budget on the ReadItem operation under test.
+        // Setup and account-metadata operations retain their normal retry
+        // budgets so transient service-side metadata throttling cannot mask the
+        // fault-injection assertion. A generous cumulative-wait budget keeps
+        // the read's attempt count as the sole limiter for these small retry
+        // counts. No end-to-end latency policy is set, so the transport request
+        // carries no deadline and the forced-final retry is immediate.
         let operation_options = OperationOptionsBuilder::new()
             .with_throttling_retry_options(
                 ThrottlingRetryOptionsBuilder::new()
@@ -1135,9 +1137,8 @@ pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
 
         let rule_for_assert = Arc::clone(&rule);
         Box::pin(
-            DriverTestClient::run_with_unique_db_and_fault_injection_options(
+            DriverTestClient::run_with_unique_db_and_fault_injection(
                 vec![rule],
-                operation_options,
                 async move |context, database| {
                     let container_name = context.unique_container_name();
                     let container = context
@@ -1153,7 +1154,14 @@ pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
 
                     // The read always observes 429 and ultimately fails once
                     // the throttle budget is exhausted.
-                    let read_result = context.read_item(&container, "item1", "pk1").await;
+                    let read_result = context
+                        .read_item_with_options(
+                            &container,
+                            "item1",
+                            "pk1",
+                            operation_options,
+                        )
+                        .await;
                     assert!(
                         read_result.is_err(),
                         "read must fail once the throttle budget is exhausted \
