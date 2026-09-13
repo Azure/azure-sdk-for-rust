@@ -1136,51 +1136,44 @@ pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
             .build();
 
         let rule_for_assert = Arc::clone(&rule);
-        Box::pin(
-            DriverTestClient::run_with_unique_db_and_fault_injection(
-                vec![rule],
-                async move |context, database| {
-                    let container_name = context.unique_container_name();
-                    let container = context
-                        .create_container(&database, &container_name, "/pk")
-                        .await?;
+        Box::pin(DriverTestClient::run_with_unique_db_and_fault_injection(
+            vec![rule],
+            async move |context, database| {
+                let container_name = context.unique_container_name();
+                let container = context
+                    .create_container(&database, &container_name, "/pk")
+                    .await?;
 
-                    // Seed the item with a write. The fault rule targets only
-                    // ReadItem, so the seeding write is unaffected.
-                    let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
-                    context
-                        .create_item(&container, "item1", "pk1", item_json)
-                        .await?;
+                // Seed the item with a write. The fault rule targets only
+                // ReadItem, so the seeding write is unaffected.
+                let item_json = br#"{"id": "item1", "pk": "pk1", "value": "test"}"#;
+                context
+                    .create_item(&container, "item1", "pk1", item_json)
+                    .await?;
 
-                    // The read always observes 429 and ultimately fails once
-                    // the throttle budget is exhausted.
-                    let read_result = context
-                        .read_item_with_options(
-                            &container,
-                            "item1",
-                            "pk1",
-                            operation_options,
-                        )
-                        .await;
-                    assert!(
-                        read_result.is_err(),
-                        "read must fail once the throttle budget is exhausted \
+                // The read always observes 429 and ultimately fails once
+                // the throttle budget is exhausted.
+                let read_result = context
+                    .read_item_with_options(&container, "item1", "pk1", operation_options)
+                    .await;
+                assert!(
+                    read_result.is_err(),
+                    "read must fail once the throttle budget is exhausted \
                          (max_throttle_retry_count={max_throttle_retry_count})",
-                    );
+                );
 
-                    assert_eq!(
-                        rule_for_assert.hit_count(),
-                        expected_hits,
-                        "max_throttle_retry_count={max_throttle_retry_count} must yield \
+                assert_eq!(
+                    rule_for_assert.hit_count(),
+                    expected_hits,
+                    "max_throttle_retry_count={max_throttle_retry_count} must yield \
                          {expected_hits} ReadItem attempts on the wire, but the 429 fault \
                          rule fired {} time(s)",
-                        rule_for_assert.hit_count(),
-                    );
+                    rule_for_assert.hit_count(),
+                );
 
-                    Ok(())
-                },
-            ),
-        )
+                Ok(())
+            },
+        ))
         .await?;
     }
 

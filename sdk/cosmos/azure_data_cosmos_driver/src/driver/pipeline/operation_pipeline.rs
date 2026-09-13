@@ -436,17 +436,19 @@ pub(crate) async fn execute_operation_pipeline(
         .read_consistency_strategy()
         .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
-    let effective_consistency =
-        resolve_effective_consistency(read_consistency_strategy, account_default_consistency);
-    let session_token_resolution_strategy =
-        session_token_resolution_strategy_for_operation(operation, read_consistency_strategy);
+    let operation_read_consistency_strategy =
+        read_consistency_strategy_for_operation(operation, read_consistency_strategy);
+    let effective_consistency = resolve_effective_consistency(
+        operation_read_consistency_strategy,
+        account_default_consistency,
+    );
     let session_token_resolution_active = partition_key_range_cache_enabled
         && !session_capturing_disabled
         && operation_allows_automatic_session_token_resolution(
             operation,
             location_snapshot.account.multiple_write_locations_enabled,
         )
-        && session_token_resolution_strategy.is_session_effective(account_default_consistency);
+        && operation_read_consistency_strategy.is_session_effective(account_default_consistency);
     let session_token_capture_active =
         partition_key_range_cache_enabled && !session_capturing_disabled;
 
@@ -574,25 +576,19 @@ pub(crate) async fn execute_operation_pipeline(
             if operation.prefers_write_endpoints_for_read() && routing.routing_fallback.is_some() {
                 ReadConsistencyStrategy::Default
             } else {
-                read_consistency_strategy
+                operation_read_consistency_strategy
             };
         let attempt_effective_consistency = resolve_effective_consistency(
             attempt_read_consistency_strategy,
             account_default_consistency,
         );
-        let attempt_session_token_resolution_strategy =
-            session_token_resolution_strategy_for_operation(
-                operation,
-                attempt_read_consistency_strategy,
-            );
         let attempt_session_token_resolution_active = partition_key_range_cache_enabled
             && !session_capturing_disabled
             && operation_allows_automatic_session_token_resolution(
                 operation,
                 location.account.multiple_write_locations_enabled,
             )
-            && attempt_session_token_resolution_strategy
-                .is_session_effective(account_default_consistency);
+            && attempt_read_consistency_strategy.is_session_effective(account_default_consistency);
         let attempt_session_token_capture_active = session_token_capture_active;
 
         // Emit one structured debug record per attempt with the chosen
@@ -4365,7 +4361,7 @@ async fn execute_hedged(
     }
 }
 
-fn session_token_resolution_strategy_for_operation(
+fn read_consistency_strategy_for_operation(
     operation: &CosmosOperation,
     read_consistency_strategy: ReadConsistencyStrategy,
 ) -> ReadConsistencyStrategy {
@@ -4775,11 +4771,18 @@ mod tests {
         let batch = CosmosOperation::batch(test_container(), PartitionKey::from("pk1"));
 
         assert_eq!(
-            super::session_token_resolution_strategy_for_operation(
+            super::read_consistency_strategy_for_operation(
                 &write,
                 crate::options::ReadConsistencyStrategy::Session,
             ),
             crate::options::ReadConsistencyStrategy::Default
+        );
+        assert_eq!(
+            super::read_consistency_strategy_for_operation(
+                &read,
+                crate::options::ReadConsistencyStrategy::Eventual,
+            ),
+            crate::options::ReadConsistencyStrategy::Eventual
         );
         assert!(super::operation_allows_automatic_session_token_resolution(
             &read, false

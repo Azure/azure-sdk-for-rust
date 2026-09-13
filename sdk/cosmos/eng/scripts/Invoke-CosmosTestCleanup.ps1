@@ -112,6 +112,10 @@ if ($env:AZURE_COSMOS_CONNECTION_STRING -eq "emulator" -or
     $env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     $env:AZURE_COSMOS_CONNECTION_STRING = $null
 }
+if ($env:AZURE_COSMOS_E2E_PROFILE -and
+    $env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
+    $env:AZURE_COSMOS_DEFAULT_CONSISTENCY = $null
+}
 $env:AZURE_COSMOS_TEST_MODE = $null
 $env:AZURE_COSMOS_EMULATOR_HOST = $null
 $env:AZURE_COSMOS_INMEMORY_EMULATOR_PID = $null
