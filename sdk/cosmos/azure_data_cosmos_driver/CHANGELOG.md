@@ -18,6 +18,7 @@
 - Added partition-merge routing support, advertised the merge capability bits, and retained point-in-time change feed filtering across merged partitions on Gateway V1 and Gateway V2. ([#4122](https://github.com/Azure/azure-sdk-for-rust/issues/4122))
 - Cosmos driver user agents now include the build-time Rust compiler version instead of `rustc/unknown`. ([#5201](https://github.com/Azure/azure-sdk-for-rust/pull/5201))
 - Name-addressed container operations now refresh metadata and retry once after container recreation, clearing generation-specific session and partition-routing state before targeting the replacement. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
+- Binary request-body encoding is now disabled automatically when the connected backend cannot decode it, so a default (binary-enabled) client works against the vnext emulator instead of failing item writes with `400/1001 PartitionKeyMismatch`. Detection requires both an emulator host and an account payload that omits `userReplicationPolicy`, so a real account is never affected; response negotiation is unchanged, since a backend that does not support binary simply replies with text. ([#5240](https://github.com/Azure/azure-sdk-for-rust/issues/5240))
 
 ### Other Changes
 
