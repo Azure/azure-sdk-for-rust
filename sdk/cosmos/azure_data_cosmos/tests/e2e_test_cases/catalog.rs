@@ -22,24 +22,36 @@ const BACKENDS: [&str; 3] = [
 
 const SCENARIOS: &[&str] = &[
     include_str!("../../../e2e_tests/scenarios/management/capabilities.json"),
+    include_str!("../../../e2e_tests/scenarios/management/resource-lifecycle.json"),
     include_str!("../../../e2e_tests/scenarios/bootstrap/primary-success.json"),
     include_str!("../../../e2e_tests/scenarios/items/lifecycle.json"),
     include_str!("../../../e2e_tests/scenarios/items/upsert-create-update.json"),
     include_str!("../../../e2e_tests/scenarios/items/create-conflict.json"),
     include_str!("../../../e2e_tests/scenarios/items/not-found-wrong-partition-key.json"),
     include_str!("../../../e2e_tests/scenarios/items/optimistic-concurrency.json"),
+    include_str!("../../../e2e_tests/scenarios/items/scalar-partition-keys.json"),
+    include_str!("../../../e2e_tests/scenarios/items/hierarchical-partition-key.json"),
+    include_str!("../../../e2e_tests/scenarios/items/transactional-batch-atomicity.json"),
+    include_str!("../../../e2e_tests/scenarios/items/patch-state.json"),
+    include_str!("../../../e2e_tests/scenarios/items/validation-contracts.json"),
     include_str!("../../../e2e_tests/scenarios/queries/parameterized-filter.json"),
     include_str!("../../../e2e_tests/scenarios/queries/invalid-syntax.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/pagination-resume.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/feed-ranges.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/change-feed-pagination-resume.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/change-feed-all-versions-starts.json"),
     include_str!("../../../e2e_tests/scenarios/diagnostics/success-and-error.json"),
 ];
 
 const PROFILES: &[&str] = &[
     include_str!("../../../e2e_tests/profiles/hostedEmulatorSmoke.json"),
+    include_str!("../../../e2e_tests/profiles/coreOperations.json"),
     include_str!("../../../e2e_tests/profiles/lifecycleConsistencyMatrix.json"),
     include_str!("../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"),
 ];
 
 const RUST_IMPLEMENTATIONS: &str = include_str!("../../../e2e_tests/implementations/rust.json");
+const CORE_OPERATIONS_MATRIX: &str = include_str!("../../../e2e-core-operations-matrix.json");
 const CONSISTENCY_MATRIX: &str = include_str!("../../../e2e-consistency-matrix.json");
 const OVERRIDE_MATRIX: &str = include_str!("../../../e2e-read-consistency-override-matrix.json");
 const SCENARIO_SCHEMA: &str = include_str!("../../../e2e_tests/schema/scenario.v1.json");
@@ -113,7 +125,14 @@ struct Backend {
 #[serde(rename_all = "camelCase")]
 pub(super) enum Capability {
     Capabilities,
+    ChangeFeed,
+    Container,
+    Database,
     GatewayV2,
+    Item,
+    Patch,
+    Query,
+    TransactionalBatch,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
@@ -370,6 +389,23 @@ pub(super) fn required_capabilities_for(
         .clone())
 }
 
+pub(super) fn scenario_applies_to_backend(
+    scenario_id: &str,
+    backend: &str,
+) -> Result<bool, String> {
+    let scenarios = load_scenarios()?;
+    let scenario = scenarios
+        .iter()
+        .find(|scenario| scenario.id == scenario_id)
+        .ok_or_else(|| format!("E2E scenario '{scenario_id}' does not exist"))?;
+    Ok(scenario
+        .backends
+        .get(backend)
+        .ok_or_else(|| format!("E2E scenario '{scenario_id}' has no backend '{backend}'"))?
+        .applicability
+        != Applicability::NotApplicable)
+}
+
 pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
     // Full JSON Schema evaluation is owned by Test-CosmosE2eScenarioDocuments in
     // Invoke-CosmosTestSetup.ps1. Keep these repository-native semantic checks aligned with
@@ -467,6 +503,13 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
             ));
         }
     }
+    validate_pipeline_matrix(
+        CORE_OPERATIONS_MATRIX,
+        profiles
+            .iter()
+            .find(|profile| profile.id == "coreOperations")
+            .expect("core operations profile must be registered"),
+    )?;
     validate_pipeline_matrix(
         CONSISTENCY_MATRIX,
         profiles

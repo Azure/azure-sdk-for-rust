@@ -4,27 +4,47 @@
 mod bootstrap_primary;
 mod capabilities;
 mod catalog;
+mod change_feed_all_versions_starts;
+mod change_feed_pagination_resume;
 mod diagnostics_success_and_error;
 mod fixture;
 mod item_create_conflict;
+mod item_hierarchical_partition_key;
 mod item_lifecycle;
 mod item_not_found;
 mod item_optimistic_concurrency;
+mod item_patch_state;
+mod item_scalar_partition_keys;
 mod item_upsert;
+mod item_validation_contracts;
+mod management_resource_lifecycle;
+mod query_feed_ranges;
 mod query_invalid_syntax;
+mod query_pagination_resume;
 mod query_parameterized_filter;
 mod support;
+mod transactional_batch_atomicity;
 
 const IMPLEMENTED_TESTS: &[&str] = &[
     "capabilities::capability_document_is_versioned",
+    "management_resource_lifecycle::database_and_container_resource_lifecycle",
     "bootstrap_primary::bootstrap_primary_endpoint",
     "item_lifecycle::crud_lifecycle",
     "item_upsert::upsert_creates_then_updates",
     "item_create_conflict::duplicate_create_preserves_original",
     "item_not_found::not_found_does_not_cross_partition_keys",
     "item_optimistic_concurrency::stale_etag_preserves_successful_update",
+    "item_scalar_partition_keys::scalar_partition_key_values_remain_distinct",
+    "item_hierarchical_partition_key::hierarchical_key_point_and_prefix_operations",
+    "transactional_batch_atomicity::batch_success_and_failure_are_atomic",
+    "item_patch_state::patch_paths_persist_exact_post_images",
+    "item_validation_contracts::invalid_writes_preserve_state",
     "query_parameterized_filter::parameterized_query_filters_and_orders",
     "query_invalid_syntax::invalid_query_is_not_an_empty_feed",
+    "query_pagination_resume::query_resumes_without_loss_or_duplication",
+    "query_feed_ranges::feed_ranges_cover_partition_key_routing",
+    "change_feed_pagination_resume::change_feed_resumes_without_replay",
+    "change_feed_all_versions_starts::all_versions_rejects_unsupported_starts",
     "diagnostics_success_and_error::diagnostics_cover_success_and_error",
 ];
 

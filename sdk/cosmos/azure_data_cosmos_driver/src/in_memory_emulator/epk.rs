@@ -49,7 +49,8 @@ pub(crate) fn compute_epk(
 /// - Empty strings and `[]` parse to an empty vector (cross-partition).
 /// - Malformed JSON returns `BadRequest` (HTTP 400).
 /// - NaN / +Inf / -Inf numbers return `BadRequest` (HTTP 400).
-/// - Object / array components return `BadRequest` (HTTP 400).
+/// - The empty-object `{}` sentinel maps to an undefined component.
+/// - Other object / array components return `BadRequest` (HTTP 400).
 pub(crate) fn parse_partition_key_header(
     header: &str,
 ) -> crate::error::Result<Vec<PartitionKeyValue>> {
@@ -170,6 +171,7 @@ fn json_to_pk_component(value: &serde_json::Value) -> crate::error::Result<Parti
             }
             Ok(PartitionKeyValue::from(f))
         }
+        serde_json::Value::Object(object) if object.is_empty() => Ok(PartitionKeyValue::UNDEFINED),
         serde_json::Value::Object(_) | serde_json::Value::Array(_) => {
             Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
@@ -207,6 +209,12 @@ mod tests {
         let components = parse_partition_key_header("[null]").unwrap();
         let expected: PartitionKeyValue = Option::<&str>::None.into();
         assert_eq!(components, vec![expected]);
+    }
+
+    #[test]
+    fn parse_pk_header_undefined() {
+        let components = parse_partition_key_header("[{}]").unwrap();
+        assert_eq!(components, vec![PartitionKeyValue::UNDEFINED]);
     }
 
     #[test]

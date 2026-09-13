@@ -9,7 +9,10 @@ use azure_data_cosmos::{
 use serde::{Deserialize, Serialize};
 
 use crate::e2e_test_cases::{
-    catalog::{required_capabilities_for, selected_profile_for, Capability, Profile},
+    catalog::{
+        required_capabilities_for, scenario_applies_to_backend, selected_profile_for, Capability,
+        Profile,
+    },
     fixture::TestResult,
 };
 
@@ -68,6 +71,13 @@ pub(super) async fn should_run(scenario_id: &str) -> TestResult<bool> {
 
 pub(super) async fn selected_scenario_profile(scenario_id: &str) -> TestResult<Option<Profile>> {
     init_test_tracing();
+    if std::env::var_os("AZURE_COSMOS_EMULATOR_FLAVOR").is_none()
+        && std::env::var_os("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT").is_none()
+        && !scenario_applies_to_backend(scenario_id, "azureLive")?
+    {
+        eprintln!("SKIP {scenario_id}: scenario is not applicable to Azure Live");
+        return Ok(None);
+    }
     let Some(profile) = selected_profile_for(scenario_id)? else {
         let selected = std::env::var("AZURE_COSMOS_E2E_PROFILE")
             .unwrap_or_else(|_| "hostedEmulatorSmoke".to_owned());
@@ -88,7 +98,18 @@ fn init_test_tracing() {
 }
 
 async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
-    let management_endpoint = std::env::var("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT")?;
+    let management_endpoint = match std::env::var("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT") {
+        Ok(endpoint) => endpoint,
+        Err(std::env::VarError::NotPresent)
+            if std::env::var_os("AZURE_COSMOS_EMULATOR_FLAVOR").is_none() =>
+        {
+            // Azure Live has no emulator management plane. Account/profile
+            // suitability is owned by live pipeline selection, so only hosted
+            // emulator runs perform capability-document validation here.
+            return Ok(());
+        }
+        Err(error) => return Err(error.into()),
+    };
     let response = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         .build()?
@@ -127,6 +148,15 @@ async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
         let available = match requirement {
             Capability::Capabilities => true,
             Capability::GatewayV2 => capabilities.protocols.gateway_v2,
+            Capability::ChangeFeed => capabilities.data_plane_contains("changeFeed"),
+            Capability::Container => capabilities.data_plane_contains("container"),
+            Capability::Database => capabilities.data_plane_contains("database"),
+            Capability::Item => capabilities.data_plane_contains("item"),
+            Capability::Patch => capabilities.data_plane_contains("patch"),
+            Capability::Query => capabilities.data_plane_contains("query"),
+            Capability::TransactionalBatch => {
+                capabilities.data_plane_contains("transactionalBatch")
+            }
         };
         if !available {
             return Err(format!(
@@ -143,6 +173,13 @@ async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
 struct CapabilityDocument {
     api_version: u32,
     protocols: ProtocolCapabilities,
+    data_plane: Vec<String>,
+}
+
+impl CapabilityDocument {
+    fn data_plane_contains(&self, capability: &str) -> bool {
+        self.data_plane.iter().any(|value| value == capability)
+    }
 }
 
 #[derive(Deserialize)]
@@ -179,4 +216,44 @@ pub(super) fn assert_critical_diagnostics(
             "completed requests must use {expected_transport:?}"
         );
     }
+}
+
+pub(super) fn assert_transport(diagnostics: &DiagnosticsContext, expected: TransportKind) {
+    assert!(diagnostics.request_count() >= 1);
+    assert!(
+        diagnostics
+            .requests()
+            .iter()
+            .all(|request| request.transport_kind() == expected),
+        "completed requests must use {expected:?}"
+    );
+}
+
+pub(super) async fn gateway_request_counts() -> TestResult<Option<GatewayRequestCounts>> {
+    if std::env::var("AZURE_COSMOS_EMULATOR_FLAVOR").as_deref() != Ok("inmemory-v2") {
+        return Ok(None);
+    }
+    let endpoint = std::env::var("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT")?;
+    let response = reqwest::Client::new()
+        .get(url::Url::parse(&endpoint)?.join("health")?)
+        .send()
+        .await?
+        .error_for_status()?;
+    let metrics: EmulatorMetrics = serde_json::from_slice(&response.bytes().await?)?;
+    Ok(Some(GatewayRequestCounts {
+        gateway: metrics.gateway_requests,
+        gateway_v2: metrics.gateway20_requests,
+    }))
+}
+
+pub(super) struct GatewayRequestCounts {
+    pub(super) gateway: u64,
+    pub(super) gateway_v2: u64,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EmulatorMetrics {
+    gateway_requests: u64,
+    gateway20_requests: u64,
 }

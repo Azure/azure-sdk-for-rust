@@ -272,6 +272,14 @@ fn decode_request(
         };
         request.headers_mut().insert(header, value);
     }
+    if frame.operation_type == OperationType::ReadFeed {
+        // The current RNTBD request tokens do not carry the Gateway V1 A-IM
+        // header. The public Rust SDK uses ReadFeed only for LatestVersion
+        // change feed, so preserve that semantic when bridging into the shared
+        // emulator dispatcher. This makes its ETag/If-None-Match continuation
+        // contract identical across Gateway V1 and Gateway V2.
+        request.headers_mut().insert("a-im", "Incremental Feed");
+    }
     if let Some(value) = metadata.if_modified_since {
         request.headers_mut().insert("if-modified-since", value);
     }

@@ -23,6 +23,7 @@ pub(crate) enum OperationType {
     ReadFeedContainers,
     QueryContainers,
     ReadContainer,
+    ReplaceContainer,
     DeleteContainer,
     ReadPKRanges,
     ReadFeedItems,
@@ -427,6 +428,11 @@ fn resolve_operation(
         // GET /dbs/{db}/colls/{coll} → ReadContainer
         ("GET", 4) if segments[0] == "dbs" && segments[2] == "colls" => {
             OperationType::ReadContainer
+        }
+
+        // PUT /dbs/{db}/colls/{coll} → ReplaceContainer
+        ("PUT", 4) if segments[0] == "dbs" && segments[2] == "colls" => {
+            OperationType::ReplaceContainer
         }
 
         // DELETE /dbs/{db}/colls/{coll} → DeleteContainer

@@ -1,0 +1,45 @@
+{
+  "$schema": "../../schema/scenario.v1.json",
+  "specVersion": "1.0",
+  "id": "changefeed.all-versions-start-validation",
+  "title": "All-versions change feed rejects unsupported start positions",
+  "requirement": "AllVersionsAndDeletes rejects Beginning and PointInTime starts with BadRequest while preserving the public SDK error contract.",
+  "maturity": "candidate",
+  "precedents": [
+    {
+      "sdk": "rust",
+      "path": "sdk/cosmos/azure_data_cosmos/tests/emulator_tests/cosmos_change_feed.rs",
+      "test": "change_feed_all_versions_rejects_beginning/change_feed_all_versions_rejects_point_in_time"
+    }
+  ],
+  "profiles": [
+    "coreOperations"
+  ],
+  "tags": [
+    "changeFeed",
+    "validation",
+    "coreOperations"
+  ],
+  "backends": {
+    "hostedEmulatorGatewayV1": {
+      "applicability": "required",
+      "fidelity": "full",
+      "requires": [
+        "changeFeed"
+      ]
+    },
+    "hostedEmulatorGatewayV2": {
+      "applicability": "required",
+      "fidelity": "full",
+      "reason": "AllVersionsAndDeletes intentionally uses the standard gateway because Gateway V2 cannot forward the A-IM mode header.",
+      "requires": [
+        "changeFeed",
+        "gatewayV2"
+      ]
+    },
+    "azureLive": {
+      "applicability": "supported",
+      "fidelity": "full"
+    }
+  }
+}

@@ -653,6 +653,23 @@ impl EmulatorStore {
         pk_def: PartitionKeyDefinition,
         config: ContainerConfig,
     ) -> ContainerMetadata {
+        self.create_container_with_properties_internal(
+            db_id,
+            coll_id,
+            pk_def,
+            config,
+            serde_json::Map::new(),
+        )
+    }
+
+    pub(crate) fn create_container_with_properties_internal(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        pk_def: PartitionKeyDefinition,
+        config: ContainerConfig,
+        properties: serde_json::Map<String, serde_json::Value>,
+    ) -> ContainerMetadata {
         let db_meta = {
             let regions = self.regions.read().unwrap();
             let region = regions.values().next().unwrap();
@@ -674,6 +691,7 @@ impl EmulatorStore {
             self_link: format!("dbs/{}/colls/{}/", db_meta.rid, coll_rid),
             etag: new_etag(),
             partition_key: pk_def,
+            properties,
             partition_count: config.partition_count(),
             partition_key_range_page_size: config.partition_key_range_page_size(),
             provisioned_throughput_ru: config.provisioned_throughput_ru(),
@@ -718,6 +736,28 @@ impl EmulatorStore {
         }
 
         meta
+    }
+
+    pub(crate) fn replace_container_properties(
+        &self,
+        db_id: &str,
+        coll_id: &str,
+        properties: serde_json::Map<String, serde_json::Value>,
+    ) -> Option<ContainerMetadata> {
+        let ts = current_timestamp();
+        let etag = new_etag();
+        let regions = self.regions.read().unwrap();
+        let mut updated = None;
+        for region in regions.values() {
+            let mut containers = region.containers.write().unwrap();
+            if let Some(container) = containers.get_mut(&(db_id.to_owned(), coll_id.to_owned())) {
+                container.metadata.ts = ts;
+                container.metadata.etag = etag.clone();
+                container.metadata.properties = properties.clone();
+                updated = Some(container.metadata.clone());
+            }
+        }
+        updated
     }
 
     pub(crate) fn replace_offer_internal(
@@ -1972,6 +2012,7 @@ pub(crate) struct ContainerMetadata {
     pub self_link: String,
     pub etag: String,
     pub partition_key: PartitionKeyDefinition,
+    pub properties: serde_json::Map<String, serde_json::Value>,
     pub partition_count: u32,
     pub partition_key_range_page_size: Option<u32>,
     pub provisioned_throughput_ru: Option<u32>,

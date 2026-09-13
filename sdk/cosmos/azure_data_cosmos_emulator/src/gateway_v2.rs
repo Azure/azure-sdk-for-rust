@@ -66,6 +66,9 @@ fn router(
 }
 
 async fn dispatch(State(state): State<GatewayV2State>, request: Request) -> Response<Body> {
+    if request.uri().path() != "/connectivity-probe" {
+        state.metrics.record_gateway20_request();
+    }
     match execute(state, request).await {
         Ok(response) => response,
         Err((status, message)) => {
@@ -113,7 +116,6 @@ async fn execute(
             (status, error.to_string())
         })?;
     let response = data_plane::into_http_response(response).await?;
-    state.metrics.record_gateway20_request();
     #[cfg(test)]
     if let Some(request_count) = &state.request_count {
         request_count.fetch_add(1, Ordering::SeqCst);
