@@ -170,6 +170,11 @@ name = "in_memory_emulator"
 path = "tests/in_memory_emulator.rs"
 required-features = ["__internal_in_memory_emulator"]
 
+[[test]]
+name = "e2e_tests"
+path = "tests/e2e_tests.rs"
+required-features = ["key_auth", "control_plane"]
+
 # The `cosmos` example CLI exercises control-plane operations (database and
 # container CRUD, throughput) alongside data-plane commands, so the whole
 # binary requires the `control_plane` feature to compile.

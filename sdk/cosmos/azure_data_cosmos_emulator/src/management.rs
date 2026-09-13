@@ -79,6 +79,7 @@ fn router(
     };
     Router::new()
         .route("/health", get(health))
+        .route("/capabilities", get(capabilities))
         .route("/account", get(account))
         .route(
             "/databases/{database}/containers/{container}/partitions/{partition_id}/split",
@@ -118,6 +119,64 @@ async fn health(State(state): State<ManagementState>) -> Json<serde_json::Value>
         "connectivityProbes": state.metrics.connectivity_probes(),
         "gateway20Requests": state.metrics.gateway20_requests()
     }))
+}
+
+const CAPABILITIES_API_VERSION: u32 = 1;
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CapabilitiesResponse {
+    api_version: u32,
+    emulator_version: &'static str,
+    protocols: ProtocolCapabilities,
+    data_plane: &'static [&'static str],
+    management_actions: &'static [&'static str],
+    limitations: &'static [&'static str],
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ProtocolCapabilities {
+    gateway_v1: bool,
+    gateway_v2: bool,
+}
+
+/// Returns the versioned capabilities document consumed by external SDK E2E
+/// test runners. Capabilities describe what the current host can exercise;
+/// they do not claim production-service fidelity beyond the listed limits.
+async fn capabilities(State(state): State<ManagementState>) -> Json<CapabilitiesResponse> {
+    Json(CapabilitiesResponse {
+        api_version: CAPABILITIES_API_VERSION,
+        emulator_version: env!("CARGO_PKG_VERSION"),
+        protocols: ProtocolCapabilities {
+            gateway_v1: true,
+            gateway_v2: state
+                .bindings
+                .iter()
+                .any(|binding| binding.gateway20_url.is_some()),
+        },
+        data_plane: &[
+            "database",
+            "container",
+            "offer",
+            "item",
+            "query",
+            "changeFeed",
+            "transactionalBatch",
+            "patch",
+        ],
+        management_actions: &[
+            "partitionSplit",
+            "partitionMerge",
+            "perPartitionFailover",
+            "replicationPauseResume",
+        ],
+        limitations: &[
+            "authenticationNotEnforced",
+            "loopbackOnly",
+            "volatileStorage",
+        ],
+    })
 }
 
 #[derive(Serialize)]
@@ -1348,6 +1407,36 @@ mod tests {
         assert!(!emulator.store().config().per_partition_failover_enabled());
 
         server.abort();
+    }
+
+    #[tokio::test]
+    async fn capabilities_report_configured_protocols() {
+        let gateway_url = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let gateway20_url = Url::parse("http://127.0.0.1:18082/").unwrap();
+        let config =
+            VirtualAccountConfig::new(vec![VirtualRegion::new("East US", gateway_url.clone())
+                .with_gateway_v2_url(gateway20_url.clone())])
+            .unwrap();
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
+        let state = ManagementState {
+            emulator,
+            account_id: "test-account".into(),
+            bindings: vec![GatewayBinding {
+                region_name: "East US".to_owned(),
+                gateway_url,
+                gateway20_url: Some(gateway20_url),
+            }]
+            .into(),
+            metrics: Arc::new(HostMetrics::default()),
+            operations: Arc::new(OperationRegistry::default()),
+        };
+
+        let response = capabilities(State(state)).await.0;
+        assert_eq!(response.api_version, CAPABILITIES_API_VERSION);
+        assert!(response.protocols.gateway_v1);
+        assert!(response.protocols.gateway_v2);
+        assert!(response.data_plane.contains(&"item"));
+        assert!(response.management_actions.contains(&"partitionSplit"));
     }
 
     #[tokio::test]
