@@ -205,29 +205,28 @@ session_token_resolution_strategy =
   read_consistency_strategy                         if operation is a read
   Default                                           otherwise
 
-session_token_capture_strategy =
-  read_consistency_strategy                         if operation is a read
-  Session                                           if strategy is Session
-  Default                                           otherwise
-
 automatic_session_token_resolution_effective =
   partition_key_range_cache_enabled
   && !session_capturing_disabled
+  && (operation is a read
+      || operation is a batch
+      || account has multiple write locations)
   && session_token_resolution_strategy.is_session_effective(account_default)
 
 automatic_session_token_capture_effective =
-    partition_key_range_cache_enabled
-    && !session_capturing_disabled
-  && session_token_capture_strategy.is_session_effective(account_default)
+  partition_key_range_cache_enabled
+  && !session_capturing_disabled
 ```
 
 `is_session_effective` is true when the strategy is `Session`, or when the
 strategy is `Default` and the account default consistency level is `Session`.
 `Eventual`, `LatestCommitted`, and `GlobalStrong` deliberately leave the session
-lane for reads. Writes ignore those read-only strategies and use the account
-default for automatic token resolution. An explicit `Session` strategy enables
-write-response capture without automatically attaching a cached token to the
-write, so a subsequent Session read can enforce read-your-writes.
+lane for reads. Capture is independent of consistency so a later Session read
+can use tokens returned by earlier operations on Strong, Bounded Staleness,
+Consistent Prefix, or Eventual accounts. Ordinary single-write operations do not
+automatically attach cached tokens. Batches and writes on multi-write accounts
+attach them when the account default consistency is Session. Explicit
+per-operation tokens remain authoritative on every topology.
 
 `session_capturing_disabled` is a single switch that turns off *both* automatic
 halves — no cache-based attach and no capture. Explicit per-operation tokens
@@ -524,9 +523,10 @@ formatting of driver state.
   `driver/pipeline/operation_pipeline.rs` and `driver/pipeline/retry_evaluation.rs`.
 - **End-to-end (in-memory emulator)** —
   `azure_data_cosmos/tests/in_memory_emulator_tests/session_token.rs` observes the
-  outgoing `x-ms-session-token` header to prove capture-then-resolve, cache
-  advance across writes, caller-token precedence, and the negative controls
-  (Eventual consistency, capturing disabled, empty cache).
+  outgoing `x-ms-session-token` header to prove consistency-independent capture,
+  Session-read resolution, single-write omission, cache advance across writes,
+  caller-token precedence, and the negative controls (Eventual reads, capturing
+  disabled, empty cache).
 - **Cross-backend** — dual-backend tests compare response session tokens between
   the in-memory emulator and a real account, which is what keeps the emulator's
   modeled contract (§1.1) honest.

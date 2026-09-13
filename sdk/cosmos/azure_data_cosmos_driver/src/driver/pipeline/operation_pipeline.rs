@@ -442,12 +442,13 @@ pub(crate) async fn execute_operation_pipeline(
         session_token_resolution_strategy_for_operation(operation, read_consistency_strategy);
     let session_token_resolution_active = partition_key_range_cache_enabled
         && !session_capturing_disabled
+        && operation_allows_automatic_session_token_resolution(
+            operation,
+            location_snapshot.account.multiple_write_locations_enabled,
+        )
         && session_token_resolution_strategy.is_session_effective(account_default_consistency);
-    let session_token_capture_strategy =
-        session_token_capture_strategy_for_operation(operation, read_consistency_strategy);
-    let session_token_capture_active = partition_key_range_cache_enabled
-        && !session_capturing_disabled
-        && session_token_capture_strategy.is_session_effective(account_default_consistency);
+    let session_token_capture_active =
+        partition_key_range_cache_enabled && !session_capturing_disabled;
 
     // Rule 4 (RCS validation): GlobalStrong is
     // valid only on reads against accounts whose default consistency is Strong.
@@ -586,16 +587,13 @@ pub(crate) async fn execute_operation_pipeline(
             );
         let attempt_session_token_resolution_active = partition_key_range_cache_enabled
             && !session_capturing_disabled
+            && operation_allows_automatic_session_token_resolution(
+                operation,
+                location.account.multiple_write_locations_enabled,
+            )
             && attempt_session_token_resolution_strategy
                 .is_session_effective(account_default_consistency);
-        let attempt_session_token_capture_strategy = session_token_capture_strategy_for_operation(
-            operation,
-            attempt_read_consistency_strategy,
-        );
-        let attempt_session_token_capture_active = partition_key_range_cache_enabled
-            && !session_capturing_disabled
-            && attempt_session_token_capture_strategy
-                .is_session_effective(account_default_consistency);
+        let attempt_session_token_capture_active = session_token_capture_active;
 
         // Emit one structured debug record per attempt with the chosen
         // routing decision. Tests and SREs filter on this to verify which
@@ -4378,15 +4376,13 @@ fn session_token_resolution_strategy_for_operation(
     }
 }
 
-fn session_token_capture_strategy_for_operation(
+fn operation_allows_automatic_session_token_resolution(
     operation: &CosmosOperation,
-    read_consistency_strategy: ReadConsistencyStrategy,
-) -> ReadConsistencyStrategy {
-    if operation.is_read_only() || read_consistency_strategy == ReadConsistencyStrategy::Session {
-        read_consistency_strategy
-    } else {
-        ReadConsistencyStrategy::Default
-    }
+    multiple_write_locations_enabled: bool,
+) -> bool {
+    operation.is_read_only()
+        || operation.operation_type() == OperationType::Batch
+        || multiple_write_locations_enabled
 }
 
 fn global_strong_account_validation_error(
@@ -4772,25 +4768,12 @@ mod tests {
     }
 
     #[test]
-    fn writes_capture_explicit_session_without_resolving_by_read_strategy() {
+    fn automatic_session_token_resolution_respects_operation_and_topology() {
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let write = CosmosOperation::create_item(item.clone()).with_body(b"{}".to_vec());
         let read = CosmosOperation::read_item(item);
+        let batch = CosmosOperation::batch(test_container(), PartitionKey::from("pk1"));
 
-        assert_eq!(
-            super::session_token_capture_strategy_for_operation(
-                &write,
-                crate::options::ReadConsistencyStrategy::LatestCommitted,
-            ),
-            crate::options::ReadConsistencyStrategy::Default
-        );
-        assert_eq!(
-            super::session_token_capture_strategy_for_operation(
-                &write,
-                crate::options::ReadConsistencyStrategy::Session,
-            ),
-            crate::options::ReadConsistencyStrategy::Session
-        );
         assert_eq!(
             super::session_token_resolution_strategy_for_operation(
                 &write,
@@ -4798,13 +4781,18 @@ mod tests {
             ),
             crate::options::ReadConsistencyStrategy::Default
         );
-        assert_eq!(
-            super::session_token_capture_strategy_for_operation(
-                &read,
-                crate::options::ReadConsistencyStrategy::LatestCommitted,
-            ),
-            crate::options::ReadConsistencyStrategy::LatestCommitted
-        );
+        assert!(super::operation_allows_automatic_session_token_resolution(
+            &read, false
+        ));
+        assert!(!super::operation_allows_automatic_session_token_resolution(
+            &write, false
+        ));
+        assert!(super::operation_allows_automatic_session_token_resolution(
+            &write, true
+        ));
+        assert!(super::operation_allows_automatic_session_token_resolution(
+            &batch, false
+        ));
     }
 
     #[test]

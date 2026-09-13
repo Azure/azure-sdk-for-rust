@@ -309,12 +309,7 @@ impl Harness {
 
 #[tokio::test]
 async fn session_strategy_on_eventual_account_captures_write_token_for_read() {
-    let h = Harness::setup_with_options(
-        true,
-        ConsistencyLevel::Eventual,
-        Some(ReadConsistencyStrategy::Session),
-    )
-    .await;
+    let h = Harness::setup_with_options(true, ConsistencyLevel::Eventual, None).await;
 
     h.observer.clear();
     let create_token = h
@@ -337,7 +332,9 @@ async fn session_strategy_on_eventual_account_captures_write_token_for_read() {
     h.driver
         .execute_singleton_operation(
             CosmosOperation::read_item(h.item_ref("pk1", "item-1")),
-            OperationOptionsBuilder::new().build(),
+            OperationOptionsBuilder::new()
+                .with_read_consistency_strategy(ReadConsistencyStrategy::Session)
+                .build(),
         )
         .await
         .expect("Session read should succeed");
@@ -345,6 +342,63 @@ async fn session_strategy_on_eventual_account_captures_write_token_for_read() {
         h.observer.single_item_read().session_token.as_deref(),
         Some(create_token.as_str()),
         "read must carry the token captured from the preceding write"
+    );
+}
+
+#[tokio::test]
+async fn single_write_account_does_not_attach_cached_token_to_writes() {
+    let h = Harness::setup().await;
+    h.create("pk1", "item-1", 1)
+        .await
+        .expect("create should return a session token");
+
+    h.observer.clear();
+    h.replace("pk1", "item-1", 2)
+        .await
+        .expect("replace should return a session token");
+    let writes: Vec<_> = h
+        .observer
+        .snapshots()
+        .into_iter()
+        .filter(|snapshot| snapshot.is_item_request() && snapshot.method == Method::Put)
+        .collect();
+    assert_eq!(writes.len(), 1, "expected exactly one replace request");
+    assert_eq!(
+        writes[0].session_token, None,
+        "ordinary single-write operations must not attach cached session tokens"
+    );
+}
+
+#[tokio::test]
+async fn session_capturing_disabled_prevents_write_response_capture() {
+    let h = Harness::setup().await;
+    let body = serde_json::to_vec(&TestItem {
+        id: "item-1".to_owned(),
+        pk: "pk1".to_owned(),
+        value: 1,
+    })
+    .unwrap();
+    h.driver
+        .execute_singleton_operation(
+            CosmosOperation::create_item(h.item_ref("pk1", "item-1")).with_body(body),
+            OperationOptionsBuilder::new()
+                .with_session_capturing_disabled(true)
+                .build(),
+        )
+        .await
+        .expect("create_item should succeed");
+
+    h.observer.clear();
+    h.driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(h.item_ref("pk1", "item-1")),
+            OperationOptionsBuilder::new().build(),
+        )
+        .await
+        .expect("read_item should succeed");
+    assert_eq!(
+        h.observer.single_item_read().session_token, None,
+        "a response captured with automatic session management disabled must not populate the cache"
     );
 }
 
