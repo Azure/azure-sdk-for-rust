@@ -1735,7 +1735,7 @@ impl TestRunContext {
         let parsed: ConnectionString = connection_string.parse()?;
 
         let endpoint: azure_data_cosmos::AccountEndpoint = parsed.account_endpoint().parse()?;
-        let builder = CosmosClient::builder().with_runtime(
+        let mut builder = CosmosClient::builder().with_runtime(
             CosmosRuntime::builder()
                 .with_connection_pool(
                     ConnectionPoolOptions::builder()
@@ -1747,6 +1747,10 @@ impl TestRunContext {
                 .build()
                 .await?,
         );
+
+        if let Some(options) = effective_binary_encoding(None) {
+            builder = builder.with_binary_encoding_options(options);
+        }
 
         builder
             .build(
