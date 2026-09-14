@@ -3,7 +3,7 @@
 
 //! Gateway 2.0 operation eligibility filter.
 
-use crate::models::{OperationType, ResourceType};
+use crate::models::{ OperationType, ResourceType };
 
 /// Returns `true` when the resource and operation pair is eligible for Gateway 2.0.
 ///
@@ -28,7 +28,7 @@ pub(crate) fn is_operation_supported_by_gateway_v2(
     resource_type: ResourceType,
     operation_type: OperationType,
     is_full_fidelity_change_feed: bool,
-    is_rid_addressed: bool,
+    is_rid_addressed: bool
 ) -> bool {
     if is_full_fidelity_change_feed {
         // Excluded by Spec 0011: Gateway V2.
@@ -41,26 +41,27 @@ pub(crate) fn is_operation_supported_by_gateway_v2(
     // that adding a new variant to either enum is a compile-time error, forcing an
     // explicit eligibility decision rather than a silent fail-closed default.
     match resource_type {
-        ResourceType::Document => match operation_type {
-            OperationType::Create
-            | OperationType::Read
-            | OperationType::Replace
-            | OperationType::Upsert
-            | OperationType::Delete
-            | OperationType::Query
-            | OperationType::SqlQuery
-            | OperationType::QueryPlan
-            | OperationType::ReadFeed
-            | OperationType::Patch
-            | OperationType::Batch => true,
-            OperationType::Head | OperationType::HeadFeed | OperationType::Execute => false,
-            // Distributed transactions route through the standard gateway
-            // coordinator, never the thin-client Gateway 2.0 path.
-            #[cfg(feature = "preview_dtx")]
-            OperationType::CommitDistributedTransaction
-            | OperationType::ReadDistributedTransaction => false,
-        },
-        ResourceType::DatabaseAccount
+        ResourceType::Document =>
+            match operation_type {
+                | OperationType::Create
+                | OperationType::Read
+                | OperationType::Replace
+                | OperationType::Upsert
+                | OperationType::Delete
+                | OperationType::Query
+                | OperationType::SqlQuery
+                | OperationType::QueryPlan
+                | OperationType::ReadFeed
+                | OperationType::Patch
+                | OperationType::Batch => true,
+                OperationType::Head | OperationType::HeadFeed | OperationType::Execute => false,
+                // Distributed transactions route through the standard gateway
+                // coordinator, never the thin-client Gateway 2.0 path.
+                #[cfg(feature = "preview_dtx")]
+                | OperationType::CommitDistributedTransaction
+                | OperationType::ReadDistributedTransaction => false,
+            }
+        | ResourceType::DatabaseAccount
         | ResourceType::Database
         | ResourceType::DocumentCollection
         | ResourceType::StoredProcedure
@@ -112,27 +113,28 @@ mod tests {
 
     fn expected_gateway_v2_eligibility(
         resource_type: ResourceType,
-        operation_type: OperationType,
+        operation_type: OperationType
     ) -> bool {
         match resource_type {
-            ResourceType::Document => match operation_type {
-                OperationType::Create
-                | OperationType::Read
-                | OperationType::Replace
-                | OperationType::Upsert
-                | OperationType::Delete
-                | OperationType::Query
-                | OperationType::SqlQuery
-                | OperationType::QueryPlan
-                | OperationType::ReadFeed
-                | OperationType::Patch
-                | OperationType::Batch => true,
-                OperationType::Head | OperationType::HeadFeed | OperationType::Execute => false,
-                #[cfg(feature = "preview_dtx")]
-                OperationType::CommitDistributedTransaction
-                | OperationType::ReadDistributedTransaction => false,
-            },
-            ResourceType::DatabaseAccount
+            ResourceType::Document =>
+                match operation_type {
+                    | OperationType::Create
+                    | OperationType::Read
+                    | OperationType::Replace
+                    | OperationType::Upsert
+                    | OperationType::Delete
+                    | OperationType::Query
+                    | OperationType::SqlQuery
+                    | OperationType::QueryPlan
+                    | OperationType::ReadFeed
+                    | OperationType::Patch
+                    | OperationType::Batch => true,
+                    OperationType::Head | OperationType::HeadFeed | OperationType::Execute => false,
+                    #[cfg(feature = "preview_dtx")]
+                    | OperationType::CommitDistributedTransaction
+                    | OperationType::ReadDistributedTransaction => false,
+                }
+            | ResourceType::DatabaseAccount
             | ResourceType::Database
             | ResourceType::DocumentCollection
             | ResourceType::StoredProcedure
@@ -168,18 +170,22 @@ mod tests {
         // A `Document`/`ReadFeed` is otherwise eligible, but a full-fidelity
         // (AllVersionsAndDeletes) change feed must route through the standard
         // gateway.
-        assert!(is_operation_supported_by_gateway_v2(
-            ResourceType::Document,
-            OperationType::ReadFeed,
-            false,
-            false,
-        ));
-        assert!(!is_operation_supported_by_gateway_v2(
-            ResourceType::Document,
-            OperationType::ReadFeed,
-            true,
-            false,
-        ));
+        assert!(
+            is_operation_supported_by_gateway_v2(
+                ResourceType::Document,
+                OperationType::ReadFeed,
+                false,
+                false
+            )
+        );
+        assert!(
+            !is_operation_supported_by_gateway_v2(
+                ResourceType::Document,
+                OperationType::ReadFeed,
+                true,
+                false
+            )
+        );
     }
 
     #[test]
@@ -191,12 +197,14 @@ mod tests {
         // Every otherwise-eligible operation must fall back to standard Gateway
         // when addressed by RID.
         for operation_type in all_operation_types() {
-            if !is_operation_supported_by_gateway_v2(
-                ResourceType::Document,
-                operation_type,
-                false,
-                false,
-            ) {
+            if
+                !is_operation_supported_by_gateway_v2(
+                    ResourceType::Document,
+                    operation_type,
+                    false,
+                    false
+                )
+            {
                 continue;
             }
             assert!(

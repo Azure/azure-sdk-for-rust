@@ -1,11 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    fs,
-    path::PathBuf,
-};
+use std::{ collections::{ BTreeMap, BTreeSet }, fs, path::PathBuf };
 
 use serde::Deserialize;
 use serde_json::Value;
@@ -14,11 +10,7 @@ const DEFAULT_PROFILE: &str = "hostedEmulatorSmoke";
 const SCENARIO_SCHEMA_REFERENCE: &str = "../../schema/scenario.v1.json";
 const PROFILE_SCHEMA_REFERENCE: &str = "../schema/profile.v1.json";
 const SCENARIO_DIRECTORY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../e2e_tests/scenarios");
-const BACKENDS: [&str; 3] = [
-    "azureLive",
-    "hostedEmulatorGatewayV1",
-    "hostedEmulatorGatewayV2",
-];
+const BACKENDS: [&str; 3] = ["azureLive", "hostedEmulatorGatewayV1", "hostedEmulatorGatewayV2"];
 
 const SCENARIOS: &[&str] = &[
     include_str!("../../../e2e_tests/scenarios/management/capabilities.json"),
@@ -68,10 +60,7 @@ struct Scenario {
     id: String,
     title: String,
     requirement: String,
-    #[expect(
-        dead_code,
-        reason = "typed schema metadata is validated during deserialization"
-    )]
+    #[expect(dead_code, reason = "typed schema metadata is validated during deserialization")]
     maturity: Maturity,
     precedents: Vec<Precedent>,
     profiles: Vec<String>,
@@ -90,10 +79,7 @@ enum Maturity {
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Precedent {
-    #[expect(
-        dead_code,
-        reason = "typed schema metadata is validated during deserialization"
-    )]
+    #[expect(dead_code, reason = "typed schema metadata is validated during deserialization")]
     sdk: ReferenceSdk,
     path: String,
     test: String,
@@ -113,10 +99,7 @@ enum ReferenceSdk {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Backend {
     applicability: Applicability,
-    #[expect(
-        dead_code,
-        reason = "typed schema metadata is validated during deserialization"
-    )]
+    #[expect(dead_code, reason = "typed schema metadata is validated during deserialization")]
     fidelity: Fidelity,
     reason: Option<String>,
     #[serde(default)]
@@ -175,10 +158,7 @@ pub struct AccountDefinition {
     pub consistency: String,
     regions: Vec<RegionDefinition>,
     replication: ReplicationDefinition,
-    #[expect(
-        dead_code,
-        reason = "profile metadata is consumed by external orchestration"
-    )]
+    #[expect(dead_code, reason = "profile metadata is consumed by external orchestration")]
     per_partition_failover: bool,
 }
 
@@ -261,8 +241,7 @@ impl Profile {
     }
 
     pub fn selected_account(&self) -> Result<&AccountDefinition, String> {
-        let ids: Vec<_> = self
-            .accounts
+        let ids: Vec<_> = self.accounts
             .iter()
             .map(|definition| definition.id.as_str())
             .collect();
@@ -270,8 +249,7 @@ impl Profile {
     }
 
     pub fn selected_runtime(&self) -> Result<&RuntimeDefinition, String> {
-        let ids: Vec<_> = self
-            .runtimes
+        let ids: Vec<_> = self.runtimes
             .iter()
             .map(|definition| definition.id.as_str())
             .collect();
@@ -279,8 +257,7 @@ impl Profile {
     }
 
     pub fn selected_client(&self) -> Result<&ClientDefinition, String> {
-        let ids: Vec<_> = self
-            .clients
+        let ids: Vec<_> = self.clients
             .iter()
             .map(|definition| definition.id.as_str())
             .collect();
@@ -290,23 +267,26 @@ impl Profile {
 
 fn selected_axis<'a>(environment_variable: &str, available: &'a [&str]) -> Result<&'a str, String> {
     match std::env::var(environment_variable) {
-        Ok(selected) => available
-            .iter()
-            .copied()
-            .find(|candidate| *candidate == selected)
-            .ok_or_else(|| {
-                format!("{environment_variable}='{selected}' is not one of {available:?}")
-            }),
+        Ok(selected) =>
+            available
+                .iter()
+                .copied()
+                .find(|candidate| *candidate == selected)
+                .ok_or_else(|| {
+                    format!("{environment_variable}='{selected}' is not one of {available:?}")
+                }),
         Err(_) if available.len() == 1 => Ok(available[0]),
-        Err(_) => Err(format!(
-            "{environment_variable} is required because this profile defines {available:?}"
-        )),
+        Err(_) =>
+            Err(
+                format!(
+                    "{environment_variable} is required because this profile defines {available:?}"
+                )
+            ),
     }
 }
 
 fn load_scenarios() -> Result<Vec<Scenario>, String> {
-    SCENARIOS
-        .iter()
+    SCENARIOS.iter()
         .map(|json| serde_json::from_str(json).map_err(|error| error.to_string()))
         .collect()
 }
@@ -315,16 +295,18 @@ fn scenario_ids_on_disk() -> Result<BTreeSet<String>, String> {
     let mut directories = vec![PathBuf::from(SCENARIO_DIRECTORY)];
     let mut documents = Vec::new();
     while let Some(directory) = directories.pop() {
-        let entries = fs::read_dir(&directory)
+        let entries = fs
+            ::read_dir(&directory)
             .map_err(|error| format!("failed to read '{}': {error}", directory.display()))?;
         for entry in entries {
             let path = entry.map_err(|error| error.to_string())?.path();
             if path.is_dir() {
                 directories.push(path);
-            } else if path
-                .extension()
-                .and_then(std::ffi::OsStr::to_str)
-                .is_some_and(|extension| extension.eq_ignore_ascii_case("json"))
+            } else if
+                path
+                    .extension()
+                    .and_then(std::ffi::OsStr::to_str)
+                    .is_some_and(|extension| extension.eq_ignore_ascii_case("json"))
             {
                 documents.push(path);
             }
@@ -334,9 +316,11 @@ fn scenario_ids_on_disk() -> Result<BTreeSet<String>, String> {
 
     let mut ids = BTreeSet::new();
     for path in documents {
-        let json = fs::read_to_string(&path)
+        let json = fs
+            ::read_to_string(&path)
             .map_err(|error| format!("failed to read '{}': {error}", path.display()))?;
-        let document: Value = serde_json::from_str(&json)
+        let document: Value = serde_json
+            ::from_str(&json)
             .map_err(|error| format!("invalid scenario '{}': {error}", path.display()))?;
         let id = document
             .get("id")
@@ -350,15 +334,15 @@ fn scenario_ids_on_disk() -> Result<BTreeSet<String>, String> {
 }
 
 fn load_profiles() -> Result<Vec<Profile>, String> {
-    PROFILES
-        .iter()
+    PROFILES.iter()
         .map(|json| serde_json::from_str(json).map_err(|error| error.to_string()))
         .collect()
 }
 
 pub fn selected_profile_for(scenario_id: &str) -> Result<Option<Profile>, String> {
-    let selected =
-        std::env::var("AZURE_COSMOS_E2E_PROFILE").unwrap_or_else(|_| DEFAULT_PROFILE.to_owned());
+    let selected = std::env
+        ::var("AZURE_COSMOS_E2E_PROFILE")
+        .unwrap_or_else(|_| DEFAULT_PROFILE.to_owned());
     let scenarios = load_scenarios()?;
     let scenario = scenarios
         .iter()
@@ -376,47 +360,53 @@ pub fn selected_profile_for(scenario_id: &str) -> Result<Option<Profile>, String
 
 pub(super) fn required_capabilities_for(
     scenario_id: &str,
-    backend: &str,
+    backend: &str
 ) -> Result<Vec<Capability>, String> {
     let scenarios = load_scenarios()?;
     let scenario = scenarios
         .iter()
         .find(|scenario| scenario.id == scenario_id)
         .ok_or_else(|| format!("E2E scenario '{scenario_id}' does not exist"))?;
-    Ok(scenario
-        .backends
-        .get(backend)
-        .ok_or_else(|| format!("E2E scenario '{scenario_id}' has no backend '{backend}'"))?
-        .requires
-        .clone())
+    Ok(
+        scenario.backends
+            .get(backend)
+            .ok_or_else(|| format!("E2E scenario '{scenario_id}' has no backend '{backend}'"))?
+            .requires.clone()
+    )
 }
 
 pub(super) fn scenario_applies_to_backend(
     scenario_id: &str,
-    backend: &str,
+    backend: &str
 ) -> Result<bool, String> {
     let scenarios = load_scenarios()?;
     let scenario = scenarios
         .iter()
         .find(|scenario| scenario.id == scenario_id)
         .ok_or_else(|| format!("E2E scenario '{scenario_id}' does not exist"))?;
-    Ok(scenario
-        .backends
-        .get(backend)
-        .ok_or_else(|| format!("E2E scenario '{scenario_id}' has no backend '{backend}'"))?
-        .applicability
-        != Applicability::NotApplicable)
+    Ok(
+        scenario.backends
+            .get(backend)
+            .ok_or_else(||
+                format!("E2E scenario '{scenario_id}' has no backend '{backend}'")
+            )?.applicability != Applicability::NotApplicable
+    )
 }
 
 pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
     // Full JSON Schema evaluation is owned by Test-CosmosE2eScenarioDocuments in
     // Invoke-CosmosTestSetup.ps1. Keep these repository-native semantic checks aligned with
     // schema constraints that they intentionally duplicate.
-    for (name, schema) in [("scenario", SCENARIO_SCHEMA), ("profile", PROFILE_SCHEMA)] {
-        let schema: Value = serde_json::from_str(schema)
+    for (name, schema) in [
+        ("scenario", SCENARIO_SCHEMA),
+        ("profile", PROFILE_SCHEMA),
+    ] {
+        let schema: Value = serde_json
+            ::from_str(schema)
             .map_err(|error| format!("{name} schema is not JSON: {error}"))?;
-        if schema.get("$schema").and_then(Value::as_str)
-            != Some("https://json-schema.org/draft/2020-12/schema")
+        if
+            schema.get("$schema").and_then(Value::as_str) !=
+            Some("https://json-schema.org/draft/2020-12/schema")
         {
             return Err(format!("{name} schema must use JSON Schema draft 2020-12"));
         }
@@ -425,34 +415,32 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
     let profiles = load_profiles()?;
     let mut profile_ids = BTreeSet::new();
     for profile in &profiles {
-        if profile.schema != PROFILE_SCHEMA_REFERENCE
-            || profile.spec_version != "1.0"
-            || !valid_camel_id(&profile.id)
-            || !profile_ids.insert(profile.id.as_str())
+        if
+            profile.schema != PROFILE_SCHEMA_REFERENCE ||
+            profile.spec_version != "1.0" ||
+            !valid_camel_id(&profile.id) ||
+            !profile_ids.insert(profile.id.as_str())
         {
             return Err(format!("invalid or duplicate profile '{}'", profile.id));
         }
         for (axis, ids) in [
             (
                 "account",
-                profile
-                    .accounts
+                profile.accounts
                     .iter()
                     .map(|definition| definition.id.as_str())
                     .collect::<Vec<_>>(),
             ),
             (
                 "runtime",
-                profile
-                    .runtimes
+                profile.runtimes
                     .iter()
                     .map(|definition| definition.id.as_str())
                     .collect::<Vec<_>>(),
             ),
             (
                 "client",
-                profile
-                    .clients
+                profile.clients
                     .iter()
                     .map(|definition| definition.id.as_str())
                     .collect::<Vec<_>>(),
@@ -460,49 +448,61 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
         ] {
             let unique: BTreeSet<_> = ids.iter().copied().collect();
             if ids.is_empty() || unique.len() != ids.len() {
-                return Err(format!(
-                    "profile '{}' has an empty or duplicate {axis} axis",
-                    profile.id
-                ));
+                return Err(
+                    format!("profile '{}' has an empty or duplicate {axis} axis", profile.id)
+                );
             }
         }
         for account in &profile.accounts {
-            if account.regions.is_empty()
-                || account.regions.iter().any(|region| region.name.is_empty())
-                || account.replication.min_delay_ms > account.replication.max_delay_ms
-                || !matches!(account.write_mode.as_str(), "single" | "multi")
-                || !matches!(
+            if
+                account.regions.is_empty() ||
+                account.regions.iter().any(|region| region.name.is_empty()) ||
+                account.replication.min_delay_ms > account.replication.max_delay_ms ||
+                !matches!(account.write_mode.as_str(), "single" | "multi") ||
+                !matches!(
                     account.consistency.as_str(),
                     "strong" | "boundedStaleness" | "session" | "consistentPrefix" | "eventual"
                 )
             {
-                return Err(format!(
-                    "profile '{}' account '{}' has invalid regions or replication delay",
-                    profile.id, account.id
-                ));
+                return Err(
+                    format!(
+                        "profile '{}' account '{}' has invalid regions or replication delay",
+                        profile.id,
+                        account.id
+                    )
+                );
             }
         }
-        if profile.runtimes.iter().any(|runtime| {
-            !matches!(
-                runtime.gateway_v2.as_str(),
-                "enabled" | "disabled" | "backendDefault"
-            ) || !matches!(runtime.ppcb.as_str(), "enabled" | "disabled" | "sdkDefault")
-                || !valid_optional_read_strategy(
-                    runtime.default_read_consistency_strategy.as_deref(),
-                )
-        }) || profile.clients.iter().any(|client| {
-            !matches!(
-                client.binary_encoding.as_str(),
-                "enabled" | "disabled" | "sdkDefault"
-            ) || !matches!(
-                client.routing.as_str(),
-                "proximity" | "preferredRegions" | "accountOrder"
-            ) || !valid_optional_read_strategy(client.default_read_consistency_strategy.as_deref())
-        }) {
-            return Err(format!(
-                "profile '{}' has invalid setup options",
-                profile.id
-            ));
+        if
+            profile.runtimes
+                .iter()
+                .any(|runtime| {
+                    !matches!(
+                        runtime.gateway_v2.as_str(),
+                        "enabled" | "disabled" | "backendDefault"
+                    ) ||
+                        !matches!(runtime.ppcb.as_str(), "enabled" | "disabled" | "sdkDefault") ||
+                        !valid_optional_read_strategy(
+                            runtime.default_read_consistency_strategy.as_deref()
+                        )
+                }) ||
+            profile.clients
+                .iter()
+                .any(|client| {
+                    !matches!(
+                        client.binary_encoding.as_str(),
+                        "enabled" | "disabled" | "sdkDefault"
+                    ) ||
+                        !matches!(
+                            client.routing.as_str(),
+                            "proximity" | "preferredRegions" | "accountOrder"
+                        ) ||
+                        !valid_optional_read_strategy(
+                            client.default_read_consistency_strategy.as_deref()
+                        )
+                })
+        {
+            return Err(format!("profile '{}' has invalid setup options", profile.id));
         }
     }
     validate_pipeline_matrix(
@@ -510,89 +510,87 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
         profiles
             .iter()
             .find(|profile| profile.id == "coreOperations")
-            .expect("core operations profile must be registered"),
+            .expect("core operations profile must be registered")
     )?;
     validate_pipeline_matrix(
         CONSISTENCY_MATRIX,
         profiles
             .iter()
             .find(|profile| profile.id == "lifecycleConsistencyMatrix")
-            .expect("consistency profile must be registered"),
+            .expect("consistency profile must be registered")
     )?;
     validate_pipeline_matrix(
         OVERRIDE_MATRIX,
         profiles
             .iter()
             .find(|profile| profile.id == "readConsistencyOverrideMatrix")
-            .expect("override profile must be registered"),
+            .expect("override profile must be registered")
     )?;
 
     let scenarios = load_scenarios()?;
     let mut scenario_ids = BTreeSet::new();
     for scenario in &scenarios {
-        if scenario.schema != SCENARIO_SCHEMA_REFERENCE
-            || scenario.spec_version != "1.0"
-            || !valid_scenario_id(&scenario.id)
+        if
+            scenario.schema != SCENARIO_SCHEMA_REFERENCE ||
+            scenario.spec_version != "1.0" ||
+            !valid_scenario_id(&scenario.id)
         {
-            return Err(format!(
-                "scenario '{}' has an unsupported version",
-                scenario.id
-            ));
+            return Err(format!("scenario '{}' has an unsupported version", scenario.id));
         }
         if !scenario_ids.insert(scenario.id.as_str()) {
             return Err(format!("duplicate scenario id '{}'", scenario.id));
         }
-        if scenario.title.is_empty()
-            || scenario.requirement.is_empty()
-            || scenario.precedents.is_empty()
-            || scenario.profiles.is_empty()
-            || scenario.tags.is_empty()
-            || scenario
-                .precedents
+        if
+            scenario.title.is_empty() ||
+            scenario.requirement.is_empty() ||
+            scenario.precedents.is_empty() ||
+            scenario.profiles.is_empty() ||
+            scenario.tags.is_empty() ||
+            scenario.precedents
                 .iter()
-                .any(|precedent| precedent.path.is_empty() || precedent.test.is_empty())
+                .any(|precedent| (precedent.path.is_empty() || precedent.test.is_empty()))
         {
-            return Err(format!(
-                "scenario '{}' is missing required metadata",
-                scenario.id
-            ));
+            return Err(format!("scenario '{}' is missing required metadata", scenario.id));
         }
         let selected_profiles: BTreeSet<_> = scenario.profiles.iter().map(String::as_str).collect();
         let tags: BTreeSet<_> = scenario.tags.iter().map(String::as_str).collect();
-        if selected_profiles.len() != scenario.profiles.len()
-            || !selected_profiles.is_subset(&profile_ids)
-            || tags.len() != scenario.tags.len()
+        if
+            selected_profiles.len() != scenario.profiles.len() ||
+            !selected_profiles.is_subset(&profile_ids) ||
+            tags.len() != scenario.tags.len()
         {
-            return Err(format!(
-                "scenario '{}' references an unknown or duplicate profile",
-                scenario.id
-            ));
+            return Err(
+                format!("scenario '{}' references an unknown or duplicate profile", scenario.id)
+            );
         }
         let backend_names: BTreeSet<_> = scenario.backends.keys().map(String::as_str).collect();
         if backend_names != BACKENDS.into_iter().collect() {
-            return Err(format!(
-                "scenario '{}' has incomplete backend applicability",
-                scenario.id
-            ));
+            return Err(format!("scenario '{}' has incomplete backend applicability", scenario.id));
         }
         for (backend_name, backend) in &scenario.backends {
             if backend.applicability == Applicability::NotApplicable && backend.reason.is_none() {
-                return Err(format!(
-                    "scenario '{}' must explain why '{backend_name}' is not applicable",
-                    scenario.id
-                ));
+                return Err(
+                    format!(
+                        "scenario '{}' must explain why '{backend_name}' is not applicable",
+                        scenario.id
+                    )
+                );
             }
             let requirements: BTreeSet<_> = backend.requires.iter().collect();
             if requirements.len() != backend.requires.len() {
-                return Err(format!(
-                    "scenario '{}' has duplicate requirements for '{backend_name}'",
-                    scenario.id
-                ));
+                return Err(
+                    format!(
+                        "scenario '{}' has duplicate requirements for '{backend_name}'",
+                        scenario.id
+                    )
+                );
             }
         }
     }
-    let registered_scenario_ids: BTreeSet<_> =
-        scenario_ids.iter().map(|id| (*id).to_owned()).collect();
+    let registered_scenario_ids: BTreeSet<_> = scenario_ids
+        .iter()
+        .map(|id| (*id).to_owned())
+        .collect();
     let discovered_scenario_ids = scenario_ids_on_disk()?;
     if registered_scenario_ids != discovered_scenario_ids {
         let unregistered: Vec<_> = discovered_scenario_ids
@@ -603,9 +601,11 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
             .difference(&discovered_scenario_ids)
             .cloned()
             .collect();
-        return Err(format!(
-            "scenario inventory differs from e2e_tests/scenarios; unregistered: {unregistered:?}, missing: {missing:?}"
-        ));
+        return Err(
+            format!(
+                "scenario inventory differs from e2e_tests/scenarios; unregistered: {unregistered:?}, missing: {missing:?}"
+            )
+        );
     }
     let referenced_profiles: BTreeSet<_> = scenarios
         .iter()
@@ -613,14 +613,12 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
         .collect();
     if let Ok(selected_profile) = std::env::var("AZURE_COSMOS_E2E_PROFILE") {
         if !profile_ids.contains(selected_profile.as_str()) {
-            return Err(format!(
-                "selected E2E profile '{selected_profile}' does not exist"
-            ));
+            return Err(format!("selected E2E profile '{selected_profile}' does not exist"));
         }
         if !referenced_profiles.contains(selected_profile.as_str()) {
-            return Err(format!(
-                "selected E2E profile '{selected_profile}' has no active scenarios"
-            ));
+            return Err(
+                format!("selected E2E profile '{selected_profile}' has no active scenarios")
+            );
         }
         let selected_scenarios: Vec<_> = scenarios
             .iter()
@@ -630,11 +628,13 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
         eprintln!("E2E profile '{selected_profile}' selects scenarios: {selected_scenarios:?}");
     }
 
-    let implementations: ImplementationMap =
-        serde_json::from_str(RUST_IMPLEMENTATIONS).map_err(|error| error.to_string())?;
-    if implementations.spec_version != "1.0"
-        || implementations.sdk != "rust"
-        || implementations.test_target != "e2e_tests"
+    let implementations: ImplementationMap = serde_json
+        ::from_str(RUST_IMPLEMENTATIONS)
+        .map_err(|error| error.to_string())?;
+    if
+        implementations.spec_version != "1.0" ||
+        implementations.sdk != "rust" ||
+        implementations.test_target != "e2e_tests"
     {
         return Err("invalid Rust implementation map header".to_owned());
     }
@@ -642,24 +642,24 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
     let mut mapped_ids = BTreeSet::new();
     for implementation in &implementations.scenarios {
         if !scenario_ids.contains(implementation.id.as_str()) {
-            return Err(format!(
-                "implementation references unknown scenario '{}'",
-                implementation.id
-            ));
+            return Err(
+                format!("implementation references unknown scenario '{}'", implementation.id)
+            );
         }
         if !mapped_ids.insert(implementation.id.as_str()) {
-            return Err(format!(
-                "scenario '{}' is mapped more than once",
-                implementation.id
-            ));
+            return Err(format!("scenario '{}' is mapped more than once", implementation.id));
         }
-        if implementation.status == ImplementationStatus::Active
-            && !known_tests.contains(implementation.test.as_str())
+        if
+            implementation.status == ImplementationStatus::Active &&
+            !known_tests.contains(implementation.test.as_str())
         {
-            return Err(format!(
-                "scenario '{}' references missing test '{}'",
-                implementation.id, implementation.test
-            ));
+            return Err(
+                format!(
+                    "scenario '{}' references missing test '{}'",
+                    implementation.id,
+                    implementation.test
+                )
+            );
         }
     }
     if mapped_ids != scenario_ids {
@@ -670,10 +670,7 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
 
 fn valid_optional_read_strategy(strategy: Option<&str>) -> bool {
     strategy.is_none_or(|strategy| {
-        matches!(
-            strategy,
-            "Default" | "Eventual" | "Session" | "LatestCommitted" | "GlobalStrong"
-        )
+        matches!(strategy, "Default" | "Eventual" | "Session" | "LatestCommitted" | "GlobalStrong")
     })
 }
 
@@ -685,17 +682,13 @@ fn validate_pipeline_matrix(json: &str, profile: &Profile) -> Result<(), String>
         .ok_or("pipeline matrix must contain an object named 'matrix'")?;
     let actual_profiles = matrix_axis(matrix, "AZURE_COSMOS_E2E_PROFILE")?;
     if actual_profiles != BTreeSet::from([profile.id.as_str()]) {
-        return Err(format!(
-            "pipeline matrix must select only profile '{}'",
-            profile.id
-        ));
+        return Err(format!("pipeline matrix must select only profile '{}'", profile.id));
     }
     for (axis, actual, expected) in [
         (
             "account",
             matrix_axis(matrix, "AZURE_COSMOS_E2E_ACCOUNT")?,
-            profile
-                .accounts
+            profile.accounts
                 .iter()
                 .map(|definition| definition.id.as_str())
                 .collect(),
@@ -703,8 +696,7 @@ fn validate_pipeline_matrix(json: &str, profile: &Profile) -> Result<(), String>
         (
             "runtime",
             matrix_axis(matrix, "AZURE_COSMOS_E2E_RUNTIME")?,
-            profile
-                .runtimes
+            profile.runtimes
                 .iter()
                 .map(|definition| definition.id.as_str())
                 .collect(),
@@ -712,33 +704,33 @@ fn validate_pipeline_matrix(json: &str, profile: &Profile) -> Result<(), String>
         (
             "client",
             matrix_axis(matrix, "AZURE_COSMOS_E2E_CLIENT")?,
-            profile
-                .clients
+            profile.clients
                 .iter()
                 .map(|definition| definition.id.as_str())
                 .collect(),
         ),
     ] {
         if actual != expected {
-            return Err(format!(
-                "pipeline matrix for '{}' does not cover its {axis} axis: expected {expected:?}, got {actual:?}",
-                profile.id
-            ));
+            return Err(
+                format!(
+                    "pipeline matrix for '{}' does not cover its {axis} axis: expected {expected:?}, got {actual:?}",
+                    profile.id
+                )
+            );
         }
     }
     let flavors = matrix_axis(matrix, "AZURE_COSMOS_EMULATOR_FLAVOR")?;
     if flavors != BTreeSet::from(["inmemory-v1", "inmemory-v2"]) {
-        return Err(format!(
-            "pipeline matrix for '{}' must cover Gateway V1 and Gateway V2",
-            profile.id
-        ));
+        return Err(
+            format!("pipeline matrix for '{}' must cover Gateway V1 and Gateway V2", profile.id)
+        );
     }
     Ok(())
 }
 
 fn matrix_axis<'a>(
     matrix: &'a serde_json::Map<String, Value>,
-    name: &str,
+    name: &str
 ) -> Result<BTreeSet<&'a str>, String> {
     matrix
         .get(name)
@@ -757,39 +749,39 @@ fn valid_camel_id(value: &str) -> bool {
     value
         .chars()
         .next()
-        .is_some_and(|first| first.is_ascii_lowercase())
-        && value
-            .chars()
-            .all(|character| character.is_ascii_alphanumeric())
+        .is_some_and(|first| first.is_ascii_lowercase()) &&
+        value.chars().all(|character| character.is_ascii_alphanumeric())
 }
 
 fn valid_scenario_id(value: &str) -> bool {
     let mut segments = value.split('.');
     let first = segments.next();
     let rest: Vec<_> = segments.collect();
-    first.is_some_and(valid_first_scenario_segment)
-        && !rest.is_empty()
-        && rest.into_iter().all(valid_slug)
+    first.is_some_and(valid_first_scenario_segment) &&
+        !rest.is_empty() &&
+        rest.into_iter().all(valid_slug)
 }
 
 fn valid_first_scenario_segment(value: &str) -> bool {
     value
         .chars()
         .next()
-        .is_some_and(|first| first.is_ascii_lowercase())
-        && value
+        .is_some_and(|first| first.is_ascii_lowercase()) &&
+        value
             .chars()
-            .all(|character| character.is_ascii_lowercase() || character.is_ascii_digit())
+            .all(|character| (character.is_ascii_lowercase() || character.is_ascii_digit()))
 }
 
 fn valid_slug(value: &str) -> bool {
     value
         .chars()
         .next()
-        .is_some_and(|first| first.is_ascii_lowercase())
-        && value.chars().all(|character| {
-            character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
-        })
+        .is_some_and(|first| first.is_ascii_lowercase()) &&
+        value
+            .chars()
+            .all(|character| {
+                character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
+            })
 }
 
 #[cfg(test)]

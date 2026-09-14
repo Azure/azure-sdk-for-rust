@@ -36,18 +36,27 @@ use crate::diagnostics::DiagnosticsContext;
 use crate::driver::pipeline::from_local_body::from_local_body_and_driver_headers;
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
 use crate::driver::pipeline::patch_tracking::{
-    prepare_tracking_marker, TrackingMarkerOutcome, PATCH_TRACKING_POINTER,
+    prepare_tracking_marker,
+    TrackingMarkerOutcome,
+    PATCH_TRACKING_POINTER,
 };
 use crate::driver::CosmosDriver;
 use crate::models::{
-    CosmosOperation, CosmosResponse, PartitionKeyKind, PatchInstructions, PatchOperation,
+    CosmosOperation,
+    CosmosResponse,
+    PartitionKeyKind,
+    PatchInstructions,
+    PatchOperation,
     Precondition,
 };
 use crate::options::{
-    BinaryEncodingOptions, ContentResponseOnWrite, OperationOptions, ReadConsistencyStrategy,
+    BinaryEncodingOptions,
+    ContentResponseOnWrite,
+    OperationOptions,
+    ReadConsistencyStrategy,
 };
 use async_trait::async_trait;
-use azure_core::http::{Etag, StatusCode};
+use azure_core::http::{ Etag, StatusCode };
 use std::num::NonZeroU8;
 use std::sync::Arc;
 use std::time::Instant;
@@ -76,12 +85,12 @@ pub(crate) trait SubOperationDispatcher: Send + Sync {
     async fn execute_operation(
         &self,
         operation: CosmosOperation,
-        options: OperationOptions,
+        options: OperationOptions
     ) -> crate::error::Result<CosmosResponse>;
 
     async fn canonicalize_operation_container(
         &self,
-        _operation: &mut CosmosOperation,
+        _operation: &mut CosmosOperation
     ) -> crate::error::Result<bool> {
         Ok(false)
     }
@@ -92,14 +101,14 @@ impl SubOperationDispatcher for CosmosDriver {
     async fn execute_operation(
         &self,
         operation: CosmosOperation,
-        options: OperationOptions,
+        options: OperationOptions
     ) -> crate::error::Result<CosmosResponse> {
         CosmosDriver::execute_singleton_operation(self, operation, options).await
     }
 
     async fn canonicalize_operation_container(
         &self,
-        operation: &mut CosmosOperation,
+        operation: &mut CosmosOperation
     ) -> crate::error::Result<bool> {
         CosmosDriver::canonicalize_operation_container(self, operation).await
     }
@@ -115,7 +124,7 @@ pub(crate) async fn execute(
     options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
     absolute_deadline: Option<Instant>,
-    return_response_body: bool,
+    return_response_body: bool
 ) -> crate::error::Result<CosmosResponse> {
     execute_with_dispatcher_and_deadline(
         driver,
@@ -123,9 +132,8 @@ pub(crate) async fn execute(
         options,
         max_attempts,
         absolute_deadline,
-        return_response_body,
-    )
-    .await
+        return_response_body
+    ).await
 }
 
 /// Same as [`execute`], but parameterized over the sub-operation dispatcher.
@@ -136,10 +144,9 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
     dispatcher: &D,
     operation: CosmosOperation,
     options: OperationOptions,
-    max_attempts: Option<NonZeroU8>,
+    max_attempts: Option<NonZeroU8>
 ) -> crate::error::Result<CosmosResponse> {
-    let absolute_deadline = options
-        .end_to_end_latency_policy
+    let absolute_deadline = options.end_to_end_latency_policy
         .as_ref()
         .map(|policy| Instant::now() + policy.timeout());
     let return_response_body = !matches!(
@@ -152,9 +159,8 @@ pub(crate) async fn execute_with_dispatcher<D: SubOperationDispatcher + ?Sized>(
         options,
         max_attempts,
         absolute_deadline,
-        return_response_body,
-    )
-    .await
+        return_response_body
+    ).await
 }
 
 async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized>(
@@ -163,7 +169,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     mut options: OperationOptions,
     max_attempts: Option<NonZeroU8>,
     absolute_deadline: Option<Instant>,
-    return_response_body: bool,
+    return_response_body: bool
 ) -> crate::error::Result<CosmosResponse> {
     // PATCH is excluded from binary encoding. Force it off *explicitly*:
     // `None` would inherit a lower layer (e.g. an account/client that enabled
@@ -172,41 +178,49 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     let mut read_options = options.clone();
     read_options.read_consistency_strategy = Some(ReadConsistencyStrategy::LatestCommitted);
     let mut replace_options = options.clone();
-    replace_options.content_response_on_write = Some(if return_response_body {
-        ContentResponseOnWrite::Enabled
-    } else {
-        ContentResponseOnWrite::Disabled
-    });
+    replace_options.content_response_on_write = Some(
+        if return_response_body {
+            ContentResponseOnWrite::Enabled
+        } else {
+            ContentResponseOnWrite::Disabled
+        }
+    );
 
-    if operation
-        .precondition()
-        .is_some_and(Precondition::is_if_none_match)
-    {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
-            .with_message("PATCH supports If-Match preconditions; If-None-Match is read-only")
-            .build());
+    if operation.precondition().is_some_and(Precondition::is_if_none_match) {
+        return Err(
+            crate::error::CosmosError
+                ::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_message("PATCH supports If-Match preconditions; If-None-Match is read-only")
+                .build()
+        );
     }
 
     // -- 1. Parse and validate the patch spec --
     let body = operation
         .body()
         .ok_or_else(|| missing_body_error("PATCH operation requires a PatchInstructions body"))?;
-    let spec: PatchInstructions = serde_json::from_slice(body).map_err(|err| {
-        crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
-            .with_message("failed to parse PATCH body as PatchInstructions")
-            .with_source(err)
-            .build()
-    })?;
+    let spec: PatchInstructions = serde_json
+        ::from_slice(body)
+        .map_err(|err| {
+            crate::error::CosmosError
+                ::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+                .with_message("failed to parse PATCH body as PatchInstructions")
+                .with_source(err)
+                .build()
+        })?;
 
     if spec.operations.is_empty() {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::new(
-                azure_core::http::StatusCode::BadRequest,
-            ))
-            .with_message("PATCH operation must include at least one PatchOperation")
-            .build());
+        return Err(
+            crate::error::CosmosError
+                ::builder()
+                .with_status(
+                    crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                )
+                .with_message("PATCH operation must include at least one PatchOperation")
+                .build()
+        );
     }
 
     let mut item_ref = operation
@@ -214,12 +228,13 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         .cloned()
         .and_then(|pk| operation.resource_reference().try_into_item_reference(pk))
         .ok_or_else(|| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
+            crate::error::CosmosError
+                ::builder()
+                .with_status(
+                    crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                )
                 .with_message(
-                    "PATCH dispatch requires an item-level operation with a partition key",
+                    "PATCH dispatch requires an item-level operation with a partition key"
                 )
                 .build()
         })?;
@@ -233,9 +248,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     }
     let tracking = requires_tracking.then(|| {
         (
-            operation
-                .patch_tracking_id()
-                .unwrap_or_else(crate::models::PatchTrackingId::new),
+            operation.patch_tracking_id().unwrap_or_else(crate::models::PatchTrackingId::new),
             operation
                 .patch_tracking_capacity()
                 .unwrap_or(crate::models::DEFAULT_PATCH_TRACKING_CAPACITY),
@@ -246,9 +259,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     });
     let tracking_id = tracking.map(|(id, _, _)| id);
 
-    let attempts = max_attempts
-        .map(|n| n.get())
-        .unwrap_or(DEFAULT_PATCH_MAX_ATTEMPTS);
+    let attempts = max_attempts.map(|n| n.get()).unwrap_or(DEFAULT_PATCH_MAX_ATTEMPTS);
 
     // -- 3..7. RMW loop --
     let mut last_412: Option<crate::error::CosmosError> = None;
@@ -259,8 +270,9 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     // PATCH operation = one DiagnosticsContext containing every
     // sub-op's per-request diagnostics, instead of just the final
     // Replace's. See `DiagnosticsContext::aggregate_sub_operations`.
-    let mut sub_op_diagnostics: Vec<Arc<DiagnosticsContext>> =
-        Vec::with_capacity(2 * attempts as usize);
+    let mut sub_op_diagnostics: Vec<Arc<DiagnosticsContext>> = Vec::with_capacity(
+        2 * (attempts as usize)
+    );
 
     // The aggregated context concatenates the Read + Replace sub-ops and would
     // otherwise inherit the *last* sub-op's `db.operation.name`. Stamp the
@@ -273,11 +285,15 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     let caller_session_token = operation.request_headers().session_token.clone();
     let caller_precondition = operation.precondition().cloned();
 
-    let custom_session_token = options.custom_headers.as_ref().is_some_and(|headers| {
-        headers.contains_key(&azure_core::http::headers::HeaderName::from_static(
-            crate::models::request_header_names::SESSION_TOKEN,
-        ))
-    });
+    let custom_session_token = options.custom_headers
+        .as_ref()
+        .is_some_and(|headers| {
+            headers.contains_key(
+                &azure_core::http::headers::HeaderName::from_static(
+                    crate::models::request_header_names::SESSION_TOKEN
+                )
+            )
+        });
     let recreation_allowed = caller_session_token.is_none() && !custom_session_token;
     let mut recreation_retried = false;
     let mut rmw_attempts = 0;
@@ -289,8 +305,10 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         // outside the session lane. If routing degrades to a reader, the
         // operation pipeline restores account-default consistency and can use
         // this explicit token even when the local session cache is empty.
-        let read_op = build_read_sub_op(item_ref.clone(), caller_session_token.clone())
-            .with_absolute_deadline(absolute_deadline);
+        let read_op = build_read_sub_op(
+            item_ref.clone(),
+            caller_session_token.clone()
+        ).with_absolute_deadline(absolute_deadline);
 
         // Any non-2xx Read response is mapped by the driver pipeline into
         // `Err(ErrorKind::HttpResponse { .. })` (see retry_evaluation.rs's
@@ -300,19 +318,14 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         // it still describe the *sub-op* (`read_item`). Re-stamp the virtual
         // PATCH operation's identity so the failure reports the same
         // `db.operation.name` as its success and retry-exhaustion counterparts.
-        let read_resp = match dispatcher
-            .execute_operation(read_op, read_options.clone())
-            .await
-        {
+        let read_resp = match dispatcher.execute_operation(read_op, read_options.clone()).await {
             Ok(response) => response,
-            Err(err)
-                if recreation_allowed
-                    && !recreation_retried
-                    && is_container_recreation_error(&err)
-                    && dispatcher
-                        .canonicalize_operation_container(&mut operation)
-                        .await? =>
-            {
+            Err(err) if
+                recreation_allowed &&
+                !recreation_retried &&
+                is_container_recreation_error(&err) &&
+                dispatcher.canonicalize_operation_container(&mut operation).await?
+            => {
                 recreation_retried = true;
                 rmw_attempts -= 1;
                 item_ref = operation
@@ -324,12 +337,14 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                 continue;
             }
             Err(err) => {
-                return Err(stamp_patch_identity(
-                    err,
-                    operation_name.clone(),
-                    tracking_id,
-                    &sub_op_diagnostics,
-                ));
+                return Err(
+                    stamp_patch_identity(
+                        err,
+                        operation_name.clone(),
+                        tracking_id,
+                        &sub_op_diagnostics
+                    )
+                );
             }
         };
         let read_headers = read_resp.headers().clone();
@@ -345,37 +360,28 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
             .into_body()
             .single()
             .map_err(|err| {
-                crate::error::CosmosError::builder()
+                crate::error::CosmosError
+                    ::builder()
                     .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("PATCH could not extract Read response body")
                     .with_source(err)
                     .build()
             })
             .map_err(|err| {
-                stamp_patch_identity(
-                    err,
-                    operation_name.clone(),
-                    tracking_id,
-                    &sub_op_diagnostics,
-                )
+                stamp_patch_identity(err, operation_name.clone(), tracking_id, &sub_op_diagnostics)
             })?;
-        let mut value: serde_json::Value = serde_json::from_slice(&read_body_bytes)
+        let mut value: serde_json::Value = serde_json
+            ::from_slice(&read_body_bytes)
             .map_err(|err| {
-                crate::error::CosmosError::builder()
+                crate::error::CosmosError
+                    ::builder()
                     .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-                    .with_message(format!(
-                        "PATCH could not deserialize current item body: {err}"
-                    ))
+                    .with_message(format!("PATCH could not deserialize current item body: {err}"))
                     .with_source(err)
                     .build()
             })
             .map_err(|err| {
-                stamp_patch_identity(
-                    err,
-                    operation_name.clone(),
-                    tracking_id,
-                    &sub_op_diagnostics,
-                )
+                stamp_patch_identity(err, operation_name.clone(), tracking_id, &sub_op_diagnostics)
             })?;
 
         if let Some((tracking_id, capacity, retention_seconds)) = tracking {
@@ -384,14 +390,13 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                 tracking_id.as_uuid(),
                 capacity,
                 retention_seconds,
-                !routing_fallback || (!caller_supplied_tracking_id && !replace_dispatched),
-            )
-            .map_err(|err| {
+                !routing_fallback || (!caller_supplied_tracking_id && !replace_dispatched)
+            ).map_err(|err| {
                 stamp_patch_identity(
                     err,
                     operation_name.clone(),
                     Some(tracking_id),
-                    &sub_op_diagnostics,
+                    &sub_op_diagnostics
                 )
             })?;
 
@@ -400,55 +405,49 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                     let diagnostics = aggregate_patch_diagnostics(
                         &sub_op_diagnostics,
                         operation_name.clone(),
-                        Some(tracking_id),
+                        Some(tracking_id)
                     );
                     let mut response_headers = read_headers;
                     response_headers.request_charge = Some(diagnostics.total_request_charge());
-                    return Ok(from_local_body_and_driver_headers(
-                        read_body_bytes.to_vec(),
-                        response_headers,
-                        read_status,
-                        diagnostics,
-                    ));
+                    return Ok(
+                        from_local_body_and_driver_headers(
+                            read_body_bytes.to_vec(),
+                            response_headers,
+                            read_status,
+                            diagnostics
+                        )
+                    );
                 }
                 TrackingMarkerOutcome::Missing => {
-                    return Err(stamp_patch_identity(
-                        inconclusive_tracking_verification_error(tracking_id),
-                        operation_name.clone(),
-                        Some(tracking_id),
-                        &sub_op_diagnostics,
-                    ));
+                    return Err(
+                        stamp_patch_identity(
+                            inconclusive_tracking_verification_error(tracking_id),
+                            operation_name.clone(),
+                            Some(tracking_id),
+                            &sub_op_diagnostics
+                        )
+                    );
                 }
                 TrackingMarkerOutcome::Added => {}
             }
         }
 
-        let etag = read_headers
-            .etag
+        let etag = read_headers.etag
             .clone()
             .ok_or_else(|| {
-                crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
+                crate::error::CosmosError
+                    ::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                    )
                     .with_message("PATCH cannot proceed: the Read response did not include an ETag")
                     .build()
             })
             .map_err(|err| {
-                stamp_patch_identity(
-                    err,
-                    operation_name.clone(),
-                    tracking_id,
-                    &sub_op_diagnostics,
-                )
+                stamp_patch_identity(err, operation_name.clone(), tracking_id, &sub_op_diagnostics)
             })?;
         validate_caller_precondition(caller_precondition.as_ref(), &etag).map_err(|err| {
-            stamp_patch_identity(
-                err,
-                operation_name.clone(),
-                tracking_id,
-                &sub_op_diagnostics,
-            )
+            stamp_patch_identity(err, operation_name.clone(), tracking_id, &sub_op_diagnostics)
         })?;
         // R3-DRIVER: forward the session token returned by the Read on the
         // Replace, so the write commits against the same replica view we
@@ -461,24 +460,21 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                 err.into(),
                 operation_name.clone(),
                 tracking_id,
-                &sub_op_diagnostics,
+                &sub_op_diagnostics
             )
         })?;
-        let merged_bytes = serde_json::to_vec(&value)
+        let merged_bytes = serde_json
+            ::to_vec(&value)
             .map_err(|err| {
-                crate::error::CosmosError::builder()
+                crate::error::CosmosError
+                    ::builder()
                     .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("PATCH could not serialize merged item")
                     .with_source(err)
                     .build()
             })
             .map_err(|err| {
-                stamp_patch_identity(
-                    err,
-                    operation_name.clone(),
-                    tracking_id,
-                    &sub_op_diagnostics,
-                )
+                stamp_patch_identity(err, operation_name.clone(), tracking_id, &sub_op_diagnostics)
             })?;
 
         // Issue the ETag-guarded Replace, forwarding the Read response's
@@ -487,9 +483,8 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
             item_ref.clone(),
             merged_bytes.clone(),
             etag,
-            read_session_token,
-        )
-        .with_absolute_deadline(absolute_deadline);
+            read_session_token
+        ).with_absolute_deadline(absolute_deadline);
 
         // The driver pipeline returns `Err(ErrorKind::HttpResponse { .. })`
         // for any non-2xx Replace response (412 included — `OperationAction::Abort`
@@ -497,10 +492,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         // happens on the `Result` itself, not on a status code we never get
         // to inspect.
         replace_dispatched = true;
-        match dispatcher
-            .execute_operation(replace_op, replace_options.clone())
-            .await
-        {
+        match dispatcher.execute_operation(replace_op, replace_options.clone()).await {
             Ok(replace_resp) => {
                 let mut replace_headers = replace_resp.headers().clone();
                 let replace_status = replace_resp.status();
@@ -513,7 +505,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                 // "empty" uniformly across `NoPayload` and `Bytes(empty)`.
                 let replace_body_bytes: Vec<u8> = match replace_body {
                     crate::models::ResponseBody::Bytes(b) => b.to_vec(),
-                    crate::models::ResponseBody::NoPayload
+                    | crate::models::ResponseBody::NoPayload
                     | crate::models::ResponseBody::Items(_) => Vec::new(),
                 };
                 // Aggregate the per-request diagnostics of every successful
@@ -526,7 +518,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                 let diagnostics = aggregate_patch_diagnostics(
                     &sub_op_diagnostics,
                     operation_name.clone(),
-                    tracking_id,
+                    tracking_id
                 );
                 replace_headers.request_charge = Some(diagnostics.total_request_charge());
                 // Reconcile the locally-merged body's system properties with
@@ -548,14 +540,16 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                 let synthesized_body = synthesize_post_image_body(
                     merged_bytes,
                     replace_body_bytes,
-                    replace_etag.as_ref(),
+                    replace_etag.as_ref()
                 );
-                return Ok(from_local_body_and_driver_headers(
-                    synthesized_body,
-                    replace_headers,
-                    replace_status,
-                    diagnostics,
-                ));
+                return Ok(
+                    from_local_body_and_driver_headers(
+                        synthesized_body,
+                        replace_headers,
+                        replace_status,
+                        diagnostics
+                    )
+                );
             }
             Err(err) if is_precondition_failed(&err) => {
                 // 412 — someone raced us.
@@ -574,12 +568,11 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                 continue;
             }
             Err(err) => {
-                if recreation_allowed
-                    && !recreation_retried
-                    && is_container_recreation_error(&err)
-                    && dispatcher
-                        .canonicalize_operation_container(&mut operation)
-                        .await?
+                if
+                    recreation_allowed &&
+                    !recreation_retried &&
+                    is_container_recreation_error(&err) &&
+                    dispatcher.canonicalize_operation_container(&mut operation).await?
                 {
                     recreation_retried = true;
                     rmw_attempts -= 1;
@@ -594,97 +587,101 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                 if terminal_error_requires_verification(&err) {
                     if let Some(tracking) = tracking {
                         push_unique_diagnostics(&mut sub_op_diagnostics, err.diagnostics());
-                        match verify_committed_patch(
-                            dispatcher,
-                            &item_ref,
-                            &read_options,
-                            VerificationContext {
-                                tracking,
-                                caller_session_token: caller_session_token.clone(),
-                                operation_name: operation_name.clone(),
-                                absolute_deadline,
-                            },
-                            &mut sub_op_diagnostics,
-                        )
-                        .await
+                        match
+                            verify_committed_patch(
+                                dispatcher,
+                                &item_ref,
+                                &read_options,
+                                VerificationContext {
+                                    tracking,
+                                    caller_session_token: caller_session_token.clone(),
+                                    operation_name: operation_name.clone(),
+                                    absolute_deadline,
+                                },
+                                &mut sub_op_diagnostics
+                            ).await
                         {
-                            Ok(VerificationOutcome::Applied(response)) => return Ok(*response),
+                            Ok(VerificationOutcome::Applied(response)) => {
+                                return Ok(*response);
+                            }
                             Ok(VerificationOutcome::Absent) => {}
                             Ok(VerificationOutcome::ReadFailed(verification_error)) => {
                                 push_unique_diagnostics(
                                     &mut sub_op_diagnostics,
-                                    verification_error.diagnostics(),
+                                    verification_error.diagnostics()
                                 );
                             }
 
                             Err(verification_error) => {
-                                return Err(stamp_patch_identity(
-                                    verification_error,
-                                    operation_name,
-                                    tracking_id,
-                                    &sub_op_diagnostics,
-                                ));
+                                return Err(
+                                    stamp_patch_identity(
+                                        verification_error,
+                                        operation_name,
+                                        tracking_id,
+                                        &sub_op_diagnostics
+                                    )
+                                );
                             }
                         }
                     }
                 }
-                return Err(stamp_patch_identity(
-                    err,
-                    operation_name.clone(),
-                    tracking_id,
-                    &sub_op_diagnostics,
-                ));
+                return Err(
+                    stamp_patch_identity(
+                        err,
+                        operation_name.clone(),
+                        tracking_id,
+                        &sub_op_diagnostics
+                    )
+                );
             }
         }
     }
 
     if let Some(tracking) = tracking {
-        match verify_committed_patch(
-            dispatcher,
-            &item_ref,
-            &read_options,
-            VerificationContext {
-                tracking,
-                caller_session_token,
-                operation_name: operation_name.clone(),
-                absolute_deadline,
-            },
-            &mut sub_op_diagnostics,
-        )
-        .await
+        match
+            verify_committed_patch(
+                dispatcher,
+                &item_ref,
+                &read_options,
+                VerificationContext {
+                    tracking,
+                    caller_session_token,
+                    operation_name: operation_name.clone(),
+                    absolute_deadline,
+                },
+                &mut sub_op_diagnostics
+            ).await
         {
-            Ok(VerificationOutcome::Applied(response)) => return Ok(*response),
+            Ok(VerificationOutcome::Applied(response)) => {
+                return Ok(*response);
+            }
             Ok(VerificationOutcome::Absent) => {}
             Ok(VerificationOutcome::ReadFailed(verification_error)) => {
                 push_unique_diagnostics(&mut sub_op_diagnostics, verification_error.diagnostics());
             }
             Err(verification_error) => {
-                return Err(stamp_patch_identity(
-                    verification_error,
-                    operation_name,
-                    tracking_id,
-                    &sub_op_diagnostics,
-                ));
+                return Err(
+                    stamp_patch_identity(
+                        verification_error,
+                        operation_name,
+                        tracking_id,
+                        &sub_op_diagnostics
+                    )
+                );
             }
         }
     }
 
-    Err(exhaustion_error(
-        attempts,
-        last_412,
-        &sub_op_diagnostics,
-        operation_name,
-        tracking_id,
-    ))
+    Err(exhaustion_error(attempts, last_412, &sub_op_diagnostics, operation_name, tracking_id))
 }
 
 fn is_container_recreation_error(error: &crate::error::CosmosError) -> bool {
     let status = error.status();
-    (status.status_code() == StatusCode::BadRequest
-        && status.sub_status() == Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH))
-        || (status.status_code() == StatusCode::Gone
-            && status.sub_status() == Some(crate::models::SubStatusCode::NAME_CACHE_STALE))
-        || status.is_read_session_not_available()
+    (status.status_code() == StatusCode::BadRequest &&
+        status.sub_status() == Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH)) ||
+        (status.status_code() == StatusCode::Gone &&
+            status.sub_status() == Some(crate::models::SubStatusCode::NAME_CACHE_STALE)) ||
+        status.is_read_session_not_available()
 }
 
 /// Re-stamps the virtual PATCH operation's canonical `db.operation.name` onto
@@ -710,7 +707,7 @@ fn stamp_patch_identity(
     err: crate::error::CosmosError,
     operation_name: Option<Arc<str>>,
     tracking_id: Option<crate::models::PatchTrackingId>,
-    prior_sub_ops: &[Arc<DiagnosticsContext>],
+    prior_sub_ops: &[Arc<DiagnosticsContext>]
 ) -> crate::error::CosmosError {
     let mut sources: Vec<Arc<DiagnosticsContext>> = prior_sub_ops.to_vec();
     if let Some(failed) = err.diagnostics() {
@@ -721,19 +718,24 @@ fn stamp_patch_identity(
     let stamped = match sources.as_slice() {
         [] => {
             return match tracking_id {
-                Some(id) => crate::error::CosmosErrorBuilder::from_error(err)
-                    .with_patch_tracking_id(id)
-                    .build(),
+                Some(id) =>
+                    crate::error::CosmosErrorBuilder
+                        ::from_error(err)
+                        .with_patch_tracking_id(id)
+                        .build(),
                 None => err,
-            }
+            };
         }
         [only] => Arc::new(only.clone_with_operation_name(operation_name)),
-        many => match DiagnosticsContext::aggregate_sub_operations(many) {
-            Some(ctx) => Arc::new(ctx.with_operation_name(operation_name)),
-            // Unreachable: `many` is non-empty. Keep the error intact rather
-            // than panicking if that ever changes.
-            None => return err,
-        },
+        many =>
+            match DiagnosticsContext::aggregate_sub_operations(many) {
+                Some(ctx) => Arc::new(ctx.with_operation_name(operation_name)),
+                // Unreachable: `many` is non-empty. Keep the error intact rather
+                // than panicking if that ever changes.
+                None => {
+                    return err;
+                }
+            }
     };
     let stamped = match tracking_id {
         Some(id) => Arc::new(stamped.as_ref().clone().with_patch_tracking_id(id)),
@@ -748,13 +750,10 @@ fn stamp_patch_identity(
 
 fn push_unique_diagnostics(
     diagnostics: &mut Vec<Arc<DiagnosticsContext>>,
-    candidate: Option<Arc<DiagnosticsContext>>,
+    candidate: Option<Arc<DiagnosticsContext>>
 ) {
     if let Some(candidate) = candidate {
-        if !diagnostics
-            .iter()
-            .any(|existing| Arc::ptr_eq(existing, &candidate))
-        {
+        if !diagnostics.iter().any(|existing| Arc::ptr_eq(existing, &candidate)) {
             diagnostics.push(candidate);
         }
     }
@@ -763,7 +762,7 @@ fn push_unique_diagnostics(
 fn aggregate_patch_diagnostics(
     sub_operations: &[Arc<DiagnosticsContext>],
     operation_name: Option<Arc<str>>,
-    tracking_id: Option<crate::models::PatchTrackingId>,
+    tracking_id: Option<crate::models::PatchTrackingId>
 ) -> Arc<DiagnosticsContext> {
     let diagnostics = DiagnosticsContext::aggregate_sub_operations(sub_operations)
         .map(|context| Arc::new(context.with_operation_name(operation_name)))
@@ -785,11 +784,7 @@ enum VerificationOutcome {
 }
 
 struct VerificationContext {
-    tracking: (
-        crate::models::PatchTrackingId,
-        std::num::NonZeroU16,
-        std::num::NonZeroU32,
-    ),
+    tracking: (crate::models::PatchTrackingId, std::num::NonZeroU16, std::num::NonZeroU32),
     caller_session_token: Option<crate::models::SessionToken>,
     operation_name: Option<Arc<str>>,
     absolute_deadline: Option<Instant>,
@@ -800,37 +795,43 @@ async fn verify_committed_patch<D: SubOperationDispatcher + ?Sized>(
     item_ref: &crate::models::ItemReference,
     read_options: &OperationOptions,
     context: VerificationContext,
-    sub_op_diagnostics: &mut Vec<Arc<DiagnosticsContext>>,
+    sub_op_diagnostics: &mut Vec<Arc<DiagnosticsContext>>
 ) -> crate::error::Result<VerificationOutcome> {
-    let response = match dispatcher
-        .execute_operation(
-            build_read_sub_op(item_ref.clone(), context.caller_session_token)
-                .with_absolute_deadline(context.absolute_deadline),
-            read_options.clone(),
-        )
-        .await
+    let response = match
+        dispatcher.execute_operation(
+            build_read_sub_op(
+                item_ref.clone(),
+                context.caller_session_token
+            ).with_absolute_deadline(context.absolute_deadline),
+            read_options.clone()
+        ).await
     {
         Ok(response) => response,
-        Err(error) => return Ok(VerificationOutcome::ReadFailed(error)),
+        Err(error) => {
+            return Ok(VerificationOutcome::ReadFailed(error));
+        }
     };
     let mut headers = response.headers().clone();
     let status = response.status();
     let routing_fallback = response.routing_fallback();
     sub_op_diagnostics.push(response.diagnostics());
     let body = response.into_body().single()?;
-    let mut value = serde_json::from_slice::<serde_json::Value>(&body).map_err(|error| {
-        crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
-            .with_message("PATCH could not deserialize verification Read response body")
-            .with_source(error)
-            .build()
-    })?;
+    let mut value = serde_json
+        ::from_slice::<serde_json::Value>(&body)
+        .map_err(|error| {
+            crate::error::CosmosError
+                ::builder()
+                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("PATCH could not deserialize verification Read response body")
+                .with_source(error)
+                .build()
+        })?;
     let outcome = prepare_tracking_marker(
         &mut value,
         context.tracking.0.as_uuid(),
         context.tracking.1,
         context.tracking.2,
-        false,
+        false
     )?;
     if outcome != TrackingMarkerOutcome::AlreadyApplied {
         if routing_fallback {
@@ -842,36 +843,42 @@ async fn verify_committed_patch<D: SubOperationDispatcher + ?Sized>(
     let diagnostics = aggregate_patch_diagnostics(
         sub_op_diagnostics,
         context.operation_name,
-        Some(context.tracking.0),
+        Some(context.tracking.0)
     );
     headers.request_charge = Some(diagnostics.total_request_charge());
-    Ok(VerificationOutcome::Applied(Box::new(
-        from_local_body_and_driver_headers(body.to_vec(), headers, status, diagnostics),
-    )))
+    Ok(
+        VerificationOutcome::Applied(
+            Box::new(
+                from_local_body_and_driver_headers(body.to_vec(), headers, status, diagnostics)
+            )
+        )
+    )
 }
 
 fn default_patch_tracking_retention_seconds() -> std::num::NonZeroU32 {
-    let seconds = u32::try_from(crate::models::PATCH_TRACKING_RETENTION.as_secs())
+    let seconds = u32
+        ::try_from(crate::models::PATCH_TRACKING_RETENTION.as_secs())
         .expect("default PATCH tracking retention fits in u32 seconds");
     std::num::NonZeroU32::new(seconds).expect("default PATCH tracking retention is non-zero")
 }
 
 fn terminal_error_requires_verification(err: &crate::error::CosmosError) -> bool {
-    if err.is_from_wire()
-        && matches!(
+    if
+        err.is_from_wire() &&
+        matches!(
             err.status().status_code(),
-            StatusCode::BadRequest
-                | StatusCode::Unauthorized
-                | StatusCode::Forbidden
-                | StatusCode::PayloadTooLarge
+            StatusCode::BadRequest |
+                StatusCode::Unauthorized |
+                StatusCode::Forbidden |
+                StatusCode::PayloadTooLarge
         )
     {
         return false;
     }
 
     err.diagnostics().is_none_or(|diagnostics| {
-        diagnostics.requests().is_empty()
-            || diagnostics
+        diagnostics.requests().is_empty() ||
+            diagnostics
                 .requests()
                 .iter()
                 .any(|request| !request.request_sent().definitely_not_sent())
@@ -879,30 +886,30 @@ fn terminal_error_requires_verification(err: &crate::error::CosmosError) -> bool
 }
 
 fn inconclusive_tracking_verification_error(
-    tracking_id: crate::models::PatchTrackingId,
+    tracking_id: crate::models::PatchTrackingId
 ) -> crate::error::CosmosError {
-    crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::new(
-            StatusCode::ServiceUnavailable,
-        ))
-        .with_message(format!(
-            "PATCH tracking verification for '{tracking_id}' was routed away from every usable write endpoint and did not observe the marker; refusing to apply because absence is inconclusive"
-        ))
+    crate::error::CosmosError
+        ::builder()
+        .with_status(crate::error::CosmosStatus::new(StatusCode::ServiceUnavailable))
+        .with_message(
+            format!(
+                "PATCH tracking verification for '{tracking_id}' was routed away from every usable write endpoint and did not observe the marker; refusing to apply because absence is inconclusive"
+            )
+        )
         .build()
 }
 
 fn missing_body_error(msg: &'static str) -> crate::error::CosmosError {
-    crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::new(
-            azure_core::http::StatusCode::BadRequest,
-        ))
+    crate::error::CosmosError
+        ::builder()
+        .with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
         .with_message(msg)
         .build()
 }
 
 fn validate_caller_precondition(
     precondition: Option<&Precondition>,
-    current_etag: &Etag,
+    current_etag: &Etag
 ) -> crate::error::Result<()> {
     let Some(precondition) = precondition else {
         return Ok(());
@@ -914,12 +921,13 @@ fn validate_caller_precondition(
     if satisfied {
         return Ok(());
     }
-    Err(crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::new(
-            StatusCode::PreconditionFailed,
-        ))
-        .with_message("One of the specified pre-conditions is not met.")
-        .build())
+    Err(
+        crate::error::CosmosError
+            ::builder()
+            .with_status(crate::error::CosmosStatus::new(StatusCode::PreconditionFailed))
+            .with_message("One of the specified pre-conditions is not met.")
+            .build()
+    )
 }
 
 /// Returns `true` if `err` is the driver pipeline's representation of a
@@ -970,7 +978,7 @@ fn is_precondition_failed(err: &crate::error::CosmosError) -> bool {
 fn synthesize_post_image_body(
     merged_bytes: Vec<u8>,
     replace_body: Vec<u8>,
-    replace_etag: Option<&Etag>,
+    replace_etag: Option<&Etag>
 ) -> Vec<u8> {
     if !replace_body.is_empty() {
         return replace_body;
@@ -984,10 +992,7 @@ fn synthesize_post_image_body(
     let serde_json::Value::Object(ref mut map) = value else {
         return merged_bytes;
     };
-    map.insert(
-        "_etag".to_string(),
-        serde_json::Value::String(etag.to_string()),
-    );
+    map.insert("_etag".to_string(), serde_json::Value::String(etag.to_string()));
     serde_json::to_vec(&value).unwrap_or(merged_bytes)
 }
 
@@ -998,7 +1003,7 @@ fn synthesize_post_image_body(
 /// session even when the driver's local session cache has not observed it.
 fn build_read_sub_op(
     item_ref: crate::models::ItemReference,
-    caller_session_token: Option<crate::models::SessionToken>,
+    caller_session_token: Option<crate::models::SessionToken>
 ) -> CosmosOperation {
     let mut operation = CosmosOperation::read_item(item_ref).as_patch_read_sub_operation();
     if let Some(token) = caller_session_token {
@@ -1015,7 +1020,7 @@ fn build_replace_sub_op(
     item_ref: crate::models::ItemReference,
     merged_bytes: Vec<u8>,
     etag: Etag,
-    read_response_session_token: Option<crate::models::SessionToken>,
+    read_response_session_token: Option<crate::models::SessionToken>
 ) -> CosmosOperation {
     let mut op = CosmosOperation::replace_item(item_ref)
         .as_patch_sub_operation()
@@ -1051,7 +1056,7 @@ fn exhaustion_error(
     last_412: Option<crate::error::CosmosError>,
     sub_op_diagnostics: &[Arc<DiagnosticsContext>],
     operation_name: Option<Arc<str>>,
-    tracking_id: Option<crate::models::PatchTrackingId>,
+    tracking_id: Option<crate::models::PatchTrackingId>
 ) -> crate::error::CosmosError {
     let message = format!("patch_item: ETag conflict after {attempts} attempts");
     let aggregated = DiagnosticsContext::aggregate_sub_operations(sub_op_diagnostics).map(|ctx| {
@@ -1077,10 +1082,9 @@ fn exhaustion_error(
             // onto the error if any exist by the time it leaves the
             // pipeline. Attach `aggregated` here too in case a future caller
             // seeds `sub_op_diagnostics` without a `last_412` source.
-            let mut b = crate::error::CosmosError::builder()
-                .with_status(crate::models::CosmosStatus::new(
-                    StatusCode::PreconditionFailed,
-                ))
+            let mut b = crate::error::CosmosError
+                ::builder()
+                .with_status(crate::models::CosmosStatus::new(StatusCode::PreconditionFailed))
                 .with_message(message);
             if let Some(diag) = aggregated {
                 b = b.with_diagnostics(diag);
@@ -1089,9 +1093,8 @@ fn exhaustion_error(
         }
     };
     match tracking_id {
-        Some(id) => crate::error::CosmosErrorBuilder::from_error(error)
-            .with_patch_tracking_id(id)
-            .build(),
+        Some(id) =>
+            crate::error::CosmosErrorBuilder::from_error(error).with_patch_tracking_id(id).build(),
         None => error,
     }
 }
@@ -1104,18 +1107,24 @@ fn exhaustion_error(
 /// rather than silently produce an inconsistent state.
 pub(crate) fn validate_partition_key_paths(
     ops: &[PatchOperation],
-    item_ref: &crate::models::ItemReference,
+    item_ref: &crate::models::ItemReference
 ) -> crate::error::Result<()> {
     let pk_def = item_ref.container().partition_key_definition();
-    let pk_paths: Vec<&str> = pk_def.paths().iter().map(|p| p.as_ref()).collect();
+    let pk_paths: Vec<&str> = pk_def
+        .paths()
+        .iter()
+        .map(|p| p.as_ref())
+        .collect();
     // Hash and MultiHash treat each path as a JSON Pointer rooted at the
     // document. Range PKs are deprecated and never reached the public API, but
     // we treat them identically for safety.
     let kind = pk_def.kind();
-    debug_assert!(matches!(
-        kind,
-        PartitionKeyKind::Hash | PartitionKeyKind::MultiHash | PartitionKeyKind::Range
-    ));
+    debug_assert!(
+        matches!(
+            kind,
+            PartitionKeyKind::Hash | PartitionKeyKind::MultiHash | PartitionKeyKind::Range
+        )
+    );
     let _ = kind;
 
     for op in ops {
@@ -1131,37 +1140,56 @@ pub(crate) fn validate_partition_key_paths(
         };
         for path in std::iter::once(dest).chain(from) {
             if path_overlaps_partition_key(path, "/id") {
-                return Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
-                    .with_message(format!(
-                        "PATCH op '{path}' overlaps immutable item ID path '/id'"
-                    ))
-                    .build());
+                return Err(
+                    crate::error::CosmosError
+                        ::builder()
+                        .with_status(
+                            crate::error::CosmosStatus::new(
+                                azure_core::http::StatusCode::BadRequest
+                            )
+                        )
+                        .with_message(
+                            format!("PATCH op '{path}' overlaps immutable item ID path '/id'")
+                        )
+                        .build()
+                );
             }
             if path_overlaps_partition_key(path, PATCH_TRACKING_POINTER) {
-                return Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
-                    .with_message(format!(
-                        "PATCH op '{path}' overlaps reserved tracking path \
+                return Err(
+                    crate::error::CosmosError
+                        ::builder()
+                        .with_status(
+                            crate::error::CosmosStatus::new(
+                                azure_core::http::StatusCode::BadRequest
+                            )
+                        )
+                        .with_message(
+                            format!(
+                                "PATCH op '{path}' overlaps reserved tracking path \
                          '{PATCH_TRACKING_POINTER}'"
-                    ))
-                    .build());
+                            )
+                        )
+                        .build()
+                );
             }
             for pk_path in &pk_paths {
                 if path_overlaps_partition_key(path, pk_path) {
-                    return Err(crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::new(
-                            azure_core::http::StatusCode::BadRequest,
-                        ))
-                        .with_message(format!(
-                            "PATCH op '{path}' overlaps partition key path '{pk_path}'; \
+                    return Err(
+                        crate::error::CosmosError
+                            ::builder()
+                            .with_status(
+                                crate::error::CosmosStatus::new(
+                                    azure_core::http::StatusCode::BadRequest
+                                )
+                            )
+                            .with_message(
+                                format!(
+                                    "PATCH op '{path}' overlaps partition key path '{pk_path}'; \
                              cannot mutate partition key with a client-side Read-Modify-Write"
-                        ))
-                        .build());
+                                )
+                            )
+                            .build()
+                    );
                 }
             }
         }
@@ -1173,19 +1201,24 @@ pub(crate) fn validate_partition_key_paths(
 /// partition-key path. Adding or pruning markers would otherwise mutate the
 /// item's partition key on every unsafe operation.
 fn validate_tracking_partition_key_paths(
-    item_ref: &crate::models::ItemReference,
+    item_ref: &crate::models::ItemReference
 ) -> crate::error::Result<()> {
     for pk_path in item_ref.container().partition_key_definition().paths() {
         if path_overlaps_partition_key(PATCH_TRACKING_POINTER, pk_path) {
-            return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
-                .with_message(format!(
-                    "unsafe PATCH requires reserved tracking path '{PATCH_TRACKING_POINTER}', \
+            return Err(
+                crate::error::CosmosError
+                    ::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                    )
+                    .with_message(
+                        format!(
+                            "unsafe PATCH requires reserved tracking path '{PATCH_TRACKING_POINTER}', \
                      which overlaps partition key path '{pk_path}'"
-                ))
-                .build());
+                        )
+                    )
+                    .build()
+            );
         }
     }
     Ok(())
@@ -1204,11 +1237,7 @@ fn path_overlaps_partition_key(op_path: &str, pk_path: &str) -> bool {
     // only the *PK-overlap-guard escape* window, not the broader validation
     // (which is still enforced at apply time).
     fn normalize(p: &str) -> String {
-        if p.is_empty() || p.starts_with('/') {
-            p.to_string()
-        } else {
-            format!("/{p}")
-        }
+        if p.is_empty() || p.starts_with('/') { p.to_string() } else { format!("/{p}") }
     }
     let op = normalize(op_path);
     let pk = normalize(pk_path);
@@ -1221,11 +1250,7 @@ fn path_overlaps_partition_key(op_path: &str, pk_path: &str) -> bool {
     // (e.g., '/account/tenantId/extra' on PK '/account/tenantId') also
     // overlaps. The check is symmetric on prefixes split at '/'.
     let with_slash = |p: &str| {
-        if p.ends_with('/') {
-            p.to_string()
-        } else {
-            format!("{p}/")
-        }
+        if p.ends_with('/') { p.to_string() } else { format!("{p}/") }
     };
     let a = with_slash(&op);
     let b = with_slash(&pk);
@@ -1236,8 +1261,15 @@ fn path_overlaps_partition_key(op_path: &str, pk_path: &str) -> bool {
 mod tests {
     use super::*;
     use crate::models::{
-        AccountReference, ContainerProperties, ContainerReference, ItemReference, OperationType,
-        PartitionKey, PartitionKeyDefinition, SessionToken, SystemProperties,
+        AccountReference,
+        ContainerProperties,
+        ContainerReference,
+        ItemReference,
+        OperationType,
+        PartitionKey,
+        PartitionKeyDefinition,
+        SessionToken,
+        SystemProperties,
     };
     use azure_core::http::Url;
     use std::borrow::Cow;
@@ -1245,7 +1277,7 @@ mod tests {
     fn test_account() -> AccountReference {
         AccountReference::with_master_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
-            "test-key",
+            "test-key"
         )
     }
 
@@ -1265,7 +1297,7 @@ mod tests {
             "testdb_rid",
             "testcontainer",
             "testcontainer_rid",
-            &props,
+            &props
         )
     }
 
@@ -1335,15 +1367,12 @@ mod tests {
             test_item_ref(),
             body.clone(),
             etag.clone(),
-            Some(read_response_token.clone()),
+            Some(read_response_token.clone())
         );
 
         assert_eq!(op.operation_type(), OperationType::Replace);
         assert_eq!(op.body(), Some(body.as_slice()));
-        assert_eq!(
-            op.request_headers().session_token.as_ref(),
-            Some(&read_response_token)
-        );
+        assert_eq!(op.request_headers().session_token.as_ref(), Some(&read_response_token));
         // assert the If-Match precondition was applied. A future refactor
         // that silently dropped `.with_precondition(...)` would downgrade the
         // RMW to a non-conditional Replace — precisely the bug R3-DRIVER's
@@ -1376,7 +1405,7 @@ mod tests {
             test_item_ref(),
             b"{\"id\":\"doc1\"}".to_vec(),
             Etag::from("\"abc\""),
-            None,
+            None
         );
         assert!(replace.is_patch_sub_operation());
         assert_eq!(replace.db_operation_name(), Some("patch_replace_item"));
@@ -1391,8 +1420,12 @@ mod tests {
         // the RMW loop's 412 detection runs on the `Err(_)` produced
         // by the driver pipeline (`build_service_error`). Build the same
         // shape here.
-        let err =
-            cosmos_service_error(StatusCode::PreconditionFailed, "412 from server", None, &[]);
+        let err = cosmos_service_error(
+            StatusCode::PreconditionFailed,
+            "412 from server",
+            None,
+            &[]
+        );
         assert!(is_precondition_failed(&err));
     }
 
@@ -1405,10 +1438,7 @@ mod tests {
             StatusCode::ServiceUnavailable,
         ] {
             let err = cosmos_service_error(status, "non-412 service error", None, &[]);
-            assert!(
-                !is_precondition_failed(&err),
-                "should not match status {status:?}",
-            );
+            assert!(!is_precondition_failed(&err), "should not match status {status:?}");
         }
     }
 
@@ -1416,10 +1446,10 @@ mod tests {
     fn terminal_verification_considers_every_transport_attempt() {
         let mut diagnostics = DiagnosticsContextBuilder::new(
             ActivityId::new_uuid(),
-            Arc::new(DiagnosticsOptions::default()),
+            Arc::new(DiagnosticsOptions::default())
         );
         let endpoint = crate::driver::routing::CosmosEndpoint::global(
-            Url::parse("https://test.documents.azure.com/").unwrap(),
+            Url::parse("https://test.documents.azure.com/").unwrap()
         );
         for request_sent in [
             crate::diagnostics::RequestSentStatus::Unknown,
@@ -1431,16 +1461,17 @@ mod tests {
                 crate::diagnostics::TransportSecurity::Secure,
                 crate::diagnostics::TransportKind::Gateway,
                 crate::diagnostics::TransportHttpVersion::Http11,
-                &endpoint,
+                &endpoint
             );
             diagnostics.fail_transport_request(
                 handle,
                 "transport failed",
                 request_sent,
-                CosmosStatus::TRANSPORT_IO_FAILED,
+                CosmosStatus::TRANSPORT_IO_FAILED
             );
         }
-        let error = crate::error::CosmosError::builder()
+        let error = crate::error::CosmosError
+            ::builder()
             .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
             .with_diagnostics(Arc::new(diagnostics.complete()))
             .build();
@@ -1453,9 +1484,9 @@ mod tests {
         use crate::error::CosmosError;
         let errs = [
             CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::new(
-                    azure_core::http::StatusCode::BadRequest,
-                ))
+                .with_status(
+                    crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                )
                 .with_message("synthetic")
                 .build(),
             CosmosError::builder()
@@ -1465,11 +1496,7 @@ mod tests {
                 .build(),
         ];
         for err in &errs {
-            assert!(
-                !is_precondition_failed(err),
-                "should not match {:?}",
-                err.status()
-            );
+            assert!(!is_precondition_failed(err), "should not match {:?}", err.status());
         }
     }
 
@@ -1482,13 +1509,11 @@ mod tests {
         let item_ref = test_item_ref();
         let ops = vec![PatchOperation::move_value("/pk", "/somewhere_else")];
 
-        let err = validate_partition_key_paths(&ops, &item_ref)
-            .expect_err("MoveOp from /pk on a /pk PK must be rejected");
-        let msg = format!("{err}").to_ascii_lowercase();
-        assert!(
-            msg.contains("partition key"),
-            "error should mention partition key; got: {err}"
+        let err = validate_partition_key_paths(&ops, &item_ref).expect_err(
+            "MoveOp from /pk on a /pk PK must be rejected"
         );
+        let msg = format!("{err}").to_ascii_lowercase();
+        assert!(msg.contains("partition key"), "error should mention partition key; got: {err}");
     }
 
     #[test]
@@ -1496,10 +1521,9 @@ mod tests {
         // Same as the flat test but exercises one path of a MultiHash PK
         // (`/tenant`, `/region`, `/user`). A move out of `/tenant` would
         // erase a component of the hierarchical partition key.
-        let pk_def: PartitionKeyDefinition = serde_json::from_str(
-            r#"{"paths":["/tenant","/region","/user"],"kind":"MultiHash","version":2}"#,
-        )
-        .unwrap();
+        let pk_def: PartitionKeyDefinition = serde_json
+            ::from_str(r#"{"paths":["/tenant","/region","/user"],"kind":"MultiHash","version":2}"#)
+            .unwrap();
         let props = ContainerProperties {
             id: "multi_hash_container".into(),
             partition_key: pk_def,
@@ -1511,20 +1535,21 @@ mod tests {
             "testdb_rid",
             "multi_hash_container",
             "multi_hash_container_rid",
-            &props,
+            &props
         );
-        let item_ref =
-            ItemReference::from_name(&container, PartitionKey::from(("t1", "r1", "u1")), "doc1");
+        let item_ref = ItemReference::from_name(
+            &container,
+            PartitionKey::from(("t1", "r1", "u1")),
+            "doc1"
+        );
 
         let ops = vec![PatchOperation::move_value("/tenant", "/somewhere_else")];
 
-        let err = validate_partition_key_paths(&ops, &item_ref)
-            .expect_err("MoveOp from /tenant on a hierarchical PK must be rejected");
-        let msg = format!("{err}").to_ascii_lowercase();
-        assert!(
-            msg.contains("partition key"),
-            "error should mention partition key; got: {err}"
+        let err = validate_partition_key_paths(&ops, &item_ref).expect_err(
+            "MoveOp from /tenant on a hierarchical PK must be rejected"
         );
+        let msg = format!("{err}").to_ascii_lowercase();
+        assert!(msg.contains("partition key"), "error should mention partition key; got: {err}");
     }
 
     #[test]
@@ -1541,12 +1566,13 @@ mod tests {
                 "testdb_rid",
                 "tracking_pk_container",
                 "tracking_pk_container_rid",
-                &props,
+                &props
             );
             let item_ref = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
 
-            let err = validate_tracking_partition_key_paths(&item_ref)
-                .expect_err("tracking and partition-key paths must not overlap");
+            let err = validate_tracking_partition_key_paths(&item_ref).expect_err(
+                "tracking and partition-key paths must not overlap"
+            );
 
             assert_eq!(err.status().status_code(), StatusCode::BadRequest);
             assert!(err.to_string().contains("reserved tracking path"));
@@ -1567,15 +1593,9 @@ mod tests {
             StatusCode::PreconditionFailed,
             "ETag mismatch from server",
             None,
-            b"server-body",
+            b"server-body"
         );
-        let err = exhaustion_error(
-            7,
-            Some(underlying),
-            &[],
-            Some(Arc::from("patch_item")),
-            None,
-        );
+        let err = exhaustion_error(7, Some(underlying), &[], Some(Arc::from("patch_item")), None);
 
         // (a) Shape.
         assert_eq!(
@@ -1587,13 +1607,10 @@ mod tests {
         // (b) Message carries the attempts count and the underlying detail
         //     (with_context prefixes the attempts message onto the source).
         let msg = format!("{err}");
+        assert!(msg.contains("7"), "exhaustion message should mention the attempts count: {msg}");
         assert!(
-            msg.contains("7"),
-            "exhaustion message should mention the attempts count: {msg}"
-        );
-        assert!(
-            msg.to_ascii_lowercase().contains("etag")
-                || msg.to_ascii_lowercase().contains("conflict"),
+            msg.to_ascii_lowercase().contains("etag") ||
+                msg.to_ascii_lowercase().contains("conflict"),
             "exhaustion message should mention ETag conflict: {msg}"
         );
         assert!(
@@ -1602,9 +1619,11 @@ mod tests {
         );
         // (c) Typed payload from the underlying 412 is preserved verbatim.
         assert_eq!(
-            err.wire_payload().and_then(|p| match p.body() {
-                crate::models::ResponseBody::Bytes(b) => Some(b.as_ref()),
-                _ => None,
+            err.wire_payload().and_then(|p| {
+                match p.body() {
+                    crate::models::ResponseBody::Bytes(b) => Some(b.as_ref()),
+                    _ => None,
+                }
             }),
             Some(b"server-body".as_slice())
         );
@@ -1645,21 +1664,17 @@ mod tests {
             StatusCode::PreconditionFailed,
             "ETag mismatch from server",
             Some("0:1#42"),
-            b"{\"code\":\"PreconditionFailed\",\"message\":\"server: stale etag\"}",
+            b"{\"code\":\"PreconditionFailed\",\"message\":\"server: stale etag\"}"
         );
-        let err = exhaustion_error(
-            4,
-            Some(underlying),
-            &[],
-            Some(Arc::from("patch_item")),
-            None,
-        );
+        let err = exhaustion_error(4, Some(underlying), &[], Some(Arc::from("patch_item")), None);
 
         assert_eq!(err.status().status_code(), StatusCode::PreconditionFailed);
         assert_eq!(
-            err.wire_payload().and_then(|p| match p.body() {
-                crate::models::ResponseBody::Bytes(b) => Some(b.as_ref()),
-                _ => None,
+            err.wire_payload().and_then(|p| {
+                match p.body() {
+                    crate::models::ResponseBody::Bytes(b) => Some(b.as_ref()),
+                    _ => None,
+                }
             }),
             Some(
                 b"{\"code\":\"PreconditionFailed\",\"message\":\"server: stale etag\"}".as_slice()
@@ -1667,7 +1682,8 @@ mod tests {
             "exhaustion error must forward the wrapped 412's response body verbatim"
         );
         assert_eq!(
-            err.wire_payload()
+            err
+                .wire_payload()
                 .map(|p| p.headers())
                 .and_then(|h| h.session_token.as_ref())
                 .map(|t| t.0.as_ref()),
@@ -1688,7 +1704,7 @@ mod tests {
             StatusCode::PreconditionFailed,
             "ETag mismatch from server",
             None,
-            b"server-body",
+            b"server-body"
         );
         // Four synthetic per-attempt contexts standing in for what the
         // RMW loop accumulates. Each one carries a real (completed)
@@ -1698,7 +1714,7 @@ mod tests {
             .map(|_| {
                 let mut builder = DiagnosticsContextBuilder::new(
                     crate::models::ActivityId::new_uuid(),
-                    Arc::new(crate::options::DiagnosticsOptions::default()),
+                    Arc::new(crate::options::DiagnosticsOptions::default())
                 );
                 let handle = builder.start_request(
                     crate::diagnostics::ExecutionContext::Initial,
@@ -1707,8 +1723,8 @@ mod tests {
                     crate::diagnostics::TransportKind::Gateway,
                     crate::diagnostics::TransportHttpVersion::Http11,
                     &crate::driver::routing::CosmosEndpoint::global(
-                        url::Url::parse("https://test.documents.azure.com/").unwrap(),
-                    ),
+                        url::Url::parse("https://test.documents.azure.com/").unwrap()
+                    )
                 );
                 builder.complete_request(handle, StatusCode::PreconditionFailed, None);
                 Arc::new(builder.complete())
@@ -1719,7 +1735,7 @@ mod tests {
             Some(underlying),
             &attempt_diags,
             Some(Arc::from("patch_item")),
-            None,
+            None
         );
 
         let diag = err
@@ -1728,19 +1744,19 @@ mod tests {
         assert_eq!(
             diag.request_count(),
             4,
-            "aggregated diagnostics must concatenate every per-attempt RequestDiagnostics",
+            "aggregated diagnostics must concatenate every per-attempt RequestDiagnostics"
         );
         assert_eq!(
             diag.operation_name(),
             Some("patch_item"),
-            "aggregated PATCH diagnostics must carry the virtual operation's own name",
+            "aggregated PATCH diagnostics must carry the virtual operation's own name"
         );
         // And critically, the attached diagnostics must be distinct from
         // every input Arc — the aggregator returns a fresh context.
         for input in &attempt_diags {
             assert!(
                 !Arc::ptr_eq(&diag, input),
-                "exhaustion error must surface the aggregated context, not any input Arc",
+                "exhaustion error must surface the aggregated context, not any input Arc"
             );
         }
     }
@@ -1754,10 +1770,10 @@ mod tests {
     // guard (rather than before) will fail loudly here — without needing a
     // live emulator.
 
-    use crate::diagnostics::{DiagnosticsContextBuilder, RequestEventType};
-    use crate::models::{ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge};
-    use crate::options::{BinaryEncodingOptions, DiagnosticsOptions};
-    use std::sync::{Arc, Mutex};
+    use crate::diagnostics::{ DiagnosticsContextBuilder, RequestEventType };
+    use crate::models::{ ActivityId, CosmosResponseHeaders, CosmosStatus, RequestCharge };
+    use crate::options::{ BinaryEncodingOptions, DiagnosticsOptions };
+    use std::sync::{ Arc, Mutex };
 
     /// A pre-baked response a [`ScriptedDispatcher`] returns for a single
     /// sub-operation. `Ok` becomes a [`CosmosResponse`]; `Err` is returned
@@ -1839,45 +1855,46 @@ mod tests {
         async fn execute_operation(
             &self,
             operation: CosmosOperation,
-            options: OperationOptions,
+            options: OperationOptions
         ) -> crate::error::Result<CosmosResponse> {
             let operation_type = operation.operation_type();
             let if_match = match operation.precondition() {
                 Some(Precondition::IfMatch(tag)) => Some(tag.as_ref().to_string()),
                 _ => None,
             };
-            self.calls.lock().unwrap().push(DispatchedCall {
-                op_type: operation_type,
-                if_match_etag: if_match,
-                session_token: operation.request_headers().session_token.clone(),
-                body: operation.body().map(<[u8]>::to_vec),
-                read_consistency_strategy: options.read_consistency_strategy,
-                content_response_on_write: options.content_response_on_write,
-                prefers_write_endpoints_for_read: operation.prefers_write_endpoints_for_read(),
-                suppresses_hedging: operation.suppresses_hedging(),
-                absolute_deadline: operation.absolute_deadline(),
-            });
+            self.calls
+                .lock()
+                .unwrap()
+                .push(DispatchedCall {
+                    op_type: operation_type,
+                    if_match_etag: if_match,
+                    session_token: operation.request_headers().session_token.clone(),
+                    body: operation.body().map(<[u8]>::to_vec),
+                    read_consistency_strategy: options.read_consistency_strategy,
+                    content_response_on_write: options.content_response_on_write,
+                    prefers_write_endpoints_for_read: operation.prefers_write_endpoints_for_read(),
+                    suppresses_hedging: operation.suppresses_hedging(),
+                    absolute_deadline: operation.absolute_deadline(),
+                });
 
-            let reply =
-                self.script.lock().unwrap().drain(..1).next().expect(
-                    "ScriptedDispatcher exhausted: PATCH loop made more sub-ops than scripted",
-                );
+            let reply = self.script
+                .lock()
+                .unwrap()
+                .drain(..1)
+                .next()
+                .expect("ScriptedDispatcher exhausted: PATCH loop made more sub-ops than scripted");
 
             match reply {
                 ScriptedReply::Err(e) => Err(e),
-                ScriptedReply::Ok {
-                    body,
-                    etag,
-                    session_token,
-                    status,
-                } => scripted_response(
-                    body,
-                    etag,
-                    session_token,
-                    status,
-                    false,
-                    operation_type == OperationType::Read,
-                ),
+                ScriptedReply::Ok { body, etag, session_token, status } =>
+                    scripted_response(
+                        body,
+                        etag,
+                        session_token,
+                        status,
+                        false,
+                        operation_type == OperationType::Read
+                    ),
                 ScriptedReply::OkWithRoutingFallback { body, etag, status } => {
                     scripted_response(body, etag, None, status, true, true)
                 }
@@ -1891,19 +1908,20 @@ mod tests {
         session_token: Option<&'static str>,
         status: StatusCode,
         routing_fallback: bool,
-        inject_document_timestamp: bool,
+        inject_document_timestamp: bool
     ) -> crate::error::Result<CosmosResponse> {
-        let body = match (
-            inject_document_timestamp,
-            serde_json::from_slice::<serde_json::Value>(&body),
-        ) {
+        let body = match
+            (inject_document_timestamp, serde_json::from_slice::<serde_json::Value>(&body))
+        {
             (true, Ok(mut value)) => {
                 if let Some(object) = value.as_object_mut() {
-                    object.entry("_ts").or_insert_with(|| {
-                        serde_json::Value::from(
-                            time::OffsetDateTime::now_utc().unix_timestamp().max(0),
-                        )
-                    });
+                    object
+                        .entry("_ts")
+                        .or_insert_with(|| {
+                            serde_json::Value::from(
+                                time::OffsetDateTime::now_utc().unix_timestamp().max(0)
+                            )
+                        });
                     serde_json::to_vec(&value).expect("scripted response body must serialize")
                 } else {
                     body
@@ -1921,11 +1939,11 @@ mod tests {
         headers.request_charge = Some(RequestCharge::new(1.0));
         let mut diagnostics = DiagnosticsContextBuilder::new(
             ActivityId::new_uuid(),
-            Arc::new(DiagnosticsOptions::default()),
+            Arc::new(DiagnosticsOptions::default())
         );
         if routing_fallback {
             let endpoint = crate::driver::routing::CosmosEndpoint::global(
-                Url::parse("https://fallback.documents.azure.com/").unwrap(),
+                Url::parse("https://fallback.documents.azure.com/").unwrap()
             );
             let handle = diagnostics.start_request(
                 crate::diagnostics::ExecutionContext::Initial,
@@ -1933,21 +1951,22 @@ mod tests {
                 crate::diagnostics::TransportSecurity::Secure,
                 crate::diagnostics::TransportKind::Gateway,
                 crate::diagnostics::TransportHttpVersion::Http11,
-                &endpoint,
+                &endpoint
             );
             diagnostics.add_event(
                 handle,
-                crate::diagnostics::RequestEvent::new(RequestEventType::RoutingFallback),
+                crate::diagnostics::RequestEvent::new(RequestEventType::RoutingFallback)
             );
             diagnostics.complete_request(handle, status, None);
         }
-        Ok(from_local_body_and_driver_headers(
-            body,
-            headers,
-            CosmosStatus::from_parts(status, None),
-            Arc::new(diagnostics.complete()),
+        Ok(
+            from_local_body_and_driver_headers(
+                body,
+                headers,
+                CosmosStatus::from_parts(status, None),
+                Arc::new(diagnostics.complete())
+            ).with_routing_fallback(routing_fallback)
         )
-        .with_routing_fallback(routing_fallback))
     }
 
     /// Builds a real cosmos `CosmosError::service_from_parts` for a non-2xx HTTP
@@ -1966,7 +1985,7 @@ mod tests {
         status: StatusCode,
         msg: &'static str,
         session_token: Option<&'static str>,
-        body: &[u8],
+        body: &[u8]
     ) -> crate::error::CosmosError {
         let mut headers = CosmosResponseHeaders::new();
         if let Some(token) = session_token {
@@ -1982,19 +2001,18 @@ mod tests {
         // they re-decorate the error (notably `exhaustion_error`,
         // which graft-overrides diagnostics on a Wire base).
         let diagnostics = Arc::new(
-            crate::diagnostics::DiagnosticsContextBuilder::new(
-                crate::models::ActivityId::new_uuid(),
-                Arc::new(crate::options::DiagnosticsOptions::default()),
-            )
-            .complete(),
+            crate::diagnostics::DiagnosticsContextBuilder
+                ::new(
+                    crate::models::ActivityId::new_uuid(),
+                    Arc::new(crate::options::DiagnosticsOptions::default())
+                )
+                .complete()
         );
-        crate::error::CosmosError::builder()
+        crate::error::CosmosError
+            ::builder()
             .with_status(CosmosStatus::new(status))
             .with_message(msg)
-            .with_response_parts(crate::models::CosmosResponsePayload::new(
-                body.to_vec(),
-                headers,
-            ))
+            .with_response_parts(crate::models::CosmosResponsePayload::new(body.to_vec(), headers))
             .with_diagnostics(diagnostics)
             .build()
     }
@@ -2007,10 +2025,7 @@ mod tests {
     /// Builds the canonical (`/pk`, `pk1`, `doc1`) PATCH operation used by
     /// all of these tests — `+1` on `/visits`.
     fn canonical_patch_op() -> CosmosOperation {
-        patch_op_for(
-            test_item_ref(),
-            vec![PatchOperation::increment("/visits", 1i64)],
-        )
+        patch_op_for(test_item_ref(), vec![PatchOperation::increment("/visits", 1i64)])
     }
 
     fn tracking_id(value: u128) -> crate::models::PatchTrackingId {
@@ -2026,7 +2041,8 @@ mod tests {
     }
 
     fn dispatched_body(call: &DispatchedCall) -> serde_json::Value {
-        serde_json::from_slice(call.body.as_deref().expect("call must carry a body"))
+        serde_json
+            ::from_slice(call.body.as_deref().expect("call must carry a body"))
             .expect("dispatched body must be JSON")
     }
 
@@ -2035,18 +2051,15 @@ mod tests {
             .as_array()
             .expect("tracking property must be an array")
             .iter()
-            .map(|entry| {
-                entry["trackingId"]
-                    .as_str()
-                    .expect("trackingId must be a string")
-            })
+            .map(|entry| { entry["trackingId"].as_str().expect("trackingId must be a string") })
             .collect()
     }
 
     #[tokio::test]
     async fn committed_replace_with_lost_response_is_applied_once() {
         let id = tracking_id(1);
-        let committed = serde_json::json!({
+        let committed =
+            serde_json::json!({
             "id": "doc1",
             "pk": "pk1",
             "visits": 1,
@@ -2054,21 +2067,23 @@ mod tests {
                 marker_entry(id, 1)
             ]
         });
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            // Models the retry of a committed Replace returning 412 after the
-            // original response was lost.
-            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost response")),
-            ScriptedReply::ok(
-                serde_json::to_vec(&committed).unwrap(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                // Models the retry of a committed Replace returning 412 after the
+                // original response was lost.
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost response")),
+                ScriptedReply::ok(
+                    serde_json::to_vec(&committed).unwrap(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let response = execute_with_dispatcher(
             &dispatcher,
@@ -2076,10 +2091,8 @@ mod tests {
                 .with_patch_tracking_id(id)
                 .with_precondition(Precondition::if_match(Etag::from("\"v1\""))),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect("marker recognition must precede the now-stale caller If-Match");
+            None
+        ).await.expect("marker recognition must precede the now-stale caller If-Match");
 
         let body: serde_json::Value = response.into_body().into_single().unwrap();
         assert_eq!(body["visits"], 1);
@@ -2094,7 +2107,8 @@ mod tests {
         let id = tracking_id(1);
         let other_id = tracking_id(2);
         let now = time::OffsetDateTime::now_utc().unix_timestamp();
-        let concurrent = serde_json::json!({
+        let concurrent =
+            serde_json::json!({
             "id": "doc1",
             "pk": "pk1",
             "visits": 10,
@@ -2102,48 +2116,43 @@ mod tests {
                 marker_entry(other_id, now)
             ]
         });
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(
-                StatusCode::PreconditionFailed,
-                "concurrent writer",
-            )),
-            ScriptedReply::ok(
-                serde_json::to_vec(&concurrent).unwrap(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::ok(Vec::new(), Some("\"v3\""), StatusCode::Ok),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "concurrent writer")),
+                ScriptedReply::ok(
+                    serde_json::to_vec(&concurrent).unwrap(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::ok(Vec::new(), Some("\"v3\""), StatusCode::Ok)
+            ]
+        );
 
         let response = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op().with_patch_tracking_id(id),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect("marker absence on a write-region read proves a genuine race");
+            None
+        ).await.expect("marker absence on a write-region read proves a genuine race");
 
         let body: serde_json::Value = response.into_body().into_single().unwrap();
         assert_eq!(body["visits"], 11);
         let second_replace = dispatched_body(&dispatcher.calls()[3]);
         assert_eq!(second_replace["visits"], 11);
-        assert_eq!(
-            marker_ids(&second_replace),
-            vec![other_id.to_string(), id.to_string()]
-        );
+        assert_eq!(marker_ids(&second_replace), vec![other_id.to_string(), id.to_string()]);
     }
 
     #[tokio::test]
     async fn cooperating_writer_on_top_does_not_hide_committed_marker() {
         let id = tracking_id(1);
         let other_id = tracking_id(2);
-        let current = serde_json::json!({
+        let current =
+            serde_json::json!({
             "id": "doc1",
             "pk": "pk1",
             "visits": 1,
@@ -2153,28 +2162,28 @@ mod tests {
                 marker_entry(other_id, 2)
             ]
         });
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost response")),
-            ScriptedReply::ok(
-                serde_json::to_vec(&current).unwrap(),
-                Some("\"v3\""),
-                StatusCode::Ok,
-            ),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost response")),
+                ScriptedReply::ok(
+                    serde_json::to_vec(&current).unwrap(),
+                    Some("\"v3\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let response = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op().with_patch_tracking_id(id),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect("our marker must survive a cooperating writer");
+            None
+        ).await.expect("our marker must survive a cooperating writer");
 
         let body: serde_json::Value = response.into_body().into_single().unwrap();
         assert_eq!(body["visits"], 1);
@@ -2184,29 +2193,29 @@ mod tests {
 
     #[tokio::test]
     async fn generated_tracking_id_is_stable_across_rmw_attempts() {
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "race")),
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":10}"#.to_vec(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::ok(Vec::new(), Some("\"v3\""), StatusCode::Ok),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "race")),
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":10}"#.to_vec(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::ok(Vec::new(), Some("\"v3\""), StatusCode::Ok)
+            ]
+        );
 
         let response = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .unwrap();
+            None
+        ).await.unwrap();
 
         let calls = dispatcher.calls();
         let first = marker_ids(&dispatched_body(&calls[1]))[0].to_owned();
@@ -2216,16 +2225,14 @@ mod tests {
             .patch_tracking_id()
             .expect("tracked PATCH response exposes its generated ID");
         assert_eq!(effective_id.to_string(), first);
-        assert_eq!(
-            response.diagnostics().patch_tracking_id(),
-            Some(effective_id)
-        );
-        let diagnostics_json: serde_json::Value = serde_json::from_str(
-            response
-                .diagnostics()
-                .to_json_string(Some(crate::options::DiagnosticsVerbosity::Detailed)),
-        )
-        .unwrap();
+        assert_eq!(response.diagnostics().patch_tracking_id(), Some(effective_id));
+        let diagnostics_json: serde_json::Value = serde_json
+            ::from_str(
+                response
+                    .diagnostics()
+                    .to_json_string(Some(crate::options::DiagnosticsVerbosity::Detailed))
+            )
+            .unwrap();
         assert_eq!(diagnostics_json["patch_tracking_id"], first);
     }
 
@@ -2233,7 +2240,8 @@ mod tests {
     async fn full_unexpired_marker_list_evicts_oldest_before_replace() {
         let id = tracking_id(3);
         let now = time::OffsetDateTime::now_utc().unix_timestamp();
-        let document = serde_json::json!({
+        let document =
+            serde_json::json!({
             "id": "doc1",
             "pk": "pk1",
             "visits": 0,
@@ -2242,14 +2250,16 @@ mod tests {
                 marker_entry(tracking_id(2), now)
             ]
         });
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                serde_json::to_vec(&document).unwrap(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    serde_json::to_vec(&document).unwrap(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok)
+            ]
+        );
 
         execute_with_dispatcher(
             &dispatcher,
@@ -2257,10 +2267,8 @@ mod tests {
                 .with_patch_tracking_id(id)
                 .with_patch_tracking_capacity(std::num::NonZeroU16::new(2).unwrap()),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect("capacity pressure must evict the oldest marker");
+            None
+        ).await.expect("capacity pressure must evict the oldest marker");
 
         let calls = dispatcher.calls();
         assert_eq!(calls.len(), 2);
@@ -2272,24 +2280,25 @@ mod tests {
 
     #[tokio::test]
     async fn custom_tracking_retention_is_persisted_on_marker() {
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok)
+            ]
+        );
 
         execute_with_dispatcher(
             &dispatcher,
-            canonical_patch_op()
-                .with_patch_tracking_retention_seconds(std::num::NonZeroU32::new(17).unwrap()),
+            canonical_patch_op().with_patch_tracking_retention_seconds(
+                std::num::NonZeroU32::new(17).unwrap()
+            ),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect("PATCH with custom marker retention succeeds");
+            None
+        ).await.expect("PATCH with custom marker retention succeeds");
 
         let replace = dispatched_body(&dispatcher.calls()[1]);
         assert_eq!(
@@ -2301,51 +2310,59 @@ mod tests {
 
     #[tokio::test]
     async fn retry_safe_patch_does_not_write_tracking_property() {
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","name":"before"}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","name":"before"}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok)
+            ]
+        );
         let operation = patch_op_for(
             test_item_ref(),
-            vec![PatchOperation::set("/name", serde_json::json!("after"))],
+            vec![PatchOperation::set("/name", serde_json::json!("after"))]
         );
 
-        execute_with_dispatcher(&dispatcher, operation, OperationOptions::default(), None)
-            .await
-            .unwrap();
+        execute_with_dispatcher(
+            &dispatcher,
+            operation,
+            OperationOptions::default(),
+            None
+        ).await.unwrap();
 
         let replace = dispatched_body(&dispatcher.calls()[1]);
         assert_eq!(replace["name"], "after");
-        assert!(replace
-            .get(crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY)
-            .is_none());
+        assert!(
+            replace.get(crate::driver::pipeline::patch_tracking::PATCH_TRACKING_PROPERTY).is_none()
+        );
     }
 
     #[tokio::test]
     async fn caller_supplied_id_tracks_retry_safe_patch() {
         let tracking_id = tracking_id(1);
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","name":"before"}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","name":"before"}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok)
+            ]
+        );
         let operation = patch_op_for(
             test_item_ref(),
-            vec![PatchOperation::set("/name", serde_json::json!("after"))],
-        )
-        .with_patch_tracking_id(tracking_id);
+            vec![PatchOperation::set("/name", serde_json::json!("after"))]
+        ).with_patch_tracking_id(tracking_id);
 
-        let response =
-            execute_with_dispatcher(&dispatcher, operation, OperationOptions::default(), None)
-                .await
-                .expect("explicit ID opts a retry-safe PATCH into tracking");
+        let response = execute_with_dispatcher(
+            &dispatcher,
+            operation,
+            OperationOptions::default(),
+            None
+        ).await.expect("explicit ID opts a retry-safe PATCH into tracking");
 
         let replace = dispatched_body(&dispatcher.calls()[1]);
         assert_eq!(replace["name"], "after");
@@ -2356,7 +2373,8 @@ mod tests {
     #[tokio::test]
     async fn caller_supplied_id_deduplicates_retry_safe_patch() {
         let tracking_id = tracking_id(1);
-        let document = serde_json::json!({
+        let document =
+            serde_json::json!({
             "id": "doc1",
             "pk": "pk1",
             "name": "after",
@@ -2365,21 +2383,26 @@ mod tests {
                 marker_entry(tracking_id, 10_000)
             ]
         });
-        let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::ok(
-            serde_json::to_vec(&document).unwrap(),
-            Some("\"v2\""),
-            StatusCode::Ok,
-        )]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    serde_json::to_vec(&document).unwrap(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
         let operation = patch_op_for(
             test_item_ref(),
-            vec![PatchOperation::set("/name", serde_json::json!("after"))],
-        )
-        .with_patch_tracking_id(tracking_id);
+            vec![PatchOperation::set("/name", serde_json::json!("after"))]
+        ).with_patch_tracking_id(tracking_id);
 
-        let response =
-            execute_with_dispatcher(&dispatcher, operation, OperationOptions::default(), None)
-                .await
-                .expect("existing explicit marker suppresses an application retry");
+        let response = execute_with_dispatcher(
+            &dispatcher,
+            operation,
+            OperationOptions::default(),
+            None
+        ).await.expect("existing explicit marker suppresses an application retry");
 
         assert_eq!(dispatcher.calls().len(), 1);
         assert_eq!(response.patch_tracking_id(), Some(tracking_id));
@@ -2388,24 +2411,27 @@ mod tests {
     #[tokio::test]
     async fn fallback_read_requires_positive_marker_proof() {
         let id = tracking_id(1);
-        let missing = ScriptedDispatcher::new(vec![ScriptedReply::fallback(
-            br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-            Some("\"v1\""),
-            StatusCode::Ok,
-        )]);
+        let missing = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::fallback(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let error = execute_with_dispatcher(
             &missing,
             canonical_patch_op().with_patch_tracking_id(id),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect_err("marker absence on degraded routing is inconclusive");
+            None
+        ).await.expect_err("marker absence on degraded routing is inconclusive");
         assert_eq!(error.status().status_code(), StatusCode::ServiceUnavailable);
         assert_eq!(missing.calls().len(), 1);
 
-        let present_document = serde_json::json!({
+        let present_document =
+            serde_json::json!({
             "id": "doc1",
             "pk": "pk1",
             "visits": 1,
@@ -2413,20 +2439,22 @@ mod tests {
                 marker_entry(id, 1)
             ]
         });
-        let present = ScriptedDispatcher::new(vec![ScriptedReply::fallback(
-            serde_json::to_vec(&present_document).unwrap(),
-            Some("\"v2\""),
-            StatusCode::Ok,
-        )]);
+        let present = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::fallback(
+                    serde_json::to_vec(&present_document).unwrap(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let response = execute_with_dispatcher(
             &present,
             canonical_patch_op().with_patch_tracking_id(id),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect("marker presence remains conclusive on degraded routing");
+            None
+        ).await.expect("marker presence remains conclusive on degraded routing");
         let body: serde_json::Value = response.into_body().into_single().unwrap();
         assert_eq!(body["visits"], 1);
         assert_eq!(present.calls().len(), 1);
@@ -2434,23 +2462,23 @@ mod tests {
 
     #[tokio::test]
     async fn fresh_generated_tracking_id_can_start_from_fallback_read() {
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::fallback(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::fallback(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok)
+            ]
+        );
 
         let response = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect("a fresh generated ID cannot have committed before the first read");
+            None
+        ).await.expect("a fresh generated ID cannot have committed before the first read");
 
         let body: serde_json::Value = response.into_body().into_single().unwrap();
         assert_eq!(body["visits"], 1);
@@ -2459,28 +2487,28 @@ mod tests {
 
     #[tokio::test]
     async fn fallback_marker_absence_after_replace_dispatch_remains_inconclusive() {
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "ambiguous")),
-            ScriptedReply::fallback(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "ambiguous")),
+                ScriptedReply::fallback(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let error = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect_err("fallback absence cannot disprove an earlier ambiguous commit");
+            None
+        ).await.expect_err("fallback absence cannot disprove an earlier ambiguous commit");
 
         assert_eq!(error.status().status_code(), StatusCode::ServiceUnavailable);
         assert_eq!(dispatcher.calls().len(), 3);
@@ -2493,33 +2521,33 @@ mod tests {
         // caller, and not be silently treated as a success.
         //
         // Script: Read#1 ok -> Replace#1 412 -> Read#2 ok -> Replace#2 ok.
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost the race")),
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":2}"#.to_vec(),
-                Some("\"v3\""),
-                StatusCode::Ok,
-            ),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost the race")),
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":2}"#.to_vec(),
+                    Some("\"v3\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let resp = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect("PATCH must succeed after a single 412 retry");
+            None
+        ).await.expect("PATCH must succeed after a single 412 retry");
 
         // The handler synthesizes the final response from the post-image
         // it computed locally on attempt #2 (visits=1 + 1 = 2).
@@ -2527,11 +2555,7 @@ mod tests {
         assert_eq!(body["visits"], serde_json::json!(2));
 
         let calls = dispatcher.calls();
-        assert_eq!(
-            calls.len(),
-            4,
-            "expected exactly Read,Replace,Read,Replace; got: {calls:?}"
-        );
+        assert_eq!(calls.len(), 4, "expected exactly Read,Replace,Read,Replace; got: {calls:?}");
         assert_eq!(calls[0].op_type, OperationType::Read);
         assert_eq!(
             calls[0].read_consistency_strategy,
@@ -2564,45 +2588,45 @@ mod tests {
         // Gap #1 closure (other half): after `max_attempts` failed Replaces
         // we surface the 412 with the chained source — not a synthetic
         // success.
-        let dispatcher = ScriptedDispatcher::new(vec![
-            // Attempt 1
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "412 #1")),
-            // Attempt 2
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "412 #2")),
-            // Attempt 3
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v3\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "412 #3")),
-            // Final verification does not find the marker, so the original
-            // exhaustion error must still be returned.
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v4\""),
-                StatusCode::Ok,
-            ),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                // Attempt 1
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "412 #1")),
+                // Attempt 2
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "412 #2")),
+                // Attempt 3
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v3\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "412 #3")),
+                // Final verification does not find the marker, so the original
+                // exhaustion error must still be returned.
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v4\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let err = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            Some(NonZeroU8::new(3).unwrap()),
-        )
-        .await
-        .expect_err("PATCH must fail after exhausting attempts");
+            Some(NonZeroU8::new(3).unwrap())
+        ).await.expect_err("PATCH must fail after exhausting attempts");
 
         assert!(
             is_precondition_failed(&err),
@@ -2615,17 +2639,14 @@ mod tests {
         );
         // We exhausted all 3 attempts, then issued one verification-only Read.
         let calls = dispatcher.calls();
-        assert_eq!(
-            calls.len(),
-            7,
-            "expected 3 RMW attempts + verification: {calls:?}"
-        );
+        assert_eq!(calls.len(), 7, "expected 3 RMW attempts + verification: {calls:?}");
     }
 
     #[tokio::test]
     async fn final_412_returns_success_when_verification_finds_marker() {
         let id = tracking_id(1);
-        let committed = serde_json::json!({
+        let committed =
+            serde_json::json!({
             "id": "doc1",
             "pk": "pk1",
             "visits": 1,
@@ -2633,28 +2654,28 @@ mod tests {
                 marker_entry(id, 1)
             ]
         });
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost response")),
-            ScriptedReply::ok(
-                serde_json::to_vec(&committed).unwrap(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost response")),
+                ScriptedReply::ok(
+                    serde_json::to_vec(&committed).unwrap(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let response = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op().with_patch_tracking_id(id),
             OperationOptions::default(),
-            Some(NonZeroU8::new(1).unwrap()),
-        )
-        .await
-        .expect("the final verification read proves the Replace committed");
+            Some(NonZeroU8::new(1).unwrap())
+        ).await.expect("the final verification read proves the Replace committed");
 
         assert_eq!(
             response.headers().request_charge,
@@ -2669,28 +2690,28 @@ mod tests {
     async fn rmw_propagates_non_412_replace_error_immediately() {
         // A 500 / 503 / etc. on the Replace must surface verbatim when a
         // verification-only Read does not find the tracking marker.
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::InternalServerError, "boom")),
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::InternalServerError, "boom")),
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let err = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect_err("non-412 Replace error must abort the loop");
+            None
+        ).await.expect_err("non-412 Replace error must abort the loop");
 
         assert!(
             err.status().status_code() == StatusCode::InternalServerError,
@@ -2701,9 +2722,7 @@ mod tests {
         // must be labeled with the virtual PATCH operation rather than the
         // `replace_item` sub-op that actually failed.
         assert_eq!(
-            err.diagnostics()
-                .as_deref()
-                .and_then(DiagnosticsContext::operation_name),
+            err.diagnostics().as_deref().and_then(DiagnosticsContext::operation_name),
             Some("patch_item"),
             "non-412 Replace failure must carry the PATCH operation identity"
         );
@@ -2711,31 +2730,30 @@ mod tests {
         assert_eq!(dispatcher.calls().len(), 3);
         assert!(err.patch_tracking_id().is_some());
         assert_eq!(
-            err.diagnostics()
-                .and_then(|diagnostics| diagnostics.patch_tracking_id()),
+            err.diagnostics().and_then(|diagnostics| diagnostics.patch_tracking_id()),
             err.patch_tracking_id()
         );
     }
 
     #[tokio::test]
     async fn definitive_replace_rejection_skips_verification() {
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::BadRequest, "rejected")),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::BadRequest, "rejected"))
+            ]
+        );
 
         let error = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect_err("definitive rejection must remain an error");
+            None
+        ).await.expect_err("definitive rejection must remain an error");
 
         assert_eq!(error.status().status_code(), StatusCode::BadRequest);
         assert_eq!(dispatcher.calls().len(), 2);
@@ -2743,28 +2761,28 @@ mod tests {
 
     #[tokio::test]
     async fn malformed_terminal_verification_state_returns_bad_request() {
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::InternalServerError, "ambiguous")),
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","_azsdkPatchTracking":{}}"#.to_vec(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::InternalServerError, "ambiguous")),
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","_azsdkPatchTracking":{}}"#.to_vec(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let error = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect_err("malformed verification state must not be hidden");
+            None
+        ).await.expect_err("malformed verification state must not be hidden");
 
         assert_eq!(error.status().status_code(), StatusCode::BadRequest);
         assert_eq!(dispatcher.calls().len(), 3);
@@ -2773,32 +2791,35 @@ mod tests {
     #[tokio::test]
     async fn timeout_before_verification_exposes_id_for_safe_application_retry() {
         let timeout_error = || {
-            crate::error::CosmosError::builder()
-                .with_status(CosmosStatus::from_parts(
-                    StatusCode::RequestTimeout,
-                    Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT),
-                ))
+            crate::error::CosmosError
+                ::builder()
+                .with_status(
+                    CosmosStatus::from_parts(
+                        StatusCode::RequestTimeout,
+                        Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+                    )
+                )
                 .with_message("end-to-end operation timeout exceeded")
                 .build()
         };
-        let first_dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(timeout_error()),
-            ScriptedReply::Err(timeout_error()),
-        ]);
+        let first_dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(timeout_error()),
+                ScriptedReply::Err(timeout_error())
+            ]
+        );
 
         let error = execute_with_dispatcher(
             &first_dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect_err("timeout before verification leaves an ambiguous result");
+            None
+        ).await.expect_err("timeout before verification leaves an ambiguous result");
 
         assert_eq!(error.status().status_code(), StatusCode::RequestTimeout);
         assert_eq!(
@@ -2810,7 +2831,8 @@ mod tests {
             .expect("ambiguous timeout must expose the generated tracking ID");
         assert_eq!(first_dispatcher.calls().len(), 3);
 
-        let committed = serde_json::json!({
+        let committed =
+            serde_json::json!({
             "id": "doc1",
             "pk": "pk1",
             "visits": 1,
@@ -2818,20 +2840,22 @@ mod tests {
                 marker_entry(effective_id, 1)
             ]
         });
-        let retry_dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::ok(
-            serde_json::to_vec(&committed).unwrap(),
-            Some("\"v2\""),
-            StatusCode::Ok,
-        )]);
+        let retry_dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    serde_json::to_vec(&committed).unwrap(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let response = execute_with_dispatcher(
             &retry_dispatcher,
             canonical_patch_op().with_patch_tracking_id(effective_id),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect("retry with the timeout error's ID must recognize the commit");
+            None
+        ).await.expect("retry with the timeout error's ID must recognize the commit");
 
         let body: serde_json::Value = response.into_body().into_single().unwrap();
         assert_eq!(body["visits"], 1);
@@ -2841,7 +2865,8 @@ mod tests {
     #[tokio::test]
     async fn terminal_replace_error_returns_success_when_verification_finds_marker() {
         let id = tracking_id(1);
-        let committed = serde_json::json!({
+        let committed =
+            serde_json::json!({
             "id": "doc1",
             "pk": "pk1",
             "visits": 1,
@@ -2849,28 +2874,28 @@ mod tests {
                 marker_entry(id, 1)
             ]
         });
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::InternalServerError, "ambiguous")),
-            ScriptedReply::ok(
-                serde_json::to_vec(&committed).unwrap(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::InternalServerError, "ambiguous")),
+                ScriptedReply::ok(
+                    serde_json::to_vec(&committed).unwrap(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let response = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op().with_patch_tracking_id(id),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect("positive marker proof must recover an ambiguous Replace error");
+            None
+        ).await.expect("positive marker proof must recover an ambiguous Replace error");
 
         let body: serde_json::Value = response.into_body().into_single().unwrap();
         assert_eq!(body["visits"], 1);
@@ -2883,19 +2908,16 @@ mod tests {
         // for a non-existent item) propagates to the caller without ever
         // issuing a Replace. The emulator-level analog lives in
         // tests/emulator_tests/driver_patch.rs.
-        let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::Err(http_error(
-            StatusCode::NotFound,
-            "no such item",
-        ))]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![ScriptedReply::Err(http_error(StatusCode::NotFound, "no such item"))]
+        );
 
         let err = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect_err("PATCH on a missing item must fail on the Read");
+            None
+        ).await.expect_err("PATCH on a missing item must fail on the Read");
 
         assert!(
             err.status().status_code() == StatusCode::NotFound,
@@ -2906,9 +2928,7 @@ mod tests {
         // re-labeled with the virtual PATCH operation's name so a failed PATCH
         // is never reported as a `read_item`.
         assert_eq!(
-            err.diagnostics()
-                .as_deref()
-                .and_then(DiagnosticsContext::operation_name),
+            err.diagnostics().as_deref().and_then(DiagnosticsContext::operation_name),
             Some("patch_item"),
             "Read failure must carry the PATCH operation identity"
         );
@@ -2923,20 +2943,16 @@ mod tests {
         // The Read response without an ETag is unrecoverable — we cannot
         // construct an If-Match precondition. Verify the handler aborts
         // *before* issuing a Replace.
-        let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::ok(
-            br#"{"id":"doc1","pk":"pk1"}"#.to_vec(),
-            None,
-            StatusCode::Ok,
-        )]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![ScriptedReply::ok(br#"{"id":"doc1","pk":"pk1"}"#.to_vec(), None, StatusCode::Ok)]
+        );
 
         let _err = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect_err("missing ETag on Read must fail PATCH");
+            None
+        ).await.expect_err("missing ETag on Read must fail PATCH");
         let calls = dispatcher.calls();
         assert_eq!(calls.len(), 1, "no Replace must be issued without an ETag");
         assert_eq!(calls[0].op_type, OperationType::Read);
@@ -2951,24 +2967,24 @@ mod tests {
         let failure_diagnostics = read_failure
             .diagnostics()
             .expect("fixture error carries diagnostics");
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "etag conflict")),
-            ScriptedReply::Err(read_failure),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "etag conflict")),
+                ScriptedReply::Err(read_failure)
+            ]
+        );
 
         let err = execute_with_dispatcher(
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            NonZeroU8::new(3),
-        )
-        .await
-        .expect_err("Read failure on retry must abort the loop");
+            NonZeroU8::new(3)
+        ).await.expect_err("Read failure on retry must abort the loop");
 
         assert_eq!(err.status().status_code(), StatusCode::ServiceUnavailable);
         let diagnostics = err.diagnostics().expect("error must carry diagnostics");
@@ -2991,17 +3007,18 @@ mod tests {
         // SET on `/pk` directly — this is a PK mutation; guard must reject.
         let op = patch_op_for(
             test_item_ref(),
-            vec![PatchOperation::set("/pk", serde_json::json!("evicted"))],
+            vec![PatchOperation::set("/pk", serde_json::json!("evicted"))]
         );
 
-        let err = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
-            .await
-            .expect_err("PK-mutating PATCH must be rejected by the guard");
+        let err = execute_with_dispatcher(
+            &dispatcher,
+            op,
+            OperationOptions::default(),
+            None
+        ).await.expect_err("PK-mutating PATCH must be rejected by the guard");
 
         assert!(
-            format!("{err}")
-                .to_ascii_lowercase()
-                .contains("partition key"),
+            format!("{err}").to_ascii_lowercase().contains("partition key"),
             "error must mention the partition key; got: {err}"
         );
         // The script was empty: any sub-op dispatch would have panicked
@@ -3021,9 +3038,12 @@ mod tests {
         let dispatcher = ScriptedDispatcher::new(vec![]);
         let op = patch_op_for(test_item_ref(), vec![]);
 
-        let err = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
-            .await
-            .expect_err("PATCH with no ops must be rejected");
+        let err = execute_with_dispatcher(
+            &dispatcher,
+            op,
+            OperationOptions::default(),
+            None
+        ).await.expect_err("PATCH with no ops must be rejected");
 
         let msg = format!("{err}").to_ascii_lowercase();
         assert!(
@@ -3038,41 +3058,41 @@ mod tests {
         let dispatcher = ScriptedDispatcher::new(vec![]);
         let operation = CosmosOperation::patch_item(test_item_ref()).with_body(b"{".to_vec());
 
-        let error =
-            execute_with_dispatcher(&dispatcher, operation, OperationOptions::default(), None)
-                .await
-                .expect_err("malformed PATCH input must fail before I/O");
+        let error = execute_with_dispatcher(
+            &dispatcher,
+            operation,
+            OperationOptions::default(),
+            None
+        ).await.expect_err("malformed PATCH input must fail before I/O");
 
-        assert_eq!(
-            error.status(),
-            CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID
-        );
+        assert_eq!(error.status(), CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID);
         assert!(dispatcher.calls().is_empty());
     }
 
     #[tokio::test]
     async fn matching_caller_precondition_uses_read_etag_for_replace() {
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
         let op = patch_op_for(
             test_item_ref(),
-            vec![PatchOperation::increment("/visits", 1i64)],
-        )
-        .with_precondition(Precondition::if_match(Etag::from("\"v1\"")));
+            vec![PatchOperation::increment("/visits", 1i64)]
+        ).with_precondition(Precondition::if_match(Etag::from("\"v1\"")));
 
-        execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
-            .await
-            .expect("matching caller If-Match must allow the PATCH");
+        execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None).await.expect(
+            "matching caller If-Match must allow the PATCH"
+        );
 
         let calls = dispatcher.calls();
         assert_eq!(calls.len(), 2);
@@ -3083,20 +3103,26 @@ mod tests {
 
     #[tokio::test]
     async fn mismatching_caller_if_match_fails_after_read() {
-        let dispatcher = ScriptedDispatcher::new(vec![ScriptedReply::ok(
-            br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-            Some("\"v1\""),
-            StatusCode::Ok,
-        )]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
         let op = patch_op_for(
             test_item_ref(),
-            vec![PatchOperation::increment("/visits", 1i64)],
-        )
-        .with_precondition(Precondition::if_match(Etag::from("\"other\"")));
+            vec![PatchOperation::increment("/visits", 1i64)]
+        ).with_precondition(Precondition::if_match(Etag::from("\"other\"")));
 
-        let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
-            .await
-            .expect_err("a failed caller If-Match must stop before Replace");
+        let error = execute_with_dispatcher(
+            &dispatcher,
+            op,
+            OperationOptions::default(),
+            None
+        ).await.expect_err("a failed caller If-Match must stop before Replace");
 
         assert_eq!(error.status().status_code(), StatusCode::PreconditionFailed);
         assert_eq!(dispatcher.calls().len(), 1);
@@ -3108,45 +3134,46 @@ mod tests {
         let dispatcher = ScriptedDispatcher::new(vec![]);
         let op = patch_op_for(
             test_item_ref(),
-            vec![PatchOperation::increment("/visits", 1i64)],
-        )
-        .with_precondition(Precondition::if_none_match(Etag::from("\"v1\"")));
+            vec![PatchOperation::increment("/visits", 1i64)]
+        ).with_precondition(Precondition::if_none_match(Etag::from("\"v1\"")));
 
-        let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
-            .await
-            .expect_err("PATCH If-None-Match must be rejected before I/O");
+        let error = execute_with_dispatcher(
+            &dispatcher,
+            op,
+            OperationOptions::default(),
+            None
+        ).await.expect_err("PATCH If-None-Match must be rejected before I/O");
 
-        assert_eq!(
-            error.status(),
-            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
-        );
+        assert_eq!(error.status(), crate::error::CosmosStatus::CLIENT_BAD_REQUEST);
         assert!(dispatcher.calls().is_empty());
     }
 
     #[tokio::test]
     async fn caller_if_match_is_reevaluated_after_replace_race() {
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "race")),
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":4}"#.to_vec(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-        ]);
-        let op = patch_op_for(
-            test_item_ref(),
-            vec![PatchOperation::increment("/visits", 1i64)],
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "race")),
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":4}"#.to_vec(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                )
+            ]
         );
+        let op = patch_op_for(test_item_ref(), vec![PatchOperation::increment("/visits", 1i64)]);
         let op = op.with_precondition(Precondition::if_match(Etag::from("\"v1\"")));
 
-        let error = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
-            .await
-            .expect_err("the caller If-Match must fail after a concurrent update");
+        let error = execute_with_dispatcher(
+            &dispatcher,
+            op,
+            OperationOptions::default(),
+            None
+        ).await.expect_err("the caller If-Match must fail after a concurrent update");
 
         assert_eq!(error.status().status_code(), StatusCode::PreconditionFailed);
         assert_eq!(
@@ -3155,11 +3182,7 @@ mod tests {
                 .iter()
                 .map(|call| call.op_type)
                 .collect::<Vec<_>>(),
-            vec![
-                OperationType::Read,
-                OperationType::Replace,
-                OperationType::Read
-            ],
+            vec![OperationType::Read, OperationType::Replace, OperationType::Read],
             "the changed ETag must stop the retry before a second Replace"
         );
     }
@@ -3172,29 +3195,31 @@ mod tests {
         //
         // LatestCommitted Read token behavior and Read-response→Replace
         // token wiring are covered by the per-builder and multi-attempt tests.
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
-                Some("\"v2\""),
-                StatusCode::Ok,
-            ),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                    Some("\"v2\""),
+                    StatusCode::Ok
+                )
+            ]
+        );
 
         let caller_token = SessionToken(Cow::Owned("0:1#7".into()));
         let op = canonical_patch_op().with_session_token(caller_token.clone());
 
         let mut options = OperationOptions::default();
         options.end_to_end_latency_policy = Some(
-            crate::options::EndToEndOperationLatencyPolicy::new(std::time::Duration::from_secs(2)),
+            crate::options::EndToEndOperationLatencyPolicy::new(std::time::Duration::from_secs(2))
         );
-        let _resp = execute_with_dispatcher(&dispatcher, op, options, None)
-            .await
-            .expect("PATCH should succeed");
+        let _resp = execute_with_dispatcher(&dispatcher, op, options, None).await.expect(
+            "PATCH should succeed"
+        );
 
         let calls = dispatcher.calls();
         assert_eq!(calls.len(), 2);
@@ -3213,36 +3238,41 @@ mod tests {
         // an external session. Production writer routing strips it before
         // transport because LatestCommitted is not session-effective. Each
         // Replace still uses the token from its own Read response.
-        let dispatcher = ScriptedDispatcher::new(vec![
-            // Attempt 1
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
-                etag: Some("\"v1\""),
-                session_token: Some("0:1#100"),
-                status: StatusCode::Ok,
-            },
-            ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost the race")),
-            // Attempt 2
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
-                etag: Some("\"v2\""),
-                session_token: Some("0:1#200"),
-                status: StatusCode::Ok,
-            },
-            ScriptedReply::Ok {
-                body: br#"{"id":"doc1","pk":"pk1","visits":2}"#.to_vec(),
-                etag: Some("\"v3\""),
-                session_token: Some("0:1#201"),
-                status: StatusCode::Ok,
-            },
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                // Attempt 1
+                ScriptedReply::Ok {
+                    body: br#"{"id":"doc1","pk":"pk1","visits":0}"#.to_vec(),
+                    etag: Some("\"v1\""),
+                    session_token: Some("0:1#100"),
+                    status: StatusCode::Ok,
+                },
+                ScriptedReply::Err(http_error(StatusCode::PreconditionFailed, "lost the race")),
+                // Attempt 2
+                ScriptedReply::Ok {
+                    body: br#"{"id":"doc1","pk":"pk1","visits":1}"#.to_vec(),
+                    etag: Some("\"v2\""),
+                    session_token: Some("0:1#200"),
+                    status: StatusCode::Ok,
+                },
+                ScriptedReply::Ok {
+                    body: br#"{"id":"doc1","pk":"pk1","visits":2}"#.to_vec(),
+                    etag: Some("\"v3\""),
+                    session_token: Some("0:1#201"),
+                    status: StatusCode::Ok,
+                }
+            ]
+        );
 
         let caller_token = SessionToken(Cow::Owned("0:1#1".into()));
         let op = canonical_patch_op().with_session_token(caller_token.clone());
 
-        let _resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
-            .await
-            .expect("PATCH should succeed after one 412 retry");
+        let _resp = execute_with_dispatcher(
+            &dispatcher,
+            op,
+            OperationOptions::default(),
+            None
+        ).await.expect("PATCH should succeed after one 412 retry");
 
         let calls = dispatcher.calls();
         assert_eq!(calls.len(), 4);
@@ -3287,23 +3317,25 @@ mod tests {
         // Script: Read returns body with _etag=\"v1\" + etag header \"v1\";
         // Replace returns an explicitly requested empty body + etag header
         // \"v2\".
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0,"_etag":"\"v1\""}"#.to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0,"_etag":"\"v1\""}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::ok(Vec::new(), Some("\"v2\""), StatusCode::Ok)
+            ]
+        );
 
         let op = canonical_patch_op();
         let options = OperationOptions {
             content_response_on_write: Some(ContentResponseOnWrite::Disabled),
             ..OperationOptions::default()
         };
-        let resp = execute_with_dispatcher(&dispatcher, op, options, None)
-            .await
-            .expect("PATCH should succeed");
+        let resp = execute_with_dispatcher(&dispatcher, op, options, None).await.expect(
+            "PATCH should succeed"
+        );
 
         assert_eq!(
             dispatcher.calls()[1].content_response_on_write,
@@ -3313,7 +3345,10 @@ mod tests {
 
         // Header carries the Replace's new etag (existing behavior).
         assert_eq!(
-            resp.headers().etag.as_ref().map(|t| -> &str { t.as_ref() }),
+            resp
+                .headers()
+                .etag.as_ref()
+                .map(|t| -> &str { t.as_ref() }),
             Some("\"v2\""),
             "response header etag must be the Replace's etag"
         );
@@ -3330,7 +3365,10 @@ mod tests {
             "synthesized body's _etag must be the Replace's, not the Read's"
         );
         // Other patched fields are preserved.
-        assert_eq!(body.get("visits").and_then(|v| v.as_i64()), Some(1));
+        assert_eq!(
+            body.get("visits").and_then(|v| v.as_i64()),
+            Some(1)
+        );
     }
 
     #[tokio::test]
@@ -3342,20 +3380,24 @@ mod tests {
         // rather than its locally-merged version.
         let server_post_image =
             br#"{"id":"doc1","pk":"pk1","visits":1,"_etag":"\"v2\"","_ts":1234567890}"#.to_vec();
-        let dispatcher = ScriptedDispatcher::new(vec![
-            ScriptedReply::ok(
-                br#"{"id":"doc1","pk":"pk1","visits":0,"_etag":"\"v1\"","_ts":1234567000}"#
-                    .to_vec(),
-                Some("\"v1\""),
-                StatusCode::Ok,
-            ),
-            ScriptedReply::ok(server_post_image.clone(), Some("\"v2\""), StatusCode::Ok),
-        ]);
+        let dispatcher = ScriptedDispatcher::new(
+            vec![
+                ScriptedReply::ok(
+                    br#"{"id":"doc1","pk":"pk1","visits":0,"_etag":"\"v1\"","_ts":1234567000}"#.to_vec(),
+                    Some("\"v1\""),
+                    StatusCode::Ok
+                ),
+                ScriptedReply::ok(server_post_image.clone(), Some("\"v2\""), StatusCode::Ok)
+            ]
+        );
 
         let op = canonical_patch_op();
-        let resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
-            .await
-            .expect("PATCH should succeed");
+        let resp = execute_with_dispatcher(
+            &dispatcher,
+            op,
+            OperationOptions::default(),
+            None
+        ).await.expect("PATCH should succeed");
 
         assert_eq!(
             dispatcher.calls()[1].content_response_on_write,
@@ -3363,10 +3405,7 @@ mod tests {
             "default client-side PATCH must request the authoritative Replace post-image"
         );
 
-        let body_bytes = resp
-            .into_body()
-            .single()
-            .expect("body should be a single payload");
+        let body_bytes = resp.into_body().single().expect("body should be a single payload");
         assert_eq!(
             body_bytes.as_ref(),
             server_post_image.as_slice(),
@@ -3399,7 +3438,7 @@ mod tests {
             async fn execute_operation(
                 &self,
                 operation: CosmosOperation,
-                _options: OperationOptions,
+                _options: OperationOptions
             ) -> crate::error::Result<CosmosResponse> {
                 let body = match operation.operation_type() {
                     OperationType::Read => {
@@ -3413,10 +3452,10 @@ mod tests {
                 headers.request_charge = Some(RequestCharge::new(1.0));
                 let mut diagnostics = DiagnosticsContextBuilder::new(
                     ActivityId::new_uuid(),
-                    Arc::new(DiagnosticsOptions::default()),
+                    Arc::new(DiagnosticsOptions::default())
                 );
                 let endpoint = crate::driver::routing::CosmosEndpoint::global(
-                    Url::parse("https://test.documents.azure.com/").unwrap(),
+                    Url::parse("https://test.documents.azure.com/").unwrap()
                 );
                 let handle = diagnostics.start_request(
                     crate::diagnostics::ExecutionContext::Initial,
@@ -3424,20 +3463,19 @@ mod tests {
                     crate::diagnostics::TransportSecurity::Secure,
                     crate::diagnostics::TransportKind::Gateway,
                     crate::diagnostics::TransportHttpVersion::Http11,
-                    &endpoint,
+                    &endpoint
                 );
                 diagnostics.record_response(handle, StatusCode::Ok, &headers);
                 let diagnostics = Arc::new(diagnostics.complete());
-                self.handed_out
-                    .lock()
-                    .unwrap()
-                    .push(Arc::clone(&diagnostics));
-                Ok(from_local_body_and_driver_headers(
-                    body,
-                    headers,
-                    CosmosStatus::from_parts(StatusCode::Ok, None),
-                    diagnostics,
-                ))
+                self.handed_out.lock().unwrap().push(Arc::clone(&diagnostics));
+                Ok(
+                    from_local_body_and_driver_headers(
+                        body,
+                        headers,
+                        CosmosStatus::from_parts(StatusCode::Ok, None),
+                        diagnostics
+                    )
+                )
             }
         }
 
@@ -3449,17 +3487,11 @@ mod tests {
             &dispatcher,
             canonical_patch_op(),
             OperationOptions::default(),
-            None,
-        )
-        .await
-        .expect("PATCH should succeed");
+            None
+        ).await.expect("PATCH should succeed");
 
         let handed_out = dispatcher.handed_out.lock().unwrap().clone();
-        assert_eq!(
-            handed_out.len(),
-            2,
-            "expected one Read + one Replace sub-op"
-        );
+        assert_eq!(handed_out.len(), 2, "expected one Read + one Replace sub-op");
 
         let returned = resp.diagnostics();
 
@@ -3501,12 +3533,9 @@ mod tests {
             async fn execute_operation(
                 &self,
                 operation: CosmosOperation,
-                options: OperationOptions,
+                options: OperationOptions
             ) -> crate::error::Result<CosmosResponse> {
-                self.binary_encodings
-                    .lock()
-                    .unwrap()
-                    .push(options.binary_encoding.clone());
+                self.binary_encodings.lock().unwrap().push(options.binary_encoding.clone());
                 let body = match operation.operation_type() {
                     OperationType::Read => {
                         br#"{"id":"doc1","pk":"pk1","visits":0,"_ts":1}"#.to_vec()
@@ -3519,16 +3548,17 @@ mod tests {
                 let diagnostics = Arc::new(
                     DiagnosticsContextBuilder::new(
                         ActivityId::new_uuid(),
-                        Arc::new(DiagnosticsOptions::default()),
-                    )
-                    .complete(),
+                        Arc::new(DiagnosticsOptions::default())
+                    ).complete()
                 );
-                Ok(from_local_body_and_driver_headers(
-                    body,
-                    headers,
-                    CosmosStatus::from_parts(StatusCode::Ok, None),
-                    diagnostics,
-                ))
+                Ok(
+                    from_local_body_and_driver_headers(
+                        body,
+                        headers,
+                        CosmosStatus::from_parts(StatusCode::Ok, None),
+                        diagnostics
+                    )
+                )
             }
         }
 
@@ -3539,14 +3569,12 @@ mod tests {
         // Caller opts a patch into binary encoding + text response.
         let mut options = OperationOptions::default();
         options.binary_encoding = Some(
-            BinaryEncodingOptions::new()
-                .with_enabled(true)
-                .with_request_text_response(true),
+            BinaryEncodingOptions::new().with_enabled(true).with_request_text_response(true)
         );
 
-        execute_with_dispatcher(&dispatcher, canonical_patch_op(), options, None)
-            .await
-            .expect("PATCH should succeed");
+        execute_with_dispatcher(&dispatcher, canonical_patch_op(), options, None).await.expect(
+            "PATCH should succeed"
+        );
 
         let captured = dispatcher.binary_encodings.lock().unwrap().clone();
         assert_eq!(captured.len(), 2, "expected one Read + one Replace sub-op");
@@ -3554,7 +3582,7 @@ mod tests {
         assert!(
             captured.iter().all(|be| *be == disabled),
             "patch must force binary_encoding OFF (explicit disabled, not inherit) \
-             on every forwarded sub-op, got {captured:?}",
+             on every forwarded sub-op, got {captured:?}"
         );
     }
 }

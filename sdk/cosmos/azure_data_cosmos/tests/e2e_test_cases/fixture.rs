@@ -6,16 +6,24 @@ use std::panic::AssertUnwindSafe;
 use azure_core::Uuid;
 use azure_data_cosmos::{
     clients::ContainerClient,
-    models::{ContainerProperties, PartitionKeyDefinition},
+    models::{ ContainerProperties, PartitionKeyDefinition },
     options::{
-        BinaryEncodingOptions, ConnectionPoolOptions, OperationOptions, PartitionFailoverOptions,
-        ReadConsistencyStrategy, Region,
+        BinaryEncodingOptions,
+        ConnectionPoolOptions,
+        OperationOptions,
+        PartitionFailoverOptions,
+        ReadConsistencyStrategy,
+        Region,
     },
-    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy,
+    AccountEndpoint,
+    AccountReference,
+    CosmosClient,
+    CosmosRuntime,
+    RoutingStrategy,
 };
 use futures::FutureExt;
 
-use crate::e2e_test_cases::catalog::{ClientDefinition, RuntimeDefinition};
+use crate::e2e_test_cases::catalog::{ ClientDefinition, RuntimeDefinition };
 
 pub type TestResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
 
@@ -37,15 +45,15 @@ impl ClientSetup {
     pub fn from_profile(
         runtime: &RuntimeDefinition,
         client: &ClientDefinition,
-        routing_strategy: RoutingStrategy,
+        routing_strategy: RoutingStrategy
     ) -> TestResult<Self> {
         Ok(Self {
             routing_strategy,
             runtime_read_consistency: parse_optional_read_consistency(
-                runtime.default_read_consistency_strategy.as_deref(),
+                runtime.default_read_consistency_strategy.as_deref()
             )?,
             client_read_consistency: parse_optional_read_consistency(
-                client.default_read_consistency_strategy.as_deref(),
+                client.default_read_consistency_strategy.as_deref()
             )?,
             gateway_v2_enabled: parse_setup_switch(&runtime.gateway_v2, "backendDefault")?,
             ppcb_enabled: parse_setup_switch(&runtime.ppcb, "sdkDefault")?,
@@ -55,11 +63,9 @@ impl ClientSetup {
 }
 
 fn parse_optional_read_consistency(
-    value: Option<&str>,
+    value: Option<&str>
 ) -> TestResult<Option<ReadConsistencyStrategy>> {
-    value
-        .map(|value| value.parse::<ReadConsistencyStrategy>().map_err(Into::into))
-        .transpose()
+    value.map(|value| value.parse::<ReadConsistencyStrategy>().map_err(Into::into)).transpose()
 }
 
 fn parse_setup_switch(value: &str, default: &str) -> TestResult<Option<bool>> {
@@ -77,19 +83,15 @@ struct DatabaseCleanup {
 }
 
 impl E2eTestFixture {
-    pub async fn run<F>(test: F) -> TestResult
-    where
-        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
-    {
+    pub async fn run<F>(test: F) -> TestResult where F: AsyncFnOnce(&E2eTestFixture) -> TestResult {
         Self::run_with_partition_key("/pk".into(), test).await
     }
 
     pub async fn run_with_partition_key<F>(
         partition_key: PartitionKeyDefinition,
-        test: F,
+        test: F
     ) -> TestResult
-    where
-        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+        where F: AsyncFnOnce(&E2eTestFixture) -> TestResult
     {
         let client = build_client().await?;
         Self::run_with_client(client, partition_key, test).await
@@ -97,10 +99,9 @@ impl E2eTestFixture {
 
     pub async fn run_with_container_properties<F>(
         properties: ContainerProperties,
-        test: F,
+        test: F
     ) -> TestResult
-    where
-        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+        where F: AsyncFnOnce(&E2eTestFixture) -> TestResult
     {
         let client = build_client().await?;
         Self::run_with_client_and_properties(client, properties, test).await
@@ -109,10 +110,9 @@ impl E2eTestFixture {
     pub async fn run_with_client<F>(
         client: CosmosClient,
         partition_key: PartitionKeyDefinition,
-        test: F,
+        test: F
     ) -> TestResult
-    where
-        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+        where F: AsyncFnOnce(&E2eTestFixture) -> TestResult
     {
         let container_id = format!("items-{}", Uuid::new_v4());
         let properties = ContainerProperties::new(container_id, partition_key);
@@ -122,23 +122,25 @@ impl E2eTestFixture {
     async fn run_with_client_and_properties<F>(
         client: CosmosClient,
         properties: ContainerProperties,
-        test: F,
+        test: F
     ) -> TestResult
-    where
-        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+        where F: AsyncFnOnce(&E2eTestFixture) -> TestResult
     {
         let fixture = Self::new(client, properties).await?;
         let outcome = AssertUnwindSafe(test(&fixture)).catch_unwind().await;
         let cleanup = fixture.cleanup().await;
         match outcome {
             Ok(Ok(())) => cleanup,
-            Ok(Err(test_error)) => match cleanup {
-                Ok(()) => Err(test_error),
-                Err(cleanup_error) => Err(format!(
-                    "E2E test failed: {test_error}; database cleanup also failed: {cleanup_error}"
-                )
-                .into()),
-            },
+            Ok(Err(test_error)) =>
+                match cleanup {
+                    Ok(()) => Err(test_error),
+                    Err(cleanup_error) =>
+                        Err(
+                            format!(
+                                "E2E test failed: {test_error}; database cleanup also failed: {cleanup_error}"
+                            ).into()
+                        ),
+                }
             Err(panic) => {
                 if let Err(error) = cleanup {
                     eprintln!("E2E database cleanup after panic failed: {error}");
@@ -154,20 +156,22 @@ impl E2eTestFixture {
         client.create_database(&database_id, None).await?;
         let database = client.database_client(&database_id);
         let cleanup = DatabaseCleanup::new(client.clone(), database_id);
-        let setup = async {
+        let setup = (async {
             database.create_container(properties, None).await?;
             database.container_client(&container_id, None).await
-        }
-        .await;
+        }).await;
         match setup {
             Ok(container) => Ok(Self { cleanup, container }),
-            Err(setup_error) => match cleanup.cleanup().await {
-                Ok(()) => Err(setup_error.into()),
-                Err(cleanup_error) => Err(format!(
-                    "E2E fixture setup failed: {setup_error}; database cleanup also failed: {cleanup_error}"
-                )
-                .into()),
-            },
+            Err(setup_error) =>
+                match cleanup.cleanup().await {
+                    Ok(()) => Err(setup_error.into()),
+                    Err(cleanup_error) =>
+                        Err(
+                            format!(
+                                "E2E fixture setup failed: {setup_error}; database cleanup also failed: {cleanup_error}"
+                            ).into()
+                        ),
+                }
         }
     }
 
@@ -185,10 +189,7 @@ impl DatabaseCleanup {
     }
 
     async fn cleanup(self) -> TestResult {
-        self.client
-            .database_client(&self.database_id)
-            .delete(None)
-            .await?;
+        self.client.database_client(&self.database_id).delete(None).await?;
         Ok(())
     }
 }
@@ -198,7 +199,7 @@ pub async fn build_client() -> TestResult<CosmosClient> {
 }
 
 pub async fn build_client_with_routing(
-    routing_strategy: RoutingStrategy,
+    routing_strategy: RoutingStrategy
 ) -> TestResult<CosmosClient> {
     build_client_with_defaults(ClientSetup {
         routing_strategy,
@@ -207,8 +208,7 @@ pub async fn build_client_with_routing(
         gateway_v2_enabled: None,
         ppcb_enabled: None,
         binary_encoding_enabled: None,
-    })
-    .await
+    }).await
 }
 
 pub async fn build_client_with_defaults(setup: ClientSetup) -> TestResult<CosmosClient> {
@@ -218,9 +218,7 @@ pub async fn build_client_with_defaults(setup: ClientSetup) -> TestResult<Cosmos
     let endpoint: AccountEndpoint = endpoint.parse()?;
     let mut runtime_builder = CosmosRuntime::builder();
     if let Some(enabled) = setup.gateway_v2_enabled {
-        let options = ConnectionPoolOptions::builder()
-            .with_gateway_v2_disabled(!enabled)
-            .build()?;
+        let options = ConnectionPoolOptions::builder().with_gateway_v2_disabled(!enabled).build()?;
         runtime_builder = runtime_builder.with_connection_pool(options);
     }
     if let Some(strategy) = setup.runtime_read_consistency {
@@ -243,15 +241,16 @@ pub async fn build_client_with_defaults(setup: ClientSetup) -> TestResult<Cosmos
         client_builder = client_builder.with_partition_failover_options(options);
     }
     if let Some(enabled) = setup.binary_encoding_enabled {
-        client_builder = client_builder
-            .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(enabled));
+        client_builder = client_builder.with_binary_encoding_options(
+            BinaryEncodingOptions::new().with_enabled(enabled)
+        );
     }
-    Ok(client_builder
-        .build(
+    Ok(
+        client_builder.build(
             AccountReference::with_authentication_key(endpoint, key),
-            setup.routing_strategy,
-        )
-        .await?)
+            setup.routing_strategy
+        ).await?
+    )
 }
 
 fn connection_string_value(connection_string: &str, key: &str) -> TestResult<String> {

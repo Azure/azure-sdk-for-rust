@@ -7,8 +7,8 @@
 use super::*;
 use azure_core::http::headers::HeaderValue;
 use azure_data_cosmos_driver::{
-    models::{AccountReference, CosmosOperation, ItemReference, PartitionKey},
-    options::{DriverOptions, OperationOptions},
+    models::{ AccountReference, CosmosOperation, ItemReference, PartitionKey },
+    options::{ DriverOptions, OperationOptions },
 };
 
 #[tokio::test]
@@ -21,7 +21,7 @@ async fn create_new_item() {
         "testcoll",
         &body,
         r#"["pk1"]"#,
-        true,
+        true
     );
 
     let response = ctx.emulator.execute_request(&req).await.unwrap();
@@ -52,19 +52,13 @@ async fn read_existing_item() {
         "testcoll",
         &body,
         r#"["pk1"]"#,
-        false,
+        false
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     assert_eq!(response.status(), StatusCode::Created);
 
     // Read
-    let req = read_item_request(
-        &ctx.gateway_url,
-        "testdb",
-        "testcoll",
-        "item1",
-        r#"["pk1"]"#,
-    );
+    let req = read_item_request(&ctx.gateway_url, "testdb", "testcoll", "item1", r#"["pk1"]"#);
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, doc) = collect_response(response).await;
     assert_eq!(status, StatusCode::Ok);
@@ -77,21 +71,19 @@ async fn read_existing_item() {
 #[tokio::test]
 async fn item_id_with_literal_percent_round_trips_through_driver() {
     let ctx = setup_single_region().await;
-    let runtime = ctx
-        .emulator
+    let runtime = ctx.emulator
         .runtime_builder()
-        .build()
-        .await
+        .build().await
         .expect("runtime should build against the in-memory emulator");
-    let account =
-        AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+    let account = AccountReference::with_master_key(
+        Url::parse(GATEWAY_URL).unwrap(),
+        "ZW11bGF0b3Ita2V5"
+    );
     let driver = runtime
-        .create_driver(DriverOptions::builder(account).build())
-        .await
+        .create_driver(DriverOptions::builder(account).build()).await
         .expect("driver should initialize");
     let container = driver
-        .resolve_container("testdb", "testcoll", OperationOptions::default())
-        .await
+        .resolve_container("testdb", "testcoll", OperationOptions::default()).await
         .expect("container should resolve");
     let item_id = "item%41";
     let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id.to_string());
@@ -100,18 +92,16 @@ async fn item_id_with_literal_percent_round_trips_through_driver() {
     driver
         .execute_singleton_operation(
             CosmosOperation::create_item(item).with_body(serde_json::to_vec(&body).unwrap()),
-            OperationOptions::default(),
-        )
-        .await
+            OperationOptions::default()
+        ).await
         .expect("item should be created");
 
     let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), item_id.to_string());
     let response = driver
         .execute_singleton_operation(
             CosmosOperation::read_item(item),
-            OperationOptions::default(),
-        )
-        .await
+            OperationOptions::default()
+        ).await
         .expect("literal percent item should be read");
     let bytes = response.into_body().single().expect("point read body");
     let document = parse_json_body(&bytes).expect("body should be JSON");
@@ -141,7 +131,8 @@ async fn default_operation_negotiates_binary_on_the_wire() {
                 .get_optional_str(&SUPPORTED_SERIALIZATION_FORMATS)
                 .map(str::to_string);
             self.formats.lock().unwrap().push(formats);
-            let is_binary = matches!(
+            let is_binary =
+                matches!(
                 request.body(),
                 azure_core::http::request::Body::Bytes(bytes)
                     if azure_data_cosmos_driver::binary_json::is_binary(bytes)
@@ -150,40 +141,45 @@ async fn default_operation_negotiates_binary_on_the_wire() {
         }
     }
 
-    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
-        "East US",
-        Url::parse(GATEWAY_URL).unwrap(),
-    )])
-    .unwrap()
-    .with_consistency(ConsistencyLevel::Session);
+    let config = VirtualAccountConfig::new(
+        vec![VirtualRegion::new("East US", Url::parse(GATEWAY_URL).unwrap())]
+    )
+        .unwrap()
+        .with_consistency(ConsistencyLevel::Session);
     let recorder = Arc::new(BinaryRequestRecorder::default());
     let emulator = Arc::new(
-        InMemoryEmulatorHttpClient::new(config).with_request_observer(Arc::clone(&recorder)
-            as Arc<dyn azure_data_cosmos_driver::in_memory_emulator::RequestObserver>),
+        InMemoryEmulatorHttpClient::new(config).with_request_observer(
+            Arc::clone(&recorder) as Arc<
+                dyn azure_data_cosmos_driver::in_memory_emulator::RequestObserver
+            >
+        )
     );
     let store = emulator.store();
     store.create_database("testdb");
     store.create_container(
         "testdb",
         "testcoll",
-        serde_json::from_value(serde_json::json!({
+        serde_json
+            ::from_value(
+                serde_json::json!({
             "paths": ["/pk"],
             "kind": "Hash",
             "version": 2
-        }))
-        .unwrap(),
+        })
+            )
+            .unwrap()
     );
 
     let runtime = emulator.runtime_builder().build().await.unwrap();
-    let account =
-        AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+    let account = AccountReference::with_master_key(
+        Url::parse(GATEWAY_URL).unwrap(),
+        "ZW11bGF0b3Ita2V5"
+    );
     let driver = runtime
-        .create_driver(DriverOptions::builder(account).build())
-        .await
+        .create_driver(DriverOptions::builder(account).build()).await
         .expect("driver should initialize");
     let container = driver
-        .resolve_container("testdb", "testcoll", OperationOptions::default())
-        .await
+        .resolve_container("testdb", "testcoll", OperationOptions::default()).await
         .expect("container should resolve");
 
     let body = serde_json::json!({"id": "d1", "pk": "pk1", "value": 1});
@@ -191,9 +187,8 @@ async fn default_operation_negotiates_binary_on_the_wire() {
     driver
         .execute_singleton_operation(
             CosmosOperation::create_item(item).with_body(serde_json::to_vec(&body).unwrap()),
-            OperationOptions::default(),
-        )
-        .await
+            OperationOptions::default()
+        ).await
         .expect("create must succeed");
 
     let formats = recorder.formats.lock().unwrap();
@@ -201,11 +196,11 @@ async fn default_operation_negotiates_binary_on_the_wire() {
     assert!(!formats.is_empty(), "expected at least one docs request");
     assert!(
         formats.iter().all(|f| f.as_deref() == Some("CosmosBinary")),
-        "default point op must advertise CosmosBinary; saw {formats:?}",
+        "default point op must advertise CosmosBinary; saw {formats:?}"
     );
     assert!(
         bodies.iter().all(|b| *b),
-        "default point op request body must carry the 0x80 preamble",
+        "default point op request body must carry the 0x80 preamble"
     );
 }
 
@@ -214,37 +209,27 @@ async fn conditional_read_reports_item_lsn_not_partition_lsn() {
     let ctx = setup_single_region().await;
 
     let first = serde_json::json!({"id": "item1", "pk": "pk1", "value": 1});
-    let response = ctx
-        .emulator
-        .execute_request(&create_item_request(
-            &ctx.gateway_url,
-            "testdb",
-            "testcoll",
-            &first,
-            r#"["pk1"]"#,
-            true,
-        ))
-        .await
+    let response = ctx.emulator
+        .execute_request(
+            &create_item_request(&ctx.gateway_url, "testdb", "testcoll", &first, r#"["pk1"]"#, true)
+        ).await
         .unwrap();
     let (_, first_headers, first_body) = collect_response(response).await;
     let first_etag = first_body["_etag"].as_str().unwrap().to_owned();
-    let first_item_lsn = first_headers
-        .get_optional_str(&ITEM_LSN)
-        .unwrap()
-        .to_owned();
+    let first_item_lsn = first_headers.get_optional_str(&ITEM_LSN).unwrap().to_owned();
 
     let second = serde_json::json!({"id": "item2", "pk": "pk1", "value": 2});
-    let response = ctx
-        .emulator
-        .execute_request(&create_item_request(
-            &ctx.gateway_url,
-            "testdb",
-            "testcoll",
-            &second,
-            r#"["pk1"]"#,
-            false,
-        ))
-        .await
+    let response = ctx.emulator
+        .execute_request(
+            &create_item_request(
+                &ctx.gateway_url,
+                "testdb",
+                "testcoll",
+                &second,
+                r#"["pk1"]"#,
+                false
+            )
+        ).await
         .unwrap();
     let (_, second_headers, _) = collect_response(response).await;
     assert_ne!(
@@ -258,18 +243,13 @@ async fn conditional_read_reports_item_lsn_not_partition_lsn() {
         "testdb",
         "testcoll",
         "item1",
-        r#"["pk1"]"#,
+        r#"["pk1"]"#
     );
-    request
-        .headers_mut()
-        .insert(IF_NONE_MATCH.clone(), HeaderValue::from(first_etag));
+    request.headers_mut().insert(IF_NONE_MATCH.clone(), HeaderValue::from(first_etag));
     let response = ctx.emulator.execute_request(&request).await.unwrap();
 
     assert_eq!(response.status(), StatusCode::NotModified);
-    assert_eq!(
-        response.headers().get_optional_str(&ITEM_LSN),
-        Some(first_item_lsn.as_str())
-    );
+    assert_eq!(response.headers().get_optional_str(&ITEM_LSN), Some(first_item_lsn.as_str()));
 }
 
 #[tokio::test]
@@ -284,7 +264,7 @@ async fn replace_existing_item() {
         "testcoll",
         &body,
         r#"["pk1"]"#,
-        true,
+        true
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (_, _, doc) = collect_response(response).await;
@@ -300,7 +280,7 @@ async fn replace_existing_item() {
         &new_body,
         r#"["pk1"]"#,
         Some(&etag),
-        true,
+        true
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, replaced) = collect_response(response).await;
@@ -321,7 +301,7 @@ async fn replace_changes_body_id_and_preserves_rid() {
         "testcoll",
         &body,
         r#"["pk1"]"#,
-        true,
+        true
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (_, _, created) = collect_response(response).await;
@@ -336,7 +316,7 @@ async fn replace_changes_body_id_and_preserves_rid() {
         &replacement,
         r#"["pk1"]"#,
         Some(&etag),
-        true,
+        true
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, replaced) = collect_response(response).await;
@@ -344,23 +324,11 @@ async fn replace_changes_body_id_and_preserves_rid() {
     assert_eq!(replaced["id"], "item2");
     assert_eq!(replaced["_rid"], created["_rid"]);
 
-    let req = read_item_request(
-        &ctx.gateway_url,
-        "testdb",
-        "testcoll",
-        "item1",
-        r#"["pk1"]"#,
-    );
+    let req = read_item_request(&ctx.gateway_url, "testdb", "testcoll", "item1", r#"["pk1"]"#);
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     assert_eq!(response.status(), StatusCode::NotFound);
 
-    let req = read_item_request(
-        &ctx.gateway_url,
-        "testdb",
-        "testcoll",
-        "item2",
-        r#"["pk1"]"#,
-    );
+    let req = read_item_request(&ctx.gateway_url, "testdb", "testcoll", "item2", r#"["pk1"]"#);
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, doc) = collect_response(response).await;
     assert_eq!(status, StatusCode::Ok);
@@ -385,7 +353,7 @@ async fn replace_rejects_partition_key_mutation() {
         "testcoll",
         &body,
         r#"["pk-original"]"#,
-        true,
+        true
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, created) = collect_response(response).await;
@@ -406,19 +374,15 @@ async fn replace_rejects_partition_key_mutation() {
         &replacement,
         r#"["pk-original"]"#,
         Some(&etag),
-        true,
+        true
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, body) = collect_response(response).await;
-    assert_eq!(
-        status,
-        StatusCode::BadRequest,
-        "PK mutation must be rejected; got body={body}",
-    );
+    assert_eq!(status, StatusCode::BadRequest, "PK mutation must be rejected; got body={body}");
     let msg = body["message"].as_str().unwrap_or("");
     assert!(
         msg.contains("Partition key") || msg.contains("partition key"),
-        "error message should mention partition key, got: {msg}",
+        "error message should mention partition key, got: {msg}"
     );
 
     // Original document must still be readable on its original PK.
@@ -427,7 +391,7 @@ async fn replace_rejects_partition_key_mutation() {
         "testdb",
         "testcoll",
         "item-pkmut",
-        r#"["pk-original"]"#,
+        r#"["pk-original"]"#
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, doc) = collect_response(response).await;
@@ -447,20 +411,17 @@ async fn echoes_request_activity_id() {
         "testcoll",
         &body,
         r#"["pk1"]"#,
-        true,
+        true
     );
     req.headers_mut().insert(
         ACTIVITY_ID.clone(),
-        HeaderValue::from("test-activity-id".to_string()),
+        HeaderValue::from("test-activity-id".to_string())
     );
 
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, headers, _) = collect_response(response).await;
     assert_eq!(status, StatusCode::Created);
-    assert_eq!(
-        headers.get_optional_str(&ACTIVITY_ID),
-        Some("test-activity-id")
-    );
+    assert_eq!(headers.get_optional_str(&ACTIVITY_ID), Some("test-activity-id"));
 }
 
 #[tokio::test]
@@ -474,7 +435,7 @@ async fn upsert_new_item() {
         "testcoll",
         &body,
         r#"["pk1"]"#,
-        true,
+        true
     );
 
     let response = ctx.emulator.execute_request(&req).await.unwrap();
@@ -496,7 +457,7 @@ async fn upsert_existing_item() {
         "testcoll",
         &body,
         r#"["pk1"]"#,
-        false,
+        false
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     assert_eq!(response.status(), StatusCode::Created);
@@ -509,7 +470,7 @@ async fn upsert_existing_item() {
         "testcoll",
         &body,
         r#"["pk1"]"#,
-        true,
+        true
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, doc) = collect_response(response).await;
@@ -528,20 +489,14 @@ async fn upsert_without_content_response() {
         "testcoll",
         &body,
         r#"["pk1"]"#,
-        false,
+        false
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, response_body) = collect_response(response).await;
     assert_eq!(status, StatusCode::Created);
     assert_eq!(response_body, serde_json::Value::Null);
 
-    let req = read_item_request(
-        &ctx.gateway_url,
-        "testdb",
-        "testcoll",
-        "item1",
-        r#"["pk1"]"#,
-    );
+    let req = read_item_request(&ctx.gateway_url, "testdb", "testcoll", "item1", r#"["pk1"]"#);
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, doc) = collect_response(response).await;
     assert_eq!(status, StatusCode::Ok);
@@ -560,7 +515,7 @@ async fn delete_existing_item() {
         "testcoll",
         &body,
         r#"["pk1"]"#,
-        false,
+        false
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     assert_eq!(response.status(), StatusCode::Created);
@@ -572,19 +527,13 @@ async fn delete_existing_item() {
         "testcoll",
         "item1",
         r#"["pk1"]"#,
-        None,
+        None
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     assert_eq!(response.status(), StatusCode::NoContent);
 
     // Verify deleted
-    let req = read_item_request(
-        &ctx.gateway_url,
-        "testdb",
-        "testcoll",
-        "item1",
-        r#"["pk1"]"#,
-    );
+    let req = read_item_request(&ctx.gateway_url, "testdb", "testcoll", "item1", r#"["pk1"]"#);
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     assert_eq!(response.status(), StatusCode::NotFound);
 }
@@ -600,7 +549,7 @@ async fn create_without_content_response() {
         "testcoll",
         &body,
         r#"["pk1"]"#,
-        false,
+        false
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, body) = collect_response(response).await;
@@ -608,13 +557,7 @@ async fn create_without_content_response() {
     assert_eq!(body, serde_json::Value::Null);
 
     // But the item should still exist
-    let req = read_item_request(
-        &ctx.gateway_url,
-        "testdb",
-        "testcoll",
-        "item1",
-        r#"["pk1"]"#,
-    );
+    let req = read_item_request(&ctx.gateway_url, "testdb", "testcoll", "item1", r#"["pk1"]"#);
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     assert_eq!(response.status(), StatusCode::Ok);
 }
@@ -631,7 +574,7 @@ async fn replace_without_content_response() {
         "testcoll",
         &body,
         r#"["pk1"]"#,
-        true,
+        true
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (_, _, doc) = collect_response(response).await;
@@ -647,7 +590,7 @@ async fn replace_without_content_response() {
         &new_body,
         r#"["pk1"]"#,
         Some(&etag),
-        false,
+        false
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, body) = collect_response(response).await;

@@ -20,8 +20,8 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
     if ($env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY) {
         $ownershipMarker = ([System.IO.Path]::Combine(
-            $env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY,
-            '.azure-data-cosmos-emulator-run'))
+                $env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY,
+                '.azure-data-cosmos-emulator-run'))
         $ownedRunId = if (Test-Path -LiteralPath $ownershipMarker) {
             Get-Content -LiteralPath $ownershipMarker -Raw
         }
