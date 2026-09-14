@@ -4756,7 +4756,7 @@ mod tests {
     /// the optional four-byte attachment segment.
     #[test]
     fn streaming_order_by_snapshot_accepts_20_byte_document_boundary_rid() {
-        // cspell:ignore EAAAAJAAAAAOAAA PUAAAAAAAA
+        // cspell:ignore EAAAAJAAAAAOAAAA OcAAAAAAAA
         let ranges = vec![OrderByRangeToken {
             min_epk: String::new(),
             max_epk: "FF".to_owned(),
@@ -4767,7 +4767,7 @@ mod tests {
                         value: 5.0.into(),
                     },
                 ],
-                last_rid: "EAAAAJAAAAAOAAAAvPUAAAAAAAA=".to_owned(),
+                last_rid: "EAAAAJAAAAAOAAAA/OcAAAAAAAA=".to_owned(),
                 skip_count: 1,
             }),
         }];

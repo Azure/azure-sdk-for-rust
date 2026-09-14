@@ -46,16 +46,25 @@ impl std::fmt::Display for RidParseError {
 
 impl std::error::Error for RidParseError {}
 
-/// Decodes a Cosmos DB RID string into its raw bytes.
-///
-/// RIDs use standard Base64 with `-` substituted for `/`.
-pub(crate) fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
+fn decode_rid_base64(rid: &str) -> Result<Vec<u8>, RidParseError> {
     if rid.is_empty() {
         return Err(RidParseError::Empty);
     }
     if !rid.len().is_multiple_of(4) {
         return Err(RidParseError::InvalidLength);
     }
+    let b64 = rid.replace('-', "/");
+    STANDARD
+        .decode(&b64)
+        .map_err(|_| RidParseError::InvalidBase64)
+}
+
+/// Decodes a Cosmos DB RID string into its raw bytes.
+///
+/// RIDs used in resource paths use standard Base64 with `-` substituted for
+/// `/`. Service payloads may contain the standard alphabet instead and must use
+/// a context-specific decoder rather than this path-safe helper.
+pub(crate) fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
     // Canonical Cosmos RIDs substitute `-` for Base64's `/`, so a literal `/` is
     // never part of a valid RID. Reject it here: the raw-path protocol embeds the
     // RID string directly in the request URL, where an unencoded `/` would inject
@@ -63,10 +72,7 @@ pub(crate) fn decode_rid(rid: &str) -> Result<Vec<u8>, RidParseError> {
     if rid.contains('/') {
         return Err(RidParseError::InvalidBase64);
     }
-    let b64 = rid.replace('-', "/");
-    STANDARD
-        .decode(&b64)
-        .map_err(|_| RidParseError::InvalidBase64)
+    decode_rid_base64(rid)
 }
 
 /// Encodes raw bytes into a Cosmos DB RID string.
@@ -123,7 +129,9 @@ pub(crate) fn document_ordinal(rid: &str) -> Option<u64> {
     /// range, `0x8` a stored procedure, and so on).
     const DOCUMENT_CHILD_TYPE: u8 = 0x0;
 
-    let bytes = decode_rid(rid).ok()?;
+    // ORDER BY state comes from service payloads and continuation tokens, where
+    // both standard Base64 `/` and the path-safe Cosmos `-` form are observed.
+    let bytes = decode_rid_base64(rid).ok()?;
     // .NET/Java accept both the 16-byte document RID and its 20-byte hierarchy
     // form with an attachment segment. The latter still identifies the parent
     // document whose ordinal is used for the ORDER BY tie-break.
@@ -779,6 +787,13 @@ mod tests {
             document_ordinal("EAAAAJAAAAAOAAAAvPUAAAAAAAA="),
             Some(u64::from_le_bytes([
                 0x0E, 0x00, 0x00, 0x00, 0xBC, 0xF5, 0x00, 0x00,
+            ]))
+        );
+        // cspell:ignore EAAAAJAAAAAOAAAA OcAAAAAAAA
+        assert_eq!(
+            document_ordinal("EAAAAJAAAAAOAAAA/OcAAAAAAAA="),
+            Some(u64::from_le_bytes([
+                0x0E, 0x00, 0x00, 0x00, 0xFC, 0xE7, 0x00, 0x00,
             ]))
         );
     }
