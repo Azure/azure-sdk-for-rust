@@ -39,37 +39,37 @@ pub mod clients {
     pub struct CertificateClient {
     }
     impl CertificateClient {
-        fn begin_create_certificate(&self, certificate_name: &str, parameters: RequestContent<CreateCertificateParameters>, options: Option<CertificateClientCreateCertificateOptions<'_>>) -> Result<Poller<CertificateOperation>>;
-        fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<CertificateClientOptions>) -> Result<Self>;
+        pub fn begin_create_certificate(&self, certificate_name: &str, parameters: RequestContent<CreateCertificateParameters>, options: Option<CertificateClientCreateCertificateOptions<'_>>) -> Result<Poller<CertificateOperation>>;
+        pub fn new(endpoint: &str, credential: Arc<dyn TokenCredential>, options: Option<CertificateClientOptions>) -> Result<Self>;
     }
     impl CertificateClient {
-        async fn backup_certificate(&self, certificate_name: &str, options: Option<CertificateClientBackupCertificateOptions<'_>>) -> Result<Response<BackupCertificateResult>>;
-        async fn delete_certificate(&self, certificate_name: &str, options: Option<CertificateClientDeleteCertificateOptions<'_>>) -> Result<Response<DeletedCertificate>>;
-        async fn delete_certificate_operation(&self, certificate_name: &str, options: Option<CertificateClientDeleteCertificateOperationOptions<'_>>) -> Result<Response<CertificateOperation>>;
-        async fn delete_contacts(&self, options: Option<CertificateClientDeleteContactsOptions<'_>>) -> Result<Response<Contacts>>;
-        async fn delete_issuer(&self, issuer_name: &str, options: Option<CertificateClientDeleteIssuerOptions<'_>>) -> Result<Response<Issuer>>;
-        fn endpoint(&self) -> &Url;
-        async fn get_certificate(&self, certificate_name: &str, options: Option<CertificateClientGetCertificateOptions<'_>>) -> Result<Response<Certificate>>;
-        async fn get_certificate_operation(&self, certificate_name: &str, options: Option<CertificateClientGetCertificateOperationOptions<'_>>) -> Result<Response<CertificateOperation>>;
-        async fn get_certificate_policy(&self, certificate_name: &str, options: Option<CertificateClientGetCertificatePolicyOptions<'_>>) -> Result<Response<CertificatePolicy>>;
-        async fn get_contacts(&self, options: Option<CertificateClientGetContactsOptions<'_>>) -> Result<Response<Contacts>>;
-        async fn get_deleted_certificate(&self, certificate_name: &str, options: Option<CertificateClientGetDeletedCertificateOptions<'_>>) -> Result<Response<DeletedCertificate>>;
-        async fn get_issuer(&self, issuer_name: &str, options: Option<CertificateClientGetIssuerOptions<'_>>) -> Result<Response<Issuer>>;
-        async fn import_certificate(&self, certificate_name: &str, parameters: RequestContent<ImportCertificateParameters>, options: Option<CertificateClientImportCertificateOptions<'_>>) -> Result<Response<Certificate>>;
-        fn list_certificate_properties(&self, options: Option<CertificateClientListCertificatePropertiesOptions<'_>>) -> Result<Pager<ListCertificatePropertiesResult>>;
-        fn list_certificate_properties_versions(&self, certificate_name: &str, options: Option<CertificateClientListCertificatePropertiesVersionsOptions<'_>>) -> Result<Pager<ListCertificatePropertiesResult>>;
-        fn list_deleted_certificate_properties(&self, options: Option<CertificateClientListDeletedCertificatePropertiesOptions<'_>>) -> Result<Pager<ListDeletedCertificatePropertiesResult>>;
-        fn list_issuer_properties(&self, options: Option<CertificateClientListIssuerPropertiesOptions<'_>>) -> Result<Pager<ListIssuerPropertiesResult>>;
-        async fn merge_certificate(&self, certificate_name: &str, parameters: RequestContent<MergeCertificateParameters>, options: Option<CertificateClientMergeCertificateOptions<'_>>) -> Result<Response<Certificate>>;
-        async fn purge_deleted_certificate(&self, certificate_name: &str, options: Option<CertificateClientPurgeDeletedCertificateOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn recover_deleted_certificate(&self, certificate_name: &str, options: Option<CertificateClientRecoverDeletedCertificateOptions<'_>>) -> Result<Response<Certificate>>;
-        async fn restore_certificate(&self, parameters: RequestContent<RestoreCertificateParameters>, options: Option<CertificateClientRestoreCertificateOptions<'_>>) -> Result<Response<Certificate>>;
-        async fn set_contacts(&self, contacts: RequestContent<Contacts>, options: Option<CertificateClientSetContactsOptions<'_>>) -> Result<Response<Contacts>>;
-        async fn set_issuer(&self, issuer_name: &str, parameter: RequestContent<SetIssuerParameters>, options: Option<CertificateClientSetIssuerOptions<'_>>) -> Result<Response<Issuer>>;
-        async fn update_certificate_operation(&self, certificate_name: &str, certificate_operation: RequestContent<UpdateCertificateOperationParameter>, options: Option<CertificateClientUpdateCertificateOperationOptions<'_>>) -> Result<Response<CertificateOperation>>;
-        async fn update_certificate_policy(&self, certificate_name: &str, certificate_policy: RequestContent<CertificatePolicy>, options: Option<CertificateClientUpdateCertificatePolicyOptions<'_>>) -> Result<Response<CertificatePolicy>>;
-        async fn update_certificate_properties(&self, certificate_name: &str, parameters: RequestContent<UpdateCertificatePropertiesParameters>, options: Option<CertificateClientUpdateCertificatePropertiesOptions<'_>>) -> Result<Response<Certificate>>;
-        async fn update_issuer(&self, issuer_name: &str, parameter: RequestContent<UpdateIssuerParameters>, options: Option<CertificateClientUpdateIssuerOptions<'_>>) -> Result<Response<Issuer>>;
+        pub async fn backup_certificate(&self, certificate_name: &str, options: Option<CertificateClientBackupCertificateOptions<'_>>) -> Result<Response<BackupCertificateResult>>;
+        pub async fn delete_certificate(&self, certificate_name: &str, options: Option<CertificateClientDeleteCertificateOptions<'_>>) -> Result<Response<DeletedCertificate>>;
+        pub async fn delete_certificate_operation(&self, certificate_name: &str, options: Option<CertificateClientDeleteCertificateOperationOptions<'_>>) -> Result<Response<CertificateOperation>>;
+        pub async fn delete_contacts(&self, options: Option<CertificateClientDeleteContactsOptions<'_>>) -> Result<Response<Contacts>>;
+        pub async fn delete_issuer(&self, issuer_name: &str, options: Option<CertificateClientDeleteIssuerOptions<'_>>) -> Result<Response<Issuer>>;
+        pub fn endpoint(&self) -> &Url;
+        pub async fn get_certificate(&self, certificate_name: &str, options: Option<CertificateClientGetCertificateOptions<'_>>) -> Result<Response<Certificate>>;
+        pub async fn get_certificate_operation(&self, certificate_name: &str, options: Option<CertificateClientGetCertificateOperationOptions<'_>>) -> Result<Response<CertificateOperation>>;
+        pub async fn get_certificate_policy(&self, certificate_name: &str, options: Option<CertificateClientGetCertificatePolicyOptions<'_>>) -> Result<Response<CertificatePolicy>>;
+        pub async fn get_contacts(&self, options: Option<CertificateClientGetContactsOptions<'_>>) -> Result<Response<Contacts>>;
+        pub async fn get_deleted_certificate(&self, certificate_name: &str, options: Option<CertificateClientGetDeletedCertificateOptions<'_>>) -> Result<Response<DeletedCertificate>>;
+        pub async fn get_issuer(&self, issuer_name: &str, options: Option<CertificateClientGetIssuerOptions<'_>>) -> Result<Response<Issuer>>;
+        pub async fn import_certificate(&self, certificate_name: &str, parameters: RequestContent<ImportCertificateParameters>, options: Option<CertificateClientImportCertificateOptions<'_>>) -> Result<Response<Certificate>>;
+        pub fn list_certificate_properties(&self, options: Option<CertificateClientListCertificatePropertiesOptions<'_>>) -> Result<Pager<ListCertificatePropertiesResult>>;
+        pub fn list_certificate_properties_versions(&self, certificate_name: &str, options: Option<CertificateClientListCertificatePropertiesVersionsOptions<'_>>) -> Result<Pager<ListCertificatePropertiesResult>>;
+        pub fn list_deleted_certificate_properties(&self, options: Option<CertificateClientListDeletedCertificatePropertiesOptions<'_>>) -> Result<Pager<ListDeletedCertificatePropertiesResult>>;
+        pub fn list_issuer_properties(&self, options: Option<CertificateClientListIssuerPropertiesOptions<'_>>) -> Result<Pager<ListIssuerPropertiesResult>>;
+        pub async fn merge_certificate(&self, certificate_name: &str, parameters: RequestContent<MergeCertificateParameters>, options: Option<CertificateClientMergeCertificateOptions<'_>>) -> Result<Response<Certificate>>;
+        pub async fn purge_deleted_certificate(&self, certificate_name: &str, options: Option<CertificateClientPurgeDeletedCertificateOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn recover_deleted_certificate(&self, certificate_name: &str, options: Option<CertificateClientRecoverDeletedCertificateOptions<'_>>) -> Result<Response<Certificate>>;
+        pub async fn restore_certificate(&self, parameters: RequestContent<RestoreCertificateParameters>, options: Option<CertificateClientRestoreCertificateOptions<'_>>) -> Result<Response<Certificate>>;
+        pub async fn set_contacts(&self, contacts: RequestContent<Contacts>, options: Option<CertificateClientSetContactsOptions<'_>>) -> Result<Response<Contacts>>;
+        pub async fn set_issuer(&self, issuer_name: &str, parameter: RequestContent<SetIssuerParameters>, options: Option<CertificateClientSetIssuerOptions<'_>>) -> Result<Response<Issuer>>;
+        pub async fn update_certificate_operation(&self, certificate_name: &str, certificate_operation: RequestContent<UpdateCertificateOperationParameter>, options: Option<CertificateClientUpdateCertificateOperationOptions<'_>>) -> Result<Response<CertificateOperation>>;
+        pub async fn update_certificate_policy(&self, certificate_name: &str, certificate_policy: RequestContent<CertificatePolicy>, options: Option<CertificateClientUpdateCertificatePolicyOptions<'_>>) -> Result<Response<CertificatePolicy>>;
+        pub async fn update_certificate_properties(&self, certificate_name: &str, parameters: RequestContent<UpdateCertificatePropertiesParameters>, options: Option<CertificateClientUpdateCertificatePropertiesOptions<'_>>) -> Result<Response<Certificate>>;
+        pub async fn update_issuer(&self, issuer_name: &str, parameter: RequestContent<UpdateIssuerParameters>, options: Option<CertificateClientUpdateIssuerOptions<'_>>) -> Result<Response<Issuer>>;
     }
     #[derive(Clone, Debug)]
     pub struct CertificateClientOptions {
@@ -150,7 +150,7 @@ pub mod models {
     }
     impl<'a> CertificateClientCreateCertificateOptions<'a> {
         #[must_use]
-        fn into_owned(self) -> CertificateClientCreateCertificateOptions<'static>;
+        pub fn into_owned(self) -> CertificateClientCreateCertificateOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct CertificateClientDeleteCertificateOperationOptions<'a> {
@@ -204,7 +204,7 @@ pub mod models {
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
     }
     impl CertificateClientListCertificatePropertiesOptions<'_> {
-        fn into_owned(self) -> CertificateClientListCertificatePropertiesOptions<'static>;
+        pub fn into_owned(self) -> CertificateClientListCertificatePropertiesOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct CertificateClientListCertificatePropertiesVersionsOptions<'a> {
@@ -212,7 +212,7 @@ pub mod models {
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
     }
     impl CertificateClientListCertificatePropertiesVersionsOptions<'_> {
-        fn into_owned(self) -> CertificateClientListCertificatePropertiesVersionsOptions<'static>;
+        pub fn into_owned(self) -> CertificateClientListCertificatePropertiesVersionsOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct CertificateClientListDeletedCertificatePropertiesOptions<'a> {
@@ -221,7 +221,7 @@ pub mod models {
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
     }
     impl CertificateClientListDeletedCertificatePropertiesOptions<'_> {
-        fn into_owned(self) -> CertificateClientListDeletedCertificatePropertiesOptions<'static>;
+        pub fn into_owned(self) -> CertificateClientListDeletedCertificatePropertiesOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct CertificateClientListIssuerPropertiesOptions<'a> {
@@ -229,7 +229,7 @@ pub mod models {
         pub method_options: azure_core::http::pager::PagerOptions<'a>,
     }
     impl CertificateClientListIssuerPropertiesOptions<'_> {
-        fn into_owned(self) -> CertificateClientListIssuerPropertiesOptions<'static>;
+        pub fn into_owned(self) -> CertificateClientListIssuerPropertiesOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct CertificateClientMergeCertificateOptions<'a> {

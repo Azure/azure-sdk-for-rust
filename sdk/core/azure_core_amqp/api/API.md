@@ -23,7 +23,7 @@ pub use azure_core_amqp::error::*;
 pub struct AmqpClaimsBasedSecurity {
 }
 impl AmqpClaimsBasedSecurity {
-    fn new(session: AmqpSession) -> Result<Self>;
+    pub fn new(session: AmqpSession) -> Result<Self>;
 }
 impl AmqpClaimsBasedSecurityApis for AmqpClaimsBasedSecurity {
     #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
@@ -39,16 +39,16 @@ pub struct AmqpComposite {
 }
 #[cfg(feature = "ffi")]
 impl AmqpComposite {
-    fn descriptor(&self) -> &AmqpDescriptor;
-    fn new<impl Into<AmqpDescriptor>: Into<AmqpDescriptor>, impl Into<AmqpList>: Into<AmqpList>>(descriptor: impl Into<AmqpDescriptor>, value: impl Into<AmqpList>) -> Self;
-    fn value(&self) -> &AmqpList;
-    fn value_mut(&mut self) -> &mut AmqpList;
+    pub fn descriptor(&self) -> &AmqpDescriptor;
+    pub fn new<impl Into<AmqpDescriptor>: Into<AmqpDescriptor>, impl Into<AmqpList>: Into<AmqpList>>(descriptor: impl Into<AmqpDescriptor>, value: impl Into<AmqpList>) -> Self;
+    pub fn value(&self) -> &AmqpList;
+    pub fn value_mut(&mut self) -> &mut AmqpList;
 }
 #[derive(Default)]
 pub struct AmqpConnection {
 }
 impl AmqpConnection {
-    fn new() -> Self;
+    pub fn new() -> Self;
 }
 impl AmqpConnectionApis for AmqpConnection {
     #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
@@ -90,7 +90,7 @@ pub struct AmqpDescribed {
     pub value: AmqpValue,
 }
 impl AmqpDescribed {
-    fn new<impl Into<AmqpDescriptor>: Into<AmqpDescriptor>, impl Into<AmqpValue>: Into<AmqpValue>>(descriptor: impl Into<AmqpDescriptor>, value: impl Into<AmqpValue>) -> Self;
+    pub fn new<impl Into<AmqpDescriptor>: Into<AmqpDescriptor>, impl Into<AmqpValue>: Into<AmqpValue>>(descriptor: impl Into<AmqpDescriptor>, value: impl Into<AmqpValue>) -> Self;
 }
 impl From<&AmqpValue> for Box<AmqpDescribed> {
     fn from(v: &AmqpValue) -> Self;
@@ -113,12 +113,12 @@ impl PartialEq<Described<Value>> for crate::value::AmqpDescribed {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct AmqpList(pub Vec<AmqpValue>);
 impl AmqpList {
-    fn is_empty(&self) -> bool;
-    fn iter(&self) -> impl Iterator<Item = &AmqpValue>;
-    fn len(&self) -> usize;
-    fn new() -> Self;
-    fn push(&mut self, value: AmqpValue);
-    fn with_capacity(size: usize) -> Self;
+    pub fn is_empty(&self) -> bool;
+    pub fn iter(&self) -> impl Iterator<Item = &AmqpValue>;
+    pub fn len(&self) -> usize;
+    pub fn new() -> Self;
+    pub fn push(&mut self, value: AmqpValue);
+    pub fn with_capacity(size: usize) -> Self;
 }
 impl From<&AmqpList> for fe2o3_amqp_types::primitives::Value {
     fn from(value: &AmqpList) -> Self;
@@ -169,7 +169,7 @@ impl<V> FromIterator<V> for AmqpList where V: Into<AmqpValue> {
 pub struct AmqpManagement {
 }
 impl AmqpManagement {
-    fn new(session: AmqpSession, client_node_name: String, access_token: AccessToken) -> Result<Self>;
+    pub fn new(session: AmqpSession, client_node_name: String, access_token: AccessToken) -> Result<Self>;
 }
 impl AmqpManagementApis for AmqpManagement {
     #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
@@ -190,11 +190,11 @@ pub struct AmqpMessage {
     pub footer: Option<AmqpAnnotations>,
 }
 impl AmqpMessage {
-    fn add_message_annotation<impl Into<AmqpValue>: Into<AmqpValue>>(&mut self, name: AmqpSymbol, value: impl Into<AmqpValue>);
-    fn builder() -> builders::AmqpMessageBuilder;
-    fn serialize(message: &AmqpMessage) -> Result<Vec<u8>>;
-    fn set_message_body<impl Into<AmqpMessageBody>: Into<AmqpMessageBody>>(&mut self, body: impl Into<AmqpMessageBody>);
-    fn set_message_id<impl Into<AmqpMessageId>: Into<AmqpMessageId>>(&mut self, message_id: impl Into<AmqpMessageId>);
+    pub fn add_message_annotation<impl Into<AmqpValue>: Into<AmqpValue>>(&mut self, name: AmqpSymbol, value: impl Into<AmqpValue>);
+    pub fn builder() -> builders::AmqpMessageBuilder;
+    pub fn serialize(message: &AmqpMessage) -> Result<Vec<u8>>;
+    pub fn set_message_body<impl Into<AmqpMessageBody>: Into<AmqpMessageBody>>(&mut self, body: impl Into<AmqpMessageBody>);
+    pub fn set_message_id<impl Into<AmqpMessageId>: Into<AmqpMessageId>>(&mut self, message_id: impl Into<AmqpMessageId>);
 }
 impl AsRef<AmqpMessage> for AmqpMessage {
     fn as_ref(&self) -> &AmqpMessage;
@@ -243,14 +243,14 @@ impl From<Vec<u8>> for AmqpMessage {
 pub struct AmqpOrderedMap<K, V> where K: PartialEq, V: Clone {
 }
 impl<K, V> AmqpOrderedMap<K, V> where K: PartialEq + Clone, V: Clone {
-    fn contains_key<Q>(&self, key: &Q) -> bool where K: Borrow<Q>, Q: PartialEq<K> + ?Sized;
-    fn get<Q>(&self, key: &Q) -> Option<&V> where K: Borrow<Q>, Q: PartialEq<K> + ?Sized;
-    fn insert(&mut self, key: K, value: V);
-    fn is_empty(&self) -> bool;
-    fn iter(&self) -> impl Iterator<Item = (&K, &V)> + '_;
-    fn len(&self) -> usize;
-    fn new() -> Self;
-    fn remove<Q>(&mut self, key: &Q) -> Option<V> where K: Borrow<Q>, Q: PartialEq<K> + ?Sized;
+    pub fn contains_key<Q>(&self, key: &Q) -> bool where K: Borrow<Q>, Q: PartialEq<K> + ?Sized;
+    pub fn get<Q>(&self, key: &Q) -> Option<&V> where K: Borrow<Q>, Q: PartialEq<K> + ?Sized;
+    pub fn insert(&mut self, key: K, value: V);
+    pub fn is_empty(&self) -> bool;
+    pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> + '_;
+    pub fn len(&self) -> usize;
+    pub fn new() -> Self;
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<V> where K: Borrow<Q>, Q: PartialEq<K> + ?Sized;
 }
 impl From<&AmqpValue> for AmqpOrderedMap<AmqpValue, AmqpValue> {
     fn from(v: &AmqpValue) -> Self;
@@ -294,7 +294,7 @@ impl<K, V> IntoIterator for AmqpOrderedMap<K, V> where K: PartialEq, V: Clone {
 pub struct AmqpReceiver {
 }
 impl AmqpReceiver {
-    fn new() -> Self;
+    pub fn new() -> Self;
 }
 impl AmqpReceiverApis for AmqpReceiver {
     #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
@@ -333,7 +333,7 @@ pub struct AmqpSendOptions {
 pub struct AmqpSender {
 }
 impl AmqpSender {
-    fn new() -> Self;
+    pub fn new() -> Self;
 }
 impl AmqpSenderApis for AmqpSender {
     #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
@@ -365,7 +365,7 @@ pub struct AmqpSenderOptions {
 pub struct AmqpSession {
 }
 impl AmqpSession {
-    fn new() -> Self;
+    pub fn new() -> Self;
 }
 impl AmqpSessionApis for AmqpSession {
     #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
@@ -385,7 +385,7 @@ pub struct AmqpSessionOptions {
     pub buffer_size: Option<usize>,
 }
 impl AmqpSessionOptions {
-    fn with_unbounded_windows() -> Self;
+    pub fn with_unbounded_windows() -> Self;
 }
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct AmqpSource {
@@ -402,7 +402,7 @@ pub struct AmqpSource {
     pub capabilities: Option<Vec<crate::value::AmqpSymbol>>,
 }
 impl AmqpSource {
-    fn builder() -> builders::AmqpSourceBuilder;
+    pub fn builder() -> builders::AmqpSourceBuilder;
 }
 #[cfg(feature = "ffi")]
 impl From<AmqpList> for AmqpSource {
@@ -518,7 +518,7 @@ pub struct AmqpTarget {
     pub capabilities: Option<Vec<crate::value::AmqpValue>>,
 }
 impl AmqpTarget {
-    fn builder() -> builders::AmqpTargetBuilder;
+    pub fn builder() -> builders::AmqpTargetBuilder;
 }
 #[cfg(feature = "ffi")]
 impl From<AmqpList> for AmqpTarget {
@@ -1435,46 +1435,46 @@ pub mod builder {
     pub struct AmqpMessageBuilder {
     }
     impl AmqpMessageBuilder {
-        fn add_application_property<impl Into<AmqpSimpleValue>: Into<AmqpSimpleValue>>(self, key: String, value: impl Into<AmqpSimpleValue>) -> Self;
-        fn add_message_body_binary(self, body: Vec<u8>) -> Self;
-        fn add_message_body_sequence(self, body: AmqpList) -> Self;
-        fn build(&self) -> AmqpMessage;
-        fn with_application_properties(self, application_properties: AmqpApplicationProperties) -> Self;
-        fn with_body<impl Into<AmqpMessageBody>: Into<AmqpMessageBody>>(self, body: impl Into<AmqpMessageBody>) -> Self;
-        fn with_delivery_annotations(self, delivery_annotations: AmqpAnnotations) -> Self;
-        fn with_footer(self, footer: AmqpAnnotations) -> Self;
-        fn with_header(self, header: AmqpMessageHeader) -> Self;
-        fn with_message_annotations(self, message_annotations: AmqpAnnotations) -> Self;
-        fn with_properties<T>(self, properties: T) -> Self where T: Into<AmqpMessageProperties>;
+        pub fn add_application_property<impl Into<AmqpSimpleValue>: Into<AmqpSimpleValue>>(self, key: String, value: impl Into<AmqpSimpleValue>) -> Self;
+        pub fn add_message_body_binary(self, body: Vec<u8>) -> Self;
+        pub fn add_message_body_sequence(self, body: AmqpList) -> Self;
+        pub fn build(&self) -> AmqpMessage;
+        pub fn with_application_properties(self, application_properties: AmqpApplicationProperties) -> Self;
+        pub fn with_body<impl Into<AmqpMessageBody>: Into<AmqpMessageBody>>(self, body: impl Into<AmqpMessageBody>) -> Self;
+        pub fn with_delivery_annotations(self, delivery_annotations: AmqpAnnotations) -> Self;
+        pub fn with_footer(self, footer: AmqpAnnotations) -> Self;
+        pub fn with_header(self, header: AmqpMessageHeader) -> Self;
+        pub fn with_message_annotations(self, message_annotations: AmqpAnnotations) -> Self;
+        pub fn with_properties<T>(self, properties: T) -> Self where T: Into<AmqpMessageProperties>;
     }
     pub struct AmqpSourceBuilder {
     }
     impl AmqpSourceBuilder {
-        fn add_to_filter<impl Into<AmqpValue>: Into<AmqpValue>>(self, key: AmqpSymbol, value: impl Into<AmqpValue>) -> Self;
-        fn build(&self) -> AmqpSource;
-        fn with_address(self, address: String) -> Self;
-        fn with_capabilities(self, capabilities: Vec<AmqpSymbol>) -> Self;
-        fn with_default_outcome(self, default_outcome: AmqpOutcome) -> Self;
-        fn with_distribution_mode(self, distribution_mode: DistributionMode) -> Self;
-        fn with_durable(self, durable: TerminusDurability) -> Self;
-        fn with_dynamic(self, dynamic: bool) -> Self;
-        fn with_dynamic_node_properties<impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>: Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>>(self, dynamic_node_properties: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>) -> Self;
-        fn with_expiry_policy(self, expiry_policy: TerminusExpiryPolicy) -> Self;
-        fn with_filter<impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>: Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>>(self, filter: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>) -> Self;
-        fn with_outcomes(self, outcomes: Vec<AmqpSymbol>) -> Self;
-        fn with_timeout(self, timeout: u32) -> Self;
+        pub fn add_to_filter<impl Into<AmqpValue>: Into<AmqpValue>>(self, key: AmqpSymbol, value: impl Into<AmqpValue>) -> Self;
+        pub fn build(&self) -> AmqpSource;
+        pub fn with_address(self, address: String) -> Self;
+        pub fn with_capabilities(self, capabilities: Vec<AmqpSymbol>) -> Self;
+        pub fn with_default_outcome(self, default_outcome: AmqpOutcome) -> Self;
+        pub fn with_distribution_mode(self, distribution_mode: DistributionMode) -> Self;
+        pub fn with_durable(self, durable: TerminusDurability) -> Self;
+        pub fn with_dynamic(self, dynamic: bool) -> Self;
+        pub fn with_dynamic_node_properties<impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>: Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>>(self, dynamic_node_properties: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>) -> Self;
+        pub fn with_expiry_policy(self, expiry_policy: TerminusExpiryPolicy) -> Self;
+        pub fn with_filter<impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>: Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>>(self, filter: impl Into<AmqpOrderedMap<AmqpSymbol, AmqpValue>>) -> Self;
+        pub fn with_outcomes(self, outcomes: Vec<AmqpSymbol>) -> Self;
+        pub fn with_timeout(self, timeout: u32) -> Self;
     }
     pub struct AmqpTargetBuilder {
     }
     impl AmqpTargetBuilder {
-        fn build(&self) -> AmqpTarget;
-        fn with_address(self, address: String) -> Self;
-        fn with_capabilities(self, capabilities: Vec<AmqpValue>) -> Self;
-        fn with_durable(self, durable: TerminusDurability) -> Self;
-        fn with_dynamic(self, dynamic: bool) -> Self;
-        fn with_dynamic_node_properties<impl Into<AmqpOrderedMap<String, AmqpValue>>: Into<AmqpOrderedMap<String, AmqpValue>>>(self, dynamic_node_properties: impl Into<AmqpOrderedMap<String, AmqpValue>>) -> Self;
-        fn with_expiry_policy(self, expiry_policy: TerminusExpiryPolicy) -> Self;
-        fn with_timeout(self, timeout: u32) -> Self;
+        pub fn build(&self) -> AmqpTarget;
+        pub fn with_address(self, address: String) -> Self;
+        pub fn with_capabilities(self, capabilities: Vec<AmqpValue>) -> Self;
+        pub fn with_durable(self, durable: TerminusDurability) -> Self;
+        pub fn with_dynamic(self, dynamic: bool) -> Self;
+        pub fn with_dynamic_node_properties<impl Into<AmqpOrderedMap<String, AmqpValue>>: Into<AmqpOrderedMap<String, AmqpValue>>>(self, dynamic_node_properties: impl Into<AmqpOrderedMap<String, AmqpValue>>) -> Self;
+        pub fn with_expiry_policy(self, expiry_policy: TerminusExpiryPolicy) -> Self;
+        pub fn with_timeout(self, timeout: u32) -> Self;
     }
 }
 pub mod error {
@@ -1485,7 +1485,7 @@ pub mod error {
         pub info: crate::AmqpOrderedMap<crate::AmqpSymbol, crate::AmqpValue>,
     }
     impl AmqpDescribedError {
-        fn new(condition: AmqpErrorCondition, description: Option<String>, info: AmqpOrderedMap<AmqpSymbol, AmqpValue>) -> Self;
+        pub fn new(condition: AmqpErrorCondition, description: Option<String>, info: AmqpOrderedMap<AmqpSymbol, AmqpValue>) -> Self;
     }
     impl From<AmqpDescribedError> for fe2o3_amqp_types::definitions::Error {
         fn from(e: AmqpDescribedError) -> Self;
@@ -1496,12 +1496,12 @@ pub mod error {
     pub struct AmqpError {
     }
     impl AmqpError {
-        fn kind(&self) -> &AmqpErrorKind;
+        pub fn kind(&self) -> &AmqpErrorKind;
         #[cfg(feature = "test")]
-        fn new_described_error(condition: AmqpErrorCondition, description: Option<String>, info: AmqpOrderedMap<AmqpSymbol, AmqpValue>) -> Self;
+        pub fn new_described_error(condition: AmqpErrorCondition, description: Option<String>, info: AmqpOrderedMap<AmqpSymbol, AmqpValue>) -> Self;
         #[cfg(feature = "test")]
-        fn new_management_error(status_code: azure_core::http::StatusCode, description: Option<String>) -> Self;
-        fn with_message<C>(message: C) -> AmqpError where C: Into<Cow<'static, str>>;
+        pub fn new_management_error(status_code: azure_core::http::StatusCode, description: Option<String>) -> Self;
+        pub fn with_message<C>(message: C) -> AmqpError where C: Into<Cow<'static, str>>;
     }
     impl Debug for AmqpError {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -1665,8 +1665,8 @@ pub mod message {
     #[derive(Clone, Debug, Default, PartialEq)]
     pub struct AmqpAnnotations(pub crate::value::AmqpOrderedMap<AmqpAnnotationKey, crate::value::AmqpValue>);
     impl AmqpAnnotations {
-        fn insert<impl Into<AmqpAnnotationKey>: Into<AmqpAnnotationKey>, impl Into<AmqpValue>: Into<AmqpValue>>(&mut self, key: impl Into<AmqpAnnotationKey>, value: impl Into<AmqpValue>);
-        fn new() -> Self;
+        pub fn insert<impl Into<AmqpAnnotationKey>: Into<AmqpAnnotationKey>, impl Into<AmqpValue>: Into<AmqpValue>>(&mut self, key: impl Into<AmqpAnnotationKey>, value: impl Into<AmqpValue>);
+        pub fn new() -> Self;
     }
     impl From<&AmqpAnnotations> for fe2o3_amqp_types::messaging::Annotations {
         fn from(annotations: &AmqpAnnotations) -> Self;
@@ -1704,8 +1704,8 @@ pub mod message {
     #[derive(Clone, Debug, Default, PartialEq)]
     pub struct AmqpApplicationProperties(pub crate::value::AmqpOrderedMap<String, crate::simple_value::AmqpSimpleValue>);
     impl AmqpApplicationProperties {
-        fn insert<impl Into<AmqpSimpleValue>: Into<AmqpSimpleValue>>(&mut self, key: String, value: impl Into<AmqpSimpleValue>);
-        fn new() -> Self;
+        pub fn insert<impl Into<AmqpSimpleValue>: Into<AmqpSimpleValue>>(&mut self, key: String, value: impl Into<AmqpSimpleValue>);
+        pub fn new() -> Self;
     }
     impl From<&AmqpApplicationProperties> for fe2o3_amqp_types::messaging::ApplicationProperties {
         fn from(application_properties: &AmqpApplicationProperties) -> Self;
@@ -1790,9 +1790,9 @@ pub mod message {
     pub struct AmqpSourceFilter {
     }
     impl AmqpSourceFilter {
-        fn code(&self) -> u64;
-        fn description(&self) -> &'static str;
-        fn selector_filter() -> AmqpSourceFilter;
+        pub fn code(&self) -> u64;
+        pub fn description(&self) -> &'static str;
+        pub fn selector_filter() -> AmqpSourceFilter;
     }
     #[derive(Clone, Debug, PartialEq)]
     pub enum AmqpAnnotationKey {

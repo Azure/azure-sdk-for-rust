@@ -203,32 +203,32 @@ pub mod diagnostics {
     pub struct DiagnosticsContext {
     }
     impl DiagnosticsContext {
-        fn activity_id(&self) -> &ActivityId;
-        fn compaction(&self) -> Option<&CompactionInfo>;
-        fn duration(&self) -> Duration;
-        fn effective_status(&self) -> Option<CosmosStatus>;
-        fn fault_injection_enabled(&self) -> bool;
-        fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
-        fn hedging_started(&self) -> bool;
-        fn is_completed(&self) -> bool;
-        fn is_failure(&self) -> bool;
-        fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool;
-        fn is_threshold_violated_for(&self, thresholds: &DiagnosticsThresholds, operation_name: Option<&str>) -> bool;
-        fn machine_id(&self) -> Option<&str>;
-        fn operation_name(&self) -> Option<&str>;
-        fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
-        fn regions_contacted(&self) -> Vec<Region>;
-        fn request_count(&self) -> usize;
-        fn requested_regions(&self) -> Vec<RequestedRegion>;
-        fn requests(&self) -> Arc<Vec<RequestDiagnostics>>;
-        fn responded_regions(&self) -> Vec<&Region>;
-        fn retained_request_count(&self) -> usize;
-        fn status(&self) -> Option<&CosmosStatus>;
-        fn threshold_breach_for(&self, thresholds: &DiagnosticsThresholds, operation_name: Option<&str>) -> Option<ThresholdBreach>;
-        fn to_json_string(&self, verbosity: Option<DiagnosticsVerbosity>) -> &str;
-        fn total_request_charge(&self) -> RequestCharge;
-        fn total_requested_regions(&self) -> usize;
-        fn total_responded_regions(&self) -> usize;
+        pub fn activity_id(&self) -> &ActivityId;
+        pub fn compaction(&self) -> Option<&CompactionInfo>;
+        pub fn duration(&self) -> Duration;
+        pub fn effective_status(&self) -> Option<CosmosStatus>;
+        pub fn fault_injection_enabled(&self) -> bool;
+        pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
+        pub fn hedging_started(&self) -> bool;
+        pub fn is_completed(&self) -> bool;
+        pub fn is_failure(&self) -> bool;
+        pub fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool;
+        pub fn is_threshold_violated_for(&self, thresholds: &DiagnosticsThresholds, operation_name: Option<&str>) -> bool;
+        pub fn machine_id(&self) -> Option<&str>;
+        pub fn operation_name(&self) -> Option<&str>;
+        pub fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
+        pub fn regions_contacted(&self) -> Vec<Region>;
+        pub fn request_count(&self) -> usize;
+        pub fn requested_regions(&self) -> Vec<RequestedRegion>;
+        pub fn requests(&self) -> Arc<Vec<RequestDiagnostics>>;
+        pub fn responded_regions(&self) -> Vec<&Region>;
+        pub fn retained_request_count(&self) -> usize;
+        pub fn status(&self) -> Option<&CosmosStatus>;
+        pub fn threshold_breach_for(&self, thresholds: &DiagnosticsThresholds, operation_name: Option<&str>) -> Option<ThresholdBreach>;
+        pub fn to_json_string(&self, verbosity: Option<DiagnosticsVerbosity>) -> &str;
+        pub fn total_request_charge(&self) -> RequestCharge;
+        pub fn total_requested_regions(&self) -> usize;
+        pub fn total_responded_regions(&self) -> usize;
     }
     impl Clone for DiagnosticsContext {
         fn clone(&self) -> Self;
@@ -249,80 +249,80 @@ pub mod diagnostics {
     pub struct FailedTransportShardDiagnostics {
     }
     impl FailedTransportShardDiagnostics {
-        fn error(&self) -> &str;
-        fn request_sent(&self) -> RequestSentStatus;
-        fn transport_shard(&self) -> &TransportShardDiagnostics;
+        pub fn error(&self) -> &str;
+        pub fn request_sent(&self) -> RequestSentStatus;
+        pub fn transport_shard(&self) -> &TransportShardDiagnostics;
     }
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     #[non_exhaustive]
     pub struct HedgeDiagnostics {
     }
     impl HedgeDiagnostics {
-        fn alternate_region(&self) -> Option<&Region>;
-        fn primary_region(&self) -> &Region;
-        fn response_region(&self) -> Option<&Region>;
-        fn strategy_config(&self) -> HedgingStrategyConfig;
-        fn terminal_state(&self) -> HedgeTerminalState;
+        pub fn alternate_region(&self) -> Option<&Region>;
+        pub fn primary_region(&self) -> &Region;
+        pub fn response_region(&self) -> Option<&Region>;
+        pub fn strategy_config(&self) -> HedgingStrategyConfig;
+        pub fn terminal_state(&self) -> HedgeTerminalState;
     }
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     #[non_exhaustive]
     pub struct HedgingStrategyConfig {
     }
     impl HedgingStrategyConfig {
-        fn threshold(&self) -> HedgeThreshold;
+        pub fn threshold(&self) -> HedgeThreshold;
     }
     #[derive(Clone, Debug)]
-    pub struct ProxyConfiguration {
+    pub struct ProxyConfig {
         pub proxy_allowed: bool,
         pub https_proxy_set: bool,
         pub http_proxy_set: bool,
     }
-    impl ProxyConfiguration {
-        fn from_env(proxy_allowed: bool) -> Self;
+    impl ProxyConfig {
+        pub fn from_env(proxy_allowed: bool) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     pub struct RequestDiagnostics {
     }
     impl RequestDiagnostics {
-        fn activity_id(&self) -> Option<&ActivityId>;
-        fn completed_at(&self) -> Option<Instant>;
-        fn duration_ms(&self) -> u64;
-        fn endpoint(&self) -> &str;
-        fn error(&self) -> Option<&str>;
-        fn events(&self) -> &[RequestEvent];
-        fn execution_context(&self) -> ExecutionContext;
-        fn failed_transport_shards(&self) -> &[FailedTransportShardDiagnostics];
+        pub fn activity_id(&self) -> Option<&ActivityId>;
+        pub fn completed_at(&self) -> Option<Instant>;
+        pub fn duration_ms(&self) -> u64;
+        pub fn endpoint(&self) -> &str;
+        pub fn error(&self) -> Option<&str>;
+        pub fn events(&self) -> &[RequestEvent];
+        pub fn execution_context(&self) -> ExecutionContext;
+        pub fn failed_transport_shards(&self) -> &[FailedTransportShardDiagnostics];
         #[cfg(feature = "fault_injection")]
-        fn fault_injection_evaluations(&self) -> &[crate::fault_injection::FaultInjectionEvaluation];
-        fn local_shard_retry_count(&self) -> u32;
-        fn operation_name(&self) -> Option<&str>;
-        fn pipeline_type(&self) -> PipelineType;
-        fn region(&self) -> Option<&Region>;
-        fn request_charge(&self) -> RequestCharge;
-        fn request_sent(&self) -> RequestSentStatus;
-        fn server_duration_ms(&self) -> Option<f64>;
-        fn session_token(&self) -> Option<&str>;
-        fn started_at(&self) -> Instant;
-        fn status(&self) -> &CosmosStatus;
-        fn timed_out(&self) -> bool;
-        fn transport_http_version(&self) -> TransportHttpVersion;
-        fn transport_kind(&self) -> TransportKind;
-        fn transport_security(&self) -> TransportSecurity;
-        fn transport_shard(&self) -> Option<&TransportShardDiagnostics>;
+        pub fn fault_injection_evaluations(&self) -> &[crate::fault_injection::FaultInjectionEvaluation];
+        pub fn local_shard_retry_count(&self) -> u32;
+        pub fn operation_name(&self) -> Option<&str>;
+        pub fn pipeline_type(&self) -> PipelineKind;
+        pub fn region(&self) -> Option<&Region>;
+        pub fn request_charge(&self) -> RequestCharge;
+        pub fn request_sent(&self) -> RequestSentStatus;
+        pub fn server_duration_ms(&self) -> Option<f64>;
+        pub fn session_token(&self) -> Option<&str>;
+        pub fn started_at(&self) -> Instant;
+        pub fn status(&self) -> &CosmosStatus;
+        pub fn timed_out(&self) -> bool;
+        pub fn transport_http_version(&self) -> TransportHttpVersion;
+        pub fn transport_kind(&self) -> TransportKind;
+        pub fn transport_security(&self) -> TransportSecurity;
+        pub fn transport_shard(&self) -> Option<&TransportShardDiagnostics>;
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     pub struct RequestEvent {
     }
     impl RequestEvent {
-        fn details(&self) -> Option<&str>;
-        fn duration_ms(&self) -> Option<u64>;
-        fn event_type(&self) -> &RequestEventType;
-        fn new(event_type: RequestEventType) -> Self;
-        fn timestamp(&self) -> Instant;
-        fn with_details<impl Into<String>: Into<String>>(self, details: impl Into<String>) -> Self;
-        fn with_duration(event_type: RequestEventType, duration: Duration) -> Self;
+        pub fn details(&self) -> Option<&str>;
+        pub fn duration_ms(&self) -> Option<u64>;
+        pub fn event_type(&self) -> &RequestEventType;
+        pub fn new(event_type: RequestEventType) -> Self;
+        pub fn timestamp(&self) -> Instant;
+        pub fn with_details<impl Into<String>: Into<String>>(self, details: impl Into<String>) -> Self;
+        pub fn with_duration(event_type: RequestEventType, duration: Duration) -> Self;
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct RequestHandle(/* private fields */);
@@ -337,13 +337,13 @@ pub mod diagnostics {
     pub struct TransportShardDiagnostics {
     }
     impl TransportShardDiagnostics {
-        fn consecutive_failures(&self) -> u32;
-        fn estimated_inflight(&self) -> u32;
-        fn marked_for_eviction(&self) -> bool;
-        fn shard_id(&self) -> u64;
-        fn total_cancellations(&self) -> u64;
-        fn total_failures(&self) -> u64;
-        fn total_requests(&self) -> u64;
+        pub fn consecutive_failures(&self) -> u32;
+        pub fn estimated_inflight(&self) -> u32;
+        pub fn marked_for_eviction(&self) -> bool;
+        pub fn shard_id(&self) -> u64;
+        pub fn total_cancellations(&self) -> u64;
+        pub fn total_failures(&self) -> u64;
+        pub fn total_requests(&self) -> u64;
     }
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, serde::Serialize)]
     #[non_exhaustive]
@@ -357,7 +357,7 @@ pub mod diagnostics {
         CircuitBreakerProbe,
     }
     impl ExecutionContext {
-        fn as_str(&self) -> &'static str;
+        pub fn as_str(&self) -> &'static str;
     }
     impl AsRef<str> for ExecutionContext {
         fn as_ref(&self) -> &str;
@@ -377,7 +377,7 @@ pub mod diagnostics {
         CancelledAwaitingPartner,
     }
     impl HedgeTerminalState {
-        fn as_str(&self) -> &'static str;
+        pub fn as_str(&self) -> &'static str;
     }
     impl Display for HedgeTerminalState {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -385,19 +385,19 @@ pub mod diagnostics {
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     #[serde(rename_all = "snake_case")]
-    pub enum PipelineType {
+    pub enum PipelineKind {
         Metadata,
         DataPlane,
     }
-    impl PipelineType {
-        fn as_str(self) -> &'static str;
-        fn is_data_plane(self) -> bool;
-        fn is_metadata(self) -> bool;
+    impl PipelineKind {
+        pub fn as_str(self) -> &'static str;
+        pub fn is_data_plane(self) -> bool;
+        pub fn is_metadata(self) -> bool;
     }
-    impl AsRef<str> for PipelineType {
+    impl AsRef<str> for PipelineKind {
         fn as_ref(&self) -> &str;
     }
-    impl Display for PipelineType {
+    impl Display for PipelineKind {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
@@ -411,8 +411,8 @@ pub mod diagnostics {
         TransportFailed,
     }
     impl RequestEventType {
-        fn as_str(&self) -> &str;
-        fn indicates_request_sent(&self) -> bool;
+        pub fn as_str(&self) -> &str;
+        pub fn indicates_request_sent(&self) -> bool;
     }
     impl AsRef<str> for RequestEventType {
         fn as_ref(&self) -> &str;
@@ -430,10 +430,10 @@ pub mod diagnostics {
         Unknown,
     }
     impl RequestSentStatus {
-        fn as_str(&self) -> &'static str;
-        fn definitely_not_sent(&self) -> bool;
-        fn definitely_sent(&self) -> bool;
-        fn may_have_been_sent(&self) -> bool;
+        pub fn as_str(&self) -> &'static str;
+        pub fn definitely_not_sent(&self) -> bool;
+        pub fn definitely_sent(&self) -> bool;
+        pub fn may_have_been_sent(&self) -> bool;
     }
     impl AsRef<str> for RequestSentStatus {
         fn as_ref(&self) -> &str;
@@ -456,9 +456,9 @@ pub mod diagnostics {
         Http2,
     }
     impl TransportHttpVersion {
-        fn as_str(self) -> &'static str;
-        fn is_http11(self) -> bool;
-        fn is_http2(self) -> bool;
+        pub fn as_str(self) -> &'static str;
+        pub fn is_http11(self) -> bool;
+        pub fn is_http2(self) -> bool;
     }
     impl AsRef<str> for TransportHttpVersion {
         fn as_ref(&self) -> &str;
@@ -475,9 +475,9 @@ pub mod diagnostics {
         GatewayV2,
     }
     impl TransportKind {
-        fn as_str(self) -> &'static str;
-        fn is_gateway(self) -> bool;
-        fn is_gateway_v2(self) -> bool;
+        pub fn as_str(self) -> &'static str;
+        pub fn is_gateway(self) -> bool;
+        pub fn is_gateway_v2(self) -> bool;
     }
     impl AsRef<str> for TransportKind {
         fn as_ref(&self) -> &str;
@@ -494,9 +494,9 @@ pub mod diagnostics {
         EmulatorWithInsecureCertificates,
     }
     impl TransportSecurity {
-        fn as_str(self) -> &'static str;
-        fn is_emulator(self) -> bool;
-        fn is_secure(self) -> bool;
+        pub fn as_str(self) -> &'static str;
+        pub fn is_emulator(self) -> bool;
+        pub fn is_secure(self) -> bool;
     }
     impl AsRef<str> for TransportSecurity {
         fn as_ref(&self) -> &str;
@@ -512,73 +512,73 @@ pub mod driver {
     }
     impl CosmosDriver {
         #[cfg(any(test, feature = "__internal_testing"))]
-        fn __test_only_force_ppaf_enabled(&self);
+        pub fn __test_only_force_ppaf_enabled(&self);
         #[cfg(any(test, feature = "__internal_testing"))]
-        fn __test_only_hub_region_cache_snapshot(&self) -> Vec<(String, String)>;
-        fn account(&self) -> &AccountReference;
+        pub fn __test_only_hub_region_cache_snapshot(&self) -> Vec<(String, String)>;
+        pub fn account(&self) -> &AccountReference;
         #[cfg(feature = "preview_dtx")]
-        async fn execute_distributed_transaction(&self, request: crate::models::DistributedTransactionRequest, options: OperationOptions) -> crate::error::Result<crate::models::DistributedTransactionResponse>;
-        async fn execute_operation(&self, operation: CosmosOperation, options: OperationOptions) -> crate::error::Result<Option<crate::models::CosmosResponse>>;
-        async fn execute_plan(&self, plan: &mut OperationPlan, container: Option<ContainerReference>, options: OperationOptions) -> crate::error::Result<Option<crate::models::CosmosResponse>>;
-        async fn execute_singleton_operation(&self, operation: CosmosOperation, options: OperationOptions) -> crate::error::Result<crate::models::CosmosResponse>;
-        async fn initialize(&self) -> crate::error::Result<()>;
-        fn operation_options_view<'a>(&self, operation_options: &'a OperationOptions) -> OperationOptionsView<'a>;
-        fn options(&self) -> &DriverOptions;
-        async fn plan_operation(&self, operation: CosmosOperation, options: &OperationOptions, continuation: Option<&ContinuationToken>, plan_options: &PlanOptions) -> crate::error::Result<OperationPlan>;
-        async fn prime_container(&self, db_name: &str, container_name: &str) -> crate::error::Result<()>;
-        async fn resolve_all_partition_key_ranges(&self, container: &ContainerReference, force_refresh: bool) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>;
-        async fn resolve_container(&self, db_name: &str, container_name: &str, operation_options: OperationOptions) -> crate::error::Result<ContainerReference>;
-        async fn resolve_container_by_name(&self, db_name: &str, container_name: &str, operation_options: OperationOptions) -> crate::error::Result<ContainerReference>;
-        async fn resolve_container_by_rid(&self, container_rid: &str, operation_options: OperationOptions) -> crate::error::Result<ContainerReference>;
-        async fn resolve_partition_key_ranges_for_key(&self, container: &ContainerReference, partition_key: &PartitionKey, force_refresh: bool) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>;
-        fn runtime(&self) -> &CosmosDriverRuntime;
-        fn user_agent(&self) -> &Arc<UserAgent>;
+        pub async fn execute_distributed_transaction(&self, request: crate::models::DistributedTransactionRequest, options: OperationOptions) -> crate::error::Result<crate::models::DistributedTransactionResponse>;
+        pub async fn execute_operation(&self, operation: CosmosOperation, options: OperationOptions) -> crate::error::Result<Option<crate::models::CosmosResponse>>;
+        pub async fn execute_plan(&self, plan: &mut OperationPlan, container: Option<ContainerReference>, options: OperationOptions) -> crate::error::Result<Option<crate::models::CosmosResponse>>;
+        pub async fn execute_singleton_operation(&self, operation: CosmosOperation, options: OperationOptions) -> crate::error::Result<crate::models::CosmosResponse>;
+        pub async fn initialize(&self) -> crate::error::Result<()>;
+        pub fn operation_options_view<'a>(&self, operation_options: &'a OperationOptions) -> OperationOptionsView<'a>;
+        pub fn options(&self) -> &DriverOptions;
+        pub async fn plan_operation(&self, operation: CosmosOperation, options: &OperationOptions, continuation: Option<&ContinuationToken>, plan_options: &PlanOptions) -> crate::error::Result<OperationPlan>;
+        pub async fn prime_container(&self, db_name: &str, container_name: &str) -> crate::error::Result<()>;
+        pub async fn resolve_all_partition_key_ranges(&self, container: &ContainerReference, force_refresh: bool) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>;
+        pub async fn resolve_container(&self, db_name: &str, container_name: &str, operation_options: OperationOptions) -> crate::error::Result<ContainerReference>;
+        pub async fn resolve_container_by_name(&self, db_name: &str, container_name: &str, operation_options: OperationOptions) -> crate::error::Result<ContainerReference>;
+        pub async fn resolve_container_by_rid(&self, container_rid: &str, operation_options: OperationOptions) -> crate::error::Result<ContainerReference>;
+        pub async fn resolve_partition_key_ranges_for_key(&self, container: &ContainerReference, partition_key: &PartitionKey, force_refresh: bool) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>;
+        pub fn runtime(&self) -> &CosmosDriverRuntime;
+        pub fn user_agent(&self) -> &Arc<UserAgent>;
     }
     #[derive(Debug)]
     #[non_exhaustive]
     pub struct CosmosDriverRuntime {
     }
     impl CosmosDriverRuntime {
-        fn builder() -> CosmosDriverRuntimeBuilder;
-        fn client_options(&self) -> &ClientOptions;
-        fn connection_pool(&self) -> &ConnectionPoolOptions;
-        fn correlation_id(&self) -> Option<&CorrelationId>;
-        async fn create_driver(self: &Arc<Self>, driver_options: DriverOptions) -> crate::error::Result<Arc<CosmosDriver>>;
-        fn default_operation_options(&self) -> Arc<OperationOptions>;
-        fn diagnostics_options(&self) -> &DiagnosticsOptions;
-        fn effective_correlation(&self) -> Option<&str>;
-        fn env_operation_options(&self) -> &Arc<OperationOptions>;
-        fn env_override_operation_options(&self) -> &Arc<OperationOptions>;
-        fn proxy_configuration(&self) -> &ProxyConfiguration;
-        fn set_default_operation_options(&self, options: OperationOptions);
-        fn user_agent(&self) -> &Arc<UserAgent>;
-        fn user_agent_suffix(&self) -> Option<&UserAgentSuffix>;
-        fn workload_id(&self) -> Option<WorkloadId>;
-        fn wrapping_sdk_identifier(&self) -> Option<&str>;
+        pub fn builder() -> CosmosDriverRuntimeBuilder;
+        pub fn client_options(&self) -> &ClientOptions;
+        pub fn connection_pool(&self) -> &ConnectionPoolOptions;
+        pub fn correlation_id(&self) -> Option<&CorrelationId>;
+        pub async fn create_driver(self: &Arc<Self>, driver_options: DriverOptions) -> crate::error::Result<Arc<CosmosDriver>>;
+        pub fn default_operation_options(&self) -> Arc<OperationOptions>;
+        pub fn diagnostics_options(&self) -> &DiagnosticsOptions;
+        pub fn effective_correlation(&self) -> Option<&str>;
+        pub fn env_operation_options(&self) -> &Arc<OperationOptions>;
+        pub fn env_override_operation_options(&self) -> &Arc<OperationOptions>;
+        pub fn proxy_configuration(&self) -> &ProxyConfig;
+        pub fn set_default_operation_options(&self, options: OperationOptions);
+        pub fn user_agent(&self) -> &Arc<UserAgent>;
+        pub fn user_agent_suffix(&self) -> Option<&UserAgentSuffix>;
+        pub fn workload_id(&self) -> Option<WorkloadId>;
+        pub fn wrapping_sdk_identifier(&self) -> Option<&str>;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct CosmosDriverRuntimeBuilder {
     }
     impl CosmosDriverRuntimeBuilder {
-        async fn build(self) -> crate::error::Result<Arc<CosmosDriverRuntime>>;
-        fn new() -> Self;
-        fn with_client_options(self, options: ClientOptions) -> Self;
-        fn with_connection_pool(self, options: ConnectionPoolOptions) -> Self;
-        fn with_correlation_id(self, correlation_id: CorrelationId) -> Self;
-        fn with_cpu_refresh_interval(self, interval: Duration) -> Self;
-        fn with_default_operation_options(self, options: OperationOptions) -> Self;
-        fn with_diagnostics_options(self, options: DiagnosticsOptions) -> Self;
+        pub async fn build(self) -> crate::error::Result<Arc<CosmosDriverRuntime>>;
+        pub fn new() -> Self;
+        pub fn with_client_options(self, options: ClientOptions) -> Self;
+        pub fn with_connection_pool(self, options: ConnectionPoolOptions) -> Self;
+        pub fn with_correlation_id(self, correlation_id: CorrelationId) -> Self;
+        pub fn with_cpu_refresh_interval(self, interval: Duration) -> Self;
+        pub fn with_default_operation_options(self, options: OperationOptions) -> Self;
+        pub fn with_diagnostics_options(self, options: DiagnosticsOptions) -> Self;
         #[cfg(feature = "__internal_mocking")]
-        fn with_mock_http_client_factory(self, factory: Arc<dyn HttpClientFactory>) -> Self;
-        fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
-        fn with_workload_id(self, workload_id: WorkloadId) -> Self;
-        fn with_wrapping_sdk_identifier<impl Into<String>: Into<String>>(self, identifier: impl Into<String>) -> Self;
+        pub fn with_mock_http_client_factory(self, factory: Arc<dyn HttpClientFactory>) -> Self;
+        pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
+        pub fn with_workload_id(self, workload_id: WorkloadId) -> Self;
+        pub fn with_wrapping_sdk_identifier<impl Into<String>: Into<String>>(self, identifier: impl Into<String>) -> Self;
     }
     pub struct OperationPlan {
     }
     impl OperationPlan {
-        fn to_continuation_token(&self) -> crate::error::Result<ContinuationToken>;
+        pub fn to_continuation_token(&self) -> crate::error::Result<ContinuationToken>;
     }
 }
 pub mod error {
@@ -596,15 +596,15 @@ pub mod error {
     pub struct CosmosError {
     }
     impl CosmosError {
-        fn backtrace(&self) -> Option<Arc<str>>;
-        fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>>;
-        fn is_from_wire(&self) -> bool;
-        fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
-        fn response(&self) -> Option<&CosmosResponse>;
-        fn status(&self) -> CosmosStatus;
+        pub fn backtrace(&self) -> Option<Arc<str>>;
+        pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>>;
+        pub fn is_from_wire(&self) -> bool;
+        pub fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
+        pub fn response(&self) -> Option<&CosmosResponse>;
+        pub fn status(&self) -> CosmosStatus;
     }
     impl CosmosError {
-        fn builder() -> CosmosErrorBuilder;
+        pub fn builder() -> CosmosErrorBuilder;
     }
     impl Debug for CosmosError {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -619,16 +619,16 @@ pub mod error {
     pub struct CosmosErrorBuilder {
     }
     impl CosmosErrorBuilder {
-        fn build(self) -> CosmosError;
-        fn from_error(err: CosmosError) -> Self;
-        fn with_arc_source(self, source: Arc<dyn StdError + Send + Sync + 'static>) -> Self;
-        fn with_context<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, context: impl Into<Cow<'static, str>>) -> Self;
-        fn with_diagnostics(self, diagnostics: Arc<DiagnosticsContext>) -> Self;
-        fn with_message<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, message: impl Into<Cow<'static, str>>) -> Self;
-        fn with_patch_tracking_id(self, id: PatchTrackingId) -> Self;
-        fn with_response(self, response: CosmosResponse) -> Self;
-        fn with_source<E>(self, source: E) -> Self where E: StdError + Send + Sync + 'static;
-        fn with_status(self, status: CosmosStatus) -> Self;
+        pub fn build(self) -> CosmosError;
+        pub fn from_error(err: CosmosError) -> Self;
+        pub fn with_arc_source(self, source: Arc<dyn StdError + Send + Sync + 'static>) -> Self;
+        pub fn with_context<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, context: impl Into<Cow<'static, str>>) -> Self;
+        pub fn with_diagnostics(self, diagnostics: Arc<DiagnosticsContext>) -> Self;
+        pub fn with_message<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, message: impl Into<Cow<'static, str>>) -> Self;
+        pub fn with_patch_tracking_id(self, id: PatchTrackingId) -> Self;
+        pub fn with_response(self, response: CosmosResponse) -> Self;
+        pub fn with_source<E>(self, source: E) -> Self where E: StdError + Send + Sync + 'static;
+        pub fn with_status(self, status: CosmosStatus) -> Self;
     }
     #[derive(Clone, Copy, Eq, Hash, PartialEq)]
     pub struct CosmosStatus {
@@ -720,29 +720,29 @@ pub mod error {
         const TRANSPORT_HTTP2_INCOMPATIBLE: CosmosStatus = _;
         const TRANSPORT_IO_FAILED: CosmosStatus = _;
         const WRITE_FORBIDDEN: CosmosStatus = _;
-        fn is_bad_request(&self) -> bool;
-        fn is_conflict(&self) -> bool;
-        fn is_database_account_not_found(&self) -> bool;
-        fn is_forbidden(&self) -> bool;
-        fn is_gone(&self) -> bool;
-        fn is_not_found(&self) -> bool;
-        fn is_partition_key_range_gone(&self) -> bool;
-        fn is_precondition_failed(&self) -> bool;
-        fn is_read_session_not_available(&self) -> bool;
-        fn is_retry_with(&self) -> bool;
-        fn is_service_unavailable(&self) -> bool;
-        fn is_success(&self) -> bool;
-        fn is_throttled(&self) -> bool;
-        fn is_timeout(&self) -> bool;
-        fn is_transient(&self) -> bool;
-        fn is_transport_generated_503(&self) -> bool;
-        fn is_unauthorized(&self) -> bool;
-        fn is_write_forbidden(&self) -> bool;
-        fn name(&self) -> Option<&'static str>;
-        fn new(status_code: StatusCode) -> Self;
-        fn status_code(&self) -> StatusCode;
-        fn sub_status(&self) -> Option<SubStatusCode>;
-        fn with_sub_status(self, sub_status_code: u16) -> Self;
+        pub fn is_bad_request(&self) -> bool;
+        pub fn is_conflict(&self) -> bool;
+        pub fn is_database_account_not_found(&self) -> bool;
+        pub fn is_forbidden(&self) -> bool;
+        pub fn is_gone(&self) -> bool;
+        pub fn is_not_found(&self) -> bool;
+        pub fn is_partition_key_range_gone(&self) -> bool;
+        pub fn is_precondition_failed(&self) -> bool;
+        pub fn is_read_session_not_available(&self) -> bool;
+        pub fn is_retry_with(&self) -> bool;
+        pub fn is_service_unavailable(&self) -> bool;
+        pub fn is_success(&self) -> bool;
+        pub fn is_throttled(&self) -> bool;
+        pub fn is_timeout(&self) -> bool;
+        pub fn is_transient(&self) -> bool;
+        pub fn is_transport_generated_503(&self) -> bool;
+        pub fn is_unauthorized(&self) -> bool;
+        pub fn is_write_forbidden(&self) -> bool;
+        pub fn name(&self) -> Option<&'static str>;
+        pub fn new(status_code: StatusCode) -> Self;
+        pub fn status_code(&self) -> StatusCode;
+        pub fn sub_status(&self) -> Option<SubStatusCode>;
+        pub fn with_sub_status(self, sub_status_code: u16) -> Self;
     }
     impl Debug for CosmosStatus {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1043,10 +1043,10 @@ pub mod error {
         const VALUE_DOES_NOT_MATCH_EXPECTED_BOUND: SubStatusCode = _;
         const WRITE_FORBIDDEN: SubStatusCode = _;
         const XP_COMPOSITE_REPLICATOR: SubStatusCode = _;
-        fn from_header_value(s: &str) -> Option<Self>;
-        fn name(&self, status_code: Option<StatusCode>) -> Option<&'static str>;
-        const fn new(code: u16) -> Self;
-        const fn value(&self) -> u16;
+        pub fn from_header_value(s: &str) -> Option<Self>;
+        pub fn name(&self, status_code: Option<StatusCode>) -> Option<&'static str>;
+        pub const fn new(code: u16) -> Self;
+        pub const fn value(&self) -> u16;
     }
     impl Debug for SubStatusCode {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1072,19 +1072,19 @@ pub mod fault_injection {
     pub struct CustomResponse {
     }
     impl CustomResponse {
-        fn body(&self) -> &[u8];
-        fn headers(&self) -> &Headers;
-        fn status_code(&self) -> StatusCode;
+        pub fn body(&self) -> &[u8];
+        pub fn headers(&self) -> &Headers;
+        pub fn status_code(&self) -> StatusCode;
     }
     #[non_exhaustive]
     pub struct CustomResponseBuilder {
     }
     impl CustomResponseBuilder {
-        fn build(self) -> CustomResponse;
-        fn new(status_code: StatusCode) -> Self;
-        fn with_body<impl Into<Vec<u8>>: Into<Vec<u8>>>(self, body: impl Into<Vec<u8>>) -> Self;
-        fn with_header<impl Into<HeaderName>: Into<HeaderName>, impl Into<HeaderValue>: Into<HeaderValue>>(self, name: impl Into<HeaderName>, value: impl Into<HeaderValue>) -> Self;
-        fn with_sub_status(self, code: u16) -> Self;
+        pub fn build(self) -> CustomResponse;
+        pub fn new(status_code: StatusCode) -> Self;
+        pub fn with_body<impl Into<Vec<u8>>: Into<Vec<u8>>>(self, body: impl Into<Vec<u8>>) -> Self;
+        pub fn with_header<impl Into<HeaderName>: Into<HeaderName>, impl Into<HeaderValue>: Into<HeaderValue>>(self, name: impl Into<HeaderName>, value: impl Into<HeaderValue>) -> Self;
+        pub fn with_sub_status(self, code: u16) -> Self;
     }
     #[derive(Debug)]
     #[non_exhaustive]
@@ -1099,43 +1099,43 @@ pub mod fault_injection {
     pub struct FaultInjectionCondition {
     }
     impl FaultInjectionCondition {
-        fn container_id(&self) -> Option<&str>;
-        fn operation_type(&self) -> Option<FaultOperationType>;
-        fn region(&self) -> Option<&Region>;
-        fn transport_kind(&self) -> Option<TransportKind>;
+        pub fn container_id(&self) -> Option<&str>;
+        pub fn operation_type(&self) -> Option<FaultOperationType>;
+        pub fn region(&self) -> Option<&Region>;
+        pub fn transport_kind(&self) -> Option<TransportKind>;
     }
     #[derive(Default)]
     #[non_exhaustive]
     pub struct FaultInjectionConditionBuilder {
     }
     impl FaultInjectionConditionBuilder {
-        fn build(self) -> FaultInjectionCondition;
-        fn new() -> Self;
-        fn with_container_id<impl Into<String>: Into<String>>(self, container_id: impl Into<String>) -> Self;
-        fn with_operation_type(self, operation_type: FaultOperationType) -> Self;
-        fn with_region(self, region: Region) -> Self;
-        fn with_transport_kind(self, transport_kind: TransportKind) -> Self;
+        pub fn build(self) -> FaultInjectionCondition;
+        pub fn new() -> Self;
+        pub fn with_container_id<impl Into<String>: Into<String>>(self, container_id: impl Into<String>) -> Self;
+        pub fn with_operation_type(self, operation_type: FaultOperationType) -> Self;
+        pub fn with_region(self, region: Region) -> Self;
+        pub fn with_transport_kind(self, transport_kind: TransportKind) -> Self;
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct FaultInjectionResult {
     }
     impl FaultInjectionResult {
-        fn custom_response(&self) -> Option<&CustomResponse>;
-        fn delay(&self) -> Option<Duration>;
-        fn error_type(&self) -> Option<FaultInjectionErrorType>;
-        fn probability(&self) -> f32;
+        pub fn custom_response(&self) -> Option<&CustomResponse>;
+        pub fn delay(&self) -> Option<Duration>;
+        pub fn error_type(&self) -> Option<FaultInjectionErrorType>;
+        pub fn probability(&self) -> f32;
     }
     #[non_exhaustive]
     pub struct FaultInjectionResultBuilder {
     }
     impl FaultInjectionResultBuilder {
-        fn build(self) -> FaultInjectionResult;
-        fn new() -> Self;
-        fn with_custom_response(self, response: CustomResponse) -> Self;
-        fn with_delay(self, delay: Duration) -> Self;
-        fn with_error(self, error_type: FaultInjectionErrorType) -> Self;
-        fn with_probability(self, probability: f32) -> Self;
+        pub fn build(self) -> FaultInjectionResult;
+        pub fn new() -> Self;
+        pub fn with_custom_response(self, response: CustomResponse) -> Self;
+        pub fn with_delay(self, delay: Duration) -> Self;
+        pub fn with_error(self, error_type: FaultInjectionErrorType) -> Self;
+        pub fn with_probability(self, probability: f32) -> Self;
     }
     impl Default for FaultInjectionResultBuilder {
         fn default() -> Self;
@@ -1145,29 +1145,29 @@ pub mod fault_injection {
     pub struct FaultInjectionRule {
     }
     impl FaultInjectionRule {
-        fn condition(&self) -> &FaultInjectionCondition;
-        fn disable(&self);
-        fn enable(&self);
-        fn end_time(&self) -> Option<Instant>;
-        fn hit_count(&self) -> u32;
-        fn hit_limit(&self) -> Option<u32>;
-        fn id(&self) -> &str;
-        fn is_enabled(&self) -> bool;
-        fn result(&self) -> &FaultInjectionResult;
-        fn start_time(&self) -> Option<Instant>;
+        pub fn condition(&self) -> &FaultInjectionCondition;
+        pub fn disable(&self);
+        pub fn enable(&self);
+        pub fn end_time(&self) -> Option<Instant>;
+        pub fn hit_count(&self) -> u32;
+        pub fn hit_limit(&self) -> Option<u32>;
+        pub fn id(&self) -> &str;
+        pub fn is_enabled(&self) -> bool;
+        pub fn result(&self) -> &FaultInjectionResult;
+        pub fn start_time(&self) -> Option<Instant>;
     }
     #[non_exhaustive]
     pub struct FaultInjectionRuleBuilder {
     }
     impl FaultInjectionRuleBuilder {
-        fn build(self) -> FaultInjectionRule;
-        fn new<impl Into<String>: Into<String>>(id: impl Into<String>, result: FaultInjectionResult) -> Self;
-        fn with_condition(self, condition: FaultInjectionCondition) -> Self;
-        fn with_end_time(self, end_time: Instant) -> Self;
-        fn with_hit_limit(self, hit_limit: u32) -> Self;
-        fn with_result(self, result: FaultInjectionResult) -> Self;
-        fn with_shared_state(self, enabled: Arc<AtomicBool>, hit_count: Arc<AtomicU32>) -> Self;
-        fn with_start_time(self, start_time: Instant) -> Self;
+        pub fn build(self) -> FaultInjectionRule;
+        pub fn new<impl Into<String>: Into<String>>(id: impl Into<String>, result: FaultInjectionResult) -> Self;
+        pub fn with_condition(self, condition: FaultInjectionCondition) -> Self;
+        pub fn with_end_time(self, end_time: Instant) -> Self;
+        pub fn with_hit_limit(self, hit_limit: u32) -> Self;
+        pub fn with_result(self, result: FaultInjectionResult) -> Self;
+        pub fn with_shared_state(self, enabled: Arc<AtomicBool>, hit_count: Arc<AtomicU32>) -> Self;
+        pub fn with_start_time(self, start_time: Instant) -> Self;
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[non_exhaustive]
@@ -1208,8 +1208,8 @@ pub mod fault_injection {
         Superseded { rule_id: String },
     }
     impl FaultInjectionEvaluation {
-        fn rule_id(&self) -> &str;
-        fn was_applied(&self) -> bool;
+        pub fn rule_id(&self) -> &str;
+        pub fn was_applied(&self) -> bool;
     }
     impl Display for FaultInjectionEvaluation {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -1234,8 +1234,8 @@ pub mod fault_injection {
         MetadataPartitionKeyRanges,
     }
     impl FaultOperationType {
-        fn as_str(&self) -> &'static str;
-        fn from_operation_and_resource(operation_type: &OperationType, resource_type: &ResourceType) -> Option<Self>;
+        pub fn as_str(&self) -> &'static str;
+        pub fn from_operation_and_resource(operation_type: &OperationType, resource_type: &ResourceType) -> Option<Self>;
     }
     impl Display for FaultOperationType {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1251,14 +1251,14 @@ pub mod in_memory_emulator {
     pub struct ContainerConfig {
     }
     impl ContainerConfig {
-        fn build(self) -> crate::error::Result<Self>;
-        fn new() -> Self;
-        fn partition_count(&self) -> u32;
-        fn partition_key_range_page_size(&self) -> Option<u32>;
-        fn provisioned_throughput_ru(&self) -> Option<u32>;
-        fn with_partition_count(self, count: u32) -> Self;
-        fn with_partition_key_range_page_size(self, page_size: u32) -> Self;
-        fn with_throughput(self, ru_per_second: u32) -> Self;
+        pub fn build(self) -> crate::error::Result<Self>;
+        pub fn new() -> Self;
+        pub fn partition_count(&self) -> u32;
+        pub fn partition_key_range_page_size(&self) -> Option<u32>;
+        pub fn provisioned_throughput_ru(&self) -> Option<u32>;
+        pub fn with_partition_count(self, count: u32) -> Self;
+        pub fn with_partition_key_range_page_size(self, page_size: u32) -> Self;
+        pub fn with_throughput(self, ru_per_second: u32) -> Self;
     }
     impl Default for ContainerConfig {
         fn default() -> Self;
@@ -1268,7 +1268,7 @@ pub mod in_memory_emulator {
     impl EffectivePartitionKey {
         const MAX: Self = _;
         const MIN: Self = _;
-        fn to_hex(&self) -> String;
+        pub fn to_hex(&self) -> String;
     }
     impl Display for EffectivePartitionKey {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1306,20 +1306,20 @@ pub mod in_memory_emulator {
     pub struct EmulatorStore {
     }
     impl EmulatorStore {
-        fn add_region(&self, region: VirtualRegion, seeding: SeedingPolicy) -> crate::error::Result<()>;
-        fn announce_failover(&self, region_name: &str) -> crate::error::Result<()>;
-        fn begin_failover(&self, region_name: &str) -> crate::error::Result<()>;
-        fn begin_region_removal(&self, region_name: &str) -> crate::error::Result<()>;
-        fn cancel_region_removal(&self, region_name: &str) -> crate::error::Result<()>;
-        fn complete_failover(&self);
-        fn remove_region(&self, region_name: &str) -> crate::error::Result<()>;
-        fn restore_region_write(&self, region_name: &str) -> crate::error::Result<()>;
-        fn revoke_region_write(&self, region_name: &str) -> crate::error::Result<()>;
-        fn set_failover_priorities(&self, order: &[&str]) -> crate::error::Result<()>;
-        fn set_region_offline(&self, region_name: &str) -> crate::error::Result<()>;
-        fn set_region_online(&self, region_name: &str) -> crate::error::Result<()>;
-        fn set_write_mode(&self, mode: WriteMode);
-        fn set_write_region(&self, region_name: &str) -> crate::error::Result<()>;
+        pub fn add_region(&self, region: VirtualRegion, seeding: SeedingPolicy) -> crate::error::Result<()>;
+        pub fn announce_failover(&self, region_name: &str) -> crate::error::Result<()>;
+        pub fn begin_failover(&self, region_name: &str) -> crate::error::Result<()>;
+        pub fn begin_region_removal(&self, region_name: &str) -> crate::error::Result<()>;
+        pub fn cancel_region_removal(&self, region_name: &str) -> crate::error::Result<()>;
+        pub fn complete_failover(&self);
+        pub fn remove_region(&self, region_name: &str) -> crate::error::Result<()>;
+        pub fn restore_region_write(&self, region_name: &str) -> crate::error::Result<()>;
+        pub fn revoke_region_write(&self, region_name: &str) -> crate::error::Result<()>;
+        pub fn set_failover_priorities(&self, order: &[&str]) -> crate::error::Result<()>;
+        pub fn set_region_offline(&self, region_name: &str) -> crate::error::Result<()>;
+        pub fn set_region_online(&self, region_name: &str) -> crate::error::Result<()>;
+        pub fn set_write_mode(&self, mode: WriteMode);
+        pub fn set_write_region(&self, region_name: &str) -> crate::error::Result<()>;
     }
     impl Debug for EmulatorStore {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -1327,15 +1327,15 @@ pub mod in_memory_emulator {
     pub struct InMemoryEmulatorHttpClient {
     }
     impl InMemoryEmulatorHttpClient {
-        fn new(config: VirtualAccountConfig) -> Self;
-        fn runtime_builder(self: &Arc<Self>) -> crate::driver::CosmosDriverRuntimeBuilder;
+        pub fn new(config: VirtualAccountConfig) -> Self;
+        pub fn runtime_builder(self: &Arc<Self>) -> crate::driver::CosmosDriverRuntimeBuilder;
         #[cfg(feature = "fault_injection")]
-        fn runtime_builder_with_fault_rules(self: &Arc<Self>, rules: Vec<Arc<crate::fault_injection::FaultInjectionRule>>) -> crate::driver::CosmosDriverRuntimeBuilder;
-        fn store(&self) -> Arc<EmulatorStore>;
-        fn with_request_observer(self, observer: Arc<dyn RequestObserver>) -> Self;
+        pub fn runtime_builder_with_fault_rules(self: &Arc<Self>, rules: Vec<Arc<crate::fault_injection::FaultInjectionRule>>) -> crate::driver::CosmosDriverRuntimeBuilder;
+        pub fn store(&self) -> Arc<EmulatorStore>;
+        pub fn with_request_observer(self, observer: Arc<dyn RequestObserver>) -> Self;
     }
     impl InMemoryEmulatorHttpClient {
-        async fn execute_request(&self, request: &Request) -> crate::error::Result<AsyncRawResponse>;
+        pub async fn execute_request(&self, request: &Request) -> crate::error::Result<AsyncRawResponse>;
     }
     impl Debug for InMemoryEmulatorHttpClient {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -1344,17 +1344,17 @@ pub mod in_memory_emulator {
     pub struct ReplicationConfig {
     }
     impl ReplicationConfig {
-        fn fixed(delay: Duration) -> Self;
-        fn immediate() -> Self;
-        fn is_immediate(&self) -> bool;
-        fn max_buffered_replications(&self) -> usize;
-        fn max_delay(&self) -> Duration;
-        fn min_delay(&self) -> Duration;
-        fn range(min: Duration, max: Duration) -> crate::error::Result<Self>;
-        fn sample_delay(&self) -> Duration;
-        fn with_jitter_seed(self, seed: u64) -> Self;
-        fn with_max_buffered_replications(self, max: usize) -> Self;
-        fn with_replication_delay_fn(self, f: std::sync::Arc<dyn Fn() -> std::time::Duration + Send + Sync>) -> Self;
+        pub fn fixed(delay: Duration) -> Self;
+        pub fn immediate() -> Self;
+        pub fn is_immediate(&self) -> bool;
+        pub fn max_buffered_replications(&self) -> usize;
+        pub fn max_delay(&self) -> Duration;
+        pub fn min_delay(&self) -> Duration;
+        pub fn range(min: Duration, max: Duration) -> crate::error::Result<Self>;
+        pub fn sample_delay(&self) -> Duration;
+        pub fn with_jitter_seed(self, seed: u64) -> Self;
+        pub fn with_max_buffered_replications(self, max: usize) -> Self;
+        pub fn with_replication_delay_fn(self, f: std::sync::Arc<dyn Fn() -> std::time::Duration + Send + Sync>) -> Self;
     }
     impl Debug for ReplicationConfig {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -1362,26 +1362,26 @@ pub mod in_memory_emulator {
     impl Default for ReplicationConfig {
         fn default() -> Self;
     }
-    #[derive(Clone, Debug, Eq, PartialEq)]
-    pub struct ResolvedRegion {
-        pub name: String,
-        pub status: RegionStatus,
-    }
     #[derive(Clone, Debug)]
-    pub struct RuChargingModel {
+    pub struct RequestUnitChargingModel {
         pub read_base_ru: f64,
         pub create_base_ru: f64,
         pub write_multiplier: f64,
         pub indexing_ru_per_property: f64,
     }
-    impl RuChargingModel {
-        fn compute_create_ru(&self, doc_size: usize, num_properties: usize) -> f64;
-        fn compute_read_ru(&self, doc_size: usize) -> f64;
-        fn compute_replace_or_delete_ru(&self, doc_size: usize, num_properties: usize) -> f64;
-        fn count_properties(body: &serde_json::Value) -> usize;
+    impl RequestUnitChargingModel {
+        pub fn compute_create_ru(&self, doc_size: usize, num_properties: usize) -> f64;
+        pub fn compute_read_ru(&self, doc_size: usize) -> f64;
+        pub fn compute_replace_or_delete_ru(&self, doc_size: usize, num_properties: usize) -> f64;
+        pub fn count_properties(body: &serde_json::Value) -> usize;
     }
-    impl Default for RuChargingModel {
+    impl Default for RequestUnitChargingModel {
         fn default() -> Self;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub struct ResolvedRegion {
+        pub name: String,
+        pub status: RegionStatus,
     }
     #[derive(Clone, Debug)]
     pub struct TopologySnapshot {
@@ -1394,46 +1394,46 @@ pub mod in_memory_emulator {
         pub next_write_region: Option<String>,
     }
     impl TopologySnapshot {
-        fn advertised(&self) -> Vec<&VirtualRegion>;
-        fn writable(&self, allow_multiple_write_locations: bool) -> Vec<&VirtualRegion>;
+        pub fn advertised(&self) -> Vec<&VirtualRegion>;
+        pub fn writable(&self, allow_multiple_write_locations: bool) -> Vec<&VirtualRegion>;
     }
     #[derive(Clone, Debug)]
     pub struct VirtualAccountConfig {
     }
     impl VirtualAccountConfig {
-        fn active_region_names(&self) -> Vec<String>;
-        fn active_regions(&self) -> Vec<VirtualRegion>;
-        fn consistency(&self) -> ConsistencyLevel;
-        fn is_write_region(&self, region_name: &str) -> bool;
-        fn new(regions: Vec<VirtualRegion>) -> crate::error::Result<Self>;
-        fn per_partition_failover_enabled(&self) -> bool;
-        fn region_for_url(&self, url: &Url) -> Option<ResolvedRegion>;
-        fn region_id_for(&self, region_name: &str) -> u64;
-        fn replication(&self) -> &ReplicationConfig;
-        fn replication_for(&self, source: &str, target: &str) -> &ReplicationConfig;
-        fn ru_model(&self) -> &RuChargingModel;
-        fn set_per_partition_failover(&self, enabled: bool);
-        fn throttling_enabled(&self) -> bool;
-        fn topology_snapshot(&self) -> TopologySnapshot;
-        fn with_consistency(self, level: ConsistencyLevel) -> Self;
-        fn with_per_partition_failover(self, enabled: bool) -> Self;
-        fn with_replication_config(self, config: ReplicationConfig) -> Self;
-        fn with_replication_override(self, source: &str, target: &str, config: ReplicationConfig) -> crate::error::Result<Self>;
-        fn with_ru_model(self, model: RuChargingModel) -> Self;
-        fn with_throttling_enabled(self, enabled: bool) -> Self;
-        fn with_write_mode(self, mode: WriteMode) -> Self;
-        fn write_mode(&self) -> WriteMode;
-        fn write_region_name(&self) -> String;
+        pub fn active_region_names(&self) -> Vec<String>;
+        pub fn active_regions(&self) -> Vec<VirtualRegion>;
+        pub fn consistency(&self) -> ConsistencyLevel;
+        pub fn is_write_region(&self, region_name: &str) -> bool;
+        pub fn new(regions: Vec<VirtualRegion>) -> crate::error::Result<Self>;
+        pub fn per_partition_failover_enabled(&self) -> bool;
+        pub fn region_for_url(&self, url: &Url) -> Option<ResolvedRegion>;
+        pub fn region_id_for(&self, region_name: &str) -> u64;
+        pub fn replication(&self) -> &ReplicationConfig;
+        pub fn replication_for(&self, source: &str, target: &str) -> &ReplicationConfig;
+        pub fn ru_model(&self) -> &RequestUnitChargingModel;
+        pub fn set_per_partition_failover(&self, enabled: bool);
+        pub fn throttling_enabled(&self) -> bool;
+        pub fn topology_snapshot(&self) -> TopologySnapshot;
+        pub fn with_consistency(self, level: ConsistencyLevel) -> Self;
+        pub fn with_per_partition_failover(self, enabled: bool) -> Self;
+        pub fn with_replication_config(self, config: ReplicationConfig) -> Self;
+        pub fn with_replication_override(self, source: &str, target: &str, config: ReplicationConfig) -> crate::error::Result<Self>;
+        pub fn with_ru_model(self, model: RequestUnitChargingModel) -> Self;
+        pub fn with_throttling_enabled(self, enabled: bool) -> Self;
+        pub fn with_write_mode(self, mode: WriteMode) -> Self;
+        pub fn write_mode(&self) -> WriteMode;
+        pub fn write_region_name(&self) -> String;
     }
     #[derive(Clone, Debug)]
     pub struct VirtualRegion {
     }
     impl VirtualRegion {
-        fn gateway_url(&self) -> &Url;
-        fn name(&self) -> &str;
-        fn new(name: &str, gateway_url: Url) -> Self;
-        fn region_id(&self) -> u64;
-        fn with_region_id(self, id: u64) -> Self;
+        pub fn gateway_url(&self) -> &Url;
+        pub fn name(&self) -> &str;
+        pub fn new(name: &str, gateway_url: Url) -> Self;
+        pub fn region_id(&self) -> u64;
+        pub fn with_region_id(self, id: u64) -> Self;
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub enum ConsistencyLevel {
@@ -1444,8 +1444,8 @@ pub mod in_memory_emulator {
         Eventual,
     }
     impl ConsistencyLevel {
-        fn as_str(&self) -> &str;
-        fn is_session(&self) -> bool;
+        pub fn as_str(&self) -> &str;
+        pub fn is_session(&self) -> bool;
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub enum RegionStatus {
@@ -1455,8 +1455,8 @@ pub mod in_memory_emulator {
         Retired,
     }
     impl RegionStatus {
-        fn is_unavailable(&self) -> bool;
-        fn is_unreachable(&self) -> bool;
+        pub fn is_unavailable(&self) -> bool;
+        pub fn is_unreachable(&self) -> bool;
     }
     #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
     pub enum SeedingPolicy {
@@ -1482,13 +1482,13 @@ pub mod models {
     #[non_exhaustive]
     pub struct AccountReference(/* private fields */);
     impl AccountReference {
-        fn auth(&self) -> &Credential;
-        fn backup_endpoints(&self) -> &[Url];
-        fn builder(endpoint: Url) -> AccountReferenceBuilder;
-        fn endpoint(&self) -> &Url;
-        fn with_backup_endpoints(self, endpoints: Vec<Url>) -> Self;
-        fn with_credential(endpoint: Url, credential: Arc<dyn TokenCredential>) -> Self;
-        fn with_master_key<impl Into<Secret>: Into<Secret>>(endpoint: Url, key: impl Into<Secret>) -> Self;
+        pub fn auth(&self) -> &Credential;
+        pub fn backup_endpoints(&self) -> &[Url];
+        pub fn builder(endpoint: Url) -> AccountReferenceBuilder;
+        pub fn endpoint(&self) -> &Url;
+        pub fn with_backup_endpoints(self, endpoints: Vec<Url>) -> Self;
+        pub fn with_credential(endpoint: Url, credential: Arc<dyn TokenCredential>) -> Self;
+        pub fn with_master_key<impl Into<Secret>: Into<Secret>>(endpoint: Url, key: impl Into<Secret>) -> Self;
     }
     impl Eq for AccountReference {
     }
@@ -1506,22 +1506,22 @@ pub mod models {
     pub struct AccountReferenceBuilder {
     }
     impl AccountReferenceBuilder {
-        fn auth(self, credential: Credential) -> Self;
-        fn build(self) -> crate::error::Result<AccountReference>;
-        fn credential(self, credential: Arc<dyn TokenCredential>) -> Self;
-        fn endpoint(self, endpoint: Url) -> Self;
-        fn master_key<impl Into<Secret>: Into<Secret>>(self, key: impl Into<Secret>) -> Self;
-        fn new(endpoint: Url) -> Self;
-        fn with_backup_endpoints(self, endpoints: Vec<Url>) -> Self;
+        pub fn auth(self, credential: Credential) -> Self;
+        pub fn build(self) -> crate::error::Result<AccountReference>;
+        pub fn credential(self, credential: Arc<dyn TokenCredential>) -> Self;
+        pub fn endpoint(self, endpoint: Url) -> Self;
+        pub fn master_key<impl Into<Secret>: Into<Secret>>(self, key: impl Into<Secret>) -> Self;
+        pub fn new(endpoint: Url) -> Self;
+        pub fn with_backup_endpoints(self, endpoints: Vec<Url>) -> Self;
     }
     #[derive(Clone, Debug, Eq, Hash, PartialEq, serde::Deserialize, serde::Serialize)]
     #[serde(transparent)]
     pub struct ActivityId(/* private fields */);
     impl ActivityId {
-        fn as_str(&self) -> &str;
-        const fn from_static(value: &'static str) -> Self;
-        fn from_string(value: String) -> Self;
-        fn new_uuid() -> Self;
+        pub fn as_str(&self) -> &str;
+        pub const fn from_static(value: &'static str) -> Self;
+        pub fn from_string(value: String) -> Self;
+        pub fn new_uuid() -> Self;
     }
     impl AsRef<str> for ActivityId {
         fn as_ref(&self) -> &str;
@@ -1557,8 +1557,8 @@ pub mod models {
     pub struct ConnectionString {
     }
     impl ConnectionString {
-        fn account_endpoint(&self) -> &str;
-        fn account_key(&self) -> &Secret;
+        pub fn account_endpoint(&self) -> &str;
+        pub fn account_key(&self) -> &Secret;
     }
     impl FromStr for ConnectionString {
         type Err = CosmosError;
@@ -1572,16 +1572,16 @@ pub mod models {
     #[non_exhaustive]
     pub struct ContainerReference(/* private fields */);
     impl ContainerReference {
-        fn account(&self) -> &AccountReference;
-        fn base_path(&self) -> &str;
-        fn database_name(&self) -> Option<&str>;
-        fn database_rid(&self) -> &str;
-        fn is_by_rid(&self) -> bool;
-        fn name(&self) -> &str;
-        fn name_based_path(&self) -> Option<&str>;
-        fn partition_key_definition(&self) -> &crate::models::PartitionKeyDefinition;
-        fn rid(&self) -> &str;
-        fn rid_based_path(&self) -> &str;
+        pub fn account(&self) -> &AccountReference;
+        pub fn base_path(&self) -> &str;
+        pub fn database_name(&self) -> Option<&str>;
+        pub fn database_rid(&self) -> &str;
+        pub fn is_by_rid(&self) -> bool;
+        pub fn name(&self) -> &str;
+        pub fn name_based_path(&self) -> Option<&str>;
+        pub fn partition_key_definition(&self) -> &crate::models::PartitionKeyDefinition;
+        pub fn rid(&self) -> &str;
+        pub fn rid_based_path(&self) -> &str;
     }
     impl Eq for ContainerReference {
     }
@@ -1594,8 +1594,8 @@ pub mod models {
     #[derive(Clone, Debug, Eq, PartialEq)]
     pub struct ContinuationToken(/* private fields */);
     impl ContinuationToken {
-        fn as_str(&self) -> &str;
-        fn from_string(token: String) -> Self;
+        pub fn as_str(&self) -> &str;
+        pub fn from_string(token: String) -> Self;
     }
     impl Serialize for ContinuationToken {
         fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error>;
@@ -1608,72 +1608,72 @@ pub mod models {
     pub struct CosmosOperation {
     }
     impl CosmosOperation {
-        fn allows_ambiguous_outcome_retry(&self) -> bool;
-        fn batch(container: ContainerReference, partition_key: PartitionKey) -> Self;
-        fn body(&self) -> Option<&[u8]>;
-        fn change_feed(container: ContainerReference, target: Option<FeedRange>) -> Self;
-        fn change_feed_all_versions_and_deletes(container: ContainerReference, target: Option<FeedRange>) -> Self;
-        fn change_feed_start(&self) -> Option<&ChangeFeedStartFrom>;
-        fn container(&self) -> Option<&ContainerReference>;
-        fn create_container(database: DatabaseReference) -> Self;
-        fn create_database(account: AccountReference) -> Self;
-        fn create_item(item: ItemReference) -> Self;
-        fn db_operation_name(&self) -> Option<&'static str>;
-        fn delete_container(container: ContainerReference) -> Self;
-        fn delete_database(database: DatabaseReference) -> Self;
-        fn delete_item(item: ItemReference) -> Self;
+        pub fn allows_ambiguous_outcome_retry(&self) -> bool;
+        pub fn batch(container: ContainerReference, partition_key: PartitionKey) -> Self;
+        pub fn body(&self) -> Option<&[u8]>;
+        pub fn change_feed(container: ContainerReference, target: Option<FeedRange>) -> Self;
+        pub fn change_feed_all_versions_and_deletes(container: ContainerReference, target: Option<FeedRange>) -> Self;
+        pub fn change_feed_start(&self) -> Option<&ChangeFeedStartFrom>;
+        pub fn container(&self) -> Option<&ContainerReference>;
+        pub fn create_container(database: DatabaseReference) -> Self;
+        pub fn create_database(account: AccountReference) -> Self;
+        pub fn create_item(item: ItemReference) -> Self;
+        pub fn db_operation_name(&self) -> Option<&'static str>;
+        pub fn delete_container(container: ContainerReference) -> Self;
+        pub fn delete_database(database: DatabaseReference) -> Self;
+        pub fn delete_item(item: ItemReference) -> Self;
         #[cfg(feature = "preview_dtx")]
-        fn distributed_transaction(account: AccountReference, transaction_type: crate::models::DistributedTransactionType) -> Self;
-        fn is_change_feed(&self) -> bool;
-        fn is_idempotent(&self) -> bool;
-        fn is_patch_sub_operation(&self) -> bool;
-        fn is_read_only(&self) -> bool;
-        fn is_trivial(&self) -> bool;
-        fn operation_type(&self) -> OperationType;
-        fn partition_key(&self) -> Option<&PartitionKey>;
-        fn patch_item(item: ItemReference) -> Self;
-        fn patch_max_attempts(&self) -> Option<std::num::NonZeroU8>;
-        fn patch_tracking_capacity(&self) -> Option<std::num::NonZeroU16>;
-        fn patch_tracking_id(&self) -> Option<crate::models::PatchTrackingId>;
-        fn patch_tracking_retention_seconds(&self) -> Option<std::num::NonZeroU32>;
-        fn precondition(&self) -> Option<&Precondition>;
-        fn query_containers(database: DatabaseReference) -> Self;
-        fn query_databases(account: AccountReference) -> Self;
-        fn query_items(container: ContainerReference, target: Option<FeedRange>) -> Self;
-        fn query_offers(account: AccountReference) -> Self;
-        fn query_plan(container: ContainerReference, supported_query_features: Cow<'static, str>) -> Self;
-        fn read_all_containers(database: DatabaseReference) -> Self;
-        fn read_all_databases(account: AccountReference) -> Self;
-        fn read_all_items(container: ContainerReference, partition_key: PartitionKey) -> Self;
-        fn read_all_items_cross_partition(container: ContainerReference) -> Self;
-        fn read_container(container: ContainerReference) -> Self;
-        fn read_container_by_name<impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(database: DatabaseReference, container_name: impl Into<std::borrow::Cow<'static, str>>) -> Self;
-        fn read_container_by_rid<impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(account: AccountReference, db_rid: impl Into<std::borrow::Cow<'static, str>>, container_rid: impl Into<std::borrow::Cow<'static, str>>) -> Self;
-        fn read_database(database: DatabaseReference) -> Self;
-        fn read_item(item: ItemReference) -> Self;
-        fn read_offer<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(account: AccountReference, offer_id: impl Into<Cow<'static, str>>) -> Self;
-        fn replace_container(container: ContainerReference) -> Self;
-        fn replace_item(item: ItemReference) -> Self;
-        fn replace_offer<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(account: AccountReference, offer_id: impl Into<Cow<'static, str>>) -> Self;
-        fn request_headers(&self) -> &CosmosRequestHeaders;
-        fn resource_type(&self) -> ResourceType;
-        fn target(&self) -> Option<&FeedRange>;
-        fn upsert_item(item: ItemReference) -> Self;
-        fn with_activity_id(self, activity_id: crate::models::ActivityId) -> Self;
-        fn with_body(self, body: Vec<u8>) -> Self;
-        fn with_change_feed_start(self, start_from: ChangeFeedStartFrom) -> Self;
-        fn with_if_modified_since(self, value: String) -> Self;
-        fn with_max_item_count(self, max_item_count: crate::models::MaxItemCountHint) -> Self;
-        fn with_patch_max_attempts(self, max_attempts: std::num::NonZeroU8) -> Self;
-        fn with_patch_tracking_capacity(self, capacity: std::num::NonZeroU16) -> Self;
-        fn with_patch_tracking_id(self, tracking_id: crate::models::PatchTrackingId) -> Self;
-        fn with_patch_tracking_retention_seconds(self, retention_seconds: std::num::NonZeroU32) -> Self;
-        fn with_populate_index_metrics(self, enabled: bool) -> Self;
-        fn with_populate_query_metrics(self, enabled: bool) -> Self;
-        fn with_precondition(self, precondition: Precondition) -> Self;
-        fn with_request_headers(self, headers: CosmosRequestHeaders) -> Self;
-        fn with_session_token<impl Into<crate::models::SessionToken>: Into<crate::models::SessionToken>>(self, session_token: impl Into<crate::models::SessionToken>) -> Self;
-        fn with_supported_serialization_formats<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, formats: impl Into<Cow<'static, str>>) -> Self;
+        pub fn distributed_transaction(account: AccountReference, transaction_type: crate::models::DistributedTransactionType) -> Self;
+        pub fn is_change_feed(&self) -> bool;
+        pub fn is_idempotent(&self) -> bool;
+        pub fn is_patch_sub_operation(&self) -> bool;
+        pub fn is_read_only(&self) -> bool;
+        pub fn is_trivial(&self) -> bool;
+        pub fn operation_type(&self) -> OperationType;
+        pub fn partition_key(&self) -> Option<&PartitionKey>;
+        pub fn patch_item(item: ItemReference) -> Self;
+        pub fn patch_max_attempts(&self) -> Option<std::num::NonZeroU8>;
+        pub fn patch_tracking_capacity(&self) -> Option<std::num::NonZeroU16>;
+        pub fn patch_tracking_id(&self) -> Option<crate::models::PatchTrackingId>;
+        pub fn patch_tracking_retention_seconds(&self) -> Option<std::num::NonZeroU32>;
+        pub fn precondition(&self) -> Option<&Precondition>;
+        pub fn query_containers(database: DatabaseReference) -> Self;
+        pub fn query_databases(account: AccountReference) -> Self;
+        pub fn query_items(container: ContainerReference, target: Option<FeedRange>) -> Self;
+        pub fn query_offers(account: AccountReference) -> Self;
+        pub fn query_plan(container: ContainerReference, supported_query_features: Cow<'static, str>) -> Self;
+        pub fn read_all_containers(database: DatabaseReference) -> Self;
+        pub fn read_all_databases(account: AccountReference) -> Self;
+        pub fn read_all_items(container: ContainerReference, partition_key: PartitionKey) -> Self;
+        pub fn read_all_items_cross_partition(container: ContainerReference) -> Self;
+        pub fn read_container(container: ContainerReference) -> Self;
+        pub fn read_container_by_name<impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(database: DatabaseReference, container_name: impl Into<std::borrow::Cow<'static, str>>) -> Self;
+        pub fn read_container_by_rid<impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(account: AccountReference, db_rid: impl Into<std::borrow::Cow<'static, str>>, container_rid: impl Into<std::borrow::Cow<'static, str>>) -> Self;
+        pub fn read_database(database: DatabaseReference) -> Self;
+        pub fn read_item(item: ItemReference) -> Self;
+        pub fn read_offer<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(account: AccountReference, offer_id: impl Into<Cow<'static, str>>) -> Self;
+        pub fn replace_container(container: ContainerReference) -> Self;
+        pub fn replace_item(item: ItemReference) -> Self;
+        pub fn replace_offer<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(account: AccountReference, offer_id: impl Into<Cow<'static, str>>) -> Self;
+        pub fn request_headers(&self) -> &CosmosRequestHeaders;
+        pub fn resource_type(&self) -> ResourceType;
+        pub fn target(&self) -> Option<&FeedRange>;
+        pub fn upsert_item(item: ItemReference) -> Self;
+        pub fn with_activity_id(self, activity_id: crate::models::ActivityId) -> Self;
+        pub fn with_body(self, body: Vec<u8>) -> Self;
+        pub fn with_change_feed_start(self, start_from: ChangeFeedStartFrom) -> Self;
+        pub fn with_if_modified_since(self, value: String) -> Self;
+        pub fn with_max_item_count(self, max_item_count: crate::models::MaxItemCountHint) -> Self;
+        pub fn with_patch_max_attempts(self, max_attempts: std::num::NonZeroU8) -> Self;
+        pub fn with_patch_tracking_capacity(self, capacity: std::num::NonZeroU16) -> Self;
+        pub fn with_patch_tracking_id(self, tracking_id: crate::models::PatchTrackingId) -> Self;
+        pub fn with_patch_tracking_retention_seconds(self, retention_seconds: std::num::NonZeroU32) -> Self;
+        pub fn with_populate_index_metrics(self, enabled: bool) -> Self;
+        pub fn with_populate_query_metrics(self, enabled: bool) -> Self;
+        pub fn with_precondition(self, precondition: Precondition) -> Self;
+        pub fn with_request_headers(self, headers: CosmosRequestHeaders) -> Self;
+        pub fn with_session_token<impl Into<crate::models::SessionToken>: Into<crate::models::SessionToken>>(self, session_token: impl Into<crate::models::SessionToken>) -> Self;
+        pub fn with_supported_serialization_formats<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, formats: impl Into<Cow<'static, str>>) -> Self;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -1695,21 +1695,21 @@ pub mod models {
         pub supported_serialization_formats: Option<std::borrow::Cow<'static, str>>,
     }
     impl CosmosRequestHeaders {
-        fn new() -> Self;
+        pub fn new() -> Self;
     }
     #[derive(Clone, Debug)]
     pub struct CosmosResourceReference {
     }
     impl CosmosResourceReference {
-        fn account(&self) -> &AccountReference;
-        fn container(&self) -> Option<&ContainerReference>;
-        fn into_feed_reference(self) -> Self;
-        fn link_for_signing(&self) -> String;
-        fn request_path(&self) -> String;
-        fn resource_type(&self) -> ResourceType;
-        fn with_name(self, name: Cow<'static, str>) -> Self;
-        fn with_resource_type(self, resource_type: ResourceType) -> Self;
-        fn with_rid(self, rid: Cow<'static, str>) -> Self;
+        pub fn account(&self) -> &AccountReference;
+        pub fn container(&self) -> Option<&ContainerReference>;
+        pub fn into_feed_reference(self) -> Self;
+        pub fn link_for_signing(&self) -> String;
+        pub fn request_path(&self) -> String;
+        pub fn resource_type(&self) -> ResourceType;
+        pub fn with_name(self, name: Cow<'static, str>) -> Self;
+        pub fn with_resource_type(self, resource_type: ResourceType) -> Self;
+        pub fn with_rid(self, rid: Cow<'static, str>) -> Self;
     }
     impl Display for CosmosResourceReference {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -1737,14 +1737,14 @@ pub mod models {
     pub struct CosmosResponse {
     }
     impl CosmosResponse {
-        fn body(&self) -> &ResponseBody;
-        fn diagnostics(&self) -> Arc<DiagnosticsContext>;
-        fn diagnostics_ref(&self) -> &Arc<DiagnosticsContext>;
-        fn headers(&self) -> &CosmosResponseHeaders;
-        fn into_body(self) -> ResponseBody;
-        fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
-        fn serving_region(&self) -> Option<Region>;
-        fn status(&self) -> CosmosStatus;
+        pub fn body(&self) -> &ResponseBody;
+        pub fn diagnostics(&self) -> Arc<DiagnosticsContext>;
+        pub fn diagnostics_ref(&self) -> &Arc<DiagnosticsContext>;
+        pub fn headers(&self) -> &CosmosResponseHeaders;
+        pub fn into_body(self) -> ResponseBody;
+        pub fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
+        pub fn serving_region(&self) -> Option<Region>;
+        pub fn status(&self) -> CosmosStatus;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -1786,9 +1786,9 @@ pub mod models {
         pub distributed_transaction_idempotency_token: Option<uuid::Uuid>,
     }
     impl CosmosResponseHeaders {
-        fn from_headers(headers: &Headers) -> Self;
-        fn new() -> Self;
-        fn to_raw_headers(&self) -> Headers;
+        pub fn from_headers(headers: &Headers) -> Self;
+        pub fn new() -> Self;
+        pub fn to_raw_headers(&self) -> Headers;
     }
     #[derive(Clone, Copy, Eq, Hash, PartialEq)]
     pub struct CosmosStatus {
@@ -1880,29 +1880,29 @@ pub mod models {
         const TRANSPORT_HTTP2_INCOMPATIBLE: CosmosStatus = _;
         const TRANSPORT_IO_FAILED: CosmosStatus = _;
         const WRITE_FORBIDDEN: CosmosStatus = _;
-        fn is_bad_request(&self) -> bool;
-        fn is_conflict(&self) -> bool;
-        fn is_database_account_not_found(&self) -> bool;
-        fn is_forbidden(&self) -> bool;
-        fn is_gone(&self) -> bool;
-        fn is_not_found(&self) -> bool;
-        fn is_partition_key_range_gone(&self) -> bool;
-        fn is_precondition_failed(&self) -> bool;
-        fn is_read_session_not_available(&self) -> bool;
-        fn is_retry_with(&self) -> bool;
-        fn is_service_unavailable(&self) -> bool;
-        fn is_success(&self) -> bool;
-        fn is_throttled(&self) -> bool;
-        fn is_timeout(&self) -> bool;
-        fn is_transient(&self) -> bool;
-        fn is_transport_generated_503(&self) -> bool;
-        fn is_unauthorized(&self) -> bool;
-        fn is_write_forbidden(&self) -> bool;
-        fn name(&self) -> Option<&'static str>;
-        fn new(status_code: StatusCode) -> Self;
-        fn status_code(&self) -> StatusCode;
-        fn sub_status(&self) -> Option<SubStatusCode>;
-        fn with_sub_status(self, sub_status_code: u16) -> Self;
+        pub fn is_bad_request(&self) -> bool;
+        pub fn is_conflict(&self) -> bool;
+        pub fn is_database_account_not_found(&self) -> bool;
+        pub fn is_forbidden(&self) -> bool;
+        pub fn is_gone(&self) -> bool;
+        pub fn is_not_found(&self) -> bool;
+        pub fn is_partition_key_range_gone(&self) -> bool;
+        pub fn is_precondition_failed(&self) -> bool;
+        pub fn is_read_session_not_available(&self) -> bool;
+        pub fn is_retry_with(&self) -> bool;
+        pub fn is_service_unavailable(&self) -> bool;
+        pub fn is_success(&self) -> bool;
+        pub fn is_throttled(&self) -> bool;
+        pub fn is_timeout(&self) -> bool;
+        pub fn is_transient(&self) -> bool;
+        pub fn is_transport_generated_503(&self) -> bool;
+        pub fn is_unauthorized(&self) -> bool;
+        pub fn is_write_forbidden(&self) -> bool;
+        pub fn name(&self) -> Option<&'static str>;
+        pub fn new(status_code: StatusCode) -> Self;
+        pub fn status_code(&self) -> StatusCode;
+        pub fn sub_status(&self) -> Option<SubStatusCode>;
+        pub fn with_sub_status(self, sub_status_code: u16) -> Self;
     }
     impl Debug for CosmosStatus {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1929,15 +1929,15 @@ pub mod models {
     #[non_exhaustive]
     pub struct DatabaseReference(/* private fields */);
     impl DatabaseReference {
-        fn account(&self) -> &AccountReference;
-        fn from_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(account: AccountReference, name: impl Into<Cow<'static, str>>) -> Self;
-        fn from_rid<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(account: AccountReference, rid: impl Into<Cow<'static, str>>) -> Self;
-        fn is_by_name(&self) -> bool;
-        fn is_by_rid(&self) -> bool;
-        fn name(&self) -> Option<&str>;
-        fn name_based_path(&self) -> Option<String>;
-        fn rid(&self) -> Option<&str>;
-        fn rid_based_path(&self) -> Option<String>;
+        pub fn account(&self) -> &AccountReference;
+        pub fn from_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(account: AccountReference, name: impl Into<Cow<'static, str>>) -> Self;
+        pub fn from_rid<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(account: AccountReference, rid: impl Into<Cow<'static, str>>) -> Self;
+        pub fn is_by_name(&self) -> bool;
+        pub fn is_by_rid(&self) -> bool;
+        pub fn name(&self) -> Option<&str>;
+        pub fn name_based_path(&self) -> Option<String>;
+        pub fn rid(&self) -> Option<&str>;
+        pub fn rid_based_path(&self) -> Option<String>;
     }
     #[cfg(feature = "preview_dtx")]
     #[derive(Clone, Debug)]
@@ -1952,11 +1952,11 @@ pub mod models {
     }
     #[cfg(feature = "preview_dtx")]
     impl DistributedTransactionOperation {
-        fn new(kind: DistributedTransactionOperationKind, target: DistributedTransactionTarget) -> Self;
-        fn with_patch_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
-        fn with_precondition(self, precondition: Precondition) -> Self;
-        fn with_resource_body<impl Into<Bytes>: Into<Bytes>>(self, body: impl Into<Bytes>) -> Self;
-        fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
+        pub fn new(kind: DistributedTransactionOperationKind, target: DistributedTransactionTarget) -> Self;
+        pub fn with_patch_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
+        pub fn with_precondition(self, precondition: Precondition) -> Self;
+        pub fn with_resource_body<impl Into<Bytes>: Into<Bytes>>(self, body: impl Into<Bytes>) -> Self;
+        pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
     }
     #[cfg(feature = "preview_dtx")]
     #[derive(Clone, Debug)]
@@ -1974,8 +1974,8 @@ pub mod models {
     }
     #[cfg(feature = "preview_dtx")]
     impl DistributedTransactionOperationResult {
-        fn is_completed_status_code(&self) -> bool;
-        fn is_success_status_code(&self) -> bool;
+        pub fn is_completed_status_code(&self) -> bool;
+        pub fn is_success_status_code(&self) -> bool;
     }
     #[cfg(feature = "preview_dtx")]
     #[derive(Clone, Debug)]
@@ -1987,8 +1987,8 @@ pub mod models {
     }
     #[cfg(feature = "preview_dtx")]
     impl DistributedTransactionRequest {
-        fn new(transaction_type: DistributedTransactionType, operations: Vec<DistributedTransactionOperation>) -> Self;
-        fn serialize_body(&self) -> crate::error::Result<Vec<u8>>;
+        pub fn new(transaction_type: DistributedTransactionType, operations: Vec<DistributedTransactionOperation>) -> Self;
+        pub fn serialize_body(&self) -> crate::error::Result<Vec<u8>>;
     }
     #[cfg(feature = "preview_dtx")]
     #[derive(Clone, Debug)]
@@ -2009,11 +2009,11 @@ pub mod models {
     }
     #[cfg(feature = "preview_dtx")]
     impl DistributedTransactionResponse {
-        fn from_body(status_code: azure_core::http::StatusCode, sub_status_code: Option<crate::models::SubStatusCode>, body: &[u8], operation_count: usize, idempotency_token: Uuid) -> Self;
-        fn is_completed_status_code(&self) -> bool;
-        fn is_empty(&self) -> bool;
-        fn is_success_status_code(&self) -> bool;
-        fn len(&self) -> usize;
+        pub fn from_body(status_code: azure_core::http::StatusCode, sub_status_code: Option<crate::models::SubStatusCode>, body: &[u8], operation_count: usize, idempotency_token: Uuid) -> Self;
+        pub fn is_completed_status_code(&self) -> bool;
+        pub fn is_empty(&self) -> bool;
+        pub fn is_success_status_code(&self) -> bool;
+        pub fn len(&self) -> usize;
     }
     #[cfg(feature = "preview_dtx")]
     #[derive(Clone, Debug)]
@@ -2025,19 +2025,19 @@ pub mod models {
     }
     #[cfg(feature = "preview_dtx")]
     impl DistributedTransactionTarget {
-        fn new<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: ContainerReference, partition_key: impl Into<PartitionKey>, id: impl Into<Cow<'static, str>>) -> Self;
+        pub fn new<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: ContainerReference, partition_key: impl Into<PartitionKey>, id: impl Into<Cow<'static, str>>) -> Self;
     }
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     pub struct FeedRange(/* private fields */);
     impl FeedRange {
-        fn for_partition(partition_key: PartitionKey, definition: &PartitionKeyDefinition) -> Self;
-        fn full() -> Self;
-        fn is_logical_partition(&self) -> bool;
-        fn is_subset_of(&self, other: &FeedRange) -> bool;
-        fn max_exclusive(&self) -> &EffectivePartitionKey;
-        fn min_inclusive(&self) -> &EffectivePartitionKey;
-        fn new(min_inclusive: EffectivePartitionKey, max_exclusive: EffectivePartitionKey) -> crate::error::Result<Self>;
-        fn overlaps(&self, other: &FeedRange) -> bool;
+        pub fn for_partition(partition_key: PartitionKey, definition: &PartitionKeyDefinition) -> Self;
+        pub fn full() -> Self;
+        pub fn is_logical_partition(&self) -> bool;
+        pub fn is_subset_of(&self, other: &FeedRange) -> bool;
+        pub fn max_exclusive(&self) -> &EffectivePartitionKey;
+        pub fn min_inclusive(&self) -> &EffectivePartitionKey;
+        pub fn new(min_inclusive: EffectivePartitionKey, max_exclusive: EffectivePartitionKey) -> crate::error::Result<Self>;
+        pub fn overlaps(&self, other: &FeedRange) -> bool;
     }
     impl Display for FeedRange {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -2060,16 +2060,16 @@ pub mod models {
     #[non_exhaustive]
     pub struct ItemReference(/* private fields */);
     impl ItemReference {
-        fn account(&self) -> &AccountReference;
-        fn container(&self) -> &ContainerReference;
-        fn from_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, partition_key: PartitionKey, item_name: impl Into<Cow<'static, str>>) -> Self;
-        fn from_rid<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, partition_key: PartitionKey, item_rid: impl Into<Cow<'static, str>>) -> Self;
-        fn is_by_name(&self) -> bool;
-        fn is_by_rid(&self) -> bool;
-        fn name(&self) -> Option<&str>;
-        fn partition_key(&self) -> &PartitionKey;
-        fn resource_link(&self) -> &str;
-        fn rid(&self) -> Option<&str>;
+        pub fn account(&self) -> &AccountReference;
+        pub fn container(&self) -> &ContainerReference;
+        pub fn from_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, partition_key: PartitionKey, item_name: impl Into<Cow<'static, str>>) -> Self;
+        pub fn from_rid<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, partition_key: PartitionKey, item_rid: impl Into<Cow<'static, str>>) -> Self;
+        pub fn is_by_name(&self) -> bool;
+        pub fn is_by_rid(&self) -> bool;
+        pub fn name(&self) -> Option<&str>;
+        pub fn partition_key(&self) -> &PartitionKey;
+        pub fn resource_link(&self) -> &str;
+        pub fn rid(&self) -> Option<&str>;
     }
     #[derive(Clone, Debug, Default, serde::Serialize)]
     #[non_exhaustive]
@@ -2080,8 +2080,8 @@ pub mod models {
         pub auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
     }
     impl OfferAutoscaleSettings {
-        fn new(max_throughput: usize) -> Self;
-        fn with_increment_percent(self, increment_percent: usize) -> Self;
+        pub fn new(max_throughput: usize) -> Self;
+        pub fn with_increment_percent(self, increment_percent: usize) -> Self;
     }
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     #[non_exhaustive]
@@ -2089,9 +2089,9 @@ pub mod models {
     impl PartitionKey {
         const NULL: PartitionKeyValue = PartitionKeyValue::NULL;
         const UNDEFINED: PartitionKeyValue = PartitionKeyValue::UNDEFINED;
-        fn is_empty(&self) -> bool;
-        fn len(&self) -> usize;
-        fn values(&self) -> &[PartitionKeyValue];
+        pub fn is_empty(&self) -> bool;
+        pub fn len(&self) -> usize;
+        pub fn values(&self) -> &[PartitionKeyValue];
     }
     impl AsHeaders for PartitionKey {
         type Error = CosmosError;
@@ -2116,13 +2116,13 @@ pub mod models {
     pub struct PartitionKeyDefinition {
     }
     impl PartitionKeyDefinition {
-        fn is_complete(&self, pk: &PartitionKey) -> bool;
-        fn kind(&self) -> PartitionKeyKind;
-        fn new(paths: Vec<Cow<'static, str>>) -> Self;
-        fn paths(&self) -> &[Cow<'static, str>];
-        fn version(&self) -> PartitionKeyVersion;
-        fn with_kind(self, kind: PartitionKeyKind) -> Self;
-        fn with_version(self, version: PartitionKeyVersion) -> Self;
+        pub fn is_complete(&self, pk: &PartitionKey) -> bool;
+        pub fn kind(&self) -> PartitionKeyKind;
+        pub fn new(paths: Vec<Cow<'static, str>>) -> Self;
+        pub fn paths(&self) -> &[Cow<'static, str>];
+        pub fn version(&self) -> PartitionKeyVersion;
+        pub fn with_kind(self, kind: PartitionKeyKind) -> Self;
+        pub fn with_version(self, version: PartitionKeyVersion) -> Self;
     }
     impl From<&str> for PartitionKeyDefinition {
         fn from(value: &str) -> Self;
@@ -2143,10 +2143,10 @@ pub mod models {
     pub struct PartitionKeyRangeReference {
     }
     impl PartitionKeyRangeReference {
-        fn account(&self) -> &AccountReference;
-        fn container(&self) -> &ContainerReference;
-        fn from_range_id<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, range_id: impl Into<Cow<'static, str>>) -> Self;
-        fn range_id(&self) -> &str;
+        pub fn account(&self) -> &AccountReference;
+        pub fn container(&self) -> &ContainerReference;
+        pub fn from_range_id<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, range_id: impl Into<Cow<'static, str>>) -> Self;
+        pub fn range_id(&self) -> &str;
     }
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     #[non_exhaustive]
@@ -2216,9 +2216,9 @@ pub mod models {
         pub operations: Vec<PatchOperation>,
     }
     impl PatchInstructions {
-        fn is_retry_safe(&self) -> bool;
-        fn new() -> Self;
-        fn with_operation(self, operation: PatchOperation) -> Self;
+        pub fn is_retry_safe(&self) -> bool;
+        pub fn new() -> Self;
+        pub fn with_operation(self, operation: PatchOperation) -> Self;
     }
     impl From<Vec<PatchOperation>> for PatchInstructions {
         fn from(operations: Vec<PatchOperation>) -> Self;
@@ -2226,8 +2226,8 @@ pub mod models {
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     pub struct PatchTrackingId(/* private fields */);
     impl PatchTrackingId {
-        fn as_uuid(&self) -> Uuid;
-        fn new() -> Self;
+        pub fn as_uuid(&self) -> Uuid;
+        pub fn new() -> Self;
     }
     impl Default for PatchTrackingId {
         fn default() -> Self;
@@ -2252,8 +2252,8 @@ pub mod models {
     #[serde(transparent)]
     pub struct RequestCharge(/* private fields */);
     impl RequestCharge {
-        fn new(value: f64) -> Self;
-        const fn value(self) -> f64;
+        pub fn new(value: f64) -> Self;
+        pub const fn value(self) -> f64;
     }
     impl Add for RequestCharge {
         type Output = RequestCharge;
@@ -2280,9 +2280,9 @@ pub mod models {
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     pub struct SessionToken(pub std::borrow::Cow<'static, str>);
     impl SessionToken {
-        fn as_str(&self) -> &str;
-        fn merge(&self, other: &Self) -> crate::error::Result<Self>;
-        fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(value: impl Into<Cow<'static, str>>) -> Self;
+        pub fn as_str(&self) -> &str;
+        pub fn merge(&self, other: &Self) -> crate::error::Result<Self>;
+        pub fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(value: impl Into<Cow<'static, str>>) -> Self;
     }
     impl AsRef<str> for SessionToken {
         fn as_ref(&self) -> &str;
@@ -2298,11 +2298,11 @@ pub mod models {
     pub struct SessionTokenSegment {
     }
     impl SessionTokenSegment {
-        fn global_lsn(&self) -> u64;
-        fn is_as_recent_as(&self, other: &Self) -> bool;
-        fn merge_value(&mut self, other: &Self) -> bool;
-        fn pk_range_id(&self) -> &str;
-        fn set_pk_range_id<impl Into<String>: Into<String>>(&mut self, id: impl Into<String>);
+        pub fn global_lsn(&self) -> u64;
+        pub fn is_as_recent_as(&self, other: &Self) -> bool;
+        pub fn merge_value(&mut self, other: &Self) -> bool;
+        pub fn pk_range_id(&self) -> &str;
+        pub fn set_pk_range_id<impl Into<String>: Into<String>>(&mut self, id: impl Into<String>);
     }
     impl Display for SessionTokenSegment {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -2316,15 +2316,15 @@ pub mod models {
     pub struct StoredProcedureReference {
     }
     impl StoredProcedureReference {
-        fn account(&self) -> &AccountReference;
-        fn container(&self) -> &ContainerReference;
-        fn from_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, stored_procedure_name: impl Into<Cow<'static, str>>) -> Self;
-        fn from_rid<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, stored_procedure_rid: impl Into<Cow<'static, str>>) -> Self;
-        fn is_by_name(&self) -> bool;
-        fn is_by_rid(&self) -> bool;
-        fn name(&self) -> Option<&str>;
-        fn resource_link(&self) -> &str;
-        fn rid(&self) -> Option<&str>;
+        pub fn account(&self) -> &AccountReference;
+        pub fn container(&self) -> &ContainerReference;
+        pub fn from_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, stored_procedure_name: impl Into<Cow<'static, str>>) -> Self;
+        pub fn from_rid<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, stored_procedure_rid: impl Into<Cow<'static, str>>) -> Self;
+        pub fn is_by_name(&self) -> bool;
+        pub fn is_by_rid(&self) -> bool;
+        pub fn name(&self) -> Option<&str>;
+        pub fn resource_link(&self) -> &str;
+        pub fn rid(&self) -> Option<&str>;
     }
     #[derive(Clone, Copy, Eq, Hash, PartialEq, serde::Deserialize, serde::Serialize)]
     #[serde(transparent)]
@@ -2604,10 +2604,10 @@ pub mod models {
         const VALUE_DOES_NOT_MATCH_EXPECTED_BOUND: SubStatusCode = _;
         const WRITE_FORBIDDEN: SubStatusCode = _;
         const XP_COMPOSITE_REPLICATOR: SubStatusCode = _;
-        fn from_header_value(s: &str) -> Option<Self>;
-        fn name(&self, status_code: Option<StatusCode>) -> Option<&'static str>;
-        const fn new(code: u16) -> Self;
-        const fn value(&self) -> u16;
+        pub fn from_header_value(s: &str) -> Option<Self>;
+        pub fn name(&self, status_code: Option<StatusCode>) -> Option<&'static str>;
+        pub const fn new(code: u16) -> Self;
+        pub const fn value(&self) -> u16;
     }
     impl Debug for SubStatusCode {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -2627,8 +2627,8 @@ pub mod models {
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     pub struct ThroughputControlGroupName(pub std::borrow::Cow<'static, str>);
     impl ThroughputControlGroupName {
-        fn as_str(&self) -> &str;
-        fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(name: impl Into<Cow<'static, str>>) -> Self;
+        pub fn as_str(&self) -> &str;
+        pub fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(name: impl Into<Cow<'static, str>>) -> Self;
     }
     impl AsRef<str> for ThroughputControlGroupName {
         fn as_ref(&self) -> &str;
@@ -2650,38 +2650,38 @@ pub mod models {
     pub struct TriggerReference {
     }
     impl TriggerReference {
-        fn account(&self) -> &AccountReference;
-        fn container(&self) -> &ContainerReference;
-        fn from_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, trigger_name: impl Into<Cow<'static, str>>) -> Self;
-        fn from_rid<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, trigger_rid: impl Into<Cow<'static, str>>) -> Self;
-        fn is_by_name(&self) -> bool;
-        fn is_by_rid(&self) -> bool;
-        fn name(&self) -> Option<&str>;
-        fn resource_link(&self) -> &str;
-        fn rid(&self) -> Option<&str>;
+        pub fn account(&self) -> &AccountReference;
+        pub fn container(&self) -> &ContainerReference;
+        pub fn from_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, trigger_name: impl Into<Cow<'static, str>>) -> Self;
+        pub fn from_rid<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, trigger_rid: impl Into<Cow<'static, str>>) -> Self;
+        pub fn is_by_name(&self) -> bool;
+        pub fn is_by_rid(&self) -> bool;
+        pub fn name(&self) -> Option<&str>;
+        pub fn resource_link(&self) -> &str;
+        pub fn rid(&self) -> Option<&str>;
     }
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     #[non_exhaustive]
     pub struct UdfReference {
     }
     impl UdfReference {
-        fn account(&self) -> &AccountReference;
-        fn container(&self) -> &ContainerReference;
-        fn from_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, udf_name: impl Into<Cow<'static, str>>) -> Self;
-        fn from_rid<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, udf_rid: impl Into<Cow<'static, str>>) -> Self;
-        fn is_by_name(&self) -> bool;
-        fn is_by_rid(&self) -> bool;
-        fn name(&self) -> Option<&str>;
-        fn resource_link(&self) -> &str;
-        fn rid(&self) -> Option<&str>;
+        pub fn account(&self) -> &AccountReference;
+        pub fn container(&self) -> &ContainerReference;
+        pub fn from_name<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, udf_name: impl Into<Cow<'static, str>>) -> Self;
+        pub fn from_rid<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: &ContainerReference, udf_rid: impl Into<Cow<'static, str>>) -> Self;
+        pub fn is_by_name(&self) -> bool;
+        pub fn is_by_rid(&self) -> bool;
+        pub fn name(&self) -> Option<&str>;
+        pub fn resource_link(&self) -> &str;
+        pub fn rid(&self) -> Option<&str>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[non_exhaustive]
     pub struct UserAgent {
     }
     impl UserAgent {
-        fn as_str(&self) -> &str;
-        fn suffix(&self) -> Option<&str>;
+        pub fn as_str(&self) -> &str;
+        pub fn suffix(&self) -> Option<&str>;
     }
     impl Default for UserAgent {
         fn default() -> Self;
@@ -2757,7 +2757,7 @@ pub mod models {
     }
     #[cfg(feature = "preview_dtx")]
     impl DistributedTransactionType {
-        fn as_str(self) -> &'static str;
+        pub fn as_str(self) -> &'static str;
     }
     #[cfg(feature = "preview_dtx")]
     impl AsRef<str> for DistributedTransactionType {
@@ -2796,12 +2796,12 @@ pub mod models {
         ReadDistributedTransaction,
     }
     impl OperationType {
-        fn as_str(self) -> &'static str;
-        fn http_method(self) -> azure_core::http::Method;
-        fn is_feed(self) -> bool;
-        fn is_idempotent(self) -> bool;
-        fn is_read_only(self) -> bool;
-        fn routes_to_write_endpoints(self) -> bool;
+        pub fn as_str(self) -> &'static str;
+        pub fn http_method(self) -> azure_core::http::Method;
+        pub fn is_feed(self) -> bool;
+        pub fn is_idempotent(self) -> bool;
+        pub fn is_read_only(self) -> bool;
+        pub fn routes_to_write_endpoints(self) -> bool;
     }
     impl AsRef<str> for OperationType {
         fn as_ref(&self) -> &str;
@@ -2825,7 +2825,7 @@ pub mod models {
         V2,
     }
     impl PartitionKeyVersion {
-        const fn value(self) -> u32;
+        pub const fn value(self) -> u32;
     }
     impl From<PartitionKeyVersion> for u32 {
         fn from(version: PartitionKeyVersion) -> Self;
@@ -2847,13 +2847,13 @@ pub mod models {
         Move { from: String, path: String },
     }
     impl PatchOperation {
-        fn add<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
-        fn increment<impl Into<String>: Into<String>, impl Into<CosmosNumber>: Into<CosmosNumber>>(path: impl Into<String>, value: impl Into<CosmosNumber>) -> Self;
-        fn move_value<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(from: impl Into<String>, path: impl Into<String>) -> Self;
-        fn path(&self) -> &str;
-        fn remove<impl Into<String>: Into<String>>(path: impl Into<String>) -> Self;
-        fn replace<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
-        fn set<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
+        pub fn add<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
+        pub fn increment<impl Into<String>: Into<String>, impl Into<CosmosNumber>: Into<CosmosNumber>>(path: impl Into<String>, value: impl Into<CosmosNumber>) -> Self;
+        pub fn move_value<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(from: impl Into<String>, path: impl Into<String>) -> Self;
+        pub fn path(&self) -> &str;
+        pub fn remove<impl Into<String>: Into<String>>(path: impl Into<String>) -> Self;
+        pub fn replace<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
+        pub fn set<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[non_exhaustive]
@@ -2862,12 +2862,12 @@ pub mod models {
         IfNoneMatch(azure_core::http::Etag),
     }
     impl Precondition {
-        fn as_if_match(&self) -> Option<&Etag>;
-        fn as_if_none_match(&self) -> Option<&Etag>;
-        fn if_match<impl Into<Etag>: Into<Etag>>(etag: impl Into<Etag>) -> Self;
-        fn if_none_match<impl Into<Etag>: Into<Etag>>(etag: impl Into<Etag>) -> Self;
-        fn is_if_match(&self) -> bool;
-        fn is_if_none_match(&self) -> bool;
+        pub fn as_if_match(&self) -> Option<&Etag>;
+        pub fn as_if_none_match(&self) -> Option<&Etag>;
+        pub fn if_match<impl Into<Etag>: Into<Etag>>(etag: impl Into<Etag>) -> Self;
+        pub fn if_none_match<impl Into<Etag>: Into<Etag>>(etag: impl Into<Etag>) -> Self;
+        pub fn is_if_match(&self) -> bool;
+        pub fn is_if_none_match(&self) -> bool;
     }
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     #[non_exhaustive]
@@ -2885,12 +2885,12 @@ pub mod models {
         DistributedTransactionBatch,
     }
     impl ResourceType {
-        fn as_str(self) -> &'static str;
-        fn is_metadata(self) -> bool;
-        fn is_partitioned(self, operation_type: OperationType) -> bool;
-        fn path_segment(self) -> &'static str;
-        fn requires_container(self) -> bool;
-        fn requires_database(self) -> bool;
+        pub fn as_str(self) -> &'static str;
+        pub fn is_metadata(self) -> bool;
+        pub fn is_partitioned(self, operation_type: OperationType) -> bool;
+        pub fn path_segment(self) -> &'static str;
+        pub fn requires_container(self) -> bool;
+        pub fn requires_database(self) -> bool;
     }
     impl AsRef<str> for ResourceType {
         fn as_ref(&self) -> &str;
@@ -2910,14 +2910,14 @@ pub mod models {
         Items(Vec<azure_core::Bytes>),
     }
     impl ResponseBody {
-        fn empty() -> Self;
-        fn from_bytes<impl Into<Bytes>: Into<Bytes>>(bytes: impl Into<Bytes>) -> Self;
-        fn from_items(items: Vec<Bytes>) -> Self;
-        fn into_items<T: DeserializeOwned>(self) -> crate::error::Result<Vec<T>>;
-        fn into_single<T: DeserializeOwned>(self) -> crate::error::Result<T>;
-        fn is_empty(&self) -> bool;
-        fn items(self) -> crate::error::Result<Vec<Bytes>>;
-        fn single(self) -> crate::error::Result<Bytes>;
+        pub fn empty() -> Self;
+        pub fn from_bytes<impl Into<Bytes>: Into<Bytes>>(bytes: impl Into<Bytes>) -> Self;
+        pub fn from_items(items: Vec<Bytes>) -> Self;
+        pub fn into_items<T: DeserializeOwned>(self) -> crate::error::Result<Vec<T>>;
+        pub fn into_single<T: DeserializeOwned>(self) -> crate::error::Result<T>;
+        pub fn is_empty(&self) -> bool;
+        pub fn items(self) -> crate::error::Result<Vec<Bytes>>;
+        pub fn single(self) -> crate::error::Result<Bytes>;
     }
     impl From<Bytes> for ResponseBody {
         fn from(bytes: Bytes) -> Self;
@@ -2935,7 +2935,7 @@ pub mod models {
         impl EffectivePartitionKey {
             const MAX: Self = _;
             const MIN: Self = _;
-            fn to_hex(&self) -> String;
+            pub fn to_hex(&self) -> String;
         }
         impl Display for EffectivePartitionKey {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -2987,8 +2987,8 @@ pub mod models {
             pub parents: Option<Vec<String>>,
         }
         impl PartitionKeyRange {
-            fn get_parent_ids(&self) -> HashSet<String>;
-            fn new<impl Into<EffectivePartitionKey>: Into<EffectivePartitionKey>, impl Into<EffectivePartitionKey>: Into<EffectivePartitionKey>>(id: String, min_inclusive: impl Into<EffectivePartitionKey>, max_exclusive: impl Into<EffectivePartitionKey>) -> Self;
+            pub fn get_parent_ids(&self) -> HashSet<String>;
+            pub fn new<impl Into<EffectivePartitionKey>: Into<EffectivePartitionKey>, impl Into<EffectivePartitionKey>: Into<EffectivePartitionKey>>(id: String, min_inclusive: impl Into<EffectivePartitionKey>, max_exclusive: impl Into<EffectivePartitionKey>) -> Self;
         }
         impl Eq for PartitionKeyRange {
         }
@@ -3018,9 +3018,9 @@ pub mod options {
         pub request_text_response: bool,
     }
     impl BinaryEncodingOptions {
-        fn new() -> Self;
-        fn with_enabled(self, enabled: bool) -> Self;
-        fn with_request_text_response(self, request_text_response: bool) -> Self;
+        pub fn new() -> Self;
+        pub fn with_enabled(self, enabled: bool) -> Self;
+        pub fn with_request_text_response(self, request_text_response: bool) -> Self;
     }
     impl Default for BinaryEncodingOptions {
         fn default() -> Self;
@@ -3030,35 +3030,35 @@ pub mod options {
     pub struct ConnectionPoolOptions {
     }
     impl ConnectionPoolOptions {
-        fn builder() -> ConnectionPoolOptionsBuilder;
-        fn gateway_v2_disabled(&self) -> bool;
-        fn http2_consecutive_failure_threshold(&self) -> u32;
-        fn http2_eviction_grace_period(&self) -> Duration;
-        fn http2_fan_out_threshold_percent(&self) -> u8;
-        fn http2_health_check_interval(&self) -> Duration;
-        fn http2_keep_alive_interval(&self) -> Duration;
-        fn http2_keep_alive_timeout(&self) -> Duration;
-        fn idle_connection_timeout(&self) -> Option<Duration>;
-        fn idle_http2_client_timeout(&self) -> Duration;
-        fn is_http2_allowed(&self) -> bool;
-        fn local_address(&self) -> Option<IpAddr>;
-        fn max_connect_timeout(&self) -> Duration;
-        fn max_dataplane_request_timeout(&self) -> Duration;
-        fn max_http2_connections_per_endpoint(&self) -> usize;
-        fn max_http2_streams_per_client(&self) -> u32;
-        fn max_idle_connections_per_endpoint(&self) -> usize;
-        fn max_metadata_request_timeout(&self) -> Duration;
-        fn min_connect_timeout(&self) -> Duration;
-        fn min_dataplane_request_timeout(&self) -> Duration;
-        fn min_http2_connections_per_endpoint(&self) -> usize;
-        fn min_metadata_request_timeout(&self) -> Duration;
-        fn proxy_allowed(&self) -> bool;
-        fn server_certificate_validation(&self) -> ServerCertificateValidation;
-        fn tcp_keepalive_interval(&self) -> Option<Duration>;
-        fn tcp_keepalive_retries(&self) -> Option<u32>;
-        fn tcp_keepalive_time(&self) -> Option<Duration>;
+        pub fn builder() -> ConnectionPoolOptionsBuilder;
+        pub fn gateway_v2_disabled(&self) -> bool;
+        pub fn http2_consecutive_failure_threshold(&self) -> u32;
+        pub fn http2_eviction_grace_period(&self) -> Duration;
+        pub fn http2_fan_out_threshold_percent(&self) -> u8;
+        pub fn http2_health_check_interval(&self) -> Duration;
+        pub fn http2_keep_alive_interval(&self) -> Duration;
+        pub fn http2_keep_alive_timeout(&self) -> Duration;
+        pub fn idle_connection_timeout(&self) -> Option<Duration>;
+        pub fn idle_http2_client_timeout(&self) -> Duration;
+        pub fn is_http2_allowed(&self) -> bool;
+        pub fn local_address(&self) -> Option<IpAddr>;
+        pub fn max_connect_timeout(&self) -> Duration;
+        pub fn max_dataplane_request_timeout(&self) -> Duration;
+        pub fn max_http2_connections_per_endpoint(&self) -> usize;
+        pub fn max_http2_streams_per_client(&self) -> u32;
+        pub fn max_idle_connections_per_endpoint(&self) -> usize;
+        pub fn max_metadata_request_timeout(&self) -> Duration;
+        pub fn min_connect_timeout(&self) -> Duration;
+        pub fn min_dataplane_request_timeout(&self) -> Duration;
+        pub fn min_http2_connections_per_endpoint(&self) -> usize;
+        pub fn min_metadata_request_timeout(&self) -> Duration;
+        pub fn proxy_allowed(&self) -> bool;
+        pub fn server_certificate_validation(&self) -> ServerCertificateValidation;
+        pub fn tcp_keepalive_interval(&self) -> Option<Duration>;
+        pub fn tcp_keepalive_retries(&self) -> Option<u32>;
+        pub fn tcp_keepalive_time(&self) -> Option<Duration>;
         #[cfg(feature = "rustls")]
-        fn tls_backend(&self) -> TlsBackend;
+        pub fn tls_backend(&self) -> TlsBackend;
     }
     impl Default for ConnectionPoolOptions {
         fn default() -> Self;
@@ -3069,48 +3069,48 @@ pub mod options {
     }
     #[automatically_derived]
     impl ConnectionPoolOptionsBuilder {
-        fn from_env() -> Self;
-        fn from_env_override() -> Self;
+        pub fn from_env() -> Self;
+        pub fn from_env_override() -> Self;
     }
     impl ConnectionPoolOptionsBuilder {
-        fn build(self) -> crate::error::Result<ConnectionPoolOptions>;
-        fn new() -> Self;
-        fn with_gateway_v2_disabled(self, value: bool) -> Self;
-        fn with_http2_consecutive_failure_threshold(self, value: u32) -> Self;
-        fn with_http2_eviction_grace_period(self, timeout: Duration) -> Self;
-        fn with_http2_fan_out_threshold_percent(self, value: u8) -> Self;
-        fn with_http2_health_check_interval(self, timeout: Duration) -> Self;
-        fn with_http2_keep_alive_interval(self, timeout: Duration) -> Self;
-        fn with_http2_keep_alive_timeout(self, timeout: Duration) -> Self;
-        fn with_idle_connection_timeout(self, timeout: Duration) -> Self;
-        fn with_idle_http2_client_timeout(self, timeout: Duration) -> Self;
-        fn with_is_http2_allowed(self, value: bool) -> Self;
-        fn with_local_address(self, addr: IpAddr) -> Self;
-        fn with_max_connect_timeout(self, timeout: Duration) -> Self;
-        fn with_max_dataplane_request_timeout(self, timeout: Duration) -> Self;
-        fn with_max_http2_connections_per_endpoint(self, value: usize) -> Self;
-        fn with_max_http2_streams_per_client(self, value: u32) -> Self;
-        fn with_max_idle_connections_per_endpoint(self, count: usize) -> Self;
-        fn with_max_metadata_request_timeout(self, timeout: Duration) -> Self;
-        fn with_min_connect_timeout(self, timeout: Duration) -> Self;
-        fn with_min_dataplane_request_timeout(self, timeout: Duration) -> Self;
-        fn with_min_http2_connections_per_endpoint(self, value: usize) -> Self;
-        fn with_min_metadata_request_timeout(self, timeout: Duration) -> Self;
-        fn with_proxy_allowed(self, value: bool) -> Self;
-        fn with_server_certificate_validation(self, value: ServerCertificateValidation) -> Self;
-        fn with_tcp_keepalive_interval(self, timeout: Duration) -> Self;
-        fn with_tcp_keepalive_retries(self, value: u32) -> Self;
-        fn with_tcp_keepalive_time(self, timeout: Duration) -> Self;
+        pub fn build(self) -> crate::error::Result<ConnectionPoolOptions>;
+        pub fn new() -> Self;
+        pub fn with_gateway_v2_disabled(self, value: bool) -> Self;
+        pub fn with_http2_consecutive_failure_threshold(self, value: u32) -> Self;
+        pub fn with_http2_eviction_grace_period(self, timeout: Duration) -> Self;
+        pub fn with_http2_fan_out_threshold_percent(self, value: u8) -> Self;
+        pub fn with_http2_health_check_interval(self, timeout: Duration) -> Self;
+        pub fn with_http2_keep_alive_interval(self, timeout: Duration) -> Self;
+        pub fn with_http2_keep_alive_timeout(self, timeout: Duration) -> Self;
+        pub fn with_idle_connection_timeout(self, timeout: Duration) -> Self;
+        pub fn with_idle_http2_client_timeout(self, timeout: Duration) -> Self;
+        pub fn with_is_http2_allowed(self, value: bool) -> Self;
+        pub fn with_local_address(self, addr: IpAddr) -> Self;
+        pub fn with_max_connect_timeout(self, timeout: Duration) -> Self;
+        pub fn with_max_dataplane_request_timeout(self, timeout: Duration) -> Self;
+        pub fn with_max_http2_connections_per_endpoint(self, value: usize) -> Self;
+        pub fn with_max_http2_streams_per_client(self, value: u32) -> Self;
+        pub fn with_max_idle_connections_per_endpoint(self, count: usize) -> Self;
+        pub fn with_max_metadata_request_timeout(self, timeout: Duration) -> Self;
+        pub fn with_min_connect_timeout(self, timeout: Duration) -> Self;
+        pub fn with_min_dataplane_request_timeout(self, timeout: Duration) -> Self;
+        pub fn with_min_http2_connections_per_endpoint(self, value: usize) -> Self;
+        pub fn with_min_metadata_request_timeout(self, timeout: Duration) -> Self;
+        pub fn with_proxy_allowed(self, value: bool) -> Self;
+        pub fn with_server_certificate_validation(self, value: ServerCertificateValidation) -> Self;
+        pub fn with_tcp_keepalive_interval(self, timeout: Duration) -> Self;
+        pub fn with_tcp_keepalive_retries(self, value: u32) -> Self;
+        pub fn with_tcp_keepalive_time(self, timeout: Duration) -> Self;
         #[cfg(feature = "rustls")]
-        fn with_tls_backend(self, value: TlsBackend) -> Self;
+        pub fn with_tls_backend(self, value: TlsBackend) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     pub struct CorrelationId(/* private fields */);
     impl CorrelationId {
         const MAX_LENGTH: usize = 50;
-        fn as_str(&self) -> &str;
-        fn new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Self;
-        fn try_new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Option<Self>;
+        pub fn as_str(&self) -> &str;
+        pub fn new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Self;
+        pub fn try_new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Option<Self>;
     }
     impl AsRef<str> for CorrelationId {
         fn as_ref(&self) -> &str;
@@ -3123,10 +3123,10 @@ pub mod options {
     pub struct DiagnosticsOptions {
     }
     impl DiagnosticsOptions {
-        fn builder() -> DiagnosticsOptionsBuilder;
-        fn default_verbosity(&self) -> DiagnosticsVerbosity;
-        fn max_request_diagnostics(&self) -> usize;
-        fn max_summary_size_bytes(&self) -> usize;
+        pub fn builder() -> DiagnosticsOptionsBuilder;
+        pub fn default_verbosity(&self) -> DiagnosticsVerbosity;
+        pub fn max_request_diagnostics(&self) -> usize;
+        pub fn max_summary_size_bytes(&self) -> usize;
     }
     impl Default for DiagnosticsOptions {
         fn default() -> Self;
@@ -3137,33 +3137,33 @@ pub mod options {
     }
     #[automatically_derived]
     impl DiagnosticsOptionsBuilder {
-        fn from_env() -> Self;
+        pub fn from_env() -> Self;
     }
     impl DiagnosticsOptionsBuilder {
-        fn build(self) -> crate::error::Result<DiagnosticsOptions>;
-        fn new() -> Self;
-        fn with_default_verbosity(self, verbosity: DiagnosticsVerbosity) -> Self;
-        fn with_max_request_diagnostics(self, max: usize) -> Self;
-        fn with_max_summary_size_bytes(self, size: usize) -> Self;
+        pub fn build(self) -> crate::error::Result<DiagnosticsOptions>;
+        pub fn new() -> Self;
+        pub fn with_default_verbosity(self, verbosity: DiagnosticsVerbosity) -> Self;
+        pub fn with_max_request_diagnostics(self, max: usize) -> Self;
+        pub fn with_max_summary_size_bytes(self, size: usize) -> Self;
     }
     #[derive(Clone, Copy, Debug, PartialEq)]
     #[non_exhaustive]
     pub struct DiagnosticsThresholds {
     }
     impl DiagnosticsThresholds {
-        fn new() -> Self;
-        fn non_point_operation_latency(&self) -> Duration;
-        fn payload_size(&self) -> u64;
-        fn point_operation_latency(&self) -> Duration;
-        fn request_charge(&self) -> f64;
+        pub fn new() -> Self;
+        pub fn non_point_operation_latency(&self) -> Duration;
+        pub fn payload_size(&self) -> u64;
+        pub fn point_operation_latency(&self) -> Duration;
+        pub fn request_charge(&self) -> f64;
         #[must_use]
-        fn with_non_point_operation_latency(self, latency: Duration) -> Self;
+        pub fn with_non_point_operation_latency(self, latency: Duration) -> Self;
         #[must_use]
-        fn with_payload_size(self, payload_size: u64) -> Self;
+        pub fn with_payload_size(self, payload_size: u64) -> Self;
         #[must_use]
-        fn with_point_operation_latency(self, latency: Duration) -> Self;
+        pub fn with_point_operation_latency(self, latency: Duration) -> Self;
         #[must_use]
-        fn with_request_charge(self, request_charge: f64) -> Self;
+        pub fn with_request_charge(self, request_charge: f64) -> Self;
     }
     impl Default for DiagnosticsThresholds {
         fn default() -> Self;
@@ -3173,41 +3173,41 @@ pub mod options {
     pub struct DriverOptions {
     }
     impl DriverOptions {
-        fn account(&self) -> &AccountReference;
-        fn builder(account: AccountReference) -> DriverOptionsBuilder;
+        pub fn account(&self) -> &AccountReference;
+        pub fn builder(account: AccountReference) -> DriverOptionsBuilder;
         #[cfg(feature = "fault_injection")]
-        fn fault_injection_rules(&self) -> Option<&[Arc<FaultInjectionRule>]>;
-        fn hedging_options(&self) -> &HedgingOptions;
-        fn operation_options(&self) -> &Arc<OperationOptions>;
-        fn partition_failover_options(&self) -> &PartitionFailoverOptions;
-        fn partition_key_range_cache_enabled(&self) -> bool;
-        fn preferred_regions(&self) -> &[Region];
-        fn user_agent_suffix(&self) -> Option<&UserAgentSuffix>;
+        pub fn fault_injection_rules(&self) -> Option<&[Arc<FaultInjectionRule>]>;
+        pub fn hedging_options(&self) -> &HedgingOptions;
+        pub fn operation_options(&self) -> &Arc<OperationOptions>;
+        pub fn partition_failover_options(&self) -> &PartitionFailoverOptions;
+        pub fn partition_key_range_cache_enabled(&self) -> bool;
+        pub fn preferred_regions(&self) -> &[Region];
+        pub fn user_agent_suffix(&self) -> Option<&UserAgentSuffix>;
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct DriverOptionsBuilder {
     }
     impl DriverOptionsBuilder {
-        fn build(self) -> DriverOptions;
-        fn new(account: AccountReference) -> Self;
-        fn register_throughput_control_group(self, group: ThroughputControlGroupOptions) -> crate::error::Result<Self>;
+        pub fn build(self) -> DriverOptions;
+        pub fn new(account: AccountReference) -> Self;
+        pub fn register_throughput_control_group(self, group: ThroughputControlGroupOptions) -> crate::error::Result<Self>;
         #[cfg(feature = "fault_injection")]
-        fn with_fault_injection_rules(self, rules: Vec<Arc<FaultInjectionRule>>) -> crate::error::Result<Self>;
-        fn with_hedging_options(self, options: HedgingOptions) -> Self;
-        fn with_operation_options(self, options: OperationOptions) -> Self;
-        fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
-        fn with_partition_key_range_cache_enabled(self, enabled: bool) -> Self;
-        fn with_preferred_regions(self, regions: Vec<Region>) -> Self;
-        fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
+        pub fn with_fault_injection_rules(self, rules: Vec<Arc<FaultInjectionRule>>) -> crate::error::Result<Self>;
+        pub fn with_hedging_options(self, options: HedgingOptions) -> Self;
+        pub fn with_operation_options(self, options: OperationOptions) -> Self;
+        pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
+        pub fn with_partition_key_range_cache_enabled(self, enabled: bool) -> Self;
+        pub fn with_preferred_regions(self, regions: Vec<Region>) -> Self;
+        pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[non_exhaustive]
     pub struct EndToEndOperationLatencyPolicy {
     }
     impl EndToEndOperationLatencyPolicy {
-        fn new(timeout: Duration) -> Self;
-        fn timeout(&self) -> Duration;
+        pub fn new(timeout: Duration) -> Self;
+        pub fn timeout(&self) -> Duration;
     }
     impl From<Duration> for EndToEndOperationLatencyPolicy {
         fn from(timeout: Duration) -> Self;
@@ -3215,11 +3215,11 @@ pub mod options {
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     pub struct ExcludedRegions(pub Vec<crate::options::Region>);
     impl ExcludedRegions {
-        fn is_empty(&self) -> bool;
-        fn iter(&self) -> impl Iterator<Item = &Region>;
-        fn len(&self) -> usize;
-        fn new() -> Self;
-        fn with_region<impl Into<Region>: Into<Region>>(self, region: impl Into<Region>) -> Self;
+        pub fn is_empty(&self) -> bool;
+        pub fn iter(&self) -> impl Iterator<Item = &Region>;
+        pub fn len(&self) -> usize;
+        pub fn new() -> Self;
+        pub fn with_region<impl Into<Region>: Into<Region>>(self, region: impl Into<Region>) -> Self;
     }
     impl<T: Into<crate::options::Region>> FromIterator<T> for ExcludedRegions {
         fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self;
@@ -3227,16 +3227,16 @@ pub mod options {
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     pub struct HedgeThreshold(/* private fields */);
     impl HedgeThreshold {
-        const fn get(self) -> Duration;
-        const fn new(duration: Duration) -> Option<Self>;
+        pub const fn get(self) -> Duration;
+        pub const fn new(duration: Duration) -> Option<Self>;
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct HedgingOptions {
     }
     impl HedgingOptions {
-        fn builder() -> HedgingOptionsBuilder;
-        fn max_concurrent_metadata_attempts(&self) -> usize;
+        pub fn builder() -> HedgingOptionsBuilder;
+        pub fn max_concurrent_metadata_attempts(&self) -> usize;
     }
     impl Default for HedgingOptions {
         fn default() -> Self;
@@ -3246,17 +3246,17 @@ pub mod options {
     pub struct HedgingOptionsBuilder {
     }
     impl HedgingOptionsBuilder {
-        fn build(self) -> HedgingOptions;
-        fn new() -> Self;
-        fn with_max_concurrent_metadata_attempts(self, value: usize) -> Self;
+        pub fn build(self) -> HedgingOptions;
+        pub fn new() -> Self;
+        pub fn with_max_concurrent_metadata_attempts(self, value: usize) -> Self;
     }
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     #[non_exhaustive]
     pub struct HedgingStrategy {
     }
     impl HedgingStrategy {
-        const fn new(threshold: HedgeThreshold) -> Self;
-        const fn threshold(&self) -> HedgeThreshold;
+        pub const fn new(threshold: HedgeThreshold) -> Self;
+        pub const fn threshold(&self) -> HedgeThreshold;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -3280,8 +3280,8 @@ pub mod options {
     }
     #[automatically_derived]
     impl OperationOptions {
-        fn from_env() -> Self;
-        fn from_env_override() -> Self;
+        pub fn from_env() -> Self;
+        pub fn from_env_override() -> Self;
     }
     #[automatically_derived]
     pub struct OperationOptionsBuilder {
@@ -3289,62 +3289,62 @@ pub mod options {
     #[automatically_derived]
     impl OperationOptionsBuilder {
         #[must_use]
-        fn build(self) -> OperationOptions;
-        fn new() -> Self;
-        fn with_availability_strategy(self, value: AvailabilityStrategy) -> Self;
-        fn with_binary_encoding(self, value: BinaryEncodingOptions) -> Self;
-        fn with_content_response_on_write(self, value: ContentResponseOnWrite) -> Self;
-        fn with_custom_headers(self, value: HashMap<HeaderName, HeaderValue>) -> Self;
-        fn with_end_to_end_latency_policy(self, value: EndToEndOperationLatencyPolicy) -> Self;
-        fn with_endpoint_unavailability_ttl(self, value: Duration) -> Self;
-        fn with_excluded_regions(self, value: ExcludedRegions) -> Self;
-        fn with_hedging_enabled(self, value: bool) -> Self;
-        fn with_max_failover_retry_count(self, value: u32) -> Self;
-        fn with_max_session_retry_count(self, value: u32) -> Self;
-        fn with_patch_strategy(self, value: PatchStrategy) -> Self;
-        fn with_query_plan_mode(self, value: QueryPlanMode) -> Self;
-        fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
-        fn with_session_capturing_disabled(self, value: bool) -> Self;
-        fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
-        fn with_throughput_control(self, value: ThroughputControlOptions) -> Self;
+        pub fn build(self) -> OperationOptions;
+        pub fn new() -> Self;
+        pub fn with_availability_strategy(self, value: AvailabilityStrategy) -> Self;
+        pub fn with_binary_encoding(self, value: BinaryEncodingOptions) -> Self;
+        pub fn with_content_response_on_write(self, value: ContentResponseOnWrite) -> Self;
+        pub fn with_custom_headers(self, value: HashMap<HeaderName, HeaderValue>) -> Self;
+        pub fn with_end_to_end_latency_policy(self, value: EndToEndOperationLatencyPolicy) -> Self;
+        pub fn with_endpoint_unavailability_ttl(self, value: Duration) -> Self;
+        pub fn with_excluded_regions(self, value: ExcludedRegions) -> Self;
+        pub fn with_hedging_enabled(self, value: bool) -> Self;
+        pub fn with_max_failover_retry_count(self, value: u32) -> Self;
+        pub fn with_max_session_retry_count(self, value: u32) -> Self;
+        pub fn with_patch_strategy(self, value: PatchStrategy) -> Self;
+        pub fn with_query_plan_mode(self, value: QueryPlanMode) -> Self;
+        pub fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
+        pub fn with_session_capturing_disabled(self, value: bool) -> Self;
+        pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
+        pub fn with_throughput_control(self, value: ThroughputControlOptions) -> Self;
     }
     #[automatically_derived]
     pub struct OperationOptionsView<'a> {
     }
     #[automatically_derived]
     impl<'a> OperationOptionsView<'a> {
-        fn availability_strategy(&self) -> Option<&AvailabilityStrategy>;
-        fn binary_encoding(&self) -> Option<&BinaryEncodingOptions>;
-        fn content_response_on_write(&self) -> Option<&ContentResponseOnWrite>;
-        fn custom_headers(&self) -> Option<&HashMap<HeaderName, HeaderValue>>;
-        fn end_to_end_latency_policy(&self) -> Option<&EndToEndOperationLatencyPolicy>;
-        fn endpoint_unavailability_ttl(&self) -> Option<&Duration>;
-        fn excluded_regions(&self) -> Option<&ExcludedRegions>;
-        fn hedging_enabled(&self) -> Option<&bool>;
-        fn max_failover_retry_count(&self) -> Option<&u32>;
-        fn max_session_retry_count(&self) -> Option<&u32>;
-        fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
-        fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
-        fn patch_strategy(&self) -> Option<&PatchStrategy>;
-        fn query_plan_mode(&self) -> Option<&QueryPlanMode>;
-        fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
-        fn session_capturing_disabled(&self) -> Option<&bool>;
-        fn throttling_retry_options(&self) -> ThrottlingRetryOptionsView<'_>;
-        fn throughput_control(&self) -> ThroughputControlOptionsView<'_>;
+        pub fn availability_strategy(&self) -> Option<&AvailabilityStrategy>;
+        pub fn binary_encoding(&self) -> Option<&BinaryEncodingOptions>;
+        pub fn content_response_on_write(&self) -> Option<&ContentResponseOnWrite>;
+        pub fn custom_headers(&self) -> Option<&HashMap<HeaderName, HeaderValue>>;
+        pub fn end_to_end_latency_policy(&self) -> Option<&EndToEndOperationLatencyPolicy>;
+        pub fn endpoint_unavailability_ttl(&self) -> Option<&Duration>;
+        pub fn excluded_regions(&self) -> Option<&ExcludedRegions>;
+        pub fn hedging_enabled(&self) -> Option<&bool>;
+        pub fn max_failover_retry_count(&self) -> Option<&u32>;
+        pub fn max_session_retry_count(&self) -> Option<&u32>;
+        pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
+        pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
+        pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
+        pub fn query_plan_mode(&self) -> Option<&QueryPlanMode>;
+        pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
+        pub fn session_capturing_disabled(&self) -> Option<&bool>;
+        pub fn throttling_retry_options(&self) -> ThrottlingRetryOptionsView<'_>;
+        pub fn throughput_control(&self) -> ThroughputControlOptionsView<'_>;
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct PartitionFailoverOptions {
     }
     impl PartitionFailoverOptions {
-        fn builder() -> PartitionFailoverOptionsBuilder;
-        fn circuit_breaker_enabled(&self) -> bool;
-        fn consecutive_hedge_win_threshold(&self) -> u32;
-        fn counter_reset_window(&self) -> Duration;
-        fn failback_sweep_interval(&self) -> Duration;
-        fn partition_unavailability_duration(&self) -> Duration;
-        fn read_failure_threshold(&self) -> u32;
-        fn write_failure_threshold(&self) -> u32;
+        pub fn builder() -> PartitionFailoverOptionsBuilder;
+        pub fn circuit_breaker_enabled(&self) -> bool;
+        pub fn consecutive_hedge_win_threshold(&self) -> u32;
+        pub fn counter_reset_window(&self) -> Duration;
+        pub fn failback_sweep_interval(&self) -> Duration;
+        pub fn partition_unavailability_duration(&self) -> Duration;
+        pub fn read_failure_threshold(&self) -> u32;
+        pub fn write_failure_threshold(&self) -> u32;
     }
     impl Default for PartitionFailoverOptions {
         fn default() -> Self;
@@ -3354,15 +3354,15 @@ pub mod options {
     pub struct PartitionFailoverOptionsBuilder {
     }
     impl PartitionFailoverOptionsBuilder {
-        fn build(self) -> crate::error::Result<PartitionFailoverOptions>;
-        fn new() -> Self;
-        fn with_circuit_breaker_enabled(self, value: bool) -> Self;
-        fn with_consecutive_hedge_win_threshold(self, value: u32) -> Self;
-        fn with_counter_reset_window(self, value: Duration) -> Self;
-        fn with_failback_sweep_interval(self, value: Duration) -> Self;
-        fn with_partition_unavailability_duration(self, value: Duration) -> Self;
-        fn with_read_failure_threshold(self, value: u32) -> Self;
-        fn with_write_failure_threshold(self, value: u32) -> Self;
+        pub fn build(self) -> crate::error::Result<PartitionFailoverOptions>;
+        pub fn new() -> Self;
+        pub fn with_circuit_breaker_enabled(self, value: bool) -> Self;
+        pub fn with_consecutive_hedge_win_threshold(self, value: u32) -> Self;
+        pub fn with_counter_reset_window(self, value: Duration) -> Self;
+        pub fn with_failback_sweep_interval(self, value: Duration) -> Self;
+        pub fn with_partition_unavailability_duration(self, value: Duration) -> Self;
+        pub fn with_read_failure_threshold(self, value: u32) -> Self;
+        pub fn with_write_failure_threshold(self, value: u32) -> Self;
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]
@@ -3370,7 +3370,7 @@ pub mod options {
         pub max_fan_out: u32,
     }
     impl PlanOptions {
-        fn with_max_fan_out(self, max_fan_out: u32) -> Self;
+        pub fn with_max_fan_out(self, max_fan_out: u32) -> Self;
     }
     impl Default for PlanOptions {
         fn default() -> Self;
@@ -3493,9 +3493,9 @@ pub mod options {
         const WEST_US: Region = _;
         const WEST_US_2: Region = _;
         const WEST_US_3: Region = _;
-        fn as_str(&self) -> &str;
-        fn display_name(&self) -> &str;
-        fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(name: impl Into<Cow<'static, str>>) -> Self;
+        pub fn as_str(&self) -> &str;
+        pub fn display_name(&self) -> &str;
+        pub fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(name: impl Into<Cow<'static, str>>) -> Self;
     }
     impl AsRef<str> for Region {
         fn as_ref(&self) -> &str;
@@ -3520,7 +3520,7 @@ pub mod options {
     }
     #[automatically_derived]
     impl ThrottlingRetryOptions {
-        fn from_env() -> Self;
+        pub fn from_env() -> Self;
     }
     #[automatically_derived]
     pub struct ThrottlingRetryOptionsBuilder {
@@ -3528,35 +3528,35 @@ pub mod options {
     #[automatically_derived]
     impl ThrottlingRetryOptionsBuilder {
         #[must_use]
-        fn build(self) -> ThrottlingRetryOptions;
-        fn new() -> Self;
-        fn with_max_retry_count(self, value: u32) -> Self;
-        fn with_max_retry_wait_time(self, value: Duration) -> Self;
+        pub fn build(self) -> ThrottlingRetryOptions;
+        pub fn new() -> Self;
+        pub fn with_max_retry_count(self, value: u32) -> Self;
+        pub fn with_max_retry_wait_time(self, value: Duration) -> Self;
     }
     #[automatically_derived]
     pub struct ThrottlingRetryOptionsView<'a> {
     }
     #[automatically_derived]
     impl<'a> ThrottlingRetryOptionsView<'a> {
-        fn max_retry_count(&self) -> Option<&u32>;
-        fn max_retry_wait_time(&self) -> Option<&Duration>;
-        fn new(env: Option<::std::sync::Arc<ThrottlingRetryOptions>>, runtime: Option<::std::sync::Arc<ThrottlingRetryOptions>>, account: Option<::std::sync::Arc<ThrottlingRetryOptions>>, operation: Option<&'a ThrottlingRetryOptions>) -> Self;
+        pub fn max_retry_count(&self) -> Option<&u32>;
+        pub fn max_retry_wait_time(&self) -> Option<&Duration>;
+        pub fn new(env: Option<::std::sync::Arc<ThrottlingRetryOptions>>, runtime: Option<::std::sync::Arc<ThrottlingRetryOptions>>, account: Option<::std::sync::Arc<ThrottlingRetryOptions>>, operation: Option<&'a ThrottlingRetryOptions>) -> Self;
     }
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct ThroughputControlGroupOptions {
     }
     impl ThroughputControlGroupOptions {
-        fn container(&self) -> &ContainerReference;
-        fn is_default(&self) -> bool;
-        fn name(&self) -> &ThroughputControlGroupName;
-        fn new<impl Into<ThroughputControlGroupName>: Into<ThroughputControlGroupName>>(name: impl Into<ThroughputControlGroupName>, container: ContainerReference, is_default: bool) -> Self;
-        fn priority_level(&self) -> Option<PriorityLevel>;
-        fn set_priority_level(&self, level: PriorityLevel);
-        fn set_throughput_bucket(&self, bucket: u32);
-        fn throughput_bucket(&self) -> Option<u32>;
-        fn with_priority_level(self, level: PriorityLevel) -> Self;
-        fn with_throughput_bucket(self, bucket: u32) -> Self;
+        pub fn container(&self) -> &ContainerReference;
+        pub fn is_default(&self) -> bool;
+        pub fn name(&self) -> &ThroughputControlGroupName;
+        pub fn new<impl Into<ThroughputControlGroupName>: Into<ThroughputControlGroupName>>(name: impl Into<ThroughputControlGroupName>, container: ContainerReference, is_default: bool) -> Self;
+        pub fn priority_level(&self) -> Option<PriorityLevel>;
+        pub fn set_priority_level(&self, level: PriorityLevel);
+        pub fn set_throughput_bucket(&self, bucket: u32);
+        pub fn throughput_bucket(&self) -> Option<u32>;
+        pub fn with_priority_level(self, level: PriorityLevel) -> Self;
+        pub fn with_throughput_bucket(self, bucket: u32) -> Self;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -3571,29 +3571,29 @@ pub mod options {
     #[automatically_derived]
     impl ThroughputControlOptionsBuilder {
         #[must_use]
-        fn build(self) -> ThroughputControlOptions;
-        fn new() -> Self;
-        fn with_group_name(self, value: ThroughputControlGroupName) -> Self;
-        fn with_priority_level(self, value: PriorityLevel) -> Self;
-        fn with_throughput_bucket(self, value: u32) -> Self;
+        pub fn build(self) -> ThroughputControlOptions;
+        pub fn new() -> Self;
+        pub fn with_group_name(self, value: ThroughputControlGroupName) -> Self;
+        pub fn with_priority_level(self, value: PriorityLevel) -> Self;
+        pub fn with_throughput_bucket(self, value: u32) -> Self;
     }
     #[automatically_derived]
     pub struct ThroughputControlOptionsView<'a> {
     }
     #[automatically_derived]
     impl<'a> ThroughputControlOptionsView<'a> {
-        fn group_name(&self) -> Option<&ThroughputControlGroupName>;
-        fn new(env: Option<::std::sync::Arc<ThroughputControlOptions>>, runtime: Option<::std::sync::Arc<ThroughputControlOptions>>, account: Option<::std::sync::Arc<ThroughputControlOptions>>, operation: Option<&'a ThroughputControlOptions>) -> Self;
-        fn priority_level(&self) -> Option<&PriorityLevel>;
-        fn throughput_bucket(&self) -> Option<&u32>;
+        pub fn group_name(&self) -> Option<&ThroughputControlGroupName>;
+        pub fn new(env: Option<::std::sync::Arc<ThroughputControlOptions>>, runtime: Option<::std::sync::Arc<ThroughputControlOptions>>, account: Option<::std::sync::Arc<ThroughputControlOptions>>, operation: Option<&'a ThroughputControlOptions>) -> Self;
+        pub fn priority_level(&self) -> Option<&PriorityLevel>;
+        pub fn throughput_bucket(&self) -> Option<&u32>;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     pub struct UserAgentSuffix(/* private fields */);
     impl UserAgentSuffix {
         const MAX_LENGTH: usize = 25;
-        fn as_str(&self) -> &str;
-        fn new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Self;
-        fn try_new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Option<Self>;
+        pub fn as_str(&self) -> &str;
+        pub fn new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Self;
+        pub fn try_new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Option<Self>;
     }
     impl AsRef<str> for UserAgentSuffix {
         fn as_ref(&self) -> &str;
@@ -3606,9 +3606,9 @@ pub mod options {
     impl WorkloadId {
         const MAX: u8 = 50;
         const MIN: u8 = 1;
-        fn new(value: u8) -> Self;
-        fn try_new(value: u8) -> Option<Self>;
-        fn value(&self) -> u8;
+        pub fn new(value: u8) -> Self;
+        pub fn try_new(value: u8) -> Option<Self>;
+        pub fn value(&self) -> u8;
     }
     impl Display for WorkloadId {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -3651,7 +3651,7 @@ pub mod options {
         Detailed,
     }
     impl DiagnosticsVerbosity {
-        fn as_str(&self) -> &'static str;
+        pub fn as_str(&self) -> &'static str;
     }
     impl AsRef<str> for DiagnosticsVerbosity {
         fn as_ref(&self) -> &str;
@@ -3672,7 +3672,7 @@ pub mod options {
         ServerSide,
     }
     impl PatchStrategy {
-        fn as_str(&self) -> &'static str;
+        pub fn as_str(&self) -> &'static str;
     }
     impl Display for PatchStrategy {
         fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -3689,7 +3689,7 @@ pub mod options {
         Low,
     }
     impl PriorityLevel {
-        fn as_str(&self) -> &'static str;
+        pub fn as_str(&self) -> &'static str;
     }
     impl Display for PriorityLevel {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -3706,7 +3706,7 @@ pub mod options {
         GatewayOnly,
     }
     impl QueryPlanMode {
-        fn as_str(self) -> &'static str;
+        pub fn as_str(self) -> &'static str;
     }
     impl Display for QueryPlanMode {
         fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -3725,7 +3725,7 @@ pub mod options {
         GlobalStrong,
     }
     impl ReadConsistencyStrategy {
-        fn as_str(&self) -> &'static str;
+        pub fn as_str(&self) -> &'static str;
     }
     impl Display for ReadConsistencyStrategy {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
@@ -3751,7 +3751,7 @@ pub mod options {
     pub const DEFAULT_MAX_FAN_OUT: u32 = 100;
 }
 #[cfg(feature = "__internal_mocking")]
-pub mod testing {
+pub mod test {
     pub use azure_data_cosmos_driver::options::connection_pool::ConnectionPoolOptions;
     #[derive(Clone, Copy, Debug)]
     pub struct HttpClientConfig {
@@ -3775,7 +3775,7 @@ pub mod testing {
         pub request_sent: crate::diagnostics::RequestSentStatus,
     }
     impl TransportError {
-        fn new<impl Into<crate::error::CosmosError>: Into<crate::error::CosmosError>>(error: impl Into<crate::error::CosmosError>, request_sent: RequestSentStatus) -> Self;
+        pub fn new<impl Into<crate::error::CosmosError>: Into<crate::error::CosmosError>>(error: impl Into<crate::error::CosmosError>, request_sent: RequestSentStatus) -> Self;
     }
     impl Debug for TransportError {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
