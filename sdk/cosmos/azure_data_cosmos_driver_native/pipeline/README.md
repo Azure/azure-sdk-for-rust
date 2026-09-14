@@ -18,12 +18,12 @@ draft pull request in `Azure/azure-cosmos-driver`.
 Production jobs install the centrally pinned Microsoft Rust toolchain from
 `eng/templates/ms-rust-toolchain.toml` through the internal `RustInstaller@1`
 feed. The native build invokes Cargo and rustc with the explicit pinned
-toolchain selector, verifies that the selected sysroot contains the compiler
-and Cargo resolved by `msrustup`, and rejects an upstream compiler, a different
-or unpinned channel, and targets that `msrustup` cannot install. Each matrix job
-validates its target against the centralized list and passes only that target
-to `RustInstaller@1`; it does not attempt to install targets assigned to other
-operating systems.
+toolchain selector, verifies that the selected sysroot matches the
+`RUST_BIN_PATH` installation reported by `RustInstaller@1`, and rejects an
+upstream compiler, a different or unpinned channel, and targets that `msrustup`
+cannot install. Each matrix job validates its target against the centralized
+list and passes only that target to `RustInstaller@1`; it does not attempt to
+install targets assigned to other operating systems.
 
 ## Configured release matrix
 
@@ -104,7 +104,7 @@ signature verifier.
 
 Each target artifact includes schema 4 metadata with the selected toolchain
 manager, pinned Microsoft Rust channel, exact RustInstaller package, manager and
-Cargo versions, manager-resolved compiler and Cargo paths, selected sysroot,
+Cargo versions, invoked compiler and Cargo paths, installer-bound sysroot,
 complete `rustc -Vv` output and compiler commit, target triple, and linker
 command, resolved path, and version output. `New-GoModules.ps1` rejects missing
 or mixed toolchain identities before writing schema 2 `provenance.json`. The
@@ -135,8 +135,10 @@ Run the complete local test on Windows AMD64:
 
 ```powershell
 $installerPackageVersion = '<exact RUST-INSTALLER Actual value>'
+$installerBinPath = '<RUST_BIN_PATH reported by RustInstaller@1>'
 ./Invoke-LocalSupplyChain.ps1 `
-    -InstallerPackageVersion $installerPackageVersion
+    -InstallerPackageVersion $installerPackageVersion `
+    -InstallerBinPath $installerBinPath
 ```
 
 The local machine must already have access to the internal Microsoft Rust feed,
@@ -174,16 +176,19 @@ Individual steps can also be run separately:
 
 ```powershell
 $installerPackageVersion = '<exact RUST-INSTALLER Actual value>'
+$installerBinPath = '<RUST_BIN_PATH reported by RustInstaller@1>'
 
 # Build one target.
 ./Build-NativeMatrix.ps1 `
     -TargetId windows-amd64 `
     -CCompiler gcc `
-    -InstallerPackageVersion $installerPackageVersion
+    -InstallerPackageVersion $installerPackageVersion `
+    -InstallerBinPath $installerBinPath
 
 # Inspect metadata without producing native libraries.
 ./Build-NativeMatrix.ps1 `
     -InstallerPackageVersion $installerPackageVersion `
+    -InstallerBinPath $installerBinPath `
     -SkipBuild
 
 # Generate Go modules from previously built artifacts.

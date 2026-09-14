@@ -4,6 +4,7 @@
 Describe 'Build-NativeMatrix target compiler configuration' {
     BeforeAll {
         $OriginalRustVersion = $env:RUST_VERSION
+        $OriginalRustBinPath = $env:RUST_BIN_PATH
         $PipelineDirectory = Split-Path -Parent $PSScriptRoot
         $ScriptPath = Join-Path $PipelineDirectory 'Build-NativeMatrix.ps1'
         $MatrixPath = Join-Path $PipelineDirectory 'build-matrix.json'
@@ -52,11 +53,14 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $global:MicrosoftRustSysroot = Join-Path $TestDrive 'ms-prod-1.95'
         $global:SelectedRustSysroot = $global:MicrosoftRustSysroot
         $global:MicrosoftRustBin = Join-Path $global:MicrosoftRustSysroot 'bin'
+        $env:RUST_BIN_PATH = $global:MicrosoftRustBin
+        $global:RustProxyBin = Join-Path $TestDrive 'cargo-home/bin'
+        New-Item -ItemType Directory -Force -Path $global:RustProxyBin | Out-Null
         New-Item -ItemType Directory -Force -Path $global:MicrosoftRustBin | Out-Null
-        $global:MicrosoftRustc = Join-Path $global:MicrosoftRustBin 'rustc'
-        $global:MicrosoftCargo = Join-Path $global:MicrosoftRustBin 'cargo'
-        Set-Content $global:MicrosoftRustc ''
-        Set-Content $global:MicrosoftCargo ''
+        $global:RustcExecutable = Join-Path $global:RustProxyBin 'rustc'
+        $global:CargoExecutable = Join-Path $global:RustProxyBin 'cargo'
+        Set-Content $global:RustcExecutable ''
+        Set-Content $global:CargoExecutable ''
         $global:CompilerLibraryPath = Join-Path $TestDrive 'libgcc_eh.a'
         Set-Content $global:CompilerLibraryPath 'archive'
 
@@ -65,13 +69,25 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             '0123456789abcdef0123456789abcdef01234567'
         }
         Mock Get-Command {
-            if ($global:MicrosoftRustManagerAvailable) {
+            if ($Name -eq 'msrustup' -and $global:MicrosoftRustManagerAvailable) {
                 [pscustomobject]@{
                     Name = 'msrustup'
                     Source = $null
                 }
             }
-        } -ParameterFilter { $Name -eq 'msrustup' }
+            elseif ($Name -eq 'rustc') {
+                [pscustomobject]@{
+                    Name = 'rustc'
+                    Source = $global:RustcExecutable
+                }
+            }
+            elseif ($Name -eq 'cargo') {
+                [pscustomobject]@{
+                    Name = 'cargo'
+                    Source = $global:CargoExecutable
+                }
+            }
+        } -ParameterFilter { $Name -in @('msrustup', 'rustc', 'cargo') }
         Mock msrustup {
             switch ("$args") {
                 '--version' {
@@ -81,14 +97,6 @@ Describe 'Build-NativeMatrix target compiler configuration' {
                 "target list --installed --toolchain $MicrosoftRustChannel" {
                     $global:LASTEXITCODE = 0
                     $global:InstalledMicrosoftRustTargets
-                }
-                "which --toolchain $MicrosoftRustChannel rustc" {
-                    $global:LASTEXITCODE = 0
-                    $global:MicrosoftRustc
-                }
-                "which --toolchain $MicrosoftRustChannel cargo" {
-                    $global:LASTEXITCODE = 0
-                    $global:MicrosoftCargo
                 }
                 default {
                     if ($args[0] -eq 'target' -and $args[1] -eq 'add') {
@@ -213,8 +221,8 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             $metadata.toolchain.installer_package_version |
                 Should -Be '1.95.0-ms-20260618.5'
             $metadata.toolchain.sysroot | Should -Be $global:MicrosoftRustSysroot
-            $metadata.toolchain.rustc_executable | Should -Be $global:MicrosoftRustc
-            $metadata.toolchain.cargo_executable | Should -Be $global:MicrosoftCargo
+            $metadata.toolchain.rustc_executable | Should -Be $global:RustcExecutable
+            $metadata.toolchain.cargo_executable | Should -Be $global:CargoExecutable
             $metadata.toolchain.rustc_verbose_version | Should -Match 'release: 1\.95\.0'
             $metadata.toolchain.rustc_release | Should -Be '1.95.0'
             $metadata.toolchain.cargo_version | Should -Be 'cargo 1.0.0'
@@ -332,6 +340,18 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         } | Should -Throw "*does not identify Microsoft Rust release '1.95.0'*"
     }
 
+    It 'rejects a missing RustInstaller bin path' {
+        $env:RUST_BIN_PATH = $null
+
+        {
+            & $ScriptPath `
+                -TargetId 'windows-amd64' `
+                -OutputRoot (Join-Path $TestDrive 'artifacts') `
+                -CCompiler 'pwsh' `
+                -SkipBuild
+        } | Should -Throw '*Microsoft Rust installer bin path is required*'
+    }
+
     It 'rejects a rustc selection outside the msrustup toolchain' {
         $global:SelectedRustSysroot = Join-Path $TestDrive 'upstream-1.95'
         New-Item -ItemType Directory -Force -Path $global:SelectedRustSysroot | Out-Null
@@ -354,6 +374,7 @@ Describe 'Build-NativeMatrix target compiler configuration' {
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -InstallerPackageVersion '1.95.0-ms-20260618.5' `
+                -InstallerBinPath $global:MicrosoftRustBin `
                 -SkipBuild
         } | Should -Not -Throw
     }
@@ -585,5 +606,6 @@ targets = ["x86_64-pc-windows-gnu"]
 
     AfterAll {
         $env:RUST_VERSION = $OriginalRustVersion
+        $env:RUST_BIN_PATH = $OriginalRustBinPath
     }
 }

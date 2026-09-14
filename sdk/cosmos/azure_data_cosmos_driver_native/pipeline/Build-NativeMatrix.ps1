@@ -62,7 +62,8 @@ param(
     [switch]   $NoAuditable,
     [switch]   $StaticOnly,
     [string]   $ToolchainConfigPath,
-    [string]   $InstallerPackageVersion = $env:RUST_VERSION
+    [string]   $InstallerPackageVersion = $env:RUST_VERSION,
+    [string]   $InstallerBinPath = $env:RUST_BIN_PATH
 )
 
 Set-StrictMode -Version 3.0
@@ -147,30 +148,6 @@ function Invoke-RequiredToolOutput(
     }
 
     return $text.Trim()
-}
-
-function Resolve-MicrosoftRustToolPath(
-    [string] $Tool
-) {
-    $output = Invoke-RequiredToolOutput `
-        -Executable $msrustupExecutable `
-        -Arguments @(
-            'which',
-            '--toolchain',
-            $microsoftRustConfig.Channel,
-            $Tool
-        ) `
-        -Description "msrustup which $Tool"
-    $toolPath = @(
-        $output -split '\r?\n' |
-            ForEach-Object { $_.Trim() } |
-            Where-Object { $_ -and (Test-Path $_ -PathType Leaf) }
-    ) | Select-Object -Last 1
-    if (-not $toolPath) {
-        throw "msrustup did not resolve an executable path for '$Tool' in '$($microsoftRustConfig.Channel)'."
-    }
-
-    return (Resolve-Path $toolPath).Path
 }
 
 # Programmatically parse the `native-static-libs:` note out of a
@@ -276,17 +253,25 @@ $managerVersion = Invoke-RequiredToolOutput `
     -Executable $msrustupExecutable `
     -Arguments @('--version') `
     -Description 'Microsoft Rust toolchain manager'
-$managedRustcExecutable = Resolve-MicrosoftRustToolPath -Tool 'rustc'
-$managedCargoExecutable = Resolve-MicrosoftRustToolPath -Tool 'cargo'
-$managedRustSysroot = Split-Path -Parent (Split-Path -Parent $managedRustcExecutable)
-$managedCargoSysroot = Split-Path -Parent (Split-Path -Parent $managedCargoExecutable)
-if ($managedCargoSysroot -cne $managedRustSysroot) {
-    throw "msrustup resolved rustc and cargo from different toolchains."
-}
 
 if ([string]::IsNullOrWhiteSpace($InstallerPackageVersion)) {
     throw 'Microsoft Rust installer package version is required. Use RustInstaller@1 or pass -InstallerPackageVersion.'
 }
+if (
+    [string]::IsNullOrWhiteSpace($InstallerBinPath) -or
+    -not (Test-Path $InstallerBinPath -PathType Container)
+) {
+    throw 'Microsoft Rust installer bin path is required. Use RustInstaller@1 or pass -InstallerBinPath.'
+}
+$installerBinPath = (Resolve-Path $InstallerBinPath).Path
+$installerSysroot = Split-Path -Parent $installerBinPath
+$rustcCommand = Get-Command 'rustc' -CommandType Application -ErrorAction SilentlyContinue
+$cargoCommand = Get-Command 'cargo' -CommandType Application -ErrorAction SilentlyContinue
+if (-not $rustcCommand -or -not $cargoCommand) {
+    throw 'RustInstaller@1 must place rustc and cargo on PATH.'
+}
+$rustcExecutable = $rustcCommand.Source
+$cargoExecutable = $cargoCommand.Source
 
 $selectedRustSysroot = Invoke-RequiredToolOutput `
     -Executable 'rustc' `
@@ -302,8 +287,8 @@ $pathComparison = if ($IsWindows) {
 else {
     [System.StringComparison]::Ordinal
 }
-if (-not [string]::Equals($selectedRustSysroot, $managedRustSysroot, $pathComparison)) {
-    throw "rustc $cargoToolchainArgument resolved sysroot '$selectedRustSysroot', but msrustup selected '$managedRustSysroot'; refusing a possible upstream fallback."
+if (-not [string]::Equals($selectedRustSysroot, $installerSysroot, $pathComparison)) {
+    throw "rustc $cargoToolchainArgument resolved sysroot '$selectedRustSysroot', but RustInstaller@1 installed '$installerSysroot'; refusing a possible upstream fallback."
 }
 
 $rustcVerboseVersion = Invoke-RequiredToolOutput `
@@ -513,8 +498,8 @@ foreach ($row in $rows) {
             selected_toolchain    = $microsoftRustConfig.Channel
             installer_package_version = $InstallerPackageVersion
             sysroot                = $selectedRustSysroot
-            rustc_executable       = $managedRustcExecutable
-            cargo_executable       = $managedCargoExecutable
+            rustc_executable       = $rustcExecutable
+            cargo_executable       = $cargoExecutable
             rustc_verbose_version = $rustcVerboseVersion
             rustc_release         = $rustcRelease
             cargo_version         = $cargoVersion

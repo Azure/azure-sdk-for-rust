@@ -31,12 +31,16 @@
     Do not apply a disposable self-signed certificate to the Windows DLL.
 
 .PARAMETER InstallerPackageVersion
-    Exact Microsoft Rust package version reported by msrustup during toolchain
-    installation.
+    Exact Microsoft Rust package version reported by RustInstaller@1 during
+    toolchain installation.
+
+.PARAMETER InstallerBinPath
+    Microsoft Rust tools/bin path reported by RustInstaller@1 as RUST_BIN_PATH.
 
 .EXAMPLE
     ./Invoke-LocalSupplyChain.ps1 `
-        -InstallerPackageVersion '1.95.0-ms-20260618.5'
+        -InstallerPackageVersion '1.95.0-ms-20260618.5' `
+        -InstallerBinPath '/path/to/ms-prod-1.95/bin'
 #>
 [CmdletBinding()]
 param(
@@ -44,7 +48,9 @@ param(
     [bool] $PrepareGoPr = $true,
     [switch] $SkipTestSigning,
     [Parameter(Mandatory = $true)]
-    [string] $InstallerPackageVersion
+    [string] $InstallerPackageVersion,
+    [Parameter(Mandatory = $true)]
+    [string] $InstallerBinPath
 )
 
 Set-StrictMode -Version 3.0
@@ -139,7 +145,8 @@ Write-Host "Building $TargetId with cargo-auditable"
     -TargetId $TargetId `
     -OutputRoot $ArtifactRoot `
     -CCompiler $cCompiler `
-    -InstallerPackageVersion $InstallerPackageVersion
+    -InstallerPackageVersion $InstallerPackageVersion `
+    -InstallerBinPath $InstallerBinPath
 if ($LASTEXITCODE -ne 0) {
     throw "Build-NativeMatrix.ps1 failed with exit code $LASTEXITCODE"
 }
