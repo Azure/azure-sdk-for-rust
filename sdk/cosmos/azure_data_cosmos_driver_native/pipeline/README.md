@@ -18,10 +18,11 @@ draft pull request in `Azure/azure-cosmos-driver`.
 Production jobs install the centrally pinned Microsoft Rust toolchain from
 `eng/templates/ms-rust-toolchain.toml` through the internal `RustInstaller@1`
 feed. The native build invokes Cargo and rustc with the explicit pinned
-toolchain selector and rejects an upstream compiler, a different or unpinned
-channel, and targets that `msrustup` cannot install. Each matrix job validates
-its target against the centralized list and passes only that target to
-`RustInstaller@1`; it does not attempt to install targets assigned to other
+toolchain selector, verifies that the selected sysroot contains the compiler
+and Cargo resolved by `msrustup`, and rejects an upstream compiler, a different
+or unpinned channel, and targets that `msrustup` cannot install. Each matrix job
+validates its target against the centralized list and passes only that target
+to `RustInstaller@1`; it does not attempt to install targets assigned to other
 operating systems.
 
 ## Configured release matrix
@@ -102,13 +103,14 @@ with SBOM generation enabled rather than implementing a second, pipeline-local
 signature verifier.
 
 Each target artifact includes schema 4 metadata with the selected toolchain
-manager, pinned Microsoft Rust channel, manager and Cargo versions, complete
-`rustc -Vv` output and compiler commit, target triple, and linker command,
-resolved path, and version output. `New-GoModules.ps1` rejects missing or mixed
-toolchain identities before writing schema 2 `provenance.json`. The link smoke
-test remains toolchain-neutral so third-party builds can validate compatible
-artifacts; the Microsoft Rust policy applies only at the governed production
-build and publication boundaries.
+manager, pinned Microsoft Rust channel, exact RustInstaller package, manager and
+Cargo versions, manager-resolved compiler and Cargo paths, selected sysroot,
+complete `rustc -Vv` output and compiler commit, target triple, and linker
+command, resolved path, and version output. `New-GoModules.ps1` rejects missing
+or mixed toolchain identities before writing schema 2 `provenance.json`. The
+link smoke test remains toolchain-neutral so third-party builds can validate
+compatible artifacts; the Microsoft Rust policy applies only at the governed
+production build and publication boundaries.
 
 The native-driver pipeline is not part of the automatic pull-request pipeline.
 Authorized reviewers can run its registered pipeline definition against a pull
@@ -132,7 +134,9 @@ code-owner approval before merge.
 Run the complete local test on Windows AMD64:
 
 ```powershell
-./Invoke-LocalSupplyChain.ps1
+$installerPackageVersion = '<exact RUST-INSTALLER Actual value>'
+./Invoke-LocalSupplyChain.ps1 `
+    -InstallerPackageVersion $installerPackageVersion
 ```
 
 The local machine must already have access to the internal Microsoft Rust feed,
@@ -169,13 +173,18 @@ results are not committed to the repository.
 Individual steps can also be run separately:
 
 ```powershell
+$installerPackageVersion = '<exact RUST-INSTALLER Actual value>'
+
 # Build one target.
 ./Build-NativeMatrix.ps1 `
     -TargetId windows-amd64 `
-    -CCompiler gcc
+    -CCompiler gcc `
+    -InstallerPackageVersion $installerPackageVersion
 
 # Inspect metadata without producing native libraries.
-./Build-NativeMatrix.ps1 -SkipBuild
+./Build-NativeMatrix.ps1 `
+    -InstallerPackageVersion $installerPackageVersion `
+    -SkipBuild
 
 # Generate Go modules from previously built artifacts.
 ./New-GoModules.ps1

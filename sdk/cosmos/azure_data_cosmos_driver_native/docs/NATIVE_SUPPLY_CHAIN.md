@@ -59,6 +59,7 @@ The metadata records:
 - the native-interface and driver versions;
 - the `msrustup` executable and manager version, plus the explicitly selected
   pinned Microsoft Rust channel;
+- the `rustc` and Cargo paths resolved by `msrustup` and the selected sysroot;
 - the complete `rustc -Vv` output and Cargo version;
 - the linker command, resolved executable path, and version output;
 - the operating-system libraries required by the Go linker; and
@@ -200,11 +201,11 @@ binds the published static libraries back to their exact source:
 - `native_interface_crate` / `native_interface_version` — the wrapper crate and
   the `AZURECOSMOSDRIVER_H_VERSION` header contract; and
 - `rust_toolchain` — the Microsoft provider, `msrustup` manager identity, pinned
-  channel, Rust release, compiler commit, and Cargo version shared by every
-  target; and
+  channel, exact RustInstaller package, Rust release, compiler commit, and Cargo
+  version shared by every target; and
 - `targets[]` — one entry per built row with its `id`, `triple`, `module_path`,
-  full `rustc -Vv` output, linker identity, and the SHA256 of the static library
-  and C header.
+  manager-resolved compiler paths, selected sysroot, full `rustc -Vv` output,
+  linker identity, and the SHA256 of the static library and C header.
 
 `New-GoModules.ps1` cross-validates that every selected target agrees on the
 identity fields before emitting the file, so a mismatched or tampered target
@@ -292,7 +293,9 @@ repository then requires one approval and code-owner approval before merge.
 
 `Invoke-LocalSupplyChain.ps1` exercises the mechanics on a developer machine
 that already has the pinned Microsoft Rust toolchain installed through
-`msrustup`. Build commands select the pinned channel explicitly. It:
+`msrustup`. Pass the exact package version reported by the installer through
+`-InstallerPackageVersion`; build commands then select the pinned channel
+explicitly. It:
 
 1. builds the native libraries;
 2. applies a disposable test signature to the Windows DLL;

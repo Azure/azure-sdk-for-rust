@@ -89,8 +89,12 @@ BeforeAll {
                     }
                     channel = $MicrosoftRustChannel
                     selected_toolchain = $MicrosoftRustChannel
+                    installer_package_version = '1.95.0-ms-20260618.5'
+                    sysroot = "/tools/$MicrosoftRustChannel"
+                    rustc_executable = "/tools/$MicrosoftRustChannel/bin/rustc"
+                    cargo_executable = "/tools/$MicrosoftRustChannel/bin/cargo"
                     rustc_verbose_version = @"
-rustc 1.95.0 (microsoft 012345678 2026-08-01)
+rustc 1.95.0 (012345678 2026-08-01)
 binary: rustc
 commit-hash: 0123456789abcdef0123456789abcdef01234567
 commit-date: 2026-08-01
@@ -175,6 +179,8 @@ BeforeEach {
         $provenance.rust_toolchain.manager | Should -Be 'msrustup'
         $provenance.rust_toolchain.manager_version | Should -Be 'msrustup 1.0.0'
         $provenance.rust_toolchain.channel | Should -Be $MicrosoftRustChannel
+        $provenance.rust_toolchain.installer_package_version |
+            Should -Be '1.95.0-ms-20260618.5'
         $provenance.rust_toolchain.rustc_release | Should -Be '1.95.0'
         $provenance.rust_toolchain.rustc_commit_hash |
             Should -Be '0123456789abcdef0123456789abcdef01234567'
@@ -186,6 +192,11 @@ BeforeEach {
         $windowsEntry[0].static_library_sha256 | Should -Match '^[0-9a-f]{64}$'
         $windowsEntry[0].header_sha256 | Should -Match '^[0-9a-f]{64}$'
         $windowsEntry[0].toolchain.selected_toolchain | Should -Be $MicrosoftRustChannel
+        $windowsEntry[0].toolchain.sysroot | Should -Be "/tools/$MicrosoftRustChannel"
+        $windowsEntry[0].toolchain.rustc_executable |
+            Should -Be "/tools/$MicrosoftRustChannel/bin/rustc"
+        $windowsEntry[0].toolchain.cargo_executable |
+            Should -Be "/tools/$MicrosoftRustChannel/bin/cargo"
         $windowsEntry[0].toolchain.rustc_verbose_version | Should -Match 'release: 1\.95\.0'
         $windowsEntry[0].toolchain.target | Should -Be 'x86_64-pc-windows-gnu'
         $windowsEntry[0].toolchain.linker.command | Should -Be 'gcc'
@@ -270,22 +281,24 @@ BeforeEach {
             Should -Throw "*toolchain provider must be 'microsoft'*"
     }
 
-    It 'rejects metadata produced by an upstream rustc' {
+    It 'rejects metadata without Microsoft Rust installer package identity' {
         Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
             param($metadata)
-            $metadata.toolchain.rustc_verbose_version = @'
-rustc 1.95.0 (012345678 2026-08-01)
-binary: rustc
-commit-hash: 0123456789abcdef0123456789abcdef01234567
-commit-date: 2026-08-01
-host: x86_64-pc-windows-msvc
-release: 1.95.0
-LLVM version: 21.1.0
-'@
+            $metadata.toolchain.installer_package_version = '1.95.0'
         }
 
         { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
-            Should -Throw '*rustc identity is not Microsoft Rust*'
+            Should -Throw "*does not identify Microsoft Rust release '1.95.0'*"
+    }
+
+    It 'rejects metadata without manager-resolved compiler identity' {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+            param($metadata)
+            $metadata.toolchain.PSObject.Properties.Remove('rustc_executable')
+        }
+
+        { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
+            Should -Throw "*metadata is missing non-empty 'rustc_executable'*"
     }
 
     It 'rejects an unpinned Microsoft Rust identity' {
@@ -329,12 +342,23 @@ LLVM version: 21.1.0
         Update-TestMetadata -Root $ArtifactRoot -TargetId 'linux-amd64-glibc' -Update {
             param($metadata)
             $metadata.toolchain.rustc_release = '1.95.1'
+            $metadata.toolchain.installer_package_version = '1.95.1-ms-20260618.5'
             $metadata.toolchain.rustc_verbose_version = $metadata.toolchain.rustc_verbose_version `
                 -replace 'release: 1\.95\.0', 'release: 1.95.1'
         }
 
         { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
             Should -Throw "*release identity 'rustc_release' mismatch*"
+    }
+
+    It 'rejects targets carrying mixed Microsoft Rust installer packages' {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'linux-amd64-glibc' -Update {
+            param($metadata)
+            $metadata.toolchain.installer_package_version = '1.95.0-ms-20260619.1'
+        }
+
+        { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
+            Should -Throw "*release identity 'rust_toolchain_installer_package_version' mismatch*"
     }
 
     It 'rejects targets built from different compiler commits' {

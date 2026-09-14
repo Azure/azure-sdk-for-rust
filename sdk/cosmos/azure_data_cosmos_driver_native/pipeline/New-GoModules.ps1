@@ -292,13 +292,26 @@ foreach ($row in $rows) {
         throw "[$($row.id)] metadata selected toolchain '$selectedToolchain' does not match '$channel'."
     }
 
+    $selectedRustSysroot = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain `
+        -Name 'sysroot'
+    $rustcExecutable = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain `
+        -Name 'rustc_executable'
+    $cargoExecutable = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain `
+        -Name 'cargo_executable'
     $rustcVerboseVersion = Get-RequiredMetadataString `
         -TargetId $row.id `
         -Object $toolchain `
         -Name 'rustc_verbose_version'
-    if ($rustcVerboseVersion -notmatch '(?im)^rustc\s+.*\bmicrosoft\b') {
-        throw "[$($row.id)] metadata rustc identity is not Microsoft Rust."
-    }
+    $installerPackageVersion = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain `
+        -Name 'installer_package_version'
     $rustcRelease = Get-RequiredMetadataString `
         -TargetId $row.id `
         -Object $toolchain `
@@ -325,6 +338,9 @@ foreach ($row in $rows) {
     $channelRelease = $channel.Substring('ms-prod-'.Length)
     if ($rustcRelease -notmatch "^$([regex]::Escape($channelRelease))(?:\.|$)") {
         throw "[$($row.id)] metadata Microsoft Rust release '$rustcRelease' does not match pinned channel '$channel'."
+    }
+    if ($installerPackageVersion -notmatch "^$([regex]::Escape($rustcRelease))-ms-\S+$") {
+        throw "[$($row.id)] metadata installer package '$installerPackageVersion' does not identify Microsoft Rust release '$rustcRelease'."
     }
     $cargoVersion = Get-RequiredMetadataString `
         -TargetId $row.id `
@@ -390,6 +406,7 @@ foreach ($row in $rows) {
         rust_toolchain_manager_version = $managerVersion
         rust_toolchain_channel = $channel
         rustc_release = $rustcRelease
+        rust_toolchain_installer_package_version = $installerPackageVersion
         rustc_commit_hash = $rustcCommitHash
         cargo_version = $cargoVersion
     }
@@ -416,6 +433,9 @@ foreach ($row in $rows) {
         StaticLibraryPath = $staticLibraryPath
         Toolchain = [ordered]@{
             selected_toolchain    = $selectedToolchain
+            sysroot               = $selectedRustSysroot
+            rustc_executable      = $rustcExecutable
+            cargo_executable      = $cargoExecutable
             rustc_verbose_version = $rustcVerboseVersion
             target                = [string]$toolchain.target
             linker = [ordered]@{
@@ -536,6 +556,7 @@ $provenance = [ordered]@{
         manager         = $releaseIdentity['rust_toolchain_manager']
         manager_version = $releaseIdentity['rust_toolchain_manager_version']
         channel         = $releaseIdentity['rust_toolchain_channel']
+        installer_package_version = $releaseIdentity['rust_toolchain_installer_package_version']
         rustc_release   = $releaseIdentity['rustc_release']
         rustc_commit_hash = $releaseIdentity['rustc_commit_hash']
         cargo_version   = $releaseIdentity['cargo_version']

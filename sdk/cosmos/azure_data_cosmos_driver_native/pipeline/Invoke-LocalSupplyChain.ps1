@@ -30,14 +30,21 @@
 .PARAMETER SkipTestSigning
     Do not apply a disposable self-signed certificate to the Windows DLL.
 
+.PARAMETER InstallerPackageVersion
+    Exact Microsoft Rust package version reported by msrustup during toolchain
+    installation.
+
 .EXAMPLE
-    ./Invoke-LocalSupplyChain.ps1
+    ./Invoke-LocalSupplyChain.ps1 `
+        -InstallerPackageVersion '1.95.0-ms-20260618.5'
 #>
 [CmdletBinding()]
 param(
     [string] $TargetId = 'windows-amd64',
     [bool] $PrepareGoPr = $true,
-    [switch] $SkipTestSigning
+    [switch] $SkipTestSigning,
+    [Parameter(Mandatory = $true)]
+    [string] $InstallerPackageVersion
 )
 
 Set-StrictMode -Version 3.0
@@ -131,7 +138,8 @@ Write-Host "Building $TargetId with cargo-auditable"
 & ([System.IO.Path]::Combine($PipelineDir, 'Build-NativeMatrix.ps1')) `
     -TargetId $TargetId `
     -OutputRoot $ArtifactRoot `
-    -CCompiler $cCompiler
+    -CCompiler $cCompiler `
+    -InstallerPackageVersion $InstallerPackageVersion
 if ($LASTEXITCODE -ne 0) {
     throw "Build-NativeMatrix.ps1 failed with exit code $LASTEXITCODE"
 }
