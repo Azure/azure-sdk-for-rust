@@ -12,10 +12,10 @@
 #[derive(Debug)]
 pub struct Retry(/* private fields */);
 impl Retry {
-    fn duration(&self) -> Option<Duration>;
-    fn immediate() -> Self;
-    async fn next(&mut self) -> Option<()>;
-    fn progressive(timeout: Option<Duration>) -> Self;
+    pub fn duration(&self) -> Option<Duration>;
+    pub fn immediate() -> Self;
+    pub async fn next(&mut self) -> Option<()>;
+    pub fn progressive(timeout: Option<Duration>) -> Self;
 }
 pub mod policies {
     #[derive(Debug)]

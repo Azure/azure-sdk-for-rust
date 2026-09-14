@@ -1427,7 +1427,7 @@ fn extracts_inherent_impl_blocks_for_enum_methods() {
     assert_eq!(extracted[0].declaration, "impl Status {");
     assert_eq!(
         extracted[0].members[0].declaration,
-        "fn is_ready(&self) -> bool;"
+        "pub fn is_ready(&self) -> bool;"
     );
 }
 

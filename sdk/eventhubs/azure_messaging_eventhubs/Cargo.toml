@@ -3,7 +3,7 @@
 
 [package]
 name = "azure_messaging_eventhubs"
-version = "0.16.0"
+version = "0.17.0"
 description = "Rust client for Azure Eventhubs Service"
 readme = "README.md"
 authors.workspace = true
@@ -21,13 +21,13 @@ async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
 azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default-features = false }
-# Unreleased: AmqpTransport for AMQP-over-WebSockets (issue #3601). Path plus
-# version per the dependency policy in AGENTS.md.
+# Unreleased: the WebSocket withdrawal requires azure_core_amqp 1.2.0-beta.2.
+# Keep local core dependencies aligned for the types exchanged between crates.
 # `default-features = false` so that the `default` feature below is what selects
 # the TLS stack, in the same shape as `azure_core` above. With the default
 # features on here, a consumer that turns them off could not drop the rustls
 # stack to bring their own.
-azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.2.0-beta.1", default-features = false }
+azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.2.0-beta.2", default-features = false }
 base64.workspace = true
 futures.workspace = true
 hmac.workspace = true
@@ -66,30 +66,12 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 [features]
 in_memory_checkpoint_store = []
 default = ["azure_core_amqp/default"]
-# The AMQP backend and the AMQP-over-WebSockets transport, forwarded from
-# `azure_core_amqp`. The `default` feature selects the backend and the rustls
-# stack with the aws-lc-rs provider for both the TCP and the WebSocket
-# transport. That is the stack that the rest of `sdk/core` uses.
-#
-# There is no native-tls feature, because `fe2o3-amqp` accepts one TLS stack
-# only. To build on another stack, turn off the default features, name the base
-# features, and take a direct dependency on the backend crates with the stack
-# you want. Cargo unifies the features:
-#
-#   azure_messaging_eventhubs = { version = "...", default-features = false, features = [
-#     "fe2o3_amqp", "fe2o3_amqp_ws",
-#   ] }
-#   fe2o3-amqp = { version = "0.16", features = ["native-tls"] }
-#   fe2o3-amqp-ws = { version = "0.16", features = ["native-tls"] }
-#
-# `samples/list_blobs_native_tls` shows the same pattern for `reqwest`.
+# Forward the AMQP backend and TCP TLS features from `azure_core_amqp`.
+# The default selects rustls with the aws-lc-rs provider. To use another TLS
+# stack, disable default features, enable `fe2o3_amqp`, and select that stack
+# through a direct dependency on `fe2o3-amqp`.
 fe2o3_amqp = ["azure_core_amqp/fe2o3_amqp"]
 fe2o3_amqp_rustls = ["fe2o3_amqp", "azure_core_amqp/fe2o3_amqp_rustls"]
-fe2o3_amqp_ws = ["fe2o3_amqp", "azure_core_amqp/fe2o3_amqp_ws"]
-fe2o3_amqp_ws_rustls = [
-  "fe2o3_amqp_ws",
-  "azure_core_amqp/fe2o3_amqp_ws_rustls",
-]
 
 [[bench]]
 name = "benchmarks"
