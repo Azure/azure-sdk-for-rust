@@ -426,7 +426,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "async-trait",
  "azure_core 1.2.0-beta.1",
@@ -435,7 +435,6 @@ dependencies = [
  "fe2o3-amqp-ext 0.16.0",
  "fe2o3-amqp-management 0.16.0",
  "fe2o3-amqp-types 0.16.0",
- "fe2o3-amqp-ws",
  "rustls",
  "rustls-platform-verifier",
  "serde",
@@ -802,13 +801,13 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs"
-version = "0.16.0"
+version = "0.17.0"
 dependencies = [
  "async-lock",
  "async-stream",
  "async-trait",
  "azure_core 1.2.0-beta.1",
- "azure_core_amqp 1.2.0-beta.1",
+ "azure_core_amqp 1.2.0-beta.2",
  "azure_core_test 0.2.0",
  "azure_identity 1.1.0-beta.1",
  "azure_messaging_eventhubs",
@@ -832,7 +831,7 @@ dependencies = [
 
 [[package]]
 name = "azure_messaging_eventhubs_checkpointstore_blob"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "async-trait",
  "azure_core 1.2.0-beta.1",
@@ -1528,12 +1527,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "data-encoding"
-version = "2.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4583a4551df46e2792f82ceeac45e850d2e2d5debba0b91f102385cda5b11f06"
-
-[[package]]
 name = "der"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1785,26 +1778,6 @@ dependencies = [
  "serde_amqp 0.16.0",
  "serde_bytes",
  "serde_repr",
-]
-
-[[package]]
-name = "fe2o3-amqp-ws"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d97c7c11da9b00c1703fee21d5b1ca129ade1ae0d44d4b9f20eecdde29dbbe7e"
-dependencies = [
- "bytes",
- "futures-util",
- "getrandom 0.4.3",
- "http",
- "js-sys",
- "pin-project-lite",
- "thiserror",
- "tokio",
- "tokio-tungstenite",
- "tungstenite",
- "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]
@@ -3835,17 +3808,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sha1"
-version = "0.10.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a978451301f4db1d02937a4ab3ccce137717b81826e79b7d49ffe3244a13c3b8"
-dependencies = [
- "cfg-if",
- "cpufeatures 0.2.17",
- "digest",
-]
-
-[[package]]
 name = "sha2"
 version = "0.10.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4215,22 +4177,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tokio-tungstenite"
-version = "0.26.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a9daff607c6d2bf6c16fd681ccb7eecc83e4e2cdc1ca067ffaadfca5de7f084"
-dependencies = [
- "futures-util",
- "log",
- "rustls",
- "rustls-native-certs",
- "rustls-pki-types",
- "tokio",
- "tokio-rustls",
- "tungstenite",
-]
-
-[[package]]
 name = "tokio-util"
 version = "0.7.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4538,25 +4484,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
 
 [[package]]
-name = "tungstenite"
-version = "0.26.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4793cb5e56680ecbb1d843515b23b6de9a75eb04b66643e256a396d43be33c13"
-dependencies = [
- "bytes",
- "data-encoding",
- "http",
- "httparse",
- "log",
- "rand 0.9.5",
- "rustls",
- "rustls-pki-types",
- "sha1",
- "thiserror",
- "utf-8",
-]
-
-[[package]]
 name = "typed-path"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4734,12 +4661,6 @@ dependencies = [
  "percent-encoding",
  "serde",
 ]
-
-[[package]]
-name = "utf-8"
-version = "0.7.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
 
 [[package]]
 name = "utf8-zero"
