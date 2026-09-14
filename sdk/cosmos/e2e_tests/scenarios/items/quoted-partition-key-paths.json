@@ -3,7 +3,7 @@
     "specVersion": "1.0",
     "id": "item.quoted-partition-key-paths",
     "title": "Quoted partition-key paths work across item operations",
-    "requirement": "Quoted path segments, including property names containing slash characters, preserve partition routing for Hash V1, Hash V2, and hierarchical partition keys across item operations.",
+    "requirement": "Quoted path segments, including property names containing slash characters or matching quotes preceded by literal backslashes, preserve partition routing for Hash V1, Hash V2, and hierarchical partition keys across item operations.",
     "maturity": "candidate",
     "precedents": [
         {

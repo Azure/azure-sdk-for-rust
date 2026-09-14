@@ -19,7 +19,7 @@
 //! buggy callers fail with 400 BadRequest in the emulator just like they would
 //! against a real account.
 
-use crate::models::{ PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion };
+use crate::models::{PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion};
 
 /// Re-export of the production [`EffectivePartitionKey`](crate::models::effective_partition_key::EffectivePartitionKey).
 ///
@@ -37,7 +37,7 @@ pub(crate) type PartitionKeyComponent = PartitionKeyValue;
 pub(crate) fn compute_epk(
     components: &[PartitionKeyValue],
     kind: PartitionKeyKind,
-    version: PartitionKeyVersion
+    version: PartitionKeyVersion,
 ) -> Epk {
     Epk::compute(components, kind, version)
 }
@@ -52,36 +52,30 @@ pub(crate) fn compute_epk(
 /// - The empty-object `{}` sentinel maps to an undefined component.
 /// - Other object / array components return `BadRequest` (HTTP 400).
 pub(crate) fn parse_partition_key_header(
-    header: &str
+    header: &str,
 ) -> crate::error::Result<Vec<PartitionKeyValue>> {
     let trimmed = header.trim();
     if trimmed.is_empty() || trimmed == "[]" {
         return Ok(Vec::new());
     }
 
-    let value: serde_json::Value = serde_json
-        ::from_str(trimmed)
-        .map_err(|e| {
-            crate::error::CosmosError
-                ::builder()
-                .with_status(
-                    crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
-                )
-                .with_message(format!("invalid partition key header: {e}"))
-                .build()
-        })?;
+    let value: serde_json::Value = serde_json::from_str(trimmed).map_err(|e| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message(format!("invalid partition key header: {e}"))
+            .build()
+    })?;
 
-    let arr = value
-        .as_array()
-        .ok_or_else(|| {
-            crate::error::CosmosError
-                ::builder()
-                .with_status(
-                    crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
-                )
-                .with_message("partition key header must be a JSON array")
-                .build()
-        })?;
+    let arr = value.as_array().ok_or_else(|| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message("partition key header must be a JSON array")
+            .build()
+    })?;
 
     arr.iter().map(json_to_pk_component).collect()
 }
@@ -97,18 +91,15 @@ pub(crate) fn parse_partition_key_header(
 /// partition key property" handling.
 pub(crate) fn extract_pk_from_body(
     body: &serde_json::Value,
-    pk_paths: &[impl AsRef<str>]
+    pk_paths: &[impl AsRef<str>],
 ) -> crate::error::Result<Vec<PartitionKeyValue>> {
     if !body.is_object() {
-        return Err(
-            crate::error::CosmosError
-                ::builder()
-                .with_status(
-                    crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
-                )
-                .with_message("document body must be a JSON object to extract a partition key")
-                .build()
-        );
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message("document body must be a JSON object to extract a partition key")
+            .build());
     }
     pk_paths
         .iter()
@@ -120,7 +111,7 @@ pub(crate) fn extract_pk_from_body(
 /// whose property names contain `/` characters.
 fn extract_pk_at_path(
     body: &serde_json::Value,
-    path: &str
+    path: &str,
 ) -> crate::error::Result<PartitionKeyValue> {
     let segments = parse_partition_key_path(path)?;
     if segments.is_empty() {
@@ -182,12 +173,13 @@ fn parse_partition_key_path(path: &str) -> crate::error::Result<Vec<String>> {
                     return Err(invalid_partition_key_path(path, start - 1));
                 };
                 index += relative;
-                let escaped =
-                    bytes[..index]
-                        .iter()
-                        .rev()
-                        .take_while(|value| **value == b'\\')
-                        .count() % 2 == 1;
+                let escaped = bytes[..index]
+                    .iter()
+                    .rev()
+                    .take_while(|value| **value == b'\\')
+                    .count()
+                    % 2
+                    == 1;
                 if !escaped {
                     break;
                 }
@@ -211,10 +203,13 @@ fn parse_partition_key_path(path: &str) -> crate::error::Result<Vec<String>> {
 }
 
 fn invalid_partition_key_path(path: &str, index: usize) -> crate::error::CosmosError {
-    crate::error::CosmosError
-        ::builder()
-        .with_status(crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
-        .with_message(format!("invalid partition key path '{path}' at byte index {index}"))
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            azure_core::http::StatusCode::BadRequest,
+        ))
+        .with_message(format!(
+            "invalid partition key path '{path}' at byte index {index}"
+        ))
         .build()
 }
 
@@ -226,49 +221,36 @@ fn json_to_pk_component(value: &serde_json::Value) -> crate::error::Result<Parti
         serde_json::Value::Bool(b) => Ok(PartitionKeyValue::from(*b)),
         serde_json::Value::String(s) => Ok(PartitionKeyValue::from(s.clone())),
         serde_json::Value::Number(n) => {
-            let f = n
-                .as_f64()
-                .ok_or_else(|| {
-                    crate::error::CosmosError
-                        ::builder()
-                        .with_status(
-                            crate::error::CosmosStatus::new(
-                                azure_core::http::StatusCode::BadRequest
-                            )
-                        )
-                        .with_message("partition key number is not representable as f64")
-                        .build()
-                })?;
+            let f = n.as_f64().ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message("partition key number is not representable as f64")
+                    .build()
+            })?;
             if !f.is_finite() {
-                return Err(
-                    crate::error::CosmosError
-                        ::builder()
-                        .with_status(
-                            crate::error::CosmosStatus::new(
-                                azure_core::http::StatusCode::BadRequest
-                            )
-                        )
-                        .with_message(
-                            "partition key numbers must be finite (NaN and Infinity are not allowed)"
-                        )
-                        .build()
-                );
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message(
+                        "partition key numbers must be finite (NaN and Infinity are not allowed)",
+                    )
+                    .build());
             }
             Ok(PartitionKeyValue::from(f))
         }
         serde_json::Value::Object(object) if object.is_empty() => Ok(PartitionKeyValue::UNDEFINED),
         serde_json::Value::Object(_) | serde_json::Value::Array(_) => {
-            Err(
-                crate::error::CosmosError
-                    ::builder()
-                    .with_status(
-                        crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
-                    )
-                    .with_message(
-                        "partition key components must be scalar (null, bool, number, or string)"
-                    )
-                    .build()
-            )
+            Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(
+                    "partition key components must be scalar (null, bool, number, or string)",
+                )
+                .build())
         }
     }
 }
@@ -280,7 +262,10 @@ mod tests {
     #[test]
     fn parse_pk_header_string() {
         let components = parse_partition_key_header(r#"["hello"]"#).unwrap();
-        assert_eq!(components, vec![PartitionKeyValue::from("hello".to_string())]);
+        assert_eq!(
+            components,
+            vec![PartitionKeyValue::from("hello".to_string())]
+        );
     }
 
     #[test]
@@ -336,7 +321,10 @@ mod tests {
     fn extract_pk_from_json_body() {
         let body = serde_json::json!({"id": "doc1", "pk": "value1", "nested": {"key": 42}});
         let components = extract_pk_from_body(&body, &["/pk"]).unwrap();
-        assert_eq!(components, vec![PartitionKeyValue::from("value1".to_string())]);
+        assert_eq!(
+            components,
+            vec![PartitionKeyValue::from("value1".to_string())]
+        );
     }
 
     #[test]
@@ -349,21 +337,34 @@ mod tests {
     #[test]
     fn extract_pk_double_quoted_segments_preserve_slashes() {
         let body = serde_json::json!({"first level' 1*()": {"le/vel2": "value"}});
-        let components = extract_pk_from_body(
-            &body,
-            &[r#"/"first level' 1*()"/"le/vel2""#]
-        ).unwrap();
+        let components =
+            extract_pk_from_body(&body, &[r#"/"first level' 1*()"/"le/vel2""#]).unwrap();
         assert_eq!(components, [PartitionKeyValue::from("value")]);
     }
 
     #[test]
     fn extract_pk_single_quoted_segments_preserve_slashes() {
         let body = serde_json::json!({"first level\" 1*()": {"le/vel2": "value"}});
-        let components = extract_pk_from_body(
-            &body,
-            &[r#"/'first level" 1*()'/'le/vel2'"#]
-        ).unwrap();
+        let components =
+            extract_pk_from_body(&body, &[r#"/'first level" 1*()'/'le/vel2'"#]).unwrap();
         assert_eq!(components, [PartitionKeyValue::from("value")]);
+    }
+
+    #[test]
+    fn extract_pk_matching_quotes_preserve_preceding_backslashes() {
+        let body = serde_json::json!({
+            "double\\\"quote": "double-value",
+            "single\\'quote": "single-value",
+            "double\"quote": "must-not-match"
+        });
+        assert_eq!(
+            extract_pk_from_body(&body, &[r#"/"double\"quote""#]).unwrap(),
+            [PartitionKeyValue::from("double-value")]
+        );
+        assert_eq!(
+            extract_pk_from_body(&body, &[r#"/'single\'quote'"#]).unwrap(),
+            [PartitionKeyValue::from("single-value")]
+        );
     }
 
     #[test]
@@ -389,7 +390,10 @@ mod tests {
     #[test]
     fn extract_pk_empty_object_value_is_undefined() {
         let body = serde_json::json!({"pk": {}});
-        assert_eq!(extract_pk_from_body(&body, &["/pk"]).unwrap(), [PartitionKeyValue::UNDEFINED]);
+        assert_eq!(
+            extract_pk_from_body(&body, &["/pk"]).unwrap(),
+            [PartitionKeyValue::UNDEFINED]
+        );
     }
 
     #[test]
@@ -416,7 +420,7 @@ mod tests {
         let epk = compute_epk(
             &[PartitionKeyValue::from("customer42".to_string())],
             PartitionKeyKind::Hash,
-            PartitionKeyVersion::V2
+            PartitionKeyVersion::V2,
         );
         assert_eq!(epk.to_hex(), "19819C94CE42A1654CCC8110539D9589");
     }
@@ -437,7 +441,11 @@ mod tests {
             ("integer 42", serde_json::json!({"pk": 42}), "[42]"),
             ("integer 0", serde_json::json!({"pk": 0}), "[0]"),
             ("negative integer", serde_json::json!({"pk": -7}), "[-7]"),
-            ("integer-as-f64 42.0", serde_json::json!({"pk": 42.0}), "[42.0]"),
+            (
+                "integer-as-f64 42.0",
+                serde_json::json!({"pk": 42.0}),
+                "[42.0]",
+            ),
             ("fractional 1.5", serde_json::json!({"pk": 1.5}), "[1.5]"),
             ("large 1e10", serde_json::json!({"pk": 1e10}), "[1e10]"),
             (
@@ -448,7 +456,7 @@ mod tests {
             ("string", serde_json::json!({"pk": "abc"}), r#"["abc"]"#),
             ("bool true", serde_json::json!({"pk": true}), "[true]"),
             ("bool false", serde_json::json!({"pk": false}), "[false]"),
-            ("null", serde_json::json!({"pk": null}), "[null]")
+            ("null", serde_json::json!({"pk": null}), "[null]"),
         ];
 
         for (label, body, header) in cases {
@@ -459,19 +467,16 @@ mod tests {
                 panic!("header parsing failed for {}: {}", label, e);
             });
             assert_eq!(
-                from_body,
-                from_header,
+                from_body, from_header,
                 "components diverge for {}: body={:?} header={:?}",
-                label,
-                from_body,
-                from_header
+                label, from_body, from_header
             );
 
             let epk_body = compute_epk(&from_body, PartitionKeyKind::Hash, PartitionKeyVersion::V2);
             let epk_header = compute_epk(
                 &from_header,
                 PartitionKeyKind::Hash,
-                PartitionKeyVersion::V2
+                PartitionKeyVersion::V2,
             );
             assert_eq!(
                 epk_body,
@@ -484,15 +489,12 @@ mod tests {
 
             // V1 too — hierarchical-PK V1 containers exist and the same
             // body/header parity must hold there.
-            let epk_body_v1 = compute_epk(
-                &from_body,
-                PartitionKeyKind::Hash,
-                PartitionKeyVersion::V1
-            );
+            let epk_body_v1 =
+                compute_epk(&from_body, PartitionKeyKind::Hash, PartitionKeyVersion::V1);
             let epk_header_v1 = compute_epk(
                 &from_header,
                 PartitionKeyKind::Hash,
-                PartitionKeyVersion::V1
+                PartitionKeyVersion::V1,
             );
             assert_eq!(
                 epk_body_v1,

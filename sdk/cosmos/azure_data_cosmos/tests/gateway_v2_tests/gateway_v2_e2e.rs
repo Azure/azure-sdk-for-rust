@@ -4,65 +4,42 @@
 #![cfg(feature = "key_auth")]
 
 use azure_core::credentials::Secret;
-use azure_core::http::{ Etag, StatusCode };
-use azure_data_cosmos::diagnostics::{ DiagnosticsContext, TransportKind };
+use azure_core::http::{Etag, StatusCode};
+use azure_data_cosmos::diagnostics::{DiagnosticsContext, TransportKind};
 use azure_data_cosmos::models::{
-    CompositeIndex,
-    CompositeIndexOrder,
-    CompositeIndexProperty,
-    ContainerProperties,
-    IndexingPolicy,
-    ItemResponse,
-    PartitionKeyDefinition,
-    PartitionKeyVersion,
+    CompositeIndex, CompositeIndexOrder, CompositeIndexProperty, ContainerProperties,
+    IndexingPolicy, ItemResponse, PartitionKeyDefinition, PartitionKeyVersion,
     ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    ChangeFeedStartFrom,
-    ConnectionPoolOptions,
-    CreateContainerOptions,
-    ItemReadOptions,
-    ItemWriteOptions,
-    MaxItemCountHint,
-    OperationOptionsBuilder,
-    PartitionFailoverOptions,
-    Precondition,
-    QueryOptions,
-    ReadConsistencyStrategy,
-    Region,
+    ChangeFeedStartFrom, ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions,
+    ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder, PartitionFailoverOptions,
+    Precondition, QueryOptions, ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
-    AccountEndpoint,
-    AccountReference,
-    CosmosClient,
-    CosmosRuntime,
-    FeedScope,
-    Query,
-    RoutingStrategy,
-    SubStatusCode,
-    TransactionalBatch,
+    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
+    RoutingStrategy, SubStatusCode, TransactionalBatch,
 };
 use azure_data_cosmos_driver::{
-    models::{ AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference },
+    models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
     options::OperationOptions,
-    CosmosDriverRuntime,
-    DriverOptions,
+    CosmosDriverRuntime, DriverOptions,
 };
-use futures::{ FutureExt, StreamExt };
-use serde::{ Deserialize, Serialize };
-use std::{ num::NonZeroU32, panic::AssertUnwindSafe };
+use futures::{FutureExt, StreamExt};
+use serde::{Deserialize, Serialize};
+use std::{num::NonZeroU32, panic::AssertUnwindSafe};
 
 fn read_env(name: &str) -> Option<String> {
-    std::env
-        ::var(name)
-        .ok()
-        .filter(|v| !v.trim().is_empty())
+    std::env::var(name).ok().filter(|v| !v.trim().is_empty())
 }
 
 /// Asserts every request recorded in `diagnostics` used `expected` transport.
 fn assert_transport_kind(diagnostics: &DiagnosticsContext, expected: TransportKind) {
     let requests = diagnostics.requests();
-    assert!(!requests.is_empty(), "expected at least one request in diagnostics");
+    assert!(
+        !requests.is_empty(),
+        "expected at least one request in diagnostics"
+    );
     for r in requests.iter() {
         // The transport kind is stamped together with the contacted endpoint at
         // request-start, and the status is written onto the same record when the
@@ -124,24 +101,28 @@ async fn create_seed_item<P, T>(
     container: &azure_data_cosmos::clients::ContainerClient,
     partition_key: P,
     item_id: &str,
-    item: &T
-)
-    -> Result<ItemResponse, Box<dyn std::error::Error>>
-    where P: Into<azure_data_cosmos::PartitionKey> + Clone, T: Serialize
+    item: &T,
+) -> Result<ItemResponse, Box<dyn std::error::Error>>
+where
+    P: Into<azure_data_cosmos::PartitionKey> + Clone,
+    T: Serialize,
 {
     const MAX_ATTEMPTS: u32 = 6;
 
     let mut delay = std::time::Duration::from_millis(250);
     for attempt in 1..=MAX_ATTEMPTS {
-        match container.create_item(partition_key.clone(), item_id, item, None).await {
+        match container
+            .create_item(partition_key.clone(), item_id, item, None)
+            .await
+        {
             Ok(response) => {
                 return Ok(response);
             }
-            Err(error) if
-                error.status().status_code() == StatusCode::Unauthorized &&
-                error.to_string().contains("MAC signature") &&
-                attempt < MAX_ATTEMPTS
-            => {
+            Err(error)
+                if error.status().status_code() == StatusCode::Unauthorized
+                    && error.to_string().contains("MAC signature")
+                    && attempt < MAX_ATTEMPTS =>
+            {
                 eprintln!(
                     "transient 401 during Gateway 2.0 seed write; retrying attempt {attempt}/{MAX_ATTEMPTS} after {delay:?}: {error}"
                 );
@@ -164,7 +145,7 @@ async fn create_seed_item<P, T>(
 /// the transport.
 async fn build_client(
     endpoint: &str,
-    key: &str
+    key: &str,
 ) -> Result<CosmosClient, Box<dyn std::error::Error>> {
     build_client_for_region(endpoint, key, Region::EAST_US).await
 }
@@ -172,22 +153,22 @@ async fn build_client(
 async fn build_client_with_gateway_v2_disabled(
     endpoint: &str,
     key: &str,
-    gateway_v2_disabled: bool
+    gateway_v2_disabled: bool,
 ) -> Result<CosmosClient, Box<dyn std::error::Error>> {
     let pool = ConnectionPoolOptions::builder()
         .with_gateway_v2_disabled(gateway_v2_disabled)
         .build()?;
-    let runtime = CosmosRuntime::builder().with_connection_pool(pool).build().await?;
+    let runtime = CosmosRuntime::builder()
+        .with_connection_pool(pool)
+        .build()
+        .await?;
     let endpoint: AccountEndpoint = normalize_gateway_v2_endpoint(endpoint).parse()?;
-    let account_ref = AccountReference::with_authentication_key(
-        endpoint,
-        Secret::from(key.to_string())
-    );
-    Ok(
-        CosmosClient::builder()
-            .with_runtime(runtime)
-            .build(account_ref, RoutingStrategy::ProximityTo(Region::EAST_US)).await?
-    )
+    let account_ref =
+        AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
+    Ok(CosmosClient::builder()
+        .with_runtime(runtime)
+        .build(account_ref, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .await?)
 }
 
 /// Like [`build_client`] but pins proximity routing to `region` so reads are
@@ -197,17 +178,14 @@ async fn build_client_with_gateway_v2_disabled(
 async fn build_client_for_region(
     endpoint: &str,
     key: &str,
-    region: Region
+    region: Region,
 ) -> Result<CosmosClient, Box<dyn std::error::Error>> {
     let endpoint: AccountEndpoint = normalize_gateway_v2_endpoint(endpoint).parse()?;
-    let account_ref = AccountReference::with_authentication_key(
-        endpoint,
-        Secret::from(key.to_string())
-    );
-    let client = CosmosClient::builder().build(
-        account_ref,
-        RoutingStrategy::ProximityTo(region)
-    ).await?;
+    let account_ref =
+        AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
+    let client = CosmosClient::builder()
+        .build(account_ref, RoutingStrategy::ProximityTo(region))
+        .await?;
     Ok(client)
 }
 
@@ -224,19 +202,18 @@ async fn build_client_for_region(
 /// request and rejected by the thin-client backend with HTTP 400.
 async fn build_client_ppcb_disabled(
     endpoint: &str,
-    key: &str
+    key: &str,
 ) -> Result<CosmosClient, Box<dyn std::error::Error>> {
     let endpoint: AccountEndpoint = normalize_gateway_v2_endpoint(endpoint).parse()?;
-    let account_ref = AccountReference::with_authentication_key(
-        endpoint,
-        Secret::from(key.to_string())
-    );
+    let account_ref =
+        AccountReference::with_authentication_key(endpoint, Secret::from(key.to_string()));
     let failover_options = PartitionFailoverOptions::builder()
         .with_circuit_breaker_enabled(false)
         .build()?;
     let client = CosmosClient::builder()
         .with_partition_failover_options(failover_options)
-        .build(account_ref, RoutingStrategy::ProximityTo(Region::EAST_US)).await?;
+        .build(account_ref, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .await?;
     Ok(client)
 }
 
@@ -264,7 +241,7 @@ async fn build_client_ppcb_disabled(
 /// or until the bounded poll budget is exhausted.
 async fn wait_for_container_ready(
     db_client: &azure_data_cosmos::clients::DatabaseClient,
-    container_name: &str
+    container_name: &str,
 ) -> Result<azure_data_cosmos::clients::ContainerClient, Box<dyn std::error::Error>> {
     const MAX_ATTEMPTS: u32 = 120;
     const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
@@ -274,19 +251,19 @@ async fn wait_for_container_ready(
     // the metadata path reports `404 / 1003 OwnerResourceNotFound` (routing
     // caches not yet propagated). Both are transient; anything else is fatal.
     fn is_transient_not_ready(status: &azure_data_cosmos::CosmosStatus) -> bool {
-        status.status_code() == StatusCode::NotFound &&
-            matches!(
+        status.status_code() == StatusCode::NotFound
+            && matches!(
                 status.sub_status(),
                 Some(
-                    SubStatusCode::COLLECTION_CREATE_IN_PROGRESS |
-                        SubStatusCode::OWNER_RESOURCE_NOT_FOUND
+                    SubStatusCode::COLLECTION_CREATE_IN_PROGRESS
+                        | SubStatusCode::OWNER_RESOURCE_NOT_FOUND
                 )
             )
     }
 
     async fn probe_ready(
         db_client: &azure_data_cosmos::clients::DatabaseClient,
-        container_name: &str
+        container_name: &str,
     ) -> azure_data_cosmos::Result<azure_data_cosmos::clients::ContainerClient> {
         let container_client = db_client.container_client(container_name, None).await?;
         container_client.read(None).await?;
@@ -294,17 +271,16 @@ async fn wait_for_container_ready(
     }
 
     for attempt in 0..MAX_ATTEMPTS {
-        let last_err: Box<dyn std::error::Error> = match
-            probe_ready(db_client, container_name).await
-        {
-            Ok(container_client) => {
-                return Ok(container_client);
-            }
-            Err(e) if is_transient_not_ready(&e.status()) => Box::new(e),
-            Err(e) => {
-                return Err(Box::new(e));
-            }
-        };
+        let last_err: Box<dyn std::error::Error> =
+            match probe_ready(db_client, container_name).await {
+                Ok(container_client) => {
+                    return Ok(container_client);
+                }
+                Err(e) if is_transient_not_ready(&e.status()) => Box::new(e),
+                Err(e) => {
+                    return Err(Box::new(e));
+                }
+            };
 
         if attempt + 1 == MAX_ATTEMPTS {
             return Err(
@@ -326,18 +302,19 @@ async fn wait_for_container_ready(
 /// that can lag a beat behind it. `run` must be safe to call repeatedly from
 /// scratch (e.g. a read-only query drain).
 async fn retry_query_owner_not_found<T, F, Fut>(mut run: F) -> Result<T, Box<dyn std::error::Error>>
-    where
-        F: FnMut() -> Fut,
-        Fut: std::future::Future<Output = Result<T, Box<dyn std::error::Error>>>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = Result<T, Box<dyn std::error::Error>>>,
 {
     const MAX_ATTEMPTS: u32 = 10;
     const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
 
     fn is_owner_resource_not_found(e: &(dyn std::error::Error + 'static)) -> bool {
-        e.downcast_ref::<azure_data_cosmos::CosmosError>().is_some_and(|ce| {
-            ce.status().status_code() == StatusCode::NotFound &&
-                ce.status().sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND)
-        })
+        e.downcast_ref::<azure_data_cosmos::CosmosError>()
+            .is_some_and(|ce| {
+                ce.status().status_code() == StatusCode::NotFound
+                    && ce.status().sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND)
+            })
     }
 
     for attempt in 0..MAX_ATTEMPTS {
@@ -360,7 +337,7 @@ async fn retry_query_owner_not_found<T, F, Fut>(mut run: F) -> Result<T, Box<dyn
 /// returns the database name (so the caller can drop it) and a container
 /// client to drive operations against.
 async fn provision_database_and_container(
-    client: &CosmosClient
+    client: &CosmosClient,
 ) -> Result<(String, azure_data_cosmos::clients::ContainerClient), Box<dyn std::error::Error>> {
     let unique = azure_core::Uuid::new_v4();
     let db_name = format!("gw_v2-test-db-{unique}");
@@ -385,8 +362,7 @@ async fn provision_database_and_container(
     let body = container_client.read(None).await?.into_body().single()?;
     let raw: serde_json::Value = serde_json::from_slice(&body)?;
     assert_eq!(
-        raw["partitionKey"]["version"],
-        2,
+        raw["partitionKey"]["version"], 2,
         "the service must return an explicit version for a V2 container"
     );
     let properties: ContainerProperties = serde_json::from_slice(&body)?;
@@ -411,7 +387,7 @@ async fn provision_v1_container(
     client: &CosmosClient,
     endpoint: &str,
     key: &str,
-    db_name: &str
+    db_name: &str,
 ) -> Result<azure_data_cosmos::clients::ContainerClient, Box<dyn std::error::Error>> {
     let unique = azure_core::Uuid::new_v4();
     let container_name = format!("gw_v2-test-v1-container-{unique}");
@@ -419,22 +395,27 @@ async fn provision_v1_container(
 
     let account = DriverAccountReference::with_master_key(
         normalize_gateway_v2_endpoint(endpoint).parse::<url::Url>()?,
-        key.to_string()
+        key.to_string(),
     );
     let runtime = CosmosDriverRuntime::builder().build().await?;
-    let driver = runtime.create_driver(DriverOptions::builder(account.clone()).build()).await?;
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account.clone()).build())
+        .await?;
     let database = DatabaseReference::from_name(account, db_name.to_string());
-    let body = format!(
-        r#"{{"id":"{container_name}","partitionKey":{{"paths":["/pk"],"kind":"Hash"}}}}"#
-    );
-    let response = driver.execute_singleton_operation(
-        CosmosOperation::create_container(database).with_body(body.into_bytes()),
-        OperationOptions::default()
-    ).await?;
+    let body =
+        format!(r#"{{"id":"{container_name}","partitionKey":{{"paths":["/pk"],"kind":"Hash"}}}}"#);
+    let response = driver
+        .execute_singleton_operation(
+            CosmosOperation::create_container(database).with_body(body.into_bytes()),
+            OperationOptions::default(),
+        )
+        .await?;
     if !response.status().is_success() {
-        return Err(
-            format!("failed to create version-less V1 container: {}", response.status()).into()
-        );
+        return Err(format!(
+            "failed to create version-less V1 container: {}",
+            response.status()
+        )
+        .into());
     }
     let container_client = wait_for_container_ready(&db_client, &container_name).await?;
 
@@ -481,7 +462,7 @@ async fn assert_item_readable_from_region(
     region: Region,
     db_name: &str,
     container_name: &str,
-    expected: &GwV2TestItem
+    expected: &GwV2TestItem,
 ) -> Result<(), Box<dyn std::error::Error>> {
     const MAX_ATTEMPTS: u32 = 40;
     const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(500);
@@ -492,21 +473,20 @@ async fn assert_item_readable_from_region(
     for attempt in 0..MAX_ATTEMPTS {
         let container = match db_client.container_client(container_name, None).await {
             Ok(container) => container,
-            Err(e) if
-                (e.status().status_code() == StatusCode::NotFound ||
-                    (e.status().status_code() == StatusCode::BadRequest &&
-                        e
-                            .status()
+            Err(e)
+                if (e.status().status_code() == StatusCode::NotFound
+                    || (e.status().status_code() == StatusCode::BadRequest
+                        && e.status()
                             .sub_status()
-                            .is_some_and(|sub_status| sub_status.value() == 13002))) &&
-                attempt + 1 < MAX_ATTEMPTS
-            => {
+                            .is_some_and(|sub_status| sub_status.value() == 13002)))
+                    && attempt + 1 < MAX_ATTEMPTS =>
+            {
                 tokio::time::sleep(POLL_INTERVAL).await;
                 continue;
             }
             Err(e) => {
                 return Err(
-                    format!("container resolution from region {region:?} failed: {e}").into()
+                    format!("container resolution from region {region:?} failed: {e}").into(),
                 );
             }
         };
@@ -516,21 +496,19 @@ async fn assert_item_readable_from_region(
                 assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
                 let read_item: GwV2TestItem = read_resp.into_model()?;
                 assert_eq!(
-                    &read_item,
-                    expected,
+                    &read_item, expected,
                     "item read from region {region:?} must match what was written"
                 );
                 return Ok(());
             }
-            Err(e) if
-                (e.status().status_code() == StatusCode::NotFound ||
-                    (e.status().status_code() == StatusCode::BadRequest &&
-                        e
-                            .status()
+            Err(e)
+                if (e.status().status_code() == StatusCode::NotFound
+                    || (e.status().status_code() == StatusCode::BadRequest
+                        && e.status()
                             .sub_status()
-                            .is_some_and(|sub_status| sub_status.value() == 13002))) &&
-                attempt + 1 < MAX_ATTEMPTS
-            => {
+                            .is_some_and(|sub_status| sub_status.value() == 13002)))
+                    && attempt + 1 < MAX_ATTEMPTS =>
+            {
                 tokio::time::sleep(POLL_INTERVAL).await;
             }
             Err(e) => {
@@ -545,7 +523,10 @@ async fn assert_item_readable_from_region(
 /// the live Gateway 2.0 account.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway_v2", test_category = "gateway_v2_multi_region")),
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
 pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error::Error>> {
@@ -578,7 +559,9 @@ pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error
 
     item.value = 2;
     item.label = "updated".into();
-    let replace_resp = container.replace_item(&pk_value, &item_id, &item, None).await?;
+    let replace_resp = container
+        .replace_item(&pk_value, &item_id, &item, None)
+        .await?;
     assert_transport_kind(&replace_resp.diagnostics(), TransportKind::GatewayV2);
     assert!(!replace_resp.diagnostics().activity_id().as_str().is_empty());
 
@@ -595,7 +578,10 @@ pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error
 /// eligibility test because that mode is not supported by Gateway V2.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway_v2", test_category = "gateway_v2_multi_region")),
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
 pub async fn gateway_v2_incremental_change_feed() -> Result<(), Box<dyn std::error::Error>> {
@@ -616,23 +602,30 @@ pub async fn gateway_v2_incremental_change_feed() -> Result<(), Box<dyn std::err
         create_seed_item(&container, &pk, &item.id, &item).await?;
 
         let page = retry_query_owner_not_found(|| async {
-            let mut pages = container.query_change_feed::<GwV2TestItem>(
-                FeedScope::partition(pk.clone()),
-                ChangeFeedStartFrom::Beginning,
-                None
-            ).await?;
-            Ok(pages.next().await.expect("incremental change feed must return a page")?)
-        }).await?;
+            let mut pages = container
+                .query_change_feed::<GwV2TestItem>(
+                    FeedScope::partition(pk.clone()),
+                    ChangeFeedStartFrom::Beginning,
+                    None,
+                )
+                .await?;
+            Ok(pages
+                .next()
+                .await
+                .expect("incremental change feed must return a page")?)
+        })
+        .await?;
         assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
         assert!(
-            page
-                .items()
+            page.items()
                 .iter()
                 .any(|change| change.current() == Some(&item)),
             "incremental change feed must contain the created item"
         );
         Ok::<_, Box<dyn std::error::Error>>(())
-    }).catch_unwind().await;
+    })
+    .catch_unwind()
+    .await;
 
     drop_database(&client, &db_name).await;
     match result {
@@ -659,10 +652,8 @@ pub async fn gateway_v2_incremental_change_feed() -> Result<(), Box<dyn std::err
     not(test_category = "gateway_v2_multi_region"),
     ignore = "requires the single-writer Gateway 2.0 account (test_category = \"gateway_v2_multi_region\" + AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT/_KEY)"
 )]
-pub async fn gateway_v2_v1_container_point_crud_round_trip() -> Result<
-    (),
-    Box<dyn std::error::Error>
-> {
+pub async fn gateway_v2_v1_container_point_crud_round_trip(
+) -> Result<(), Box<dyn std::error::Error>> {
     let Some((endpoint, key)) = live_credentials() else {
         return Ok(());
     };
@@ -692,11 +683,14 @@ pub async fn gateway_v2_v1_container_point_crud_round_trip() -> Result<
 
         item.value = 2;
         item.label = "updated".into();
-        let replace_resp = container.replace_item(&pk_value, &item_id, &item, None).await?;
+        let replace_resp = container
+            .replace_item(&pk_value, &item_id, &item, None)
+            .await?;
         assert_transport_kind(&replace_resp.diagnostics(), TransportKind::GatewayV2);
 
         let reread: GwV2TestItem = container
-            .read_item(&pk_value, &item_id, None).await?
+            .read_item(&pk_value, &item_id, None)
+            .await?
             .into_model()?;
         assert_eq!(reread, item, "replace must be reflected on re-read");
 
@@ -710,27 +704,27 @@ pub async fn gateway_v2_v1_container_point_crud_round_trip() -> Result<
                     return Ok(());
                 }
                 Err(err) => {
-                    return Err(
-                        format!(
-                            "expected NotFound after deleting V1 item, got {}",
-                            err.status()
-                        ).into()
-                    );
+                    return Err(format!(
+                        "expected NotFound after deleting V1 item, got {}",
+                        err.status()
+                    )
+                    .into());
                 }
                 Ok(_) if attempt + 1 < MAX_DELETE_POLLS => {
                     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
                 }
                 Ok(_) => {
-                    return Err(
-                        format!(
-                            "V1 item remained readable after {MAX_DELETE_POLLS} delete polls"
-                        ).into()
-                    );
+                    return Err(format!(
+                        "V1 item remained readable after {MAX_DELETE_POLLS} delete polls"
+                    )
+                    .into());
                 }
             }
         }
         unreachable!("delete polling loop always returns")
-    }).catch_unwind().await;
+    })
+    .catch_unwind()
+    .await;
 
     drop_database(&client, &db_name).await;
     match test_result {
@@ -742,7 +736,10 @@ pub async fn gateway_v2_v1_container_point_crud_round_trip() -> Result<
 /// Exercises a transactional batch routed through Gateway 2.0.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway_v2", test_category = "gateway_v2_multi_region")),
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
 pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::Error>> {
@@ -781,11 +778,7 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
     let response = container.execute_transactional_batch(batch, None).await?;
     assert_transport_kind(&response.diagnostics(), TransportKind::GatewayV2);
     let body = response.into_model()?;
-    let codes: Vec<u16> = body
-        .results()
-        .iter()
-        .map(|r| r.status_code())
-        .collect();
+    let codes: Vec<u16> = body.results().iter().map(|r| r.status_code()).collect();
     assert_eq!(codes, vec![201, 201, 201]);
 
     drop_database(&client, &db_name).await;
@@ -796,7 +789,10 @@ pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::
 /// through Gateway 2.0, including the `GatewayV2` transport kind.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway_v2", test_category = "gateway_v2_multi_region")),
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
 pub async fn gateway_v2_diagnostics_validation() -> Result<(), Box<dyn std::error::Error>> {
@@ -838,7 +834,7 @@ pub async fn gateway_v2_diagnostics_validation() -> Result<(), Box<dyn std::erro
 /// `(/tenantId, /userId, /sessionId)` as the partition key paths so the
 /// container exercises hierarchical partitioning end-to-end.
 async fn provision_database_and_hpk_container(
-    client: &CosmosClient
+    client: &CosmosClient,
 ) -> Result<(String, azure_data_cosmos::clients::ContainerClient), Box<dyn std::error::Error>> {
     let unique = azure_core::Uuid::new_v4();
     let db_name = format!("gw_v2-test-db-{unique}");
@@ -885,13 +881,14 @@ struct GwV2HpkItem {
 /// single-partition or fail.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway_v2", test_category = "gateway_v2_multi_region")),
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip() -> Result<
-    (),
-    Box<dyn std::error::Error>
-> {
+pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip(
+) -> Result<(), Box<dyn std::error::Error>> {
     use azure_data_cosmos::models::PartitionKeyValue;
     use azure_data_cosmos::PartitionKey;
 
@@ -956,7 +953,8 @@ pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip() -> Resul
         let container = &container;
         async move {
             let mut pages = container
-                .query_items::<GwV2HpkItem>(query, FeedScope::partition(partial_pk), None).await?
+                .query_items::<GwV2HpkItem>(query, FeedScope::partition(partial_pk), None)
+                .await?
                 .into_pages();
 
             let mut returned_ids: Vec<String> = Vec::new();
@@ -968,8 +966,7 @@ pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip() -> Resul
                 assert!(!page.diagnostics().activity_id().as_str().is_empty());
                 for it in page.items() {
                     assert_eq!(
-                        &it.tenant_id,
-                        target_tenant,
+                        &it.tenant_id, target_tenant,
                         "partial-PK query must not bleed across tenants"
                     );
                     returned_ids.push(it.id.clone());
@@ -977,7 +974,8 @@ pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip() -> Resul
             }
             Ok((returned_ids, pages_seen))
         }
-    }).await?;
+    })
+    .await?;
     assert!(pages_seen >= 1, "expected at least one query page");
     expected_target_ids.sort();
     returned_ids.sort();
@@ -1022,7 +1020,7 @@ pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip() -> Resul
 /// at the driver layer, which is the behavior these tests need to
 /// observe.
 async fn provision_database_and_multi_partition_container(
-    client: &CosmosClient
+    client: &CosmosClient,
 ) -> Result<(String, azure_data_cosmos::clients::ContainerClient), Box<dyn std::error::Error>> {
     let unique = azure_core::Uuid::new_v4();
     let db_name = format!("gw_v2-test-db-{unique}");
@@ -1033,10 +1031,11 @@ async fn provision_database_and_multi_partition_container(
 
     let pk_def: PartitionKeyDefinition = "/pk".into();
     let properties = ContainerProperties::new(container_name.clone(), pk_def);
-    let create_options = CreateContainerOptions::default().with_throughput(
-        ThroughputProperties::manual(11_000)
-    );
-    db_client.create_container(properties, Some(create_options)).await?;
+    let create_options =
+        CreateContainerOptions::default().with_throughput(ThroughputProperties::manual(11_000));
+    db_client
+        .create_container(properties, Some(create_options))
+        .await?;
     let container_client = wait_for_container_ready(&db_client, &container_name).await?;
 
     Ok((db_name, container_client))
@@ -1044,25 +1043,21 @@ async fn provision_database_and_multi_partition_container(
 
 async fn drain_order_by_with_transport(
     container: &azure_data_cosmos::clients::ContainerClient,
-    expected_transport: TransportKind
+    expected_transport: TransportKind,
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let query = Query::from("SELECT * FROM c ORDER BY c.sortValue ASC, c.label DESC");
     let mut continuation = None;
     let mut ids = Vec::new();
     let mut requests_seen = 0_usize;
     loop {
-        let mut options = QueryOptions::default().with_max_item_count(
-            MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap())
-        );
+        let mut options = QueryOptions::default()
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
         if let Some(token) = continuation.take() {
             options = options.with_continuation_token(token);
         }
         let mut pages = container
-            .query_items::<GwV2TestItem>(
-                query.clone(),
-                FeedScope::full_container(),
-                Some(options)
-            ).await?
+            .query_items::<GwV2TestItem>(query.clone(), FeedScope::full_container(), Some(options))
+            .await?
             .into_pages();
         let Some(page) = pages.next().await else {
             break;
@@ -1072,17 +1067,17 @@ async fn drain_order_by_with_transport(
             assert_transport_kind(&page.diagnostics(), expected_transport);
             requests_seen += page.diagnostics().requests().len();
         }
-        ids.extend(
-            page
-                .into_items()
-                .into_iter()
-                .map(|item| item.id)
-        );
+        ids.extend(page.into_items().into_iter().map(|item| item.id));
         let serialized = pages.to_continuation_token()?.as_str().to_owned();
         drop(pages);
-        continuation = Some(azure_data_cosmos::feed::ContinuationToken::from_string(serialized));
+        continuation = Some(azure_data_cosmos::feed::ContinuationToken::from_string(
+            serialized,
+        ));
     }
-    assert!(requests_seen > 0, "expected at least one backend request over {expected_transport:?}");
+    assert!(
+        requests_seen > 0,
+        "expected at least one backend request over {expected_transport:?}"
+    );
     Ok(ids)
 }
 
@@ -1090,13 +1085,14 @@ async fn drain_order_by_with_transport(
 /// and Gateway 2.0 against the same container.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway_v2", test_category = "gateway_v2_multi_region")),
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn order_by_continuation_matches_gateway_v1_and_v2() -> Result<
-    (),
-    Box<dyn std::error::Error>
-> {
+pub async fn order_by_continuation_matches_gateway_v1_and_v2(
+) -> Result<(), Box<dyn std::error::Error>> {
     let Some((endpoint, key)) = live_credentials() else {
         return Ok(());
     };
@@ -1110,24 +1106,28 @@ pub async fn order_by_continuation_matches_gateway_v1_and_v2() -> Result<
     let result = AssertUnwindSafe(async {
         let database = gateway_v2.database_client(&db_name);
         let composite_index = CompositeIndex::default()
-            .with_property(
-                CompositeIndexProperty::new("/sortValue", CompositeIndexOrder::Ascending)
-            )
-            .with_property(CompositeIndexProperty::new("/label", CompositeIndexOrder::Descending));
+            .with_property(CompositeIndexProperty::new(
+                "/sortValue",
+                CompositeIndexOrder::Ascending,
+            ))
+            .with_property(CompositeIndexProperty::new(
+                "/label",
+                CompositeIndexOrder::Descending,
+            ));
         let mut indexing_policy = IndexingPolicy::default().with_composite_index(composite_index);
         indexing_policy.automatic = true;
-        let properties = ContainerProperties::new(
-            container_name.clone(),
-            PartitionKeyDefinition::from("/pk")
-        ).with_indexing_policy(indexing_policy);
-        database.create_container(
-            properties,
-            Some(
-                CreateContainerOptions::default().with_throughput(
-                    ThroughputProperties::manual(11_000)
-                )
+        let properties =
+            ContainerProperties::new(container_name.clone(), PartitionKeyDefinition::from("/pk"))
+                .with_indexing_policy(indexing_policy);
+        database
+            .create_container(
+                properties,
+                Some(
+                    CreateContainerOptions::default()
+                        .with_throughput(ThroughputProperties::manual(11_000)),
+                ),
             )
-        ).await?;
+            .await?;
         let v2_container = wait_for_container_ready(&database, &container_name).await?;
 
         for index in 0..20 {
@@ -1143,17 +1143,22 @@ pub async fn order_by_continuation_matches_gateway_v1_and_v2() -> Result<
 
         let v1_container = gateway_v1
             .database_client(&db_name)
-            .container_client(&container_name, None).await?;
+            .container_client(&container_name, None)
+            .await?;
         let v2_ids = retry_query_owner_not_found(|| {
             drain_order_by_with_transport(&v2_container, TransportKind::GatewayV2)
-        }).await?;
+        })
+        .await?;
         let v1_ids = retry_query_owner_not_found(|| {
             drain_order_by_with_transport(&v1_container, TransportKind::Gateway)
-        }).await?;
+        })
+        .await?;
         assert_eq!(v1_ids, v2_ids);
         assert_eq!(v1_ids.len(), 20);
         Ok::<(), Box<dyn std::error::Error>>(())
-    }).catch_unwind().await;
+    })
+    .catch_unwind()
+    .await;
 
     let cleanup = gateway_v2.database_client(&db_name).delete(None).await;
     match result {
@@ -1184,13 +1189,14 @@ pub async fn order_by_continuation_matches_gateway_v1_and_v2() -> Result<
 /// duplicates and no drops across partition boundaries.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway_v2", test_category = "gateway_v2_multi_region")),
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway_v2_cross_partition_query_full_container() -> Result<
-    (),
-    Box<dyn std::error::Error>
-> {
+pub async fn gateway_v2_cross_partition_query_full_container(
+) -> Result<(), Box<dyn std::error::Error>> {
     use std::collections::HashSet;
 
     let Some((endpoint, key)) = live_credentials() else {
@@ -1220,7 +1226,8 @@ pub async fn gateway_v2_cross_partition_query_full_container() -> Result<
     let (pages_seen, seen_ids) = retry_query_owner_not_found(|| async {
         let query = Query::from("SELECT * FROM c");
         let mut pages = container
-            .query_items::<GwV2TestItem>(query, FeedScope::full_container(), None).await?
+            .query_items::<GwV2TestItem>(query, FeedScope::full_container(), None)
+            .await?
             .into_pages();
 
         let mut pages_seen = 0_usize;
@@ -1242,12 +1249,15 @@ pub async fn gateway_v2_cross_partition_query_full_container() -> Result<
             }
         }
         Ok((pages_seen, seen_ids))
-    }).await?;
+    })
+    .await?;
 
-    assert!(pages_seen >= 1, "expected at least one page from the cross-partition fanout");
+    assert!(
+        pages_seen >= 1,
+        "expected at least one page from the cross-partition fanout"
+    );
     assert_eq!(
-        seen_ids,
-        expected_ids,
+        seen_ids, expected_ids,
         "cross-partition query must return every inserted item exactly once"
     );
 
@@ -1262,13 +1272,14 @@ pub async fn gateway_v2_cross_partition_query_full_container() -> Result<
 /// produce equivalent results against the Gateway 2.0 transport.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway_v2", test_category = "gateway_v2_multi_region")),
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway_v2_cross_partition_query_via_feed_range_full() -> Result<
-    (),
-    Box<dyn std::error::Error>
-> {
+pub async fn gateway_v2_cross_partition_query_via_feed_range_full(
+) -> Result<(), Box<dyn std::error::Error>> {
     use azure_data_cosmos::feed::FeedRange;
     use std::collections::HashSet;
 
@@ -1297,7 +1308,8 @@ pub async fn gateway_v2_cross_partition_query_via_feed_range_full() -> Result<
     let seen_ids: HashSet<String> = retry_query_owner_not_found(|| async {
         let query = Query::from("SELECT * FROM c");
         let mut pages = container
-            .query_items::<GwV2TestItem>(query, FeedScope::range(FeedRange::full()), None).await?
+            .query_items::<GwV2TestItem>(query, FeedScope::range(FeedRange::full()), None)
+            .await?
             .into_pages();
 
         let mut seen_ids: HashSet<String> = HashSet::new();
@@ -1314,10 +1326,10 @@ pub async fn gateway_v2_cross_partition_query_via_feed_range_full() -> Result<
             }
         }
         Ok(seen_ids)
-    }).await?;
+    })
+    .await?;
     assert_eq!(
-        seen_ids,
-        expected_ids,
+        seen_ids, expected_ids,
         "FeedScope::range(FeedRange::full()) on Gateway 2.0 must yield \
          the same complete result set as FeedScope::full_container()"
     );
@@ -1350,13 +1362,14 @@ pub async fn gateway_v2_cross_partition_query_via_feed_range_full() -> Result<
 ///      result set, exercising the per-leaf scoped-token path as well.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway_v2", test_category = "gateway_v2_multi_region")),
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway_v2_session_read_your_writes_ppcb_disabled() -> Result<
-    (),
-    Box<dyn std::error::Error>
-> {
+pub async fn gateway_v2_session_read_your_writes_ppcb_disabled(
+) -> Result<(), Box<dyn std::error::Error>> {
     use azure_data_cosmos::feed::FeedRange;
     use std::collections::HashSet;
 
@@ -1393,8 +1406,7 @@ pub async fn gateway_v2_session_read_your_writes_ppcb_disabled() -> Result<
         assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
         let read_item: GwV2TestItem = read_resp.into_model()?;
         assert_eq!(
-            read_item.id,
-            *id,
+            read_item.id, *id,
             "read-your-writes must return the item just written to partition {i}"
         );
         assert_eq!(read_item.value, i as i64);
@@ -1404,7 +1416,8 @@ pub async fn gateway_v2_session_read_your_writes_ppcb_disabled() -> Result<
     // also succeed and return the complete set (per-leaf scoped tokens).
     let query = Query::from("SELECT * FROM c");
     let mut pages = container
-        .query_items::<GwV2TestItem>(query, FeedScope::range(FeedRange::full()), None).await?
+        .query_items::<GwV2TestItem>(query, FeedScope::range(FeedRange::full()), None)
+        .await?
         .into_pages();
 
     let mut seen_ids: HashSet<String> = HashSet::new();
@@ -1416,8 +1429,7 @@ pub async fn gateway_v2_session_read_your_writes_ppcb_disabled() -> Result<
         }
     }
     assert_eq!(
-        seen_ids,
-        expected_ids,
+        seen_ids, expected_ids,
         "cross-partition query with PPCB disabled must return every written item"
     );
 
@@ -1447,13 +1459,14 @@ pub async fn gateway_v2_session_read_your_writes_ppcb_disabled() -> Result<
 /// surfaces here as one oversized page.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway_v2", test_category = "gateway_v2_multi_region")),
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway_v2_query_honors_max_item_count_page_size() -> Result<
-    (),
-    Box<dyn std::error::Error>
-> {
+pub async fn gateway_v2_query_honors_max_item_count_page_size(
+) -> Result<(), Box<dyn std::error::Error>> {
     let Some((endpoint, key)) = live_credentials() else {
         return Ok(());
     };
@@ -1481,15 +1494,15 @@ pub async fn gateway_v2_query_honors_max_item_count_page_size() -> Result<
     let (pages_seen, total_seen, page_lens) = retry_query_owner_not_found(|| {
         let pk_value = pk_value.clone();
         async {
-            let options = QueryOptions::default().with_max_item_count(
-                MaxItemCountHint::Limit(page_size)
-            );
+            let options =
+                QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(page_size));
             let mut pages = container
                 .query_items::<GwV2TestItem>(
                     Query::from("SELECT * FROM c"),
                     FeedScope::partition(pk_value),
-                    Some(options)
-                ).await?
+                    Some(options),
+                )
+                .await?
                 .into_pages();
 
             let mut pages_seen = 0_usize;
@@ -1510,11 +1523,11 @@ pub async fn gateway_v2_query_honors_max_item_count_page_size() -> Result<
             }
             Ok((pages_seen, total_seen, page_lens))
         }
-    }).await?;
+    })
+    .await?;
 
     assert_eq!(
-        total_seen,
-        total_items,
+        total_seen, total_items,
         "every inserted item must be returned across the paged result \
          (page lengths: {page_lens:?})"
     );
@@ -1541,13 +1554,14 @@ pub async fn gateway_v2_query_honors_max_item_count_page_size() -> Result<
 /// instead of being rejected.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway_v2", test_category = "gateway_v2_multi_region")),
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway_v2_if_match_precondition_round_trip() -> Result<
-    (),
-    Box<dyn std::error::Error>
-> {
+pub async fn gateway_v2_if_match_precondition_round_trip() -> Result<(), Box<dyn std::error::Error>>
+{
     let Some((endpoint, key)) = live_credentials() else {
         return Ok(());
     };
@@ -1575,12 +1589,17 @@ pub async fn gateway_v2_if_match_precondition_round_trip() -> Result<
     // Replace guarded by the CURRENT etag → must succeed and roll the ETag.
     item.value = 2;
     item.label = "updated".into();
-    let replace_resp = container.replace_item(
-        &pk_value,
-        &item_id,
-        &item,
-        Some(ItemWriteOptions::default().with_precondition(Precondition::IfMatch(etag_v1.clone())))
-    ).await?;
+    let replace_resp = container
+        .replace_item(
+            &pk_value,
+            &item_id,
+            &item,
+            Some(
+                ItemWriteOptions::default()
+                    .with_precondition(Precondition::IfMatch(etag_v1.clone())),
+            ),
+        )
+        .await?;
     assert_transport_kind(&replace_resp.diagnostics(), TransportKind::GatewayV2);
     let etag_v2: Etag = replace_resp
         .headers()
@@ -1596,15 +1615,23 @@ pub async fn gateway_v2_if_match_precondition_round_trip() -> Result<
     // Replace guarded by the now-STALE v1 etag → must be rejected with 412.
     item.value = 3;
     item.label = "stale-attempt".into();
-    let stale = container.replace_item(
-        &pk_value,
-        &item_id,
-        &item,
-        Some(ItemWriteOptions::default().with_precondition(Precondition::IfMatch(etag_v1.clone())))
-    ).await;
+    let stale = container
+        .replace_item(
+            &pk_value,
+            &item_id,
+            &item,
+            Some(
+                ItemWriteOptions::default()
+                    .with_precondition(Precondition::IfMatch(etag_v1.clone())),
+            ),
+        )
+        .await;
     assert_eq!(
         StatusCode::PreconditionFailed,
-        stale.expect_err("a stale If-Match must be rejected by the server").status().status_code(),
+        stale
+            .expect_err("a stale If-Match must be rejected by the server")
+            .status()
+            .status_code(),
         "stale If-Match must return 412 PreconditionFailed; a 200 means the \
          Match token was not honored on the Gateway 2.0 wire"
     );
@@ -1635,13 +1662,14 @@ pub async fn gateway_v2_if_match_precondition_round_trip() -> Result<
 /// the read is polled past that brief visibility window before asserting.
 #[tokio::test]
 #[cfg_attr(
-    not(any(test_category = "gateway_v2", test_category = "gateway_v2_multi_region")),
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
-pub async fn gateway_v2_read_with_non_default_consistency_strategy() -> Result<
-    (),
-    Box<dyn std::error::Error>
-> {
+pub async fn gateway_v2_read_with_non_default_consistency_strategy(
+) -> Result<(), Box<dyn std::error::Error>> {
     let Some((endpoint, key)) = live_credentials() else {
         return Ok(());
     };
@@ -1666,25 +1694,27 @@ pub async fn gateway_v2_read_with_non_default_consistency_strategy() -> Result<
         let read_options = ItemReadOptions::default().with_operation_options(
             OperationOptionsBuilder::new()
                 .with_read_consistency_strategy(ReadConsistencyStrategy::LatestCommitted)
-                .build()
+                .build(),
         );
-        match container.read_item(&pk_value, &item_id, Some(read_options)).await {
+        match container
+            .read_item(&pk_value, &item_id, Some(read_options))
+            .await
+        {
             Ok(read_resp) => {
                 assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
                 assert!(!read_resp.diagnostics().activity_id().as_str().is_empty());
                 let read_item: GwV2TestItem = read_resp.into_model()?;
                 assert_eq!(
-                    read_item,
-                    item,
+                    read_item, item,
                     "a LatestCommitted read must return the item unchanged"
                 );
                 drop_database(&client, &db_name).await;
                 return Ok(());
             }
-            Err(e) if
-                e.status().status_code() == StatusCode::NotFound &&
-                attempt + 1 < MAX_ATTEMPTS
-            => {
+            Err(e)
+                if e.status().status_code() == StatusCode::NotFound
+                    && attempt + 1 < MAX_ATTEMPTS =>
+            {
                 tokio::time::sleep(POLL_INTERVAL).await;
             }
             Err(e) => {
@@ -1706,10 +1736,8 @@ pub async fn gateway_v2_read_with_non_default_consistency_strategy() -> Result<
     not(test_category = "gateway_v2_multi_region"),
     ignore = "requires the multi-region Gateway 2.0 account (test_category = \"gateway_v2_multi_region\" + AZURE_COSMOS_GW_V2_MULTI_REGION_ENDPOINT/_KEY)"
 )]
-pub async fn gateway_v2_point_read_usable_from_every_region() -> Result<
-    (),
-    Box<dyn std::error::Error>
-> {
+pub async fn gateway_v2_point_read_usable_from_every_region(
+) -> Result<(), Box<dyn std::error::Error>> {
     let Some((endpoint, key)) = live_credentials() else {
         return Ok(());
     };
@@ -1744,14 +1772,8 @@ pub async fn gateway_v2_point_read_usable_from_every_region() -> Result<
     assert_transport_kind(&create_resp.diagnostics(), TransportKind::GatewayV2);
 
     for region in REGIONS {
-        assert_item_readable_from_region(
-            &endpoint,
-            &key,
-            region,
-            &db_name,
-            &container_name,
-            &item
-        ).await?;
+        assert_item_readable_from_region(&endpoint, &key, region, &db_name, &container_name, &item)
+            .await?;
     }
 
     drop_database(&client, &db_name).await;

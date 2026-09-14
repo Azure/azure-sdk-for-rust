@@ -7,7 +7,7 @@
 pub(crate) fn feed_to_json(
     envelope_name: &str,
     items: Vec<serde_json::Value>,
-    rid: impl Into<String>
+    rid: impl Into<String>,
 ) -> serde_json::Value {
     let count = items.len();
     serde_json::json!({
@@ -27,16 +27,25 @@ pub(crate) fn inject_system_properties(
     self_link: &str,
     etag: &str,
     ts: u64,
-    body: &mut serde_json::Value
+    body: &mut serde_json::Value,
 ) {
     if let Some(obj) = body.as_object_mut() {
-        obj.insert("_rid".to_string(), serde_json::Value::String(rid.to_owned()));
-        obj.insert("_self".to_string(), serde_json::Value::String(self_link.to_owned()));
-        obj.insert("_etag".to_string(), serde_json::Value::String(etag.to_owned()));
+        obj.insert(
+            "_rid".to_string(),
+            serde_json::Value::String(rid.to_owned()),
+        );
+        obj.insert(
+            "_self".to_string(),
+            serde_json::Value::String(self_link.to_owned()),
+        );
+        obj.insert(
+            "_etag".to_string(),
+            serde_json::Value::String(etag.to_owned()),
+        );
         obj.insert("_ts".to_string(), serde_json::json!(ts));
         obj.insert(
             "_attachments".to_string(),
-            serde_json::Value::String("attachments/".to_string())
+            serde_json::Value::String("attachments/".to_string()),
         );
     }
 }
@@ -56,13 +65,13 @@ pub(crate) fn database_to_json(meta: &super::store::DatabaseMetadata) -> serde_j
 
 /// Returns a JSON representation of container metadata.
 pub(crate) fn container_to_json(meta: &super::store::ContainerMetadata) -> serde_json::Value {
-    let pk_paths: Vec<&str> = meta.partition_key
+    let pk_paths: Vec<&str> = meta
+        .partition_key
         .paths()
         .iter()
         .map(|p| p.as_ref())
         .collect();
-    let mut body =
-        serde_json::json!({
+    let mut body = serde_json::json!({
         "id": meta.id,
         "_rid": meta.rid,
         "_self": meta.self_link,
@@ -95,11 +104,10 @@ pub(crate) fn container_to_json(meta: &super::store::ContainerMetadata) -> serde
     });
     if let Some(object) = body.as_object_mut() {
         for (name, value) in &meta.properties {
-            if
-                name != "id" &&
-                name != "partitionKey" &&
-                name != "conflictResolutionPolicy" &&
-                !name.starts_with('_')
+            if name != "id"
+                && name != "partitionKey"
+                && name != "conflictResolutionPolicy"
+                && !name.starts_with('_')
             {
                 object.insert(name.clone(), value.clone());
             }
@@ -130,17 +138,15 @@ pub(crate) fn offer_to_json(meta: &super::store::OfferMetadata) -> serde_json::V
 pub(crate) fn pkranges_to_json(
     container: &super::store::ContainerState,
     start: usize,
-    end: usize
+    end: usize,
 ) -> serde_json::Value {
-    let ranges: Vec<serde_json::Value> = container.physical_partitions
+    let ranges: Vec<serde_json::Value> = container
+        .physical_partitions
         .get(start..end)
         .unwrap_or_default()
         .iter()
         .map(|p| {
-            let parents: Vec<String> = p.parents
-                .iter()
-                .map(|id| id.to_string())
-                .collect();
+            let parents: Vec<String> = p.parents.iter().map(|id| id.to_string()).collect();
             serde_json::json!({
                 "id": p.id.to_string(),
                 "_rid": p.rid,
@@ -172,7 +178,7 @@ pub(crate) fn pkranges_to_json(
 /// derives the account `id` from it rather than reporting a fixed name.
 pub(crate) fn account_properties_to_json(
     config: &super::config::VirtualAccountConfig,
-    request_host: Option<&str>
+    request_host: Option<&str>,
 ) -> serde_json::Value {
     let location_json = |r: &super::config::VirtualRegion| {
         serde_json::json!({
@@ -192,10 +198,7 @@ pub(crate) fn account_properties_to_json(
     // front; during a failover `writable` carries both the outgoing and
     // incoming write regions, which is what the service advertises.
     let advertised = topology.advertised();
-    let readable: Vec<serde_json::Value> = advertised
-        .iter()
-        .map(|r| location_json(r))
-        .collect();
+    let readable: Vec<serde_json::Value> = advertised.iter().map(|r| location_json(r)).collect();
 
     let is_multi_write = topology.write_mode == super::config::WriteMode::Multi;
     // The service emits enableMultipleWriteLocations=true under Strong, but
@@ -235,8 +238,7 @@ pub(crate) fn account_properties_to_json(
     // therefore inert in production -- it is guarded by `!etag.is_empty()` -- and
     // emitting one here would make the emulator exercise a path the service can
     // never trigger. That short-circuit is covered by unit tests instead.
-    let mut response =
-        serde_json::json!({
+    let mut response = serde_json::json!({
         "id": account_id,
         "_rid": rid,
         "_self": "",
@@ -272,28 +274,24 @@ pub(crate) fn account_properties_to_json(
         let thin_client_readable: Vec<_> = advertised
             .iter()
             .filter_map(|region| {
-                region
-                    .gateway_v2_url()
-                    .map(|url| {
-                        serde_json::json!({
+                region.gateway_v2_url().map(|url| {
+                    serde_json::json!({
                         "name": region.name(),
                         "databaseAccountEndpoint": url.as_str()
                     })
-                    })
+                })
             })
             .collect();
         let thin_client_writable: Vec<_> = topology
             .writable(allow_multiple_write_locations)
             .iter()
             .filter_map(|region| {
-                region
-                    .gateway_v2_url()
-                    .map(|url| {
-                        serde_json::json!({
+                region.gateway_v2_url().map(|url| {
+                    serde_json::json!({
                         "name": region.name(),
                         "databaseAccountEndpoint": url.as_str()
                     })
-                    })
+                })
             })
             .collect();
         if !thin_client_readable.is_empty() {
@@ -302,11 +300,11 @@ pub(crate) fn account_properties_to_json(
                 .expect("account properties response is a JSON object");
             object.insert(
                 "thinClientReadableLocations".to_owned(),
-                serde_json::Value::Array(thin_client_readable)
+                serde_json::Value::Array(thin_client_readable),
             );
             object.insert(
                 "thinClientWritableLocations".to_owned(),
-                serde_json::Value::Array(thin_client_writable)
+                serde_json::Value::Array(thin_client_writable),
             );
         }
     }

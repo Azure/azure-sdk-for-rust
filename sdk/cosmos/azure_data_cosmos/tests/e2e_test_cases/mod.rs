@@ -60,8 +60,7 @@ fn e2e_scenario_catalog_is_valid() {
 #[test]
 fn implementation_registry_names_compiled_tests() {
     let executable = std::env::current_exe().expect("current E2E test executable must be known");
-    let output = std::process::Command
-        ::new(executable)
+    let output = std::process::Command::new(executable)
         .arg("--list")
         .output()
         .expect("E2E test executable must support libtest --list");
@@ -73,11 +72,9 @@ fn implementation_registry_names_compiled_tests() {
     let listed = String::from_utf8(output.stdout).expect("libtest list must be UTF-8");
     for test in IMPLEMENTED_TESTS {
         assert!(
-            listed
-                .lines()
-                .any(|line| {
-                    line.strip_suffix(": test") == Some(format!("e2e_test_cases::{test}").as_str())
-                }),
+            listed.lines().any(|line| {
+                line.strip_suffix(": test") == Some(format!("e2e_test_cases::{test}").as_str())
+            }),
             "implementation registry entry '{test}' does not name a compiled E2E test"
         );
     }

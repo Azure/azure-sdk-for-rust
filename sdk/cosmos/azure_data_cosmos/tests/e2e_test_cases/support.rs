@@ -3,17 +3,14 @@
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
-    diagnostics::{ DiagnosticsContext, TransportKind },
-    options::{ ContentResponseOnWrite, ItemWriteOptions, OperationOptions },
+    diagnostics::{DiagnosticsContext, TransportKind},
+    options::{ContentResponseOnWrite, ItemWriteOptions, OperationOptions},
 };
-use serde::{ Deserialize, Serialize };
+use serde::{Deserialize, Serialize};
 
 use crate::e2e_test_cases::{
     catalog::{
-        required_capabilities_for,
-        scenario_applies_to_backend,
-        selected_profile_for,
-        Capability,
+        required_capabilities_for, scenario_applies_to_backend, selected_profile_for, Capability,
         Profile,
     },
     fixture::TestResult,
@@ -48,22 +45,20 @@ pub(super) async fn should_run(scenario_id: &str) -> TestResult<bool> {
         return Ok(false);
     };
     if profile.accounts.len() != 1 || profile.runtimes.len() != 1 || profile.clients.len() != 1 {
-        return Err(
-            format!(
-                "scenario '{scenario_id}' requires a single-cell setup profile, got '{}'",
-                profile.id
-            ).into()
-        );
+        return Err(format!(
+            "scenario '{scenario_id}' requires a single-cell setup profile, got '{}'",
+            profile.id
+        )
+        .into());
     }
     let runtime = &profile.runtimes[0];
     let client = &profile.clients[0];
-    if
-        runtime.gateway_v2 != "backendDefault" ||
-        runtime.ppcb != "sdkDefault" ||
-        runtime.default_read_consistency_strategy.is_some() ||
-        client.binary_encoding != "sdkDefault" ||
-        client.routing != "proximity" ||
-        client.default_read_consistency_strategy.is_some()
+    if runtime.gateway_v2 != "backendDefault"
+        || runtime.ppcb != "sdkDefault"
+        || runtime.default_read_consistency_strategy.is_some()
+        || client.binary_encoding != "sdkDefault"
+        || client.routing != "proximity"
+        || client.default_read_consistency_strategy.is_some()
     {
         return Err(
             format!(
@@ -77,17 +72,15 @@ pub(super) async fn should_run(scenario_id: &str) -> TestResult<bool> {
 
 pub(super) async fn selected_scenario_profile(scenario_id: &str) -> TestResult<Option<Profile>> {
     init_test_tracing();
-    if
-        std::env::var_os("AZURE_COSMOS_EMULATOR_FLAVOR").is_none() &&
-        std::env::var_os("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT").is_none() &&
-        !scenario_applies_to_backend(scenario_id, "azureLive")?
+    if std::env::var_os("AZURE_COSMOS_EMULATOR_FLAVOR").is_none()
+        && std::env::var_os("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT").is_none()
+        && !scenario_applies_to_backend(scenario_id, "azureLive")?
     {
         eprintln!("SKIP {scenario_id}: scenario is not applicable to Azure Live");
         return Ok(None);
     }
     let Some(profile) = selected_profile_for(scenario_id)? else {
-        let selected = std::env
-            ::var("AZURE_COSMOS_E2E_PROFILE")
+        let selected = std::env::var("AZURE_COSMOS_E2E_PROFILE")
             .unwrap_or_else(|_| "hostedEmulatorSmoke".to_owned());
         eprintln!("SKIP {scenario_id}: profile '{selected}' does not select it");
         return Ok(None);
@@ -97,19 +90,20 @@ pub(super) async fn selected_scenario_profile(scenario_id: &str) -> TestResult<O
 }
 
 fn init_test_tracing() {
-    let filter = std::env
-        ::var("RUST_LOG")
+    let filter = std::env::var("RUST_LOG")
         .map(tracing_subscriber::EnvFilter::new)
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::from_default_env());
-    let _ = tracing_subscriber::fmt::fmt().with_env_filter(filter).try_init();
+    let _ = tracing_subscriber::fmt::fmt()
+        .with_env_filter(filter)
+        .try_init();
 }
 
 async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
     let management_endpoint = match std::env::var("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT") {
         Ok(endpoint) => endpoint,
-        Err(std::env::VarError::NotPresent) if
-            std::env::var_os("AZURE_COSMOS_EMULATOR_FLAVOR").is_none()
-        => {
+        Err(std::env::VarError::NotPresent)
+            if std::env::var_os("AZURE_COSMOS_EMULATOR_FLAVOR").is_none() =>
+        {
             // Azure Live has no emulator management plane. Account/profile
             // suitability is owned by live pipeline selection, so only hosted
             // emulator runs perform capability-document validation here.
@@ -119,31 +113,32 @@ async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
             return Err(error.into());
         }
     };
-    let response = reqwest::Client
-        ::builder()
+    let response = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         .build()?
         .get(url::Url::parse(&management_endpoint)?.join("capabilities")?)
-        .send().await?
+        .send()
+        .await?
         .error_for_status()?;
     let capabilities: CapabilityDocument = serde_json::from_slice(&response.bytes().await?)?;
     if capabilities.api_version != 1 {
-        return Err(
-            format!(
-                "scenario '{scenario_id}' requires capabilities API version 1, got {}",
-                capabilities.api_version
-            ).into()
-        );
+        return Err(format!(
+            "scenario '{scenario_id}' requires capabilities API version 1, got {}",
+            capabilities.api_version
+        )
+        .into());
     }
-    let backend = match std::env::var("AZURE_COSMOS_EMULATOR_FLAVOR").ok().as_deref() {
+    let backend = match std::env::var("AZURE_COSMOS_EMULATOR_FLAVOR")
+        .ok()
+        .as_deref()
+    {
         Some("inmemory-v1") => "hostedEmulatorGatewayV1",
         Some("inmemory-v2") => "hostedEmulatorGatewayV2",
         Some(flavor) => {
-            return Err(
-                format!(
-                    "E2E scenario '{scenario_id}' does not support emulator flavor '{flavor}'"
-                ).into()
-            );
+            return Err(format!(
+                "E2E scenario '{scenario_id}' does not support emulator flavor '{flavor}'"
+            )
+            .into());
         }
         None if capabilities.protocols.gateway_v2 => "hostedEmulatorGatewayV2",
         None => "hostedEmulatorGatewayV1",
@@ -167,11 +162,10 @@ async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
             }
         };
         if !available {
-            return Err(
-                format!(
-                    "required capability '{requirement:?}' is unavailable for scenario '{scenario_id}'"
-                ).into()
-            );
+            return Err(format!(
+                "required capability '{requirement:?}' is unavailable for scenario '{scenario_id}'"
+            )
+            .into());
         }
     }
     Ok(())
@@ -200,12 +194,14 @@ struct ProtocolCapabilities {
 pub(super) fn assert_critical_diagnostics(
     diagnostics: &DiagnosticsContext,
     operation_name: &str,
-    status_code: StatusCode
+    status_code: StatusCode,
 ) {
     assert_eq!(diagnostics.operation_name(), Some(operation_name));
     assert!(!diagnostics.activity_id().to_string().is_empty());
     assert_eq!(
-        diagnostics.effective_status().map(|status| status.status_code()),
+        diagnostics
+            .effective_status()
+            .map(|status| status.status_code()),
         Some(status_code)
     );
     assert!(diagnostics.request_count() >= 1);
@@ -227,7 +223,7 @@ pub(super) fn assert_configured_transport(diagnostics: &DiagnosticsContext) {
 
 fn assert_diagnostics_transport(
     diagnostics: &DiagnosticsContext,
-    expected_transport: Option<TransportKind>
+    expected_transport: Option<TransportKind>,
 ) {
     if let Some(expected_transport) = expected_transport {
         assert!(

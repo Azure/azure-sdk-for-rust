@@ -5,11 +5,8 @@
 
 use azure_core::{
     http::{
-        headers::{ HeaderName, HeaderValue, Headers },
-        AsyncRawResponse,
-        Method,
-        Request,
-        StatusCode,
+        headers::{HeaderName, HeaderValue, Headers},
+        AsyncRawResponse, Method, Request, StatusCode,
     },
     Bytes,
 };
@@ -18,22 +15,21 @@ use uuid::Uuid;
 use crate::models::effective_partition_key::prefix_range_end_hex;
 use crate::{
     driver::transport::rntbd::{
-        tokens::{ RntbdRequestToken, TokenValue },
-        RntbdRequestFrame,
-        RntbdResponse,
+        tokens::{RntbdRequestToken, TokenValue},
+        RntbdRequestFrame, RntbdResponse,
     },
-    models::{ CosmosStatus, OperationType, ResourceType },
+    models::{CosmosStatus, OperationType, ResourceType},
     options::ReadConsistencyStrategy,
 };
 
-use super::{ ConsistencyLevel, InMemoryEmulatorHttpClient };
+use super::{ConsistencyLevel, InMemoryEmulatorHttpClient};
 
 impl InMemoryEmulatorHttpClient {
     /// Executes a hosted Gateway V2 request and returns an RNTBD-framed response.
     #[doc(hidden)]
     pub async fn execute_gateway_v2_request(
         &self,
-        request: &Request
+        request: &Request,
     ) -> crate::error::Result<AsyncRawResponse> {
         let request_body: Bytes = request.body().into();
         // A frame that fails to parse has no usable `activityId` field, so
@@ -61,25 +57,23 @@ impl InMemoryEmulatorHttpClient {
 
 async fn encode_error_response(
     error: crate::error::CosmosError,
-    activity_id: Uuid
+    activity_id: Uuid,
 ) -> crate::error::Result<AsyncRawResponse> {
     let mut headers = Headers::new();
     headers.insert("x-ms-activity-id", activity_id.to_string());
     if let Some(sub_status) = error.status().sub_status() {
         headers.insert("x-ms-substatus", sub_status.value().to_string());
     }
-    let body = serde_json
-        ::to_vec(
-            &serde_json::json!({
+    let body = serde_json::to_vec(&serde_json::json!({
         "code": "BadRequest",
         "message": error.to_string(),
-    })
-        )
-        .map_err(gateway_v2_internal_error)?;
+    }))
+    .map_err(gateway_v2_internal_error)?;
     encode_response(
         AsyncRawResponse::from_bytes(error.status().status_code(), headers, body),
-        activity_id
-    ).await
+        activity_id,
+    )
+    .await
 }
 
 #[derive(Default)]
@@ -111,60 +105,49 @@ struct RequestMetadata {
 fn decode_request(
     outer_request: &Request,
     frame: RntbdRequestFrame,
-    account_consistency: ConsistencyLevel
+    account_consistency: ConsistencyLevel,
 ) -> crate::error::Result<Request> {
     if frame.resource_type != ResourceType::Document {
-        return Err(
-            gateway_v2_bad_request(
-                format!(
-                    "hosted Gateway V2 supports Document resources, got {:?}",
-                    frame.resource_type
-                )
-            )
-        );
+        return Err(gateway_v2_bad_request(format!(
+            "hosted Gateway V2 supports Document resources, got {:?}",
+            frame.resource_type
+        )));
     }
     let body_present = frame.body.is_some();
     let mut metadata = decode_metadata(frame.metadata)?;
-    let payload_present = metadata.payload_present.ok_or_else(||
-        gateway_v2_bad_request("RNTBD request is missing PayloadPresent")
-    )?;
+    let payload_present = metadata
+        .payload_present
+        .ok_or_else(|| gateway_v2_bad_request("RNTBD request is missing PayloadPresent"))?;
     if payload_present != body_present {
-        return Err(
-            gateway_v2_bad_request(
-                format!(
-                    "RNTBD PayloadPresent was {payload_present} but body presence was {body_present}"
-                )
-            )
-        );
+        return Err(gateway_v2_bad_request(format!(
+            "RNTBD PayloadPresent was {payload_present} but body presence was {body_present}"
+        )));
     }
     if metadata.allow_tentative_writes {
-        return Err(
-            gateway_v2_bad_request("hosted Gateway V2 does not yet support AllowTentativeWrites")
-        );
+        return Err(gateway_v2_bad_request(
+            "hosted Gateway V2 does not yet support AllowTentativeWrites",
+        ));
     }
-    let read_consistency_strategy = metadata.read_consistency_strategy
+    let read_consistency_strategy = metadata
+        .read_consistency_strategy
         .map(read_consistency_strategy_from_wire)
         .transpose()?;
     if let Some(value) = metadata.consistency_level {
         if !matches!(value, 0x00..=0x04) {
-            return Err(
-                gateway_v2_bad_request("RNTBD request contains an unknown ConsistencyLevel value")
-            );
+            return Err(gateway_v2_bad_request(
+                "RNTBD request contains an unknown ConsistencyLevel value",
+            ));
         }
         if value != consistency_wire_byte(account_consistency) {
-            return Err(
-                gateway_v2_bad_request(
-                    "hosted Gateway V2 does not yet support per-request consistency overrides"
-                )
-            );
+            return Err(gateway_v2_bad_request(
+                "hosted Gateway V2 does not yet support per-request consistency overrides",
+            ));
         }
     }
-    if
-        matches!(
-            frame.operation_type,
-            OperationType::Query | OperationType::SqlQuery | OperationType::ReadFeed
-        ) &&
-        metadata.start_epk.is_none()
+    if matches!(
+        frame.operation_type,
+        OperationType::Query | OperationType::SqlQuery | OperationType::ReadFeed
+    ) && metadata.start_epk.is_none()
     {
         if let Some(effective_partition_key) = metadata.effective_partition_key.as_ref() {
             metadata.start_epk = Some(effective_partition_key.clone());
@@ -179,22 +162,15 @@ fn decode_request(
             metadata.end_epk = Some(prefix_range_end_hex(&bytes));
         }
     }
-    if
-        matches!(
-            frame.operation_type,
-            OperationType::Read |
-                OperationType::Replace |
-                OperationType::Patch |
-                OperationType::Delete
-        ) &&
-        metadata.partition_key.is_none() &&
-        metadata.effective_partition_key.is_some()
+    if matches!(
+        frame.operation_type,
+        OperationType::Read | OperationType::Replace | OperationType::Patch | OperationType::Delete
+    ) && metadata.partition_key.is_none()
+        && metadata.effective_partition_key.is_some()
     {
-        return Err(
-            gateway_v2_bad_request(
-                "hosted Gateway V2 requires the string PartitionKey token for point operations"
-            )
-        );
+        return Err(gateway_v2_bad_request(
+            "hosted Gateway V2 requires the string PartitionKey token for point operations",
+        ));
     }
     tracing::debug!(
         operation = ?frame.operation_type,
@@ -203,10 +179,12 @@ fn decode_request(
         end_epk = ?metadata.end_epk,
         "decoded hosted Gateway V2 request target"
     );
-    let database = metadata.database
+    let database = metadata
+        .database
         .as_deref()
         .ok_or_else(|| gateway_v2_bad_request("RNTBD request is missing DatabaseName"))?;
-    let collection = metadata.collection
+    let collection = metadata
+        .collection
         .as_deref()
         .ok_or_else(|| gateway_v2_bad_request("RNTBD request is missing CollectionName"))?;
 
@@ -216,17 +194,15 @@ fn decode_request(
         OperationType::Replace => (Method::Put, true),
         OperationType::Patch => (Method::Patch, true),
         OperationType::Delete => (Method::Delete, true),
-        | OperationType::Query
+        OperationType::Query
         | OperationType::SqlQuery
         | OperationType::QueryPlan
         | OperationType::Batch => (Method::Post, false),
         OperationType::ReadFeed => (Method::Get, false),
         operation => {
-            return Err(
-                gateway_v2_bad_request(
-                    format!("unsupported hosted Gateway V2 operation {operation:?}")
-                )
-            );
+            return Err(gateway_v2_bad_request(format!(
+                "unsupported hosted Gateway V2 operation {operation:?}"
+            )));
         }
     };
 
@@ -238,36 +214,41 @@ fn decode_request(
         let mut segments = url
             .path_segments_mut()
             .map_err(|_| gateway_v2_bad_request("thin-client endpoint cannot be a base URL"))?;
-        segments.clear().push("dbs").push(database).push("colls").push(collection).push("docs");
+        segments
+            .clear()
+            .push("dbs")
+            .push(database)
+            .push("colls")
+            .push(collection)
+            .push("docs");
         if document_required {
-            let document = metadata.document
-                .as_deref()
-                .ok_or_else(|| {
-                    gateway_v2_bad_request("RNTBD point request is missing DocumentName")
-                })?;
+            let document = metadata.document.as_deref().ok_or_else(|| {
+                gateway_v2_bad_request("RNTBD point request is missing DocumentName")
+            })?;
             segments.push(document);
         }
     }
     if outer_path != url.path() {
-        return Err(
-            gateway_v2_bad_request(
-                format!(
-                    "Gateway 2.0 outer path '{outer_path}' does not match RNTBD target '{}'",
-                    url.path()
-                )
-            )
-        );
+        return Err(gateway_v2_bad_request(format!(
+            "Gateway 2.0 outer path '{outer_path}' does not match RNTBD target '{}'",
+            url.path()
+        )));
     }
 
     let mut request = Request::new(url, method);
-    request
-        .headers_mut()
-        .insert("x-ms-activity-id", HeaderValue::from(frame.activity_id.to_string()));
+    request.headers_mut().insert(
+        "x-ms-activity-id",
+        HeaderValue::from(frame.activity_id.to_string()),
+    );
     if let Some(value) = metadata.partition_key {
-        request.headers_mut().insert("x-ms-documentdb-partitionkey", value);
+        request
+            .headers_mut()
+            .insert("x-ms-documentdb-partitionkey", value);
     }
     if let Some(value) = metadata.partition_key_range_id {
-        request.headers_mut().insert("x-ms-documentdb-partitionkeyrangeid", value);
+        request
+            .headers_mut()
+            .insert("x-ms-documentdb-partitionkeyrangeid", value);
     }
     if let Some(value) = metadata.continuation {
         request.headers_mut().insert("x-ms-continuation", value);
@@ -276,10 +257,16 @@ fn decode_request(
         request.headers_mut().insert("x-ms-session-token", value);
     }
     if let Some(strategy) = read_consistency_strategy {
-        request.headers_mut().insert("x-ms-cosmos-read-consistency-strategy", strategy.as_str());
+        request
+            .headers_mut()
+            .insert("x-ms-cosmos-read-consistency-strategy", strategy.as_str());
     }
     if let Some(value) = metadata.page_size {
-        let value = if value == u32::MAX { "-1".to_owned() } else { value.to_string() };
+        let value = if value == u32::MAX {
+            "-1".to_owned()
+        } else {
+            value.to_string()
+        };
         request.headers_mut().insert("x-ms-max-item-count", value);
     }
     if let Some(value) = metadata.match_condition {
@@ -296,34 +283,49 @@ fn decode_request(
         request.headers_mut().insert("a-im", value);
     }
     if let Some(value) = metadata.change_feed_wire_format_version {
-        request.headers_mut().insert("x-ms-cosmos-changefeed-wire-format-version", value);
+        request
+            .headers_mut()
+            .insert("x-ms-cosmos-changefeed-wire-format-version", value);
     }
     if let Some(value) = metadata.start_epk {
         request.headers_mut().insert("x-ms-start-epk", value);
-        request.headers_mut().insert("x-ms-read-key-type", "EffectivePartitionKeyRange");
+        request
+            .headers_mut()
+            .insert("x-ms-read-key-type", "EffectivePartitionKeyRange");
     }
     if let Some(value) = metadata.end_epk {
         request.headers_mut().insert("x-ms-end-epk", value);
-        request.headers_mut().insert("x-ms-read-key-type", "EffectivePartitionKeyRange");
+        request
+            .headers_mut()
+            .insert("x-ms-read-key-type", "EffectivePartitionKeyRange");
     }
     if metadata.return_minimal {
         request.headers_mut().insert("prefer", "return=minimal");
     }
     if let Some(value) = metadata.supported_query_features {
-        request.headers_mut().insert("x-ms-cosmos-supported-query-features", value);
+        request
+            .headers_mut()
+            .insert("x-ms-cosmos-supported-query-features", value);
     }
     if let Some(value) = metadata.query_version {
-        request.headers_mut().insert("x-ms-cosmos-query-version", value);
+        request
+            .headers_mut()
+            .insert("x-ms-cosmos-query-version", value);
     }
 
     match frame.operation_type {
-        OperationType::Upsert => request.headers_mut().insert("x-ms-documentdb-is-upsert", "true"),
-        OperationType::Query | OperationType::SqlQuery =>
-            request.headers_mut().insert("x-ms-documentdb-isquery", "true"),
-        OperationType::QueryPlan =>
-            request.headers_mut().insert("x-ms-cosmos-is-query-plan-request", "true"),
-        OperationType::Batch =>
-            request.headers_mut().insert("x-ms-cosmos-is-batch-request", "true"),
+        OperationType::Upsert => request
+            .headers_mut()
+            .insert("x-ms-documentdb-is-upsert", "true"),
+        OperationType::Query | OperationType::SqlQuery => request
+            .headers_mut()
+            .insert("x-ms-documentdb-isquery", "true"),
+        OperationType::QueryPlan => request
+            .headers_mut()
+            .insert("x-ms-cosmos-is-query-plan-request", "true"),
+        OperationType::Batch => request
+            .headers_mut()
+            .insert("x-ms-cosmos-is-batch-request", "true"),
         _ => {}
     }
     if let Some(body) = frame.body {
@@ -334,14 +336,14 @@ fn decode_request(
 
 fn read_consistency_strategy_from_wire(value: u8) -> crate::error::Result<ReadConsistencyStrategy> {
     ReadConsistencyStrategy::from_rntbd_wire_byte(value).ok_or_else(|| {
-        gateway_v2_bad_request(
-            format!("RNTBD request contains unknown ReadConsistencyStrategy value {value:#04x}")
-        )
+        gateway_v2_bad_request(format!(
+            "RNTBD request contains unknown ReadConsistencyStrategy value {value:#04x}"
+        ))
     })
 }
 
 fn decode_metadata(
-    tokens: Vec<crate::driver::transport::rntbd::Token>
+    tokens: Vec<crate::driver::transport::rntbd::Token>,
 ) -> crate::error::Result<RequestMetadata> {
     let mut metadata = RequestMetadata::default();
     for token in tokens {
@@ -414,18 +416,16 @@ fn decode_metadata(
             }
             RntbdRequestToken::PayloadPresent => {
                 if metadata.payload_present.is_some() {
-                    return Err(
-                        gateway_v2_bad_request(
-                            "RNTBD request contains duplicate PayloadPresent tokens"
-                        )
-                    );
+                    return Err(gateway_v2_bad_request(
+                        "RNTBD request contains duplicate PayloadPresent tokens",
+                    ));
                 }
                 metadata.payload_present = Some(expect_byte(kind, token.value)? != 0);
             }
             RntbdRequestToken::ResourceId => {
                 expect_bytes(kind, token.value)?;
             }
-            | RntbdRequestToken::AuthorizationToken
+            RntbdRequestToken::AuthorizationToken
             | RntbdRequestToken::CollectionRid
             | RntbdRequestToken::GlobalDatabaseAccountName => {
                 expect_string(kind, token.value)?;
@@ -463,12 +463,10 @@ fn expect_bytes(kind: RntbdRequestToken, value: TokenValue) -> crate::error::Res
 }
 
 fn expect_hex(kind: RntbdRequestToken, value: TokenValue) -> crate::error::Result<String> {
-    Ok(
-        expect_bytes(kind, value)?
-            .iter()
-            .map(|byte| format!("{byte:02X}"))
-            .collect()
-    )
+    Ok(expect_bytes(kind, value)?
+        .iter()
+        .map(|byte| format!("{byte:02X}"))
+        .collect())
 }
 
 fn expect_byte(kind: RntbdRequestToken, value: TokenValue) -> crate::error::Result<u8> {
@@ -488,9 +486,11 @@ fn expect_ulong(kind: RntbdRequestToken, value: TokenValue) -> crate::error::Res
 fn wrong_token_type(
     kind: RntbdRequestToken,
     expected: &str,
-    actual: TokenValue
+    actual: TokenValue,
 ) -> crate::error::CosmosError {
-    gateway_v2_bad_request(format!("RNTBD token {kind:?} must use {expected}, got {actual:?}"))
+    gateway_v2_bad_request(format!(
+        "RNTBD token {kind:?} must use {expected}, got {actual:?}"
+    ))
 }
 
 fn consistency_wire_byte(value: ConsistencyLevel) -> u8 {
@@ -505,9 +505,12 @@ fn consistency_wire_byte(value: ConsistencyLevel) -> u8 {
 
 async fn encode_response(
     response: AsyncRawResponse,
-    request_activity_id: Uuid
+    request_activity_id: Uuid,
 ) -> crate::error::Result<AsyncRawResponse> {
-    let response = response.try_into_raw_response().await.map_err(gateway_v2_internal_error)?;
+    let response = response
+        .try_into_raw_response()
+        .await
+        .map_err(gateway_v2_internal_error)?;
     let headers = response.headers();
     let status = header_u32(headers, "x-ms-substatus")
         .map(|sub_status| CosmosStatus::new(response.status()).with_sub_status(sub_status as u16))
@@ -556,11 +559,17 @@ async fn encode_response(
     rntbd.write(&mut body).map_err(gateway_v2_internal_error)?;
     let mut outer_headers = Headers::new();
     outer_headers.insert("content-type", "application/octet-stream");
-    Ok(AsyncRawResponse::from_bytes(status.status_code(), outer_headers, body))
+    Ok(AsyncRawResponse::from_bytes(
+        status.status_code(),
+        outer_headers,
+        body,
+    ))
 }
 
 fn header_string(headers: &Headers, name: &'static str) -> Option<String> {
-    headers.get_optional_str(&HeaderName::from_static(name)).map(str::to_owned)
+    headers
+        .get_optional_str(&HeaderName::from_static(name))
+        .map(str::to_owned)
 }
 
 fn header_u32(headers: &Headers, name: &'static str) -> Option<u32> {
@@ -576,16 +585,14 @@ fn header_f64(headers: &Headers, name: &'static str) -> Option<f64> {
 }
 
 fn gateway_v2_bad_request(error: impl std::fmt::Display) -> crate::error::CosmosError {
-    crate::error::CosmosError
-        ::builder()
+    crate::error::CosmosError::builder()
         .with_status(CosmosStatus::new(StatusCode::BadRequest))
         .with_message(error.to_string())
         .build()
 }
 
 fn gateway_v2_internal_error(error: impl std::fmt::Display) -> crate::error::CosmosError {
-    crate::error::CosmosError
-        ::builder()
+    crate::error::CosmosError::builder()
         .with_status(CosmosStatus::new(StatusCode::InternalServerError))
         .with_message(error.to_string())
         .build()
@@ -596,7 +603,7 @@ mod tests {
     use super::*;
     use crate::{
         driver::transport::rntbd::Token,
-        in_memory_emulator::{ ContainerConfig, VirtualAccountConfig, VirtualRegion },
+        in_memory_emulator::{ContainerConfig, VirtualAccountConfig, VirtualRegion},
         models::PartitionKeyDefinition,
     };
     use url::Url;
@@ -604,27 +611,24 @@ mod tests {
     #[tokio::test]
     async fn create_item_round_trips_through_gateway_v2() {
         let thin_url = Url::parse("http://127.0.0.1:18444/").unwrap();
-        let region = VirtualRegion::new(
-            "East US",
-            "http://127.0.0.1:18081/".parse().unwrap()
-        ).with_gateway_v2_url(thin_url.clone());
-        let emulator = InMemoryEmulatorHttpClient::new(
-            VirtualAccountConfig::new(vec![region]).unwrap()
-        );
+        let region = VirtualRegion::new("East US", "http://127.0.0.1:18081/".parse().unwrap())
+            .with_gateway_v2_url(thin_url.clone());
+        let emulator =
+            InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![region]).unwrap());
         let store = emulator.store();
         store.create_database("db");
-        let partition_key: PartitionKeyDefinition = serde_json
-            ::from_value(
-                serde_json::json!({
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
             "paths": ["/pk"], "kind": "Hash", "version": 2
-        })
-            )
-            .unwrap();
+        }))
+        .unwrap();
         store.create_container_with_config(
             "db",
             "coll",
             partition_key,
-            ContainerConfig::new().with_partition_count(1).build().unwrap()
+            ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
         );
 
         let activity_id = Uuid::new_v4();
@@ -636,30 +640,29 @@ mod tests {
                 Token::database_name("db".to_owned()),
                 Token::collection_name("coll".to_owned()),
                 Token::partition_key(r#"["pk1"]"#.to_owned()),
-                Token::payload_present(true)
+                Token::payload_present(true),
             ],
             body: Some(
-                serde_json
-                    ::to_vec(
-                        &serde_json::json!({
+                serde_json::to_vec(&serde_json::json!({
                     "id": "item1", "pk": "pk1", "value": 42
-                })
-                    )
-                    .unwrap()
+                }))
+                .unwrap(),
             ),
         };
         let mut bytes = Vec::new();
         frame.write(&mut bytes).unwrap();
         let mut request = Request::new(
             thin_url.join("dbs/db/colls/coll/docs").unwrap(),
-            Method::Post
+            Method::Post,
         );
         request.set_body(bytes);
 
         let response = emulator
-            .execute_gateway_v2_request(&request).await
+            .execute_gateway_v2_request(&request)
+            .await
             .unwrap()
-            .try_into_raw_response().await
+            .try_into_raw_response()
+            .await
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::Created);
@@ -673,21 +676,16 @@ mod tests {
     async fn ordinary_read_feed_remains_flat_and_paginates_through_gateway_v2() {
         let thin_url = Url::parse("http://127.0.0.1:18444/").unwrap();
         let gateway_url = Url::parse("http://127.0.0.1:18081/").unwrap();
-        let region = VirtualRegion::new("East US", gateway_url.clone()).with_gateway_v2_url(
-            thin_url.clone()
-        );
-        let emulator = InMemoryEmulatorHttpClient::new(
-            VirtualAccountConfig::new(vec![region]).unwrap()
-        );
+        let region = VirtualRegion::new("East US", gateway_url.clone())
+            .with_gateway_v2_url(thin_url.clone());
+        let emulator =
+            InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![region]).unwrap());
         let store = emulator.store();
         store.create_database("db");
-        let partition_key: PartitionKeyDefinition = serde_json
-            ::from_value(
-                serde_json::json!({
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
             "paths": ["/pk"], "kind": "Hash", "version": 2
-        })
-            )
-            .unwrap();
+        }))
+        .unwrap();
         store.create_container("db", "coll", partition_key);
 
         let read_page = |continuation: Option<String>| {
@@ -695,7 +693,7 @@ mod tests {
                 Token::database_name("db".to_owned()),
                 Token::collection_name("coll".to_owned()),
                 Token::page_size(1),
-                Token::payload_present(false)
+                Token::payload_present(false),
             ];
             if let Some(continuation) = continuation {
                 metadata.push(Token::continuation_token(continuation));
@@ -718,11 +716,11 @@ mod tests {
         for id in ["item-1", "item-2"] {
             let mut seed = Request::new(
                 gateway_url.join("dbs/db/colls/coll/docs").unwrap(),
-                Method::Post
+                Method::Post,
             );
             seed.headers_mut().insert(
                 "x-ms-documentdb-partitionkey",
-                HeaderValue::from_static(r#"["A"]"#)
+                HeaderValue::from_static(r#"["A"]"#),
             );
             seed.set_body(serde_json::to_vec(&serde_json::json!({ "id": id, "pk": "A" })).unwrap());
             assert_eq!(
@@ -740,7 +738,7 @@ mod tests {
                 Token::collection_name("coll".to_owned()),
                 Token::a_im("Incremental Feed".to_owned()),
                 Token::page_size(1),
-                Token::payload_present(false)
+                Token::payload_present(false),
             ],
             body: None,
         };
@@ -760,7 +758,7 @@ mod tests {
                 Token::a_im("Incremental Feed".to_owned()),
                 Token::change_feed_wire_format_version("2021-09-15".to_owned()),
                 Token::page_size(1),
-                Token::payload_present(false)
+                Token::payload_present(false),
             ],
             body: None,
         };
@@ -778,8 +776,9 @@ mod tests {
         let second = execute_frame(
             &emulator,
             &thin_url,
-            read_page(first.continuation_token.clone())
-        ).await;
+            read_page(first.continuation_token.clone()),
+        )
+        .await;
         let second_body: serde_json::Value = serde_json::from_slice(&second.body).unwrap();
         assert_eq!(second_body["Documents"].as_array().unwrap().len(), 1);
         assert!(second.continuation_token.is_none());
@@ -788,19 +787,21 @@ mod tests {
     async fn execute_frame(
         emulator: &InMemoryEmulatorHttpClient,
         thin_url: &Url,
-        frame: RntbdRequestFrame
+        frame: RntbdRequestFrame,
     ) -> RntbdResponse {
         let mut bytes = Vec::new();
         frame.write(&mut bytes).unwrap();
         let mut request = Request::new(
             thin_url.join("dbs/db/colls/coll/docs").unwrap(),
-            Method::Post
+            Method::Post,
         );
         request.set_body(bytes);
         let response = emulator
-            .execute_gateway_v2_request(&request).await
+            .execute_gateway_v2_request(&request)
+            .await
             .unwrap()
-            .try_into_raw_response().await
+            .try_into_raw_response()
+            .await
             .unwrap();
         RntbdResponse::read(response.body().as_ref()).unwrap()
     }
@@ -808,22 +809,18 @@ mod tests {
     #[tokio::test]
     async fn service_not_found_uses_matching_outer_and_inner_status() {
         let gateway_v2_url = Url::parse("http://127.0.0.1:18444/").unwrap();
-        let region = VirtualRegion::new(
-            "East US",
-            "http://127.0.0.1:18081/".parse().unwrap()
-        ).with_gateway_v2_url(gateway_v2_url.clone());
-        let emulator = InMemoryEmulatorHttpClient::new(
-            VirtualAccountConfig::new(vec![region]).unwrap()
-        );
+        let region = VirtualRegion::new("East US", "http://127.0.0.1:18081/".parse().unwrap())
+            .with_gateway_v2_url(gateway_v2_url.clone());
+        let emulator =
+            InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![region]).unwrap());
         emulator.store().create_database("db");
-        let partition_key: PartitionKeyDefinition = serde_json
-            ::from_value(
-                serde_json::json!({
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
             "paths": ["/pk"], "kind": "Hash", "version": 2
-        })
-            )
-            .unwrap();
-        emulator.store().create_container("db", "coll", partition_key);
+        }))
+        .unwrap();
+        emulator
+            .store()
+            .create_container("db", "coll", partition_key);
         let frame = RntbdRequestFrame {
             resource_type: ResourceType::Document,
             operation_type: OperationType::Read,
@@ -833,22 +830,26 @@ mod tests {
                 Token::collection_name("coll".to_owned()),
                 Token::document_name("missing".to_owned()),
                 Token::partition_key(r#"["pk1"]"#.to_owned()),
-                Token::payload_present(false)
+                Token::payload_present(false),
             ],
             body: None,
         };
         let mut bytes = Vec::new();
         frame.write(&mut bytes).unwrap();
         let mut request = Request::new(
-            gateway_v2_url.join("dbs/db/colls/coll/docs/missing").unwrap(),
-            Method::Post
+            gateway_v2_url
+                .join("dbs/db/colls/coll/docs/missing")
+                .unwrap(),
+            Method::Post,
         );
         request.set_body(bytes);
 
         let response = emulator
-            .execute_gateway_v2_request(&request).await
+            .execute_gateway_v2_request(&request)
+            .await
             .unwrap()
-            .try_into_raw_response().await
+            .try_into_raw_response()
+            .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::NotFound);
         let framed = RntbdResponse::read(response.body().as_ref()).unwrap();
@@ -858,13 +859,10 @@ mod tests {
     #[tokio::test]
     async fn semantic_validation_error_is_framed_with_matching_status() {
         let gateway_v2_url = Url::parse("http://127.0.0.1:18444/").unwrap();
-        let region = VirtualRegion::new(
-            "East US",
-            "http://127.0.0.1:18081/".parse().unwrap()
-        ).with_gateway_v2_url(gateway_v2_url.clone());
-        let emulator = InMemoryEmulatorHttpClient::new(
-            VirtualAccountConfig::new(vec![region]).unwrap()
-        );
+        let region = VirtualRegion::new("East US", "http://127.0.0.1:18081/".parse().unwrap())
+            .with_gateway_v2_url(gateway_v2_url.clone());
+        let emulator =
+            InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![region]).unwrap());
         let activity_id = Uuid::new_v4();
         let frame = RntbdRequestFrame {
             resource_type: ResourceType::Document,
@@ -874,7 +872,7 @@ mod tests {
                 Token::database_name("db".to_owned()),
                 Token::collection_name("coll".to_owned()),
                 Token::allow_tentative_writes(true),
-                Token::payload_present(true)
+                Token::payload_present(true),
             ],
             body: Some(br#"{"id":"item"}"#.to_vec()),
         };
@@ -882,14 +880,16 @@ mod tests {
         frame.write(&mut bytes).unwrap();
         let mut request = Request::new(
             gateway_v2_url.join("dbs/db/colls/coll/docs").unwrap(),
-            Method::Post
+            Method::Post,
         );
         request.set_body(bytes);
 
         let response = emulator
-            .execute_gateway_v2_request(&request).await
+            .execute_gateway_v2_request(&request)
+            .await
             .unwrap()
-            .try_into_raw_response().await
+            .try_into_raw_response()
+            .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::BadRequest);
         let framed = RntbdResponse::read(response.body().as_ref()).unwrap();
@@ -900,16 +900,13 @@ mod tests {
     #[tokio::test]
     async fn malformed_frame_bytes_are_framed_with_matching_status() {
         let gateway_v2_url = Url::parse("http://127.0.0.1:18444/").unwrap();
-        let region = VirtualRegion::new(
-            "East US",
-            "http://127.0.0.1:18081/".parse().unwrap()
-        ).with_gateway_v2_url(gateway_v2_url.clone());
-        let emulator = InMemoryEmulatorHttpClient::new(
-            VirtualAccountConfig::new(vec![region]).unwrap()
-        );
+        let region = VirtualRegion::new("East US", "http://127.0.0.1:18081/".parse().unwrap())
+            .with_gateway_v2_url(gateway_v2_url.clone());
+        let emulator =
+            InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![region]).unwrap());
         let mut request = Request::new(
             gateway_v2_url.join("dbs/db/colls/coll/docs").unwrap(),
-            Method::Post
+            Method::Post,
         );
         // Not a valid RNTBD frame at all: too short to even contain a header
         // length prefix, let alone resource/operation type and activity id.
@@ -918,14 +915,15 @@ mod tests {
         request.set_body(vec![0x01, 0x02, 0x03]);
 
         let response = emulator
-            .execute_gateway_v2_request(&request).await
+            .execute_gateway_v2_request(&request)
+            .await
             .unwrap()
-            .try_into_raw_response().await
+            .try_into_raw_response()
+            .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::BadRequest);
-        let framed = RntbdResponse::read(response.body().as_ref()).expect(
-            "malformed-frame error response must itself be a well-formed RNTBD frame"
-        );
+        let framed = RntbdResponse::read(response.body().as_ref())
+            .expect("malformed-frame error response must itself be a well-formed RNTBD frame");
         assert_eq!(framed.status.status_code(), StatusCode::BadRequest);
     }
 
@@ -935,29 +933,26 @@ mod tests {
         let east_gateway_v2 = Url::parse("http://127.0.0.1:18444/").unwrap();
         let west_gateway = Url::parse("http://127.0.0.1:18082/").unwrap();
         let west_gateway_v2 = Url::parse("http://127.0.0.1:18445/").unwrap();
-        let east = VirtualRegion::new("East US", east_gateway.clone()).with_gateway_v2_url(
-            east_gateway_v2.clone()
-        );
-        let west = VirtualRegion::new("West US", west_gateway).with_gateway_v2_url(
-            west_gateway_v2.clone()
-        );
-        let emulator = InMemoryEmulatorHttpClient::new(
-            VirtualAccountConfig::new(vec![east, west]).unwrap()
-        );
+        let east = VirtualRegion::new("East US", east_gateway.clone())
+            .with_gateway_v2_url(east_gateway_v2.clone());
+        let west = VirtualRegion::new("West US", west_gateway)
+            .with_gateway_v2_url(west_gateway_v2.clone());
+        let emulator =
+            InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![east, west]).unwrap());
         let store = emulator.store();
         store.create_database("db");
-        let partition_key: PartitionKeyDefinition = serde_json
-            ::from_value(
-                serde_json::json!({
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
             "paths": ["/pk"], "kind": "Hash", "version": 2
-        })
-            )
-            .unwrap();
+        }))
+        .unwrap();
         store.create_container_with_config(
             "db",
             "coll",
             partition_key,
-            ContainerConfig::new().with_partition_count(1).build().unwrap()
+            ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
         );
 
         // Seed through the write region's standard gateway, then let the
@@ -965,18 +960,22 @@ mod tests {
         // through each region's own Gateway 2.0 endpoint.
         let mut seed = Request::new(
             east_gateway.join("dbs/db/colls/coll/docs").unwrap(),
-            Method::Post
+            Method::Post,
         );
         seed.headers_mut().insert(
             "x-ms-documentdb-partitionkey",
-            HeaderValue::from_static(r#"["pk1"]"#)
+            HeaderValue::from_static(r#"["pk1"]"#),
         );
         seed.set_body(
-            serde_json
-                ::to_vec(&serde_json::json!({ "id": "item1", "pk": "pk1", "value": 42 }))
-                .unwrap()
+            serde_json::to_vec(&serde_json::json!({ "id": "item1", "pk": "pk1", "value": 42 }))
+                .unwrap(),
         );
-        assert!(emulator.execute_request(&seed).await.unwrap().status().is_success());
+        assert!(emulator
+            .execute_request(&seed)
+            .await
+            .unwrap()
+            .status()
+            .is_success());
         store.drain_pending_replications().await;
 
         for gateway_v2_url in [&east_gateway_v2, &west_gateway_v2] {
@@ -990,7 +989,7 @@ mod tests {
                     Token::collection_name("coll".to_owned()),
                     Token::document_name("item1".to_owned()),
                     Token::partition_key(r#"["pk1"]"#.to_owned()),
-                    Token::payload_present(false)
+                    Token::payload_present(false),
                 ],
                 body: None,
             };
@@ -998,14 +997,16 @@ mod tests {
             frame.write(&mut bytes).unwrap();
             let mut request = Request::new(
                 gateway_v2_url.join("dbs/db/colls/coll/docs/item1").unwrap(),
-                Method::Post
+                Method::Post,
             );
             request.set_body(bytes);
 
             let response = emulator
-                .execute_gateway_v2_request(&request).await
+                .execute_gateway_v2_request(&request)
+                .await
                 .unwrap()
-                .try_into_raw_response().await
+                .try_into_raw_response()
+                .await
                 .unwrap();
             assert_eq!(
                 response.status(),
@@ -1025,11 +1026,13 @@ mod tests {
         headers.insert("x-ms-retry-after-ms", "25");
         let response = encode_response(
             AsyncRawResponse::from_bytes(StatusCode::TooManyRequests, headers, Vec::new()),
-            Uuid::new_v4()
-        ).await
-            .unwrap()
-            .try_into_raw_response().await
-            .unwrap();
+            Uuid::new_v4(),
+        )
+        .await
+        .unwrap()
+        .try_into_raw_response()
+        .await
+        .unwrap();
 
         assert_eq!(response.status(), StatusCode::TooManyRequests);
         let framed = RntbdResponse::read(response.body().as_ref()).unwrap();
@@ -1048,22 +1051,26 @@ mod tests {
                 Token::database_name("db".to_owned()),
                 Token::collection_name("coll".to_owned()),
                 Token::effective_partition_key(vec![0x10, 0x20]),
-                Token::payload_present(true)
+                Token::payload_present(true),
             ],
             body: Some(br#"{"query":"SELECT * FROM c"}"#.to_vec()),
         };
         let outer = Request::new(
             Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs").unwrap(),
-            Method::Post
+            Method::Post,
         );
 
         let request = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
         assert_eq!(
-            request.headers().get_optional_str(&HeaderName::from_static("x-ms-start-epk")),
+            request
+                .headers()
+                .get_optional_str(&HeaderName::from_static("x-ms-start-epk")),
             Some("1020")
         );
         assert_eq!(
-            request.headers().get_optional_str(&HeaderName::from_static("x-ms-end-epk")),
+            request
+                .headers()
+                .get_optional_str(&HeaderName::from_static("x-ms-end-epk")),
             Some("1020FF")
         );
     }
@@ -1080,22 +1087,20 @@ mod tests {
                 Token::document_name("item1".to_owned()),
                 Token::partition_key(r#"["pk1"]"#.to_owned()),
                 Token::read_consistency_strategy(ReadConsistencyStrategy::LatestCommitted),
-                Token::payload_present(false)
+                Token::payload_present(false),
             ],
             body: None,
         };
         let outer = Request::new(
             Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs/item1").unwrap(),
-            Method::Post
+            Method::Post,
         );
 
         let request = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
         assert_eq!(
-            request
-                .headers()
-                .get_optional_str(
-                    &HeaderName::from_static("x-ms-cosmos-read-consistency-strategy")
-                ),
+            request.headers().get_optional_str(&HeaderName::from_static(
+                "x-ms-cosmos-read-consistency-strategy"
+            )),
             Some("LatestCommitted")
         );
     }
@@ -1109,17 +1114,22 @@ mod tests {
             metadata: vec![
                 Token::database_name("db".to_owned()),
                 Token::collection_name("coll".to_owned()),
-                Token::payload_present(false)
+                Token::payload_present(false),
             ],
             body: None,
         };
         let outer = Request::new(
             Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs").unwrap(),
-            Method::Post
+            Method::Post,
         );
 
         let request = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
-        assert_eq!(request.headers().get_optional_str(&HeaderName::from_static("a-im")), None);
+        assert_eq!(
+            request
+                .headers()
+                .get_optional_str(&HeaderName::from_static("a-im")),
+            None
+        );
     }
 
     #[test]
@@ -1133,26 +1143,26 @@ mod tests {
                 Token::collection_name("coll".to_owned()),
                 Token::a_im("Incremental Feed".to_owned()),
                 Token::change_feed_wire_format_version("2021-09-15".to_owned()),
-                Token::payload_present(false)
+                Token::payload_present(false),
             ],
             body: None,
         };
         let outer = Request::new(
             Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs").unwrap(),
-            Method::Post
+            Method::Post,
         );
 
         let request = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
         assert_eq!(
-            request.headers().get_optional_str(&HeaderName::from_static("a-im")),
+            request
+                .headers()
+                .get_optional_str(&HeaderName::from_static("a-im")),
             Some("Incremental Feed")
         );
         assert_eq!(
-            request
-                .headers()
-                .get_optional_str(
-                    &HeaderName::from_static("x-ms-cosmos-changefeed-wire-format-version")
-                ),
+            request.headers().get_optional_str(&HeaderName::from_static(
+                "x-ms-cosmos-changefeed-wire-format-version"
+            )),
             Some("2021-09-15")
         );
     }
@@ -1168,14 +1178,17 @@ mod tests {
                 Token::collection_name("coll".to_owned()),
                 Token::document_name("item1".to_owned()),
                 Token::partition_key(r#"["pk1"]"#.to_owned()),
-                Token::new(RntbdRequestToken::ReadConsistencyStrategy, TokenValue::Byte(0xff)),
-                Token::payload_present(false)
+                Token::new(
+                    RntbdRequestToken::ReadConsistencyStrategy,
+                    TokenValue::Byte(0xff),
+                ),
+                Token::payload_present(false),
             ],
             body: None,
         };
         let outer = Request::new(
             Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs/item1").unwrap(),
-            Method::Post
+            Method::Post,
         );
 
         let error = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap_err();
@@ -1192,13 +1205,13 @@ mod tests {
                 Token::database_name("db".to_owned()),
                 Token::collection_name("coll".to_owned()),
                 Token::allow_tentative_writes(true),
-                Token::payload_present(true)
+                Token::payload_present(true),
             ],
             body: Some(br#"{"id":"item"}"#.to_vec()),
         };
         let outer = Request::new(
             Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs").unwrap(),
-            Method::Post
+            Method::Post,
         );
 
         let error = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap_err();
@@ -1209,14 +1222,17 @@ mod tests {
     fn rejects_wrong_types_for_known_tokens() {
         let outer = Request::new(
             Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs").unwrap(),
-            Method::Post
+            Method::Post,
         );
         for token in [
             Token::new(RntbdRequestToken::Match, TokenValue::ULong(1)),
-            Token::new(RntbdRequestToken::PageSize, TokenValue::String("1".to_owned())),
+            Token::new(
+                RntbdRequestToken::PageSize,
+                TokenValue::String("1".to_owned()),
+            ),
             Token::new(
                 RntbdRequestToken::EffectivePartitionKey,
-                TokenValue::String("01".to_owned())
+                TokenValue::String("01".to_owned()),
             ),
             Token::new(RntbdRequestToken::StartEpkHash, TokenValue::Byte(1)),
             Token::new(RntbdRequestToken::EndEpkHash, TokenValue::Byte(1)),
@@ -1229,7 +1245,7 @@ mod tests {
                     Token::database_name("db".to_owned()),
                     Token::collection_name("coll".to_owned()),
                     Token::payload_present(true),
-                    token
+                    token,
                 ],
                 body: Some(br#"{"query":"SELECT * FROM c"}"#.to_vec()),
             };
@@ -1242,12 +1258,9 @@ mod tests {
     fn rejects_payload_present_mismatches() {
         let outer = Request::new(
             Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs").unwrap(),
-            Method::Post
+            Method::Post,
         );
-        for (payload_present, body) in [
-            (true, None),
-            (false, Some(Vec::new())),
-        ] {
+        for (payload_present, body) in [(true, None), (false, Some(Vec::new()))] {
             let frame = RntbdRequestFrame {
                 resource_type: ResourceType::Document,
                 operation_type: OperationType::ReadFeed,
@@ -1255,7 +1268,7 @@ mod tests {
                 metadata: vec![
                     Token::database_name("db".to_owned()),
                     Token::collection_name("coll".to_owned()),
-                    Token::payload_present(payload_present)
+                    Token::payload_present(payload_present),
                 ],
                 body,
             };
@@ -1273,11 +1286,14 @@ mod tests {
             metadata: vec![
                 Token::database_name("db".to_owned()),
                 Token::collection_name("coll".to_owned()),
-                Token::payload_present(false)
+                Token::payload_present(false),
             ],
             body: None,
         };
-        let outer = Request::new(Url::parse("http://127.0.0.1:18444/wrong").unwrap(), Method::Post);
+        let outer = Request::new(
+            Url::parse("http://127.0.0.1:18444/wrong").unwrap(),
+            Method::Post,
+        );
 
         let error = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap_err();
         assert!(error.to_string().contains("does not match RNTBD target"));

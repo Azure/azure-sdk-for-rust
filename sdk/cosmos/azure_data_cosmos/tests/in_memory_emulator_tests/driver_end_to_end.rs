@@ -14,13 +14,9 @@
 //! See [`super::validation`] for the header/body comparison rules.
 
 use azure_data_cosmos_driver::models::{
-    CosmosOperation,
-    DatabaseReference,
-    ItemReference,
-    PartitionKey,
-    ResponseBody,
+    CosmosOperation, DatabaseReference, ItemReference, PartitionKey, ResponseBody,
 };
-use azure_data_cosmos_driver::options::{ DriverOptions, OperationOptions, OperationOptionsBuilder };
+use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions, OperationOptionsBuilder};
 use azure_data_cosmos_driver::CosmosResponse;
 
 #[cfg(feature = "fault_injection")]
@@ -28,11 +24,7 @@ use azure_data_cosmos_driver::options::Region;
 
 use super::dual_backend::DualBackend;
 use super::validation::{
-    compare_responses,
-    parse_body_json,
-    BodyValidationSpec,
-    HeaderValidationSpec,
-    ResponseSnapshot,
+    compare_responses, parse_body_json, BodyValidationSpec, HeaderValidationSpec, ResponseSnapshot,
 };
 use uuid::Uuid;
 
@@ -58,11 +50,9 @@ fn make_stale_session_token(token: &str) -> String {
     };
 
     let region_progress: Vec<String> = parts
-        .map(|segment| {
-            match segment.split_once('=') {
-                Some((region_id, _)) => format!("{region_id}=9999999999"),
-                None => segment.to_string(),
-            }
+        .map(|segment| match segment.split_once('=') {
+            Some((region_id, _)) => format!("{region_id}=9999999999"),
+            None => segment.to_string(),
         })
         .collect();
 
@@ -90,19 +80,25 @@ async fn setup_with_container() -> (
     // Provision real account (if available)
     if backend.has_real_backend() {
         backend.create_real_database(&db_name).await.unwrap();
-        backend.create_real_container(&db_name, container_name, pk_path).await.unwrap();
+        backend
+            .create_real_container(&db_name, container_name, pk_path)
+            .await
+            .unwrap();
     }
 
     // Resolve containers
-    let emu_container = backend.emulator_driver
-        .resolve_container(&db_name, container_name, OperationOptions::default()).await
+    let emu_container = backend
+        .emulator_driver
+        .resolve_container(&db_name, container_name, OperationOptions::default())
+        .await
         .unwrap();
 
     let real_container = if let Some(ref real_driver) = backend.real_driver {
         Some(
             real_driver
-                .resolve_container(&db_name, container_name, OperationOptions::default()).await
-                .unwrap()
+                .resolve_container(&db_name, container_name, OperationOptions::default())
+                .await
+                .unwrap(),
         )
     } else {
         None
@@ -120,8 +116,7 @@ async fn create_and_read_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
     // ── Create item ──────────────────────────────────────────────
-    let item_body =
-        serde_json::json!({
+    let item_body = serde_json::json!({
         "id": "driver-item-1",
         "pk": "pk1",
         "value": 42
@@ -133,22 +128,28 @@ async fn create_and_read_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("pk1"),
-                    "driver-item-1"
-                );
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "driver-item-1");
                 let op = CosmosOperation::create_item(item).with_body(body_bytes.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
-        ).await
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
         .unwrap();
 
-    assert_eq!(u16::from(emu_create.status()), 201, "Emulator create should return 201 Created");
+    assert_eq!(
+        u16::from(emu_create.status()),
+        201,
+        "Emulator create should return 201 Created"
+    );
     if let Some(ref real) = real_create {
-        assert_eq!(u16::from(real.status()), 201, "Real create should return 201 Created");
+        assert_eq!(
+            u16::from(real.status()),
+            201,
+            "Real create should return 201 Created"
+        );
     }
 
     // ── Read item back ───────────────────────────────────────────
@@ -157,26 +158,37 @@ async fn create_and_read_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("pk1"),
-                    "driver-item-1"
-                );
-                (CosmosOperation::read_item(item), OperationOptions::default())
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "driver-item-1");
+                (
+                    CosmosOperation::read_item(item),
+                    OperationOptions::default(),
+                )
             },
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
-        ).await
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
         .unwrap();
 
-    assert_eq!(u16::from(emu_read.status()), 200, "Emulator read should return 200 OK");
+    assert_eq!(
+        u16::from(emu_read.status()),
+        200,
+        "Emulator read should return 200 OK"
+    );
 
     // Verify emulator body structure
     let doc: serde_json::Value = body_json(&emu_read);
     assert_eq!(doc["id"], "driver-item-1");
     assert_eq!(doc["value"], 42);
-    assert!(doc.get("_rid").is_some(), "Should have _rid system property");
-    assert!(doc.get("_etag").is_some(), "Should have _etag system property");
+    assert!(
+        doc.get("_rid").is_some(),
+        "Should have _rid system property"
+    );
+    assert!(
+        doc.get("_etag").is_some(),
+        "Should have _etag system property"
+    );
 
     if let Some(ref real) = real_read {
         let real_doc: serde_json::Value = body_json(real);
@@ -204,51 +216,56 @@ async fn create_database_and_container_through_driver() {
     let (emu_create_db, real_create_db) = backend
         .execute_account_op_and_compare(
             |account| {
-                let op = CosmosOperation::create_database(account.clone()).with_body(
-                    db_body.clone()
-                );
+                let op =
+                    CosmosOperation::create_database(account.clone()).with_body(db_body.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_control_plane(),
-            BodyValidationSpec::StructuralMatch
-        ).await
+            BodyValidationSpec::StructuralMatch,
+        )
+        .await
         .unwrap();
 
-    assert_eq!(u16::from(emu_create_db.status()), 201, "Emulator create DB should return 201");
+    assert_eq!(
+        u16::from(emu_create_db.status()),
+        201,
+        "Emulator create DB should return 201"
+    );
     if let Some(ref real) = real_create_db {
-        assert_eq!(u16::from(real.status()), 201, "Real create DB should return 201");
+        assert_eq!(
+            u16::from(real.status()),
+            201,
+            "Real create DB should return 201"
+        );
     }
 
     // ── Create container ─────────────────────────────────────────
-    let coll_body = serde_json
-        ::to_vec(
-            &serde_json::json!({
+    let coll_body = serde_json::to_vec(&serde_json::json!({
         "id": container_name,
         "partitionKey": {"paths": ["/pk"], "kind": "Hash", "version": 2}
-    })
-        )
-        .unwrap();
+    }))
+    .unwrap();
 
     // Build operations separately for each backend since DatabaseReference
     // needs backend-specific account references.
-    let emu_db_ref = DatabaseReference::from_name(
-        backend.emulator_account.clone(),
-        db_name.clone()
-    );
-    let emu_create_coll_op = CosmosOperation::create_container(emu_db_ref).with_body(
-        coll_body.clone()
-    );
-    let emu_create_coll = backend.emulator_driver
-        .execute_singleton_operation(emu_create_coll_op, OperationOptions::default()).await
+    let emu_db_ref =
+        DatabaseReference::from_name(backend.emulator_account.clone(), db_name.clone());
+    let emu_create_coll_op =
+        CosmosOperation::create_container(emu_db_ref).with_body(coll_body.clone());
+    let emu_create_coll = backend
+        .emulator_driver
+        .execute_singleton_operation(emu_create_coll_op, OperationOptions::default())
+        .await
         .unwrap();
 
-    let real_create_coll = if
-        let (Some(ref driver), Some(ref account)) = (&backend.real_driver, &backend.real_account)
+    let real_create_coll = if let (Some(ref driver), Some(ref account)) =
+        (&backend.real_driver, &backend.real_account)
     {
         let real_db_ref = DatabaseReference::from_name(account.clone(), db_name.clone());
         let real_op = CosmosOperation::create_container(real_db_ref).with_body(coll_body.clone());
         let resp = driver
-            .execute_singleton_operation(real_op, OperationOptions::default()).await
+            .execute_singleton_operation(real_op, OperationOptions::default())
+            .await
             .unwrap();
         Some(resp)
     } else {
@@ -263,20 +280,26 @@ async fn create_database_and_container_through_driver() {
 
     // Compare create-container responses
     if let Some(ref real_resp) = real_create_coll {
-        assert_eq!(u16::from(real_resp.status()), 201, "Real create container should return 201");
+        assert_eq!(
+            u16::from(real_resp.status()),
+            201,
+            "Real create container should return 201"
+        );
         let real_snap = ResponseSnapshot::capture(real_resp, "real");
         let emu_snap = ResponseSnapshot::capture(&emu_create_coll, "emulator");
         compare_responses(
             &real_snap,
             &emu_snap,
             &HeaderValidationSpec::for_control_plane(),
-            BodyValidationSpec::StructuralMatch
+            BodyValidationSpec::StructuralMatch,
         );
     }
 
     // Verify container is resolvable on emulator
-    let _emu_coll = backend.emulator_driver
-        .resolve_container(&db_name, container_name, OperationOptions::default()).await
+    let _emu_coll = backend
+        .emulator_driver
+        .resolve_container(&db_name, container_name, OperationOptions::default())
+        .await
         .unwrap();
 
     // Cleanup
@@ -292,8 +315,7 @@ async fn delete_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
     // ── Create item ──────────────────────────────────────────────
-    let item_body =
-        serde_json::json!({
+    let item_body = serde_json::json!({
         "id": "delete-me",
         "pk": "pk1",
         "value": 1
@@ -305,17 +327,15 @@ async fn delete_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("pk1"),
-                    "delete-me"
-                );
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "delete-me");
                 let op = CosmosOperation::create_item(item).with_body(body_bytes.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
-        ).await
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
         .unwrap();
 
     // ── Delete item ──────────────────────────────────────────────
@@ -324,41 +344,65 @@ async fn delete_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("pk1"),
-                    "delete-me"
-                );
-                (CosmosOperation::delete_item(item), OperationOptions::default())
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "delete-me");
+                (
+                    CosmosOperation::delete_item(item),
+                    OperationOptions::default(),
+                )
             },
             &HeaderValidationSpec::for_delete_operation(),
-            BodyValidationSpec::Ignore
-        ).await
+            BodyValidationSpec::Ignore,
+        )
+        .await
         .unwrap();
 
-    assert_eq!(u16::from(emu_delete.status()), 204, "Emulator delete should return 204 No Content");
+    assert_eq!(
+        u16::from(emu_delete.status()),
+        204,
+        "Emulator delete should return 204 No Content"
+    );
     if let Some(ref real) = real_delete {
-        assert_eq!(u16::from(real.status()), 204, "Real delete should return 204 No Content");
+        assert_eq!(
+            u16::from(real.status()),
+            204,
+            "Real delete should return 204 No Content"
+        );
     }
 
     // ── Verify item is gone (emulator) ───────────────────────────
-    let emu_read_deleted = backend.emulator_driver.execute_singleton_operation(
-        CosmosOperation::read_item(
-            ItemReference::from_name(&emu_container, PartitionKey::from("pk1"), "delete-me")
-        ),
-        OperationOptions::default()
-    ).await;
-    assert!(emu_read_deleted.is_err(), "Emulator: reading deleted item should fail");
+    let emu_read_deleted = backend
+        .emulator_driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "delete-me",
+            )),
+            OperationOptions::default(),
+        )
+        .await;
+    assert!(
+        emu_read_deleted.is_err(),
+        "Emulator: reading deleted item should fail"
+    );
 
     // ── Verify item is gone (real) ───────────────────────────────
     if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
-        let real_read_deleted = driver.execute_singleton_operation(
-            CosmosOperation::read_item(
-                ItemReference::from_name(real_ctr, PartitionKey::from("pk1"), "delete-me")
-            ),
-            OperationOptions::default()
-        ).await;
-        assert!(real_read_deleted.is_err(), "Real: reading deleted item should fail");
+        let real_read_deleted = driver
+            .execute_singleton_operation(
+                CosmosOperation::read_item(ItemReference::from_name(
+                    real_ctr,
+                    PartitionKey::from("pk1"),
+                    "delete-me",
+                )),
+                OperationOptions::default(),
+            )
+            .await;
+        assert!(
+            real_read_deleted.is_err(),
+            "Real: reading deleted item should fail"
+        );
     }
 
     // Cleanup
@@ -374,64 +418,58 @@ async fn replace_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
     // ── Create item ──────────────────────────────────────────────
-    let create_body = serde_json
-        ::to_vec(
-            &serde_json::json!({
+    let create_body = serde_json::to_vec(&serde_json::json!({
         "id": "replace-me",
         "pk": "pk1",
         "value": 1
-    })
-        )
-        .unwrap();
+    }))
+    .unwrap();
 
     backend
         .execute_and_compare(
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("pk1"),
-                    "replace-me"
-                );
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "replace-me");
                 let op = CosmosOperation::create_item(item).with_body(create_body.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
-        ).await
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
         .unwrap();
 
     // ── Replace item ─────────────────────────────────────────────
-    let replace_body = serde_json
-        ::to_vec(
-            &serde_json::json!({
+    let replace_body = serde_json::to_vec(&serde_json::json!({
         "id": "replace-me",
         "pk": "pk1",
         "value": 99
-    })
-        )
-        .unwrap();
+    }))
+    .unwrap();
 
     let (emu_replace, real_replace) = backend
         .execute_and_compare(
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("pk1"),
-                    "replace-me"
-                );
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "replace-me");
                 let op = CosmosOperation::replace_item(item).with_body(replace_body.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
-        ).await
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
         .unwrap();
 
-    assert_eq!(u16::from(emu_replace.status()), 200, "Emulator replace should return 200");
+    assert_eq!(
+        u16::from(emu_replace.status()),
+        200,
+        "Emulator replace should return 200"
+    );
 
     // Verify updated value via read
     let (emu_read, _) = backend
@@ -439,16 +477,17 @@ async fn replace_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("pk1"),
-                    "replace-me"
-                );
-                (CosmosOperation::read_item(item), OperationOptions::default())
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "replace-me");
+                (
+                    CosmosOperation::read_item(item),
+                    OperationOptions::default(),
+                )
             },
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
-        ).await
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
         .unwrap();
 
     let doc: serde_json::Value = body_json(&emu_read);
@@ -479,74 +518,81 @@ async fn read_with_stale_session_token_returns_404_1002() {
     // partition and the read returns plain 404 instead of 404/1002.
 
     // Create a seed item on both backends to get a valid session token from real.
-    let seed_body = serde_json
-        ::to_vec(
-            &serde_json::json!({
+    let seed_body = serde_json::to_vec(&serde_json::json!({
         "id": "seed-for-session",
         "pk": "pk1",
         "value": 0
-    })
-        )
-        .unwrap();
+    }))
+    .unwrap();
 
-    let real_stale_token = if
-        let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container)
-    {
-        let seed_result = driver
-            .execute_singleton_operation(
-                CosmosOperation::create_item(
-                    ItemReference::from_name(
+    let real_stale_token =
+        if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
+            let seed_result = driver
+                .execute_singleton_operation(
+                    CosmosOperation::create_item(ItemReference::from_name(
                         real_ctr,
                         PartitionKey::from("pk1"),
-                        "seed-for-session"
-                    )
-                ).with_body(seed_body.clone()),
-                OperationOptions::default()
-            ).await
-            .expect("Real seed create should succeed");
-        let token = seed_result
-            .headers()
-            .session_token.as_ref()
-            .expect("Real create should return session token")
-            .as_str()
-            .to_string();
-        Some(make_stale_session_token(&token))
-    } else {
-        None
-    };
+                        "seed-for-session",
+                    ))
+                    .with_body(seed_body.clone()),
+                    OperationOptions::default(),
+                )
+                .await
+                .expect("Real seed create should succeed");
+            let token = seed_result
+                .headers()
+                .session_token
+                .as_ref()
+                .expect("Real create should return session token")
+                .as_str()
+                .to_string();
+            Some(make_stale_session_token(&token))
+        } else {
+            None
+        };
 
     // Seed the emulator and derive a stale token using the same pkrange id
     // the emulator routed the seed write to.
-    let emu_seed_result = backend.emulator_driver
+    let emu_seed_result = backend
+        .emulator_driver
         .execute_singleton_operation(
-            CosmosOperation::create_item(
-                ItemReference::from_name(
-                    &emu_container,
-                    PartitionKey::from("pk1"),
-                    "seed-for-session"
-                )
-            ).with_body(seed_body),
-            OperationOptions::default()
-        ).await
+            CosmosOperation::create_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "seed-for-session",
+            ))
+            .with_body(seed_body),
+            OperationOptions::default(),
+        )
+        .await
         .expect("Emulator seed create should succeed");
     let emu_seed_token = emu_seed_result
         .headers()
-        .session_token.as_ref()
+        .session_token
+        .as_ref()
         .expect("Emulator create should return a session token")
         .as_str()
         .to_string();
     let emu_stale_token = make_stale_session_token(&emu_seed_token);
 
     // Disable session retries so the error propagates immediately.
-    let opts = OperationOptionsBuilder::new().with_max_session_retry_count(0).build();
+    let opts = OperationOptionsBuilder::new()
+        .with_max_session_retry_count(0)
+        .build();
 
     // ── Emulator ─────────────────────────────────────────────────
-    let emu_err = backend.emulator_driver.execute_singleton_operation(
-        CosmosOperation::read_item(
-            ItemReference::from_name(&emu_container, PartitionKey::from("pk1"), "no-such-item")
-        ).with_session_token(emu_stale_token.clone()),
-        opts.clone()
-    ).await;
+    let emu_err = backend
+        .emulator_driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "no-such-item",
+            ))
+            .with_session_token(emu_stale_token.clone()),
+            opts.clone(),
+        )
+        .await;
 
     let emu_err = emu_err.expect_err("Emulator should return an error for stale session read");
     assert_eq!(
@@ -554,11 +600,12 @@ async fn read_with_stale_session_token_returns_404_1002() {
         Some(azure_core::http::StatusCode::NotFound),
         "Emulator error should be HTTP 404"
     );
-    let error_code = emu_err
-        .status()
-        .sub_status()
-        .map(|s| s.value().to_string());
-    assert_eq!(error_code.as_deref(), Some("1002"), "Emulator error should have substatus 1002");
+    let error_code = emu_err.status().sub_status().map(|s| s.value().to_string());
+    assert_eq!(
+        error_code.as_deref(),
+        Some("1002"),
+        "Emulator error should have substatus 1002"
+    );
 
     // ── Real account (if available) ──────────────────────────────
     if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
@@ -576,16 +623,22 @@ async fn read_with_stale_session_token_returns_404_1002() {
                 &db_name,
                 "testcoll",
                 "pk1",
-                "seed-for-session"
-            ).await
+                "seed-for-session",
+            )
+            .await
             .expect("seed item should become readable from all regions");
 
-        let real_err = driver.execute_singleton_operation(
-            CosmosOperation::read_item(
-                ItemReference::from_name(real_ctr, PartitionKey::from("pk1"), "no-such-item")
-            ).with_session_token(stale_token),
-            opts.clone()
-        ).await;
+        let real_err = driver
+            .execute_singleton_operation(
+                CosmosOperation::read_item(ItemReference::from_name(
+                    real_ctr,
+                    PartitionKey::from("pk1"),
+                    "no-such-item",
+                ))
+                .with_session_token(stale_token),
+                opts.clone(),
+            )
+            .await;
 
         let real_err = real_err.expect_err("Real should return an error for stale session read");
         // The read targets a nonexistent item, so it returns HTTP 404 on every
@@ -602,10 +655,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
         // item surfaces as a plain 404/0. Only assert 1002 on Session accounts.
         if DualBackend::real_account_uses_session_consistency() {
             assert_eq!(
-                real_err
-                    .status()
-                    .sub_status()
-                    .map(|s| s.value()),
+                real_err.status().sub_status().map(|s| s.value()),
                 Some(1002),
                 "Real 404 stale session read should surface substatus 1002"
             );
@@ -620,28 +670,31 @@ async fn read_with_stale_session_token_returns_404_1002() {
 async fn read_after_split_refreshes_driver_routing_map() {
     let (backend, db_name, emu_container, _) = setup_with_container().await;
 
-    let create = backend.emulator_driver
+    let create = backend
+        .emulator_driver
         .execute_singleton_operation(
-            CosmosOperation::create_item(
-                ItemReference::from_name(&emu_container, PartitionKey::from("pk1"), "split-item")
-            ).with_body(
-                serde_json
-                    ::to_vec(
-                        &serde_json::json!({
+            CosmosOperation::create_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "split-item",
+            ))
+            .with_body(
+                serde_json::to_vec(&serde_json::json!({
                     "id": "split-item",
                     "pk": "pk1",
                     "value": 42
-                })
-                    )
-                    .unwrap()
+                }))
+                .unwrap(),
             ),
-            OperationOptions::default()
-        ).await
+            OperationOptions::default(),
+        )
+        .await
         .unwrap();
 
     let routed_partition_id: u32 = create
         .headers()
-        .session_token.as_ref()
+        .session_token
+        .as_ref()
         .and_then(|token| token.as_str().split(':').next())
         .and_then(|prefix| prefix.parse().ok())
         .expect("create should return a session token with a numeric partition id");
@@ -650,17 +703,21 @@ async fn read_after_split_refreshes_driver_routing_map() {
         &db_name,
         "testcoll",
         routed_partition_id,
-        std::time::Duration::ZERO
+        std::time::Duration::ZERO,
     );
     backend.emulator_store.drain_pending_control_plane().await;
 
-    let read = backend.emulator_driver
+    let read = backend
+        .emulator_driver
         .execute_singleton_operation(
-            CosmosOperation::read_item(
-                ItemReference::from_name(&emu_container, PartitionKey::from("pk1"), "split-item")
-            ),
-            OperationOptions::default()
-        ).await
+            CosmosOperation::read_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "split-item",
+            )),
+            OperationOptions::default(),
+        )
+        .await
         .unwrap();
 
     assert_eq!(
@@ -683,15 +740,12 @@ async fn read_after_split_refreshes_driver_routing_map() {
 async fn upsert_item_through_driver() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
-    let upsert_body = serde_json
-        ::to_vec(
-            &serde_json::json!({
+    let upsert_body = serde_json::to_vec(&serde_json::json!({
         "id": "upsert-item",
         "pk": "pk1",
         "value": 10
-    })
-        )
-        .unwrap();
+    }))
+    .unwrap();
 
     // ── Upsert (insert) ─────────────────────────────────────────
     let (emu_upsert1, real_upsert1) = backend
@@ -699,54 +753,55 @@ async fn upsert_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("pk1"),
-                    "upsert-item"
-                );
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "upsert-item");
                 let op = CosmosOperation::upsert_item(item).with_body(upsert_body.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
-        ).await
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
         .unwrap();
 
-    assert_eq!(u16::from(emu_upsert1.status()), 201, "Emulator upsert-as-insert should return 201");
+    assert_eq!(
+        u16::from(emu_upsert1.status()),
+        201,
+        "Emulator upsert-as-insert should return 201"
+    );
     if let Some(ref real) = real_upsert1 {
         assert_eq!(u16::from(real.status()), 201);
     }
 
     // ── Upsert (update) ─────────────────────────────────────────
-    let upsert_body2 = serde_json
-        ::to_vec(
-            &serde_json::json!({
+    let upsert_body2 = serde_json::to_vec(&serde_json::json!({
         "id": "upsert-item",
         "pk": "pk1",
         "value": 20
-    })
-        )
-        .unwrap();
+    }))
+    .unwrap();
 
     let (emu_upsert2, real_upsert2) = backend
         .execute_and_compare(
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("pk1"),
-                    "upsert-item"
-                );
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "upsert-item");
                 let op = CosmosOperation::upsert_item(item).with_body(upsert_body2.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
-        ).await
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
         .unwrap();
 
-    assert_eq!(u16::from(emu_upsert2.status()), 200, "Emulator upsert-as-update should return 200");
+    assert_eq!(
+        u16::from(emu_upsert2.status()),
+        200,
+        "Emulator upsert-as-update should return 200"
+    );
     if let Some(ref real) = real_upsert2 {
         assert_eq!(u16::from(real.status()), 200);
     }
@@ -757,16 +812,17 @@ async fn upsert_item_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("pk1"),
-                    "upsert-item"
-                );
-                (CosmosOperation::read_item(item), OperationOptions::default())
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("pk1"), "upsert-item");
+                (
+                    CosmosOperation::read_item(item),
+                    OperationOptions::default(),
+                )
             },
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
-        ).await
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
         .unwrap();
 
     let doc: serde_json::Value = body_json(&emu_read);
@@ -780,30 +836,24 @@ async fn upsert_item_through_driver() {
 async fn paused_satellite_converges_to_latest_hub_write() {
     use azure_core::http::Url;
     use azure_data_cosmos_driver::in_memory_emulator::{
-        ConsistencyLevel,
-        InMemoryEmulatorHttpClient,
-        ReplicationConfig,
-        VirtualAccountConfig,
-        VirtualRegion,
-        WriteMode,
+        ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
+        VirtualRegion, WriteMode,
     };
     use azure_data_cosmos_driver::models::AccountReference;
-    use azure_data_cosmos_driver::options::{ DriverOptionsBuilder, Region };
+    use azure_data_cosmos_driver::options::{DriverOptionsBuilder, Region};
 
     let run_id = Uuid::new_v4().to_string()[..8].to_string();
     let east_url = "https://eastus.emulator.local";
     let west_url = "https://westus.emulator.local";
 
-    let config = VirtualAccountConfig::new(
-        vec![
-            VirtualRegion::new("East US", Url::parse(east_url).unwrap()),
-            VirtualRegion::new("West US", Url::parse(west_url).unwrap())
-        ]
-    )
-        .unwrap()
-        .with_write_mode(WriteMode::Single)
-        .with_consistency(ConsistencyLevel::Session)
-        .with_replication_config(ReplicationConfig::immediate());
+    let config = VirtualAccountConfig::new(vec![
+        VirtualRegion::new("East US", Url::parse(east_url).unwrap()),
+        VirtualRegion::new("West US", Url::parse(west_url).unwrap()),
+    ])
+    .unwrap()
+    .with_write_mode(WriteMode::Single)
+    .with_consistency(ConsistencyLevel::Session)
+    .with_replication_config(ReplicationConfig::immediate());
 
     let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
@@ -814,15 +864,12 @@ async fn paused_satellite_converges_to_latest_hub_write() {
     emulator_store.create_container(
         &db_name,
         "hub-testcoll",
-        serde_json
-            ::from_value(
-                serde_json::json!({
+        serde_json::from_value(serde_json::json!({
             "paths": ["/pk"],
             "kind": "Hash",
             "version": 2
-        })
-            )
-            .unwrap()
+        }))
+        .unwrap(),
     );
     emulator_store.pause_replication("West US");
 
@@ -831,50 +878,54 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .create_driver(
             DriverOptionsBuilder::new(account)
                 .with_preferred_regions(vec![Region::WEST_US, Region::EAST_US])
-                .build()
-        ).await
+                .build(),
+        )
+        .await
         .unwrap();
 
     let container = driver
-        .resolve_container(&db_name, "hub-testcoll", OperationOptions::default()).await
+        .resolve_container(&db_name, "hub-testcoll", OperationOptions::default())
+        .await
         .unwrap();
 
     driver
         .execute_singleton_operation(
-            CosmosOperation::create_item(
-                ItemReference::from_name(&container, PartitionKey::from("pk1"), "hub-item")
-            ).with_body(
-                serde_json
-                    ::to_vec(
-                        &serde_json::json!({
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "hub-item",
+            ))
+            .with_body(
+                serde_json::to_vec(&serde_json::json!({
                     "id": "hub-item",
                     "pk": "pk1",
                     "value": 1
-                })
-                    )
-                    .unwrap()
+                }))
+                .unwrap(),
             ),
-            OperationOptions::default()
-        ).await
+            OperationOptions::default(),
+        )
+        .await
         .unwrap();
 
     driver
         .execute_singleton_operation(
-            CosmosOperation::replace_item(
-                ItemReference::from_name(&container, PartitionKey::from("pk1"), "hub-item")
-            ).with_body(
-                serde_json
-                    ::to_vec(
-                        &serde_json::json!({
+            CosmosOperation::replace_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "hub-item",
+            ))
+            .with_body(
+                serde_json::to_vec(&serde_json::json!({
                     "id": "hub-item",
                     "pk": "pk1",
                     "value": 2
-                })
-                    )
-                    .unwrap()
+                }))
+                .unwrap(),
             ),
-            OperationOptions::default()
-        ).await
+            OperationOptions::default(),
+        )
+        .await
         .unwrap();
 
     // Disable cross-region hedging on this read so the §5.2 driver-default
@@ -886,17 +937,20 @@ async fn paused_satellite_converges_to_latest_hub_write() {
     let no_session_retry = OperationOptionsBuilder::new()
         .with_max_session_retry_count(0)
         .with_availability_strategy(
-            azure_data_cosmos_driver::options::AvailabilityStrategy::Disabled
+            azure_data_cosmos_driver::options::AvailabilityStrategy::Disabled,
         )
         .build();
 
     let west_read_before_resume = driver
         .execute_singleton_operation(
-            CosmosOperation::read_item(
-                ItemReference::from_name(&container, PartitionKey::from("pk1"), "hub-item")
-            ),
-            no_session_retry
-        ).await
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "hub-item",
+            )),
+            no_session_retry,
+        )
+        .await
         .expect_err("paused satellite should not observe the hub write yet");
     assert_eq!(
         Some(west_read_before_resume.status().status_code()),
@@ -906,26 +960,32 @@ async fn paused_satellite_converges_to_latest_hub_write() {
 
     let session_retry = OperationOptionsBuilder::new()
         .with_availability_strategy(
-            azure_data_cosmos_driver::options::AvailabilityStrategy::Disabled
+            azure_data_cosmos_driver::options::AvailabilityStrategy::Disabled,
         )
         .build();
     let recovered_read = driver
         .execute_singleton_operation(
-            CosmosOperation::read_item(
-                ItemReference::from_name(&container, PartitionKey::from("pk1"), "hub-item")
-            ),
-            session_retry
-        ).await
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "hub-item",
+            )),
+            session_retry,
+        )
+        .await
         .expect("session retry must route the stale read to a caught-up endpoint");
-    assert_eq!(recovered_read.status().status_code(), azure_core::http::StatusCode::Ok);
+    assert_eq!(
+        recovered_read.status().status_code(),
+        azure_core::http::StatusCode::Ok
+    );
     assert!(
         recovered_read
             .diagnostics()
             .requests()
             .iter()
             .any(|request| {
-                request.status().status_code() == azure_core::http::StatusCode::NotFound &&
-                    request
+                request.status().status_code() == azure_core::http::StatusCode::NotFound
+                    && request
                         .status()
                         .sub_status()
                         .is_some_and(|sub_status| sub_status.value() == 1002)
@@ -937,11 +997,14 @@ async fn paused_satellite_converges_to_latest_hub_write() {
 
     let west_read_after_resume = driver
         .execute_singleton_operation(
-            CosmosOperation::read_item(
-                ItemReference::from_name(&container, PartitionKey::from("pk1"), "hub-item")
-            ),
-            OperationOptions::default()
-        ).await
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "hub-item",
+            )),
+            OperationOptions::default(),
+        )
+        .await
         .unwrap();
 
     assert_eq!(
@@ -958,21 +1021,19 @@ async fn paused_satellite_converges_to_latest_hub_write() {
 async fn create_retries_after_429_throttling() {
     use azure_core::http::Url;
     use azure_data_cosmos_driver::in_memory_emulator::{
-        ConsistencyLevel,
-        ContainerConfig,
-        InMemoryEmulatorHttpClient,
-        VirtualAccountConfig,
+        ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
         VirtualRegion,
     };
     use azure_data_cosmos_driver::models::AccountReference;
 
     let run_id = Uuid::new_v4().to_string()[..8].to_string();
-    let config = VirtualAccountConfig::new(
-        vec![VirtualRegion::new("East US", Url::parse("https://eastus.emulator.local").unwrap())]
-    )
-        .unwrap()
-        .with_consistency(ConsistencyLevel::Session)
-        .with_throttling_enabled(true);
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
+        "East US",
+        Url::parse("https://eastus.emulator.local").unwrap(),
+    )])
+    .unwrap()
+    .with_consistency(ConsistencyLevel::Session)
+    .with_throttling_enabled(true);
 
     let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
@@ -983,67 +1044,72 @@ async fn create_retries_after_429_throttling() {
     emulator_store.create_container_with_config(
         &db_name,
         "throttle_coll",
-        serde_json
-            ::from_value(
-                serde_json::json!({
+        serde_json::from_value(serde_json::json!({
             "paths": ["/pk"],
             "kind": "Hash",
             "version": 2
-        })
-            )
+        }))
+        .unwrap(),
+        ContainerConfig::new()
+            .with_partition_count(1)
+            .with_throughput(400)
+            .build()
             .unwrap(),
-        ContainerConfig::new().with_partition_count(1).with_throughput(400).build().unwrap()
     );
 
     let account = AccountReference::with_master_key(
         Url::parse("https://eastus.emulator.local").unwrap(),
-        "dGVzdGtleQ=="
+        "dGVzdGtleQ==",
     );
     let driver = emulator_runtime
-        .create_driver(DriverOptions::builder(account.clone()).build()).await
+        .create_driver(DriverOptions::builder(account.clone()).build())
+        .await
         .unwrap();
     let container = driver
-        .resolve_container(&db_name, "throttle_coll", OperationOptions::default()).await
+        .resolve_container(&db_name, "throttle_coll", OperationOptions::default())
+        .await
         .unwrap();
 
-    let seed_body = serde_json
-        ::to_vec(
-            &serde_json::json!({
+    let seed_body = serde_json::to_vec(&serde_json::json!({
         "id": "seed-throttle",
         "pk": "pk1",
         "value": 1,
         "padding": "x".repeat(40 * 1024)
-    })
-        )
-        .unwrap();
+    }))
+    .unwrap();
     driver
         .execute_singleton_operation(
-            CosmosOperation::create_item(
-                ItemReference::from_name(&container, PartitionKey::from("pk1"), "seed-throttle")
-            ).with_body(seed_body),
-            OperationOptions::default()
-        ).await
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "seed-throttle",
+            ))
+            .with_body(seed_body),
+            OperationOptions::default(),
+        )
+        .await
         .unwrap();
 
-    let throttled_body = serde_json
-        ::to_vec(
-            &serde_json::json!({
+    let throttled_body = serde_json::to_vec(&serde_json::json!({
         "id": "throttled-item",
         "pk": "pk1",
         "value": 42,
         "padding": "x".repeat(8 * 1024)
-    })
-        )
-        .unwrap();
+    }))
+    .unwrap();
 
     let start = std::time::Instant::now();
     let create = driver
         .execute_singleton_operation(
-            CosmosOperation::create_item(
-                ItemReference::from_name(&container, PartitionKey::from("pk1"), "throttled-item")
-            ).with_body(throttled_body),
-            OperationOptions::default()
-        ).await
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "throttled-item",
+            ))
+            .with_body(throttled_body),
+            OperationOptions::default(),
+        )
+        .await
         .unwrap();
     let elapsed = start.elapsed();
 
@@ -1056,11 +1122,14 @@ async fn create_retries_after_429_throttling() {
 
     let read = driver
         .execute_singleton_operation(
-            CosmosOperation::read_item(
-                ItemReference::from_name(&container, PartitionKey::from("pk1"), "throttled-item")
-            ),
-            OperationOptions::default()
-        ).await
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "throttled-item",
+            )),
+            OperationOptions::default(),
+        )
+        .await
         .unwrap();
 
     let doc: serde_json::Value = body_json(&read);
@@ -1095,19 +1164,12 @@ async fn create_retries_after_429_throttling() {
 async fn read_failover_on_503_via_fault_injection() {
     use azure_core::http::Url;
     use azure_data_cosmos_driver::fault_injection::{
-        FaultInjectionConditionBuilder,
-        FaultInjectionErrorType,
-        FaultInjectionResultBuilder,
-        FaultInjectionRuleBuilder,
-        FaultOperationType,
+        FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+        FaultInjectionRuleBuilder, FaultOperationType,
     };
     use azure_data_cosmos_driver::in_memory_emulator::{
-        ConsistencyLevel,
-        InMemoryEmulatorHttpClient,
-        ReplicationConfig,
-        VirtualAccountConfig,
-        VirtualRegion,
-        WriteMode,
+        ConsistencyLevel, InMemoryEmulatorHttpClient, ReplicationConfig, VirtualAccountConfig,
+        VirtualRegion, WriteMode,
     };
     use azure_data_cosmos_driver::models::AccountReference;
     use azure_data_cosmos_driver::options::DriverOptionsBuilder;
@@ -1135,23 +1197,21 @@ async fn read_failover_on_503_via_fault_injection() {
             .with_condition(fault_condition.clone())
             .with_hit_limit(4) // enough for local retries then failover
             .with_shared_state(Arc::clone(&shared_enabled), Arc::clone(&shared_hit_count))
-            .build()
+            .build(),
     );
 
     // ── Multi-region emulator setup ──────────────────────────────
     let east_url = "https://eastus.emulator.local";
     let west_url = "https://westus.emulator.local";
 
-    let config = VirtualAccountConfig::new(
-        vec![
-            VirtualRegion::new("East US", Url::parse(east_url).unwrap()),
-            VirtualRegion::new("West US", Url::parse(west_url).unwrap())
-        ]
-    )
-        .unwrap()
-        .with_write_mode(WriteMode::Single)
-        .with_consistency(ConsistencyLevel::Session)
-        .with_replication_config(ReplicationConfig::immediate());
+    let config = VirtualAccountConfig::new(vec![
+        VirtualRegion::new("East US", Url::parse(east_url).unwrap()),
+        VirtualRegion::new("West US", Url::parse(west_url).unwrap()),
+    ])
+    .unwrap()
+    .with_write_mode(WriteMode::Single)
+    .with_consistency(ConsistencyLevel::Session)
+    .with_replication_config(ReplicationConfig::immediate());
 
     let emulator = std::sync::Arc::new(InMemoryEmulatorHttpClient::new(config));
     let emulator_store = emulator.store();
@@ -1164,62 +1224,69 @@ async fn read_failover_on_503_via_fault_injection() {
     emulator_store.create_container(
         "fi-testdb",
         "fi-testcoll",
-        serde_json
-            ::from_value(
-                serde_json::json!({
+        serde_json::from_value(serde_json::json!({
             "paths": ["/pk"],
             "kind": "Hash",
             "version": 2
-        })
-            )
-            .unwrap()
+        }))
+        .unwrap(),
     );
 
-    let emu_account = AccountReference::with_master_key(
-        Url::parse(east_url).unwrap(),
-        "dGVzdGtleQ=="
-    );
+    let emu_account =
+        AccountReference::with_master_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
     let emu_driver_opts = DriverOptionsBuilder::new(emu_account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
         .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
         .expect("distinct fault injection rule id")
         .build();
-    let emu_driver = emulator_runtime.create_driver(emu_driver_opts).await.unwrap();
+    let emu_driver = emulator_runtime
+        .create_driver(emu_driver_opts)
+        .await
+        .unwrap();
 
     let emu_container = emu_driver
-        .resolve_container("fi-testdb", "fi-testcoll", OperationOptions::default()).await
+        .resolve_container("fi-testdb", "fi-testcoll", OperationOptions::default())
+        .await
         .unwrap();
 
     // ── Create item (no fault — rule targets ReadItem only) ──────
-    let item_body = serde_json
-        ::to_vec(
-            &serde_json::json!({
+    let item_body = serde_json::to_vec(&serde_json::json!({
         "id": "failover-item",
         "pk": "pk1",
         "value": 42
-    })
-        )
-        .unwrap();
+    }))
+    .unwrap();
 
     let emu_create = emu_driver
         .execute_singleton_operation(
-            CosmosOperation::create_item(
-                ItemReference::from_name(&emu_container, PartitionKey::from("pk1"), "failover-item")
-            ).with_body(item_body.clone()),
-            OperationOptions::default()
-        ).await
+            CosmosOperation::create_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "failover-item",
+            ))
+            .with_body(item_body.clone()),
+            OperationOptions::default(),
+        )
+        .await
         .unwrap();
 
-    assert_eq!(u16::from(emu_create.status()), 201, "Emulator create should return 201");
+    assert_eq!(
+        u16::from(emu_create.status()),
+        201,
+        "Emulator create should return 201"
+    );
 
     // ── Read item — should failover from East US → West US ───────
     let emu_read = emu_driver
         .execute_singleton_operation(
-            CosmosOperation::read_item(
-                ItemReference::from_name(&emu_container, PartitionKey::from("pk1"), "failover-item")
-            ),
-            OperationOptions::default()
-        ).await
+            CosmosOperation::read_item(ItemReference::from_name(
+                &emu_container,
+                PartitionKey::from("pk1"),
+                "failover-item",
+            )),
+            OperationOptions::default(),
+        )
+        .await
         .unwrap();
 
     assert_eq!(
@@ -1242,12 +1309,30 @@ async fn read_failover_on_503_via_fault_injection() {
 
     // Verify key headers on the successful response.
     let emu_headers = emu_read.headers();
-    assert!(emu_headers.activity_id.is_some(), "activity_id should be present");
-    assert!(emu_headers.request_charge.is_some(), "request_charge should be present");
-    assert!(emu_headers.session_token.is_some(), "session_token should be present");
-    assert!(emu_headers.etag.is_some(), "etag should be present on successful read");
-    assert!(emu_headers.server_duration_ms.is_some(), "server_duration_ms should be present");
-    assert!(emu_read.status().sub_status().is_none(), "successful read should have no substatus");
+    assert!(
+        emu_headers.activity_id.is_some(),
+        "activity_id should be present"
+    );
+    assert!(
+        emu_headers.request_charge.is_some(),
+        "request_charge should be present"
+    );
+    assert!(
+        emu_headers.session_token.is_some(),
+        "session_token should be present"
+    );
+    assert!(
+        emu_headers.etag.is_some(),
+        "etag should be present on successful read"
+    );
+    assert!(
+        emu_headers.server_duration_ms.is_some(),
+        "server_duration_ms should be present"
+    );
+    assert!(
+        emu_read.status().sub_status().is_none(),
+        "successful read should have no substatus"
+    );
 
     // Verify system properties in body.
     assert!(doc.get("_rid").is_some(), "should have _rid");
@@ -1259,8 +1344,9 @@ async fn read_failover_on_503_via_fault_injection() {
         fault_condition,
         fault_result,
         shared_enabled,
-        shared_hit_count
-    ).await;
+        shared_hit_count,
+    )
+    .await;
 
     if let Some(real_read) = real_result {
         let real_snap = ResponseSnapshot::capture(&real_read, "real");
@@ -1269,7 +1355,7 @@ async fn read_failover_on_503_via_fault_injection() {
             &real_snap,
             &emu_snap,
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
+            BodyValidationSpec::DocumentMatch,
         );
     }
 }
@@ -1285,21 +1371,21 @@ async fn try_real_failover_comparison(
     fault_condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
     fault_result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
     shared_enabled: std::sync::Arc<std::sync::atomic::AtomicBool>,
-    shared_hit_count: std::sync::Arc<std::sync::atomic::AtomicU32>
+    shared_hit_count: std::sync::Arc<std::sync::atomic::AtomicU32>,
 ) -> Option<azure_data_cosmos_driver::models::CosmosResponse> {
     use azure_core::http::Url;
     use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
     use azure_data_cosmos_driver::fault_injection::FaultInjectionRuleBuilder;
-    use azure_data_cosmos_driver::models::{ AccountReference, ConnectionString };
+    use azure_data_cosmos_driver::models::{AccountReference, ConnectionString};
     use azure_data_cosmos_driver::options::{
-        ConnectionPoolOptions,
-        DriverOptionsBuilder,
-        ServerCertificateValidation,
+        ConnectionPoolOptions, DriverOptionsBuilder, ServerCertificateValidation,
     };
     use std::sync::Arc;
 
     let conn_str_raw = std::env::var("AZURE_COSMOS_CONNECTION_STRING").ok()?;
-    let mode = std::env::var("AZURE_COSMOS_TEST_MODE").unwrap_or_default().to_lowercase();
+    let mode = std::env::var("AZURE_COSMOS_TEST_MODE")
+        .unwrap_or_default()
+        .to_lowercase();
     if mode == "skipped" {
         return None;
     }
@@ -1317,18 +1403,22 @@ async fn try_real_failover_comparison(
             .with_condition(fault_condition)
             .with_hit_limit(4)
             .with_shared_state(shared_enabled, shared_hit_count)
-            .build()
+            .build(),
     );
 
     let mut pool_builder = ConnectionPoolOptions::builder();
     if conn_str.account_endpoint().contains("localhost") {
         pool_builder = pool_builder.with_server_certificate_validation(
-            ServerCertificateValidation::RequiredUnlessEmulator
+            ServerCertificateValidation::RequiredUnlessEmulator,
         );
     }
     let pool = pool_builder.build().ok()?;
 
-    let runtime = CosmosDriverRuntime::builder().with_connection_pool(pool).build().await.ok()?;
+    let runtime = CosmosDriverRuntime::builder()
+        .with_connection_pool(pool)
+        .build()
+        .await
+        .ok()?;
 
     let driver_opts = DriverOptionsBuilder::new(account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
@@ -1345,57 +1435,67 @@ async fn try_real_failover_comparison(
     let db_body = serde_json::to_vec(&serde_json::json!({"id": &db_name})).ok()?;
     let db_ref = azure_data_cosmos_driver::models::DatabaseReference::from_name(
         account.clone(),
-        db_name.clone()
+        db_name.clone(),
     );
     driver
         .execute_singleton_operation(
             CosmosOperation::create_database(account.clone()).with_body(db_body),
-            OperationOptions::default()
-        ).await
+            OperationOptions::default(),
+        )
+        .await
         .ok()?;
 
-    let coll_body = serde_json
-        ::to_vec(
-            &serde_json::json!({
+    let coll_body = serde_json::to_vec(&serde_json::json!({
         "id": "fi-testcoll",
         "partitionKey": {"paths": ["/pk"], "kind": "Hash", "version": 2}
-    })
-        )
-        .ok()?;
+    }))
+    .ok()?;
     driver
         .execute_singleton_operation(
             CosmosOperation::create_container(db_ref.clone()).with_body(coll_body),
-            OperationOptions::default()
-        ).await
+            OperationOptions::default(),
+        )
+        .await
         .ok()?;
 
     let container = driver
-        .resolve_container(&db_name, "fi-testcoll", OperationOptions::default()).await
+        .resolve_container(&db_name, "fi-testcoll", OperationOptions::default())
+        .await
         .ok()?;
 
     // Create item.
     driver
         .execute_singleton_operation(
-            CosmosOperation::create_item(
-                ItemReference::from_name(&container, PartitionKey::from("pk1"), "failover-item")
-            ).with_body(item_body.to_vec()),
-            OperationOptions::default()
-        ).await
+            CosmosOperation::create_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "failover-item",
+            ))
+            .with_body(item_body.to_vec()),
+            OperationOptions::default(),
+        )
+        .await
         .ok()?;
 
     // Read item — should failover.
-    let read_result = driver.execute_singleton_operation(
-        CosmosOperation::read_item(
-            ItemReference::from_name(&container, PartitionKey::from("pk1"), "failover-item")
-        ),
-        OperationOptions::default()
-    ).await;
+    let read_result = driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "failover-item",
+            )),
+            OperationOptions::default(),
+        )
+        .await;
 
     // Cleanup.
-    let _ = driver.execute_singleton_operation(
-        CosmosOperation::delete_database(db_ref),
-        OperationOptions::default()
-    ).await;
+    let _ = driver
+        .execute_singleton_operation(
+            CosmosOperation::delete_database(db_ref),
+            OperationOptions::default(),
+        )
+        .await;
 
     read_result.ok()
 }
@@ -1425,17 +1525,23 @@ async fn setup_with_v1_container() -> (
 
     if backend.has_real_backend() {
         backend.create_real_database(&db_name).await.unwrap();
-        backend.create_real_container_v1(&db_name, container_name, pk_path).await.unwrap();
+        backend
+            .create_real_container_v1(&db_name, container_name, pk_path)
+            .await
+            .unwrap();
     }
 
-    let emu_container = backend.emulator_driver
-        .resolve_container(&db_name, container_name, OperationOptions::default()).await
+    let emu_container = backend
+        .emulator_driver
+        .resolve_container(&db_name, container_name, OperationOptions::default())
+        .await
         .unwrap();
     let real_container = if let Some(ref real_driver) = backend.real_driver {
         Some(
             real_driver
-                .resolve_container(&db_name, container_name, OperationOptions::default()).await
-                .unwrap()
+                .resolve_container(&db_name, container_name, OperationOptions::default())
+                .await
+                .unwrap(),
         )
     } else {
         None
@@ -1460,17 +1566,15 @@ async fn v1_create_read_replace_delete_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("v1-pk-A"),
-                    "v1-item-1"
-                );
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("v1-pk-A"), "v1-item-1");
                 let op = CosmosOperation::create_item(item).with_body(create_bytes.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
-        ).await
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
         .unwrap();
     assert_eq!(u16::from(emu_create.status()), 201);
     if let Some(ref real) = real_create {
@@ -1483,16 +1587,17 @@ async fn v1_create_read_replace_delete_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("v1-pk-A"),
-                    "v1-item-1"
-                );
-                (CosmosOperation::read_item(item), OperationOptions::default())
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("v1-pk-A"), "v1-item-1");
+                (
+                    CosmosOperation::read_item(item),
+                    OperationOptions::default(),
+                )
             },
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
-        ).await
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
         .unwrap();
     assert_eq!(u16::from(emu_read.status()), 200);
     let doc: serde_json::Value = body_json(&emu_read);
@@ -1508,17 +1613,15 @@ async fn v1_create_read_replace_delete_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("v1-pk-A"),
-                    "v1-item-1"
-                );
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("v1-pk-A"), "v1-item-1");
                 let op = CosmosOperation::replace_item(item).with_body(replace_bytes.clone());
                 (op, OperationOptions::default())
             },
             &HeaderValidationSpec::for_point_operation(),
-            BodyValidationSpec::DocumentMatch
-        ).await
+            BodyValidationSpec::DocumentMatch,
+        )
+        .await
         .unwrap();
     assert_eq!(u16::from(emu_replace.status()), 200);
 
@@ -1528,16 +1631,17 @@ async fn v1_create_read_replace_delete_through_driver() {
             &emu_container,
             real_container.as_ref(),
             |container| {
-                let item = ItemReference::from_name(
-                    container,
-                    PartitionKey::from("v1-pk-A"),
-                    "v1-item-1"
-                );
-                (CosmosOperation::delete_item(item), OperationOptions::default())
+                let item =
+                    ItemReference::from_name(container, PartitionKey::from("v1-pk-A"), "v1-item-1");
+                (
+                    CosmosOperation::delete_item(item),
+                    OperationOptions::default(),
+                )
             },
             &HeaderValidationSpec::for_delete_operation(),
-            BodyValidationSpec::Ignore
-        ).await
+            BodyValidationSpec::Ignore,
+        )
+        .await
         .unwrap();
     assert_eq!(u16::from(emu_delete.status()), 204);
 
@@ -1557,17 +1661,18 @@ async fn v1_writes_distribute_across_partitions() {
         let id = format!("v1-doc-{}", i);
         let body = serde_json::json!({"id": id, "pk": pk, "value": i as i64});
         let body_bytes = serde_json::to_vec(&body).unwrap();
-        let resp = backend.emulator_driver
+        let resp = backend
+            .emulator_driver
             .execute_singleton_operation(
-                CosmosOperation::create_item(
-                    ItemReference::from_name(
-                        &emu_container,
-                        PartitionKey::from(pk.clone()),
-                        id.clone()
-                    )
-                ).with_body(body_bytes),
-                OperationOptions::default()
-            ).await
+                CosmosOperation::create_item(ItemReference::from_name(
+                    &emu_container,
+                    PartitionKey::from(pk.clone()),
+                    id.clone(),
+                ))
+                .with_body(body_bytes),
+                OperationOptions::default(),
+            )
+            .await
             .unwrap();
         assert_eq!(u16::from(resp.status()), 201);
         written += 1;
@@ -1583,13 +1688,17 @@ async fn v1_writes_distribute_across_partitions() {
     for i in 0..200 {
         let pk = format!("v1-tenant-{}", i);
         let id = format!("v1-doc-{}", i);
-        let resp = backend.emulator_driver
+        let resp = backend
+            .emulator_driver
             .execute_singleton_operation(
-                CosmosOperation::read_item(
-                    ItemReference::from_name(&emu_container, PartitionKey::from(pk), id)
-                ),
-                OperationOptions::default()
-            ).await
+                CosmosOperation::read_item(ItemReference::from_name(
+                    &emu_container,
+                    PartitionKey::from(pk),
+                    id,
+                )),
+                OperationOptions::default(),
+            )
+            .await
             .unwrap();
         if let Some(token) = resp.headers().session_token.as_ref() {
             if let Some(prefix) = token.as_str().split(':').next() {
@@ -1616,16 +1725,17 @@ async fn v1_writes_distribute_across_partitions() {
 async fn error_carries_extractable_diagnostics() {
     let (backend, db_name, emu_container, _real_container) = setup_with_container().await;
 
-    let read_missing = backend.emulator_driver.execute_operation(
-        CosmosOperation::read_item(
-            ItemReference::from_name(
+    let read_missing = backend
+        .emulator_driver
+        .execute_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
                 &emu_container,
                 PartitionKey::from("pk-not-here"),
-                "id-that-does-not-exist"
-            )
-        ),
-        OperationOptions::default()
-    ).await;
+                "id-that-does-not-exist",
+            )),
+            OperationOptions::default(),
+        )
+        .await;
 
     let err = read_missing.expect_err("read of missing item must fail");
     assert_eq!(

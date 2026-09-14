@@ -5,14 +5,14 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     diagnostics::TransportKind,
     feed::FeedScope,
-    options::{ ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom },
+    options::{ChangeFeedMode, ChangeFeedOptions, ChangeFeedStartFrom},
 };
 use futures::StreamExt;
 use time::OffsetDateTime;
 
 use crate::e2e_test_cases::{
-    fixture::{ E2eTestFixture, TestResult },
-    support::{ assert_transport, should_run, Item },
+    fixture::{E2eTestFixture, TestResult},
+    support::{assert_transport, should_run, Item},
 };
 
 #[tokio::test]
@@ -27,13 +27,17 @@ async fn all_versions_rejects_unsupported_starts() -> TestResult {
 
     E2eTestFixture::run(async |fixture| {
         let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
-        let mut available = fixture.container.query_change_feed::<Item>(
-            FeedScope::partition("A"),
-            ChangeFeedStartFrom::Now,
-            Some(options)
-        ).await?;
+        let mut available = fixture
+            .container
+            .query_change_feed::<Item>(
+                FeedScope::partition("A"),
+                ChangeFeedStartFrom::Now,
+                Some(options),
+            )
+            .await?;
         let page = available
-            .next().await
+            .next()
+            .await
             .expect("all-versions change feed must return an initial page")?;
         assert!(page.items().is_empty());
         assert_transport(page.diagnostics().as_ref(), TransportKind::Gateway);
@@ -42,24 +46,27 @@ async fn all_versions_rejects_unsupported_starts() -> TestResult {
             ChangeFeedStartFrom::Beginning,
             ChangeFeedStartFrom::PointInTime(OffsetDateTime::now_utc()),
         ] {
-            let options = ChangeFeedOptions::default().with_mode(
-                ChangeFeedMode::AllVersionsAndDeletes
-            );
-            let mut changes = fixture.container.query_change_feed::<Item>(
-                FeedScope::partition("A"),
-                start,
-                Some(options)
-            ).await?;
+            let options =
+                ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
+            let mut changes = fixture
+                .container
+                .query_change_feed::<Item>(FeedScope::partition("A"), start, Some(options))
+                .await?;
             let error = changes
-                .next().await
+                .next()
+                .await
                 .expect("change feed must return an error page")
                 .expect_err("unsupported all-versions start must fail");
             assert_eq!(error.status().status_code(), StatusCode::BadRequest);
             assert_transport(
-                error.diagnostics().expect("change-feed error must include diagnostics").as_ref(),
-                TransportKind::Gateway
+                error
+                    .diagnostics()
+                    .expect("change-feed error must include diagnostics")
+                    .as_ref(),
+                TransportKind::Gateway,
             );
         }
         Ok(())
-    }).await
+    })
+    .await
 }

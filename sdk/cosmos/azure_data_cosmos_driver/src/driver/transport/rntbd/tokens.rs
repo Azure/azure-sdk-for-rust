@@ -9,7 +9,7 @@ use azure_core::error::ErrorKind;
 use uuid::Uuid;
 
 use crate::{
-    models::{ DefaultConsistencyLevel, OperationType, ResourceType },
+    models::{DefaultConsistencyLevel, OperationType, ResourceType},
     options::ReadConsistencyStrategy,
 };
 
@@ -73,7 +73,9 @@ impl TryFrom<u8> for TokenType {
             0x0d => Ok(Self::Float),
             0x0e => Ok(Self::Double),
             0xff => Ok(Self::Invalid),
-            other => Err(data_conversion_error(format!("unknown RNTBD token type 0x{other:02X}"))),
+            other => Err(data_conversion_error(format!(
+                "unknown RNTBD token type 0x{other:02X}"
+            ))),
         }
     }
 }
@@ -219,7 +221,9 @@ impl TokenValue {
             }
             TokenType::SmallBytes => {
                 let len = read_u8(src)? as usize;
-                Ok(Self::SmallBytes(read_exact(src, len, "small bytes")?.to_vec()))
+                Ok(Self::SmallBytes(
+                    read_exact(src, len, "small bytes")?.to_vec(),
+                ))
             }
             TokenType::Bytes => {
                 let len = read_u16_le(src)? as usize;
@@ -227,12 +231,15 @@ impl TokenValue {
             }
             TokenType::ULongBytes => {
                 let len = read_u32_le(src)? as usize;
-                Ok(Self::ULongBytes(read_exact(src, len, "ulong bytes")?.to_vec()))
+                Ok(Self::ULongBytes(
+                    read_exact(src, len, "ulong bytes")?.to_vec(),
+                ))
             }
             TokenType::Float => Ok(Self::Float(f32::from_le_bytes(read_array(src)?))),
             TokenType::Double => Ok(Self::Double(f64::from_le_bytes(read_array(src)?))),
-            TokenType::Invalid =>
-                Err(data_conversion_error("invalid RNTBD token type sentinel encountered")),
+            TokenType::Invalid => Err(data_conversion_error(
+                "invalid RNTBD token type sentinel encountered",
+            )),
         }
     }
 }
@@ -279,11 +286,17 @@ impl Token {
     }
 
     pub(crate) fn authorization_token(value: String) -> Self {
-        Self::new(RntbdRequestToken::AuthorizationToken, TokenValue::String(value))
+        Self::new(
+            RntbdRequestToken::AuthorizationToken,
+            TokenValue::String(value),
+        )
     }
 
     pub(crate) fn payload_present(value: bool) -> Self {
-        Self::new(RntbdRequestToken::PayloadPresent, TokenValue::Byte(u8::from(value)))
+        Self::new(
+            RntbdRequestToken::PayloadPresent,
+            TokenValue::Byte(u8::from(value)),
+        )
     }
 
     pub(crate) fn date(value: String) -> Self {
@@ -313,11 +326,17 @@ impl Token {
 
     /// Point-in-time change feed start (id `0x0047`, `String`).
     pub(crate) fn if_modified_since(value: String) -> Self {
-        Self::new(RntbdRequestToken::IfModifiedSince, TokenValue::String(value))
+        Self::new(
+            RntbdRequestToken::IfModifiedSince,
+            TokenValue::String(value),
+        )
     }
 
     pub(crate) fn consistency_level(value: DefaultConsistencyLevel) -> Self {
-        Self::new(RntbdRequestToken::ConsistencyLevel, TokenValue::Byte(value.rntbd_wire_byte()))
+        Self::new(
+            RntbdRequestToken::ConsistencyLevel,
+            TokenValue::Byte(value.rntbd_wire_byte()),
+        )
     }
 
     /// `ReadConsistencyStrategy` token (id `0x00FE`, `Byte`) shared by
@@ -335,7 +354,10 @@ impl Token {
             );
             0x00
         });
-        Self::new(RntbdRequestToken::ReadConsistencyStrategy, TokenValue::Byte(byte))
+        Self::new(
+            RntbdRequestToken::ReadConsistencyStrategy,
+            TokenValue::Byte(byte),
+        )
     }
 
     pub(crate) fn database_name(value: String) -> Self {
@@ -367,38 +389,59 @@ impl Token {
     }
 
     pub(crate) fn effective_partition_key(value: Vec<u8>) -> Self {
-        Self::new(RntbdRequestToken::EffectivePartitionKey, TokenValue::Bytes(value))
+        Self::new(
+            RntbdRequestToken::EffectivePartitionKey,
+            TokenValue::Bytes(value),
+        )
     }
 
     pub(crate) fn sdk_supported_capabilities(value: u32) -> Self {
-        Self::new(RntbdRequestToken::SDKSupportedCapabilities, TokenValue::ULong(value))
+        Self::new(
+            RntbdRequestToken::SDKSupportedCapabilities,
+            TokenValue::ULong(value),
+        )
     }
 
     /// `AllowTentativeWrites` (ID 0x0066, Byte). Emitted as `1` on every request.
     pub(crate) fn allow_tentative_writes(value: bool) -> Self {
-        Self::new(RntbdRequestToken::AllowTentativeWrites, TokenValue::Byte(u8::from(value)))
+        Self::new(
+            RntbdRequestToken::AllowTentativeWrites,
+            TokenValue::Byte(u8::from(value)),
+        )
     }
 
     /// `ReturnPreference` (ID 0x0082, Byte). Emitted as `1` on every request.
     pub(crate) fn return_preference(value: bool) -> Self {
-        Self::new(RntbdRequestToken::ReturnPreference, TokenValue::Byte(u8::from(value)))
+        Self::new(
+            RntbdRequestToken::ReturnPreference,
+            TokenValue::Byte(u8::from(value)),
+        )
     }
 
     pub(crate) fn global_database_account_name(value: String) -> Self {
-        Self::new(RntbdRequestToken::GlobalDatabaseAccountName, TokenValue::String(value))
+        Self::new(
+            RntbdRequestToken::GlobalDatabaseAccountName,
+            TokenValue::String(value),
+        )
     }
 
     /// `SupportedQueryFeatures` (ID 0x00FF, String). Forwarded from the HTTP
     /// header `x-ms-cosmos-supported-query-features` so the proxy can resolve a
     /// QueryPlan compatible with what the client supports.
     pub(crate) fn supported_query_features(value: String) -> Self {
-        Self::new(RntbdRequestToken::SupportedQueryFeatures, TokenValue::String(value))
+        Self::new(
+            RntbdRequestToken::SupportedQueryFeatures,
+            TokenValue::String(value),
+        )
     }
 
     /// `QueryVersion` (ID 0x0100, SmallString). Forwarded from the HTTP header
     /// `x-ms-cosmos-query-version`.
     pub(crate) fn query_version(value: String) -> Self {
-        Self::new(RntbdRequestToken::QueryVersion, TokenValue::SmallString(value))
+        Self::new(
+            RntbdRequestToken::QueryVersion,
+            TokenValue::SmallString(value),
+        )
     }
 
     /// `StartEpkHash` (ID 0x00D2, Bytes). Per-partition routing key for
@@ -418,7 +461,10 @@ impl Token {
     /// expects this token alongside StartEpkHash/EndEpkHash to identify the
     /// target physical partition.
     pub(crate) fn partition_key_range_id(value: String) -> Self {
-        Self::new(RntbdRequestToken::PartitionKeyRangeId, TokenValue::String(value))
+        Self::new(
+            RntbdRequestToken::PartitionKeyRangeId,
+            TokenValue::String(value),
+        )
     }
 
     /// Change-feed mode (`A_IM`, ID `0x003F`, `String`).
@@ -428,14 +474,20 @@ impl Token {
 
     /// Change-feed response shape (`ChangeFeedWireFormatVersion`, ID `0x00B2`, `String`).
     pub(crate) fn change_feed_wire_format_version(value: String) -> Self {
-        Self::new(RntbdRequestToken::ChangeFeedWireFormatVersion, TokenValue::String(value))
+        Self::new(
+            RntbdRequestToken::ChangeFeedWireFormatVersion,
+            TokenValue::String(value),
+        )
     }
 
     /// Pagination cursor echoed back to the proxy on subsequent feed/query
     /// requests (ID 0x0006, String) — the SDK passes the value through
     /// unchanged so the backend can resume from the previous offset.
     pub(crate) fn continuation_token(value: String) -> Self {
-        Self::new(RntbdRequestToken::ContinuationToken, TokenValue::String(value))
+        Self::new(
+            RntbdRequestToken::ContinuationToken,
+            TokenValue::String(value),
+        )
     }
 
     /// Returns the `Byte` value, or `None` if the token holds a different type.
@@ -822,10 +874,9 @@ impl From<ResourceType> for RntbdResourceType {
             // Distributed transactions do not use the thin-client RNTBD
             // encoder; they route through the standard gateway coordinator.
             #[cfg(feature = "preview_dtx")]
-            ResourceType::DistributedTransactionBatch =>
-                unreachable!(
-                    "ResourceType::DistributedTransactionBatch must not reach RNTBD encoding"
-                ),
+            ResourceType::DistributedTransactionBatch => unreachable!(
+                "ResourceType::DistributedTransactionBatch must not reach RNTBD encoding"
+            ),
         };
         Self(id)
     }
@@ -839,8 +890,9 @@ impl TryFrom<u16> for RntbdResourceType {
             0x0014 | 0x0001 | 0x0002 | 0x0003 | 0x0007 | 0x0009 | 0x000a | 0x0016 | 0x000f => {
                 Ok(Self(value))
             }
-            other =>
-                Err(data_conversion_error(format!("unknown RNTBD resource type 0x{other:04X}"))),
+            other => Err(data_conversion_error(format!(
+                "unknown RNTBD resource type 0x{other:04X}"
+            ))),
         }
     }
 }
@@ -900,7 +952,7 @@ impl From<OperationType> for RntbdOperationType {
             // Distributed transactions do not use the thin-client RNTBD
             // encoder; they route through the standard gateway coordinator.
             #[cfg(feature = "preview_dtx")]
-            | OperationType::CommitDistributedTransaction
+            OperationType::CommitDistributedTransaction
             | OperationType::ReadDistributedTransaction => {
                 unreachable!("distributed transaction operations must not reach RNTBD encoding")
             }
@@ -914,22 +966,11 @@ impl TryFrom<u16> for RntbdOperationType {
 
     fn try_from(value: u16) -> azure_core::Result<Self> {
         match value {
-            | 0x0001
-            | 0x0002
-            | 0x0003
-            | 0x0004
-            | 0x0005
-            | 0x0006
-            | 0x0008
-            | 0x0009
-            | 0x000f
-            | 0x0011
-            | 0x0012
-            | 0x0013
-            | 0x0025
-            | 0x0042 => Ok(Self(value)),
-            other =>
-                Err(data_conversion_error(format!("unknown RNTBD operation type 0x{other:04X}"))),
+            0x0001 | 0x0002 | 0x0003 | 0x0004 | 0x0005 | 0x0006 | 0x0008 | 0x0009 | 0x000f
+            | 0x0011 | 0x0012 | 0x0013 | 0x0025 | 0x0042 => Ok(Self(value)),
+            other => Err(data_conversion_error(format!(
+                "unknown RNTBD operation type 0x{other:04X}"
+            ))),
         }
     }
 }
@@ -1025,11 +1066,10 @@ fn read_array<const N: usize>(src: &mut &[u8]) -> azure_core::Result<[u8; N]> {
 
 fn read_exact<'a>(src: &mut &'a [u8], len: usize, context: &str) -> azure_core::Result<&'a [u8]> {
     if src.len() < len {
-        return Err(
-            data_conversion_error(
-                format!("RNTBD {context} needs {len} bytes but only {} remain", src.len())
-            )
-        );
+        return Err(data_conversion_error(format!(
+            "RNTBD {context} needs {len} bytes but only {} remain",
+            src.len()
+        )));
     }
     let (head, tail) = src.split_at(len);
     *src = tail;
@@ -1038,51 +1078,41 @@ fn read_exact<'a>(src: &mut &'a [u8], len: usize, context: &str) -> azure_core::
 
 fn read_utf8(src: &mut &[u8], len: usize) -> azure_core::Result<String> {
     let bytes = read_exact(src, len, "UTF-8 string")?;
-    String::from_utf8(bytes.to_vec()).map_err(|e|
-        azure_core::Error::new(ErrorKind::DataConversion, e)
-    )
+    String::from_utf8(bytes.to_vec())
+        .map_err(|e| azure_core::Error::new(ErrorKind::DataConversion, e))
 }
 
 fn write_len_prefixed_u8(out: &mut impl Write, bytes: &[u8]) -> azure_core::Result<()> {
-    let len = u8
-        ::try_from(bytes.len())
-        .map_err(|_| {
-            data_conversion_error(
-                format!("RNTBD value length {} exceeds u8 length-prefix maximum (255)", bytes.len())
-            )
-        })?;
+    let len = u8::try_from(bytes.len()).map_err(|_| {
+        data_conversion_error(format!(
+            "RNTBD value length {} exceeds u8 length-prefix maximum (255)",
+            bytes.len()
+        ))
+    })?;
     out.write_all(&[len])?;
     out.write_all(bytes)?;
     Ok(())
 }
 
 fn write_len_prefixed_u16(out: &mut impl Write, bytes: &[u8]) -> azure_core::Result<()> {
-    let len = u16
-        ::try_from(bytes.len())
-        .map_err(|_| {
-            data_conversion_error(
-                format!(
-                    "RNTBD value length {} exceeds u16 length-prefix maximum (65535)",
-                    bytes.len()
-                )
-            )
-        })?;
+    let len = u16::try_from(bytes.len()).map_err(|_| {
+        data_conversion_error(format!(
+            "RNTBD value length {} exceeds u16 length-prefix maximum (65535)",
+            bytes.len()
+        ))
+    })?;
     out.write_all(&len.to_le_bytes())?;
     out.write_all(bytes)?;
     Ok(())
 }
 
 fn write_len_prefixed_u32(out: &mut impl Write, bytes: &[u8]) -> azure_core::Result<()> {
-    let len = u32
-        ::try_from(bytes.len())
-        .map_err(|_| {
-            data_conversion_error(
-                format!(
-                    "RNTBD value length {} exceeds u32 length-prefix maximum (4294967295)",
-                    bytes.len()
-                )
-            )
-        })?;
+    let len = u32::try_from(bytes.len()).map_err(|_| {
+        data_conversion_error(format!(
+            "RNTBD value length {} exceeds u32 length-prefix maximum (4294967295)",
+            bytes.len()
+        ))
+    })?;
     out.write_all(&len.to_le_bytes())?;
     out.write_all(bytes)?;
     Ok(())
@@ -1196,8 +1226,14 @@ mod tests {
             // u16 id (LE) + u8 token type + u8 byte value
             assert_eq!(encoded[0], 0xfe);
             assert_eq!(encoded[1], 0x00);
-            assert_eq!(encoded[2], 0x00, "ReadConsistencyStrategy must be Byte (0x00)");
-            assert_eq!(encoded[3], expected_byte, "{strategy:?} byte value mismatch");
+            assert_eq!(
+                encoded[2], 0x00,
+                "ReadConsistencyStrategy must be Byte (0x00)"
+            );
+            assert_eq!(
+                encoded[3], expected_byte,
+                "{strategy:?} byte value mismatch"
+            );
         }
     }
 }

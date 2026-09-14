@@ -126,39 +126,32 @@ static IF_MATCH: HeaderName = HeaderName::from_static("if-match");
 static IF_NONE_MATCH: HeaderName = HeaderName::from_static("if-none-match");
 static IF_MODIFIED_SINCE: HeaderName = HeaderName::from_static("if-modified-since");
 static SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
-static READ_CONSISTENCY_STRATEGY: HeaderName = HeaderName::from_static(
-    "x-ms-cosmos-read-consistency-strategy"
-);
+static READ_CONSISTENCY_STRATEGY: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-read-consistency-strategy");
 static ACTIVITY_ID: HeaderName = HeaderName::from_static("x-ms-activity-id");
-static CONTENT_RESPONSE: HeaderName = HeaderName::from_static(
-    "x-ms-cosmos-populate-content-response-on-write"
-);
+static CONTENT_RESPONSE: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-populate-content-response-on-write");
 static PREFER: HeaderName = HeaderName::from_static("prefer");
 static IS_QUERY: HeaderName = HeaderName::from_static("x-ms-documentdb-isquery");
 static IS_QUERY_LEGACY: HeaderName = HeaderName::from_static("x-ms-documentdb-query");
-static IS_QUERY_PLAN_REQUEST: HeaderName = HeaderName::from_static(
-    "x-ms-cosmos-is-query-plan-request"
-);
+static IS_QUERY_PLAN_REQUEST: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-is-query-plan-request");
 static MAX_ITEM_COUNT: HeaderName = HeaderName::from_static("x-ms-max-item-count");
 static CONTINUATION: HeaderName = HeaderName::from_static("x-ms-continuation");
-static PARTITION_KEY_RANGE_ID: HeaderName = HeaderName::from_static(
-    "x-ms-documentdb-partitionkeyrangeid"
-);
+static PARTITION_KEY_RANGE_ID: HeaderName =
+    HeaderName::from_static("x-ms-documentdb-partitionkeyrangeid");
 static START_EPK: HeaderName = HeaderName::from_static("x-ms-start-epk");
 static END_EPK: HeaderName = HeaderName::from_static("x-ms-end-epk");
 static READ_FEED_KEY_TYPE: HeaderName = HeaderName::from_static("x-ms-read-key-type");
 static IS_BATCH_REQUEST: HeaderName = HeaderName::from_static("x-ms-cosmos-is-batch-request");
 static OFFER_THROUGHPUT: HeaderName = HeaderName::from_static("x-ms-offer-throughput");
-static SUPPORTED_SERIALIZATION_FORMATS: HeaderName = HeaderName::from_static(
-    "x-ms-cosmos-supported-serialization-formats"
-);
-static OFFER_AUTOPILOT_SETTINGS: HeaderName = HeaderName::from_static(
-    "x-ms-cosmos-offer-autopilot-settings"
-);
+static SUPPORTED_SERIALIZATION_FORMATS: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-supported-serialization-formats");
+static OFFER_AUTOPILOT_SETTINGS: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
 static A_IM: HeaderName = HeaderName::from_static("a-im");
-static CHANGE_FEED_WIRE_FORMAT_VERSION: HeaderName = HeaderName::from_static(
-    "x-ms-cosmos-changefeed-wire-format-version"
-);
+static CHANGE_FEED_WIRE_FORMAT_VERSION: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-changefeed-wire-format-version");
 
 /// Parses an HTTP request into a `ParsedRequest`.
 pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
@@ -166,15 +159,25 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let method = request.method();
     let headers = request.headers();
 
-    let partition_key_header = headers.get_optional_str(&PARTITION_KEY).map(|s| s.to_string());
+    let partition_key_header = headers
+        .get_optional_str(&PARTITION_KEY)
+        .map(|s| s.to_string());
     let if_match = headers.get_optional_str(&IF_MATCH).map(|s| s.to_string());
-    let if_none_match = headers.get_optional_str(&IF_NONE_MATCH).map(|s| s.to_string());
-    let if_modified_since = headers.get_optional_str(&IF_MODIFIED_SINCE).map(|s| s.to_string());
-    let session_token = headers.get_optional_str(&SESSION_TOKEN).map(|s| s.to_string());
+    let if_none_match = headers
+        .get_optional_str(&IF_NONE_MATCH)
+        .map(|s| s.to_string());
+    let if_modified_since = headers
+        .get_optional_str(&IF_MODIFIED_SINCE)
+        .map(|s| s.to_string());
+    let session_token = headers
+        .get_optional_str(&SESSION_TOKEN)
+        .map(|s| s.to_string());
     let read_consistency_strategy = headers
         .get_optional_str(&READ_CONSISTENCY_STRATEGY)
         .and_then(|value| value.parse().ok());
-    let activity_id = headers.get_optional_str(&ACTIVITY_ID).map(|s| s.to_string());
+    let activity_id = headers
+        .get_optional_str(&ACTIVITY_ID)
+        .map(|s| s.to_string());
     // Determine whether write responses should include the document body.
     // Check the explicit header first; if absent, check the `Prefer` header
     // (the driver pipeline sends `Prefer: return=minimal` to suppress bodies).
@@ -190,21 +193,24 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         .get_optional_str(&IS_UPSERT)
         .map(|s| s.eq_ignore_ascii_case("true"))
         .unwrap_or(false);
-    let is_query =
-        header_true(headers.get_optional_str(&IS_QUERY)) ||
-        header_true(headers.get_optional_str(&IS_QUERY_LEGACY));
+    let is_query = header_true(headers.get_optional_str(&IS_QUERY))
+        || header_true(headers.get_optional_str(&IS_QUERY_LEGACY));
     let is_query_plan = header_true(headers.get_optional_str(&IS_QUERY_PLAN_REQUEST));
     let is_batch = header_true(headers.get_optional_str(&IS_BATCH_REQUEST));
     let max_item_count = headers
         .get_optional_str(&MAX_ITEM_COUNT)
         .and_then(|s| s.trim().parse::<i32>().ok());
-    let continuation = headers.get_optional_str(&CONTINUATION).map(|s| s.to_string());
+    let continuation = headers
+        .get_optional_str(&CONTINUATION)
+        .map(|s| s.to_string());
     let partition_key_range_id = headers
         .get_optional_str(&PARTITION_KEY_RANGE_ID)
         .map(|s| s.to_string());
     let start_epk = headers.get_optional_str(&START_EPK).map(|s| s.to_string());
     let end_epk = headers.get_optional_str(&END_EPK).map(|s| s.to_string());
-    let read_key_type = headers.get_optional_str(&READ_FEED_KEY_TYPE).map(|s| s.to_string());
+    let read_key_type = headers
+        .get_optional_str(&READ_FEED_KEY_TYPE)
+        .map(|s| s.to_string());
     // Parse `x-ms-offer-throughput` (RU/s) from the request headers. Invalid /
     // non-numeric values are treated as absent; the container creation handler
     // then uses `ContainerConfig::default()`. A failing parse is intentionally
@@ -235,7 +241,10 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     // Rust sends carries the header — the divergence is unreachable in practice.
     let binary_response = headers
         .get_optional_str(&SUPPORTED_SERIALIZATION_FORMATS)
-        .map(|v| { v.split(',').any(|fmt| fmt.trim().eq_ignore_ascii_case("CosmosBinary")) })
+        .map(|v| {
+            v.split(',')
+                .any(|fmt| fmt.trim().eq_ignore_ascii_case("CosmosBinary"))
+        })
         .unwrap_or(false);
 
     let path = url.path();
@@ -245,11 +254,20 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     let has_trailing_slash = path.len() > 1 && path.ends_with('/');
     let segments = parse_path_segments(path);
     let operation = if has_trailing_slash {
-        OperationType::BadRequestPath(
-            format!("{} {} (trailing slash rejected)", method.as_ref(), path)
-        )
+        OperationType::BadRequestPath(format!(
+            "{} {} (trailing slash rejected)",
+            method.as_ref(),
+            path
+        ))
     } else {
-        resolve_operation(method.as_ref(), &segments, is_upsert, is_query, is_query_plan, is_batch)
+        resolve_operation(
+            method.as_ref(),
+            &segments,
+            is_upsert,
+            is_query,
+            is_query_plan,
+            is_batch,
+        )
     };
 
     // A read scoped to an effective-partition-key *range*
@@ -259,17 +277,15 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     // invalid"`; mirror that here so a regression that reverts the driver's
     // key-type value is caught by the emulator-backed tests (issues #4680 and
     // #4681).
-    let operation = if
-        (start_epk.is_some() || end_epk.is_some()) &&
-        read_key_type.as_deref() !=
-            Some(crate::models::cosmos_headers::request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE)
-    {
-        OperationType::InvalidInput(
-            format!(
-                "x-ms-read-key-type must be 'EffectivePartitionKeyRange' when \
+    let operation = if (start_epk.is_some() || end_epk.is_some())
+        && read_key_type.as_deref()
+            != Some(
+                crate::models::cosmos_headers::request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE,
+            ) {
+        OperationType::InvalidInput(format!(
+            "x-ms-read-key-type must be 'EffectivePartitionKeyRange' when \
              x-ms-start-epk/x-ms-end-epk are present, got {read_key_type:?}"
-            )
-        )
+        ))
     } else {
         operation
     };
@@ -317,7 +333,9 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
 }
 
 fn header_true(value: Option<&str>) -> bool {
-    value.map(|v| v.eq_ignore_ascii_case("true")).unwrap_or(false)
+    value
+        .map(|v| v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
 }
 
 /// Parses URL path into segments, skipping empty entries.
@@ -355,7 +373,7 @@ fn parse_path_segments(path: &str) -> Vec<String> {
 fn segment_after_keyword(
     segments: &[String],
     keyword_index: usize,
-    keyword: &str
+    keyword: &str,
 ) -> Option<String> {
     if segments.get(keyword_index).map(String::as_str) != Some(keyword) {
         return None;
@@ -370,7 +388,7 @@ fn resolve_operation(
     is_upsert: bool,
     is_query: bool,
     is_query_plan: bool,
-    is_batch: bool
+    is_batch: bool,
 ) -> OperationType {
     let depth = segments.len();
 
@@ -388,7 +406,11 @@ fn resolve_operation(
 
         // POST /dbs → CreateDatabase/QueryDatabases
         ("POST", 1) if segments[0] == "dbs" => {
-            if is_query { OperationType::QueryDatabases } else { OperationType::CreateDatabase }
+            if is_query {
+                OperationType::QueryDatabases
+            } else {
+                OperationType::CreateDatabase
+            }
         }
 
         // GET /dbs/{db} → ReadDatabase
@@ -404,7 +426,11 @@ fn resolve_operation(
 
         // POST /dbs/{db}/colls → CreateContainer/QueryContainers
         ("POST", 3) if segments[0] == "dbs" && segments[2] == "colls" => {
-            if is_query { OperationType::QueryContainers } else { OperationType::CreateContainer }
+            if is_query {
+                OperationType::QueryContainers
+            } else {
+                OperationType::CreateContainer
+            }
         }
 
         // GET /dbs/{db}/colls/{coll} → ReadContainer
@@ -423,11 +449,9 @@ fn resolve_operation(
         }
 
         // GET /dbs/{db}/colls/{coll}/pkranges → ReadPKRanges
-        ("GET", 5) if
-            segments[0] == "dbs" &&
-            segments[2] == "colls" &&
-            segments[4] == "pkranges"
-        => {
+        ("GET", 5)
+            if segments[0] == "dbs" && segments[2] == "colls" && segments[4] == "pkranges" =>
+        {
             OperationType::ReadPKRanges
         }
 
@@ -467,7 +491,9 @@ fn resolve_operation(
         }
 
         // DELETE /dbs/{db}/colls/{coll}/docs/{doc} → Delete
-        ("DELETE", 6) if segments[0] == "dbs" && segments[2] == "colls" && segments[4] == "docs" => {
+        ("DELETE", 6)
+            if segments[0] == "dbs" && segments[2] == "colls" && segments[4] == "docs" =>
+        {
             OperationType::Delete
         }
 
@@ -491,7 +517,7 @@ fn resolve_operation(
 /// removed from the account (see [`super::config::RegionStatus`]).
 pub(crate) fn resolve_region(
     url: &azure_core::http::Url,
-    config: &super::config::VirtualAccountConfig
+    config: &super::config::VirtualAccountConfig,
 ) -> Option<super::config::ResolvedRegion> {
     config.region_for_url(url)
 }
@@ -500,7 +526,7 @@ pub(crate) fn resolve_region(
 mod tests {
     use super::*;
     use azure_core::http::headers::HeaderValue;
-    use azure_core::http::{ Method, Request, Url };
+    use azure_core::http::{Method, Request, Url};
 
     fn make_request(method: &str, path: &str) -> Request {
         let url = format!("https://test.emulator.local{}", path);
@@ -515,7 +541,8 @@ mod tests {
     }
 
     fn insert_header(req: &mut Request, name: HeaderName, value: &str) {
-        req.headers_mut().insert(name, HeaderValue::from(value.to_string()));
+        req.headers_mut()
+            .insert(name, HeaderValue::from(value.to_string()));
     }
 
     #[test]
@@ -537,11 +564,20 @@ mod tests {
             "colls".to_string(),
             "mycoll".to_string(),
             "docs".to_string(),
-            "d1".to_string()
+            "d1".to_string(),
         ];
-        assert_eq!(segment_after_keyword(&segments, 0, "dbs"), Some("colls".to_string()));
-        assert_eq!(segment_after_keyword(&segments, 2, "colls"), Some("mycoll".to_string()));
-        assert_eq!(segment_after_keyword(&segments, 4, "docs"), Some("d1".to_string()));
+        assert_eq!(
+            segment_after_keyword(&segments, 0, "dbs"),
+            Some("colls".to_string())
+        );
+        assert_eq!(
+            segment_after_keyword(&segments, 2, "colls"),
+            Some("mycoll".to_string())
+        );
+        assert_eq!(
+            segment_after_keyword(&segments, 4, "docs"),
+            Some("d1".to_string())
+        );
     }
 
     #[test]
@@ -687,11 +723,13 @@ mod tests {
 
     #[test]
     fn upsert_document() {
-        let url: Url = "https://test.emulator.local/dbs/mydb/colls/mycoll/docs".parse().unwrap();
+        let url: Url = "https://test.emulator.local/dbs/mydb/colls/mycoll/docs"
+            .parse()
+            .unwrap();
         let mut req = Request::new(url, Method::Post);
         req.headers_mut().insert(
             IS_UPSERT.clone(),
-            azure_core::http::headers::HeaderValue::from("True".to_string())
+            azure_core::http::headers::HeaderValue::from("True".to_string()),
         );
         let parsed = parse_request(&req);
         assert_eq!(parsed.operation, OperationType::Upsert);
@@ -755,7 +793,11 @@ mod tests {
         // The default binary-encoding negotiation header advertises both text
         // and binary; the emulator must reply with binary.
         let mut req = make_request("GET", "/dbs/mydb/colls/mycoll/docs/doc1");
-        insert_header(&mut req, SUPPORTED_SERIALIZATION_FORMATS.clone(), "JsonText,CosmosBinary");
+        insert_header(
+            &mut req,
+            SUPPORTED_SERIALIZATION_FORMATS.clone(),
+            "JsonText,CosmosBinary",
+        );
         assert!(parse_request(&req).binary_response);
     }
 
@@ -766,7 +808,11 @@ mod tests {
         // binary. This is the response-side of the `request_text_response`
         // option.
         let mut req = make_request("GET", "/dbs/mydb/colls/mycoll/docs/doc1");
-        insert_header(&mut req, SUPPORTED_SERIALIZATION_FORMATS.clone(), "JsonText");
+        insert_header(
+            &mut req,
+            SUPPORTED_SERIALIZATION_FORMATS.clone(),
+            "JsonText",
+        );
         assert!(!parse_request(&req).binary_response);
     }
 
