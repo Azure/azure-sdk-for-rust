@@ -29,6 +29,8 @@ jobs:
       os: ${{ parameters.OSName }}
     steps:
       - template: /eng/pipelines/templates/steps/use-ms-rust.yml@self
+        parameters:
+          TargetTriple: $(Triple)
 
       - ${{ if eq(parameters.OSName, 'windows') }}:
         - pwsh: |

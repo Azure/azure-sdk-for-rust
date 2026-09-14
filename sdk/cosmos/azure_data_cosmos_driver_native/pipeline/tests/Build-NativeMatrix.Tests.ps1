@@ -20,6 +20,13 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             $MicrosoftRustConfig,
             '(?m)^\s*channel\s*=\s*"([^"]+)"\s*$'
         ).Groups[1].Value
+        . ([System.IO.Path]::Combine(
+            $RepositoryRoot,
+            'eng',
+            'scripts',
+            'shared',
+            'MicrosoftRust.ps1'
+        ))
         $CargoLinkerVariable = 'CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER'
         $CcVariable = 'CC_x86_64_pc_windows_gnu'
         function msrustup {}
@@ -393,6 +400,7 @@ targets = ["x86_64-pc-windows-gnu"]
         $buildJobTemplate | Should -Match ([regex]::Escape(
             'template: /eng/pipelines/templates/steps/use-ms-rust.yml@self'
         ))
+        $buildJobTemplate | Should -Match 'TargetTriple:\s+\$\(Triple\)'
         $buildJobTemplate | Should -Match ([regex]::Escape(
             "C:\msys64\mingw64\bin"
         ))
@@ -412,6 +420,8 @@ targets = ["x86_64-pc-windows-gnu"]
         ))
         $template | Should -Not -Match 'RUSTUP_EXE'
         $template | Should -Match 'InstallToolchain:\s+false'
+        $template | Should -Match 'additionalTargets:\s+\$\{\{\s*parameters\.TargetTriple\s*\}\}'
+        $template | Should -Match 'New-MicrosoftRustInstallerConfiguration'
         $useRustTemplate | Should -Match '(?s)name:\s+InstallToolchain.*?default:\s+true'
         $MicrosoftRustChannel | Should -Match '^ms-prod-\d+(?:\.\d+)+$'
         $MicrosoftRustConfig | Should -Not -Match '"rust-std"'
@@ -420,6 +430,37 @@ targets = ["x86_64-pc-windows-gnu"]
                 "`"$($target.triple)`""
             ))
         }
+    }
+
+    It 'installs only the target assigned to the current matrix job' {
+        $installerConfigPath = [System.IO.Path]::Combine(
+            $TestDrive,
+            'rust-toolchain.toml'
+        )
+
+        New-MicrosoftRustInstallerConfiguration `
+            -Path $MicrosoftRustConfigPath `
+            -Target 'x86_64-unknown-linux-gnu' `
+            -OutputPath $installerConfigPath
+
+        $installerConfig = Get-Content $installerConfigPath -Raw
+        $installerConfig | Should -Match ([regex]::Escape(
+            "channel = `"$MicrosoftRustChannel`""
+        ))
+        $installerConfig | Should -Not -Match '(?m)^\s*targets\s*='
+        $installerConfig | Should -Not -Match 'x86_64-pc-windows-gnu'
+    }
+
+    It 'rejects an installer target outside the centralized allowlist' {
+        {
+            New-MicrosoftRustInstallerConfiguration `
+                -Path $MicrosoftRustConfigPath `
+                -Target 'wasm32-unknown-unknown' `
+                -OutputPath ([System.IO.Path]::Combine(
+                    $TestDrive,
+                    'rust-toolchain.toml'
+                ))
+        } | Should -Throw "*target 'wasm32-unknown-unknown' is not declared*"
     }
 
     It 'provisions Linux compilers from Ubuntu or checksum-pinned Microsoft prior art' {

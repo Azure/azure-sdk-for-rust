@@ -19,7 +19,10 @@ Production jobs install the centrally pinned Microsoft Rust toolchain from
 `eng/templates/ms-rust-toolchain.toml` through the internal `RustInstaller@1`
 feed. The native build invokes Cargo and rustc with the explicit pinned
 toolchain selector and rejects an upstream compiler, a different or unpinned
-channel, and targets that `msrustup` cannot install.
+channel, and targets that `msrustup` cannot install. Each matrix job validates
+its target against the centralized list and passes only that target to
+`RustInstaller@1`; it does not attempt to install targets assigned to other
+operating systems.
 
 ## Configured release matrix
 

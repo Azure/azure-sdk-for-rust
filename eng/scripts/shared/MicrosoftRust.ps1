@@ -23,16 +23,16 @@ function Get-MicrosoftRustToolchainConfiguration(
     throw "Microsoft Rust channel '$channel' is not an explicit pinned ms-prod channel."
   }
 
-  $targetsMatch = [regex]::Match(
+  $targetsMatches = [regex]::Matches(
     $content,
     '(?ms)^\s*targets\s*=\s*\[(.*?)\]'
   )
-  if (!$targetsMatch.Success) {
-    throw "Microsoft Rust toolchain configuration must declare targets."
+  if ($targetsMatches.Count -ne 1) {
+    throw "Microsoft Rust toolchain configuration must declare exactly one targets array."
   }
 
   $targets = @(
-    [regex]::Matches($targetsMatch.Groups[1].Value, '"([^"]+)"') |
+    [regex]::Matches($targetsMatches[0].Groups[1].Value, '"([^"]+)"') |
       ForEach-Object { $_.Groups[1].Value }
   )
   if ($targets.Count -eq 0) {
@@ -43,4 +43,35 @@ function Get-MicrosoftRustToolchainConfiguration(
     Channel = $channel
     Targets = $targets
   }
+}
+
+function New-MicrosoftRustInstallerConfiguration(
+  [Parameter(Mandatory = $true)]
+  [string] $Path,
+
+  [Parameter(Mandatory = $true)]
+  [string] $Target,
+
+  [Parameter(Mandatory = $true)]
+  [string] $OutputPath
+) {
+  $configuration = Get-MicrosoftRustToolchainConfiguration -Path $Path
+  if ($Target -notin $configuration.Targets) {
+    throw "Microsoft Rust target '$Target' is not declared in '$Path'."
+  }
+
+  $content = Get-Content -Path $Path -Raw
+  $targetsMatches = [regex]::Matches(
+    $content,
+    '(?ms)^\s*targets\s*=\s*\[(.*?)\]\s*'
+  )
+  if ($targetsMatches.Count -ne 1) {
+    throw "Microsoft Rust toolchain configuration must declare exactly one targets array."
+  }
+
+  $installerContent = $content.Remove(
+    $targetsMatches[0].Index,
+    $targetsMatches[0].Length
+  )
+  Set-Content -Path $OutputPath -Value $installerContent -Encoding utf8
 }

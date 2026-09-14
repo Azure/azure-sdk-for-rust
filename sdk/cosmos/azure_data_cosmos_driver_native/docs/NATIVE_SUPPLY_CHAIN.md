@@ -129,7 +129,11 @@ consumers continue to use the standard upstream Rust path.
 The configuration pins `ms-prod-1.95` and declares the six Rust target triples
 required by the release matrix. It does not list `rust-std` as a host component;
 cross-target standard libraries are installed through the toolchain target
-mechanism.
+mechanism. Before invoking `RustInstaller@1`, the shared template validates the
+matrix target against this centralized allowlist and creates an installer
+configuration without the complete target list. It then supplies only that
+job's target through the task's `additionalTargets` input, preventing each host
+from eagerly installing targets assigned to other operating systems.
 
 `Build-NativeMatrix.ps1` uses `msrustup` only to manage the pinned toolchain and
 its targets. Every compiler and build command selects that toolchain explicitly
