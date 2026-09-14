@@ -325,9 +325,9 @@ pub async fn probe_data_plane_ready(
     for attempt in 1..=MAX_ATTEMPTS {
         let outcome = async {
             container
-                .query_items::<i64>(
-                    "SELECT VALUE COUNT(1) FROM c",
-                    FeedScope::full_container(),
+                .query_items::<serde_json::Value>(
+                    "SELECT * FROM c",
+                    FeedScope::partition(partition_key.clone()),
                     None,
                 )
                 .await?
