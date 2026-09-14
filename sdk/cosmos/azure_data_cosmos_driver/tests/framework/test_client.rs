@@ -40,6 +40,9 @@ use super::env::{
 /// writes with `400/1001 PartitionKeyMismatch` (#5240). Runtime is the lowest
 /// explicit layer, so a test that sets binary encoding at the driver or
 /// operation layer still wins.
+///
+/// `emulator_tests::driver_vnext_binary_encoding_canary` goes red when vnext
+/// starts accepting binary writes, which is the signal to delete this.
 fn runtime_operation_options(options: OperationOptions) -> OperationOptions {
     #[cfg(test_category = "emulator_vnext")]
     let options = {
@@ -942,6 +945,26 @@ impl DriverTestRunContext {
         partition_key: impl Into<PartitionKey>,
         body: &[u8],
     ) -> Result<CosmosResponse, Box<dyn Error>> {
+        self.create_item_with_operation_options(
+            container,
+            item_id,
+            partition_key,
+            body,
+            OperationOptions::default(),
+        )
+        .await
+    }
+
+    /// Creates an item with explicit operation-level options, which override
+    /// the runtime defaults applied by [`runtime_operation_options`].
+    pub async fn create_item_with_operation_options(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        body: &[u8],
+        options: OperationOptions,
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
             .client
             .runtime
@@ -953,7 +976,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::create_item(item_ref).with_body(body.to_vec());
 
         let result = driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, options)
             .await?;
 
         Ok(result)

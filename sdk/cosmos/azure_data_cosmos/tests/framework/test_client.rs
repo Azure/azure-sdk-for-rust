@@ -437,7 +437,8 @@ fn effective_binary_encoding(
     #[cfg(test_category = "emulator_vnext")]
     {
         // Temporary workaround for #5240; product code should eventually
-        // negotiate vNext binary support.
+        // negotiate vNext binary support. The driver crate's
+        // `driver_vnext_binary_encoding_canary` test signals when it can go.
         Some(binary_encoding.unwrap_or_else(|| BinaryEncodingOptions::new().with_enabled(false)))
     }
 
