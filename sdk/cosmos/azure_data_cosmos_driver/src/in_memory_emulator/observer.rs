@@ -24,3 +24,13 @@ pub trait RequestObserver: Debug + Send + Sync {
     /// Called once per request, before the emulator routes or handles it.
     fn on_request(&self, request: &Request);
 }
+
+/// Asynchronous request gate for deterministic concurrency tests.
+///
+/// Implementations may delay selected requests but must not mutate them or the
+/// emulator state.
+#[async_trait::async_trait]
+pub trait RequestGate: Debug + Send + Sync {
+    /// Waits until the request may proceed to the emulator.
+    async fn wait(&self, request: &Request);
+}

@@ -13,7 +13,7 @@ use azure_core::Bytes;
 
 use super::config::VirtualAccountConfig;
 use super::dispatch::{parse_request, resolve_region};
-use super::observer::RequestObserver;
+use super::observer::{RequestGate, RequestObserver};
 use super::operations::{database_account_not_found_response, handle_operation};
 use super::store::EmulatorStore;
 use crate::driver::transport::cosmos_transport_client::{
@@ -42,6 +42,7 @@ use crate::options::ConnectionPoolOptions;
 pub struct InMemoryEmulatorHttpClient {
     store: Arc<EmulatorStore>,
     request_observer: Option<Arc<dyn RequestObserver>>,
+    request_gate: Option<Arc<dyn RequestGate>>,
 }
 
 impl InMemoryEmulatorHttpClient {
@@ -50,6 +51,7 @@ impl InMemoryEmulatorHttpClient {
         Self {
             store: EmulatorStore::new(config),
             request_observer: None,
+            request_gate: None,
         }
     }
 
@@ -68,6 +70,15 @@ impl InMemoryEmulatorHttpClient {
     /// Replaces any previously-attached observer.
     pub fn with_request_observer(mut self, observer: Arc<dyn RequestObserver>) -> Self {
         self.request_observer = Some(observer);
+        self
+    }
+
+    /// Attaches an asynchronous request gate for deterministic concurrency tests.
+    ///
+    /// Replaces any previously attached gate.
+    #[doc(hidden)]
+    pub fn with_request_gate(mut self, gate: Arc<dyn RequestGate>) -> Self {
+        self.request_gate = Some(gate);
         self
     }
 
@@ -156,6 +167,9 @@ impl InMemoryEmulatorHttpClient {
         // single Option check.
         if let Some(observer) = &self.request_observer {
             observer.on_request(request);
+        }
+        if let Some(gate) = &self.request_gate {
+            gate.wait(request).await;
         }
 
         let parsed = parse_request(request);

@@ -11,18 +11,19 @@
 //! split/merge topology changes via the emulator's control plane, and isolation across
 //! multiple containers sharing one driver instance.
 
+use std::future::{poll_fn, Future};
 use std::sync::{
-    atomic::{AtomicUsize, Ordering},
+    atomic::{AtomicBool, AtomicUsize, Ordering},
     Arc,
 };
 use std::time::Duration;
 
 use azure_core::http::{Method, Request, Url};
 use azure_data_cosmos_driver::in_memory_emulator::{
-    ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, RequestObserver,
-    VirtualAccountConfig, VirtualRegion,
+    ConsistencyLevel, ContainerConfig, Epk, InMemoryEmulatorHttpClient, RequestGate,
+    RequestObserver, VirtualAccountConfig, VirtualRegion,
 };
-use azure_data_cosmos_driver::models::{AccountReference, PartitionKey};
+use azure_data_cosmos_driver::models::{AccountReference, FeedRange, PartitionKey};
 use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::CosmosDriver;
 
@@ -71,9 +72,86 @@ impl RequestObserver for PkRangesRequestCounter {
     }
 }
 
+#[derive(Debug)]
+struct PkRangesRequestGate {
+    open: AtomicBool,
+    opened: tokio::sync::Notify,
+}
+
+impl PkRangesRequestGate {
+    fn new() -> Arc<Self> {
+        Arc::new(Self {
+            open: AtomicBool::new(false),
+            opened: tokio::sync::Notify::new(),
+        })
+    }
+
+    fn open(&self) {
+        self.open.store(true, Ordering::Release);
+        self.opened.notify_waiters();
+    }
+}
+
+#[async_trait::async_trait]
+impl RequestGate for PkRangesRequestGate {
+    async fn wait(&self, request: &Request) {
+        if request.method() != Method::Get || !request.url().path().ends_with("/pkranges") {
+            return;
+        }
+
+        while !self.open.load(Ordering::Acquire) {
+            let opened = self.opened.notified();
+            if self.open.load(Ordering::Acquire) {
+                return;
+            }
+            opened.await;
+        }
+    }
+}
+
+#[derive(Debug)]
+struct FirstPollTracker {
+    expected: usize,
+    polled: AtomicUsize,
+    all_polled: tokio::sync::Notify,
+}
+
+impl FirstPollTracker {
+    fn new(expected: usize) -> Arc<Self> {
+        Arc::new(Self {
+            expected,
+            polled: AtomicUsize::new(0),
+            all_polled: tokio::sync::Notify::new(),
+        })
+    }
+
+    fn record(&self) {
+        if self.polled.fetch_add(1, Ordering::SeqCst) + 1 == self.expected {
+            self.all_polled.notify_one();
+        }
+    }
+
+    async fn wait_for_all(&self) {
+        while self.polled.load(Ordering::SeqCst) < self.expected {
+            let all_polled = self.all_polled.notified();
+            if self.polled.load(Ordering::SeqCst) >= self.expected {
+                return;
+            }
+            all_polled.await;
+        }
+    }
+}
+
 /// Builds an in-memory emulator with a single region, a pre-provisioned
 /// database, and the supplied [`RequestObserver`] attached (if any).
 fn build_emulator(observer: Option<Arc<dyn RequestObserver>>) -> Arc<InMemoryEmulatorHttpClient> {
+    build_emulator_with_gate(observer, None)
+}
+
+fn build_emulator_with_gate(
+    observer: Option<Arc<dyn RequestObserver>>,
+    gate: Option<Arc<dyn RequestGate>>,
+) -> Arc<InMemoryEmulatorHttpClient> {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         Url::parse(GATEWAY_URL).unwrap(),
@@ -84,6 +162,10 @@ fn build_emulator(observer: Option<Arc<dyn RequestObserver>>) -> Arc<InMemoryEmu
     let emulator = InMemoryEmulatorHttpClient::new(config);
     let emulator = match observer {
         Some(observer) => emulator.with_request_observer(observer),
+        None => emulator,
+    };
+    let emulator = match gate {
+        Some(gate) => emulator.with_request_gate(gate),
         None => emulator,
     };
     Arc::new(emulator)
@@ -115,8 +197,10 @@ fn multi_hash_pk_def() -> serde_json::Value {
 
 #[tokio::test]
 async fn concurrent_cold_requests_share_one_pkranges_fetch() {
+    const CONCURRENT_CALLERS: usize = 8;
     let counter = PkRangesRequestCounter::new();
-    let emulator = build_emulator(Some(counter.clone()));
+    let gate = PkRangesRequestGate::new();
+    let emulator = build_emulator_with_gate(Some(counter.clone()), Some(gate.clone()));
     emulator.store().create_database(DATABASE_NAME);
     emulator.store().create_container(
         DATABASE_NAME,
@@ -129,24 +213,42 @@ async fn concurrent_cold_requests_share_one_pkranges_fetch() {
         .await
         .expect("container resolves");
 
-    // Fan out several concurrent cold lookups against an empty cache. Real
-    // task concurrency (not just sequential reuse) is what proves the
-    // `AsyncCache` single-flight path: every task races to observe the same
-    // "not yet cached" state and must coalesce onto one in-flight fetch
-    // rather than each independently issuing a `/pkranges` request.
-    const CONCURRENT_CALLERS: usize = 8;
+    // Hold /pkranges requests while every lookup future is polled once. This
+    // proves the callers overlap inside the cache instead of merely reusing a
+    // value that an earlier task already warmed.
+    let first_polls = FirstPollTracker::new(CONCURRENT_CALLERS);
     let mut handles = Vec::with_capacity(CONCURRENT_CALLERS);
     for _ in 0..CONCURRENT_CALLERS {
         let driver = driver.clone();
         let container = container.clone();
+        let first_polls = first_polls.clone();
         handles.push(tokio::spawn(async move {
-            driver
-                .resolve_all_partition_key_ranges(&container, false)
-                .await
-                .expect("cold fetch succeeds")
-                .expect("cold fetch returns topology")
+            let lookup = driver.resolve_all_partition_key_ranges(&container, false);
+            tokio::pin!(lookup);
+            let mut first_poll = true;
+            poll_fn(|cx| {
+                let result = lookup.as_mut().poll(cx);
+                if first_poll {
+                    first_poll = false;
+                    first_polls.record();
+                }
+                result
+            })
+            .await
+            .expect("cold fetch succeeds")
+            .expect("cold fetch returns topology")
         }));
     }
+
+    tokio::time::timeout(Duration::from_secs(5), first_polls.wait_for_all())
+        .await
+        .expect("all concurrent lookup futures should be polled");
+    assert_eq!(
+        counter.count(),
+        1,
+        "all pending cold callers must share one in-flight /pkranges request"
+    );
+    gate.open();
 
     let mut results = Vec::with_capacity(CONCURRENT_CALLERS);
     for handle in handles {
@@ -460,19 +562,33 @@ async fn resolve_partition_key_ranges_for_key_multihash_prefix_returns_multiple_
         .await
         .expect("container resolves");
 
-    // Only the first of two hierarchical components — a MultiHash prefix
-    // key — must resolve via the overlapping-range path to potentially many
-    // ranges, not the single-range point-lookup path.
+    // Split the physical owner inside this prefix's EPK interval so the prefix
+    // deterministically spans both children. A point-lookup implementation
+    // would incorrectly return only one of them.
     let prefix_pk = PartitionKey::from("tenant-1");
-    let ranges = driver
+    let prefix = FeedRange::for_partition(prefix_pk.clone(), container.partition_key_definition());
+    let before = driver
         .resolve_partition_key_ranges_for_key(&container, &prefix_pk, false)
         .await
         .expect("prefix lookup succeeds")
-        .expect("prefix lookup returns overlapping ranges");
+        .expect("prefix lookup returns its initial owner");
+    assert_eq!(before.len(), 1);
+    let owner_id = before[0].id.parse::<u32>().expect("range id is numeric");
+    let split_epk = Epk::from(format!("{}80", prefix.min_inclusive().to_hex()));
+    assert!(split_epk > *prefix.min_inclusive());
+    assert!(split_epk < *prefix.max_exclusive());
+    store.split_partition_at_epk(DATABASE_NAME, "coll", owner_id, split_epk, Duration::ZERO);
+    store.drain_pending_control_plane().await;
 
-    assert!(
-        !ranges.is_empty(),
-        "a MultiHash prefix key must resolve to at least one overlapping range"
+    let ranges = driver
+        .resolve_partition_key_ranges_for_key(&container, &prefix_pk, true)
+        .await
+        .expect("refreshed prefix lookup succeeds")
+        .expect("refreshed prefix lookup returns overlapping children");
+    assert_eq!(
+        ranges.len(),
+        2,
+        "a prefix split within its EPK interval must resolve to both child ranges"
     );
 
     // A full (both-component) key against the same container must still
@@ -511,18 +627,22 @@ async fn resolve_partition_key_ranges_for_key_force_refresh_reflects_split() {
     assert_eq!(before.len(), 1);
     let before_id = before[0].id.to_string();
 
-    store.split_partition(DATABASE_NAME, "coll", 0, Duration::ZERO);
+    let split_partition_id = before_id.parse::<u32>().expect("range id is numeric");
+    store.split_partition(DATABASE_NAME, "coll", split_partition_id, Duration::ZERO);
     store.drain_pending_control_plane().await;
 
-    // Without force_refresh, the stale cached map is still consulted; the key
-    // still resolves to exactly one range (its owning parent OR child,
-    // depending on cache timing), never zero and never more than one.
+    // Without force_refresh, the stale cached map still returns the retired
+    // parent that owned the key before the split.
     let without_refresh = driver
         .resolve_partition_key_ranges_for_key(&container, &pk, false)
         .await
         .expect("lookup succeeds")
         .expect("lookup still returns exactly one range from whichever map is cached");
     assert_eq!(without_refresh.len(), 1);
+    assert_eq!(
+        without_refresh[0].id, before_id,
+        "without force_refresh the cached parent remains visible"
+    );
 
     // With force_refresh, the cache must reflect the post-split topology.
     let with_refresh = driver
@@ -531,11 +651,10 @@ async fn resolve_partition_key_ranges_for_key_force_refresh_reflects_split() {
         .expect("forced lookup succeeds")
         .expect("forced lookup returns an owning range from the converged post-split map");
     assert_eq!(with_refresh.len(), 1);
-    // The parent range that owned this key pre-split no longer exists as an
-    // *online* range post-split; if the key routed to the split parent, the
-    // post-refresh id must differ.
-    let _ = before_id; // documented for readers; not asserted directly since
-                       // "stable-key" may not have routed to partition 0.
+    assert_ne!(
+        with_refresh[0].id, before_id,
+        "force_refresh must replace the retired parent with the owning child"
+    );
 }
 
 #[tokio::test]

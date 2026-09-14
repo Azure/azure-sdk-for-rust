@@ -49,7 +49,7 @@ pub use config::{
     DEFAULT_MAX_BUFFERED_REPLICATIONS,
 };
 pub use epk::Epk;
-pub use observer::RequestObserver;
+pub use observer::{RequestGate, RequestObserver};
 #[doc(hidden)]
 pub use response::headers as test_headers;
 pub use ru_model::RequestUnitChargingModel;
