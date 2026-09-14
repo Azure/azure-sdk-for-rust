@@ -11,17 +11,23 @@
 //! split/merge topology changes via the emulator's control plane, and isolation across
 //! multiple containers sharing one driver instance.
 
+#[cfg(feature = "fault_injection")]
 use std::future::{poll_fn, Future};
 use std::sync::{
-    atomic::{AtomicBool, AtomicUsize, Ordering},
+    atomic::{AtomicUsize, Ordering},
     Arc,
 };
 use std::time::Duration;
 
 use azure_core::http::{Method, Request, Url};
+#[cfg(feature = "fault_injection")]
+use azure_data_cosmos_driver::fault_injection::{
+    FaultInjectionConditionBuilder, FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
+    FaultOperationType,
+};
 use azure_data_cosmos_driver::in_memory_emulator::{
-    ConsistencyLevel, ContainerConfig, Epk, InMemoryEmulatorHttpClient, RequestGate,
-    RequestObserver, VirtualAccountConfig, VirtualRegion,
+    ConsistencyLevel, ContainerConfig, Epk, InMemoryEmulatorHttpClient, RequestObserver,
+    VirtualAccountConfig, VirtualRegion,
 };
 use azure_data_cosmos_driver::models::{AccountReference, FeedRange, PartitionKey};
 use azure_data_cosmos_driver::options::DriverOptions;
@@ -72,43 +78,7 @@ impl RequestObserver for PkRangesRequestCounter {
     }
 }
 
-#[derive(Debug)]
-struct PkRangesRequestGate {
-    open: AtomicBool,
-    opened: tokio::sync::Notify,
-}
-
-impl PkRangesRequestGate {
-    fn new() -> Arc<Self> {
-        Arc::new(Self {
-            open: AtomicBool::new(false),
-            opened: tokio::sync::Notify::new(),
-        })
-    }
-
-    fn open(&self) {
-        self.open.store(true, Ordering::Release);
-        self.opened.notify_waiters();
-    }
-}
-
-#[async_trait::async_trait]
-impl RequestGate for PkRangesRequestGate {
-    async fn wait(&self, request: &Request) {
-        if request.method() != Method::Get || !request.url().path().ends_with("/pkranges") {
-            return;
-        }
-
-        while !self.open.load(Ordering::Acquire) {
-            let opened = self.opened.notified();
-            if self.open.load(Ordering::Acquire) {
-                return;
-            }
-            opened.await;
-        }
-    }
-}
-
+#[cfg(feature = "fault_injection")]
 #[derive(Debug)]
 struct FirstPollTracker {
     expected: usize,
@@ -116,6 +86,7 @@ struct FirstPollTracker {
     all_polled: tokio::sync::Notify,
 }
 
+#[cfg(feature = "fault_injection")]
 impl FirstPollTracker {
     fn new(expected: usize) -> Arc<Self> {
         Arc::new(Self {
@@ -145,13 +116,6 @@ impl FirstPollTracker {
 /// Builds an in-memory emulator with a single region, a pre-provisioned
 /// database, and the supplied [`RequestObserver`] attached (if any).
 fn build_emulator(observer: Option<Arc<dyn RequestObserver>>) -> Arc<InMemoryEmulatorHttpClient> {
-    build_emulator_with_gate(observer, None)
-}
-
-fn build_emulator_with_gate(
-    observer: Option<Arc<dyn RequestObserver>>,
-    gate: Option<Arc<dyn RequestGate>>,
-) -> Arc<InMemoryEmulatorHttpClient> {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         Url::parse(GATEWAY_URL).unwrap(),
@@ -162,10 +126,6 @@ fn build_emulator_with_gate(
     let emulator = InMemoryEmulatorHttpClient::new(config);
     let emulator = match observer {
         Some(observer) => emulator.with_request_observer(observer),
-        None => emulator,
-    };
-    let emulator = match gate {
-        Some(gate) => emulator.with_request_gate(gate),
         None => emulator,
     };
     Arc::new(emulator)
@@ -195,27 +155,51 @@ fn multi_hash_pk_def() -> serde_json::Value {
 // Concurrent cold requests share one /pkranges fetch (single-flight coalescing)
 // =============================================================================
 
-#[tokio::test]
+#[cfg(feature = "fault_injection")]
+#[tokio::test(start_paused = true)]
 async fn concurrent_cold_requests_share_one_pkranges_fetch() {
     const CONCURRENT_CALLERS: usize = 8;
+    const FIRST_REQUEST_DELAY: Duration = Duration::from_secs(60);
     let counter = PkRangesRequestCounter::new();
-    let gate = PkRangesRequestGate::new();
-    let emulator = build_emulator_with_gate(Some(counter.clone()), Some(gate.clone()));
+    let emulator = build_emulator(Some(counter.clone()));
     emulator.store().create_database(DATABASE_NAME);
     emulator.store().create_container(
         DATABASE_NAME,
         "coll",
         serde_json::from_value(hash_pk_def()).unwrap(),
     );
-    let driver = create_driver(&emulator).await;
+    let delay_rule = Arc::new(
+        FaultInjectionRuleBuilder::new(
+            "single-flight-pk-range-delay",
+            FaultInjectionResultBuilder::new()
+                .with_delay(FIRST_REQUEST_DELAY)
+                .build(),
+        )
+        .with_condition(
+            FaultInjectionConditionBuilder::new()
+                .with_operation_type(FaultOperationType::MetadataPartitionKeyRanges)
+                .build(),
+        )
+        .with_hit_limit(1)
+        .build(),
+    );
+    let runtime = emulator
+        .runtime_builder_with_fault_rules(vec![Arc::clone(&delay_rule)])
+        .build()
+        .await
+        .expect("runtime should build");
+    let driver = runtime
+        .create_driver(DriverOptions::builder(account()).build())
+        .await
+        .expect("driver should initialize against the in-memory emulator");
     let container = driver
         .resolve_container(DATABASE_NAME, "coll", Default::default())
         .await
         .expect("container resolves");
 
-    // Hold /pkranges requests while every lookup future is polled once. This
-    // proves the callers overlap inside the cache instead of merely reusing a
-    // value that an earlier task already warmed.
+    // Delay the first /pkranges request while every lookup future is polled
+    // once. This proves the callers overlap inside the cache instead of merely
+    // reusing a value that an earlier task already warmed.
     let first_polls = FirstPollTracker::new(CONCURRENT_CALLERS);
     let mut handles = Vec::with_capacity(CONCURRENT_CALLERS);
     for _ in 0..CONCURRENT_CALLERS {
@@ -244,11 +228,16 @@ async fn concurrent_cold_requests_share_one_pkranges_fetch() {
         .await
         .expect("all concurrent lookup futures should be polled");
     assert_eq!(
-        counter.count(),
+        delay_rule.hit_count(),
         1,
         "all pending cold callers must share one in-flight /pkranges request"
     );
-    gate.open();
+    assert_eq!(
+        counter.count(),
+        0,
+        "no independent caller may bypass the delayed in-flight request"
+    );
+    tokio::time::advance(FIRST_REQUEST_DELAY).await;
 
     let mut results = Vec::with_capacity(CONCURRENT_CALLERS);
     for handle in handles {

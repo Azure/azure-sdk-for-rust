@@ -4742,13 +4742,44 @@ mod tests {
         );
     }
 
-    /// A realistic 16-byte document `_rid`, as the backend emits — the
-    /// boundary validator requires one it can decode.
+    /// A realistic 16-byte document `_rid`, as commonly emitted by the
+    /// backend — the boundary validator requires one it can decode.
     fn valid_rid(doc_id: u64) -> String {
         let mut bytes = [0u8; 16];
         bytes[0..8].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D, 0x80, 0x01, 0x02, 0x03]);
         bytes[8..16].copy_from_slice(&doc_id.to_le_bytes());
         crate::models::resource_id::encode_rid(&bytes)
+    }
+
+    /// vNext may emit the legal 20-byte resource-id form for an ORDER BY
+    /// boundary. It carries the same document ordinal in bytes `[8..16)` plus
+    /// the optional four-byte attachment segment.
+    #[test]
+    fn streaming_order_by_snapshot_accepts_20_byte_document_boundary_rid() {
+        // cspell:ignore EAAAAJAAAAAOAAA PUAAAAAAAA
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: Some(ValueBoundary {
+                resume_values: vec![
+                    crate::driver::dataflow::order_by::OrderByResumeValue::Number {
+                        value: 5.0.into(),
+                    },
+                ],
+                last_rid: "EAAAAJAAAAAOAAAAvPUAAAAAAAA=".to_owned(),
+                skip_count: 1,
+            }),
+        }];
+        let parsed = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
+            ranges,
+        )
+        .expect("a 20-byte document hierarchy RID is a valid boundary");
+        assert_eq!(parsed.len(), 1);
     }
 
     /// A boundary in a resumed `StreamingOrderedMerge` snapshot always counts

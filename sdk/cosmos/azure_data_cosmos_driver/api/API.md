@@ -272,12 +272,12 @@ pub mod diagnostics {
         fn threshold(&self) -> HedgeThreshold;
     }
     #[derive(Clone, Debug)]
-    pub struct ProxyConfiguration {
+    pub struct ProxyConfig {
         pub proxy_allowed: bool,
         pub https_proxy_set: bool,
         pub http_proxy_set: bool,
     }
-    impl ProxyConfiguration {
+    impl ProxyConfig {
         fn from_env(proxy_allowed: bool) -> Self;
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
@@ -297,7 +297,7 @@ pub mod diagnostics {
         fn fault_injection_evaluations(&self) -> &[crate::fault_injection::FaultInjectionEvaluation];
         fn local_shard_retry_count(&self) -> u32;
         fn operation_name(&self) -> Option<&str>;
-        fn pipeline_type(&self) -> PipelineType;
+        fn pipeline_type(&self) -> PipelineKind;
         fn region(&self) -> Option<&Region>;
         fn request_charge(&self) -> RequestCharge;
         fn request_sent(&self) -> RequestSentStatus;
@@ -385,19 +385,19 @@ pub mod diagnostics {
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, serde::Serialize)]
     #[non_exhaustive]
     #[serde(rename_all = "snake_case")]
-    pub enum PipelineType {
+    pub enum PipelineKind {
         Metadata,
         DataPlane,
     }
-    impl PipelineType {
+    impl PipelineKind {
         fn as_str(self) -> &'static str;
         fn is_data_plane(self) -> bool;
         fn is_metadata(self) -> bool;
     }
-    impl AsRef<str> for PipelineType {
+    impl AsRef<str> for PipelineKind {
         fn as_ref(&self) -> &str;
     }
-    impl Display for PipelineType {
+    impl Display for PipelineKind {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
     }
     #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
@@ -549,7 +549,7 @@ pub mod driver {
         fn effective_correlation(&self) -> Option<&str>;
         fn env_operation_options(&self) -> &Arc<OperationOptions>;
         fn env_override_operation_options(&self) -> &Arc<OperationOptions>;
-        fn proxy_configuration(&self) -> &ProxyConfiguration;
+        fn proxy_configuration(&self) -> &ProxyConfig;
         fn set_default_operation_options(&self, options: OperationOptions);
         fn user_agent(&self) -> &Arc<UserAgent>;
         fn user_agent_suffix(&self) -> Option<&UserAgentSuffix>;
@@ -1362,26 +1362,26 @@ pub mod in_memory_emulator {
     impl Default for ReplicationConfig {
         fn default() -> Self;
     }
-    #[derive(Clone, Debug, Eq, PartialEq)]
-    pub struct ResolvedRegion {
-        pub name: String,
-        pub status: RegionStatus,
-    }
     #[derive(Clone, Debug)]
-    pub struct RuChargingModel {
+    pub struct RequestUnitChargingModel {
         pub read_base_ru: f64,
         pub create_base_ru: f64,
         pub write_multiplier: f64,
         pub indexing_ru_per_property: f64,
     }
-    impl RuChargingModel {
+    impl RequestUnitChargingModel {
         fn compute_create_ru(&self, doc_size: usize, num_properties: usize) -> f64;
         fn compute_read_ru(&self, doc_size: usize) -> f64;
         fn compute_replace_or_delete_ru(&self, doc_size: usize, num_properties: usize) -> f64;
         fn count_properties(body: &serde_json::Value) -> usize;
     }
-    impl Default for RuChargingModel {
+    impl Default for RequestUnitChargingModel {
         fn default() -> Self;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub struct ResolvedRegion {
+        pub name: String,
+        pub status: RegionStatus,
     }
     #[derive(Clone, Debug)]
     pub struct TopologySnapshot {
@@ -1411,7 +1411,7 @@ pub mod in_memory_emulator {
         fn region_id_for(&self, region_name: &str) -> u64;
         fn replication(&self) -> &ReplicationConfig;
         fn replication_for(&self, source: &str, target: &str) -> &ReplicationConfig;
-        fn ru_model(&self) -> &RuChargingModel;
+        fn ru_model(&self) -> &RequestUnitChargingModel;
         fn set_per_partition_failover(&self, enabled: bool);
         fn throttling_enabled(&self) -> bool;
         fn topology_snapshot(&self) -> TopologySnapshot;
@@ -1419,7 +1419,7 @@ pub mod in_memory_emulator {
         fn with_per_partition_failover(self, enabled: bool) -> Self;
         fn with_replication_config(self, config: ReplicationConfig) -> Self;
         fn with_replication_override(self, source: &str, target: &str, config: ReplicationConfig) -> crate::error::Result<Self>;
-        fn with_ru_model(self, model: RuChargingModel) -> Self;
+        fn with_ru_model(self, model: RequestUnitChargingModel) -> Self;
         fn with_throttling_enabled(self, enabled: bool) -> Self;
         fn with_write_mode(self, mode: WriteMode) -> Self;
         fn write_mode(&self) -> WriteMode;
@@ -3751,7 +3751,7 @@ pub mod options {
     pub const DEFAULT_MAX_FAN_OUT: u32 = 100;
 }
 #[cfg(feature = "__internal_mocking")]
-pub mod testing {
+pub mod test {
     pub use azure_data_cosmos_driver::options::connection_pool::ConnectionPoolOptions;
     #[derive(Clone, Copy, Debug)]
     pub struct HttpClientConfig {
