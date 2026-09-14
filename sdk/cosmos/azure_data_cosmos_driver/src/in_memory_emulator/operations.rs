@@ -205,6 +205,7 @@ pub(crate) async fn handle_operation(
                 region_name,
                 parsed.db_id.as_deref().unwrap_or(""),
                 parsed.coll_id.as_deref().unwrap_or(""),
+                parsed.if_match.as_deref(),
                 request_body,
                 start,
             )
@@ -689,6 +690,7 @@ pub(crate) async fn handle_operation(
             binary_response: false,
             is_upsert: matches!(operation_type, OperationType::Upsert),
             a_im: None,
+            change_feed_wire_format_version: None,
             request_host: None,
         };
 
@@ -1509,6 +1511,7 @@ pub(crate) async fn handle_operation(
             binary_response: false,
             is_upsert: false,
             a_im: None,
+            change_feed_wire_format_version: None,
             request_host: None,
         }
     }
@@ -2139,6 +2142,7 @@ async fn handle_replace_container(
     region_name: &str,
     db_id: &str,
     coll_id: &str,
+    if_match: Option<&str>,
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
@@ -2172,13 +2176,34 @@ async fn handle_replace_container(
     else {
         return container_not_found(db_id, coll_id, start);
     };
+    if if_match.is_some_and(|etag| etag != existing.metadata.etag.as_str()) {
+        return error_response(
+            StatusCode::PreconditionFailed,
+            None,
+            "PreconditionFailed",
+            "One of the specified pre-condition is not met.",
+            1.0,
+            "",
+            start,
+        )
+        .build();
+    }
     if existing.metadata.partition_key != partition_key {
         return invalid_input_response("Container partition key cannot be changed", start);
     }
 
     let properties = body.as_object().cloned().unwrap_or_default();
     if existing.metadata.properties.get("uniqueKeyPolicy") != properties.get("uniqueKeyPolicy") {
-        return invalid_input_response("Container unique key policy cannot be changed", start);
+        return error_response(
+            StatusCode::Forbidden,
+            None,
+            "Forbidden",
+            "Container unique key policy cannot be changed",
+            1.0,
+            "",
+            start,
+        )
+        .build();
     }
     let Some(updated) = store.replace_container_properties(db_id, coll_id, properties) else {
         return container_not_found(db_id, coll_id, start);
@@ -3491,7 +3516,9 @@ fn handle_read_feed_items(
             // continuation end-to-end while full version/delete history remains
             // an explicit emulator limitation. Plain read-feed requests omit
             // `A-IM` and continue to return flat documents.
-            let docs = if parsed.a_im.is_some() {
+            let structured_change_feed = is_full_fidelity_feed(parsed.a_im.as_deref())
+                || parsed.change_feed_wire_format_version.is_some();
+            let docs = if parsed.a_im.is_some() && structured_change_feed {
                 docs.into_iter().map(change_feed_envelope).collect()
             } else {
                 docs
@@ -4634,8 +4661,7 @@ fn unique_key_conflicts(
 fn unique_key_values_equal(left: &serde_json::Value, right: &serde_json::Value) -> bool {
     match (left, right) {
         (serde_json::Value::Number(left), serde_json::Value::Number(right)) => {
-            crate::driver::dataflow::order_by::OrderByNumber::from_json_number(left)
-                == crate::driver::dataflow::order_by::OrderByNumber::from_json_number(right)
+            left.as_f64() == right.as_f64()
         }
         _ => left == right,
     }
@@ -5534,20 +5560,8 @@ async fn handle_replace_locked(
         }
     };
 
-    match body.get("id").and_then(|value| value.as_str()) {
-        Some(body_id) if body_id == doc_id => {}
-        Some(_) => {
-            return error_response(
-                StatusCode::BadRequest,
-                None,
-                "BadRequest",
-                "Document id in request body must match the resource id in the request URI",
-                0.0,
-                "",
-                start,
-            )
-            .build();
-        }
+    let body_id = match body.get("id").and_then(|value| value.as_str()) {
+        Some(body_id) => body_id.to_owned(),
         None => {
             return error_response(
                 StatusCode::BadRequest,
@@ -5560,7 +5574,7 @@ async fn handle_replace_locked(
             )
             .build();
         }
-    }
+    };
 
     let region_ref = match store.region(region_name) {
         Some(r) => r,
@@ -5697,7 +5711,7 @@ async fn handle_replace_locked(
             .compute_replace_or_delete_ru(request_body.len(), num_props);
 
         // Replace
-        let new_doc = {
+        let (new_doc, renamed_from) = {
             let mut docs = partition.documents.write().unwrap();
             let logical = match docs.get_mut(&epk) {
                 Some(logical) => logical,
@@ -5749,6 +5763,9 @@ async fn handle_replace_locked(
                     .build());
                 }
             }
+            if body_id != doc_id && logical.contains_key(&body_id) {
+                return Err(unique_key_conflict_response(start));
+            }
             if unique_key_conflicts(&state.metadata, logical, doc_id, &body) {
                 return Err(unique_key_conflict_response(start));
             }
@@ -5772,9 +5789,18 @@ async fn handle_replace_locked(
             inject_system_properties(&current.rid, &current.self_link, &etag, ts, &mut body);
             // See create handler for rationale — cache wire size.
             let body_size_bytes = request_body.len();
+            let mut renamed_from = None;
+            if body_id != doc_id {
+                let mut tombstone = current.clone();
+                tombstone.lsn = lsn;
+                tombstone.ts = ts;
+                tombstone.source_region = region_name.to_owned();
+                renamed_from = Some(tombstone);
+                logical.remove(doc_id);
+            }
             let new_doc = StoredDocument {
                 body: body.clone(),
-                id: doc_id.to_string(),
+                id: body_id.clone(),
                 rid: current.rid,
                 etag: etag.clone(),
                 ts,
@@ -5784,8 +5810,8 @@ async fn handle_replace_locked(
                 body_size_bytes,
                 source_region: region_name.to_string(),
             };
-            logical.insert(doc_id.to_string(), new_doc.clone());
-            new_doc
+            logical.insert(body_id.clone(), new_doc.clone());
+            (new_doc, renamed_from)
         };
 
         // Recompute the session token after the write committed so the success
@@ -5803,11 +5829,14 @@ async fn handle_replace_locked(
             store.next_transport_request_id(),
         ));
 
-        Ok((new_doc, token, charge, body, headers))
+        Ok((new_doc, renamed_from, token, charge, body, headers))
     });
 
     match result {
-        Some(Ok((doc, token, charge, response_body, headers))) => {
+        Some(Ok((doc, renamed_from, token, charge, response_body, headers))) => {
+            if let Some(renamed_from) = renamed_from {
+                store.replicate(region_name, db_id, coll_id, &renamed_from, true);
+            }
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
@@ -6559,13 +6588,17 @@ mod tests {
     }
 
     fn document_item(epk: &str, id: &str) -> DocumentFeedItem {
+        document_item_with_lsn(epk, id, 0)
+    }
+
+    fn document_item_with_lsn(epk: &str, id: &str, lsn: u64) -> DocumentFeedItem {
         DocumentFeedItem {
             body: serde_json::json!({ "id": id }),
             cursor: DocumentFeedCursor {
                 epk: Epk::from(epk),
                 id: id.to_owned(),
             },
-            lsn: 0,
+            lsn,
         }
     }
 
@@ -6574,6 +6607,122 @@ mod tests {
             .iter()
             .map(|value| value["id"].as_str().expect("test document has id"))
             .collect()
+    }
+
+    #[tokio::test]
+    async fn change_feed_resume_skips_consumed_prefix() {
+        let items: Vec<_> = (1..=5)
+            .map(|lsn| document_item_with_lsn("01", &format!("item-{lsn}"), lsn))
+            .collect();
+        let first = success_change_feed_response(
+            "rid",
+            items.clone(),
+            Some(2),
+            None,
+            FeedResponseHeaders::none(),
+            Instant::now(),
+        )
+        .try_into_raw_response()
+        .await
+        .unwrap();
+        let checkpoint = first
+            .headers()
+            .get_optional_str(&ETAG)
+            .expect("change feed page must return an ETag")
+            .to_owned();
+
+        let second = success_change_feed_response(
+            "rid",
+            items,
+            Some(2),
+            Some(&checkpoint),
+            FeedResponseHeaders::none(),
+            Instant::now(),
+        )
+        .try_into_raw_response()
+        .await
+        .unwrap();
+        let body: serde_json::Value = serde_json::from_slice(second.body().as_ref()).unwrap();
+        assert_eq!(
+            ids(body["Documents"].as_array().unwrap()),
+            ["item-3", "item-4"]
+        );
+    }
+
+    #[tokio::test]
+    async fn change_feed_empty_resume_preserves_checkpoint() {
+        let item = document_item_with_lsn("01", "item-1", 1);
+        let checkpoint = change_feed_cursor_token(&item);
+        let response = success_change_feed_response(
+            "rid",
+            vec![item],
+            Some(2),
+            Some(&checkpoint),
+            FeedResponseHeaders::none(),
+            Instant::now(),
+        )
+        .try_into_raw_response()
+        .await
+        .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NotModified);
+        assert_eq!(
+            response.headers().get_optional_str(&ETAG),
+            Some(checkpoint.as_str())
+        );
+    }
+
+    #[tokio::test]
+    async fn change_feed_now_checkpoints_at_highest_lsn() {
+        let items = vec![
+            document_item_with_lsn("01", "item-1", 1),
+            document_item_with_lsn("01", "item-2", 2),
+        ];
+        let response = success_change_feed_response(
+            "rid",
+            items,
+            Some(2),
+            Some("*"),
+            FeedResponseHeaders::none(),
+            Instant::now(),
+        )
+        .try_into_raw_response()
+        .await
+        .unwrap();
+        let checkpoint = response
+            .headers()
+            .get_optional_str(&ETAG)
+            .expect("Now must produce a resumable checkpoint");
+        let cursor = parse_change_feed_cursor(checkpoint, Instant::now()).unwrap();
+
+        assert_eq!(response.status(), StatusCode::NotModified);
+        assert_eq!(cursor.lsn, 2);
+        assert_eq!(cursor.cursor.id, "item-2");
+    }
+
+    #[test]
+    fn change_feed_cursor_rejects_foreign_token_kind() {
+        let token = serde_json::json!({
+            "kind": "query_cursor_v1",
+            "lsn": 1,
+            "epk": "01",
+            "id": "item-1"
+        })
+        .to_string();
+
+        assert!(parse_change_feed_cursor(&token, Instant::now()).is_err());
+    }
+
+    #[test]
+    fn unique_key_numbers_follow_service_double_equivalence() {
+        assert!(unique_key_values_equal(
+            &serde_json::json!(1),
+            &serde_json::json!(1.0)
+        ));
+        assert!(unique_key_values_equal(
+            &serde_json::json!(9_007_199_254_740_992_u64),
+            &serde_json::json!(9_007_199_254_740_993_u64)
+        ));
     }
 
     #[test]

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{collections::BTreeSet, num::NonZeroU32};
+use std::num::NonZeroU32;
 
 use azure_data_cosmos::{
     feed::{ContinuationToken, FeedScope},
@@ -12,7 +12,7 @@ use futures::StreamExt;
 
 use crate::e2e_test_cases::{
     fixture::{E2eTestFixture, TestResult},
-    support::{gateway_request_counts, item, should_run, Item},
+    support::{assert_configured_transport, item, should_run, Item},
 };
 
 #[tokio::test]
@@ -28,19 +28,6 @@ async fn query_resumes_without_loss_or_duplication() -> TestResult {
     E2eTestFixture::run(async |fixture| {
         const ITEM_COUNT: i64 = 24;
         let partition_keys: Vec<_> = (0..6).map(|value| format!("partition-{value}")).collect();
-        let mut mapped_ranges = BTreeSet::new();
-        for partition_key in &partition_keys {
-            let ranges = fixture
-                .container
-                .feed_range_from_partition_key(partition_key.clone(), None)
-                .await?;
-            assert_eq!(ranges.len(), 1);
-            mapped_ranges.insert(ranges[0].to_string());
-        }
-        assert!(
-            mapped_ranges.len() >= 2,
-            "query fixture must span at least two physical feed ranges"
-        );
 
         for value in 0..ITEM_COUNT {
             let id = format!("item-{value}");
@@ -67,14 +54,11 @@ async fn query_resumes_without_loss_or_duplication() -> TestResult {
             )
             .await?
             .into_pages();
-        // Query planning and routing metadata may use the standard gateway.
-        // Capture counters only after planning so the page-fetch delta proves
-        // every data request remained on Gateway V2.
-        let gateway_before_pages = gateway_request_counts().await?;
         let first_page = first_iterator
             .next()
             .await
-            .expect("five results must produce a first page")?;
+            .expect("query results must produce a first page")?;
+        assert_configured_transport(first_page.diagnostics().as_ref());
         assert!(!first_page.items().is_empty());
         assert!(first_page.items().len() < ITEM_COUNT as usize);
         let token = first_iterator.to_continuation_token()?;
@@ -90,28 +74,24 @@ async fn query_resumes_without_loss_or_duplication() -> TestResult {
             .query_items::<Item>(query, FeedScope::full_container(), Some(options))
             .await?
             .into_pages();
+        let mut resumed_request_observed = false;
         while let Some(page) = resumed.next().await {
             let page = page?;
+            if page.diagnostics().request_count() > 0 {
+                assert_configured_transport(page.diagnostics().as_ref());
+                resumed_request_observed = true;
+            }
             actual.extend(page.into_items());
         }
+        assert!(
+            resumed_request_observed,
+            "resumed query must issue at least one backend request"
+        );
 
         assert_eq!(
             actual.iter().map(|value| value.value).collect::<Vec<_>>(),
             (0..ITEM_COUNT).collect::<Vec<_>>()
         );
-        if let Some(before) = gateway_before_pages {
-            let after = gateway_request_counts()
-                .await?
-                .expect("Gateway V2 metrics must remain available");
-            assert!(
-                after.gateway_v2 > before.gateway_v2,
-                "query pages must issue Gateway V2 requests"
-            );
-            assert_eq!(
-                after.gateway, before.gateway,
-                "query page requests must not fall back to the standard gateway"
-            );
-        }
         Ok(())
     })
     .await

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use azure_core::http::StatusCode;
 use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
 
 use crate::e2e_test_cases::{
@@ -63,6 +64,29 @@ async fn patch_paths_persist_exact_post_images() -> TestResult {
             .await?
             .into_model()?;
         assert_eq!(stored, rmw_post_image);
+
+        let id_patch = PatchInstructions::from(vec![PatchOperation::set(
+            "/id",
+            serde_json::json!("renamed-by-patch"),
+        )]);
+        let error = fixture
+            .container
+            .patch_item("A", &original.id, id_patch, None)
+            .await
+            .expect_err("PATCH must reject mutations of /id");
+        assert_eq!(error.status().status_code(), StatusCode::BadRequest);
+        let stored_after_id_patch: Item = fixture
+            .container
+            .read_item("A", &original.id, None)
+            .await?
+            .into_model()?;
+        assert_eq!(stored_after_id_patch, stored);
+        let renamed = fixture
+            .container
+            .read_item("A", "renamed-by-patch", None)
+            .await
+            .expect_err("rejected /id patch must not create a renamed item");
+        assert_eq!(renamed.status().status_code(), StatusCode::NotFound);
         Ok(())
     })
     .await

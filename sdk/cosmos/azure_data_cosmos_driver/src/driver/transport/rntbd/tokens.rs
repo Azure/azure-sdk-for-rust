@@ -467,6 +467,19 @@ impl Token {
         )
     }
 
+    /// Change-feed mode (`A_IM`, ID `0x003F`, `String`).
+    pub(crate) fn a_im(value: String) -> Self {
+        Self::new(RntbdRequestToken::AIm, TokenValue::String(value))
+    }
+
+    /// Change-feed response shape (`ChangeFeedWireFormatVersion`, ID `0x00B2`, `String`).
+    pub(crate) fn change_feed_wire_format_version(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::ChangeFeedWireFormatVersion,
+            TokenValue::String(value),
+        )
+    }
+
     /// Pagination cursor echoed back to the proxy on subsequent feed/query
     /// requests (ID 0x0006, String) — the SDK passes the value through
     /// unchanged so the backend can resume from the previous offset.
@@ -581,11 +594,13 @@ pub(crate) enum RntbdRequestToken {
     TransportRequestId,
     PartitionKey,
     PartitionKeyRangeId,
+    AIm,
     IfModifiedSince,
     EffectivePartitionKey,
     AllowTentativeWrites,
     ReturnPreference,
     SDKSupportedCapabilities,
+    ChangeFeedWireFormatVersion,
     GlobalDatabaseAccountName,
     ReadConsistencyStrategy,
     SupportedQueryFeatures,
@@ -614,12 +629,14 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x002B => Ok(Self::PartitionKey),
             0x002C => Ok(Self::PartitionKeyRangeId),
             0x0035 => Ok(Self::CollectionRid),
+            0x003F => Ok(Self::AIm),
             0x0047 => Ok(Self::IfModifiedSince),
             0x004D => Ok(Self::TransportRequestId),
             0x005A => Ok(Self::EffectivePartitionKey),
             0x0066 => Ok(Self::AllowTentativeWrites),
             0x0082 => Ok(Self::ReturnPreference),
             0x00A2 => Ok(Self::SDKSupportedCapabilities),
+            0x00B2 => Ok(Self::ChangeFeedWireFormatVersion),
             0x00CE => Ok(Self::GlobalDatabaseAccountName),
             0x00FE => Ok(Self::ReadConsistencyStrategy),
             0x00FF => Ok(Self::SupportedQueryFeatures),
@@ -649,12 +666,14 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::PartitionKey => 0x002B,
             RntbdRequestToken::PartitionKeyRangeId => 0x002C,
             RntbdRequestToken::CollectionRid => 0x0035,
+            RntbdRequestToken::AIm => 0x003F,
             RntbdRequestToken::IfModifiedSince => 0x0047,
             RntbdRequestToken::TransportRequestId => 0x004D,
             RntbdRequestToken::EffectivePartitionKey => 0x005A,
             RntbdRequestToken::AllowTentativeWrites => 0x0066,
             RntbdRequestToken::ReturnPreference => 0x0082,
             RntbdRequestToken::SDKSupportedCapabilities => 0x00A2,
+            RntbdRequestToken::ChangeFeedWireFormatVersion => 0x00B2,
             RntbdRequestToken::GlobalDatabaseAccountName => 0x00CE,
             RntbdRequestToken::ReadConsistencyStrategy => 0x00FE,
             RntbdRequestToken::SupportedQueryFeatures => 0x00FF,

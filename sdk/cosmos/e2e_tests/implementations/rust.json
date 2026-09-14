@@ -69,6 +69,16 @@
       "status": "active"
     },
     {
+      "id": "item.numeric-unique-key-equivalence",
+      "test": "numeric_unique_key_equivalence::wide_integers_follow_service_unique_key_equivalence",
+      "status": "active"
+    },
+    {
+      "id": "item.quoted-partition-key-paths",
+      "test": "quoted_partition_key_paths::quoted_paths_work_across_item_operations",
+      "status": "active"
+    },
+    {
       "id": "query.parameterized-filter",
       "test": "query_parameterized_filter::parameterized_query_filters_and_orders",
       "status": "active"

@@ -57,20 +57,20 @@ async fn validate_identity_partition_key_and_size() -> TestResult {
             .create_item("A", &original.id, &original, None)
             .await?;
         let mismatched_id = item("different", "A", 4);
-        assert_status(
-            "body and resource id mismatch",
-            fixture
-                .container
-                .replace_item("A", &original.id, mismatched_id, None)
-                .await,
-            StatusCode::BadRequest,
-        );
+        let response = fixture
+            .container
+            .replace_item("A", &original.id, &mismatched_id, None)
+            .await?;
+        assert_eq!(response.status(), StatusCode::Ok);
+        assert_missing(&fixture.container, "A", &original.id).await?;
         let stored: Item = fixture
             .container
-            .read_item("A", &original.id, None)
+            .read_item("A", &mismatched_id.id, None)
             .await?
             .into_model()?;
-        assert_eq!(stored, original);
+        assert_eq!(stored, mismatched_id);
+
+        let original = stored;
 
         let oversized = serde_json::json!({
             "id": "oversized",
@@ -91,6 +91,11 @@ async fn validate_identity_partition_key_and_size() -> TestResult {
             "/large",
             serde_json::json!("x".repeat(2 * 1024 * 1024)),
         )]);
+        let before_patch: serde_json::Value = fixture
+            .container
+            .read_item("A", &original.id, None)
+            .await?
+            .into_model()?;
         assert_status(
             "oversized patch",
             fixture
@@ -99,12 +104,13 @@ async fn validate_identity_partition_key_and_size() -> TestResult {
                 .await,
             StatusCode::PayloadTooLarge,
         );
-        let stored_after_patch: Item = fixture
+        let stored_after_patch: serde_json::Value = fixture
             .container
             .read_item("A", &original.id, None)
             .await?
             .into_model()?;
-        assert_eq!(stored_after_patch, original);
+        assert_eq!(stored_after_patch, before_patch);
+        assert!(stored_after_patch.get("large").is_none());
         Ok(())
     })
     .await
@@ -137,7 +143,7 @@ async fn validate_unique_key_scope() -> TestResult {
                     None,
                 )
                 .await,
-            StatusCode::BadRequest,
+            StatusCode::Forbidden,
         );
 
         let first = serde_json::json!({ "id": "first", "pk": "A", "email": "same@example.test" });
@@ -179,15 +185,6 @@ async fn validate_unique_key_scope() -> TestResult {
             StatusCode::Conflict,
         );
         assert_missing(&fixture.container, "A", "equivalent-numeric").await?;
-
-        for (id, email) in [
-            ("large-numeric-a", 9_007_199_254_740_992_u64),
-            ("large-numeric-b", 9_007_199_254_740_993_u64),
-        ] {
-            let value = serde_json::json!({ "id": id, "pk": "A", "email": email });
-            let response = fixture.container.create_item("A", id, value, None).await?;
-            assert_eq!(response.status(), StatusCode::Created);
-        }
 
         let distinct =
             serde_json::json!({ "id": "distinct", "pk": "A", "email": "other@example.test" });

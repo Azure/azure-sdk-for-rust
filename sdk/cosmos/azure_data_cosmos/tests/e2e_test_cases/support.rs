@@ -202,11 +202,26 @@ pub(super) fn assert_critical_diagnostics(
         Some(status_code)
     );
     assert!(diagnostics.request_count() >= 1);
-    let expected_transport = match std::env::var("AZURE_COSMOS_EMULATOR_FLAVOR").as_deref() {
+    assert_diagnostics_transport(diagnostics, configured_emulator_transport());
+}
+
+fn configured_emulator_transport() -> Option<TransportKind> {
+    match std::env::var("AZURE_COSMOS_EMULATOR_FLAVOR").as_deref() {
         Ok("inmemory-v1") => Some(TransportKind::Gateway),
         Ok("inmemory-v2") => Some(TransportKind::GatewayV2),
         _ => None,
-    };
+    }
+}
+
+pub(super) fn assert_configured_transport(diagnostics: &DiagnosticsContext) {
+    assert!(diagnostics.request_count() >= 1);
+    assert_diagnostics_transport(diagnostics, configured_emulator_transport());
+}
+
+fn assert_diagnostics_transport(
+    diagnostics: &DiagnosticsContext,
+    expected_transport: Option<TransportKind>,
+) {
     if let Some(expected_transport) = expected_transport {
         assert!(
             diagnostics
@@ -227,33 +242,4 @@ pub(super) fn assert_transport(diagnostics: &DiagnosticsContext, expected: Trans
             .all(|request| request.transport_kind() == expected),
         "completed requests must use {expected:?}"
     );
-}
-
-pub(super) async fn gateway_request_counts() -> TestResult<Option<GatewayRequestCounts>> {
-    if std::env::var("AZURE_COSMOS_EMULATOR_FLAVOR").as_deref() != Ok("inmemory-v2") {
-        return Ok(None);
-    }
-    let endpoint = std::env::var("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT")?;
-    let response = reqwest::Client::new()
-        .get(url::Url::parse(&endpoint)?.join("health")?)
-        .send()
-        .await?
-        .error_for_status()?;
-    let metrics: EmulatorMetrics = serde_json::from_slice(&response.bytes().await?)?;
-    Ok(Some(GatewayRequestCounts {
-        gateway: metrics.gateway_requests,
-        gateway_v2: metrics.gateway20_requests,
-    }))
-}
-
-pub(super) struct GatewayRequestCounts {
-    pub(super) gateway: u64,
-    pub(super) gateway_v2: u64,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct EmulatorMetrics {
-    gateway_requests: u64,
-    gateway20_requests: u64,
 }

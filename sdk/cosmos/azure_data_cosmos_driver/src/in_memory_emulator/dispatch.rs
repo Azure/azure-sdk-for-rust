@@ -111,6 +111,8 @@ pub(crate) struct ParsedRequest {
     /// read-feed handler consults this to decide whether to return flat
     /// documents or full-fidelity envelopes.
     pub a_im: Option<String>,
+    /// Requested structured change-feed response format, when present.
+    pub change_feed_wire_format_version: Option<String>,
     /// Host the request arrived on. The real gateway derives the account `id`
     /// in the account-read response from this rather than reporting a fixed
     /// name, so a client calling a regional endpoint sees the regional id.
@@ -148,6 +150,8 @@ static SUPPORTED_SERIALIZATION_FORMATS: HeaderName =
 static OFFER_AUTOPILOT_SETTINGS: HeaderName =
     HeaderName::from_static("x-ms-cosmos-offer-autopilot-settings");
 static A_IM: HeaderName = HeaderName::from_static("a-im");
+static CHANGE_FEED_WIRE_FORMAT_VERSION: HeaderName =
+    HeaderName::from_static("x-ms-cosmos-changefeed-wire-format-version");
 
 /// Parses an HTTP request into a `ParsedRequest`.
 pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
@@ -219,6 +223,9 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         .get_optional_str(&OFFER_AUTOPILOT_SETTINGS)
         .map(|s| s.to_string());
     let a_im = headers.get_optional_str(&A_IM).map(|s| s.to_string());
+    let change_feed_wire_format_version = headers
+        .get_optional_str(&CHANGE_FEED_WIRE_FORMAT_VERSION)
+        .map(str::to_owned);
 
     // The client advertises binary-response support via
     // `x-ms-cosmos-supported-serialization-formats: JsonText,CosmosBinary`.
@@ -320,6 +327,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
         is_batch,
         is_upsert,
         a_im,
+        change_feed_wire_format_version,
         request_host: url.host_str().map(|h| h.to_string()),
     }
 }

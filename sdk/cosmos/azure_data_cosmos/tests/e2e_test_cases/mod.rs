@@ -18,10 +18,12 @@ mod item_scalar_partition_keys;
 mod item_upsert;
 mod item_validation_contracts;
 mod management_resource_lifecycle;
+mod numeric_unique_key_equivalence;
 mod query_feed_ranges;
 mod query_invalid_syntax;
 mod query_pagination_resume;
 mod query_parameterized_filter;
+mod quoted_partition_key_paths;
 mod support;
 mod transactional_batch_atomicity;
 
@@ -39,6 +41,8 @@ const IMPLEMENTED_TESTS: &[&str] = &[
     "transactional_batch_atomicity::batch_success_and_failure_are_atomic",
     "item_patch_state::patch_paths_persist_exact_post_images",
     "item_validation_contracts::invalid_writes_preserve_state",
+    "numeric_unique_key_equivalence::wide_integers_follow_service_unique_key_equivalence",
+    "quoted_partition_key_paths::quoted_paths_work_across_item_operations",
     "query_parameterized_filter::parameterized_query_filters_and_orders",
     "query_invalid_syntax::invalid_query_is_not_an_empty_feed",
     "query_pagination_resume::query_resumes_without_loss_or_duplication",

@@ -34,6 +34,8 @@ const SCENARIOS: &[&str] = &[
     include_str!("../../../e2e_tests/scenarios/items/transactional-batch-atomicity.json"),
     include_str!("../../../e2e_tests/scenarios/items/patch-state.json"),
     include_str!("../../../e2e_tests/scenarios/items/validation-contracts.json"),
+    include_str!("../../../e2e_tests/scenarios/items/numeric-unique-key-equivalence.json"),
+    include_str!("../../../e2e_tests/scenarios/items/quoted-partition-key-paths.json"),
     include_str!("../../../e2e_tests/scenarios/queries/parameterized-filter.json"),
     include_str!("../../../e2e_tests/scenarios/queries/invalid-syntax.json"),
     include_str!("../../../e2e_tests/scenarios/queries/pagination-resume.json"),

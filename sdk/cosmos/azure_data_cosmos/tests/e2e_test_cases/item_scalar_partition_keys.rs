@@ -74,6 +74,32 @@ async fn run_scalar_cases(partition_key: PartitionKeyDefinition) -> TestResult {
                 .await?;
             assert_eq!(delete.status(), StatusCode::NoContent, "case {}", case.id);
         }
+
+        let object_value = serde_json::json!({
+            "id": "object-value",
+            "pk": {},
+            "value": 6,
+        });
+        let create = fixture
+            .container
+            .create_item(
+                PartitionKey::from(PartitionKey::UNDEFINED),
+                "object-value",
+                object_value,
+                None,
+            )
+            .await?;
+        assert_eq!(create.status(), StatusCode::Created);
+        let stored: serde_json::Value = fixture
+            .container
+            .read_item(
+                PartitionKey::from(PartitionKey::UNDEFINED),
+                "object-value",
+                None,
+            )
+            .await?
+            .into_model()?;
+        assert_eq!(stored["pk"], serde_json::json!({}));
         Ok(())
     })
     .await

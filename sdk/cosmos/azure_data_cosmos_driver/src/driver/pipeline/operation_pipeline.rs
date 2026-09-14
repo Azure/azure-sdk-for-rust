@@ -7233,11 +7233,8 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_falls_back_to_gateway_for_full_fidelity_change_feed() {
-        // A full-fidelity (AllVersionsAndDeletes) change feed is a
-        // `Document`/`ReadFeed` op — otherwise Gateway 2.0 eligible — but must
-        // route through the standard gateway because Gateway 2.0 does not
-        // forward the `A-IM` header. An incremental change feed on the same
-        // endpoint stays on Gateway 2.0.
+        // AllVersionsAndDeletes must use Gateway V1; incremental change feed
+        // remains eligible for Gateway V2.
         let full_fidelity = CosmosOperation::change_feed_all_versions_and_deletes(
             test_container(),
             Some(FeedRange::full()),

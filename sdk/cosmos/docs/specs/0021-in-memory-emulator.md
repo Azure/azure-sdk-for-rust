@@ -58,12 +58,14 @@ An **in-memory emulator** that intercepts requests at the `HttpClient` transport
 
 ### Non-Goals (This Phase)
 
-- Bulk / Patch operations (return hard-coded errors).
+- Bulk operations.
 - Network hosting remains outside the in-process `HttpClient` interception contract described by
   this document. The separate `azure_data_cosmos_emulator` host supports Gateway V1 and a scoped
   Gateway 2.0 adapter; see the
   hosted emulator specification (`0027-hosted-emulator.md`).
-- Change feed.
+- Historical change-feed versions, deletes, and pre-images. The emulator
+  supports deterministic LatestVersion snapshots and minimal
+  AllVersionsAndDeletes envelopes for current documents.
 - Stored procedures / triggers / UDFs.
 - Complete Cosmos SQL service parity beyond the local query evaluator and local query-plan analyzer.
 - Per-container conflict-resolution policy customisation. Every container the
@@ -74,6 +76,14 @@ An **in-memory emulator** that intercepts requests at the `HttpClient` transport
   exercised. If a future test needs custom (or `Custom` mode) conflict
   resolution, the policy must be made per-container configurable in
   `ContainerConfig` and threaded through `container_to_json`.
+
+The emulator supports container replacement with immutable partition-key and
+unique-key policies, conditional replacement through `If-Match`, item payload
+size validation, and unique-key enforcement within a logical partition.
+Container metadata such as indexing and unique-key policies can round trip for
+test assertions, but only behavior explicitly modeled by the emulator is
+enforced. Client-supplied conflict-resolution metadata never overrides the
+fixed LWW policy described above.
 
 ---
 

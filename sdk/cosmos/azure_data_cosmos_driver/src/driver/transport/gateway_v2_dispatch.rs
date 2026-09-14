@@ -49,6 +49,9 @@ const IF_MATCH: HeaderName = HeaderName::from_static(request_header_names::IF_MA
 const IF_NONE_MATCH: HeaderName = HeaderName::from_static(request_header_names::IF_NONE_MATCH);
 const IF_MODIFIED_SINCE: HeaderName =
     HeaderName::from_static(request_header_names::IF_MODIFIED_SINCE);
+const A_IM: HeaderName = HeaderName::from_static(request_header_names::A_IM);
+const CHANGE_FEED_WIRE_FORMAT_VERSION: HeaderName =
+    HeaderName::from_static(request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION);
 const X_MS_VERSION: HeaderName = HeaderName::from_static(request_header_names::VERSION);
 const CACHE_CONTROL: HeaderName = HeaderName::from_static(request_header_names::CACHE_CONTROL);
 
@@ -313,6 +316,20 @@ pub(crate) fn wrap_request_for_gateway_v2(
         .filter(|s| !s.is_empty())
     {
         metadata.push(Token::if_modified_since(value.to_owned()));
+    }
+    if let Some(value) = request
+        .headers
+        .get_optional_str(&A_IM)
+        .filter(|s| !s.is_empty())
+    {
+        metadata.push(Token::a_im(value.to_owned()));
+    }
+    if let Some(value) = request
+        .headers
+        .get_optional_str(&CHANGE_FEED_WIRE_FORMAT_VERSION)
+        .filter(|s| !s.is_empty())
+    {
+        metadata.push(Token::change_feed_wire_format_version(value.to_owned()));
     }
 
     // Debug-only visibility into exactly which RNTBD metadata tokens are
@@ -1475,6 +1492,64 @@ mod tests {
         assert!(!parse_wrapped_request(&wrapped, 0)
             .tokens
             .contains_key(&0x0004));
+    }
+
+    #[test]
+    fn wrap_emits_incremental_feed_a_im_token() {
+        let mut request = signed_request(None);
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::A_IM),
+            request_header_names::INCREMENTAL_FEED,
+        );
+        request.headers.insert(
+            HeaderName::from_static(request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION),
+            request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15,
+        );
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs",
+        );
+
+        let wrapped = wrap_request_for_gateway_v2(
+            request,
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
+        )
+        .unwrap();
+
+        assert_eq!(
+            parse_wrapped_request(&wrapped, 0).tokens[&0x003F],
+            ParsedTokenValue::String(request_header_names::INCREMENTAL_FEED.into())
+        );
+        assert_eq!(
+            parse_wrapped_request(&wrapped, 0).tokens[&0x00B2],
+            ParsedTokenValue::String(
+                request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15.into()
+            )
+        );
+    }
+
+    #[test]
+    fn wrap_omits_a_im_token_for_ordinary_read_feed() {
+        let request = signed_request(None);
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs",
+        );
+
+        let wrapped = wrap_request_for_gateway_v2(
+            request,
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
+        )
+        .unwrap();
+
+        assert!(!parse_wrapped_request(&wrapped, 0)
+            .tokens
+            .contains_key(&0x003F));
+        assert!(!parse_wrapped_request(&wrapped, 0)
+            .tokens
+            .contains_key(&0x00B2));
     }
 
     #[test]

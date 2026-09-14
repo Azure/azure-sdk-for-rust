@@ -66,9 +66,6 @@ fn router(
 }
 
 async fn dispatch(State(state): State<GatewayV2State>, request: Request) -> Response<Body> {
-    if request.uri().path() != "/connectivity-probe" {
-        state.metrics.record_gateway20_request();
-    }
     match execute(state, request).await {
         Ok(response) => response,
         Err((status, message)) => {
@@ -116,6 +113,7 @@ async fn execute(
             (status, error.to_string())
         })?;
     let response = data_plane::into_http_response(response).await?;
+    state.metrics.record_gateway20_request();
     #[cfg(test)]
     if let Some(request_count) = &state.request_count {
         request_count.fetch_add(1, Ordering::SeqCst);
@@ -175,12 +173,13 @@ mod tests {
         let base_url = Url::parse("http://127.0.0.1:18444/").unwrap();
         let region = VirtualRegion::new("East US", Url::parse("http://127.0.0.1:18081/").unwrap())
             .with_gateway_v2_url(base_url.clone());
+        let metrics = Arc::new(HostMetrics::default());
         let state = GatewayV2State {
             emulator: Arc::new(InMemoryEmulatorHttpClient::new(
                 VirtualAccountConfig::new(vec![region]).unwrap(),
             )),
             base_url,
-            metrics: Arc::new(HostMetrics::default()),
+            metrics: metrics.clone(),
             request_count: None,
             probe_count: None,
         };
@@ -195,6 +194,7 @@ mod tests {
             let error = execute(state.clone(), request).await.unwrap_err();
             assert_eq!(error.0, StatusCode::METHOD_NOT_ALLOWED);
         }
+        assert_eq!(metrics.gateway20_requests(), 0);
     }
 
     #[tokio::test]

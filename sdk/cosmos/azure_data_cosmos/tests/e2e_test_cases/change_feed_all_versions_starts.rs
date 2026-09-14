@@ -26,6 +26,22 @@ async fn all_versions_rejects_unsupported_starts() -> TestResult {
     }
 
     E2eTestFixture::run(async |fixture| {
+        let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
+        let mut available = fixture
+            .container
+            .query_change_feed::<Item>(
+                FeedScope::partition("A"),
+                ChangeFeedStartFrom::Now,
+                Some(options),
+            )
+            .await?;
+        let page = available
+            .next()
+            .await
+            .expect("all-versions change feed must return an initial page")?;
+        assert!(page.items().is_empty());
+        assert_transport(page.diagnostics().as_ref(), TransportKind::Gateway);
+
         for start in [
             ChangeFeedStartFrom::Beginning,
             ChangeFeedStartFrom::PointInTime(OffsetDateTime::now_utc()),

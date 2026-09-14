@@ -8,8 +8,13 @@
   "precedents": [
     {
       "sdk": "rust",
+      "path": "sdk/cosmos/azure_data_cosmos/tests/in_memory_emulator_tests/change_feed.rs",
+      "test": "all_versions_and_deletes_rejects_beginning"
+    },
+    {
+      "sdk": "rust",
       "path": "sdk/cosmos/azure_data_cosmos/tests/emulator_tests/cosmos_change_feed.rs",
-      "test": "change_feed_all_versions_rejects_beginning/change_feed_all_versions_rejects_point_in_time"
+      "test": "all_versions_and_deletes_rejects_point_in_time_start"
     }
   ],
   "profiles": [
@@ -31,7 +36,7 @@
     "hostedEmulatorGatewayV2": {
       "applicability": "required",
       "fidelity": "full",
-      "reason": "AllVersionsAndDeletes intentionally uses the standard gateway because Gateway V2 cannot forward the A-IM mode header.",
+      "reason": "AllVersionsAndDeletes intentionally uses Compute Gateway because full-fidelity change feed is not supported by Gateway V2.",
       "requires": [
         "changeFeed",
         "gatewayV2"

@@ -9,7 +9,7 @@
     {
       "sdk": "rust",
       "path": "sdk/cosmos/azure_data_cosmos/tests/emulator_tests/cosmos_query.rs",
-      "test": "query_with_continuation_tokens"
+      "test": "cross_partition_query_with_order_by"
     }
   ],
   "profiles": [

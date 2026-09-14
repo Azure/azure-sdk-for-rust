@@ -1,15 +1,15 @@
 {
   "$schema": "../../schema/scenario.v1.json",
   "specVersion": "1.0",
-  "id": "item.patch-state",
-  "title": "Patch strategies persist the exact post-image",
-  "requirement": "Safe server-side and read-modify-write patch paths return and persist the same exact post-image, while attempts to patch the item ID fail without changing its addressability or stored state.",
+  "id": "item.numeric-unique-key-equivalence",
+  "title": "Numeric unique keys use service number equivalence",
+  "requirement": "Unique-key comparison treats wide JSON integers according to the Cosmos DB service number model within one logical partition.",
   "maturity": "candidate",
   "precedents": [
     {
-      "sdk": "rust",
-      "path": "sdk/cosmos/azure_data_cosmos/tests/emulator_tests/cosmos_patch.rs",
-      "test": "patch_item_auto_commits_safe_list_server_side/patch_item_round_trip"
+      "sdk": "service",
+      "path": "https://learn.microsoft.com/azure/cosmos-db/unique-keys",
+      "test": "unique keys are scoped to a logical partition"
     }
   ],
   "profiles": [
@@ -17,7 +17,8 @@
   ],
   "tags": [
     "item",
-    "patch",
+    "uniqueKey",
+    "numeric",
     "coreOperations"
   ],
   "backends": {
@@ -25,16 +26,16 @@
       "applicability": "required",
       "fidelity": "full",
       "requires": [
-        "item",
-        "patch"
+        "container",
+        "item"
       ]
     },
     "hostedEmulatorGatewayV2": {
       "applicability": "required",
       "fidelity": "full",
       "requires": [
+        "container",
         "item",
-        "patch",
         "gatewayV2"
       ]
     },

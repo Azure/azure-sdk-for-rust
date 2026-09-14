@@ -3,13 +3,18 @@
   "specVersion": "1.0",
   "id": "item.validation-contracts",
   "title": "Invalid item writes fail without changing state",
-  "requirement": "Missing or mismatched identity, mismatched partition keys, oversized payloads, and duplicate unique keys return stable failures without mutating stored items.",
+  "requirement": "Missing identity, mismatched partition keys, oversized payloads, and duplicate unique keys return stable failures without mutating stored items; name-addressed Replace can mutate the item ID while retaining its resource identity.",
   "maturity": "candidate",
   "precedents": [
     {
       "sdk": "rust",
       "path": "sdk/cosmos/azure_data_cosmos/tests/emulator_tests/cosmos_items.rs",
-      "test": "item write validation"
+      "test": "create_item_duplicate_returns_conflict"
+    },
+    {
+      "sdk": "rust",
+      "path": "sdk/cosmos/azure_data_cosmos/tests/emulator_tests/cosmos_items.rs",
+      "test": "item_replace_if_match_etag"
     },
     {
       "sdk": "service",

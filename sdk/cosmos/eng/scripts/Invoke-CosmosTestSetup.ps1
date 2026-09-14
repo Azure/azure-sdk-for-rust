@@ -192,18 +192,10 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
     $ready = $false
     $expectedGateway20 = $env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'inmemory-v2'
-    $expectedAccountId = $null
+    $expectedAccountId = 'emulator-account'
     if ($env:AZURE_COSMOS_E2E_PROFILE) {
         $e2eConfiguration = New-CosmosE2eEmulatorConfig `
             -ProfileId $env:AZURE_COSMOS_E2E_PROFILE `
-            -GatewayV2Enabled $expectedGateway20 `
-            -OutputDirectory $runDirectory
-        $configuration = $e2eConfiguration.Path
-        $expectedAccountId = $e2eConfiguration.AccountId
-    }
-    else {
-        $e2eConfiguration = New-CosmosE2eEmulatorConfig `
-            -ProfileId 'hostedEmulatorSmoke' `
             -GatewayV2Enabled $expectedGateway20 `
             -OutputDirectory $runDirectory
         $configuration = $e2eConfiguration.Path

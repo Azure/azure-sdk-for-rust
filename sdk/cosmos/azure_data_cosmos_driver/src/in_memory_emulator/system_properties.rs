@@ -104,7 +104,11 @@ pub(crate) fn container_to_json(meta: &super::store::ContainerMetadata) -> serde
     });
     if let Some(object) = body.as_object_mut() {
         for (name, value) in &meta.properties {
-            if name != "id" && name != "partitionKey" && !name.starts_with('_') {
+            if name != "id"
+                && name != "partitionKey"
+                && name != "conflictResolutionPolicy"
+                && !name.starts_with('_')
+            {
                 object.insert(name.clone(), value.clone());
             }
         }

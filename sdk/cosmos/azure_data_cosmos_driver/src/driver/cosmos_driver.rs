@@ -149,6 +149,7 @@ struct DriverRequestExecutor<'a> {
     options: &'a OperationOptions,
     absolute_deadline: Option<Instant>,
     successful_requests: usize,
+    diagnostics_sources: Vec<Arc<DiagnosticsContext>>,
     container_recreation_recovery_disabled: bool,
     container_recreation_recovery_tracker: Arc<ContainerRecreationRecoveryTracker>,
 }
@@ -298,8 +299,9 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
             let result = driver
                 .execute_operation_direct(&operation, overrides, self.options)
                 .await;
-            if result.is_ok() {
+            if let Ok(response) = &result {
                 self.successful_requests += 1;
+                self.diagnostics_sources.push(response.diagnostics());
             }
             result
         })
@@ -3420,6 +3422,7 @@ impl CosmosDriver {
             options,
             absolute_deadline,
             successful_requests: 0,
+            diagnostics_sources: Vec::new(),
             container_recreation_recovery_disabled: plan.container_recreation_recovery_attempted,
             container_recreation_recovery_tracker: Arc::clone(&recovery_tracker),
         };
@@ -3439,6 +3442,17 @@ impl CosmosDriver {
                 .map(|topology| topology as &mut dyn TopologyProvider),
         );
         let result = plan.pipeline.next_page(&mut context).await;
+        let result = match result {
+            Ok(Some(response))
+                if response.diagnostics().request_count() == 0
+                    && !executor.diagnostics_sources.is_empty() =>
+            {
+                Ok(Some(response.with_aggregated_prior_diagnostics(
+                    &executor.diagnostics_sources,
+                )))
+            }
+            result => result,
+        };
         (
             result,
             executor.successful_requests,

@@ -235,6 +235,9 @@ CI.
 
 ### PR2 — Core operations and emulator fidelity
 
+**Status:** Implemented for hosted-emulator validation; live differential
+execution is deferred to the live-promotion phase.
+
 Scope:
 
 - database and container control-plane lifecycle;
@@ -250,12 +253,16 @@ Scope:
 - patch operation and strategy behavior;
 - exact post-operation state assertions;
 - expanded negative status/substatus coverage;
-- emulator support needed for those scenarios; and
-- selected live differential baselines used to confirm emulator fidelity.
+- emulator support needed for those scenarios.
 
 PR2 should add emulator behavior only when required by a concrete SDK scenario.
 Differences discovered against live accounts must be fixed, explicitly modeled
 as simulated, or documented as not applicable.
+
+The PR2 pipeline does not run a live-account job. Its `azureLive: supported`
+metadata remains declarative until targeted differential scenarios are wired
+and validated during live promotion; hosted-emulator results must not be
+treated as evidence of live-service fidelity.
 
 ### PR3 — Configuration, consistency, and resilience
 
@@ -309,6 +316,7 @@ Scope:
 
 - complete live-account setup profiles;
 - fixed-account and provisioned-account E2E matrices;
+- targeted live differential baselines that confirm emulator fidelity;
 - Azure Live execution for every eligible scenario;
 - promotion of validated `azureLive` applicability from `supported` to
   `required`;
