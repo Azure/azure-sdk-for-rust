@@ -22,6 +22,7 @@ async-stream.workspace = true
 async-trait.workspace = true
 azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", features = ["xml"] }
 azure_storage_common = { path = "../azure_storage_common", version = "1.1.0-beta.1" }
+bitflags.workspace = true
 bytes.workspace = true
 futures.workspace = true
 percent-encoding.workspace = true
