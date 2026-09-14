@@ -176,6 +176,8 @@ BeforeEach {
         $provenance.rust_toolchain.manager_version | Should -Be 'msrustup 1.0.0'
         $provenance.rust_toolchain.channel | Should -Be $MicrosoftRustChannel
         $provenance.rust_toolchain.rustc_release | Should -Be '1.95.0'
+        $provenance.rust_toolchain.rustc_commit_hash |
+            Should -Be '0123456789abcdef0123456789abcdef01234567'
         $provenance.rust_toolchain.cargo_version | Should -Be 'cargo 1.95.0'
 
         @($provenance.targets).Count | Should -Be @($Matrix.targets).Count
@@ -333,6 +335,19 @@ LLVM version: 21.1.0
 
         { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
             Should -Throw "*release identity 'rustc_release' mismatch*"
+    }
+
+    It 'rejects targets built from different compiler commits' {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'linux-amd64-glibc' -Update {
+            param($metadata)
+            $metadata.toolchain.rustc_verbose_version = $metadata.toolchain.rustc_verbose_version `
+                -replace `
+                    'commit-hash: 0123456789abcdef0123456789abcdef01234567',
+                    'commit-hash: fedcba9876543210fedcba9876543210fedcba98'
+        }
+
+        { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
+            Should -Throw "*release identity 'rustc_commit_hash' mismatch*"
     }
 
     It 'rejects a static archive whose bytes do not match metadata' {

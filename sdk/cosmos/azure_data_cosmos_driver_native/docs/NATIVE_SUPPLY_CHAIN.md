@@ -199,8 +199,9 @@ binds the published static libraries back to their exact source:
   authoritative pin);
 - `native_interface_crate` / `native_interface_version` — the wrapper crate and
   the `AZURECOSMOSDRIVER_H_VERSION` header contract; and
-- `toolchain` — the Microsoft provider, `msrustup` manager identity, pinned
-  channel, Rust release, and Cargo version shared by every target; and
+- `rust_toolchain` — the Microsoft provider, `msrustup` manager identity, pinned
+  channel, Rust release, compiler commit, and Cargo version shared by every
+  target; and
 - `targets[]` — one entry per built row with its `id`, `triple`, `module_path`,
   full `rustc -Vv` output, linker identity, and the SHA256 of the static library
   and C header.

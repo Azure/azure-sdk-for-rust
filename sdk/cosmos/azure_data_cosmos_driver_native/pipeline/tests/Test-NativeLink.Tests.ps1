@@ -98,7 +98,7 @@ Describe 'Test-NativeLink target validation' {
         Should -Invoke go -Exactly 0
     }
 
-    It 'rejects upstream Rust metadata before invoking Go' {
+    It 'links upstream Rust metadata when its target matches the matrix' {
         $metadata = Get-Content $MetadataPath -Raw | ConvertFrom-Json
         $metadata.toolchain.provider = 'upstream'
         $metadata.toolchain.manager.executable = 'rustup'
@@ -111,8 +111,8 @@ Describe 'Test-NativeLink target validation' {
                 -ArtifactRoot $ArtifactRoot `
                 -CCompiler 'pwsh' `
                 -MatrixPath $MatrixPath
-        } | Should -Throw '*toolchain provider is not Microsoft Rust*'
+        } | Should -Not -Throw
 
-        Should -Invoke go -Exactly 0
+        Should -Invoke go -Exactly 1
     }
 }

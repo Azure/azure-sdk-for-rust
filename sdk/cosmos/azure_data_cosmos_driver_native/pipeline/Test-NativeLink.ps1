@@ -72,18 +72,6 @@ foreach ($property in $expectedIdentity.Keys) {
         throw "[$TargetId] metadata '$property' does not match build-matrix.json."
     }
 }
-if ([string]$metadata.toolchain.provider -cne 'microsoft') {
-    throw "[$TargetId] metadata toolchain provider is not Microsoft Rust."
-}
-$manager = [System.IO.Path]::GetFileNameWithoutExtension(
-    [string]$metadata.toolchain.manager.executable
-)
-if ($manager -cne 'msrustup') {
-    throw "[$TargetId] metadata toolchain manager is not msrustup."
-}
-if ([string]$metadata.toolchain.channel -notmatch '^ms-prod-\d+(?:\.\d+)+$') {
-    throw "[$TargetId] metadata Microsoft Rust channel is not explicitly pinned."
-}
 if ([string]$metadata.toolchain.target -cne [string]$target.triple) {
     throw "[$TargetId] metadata toolchain target does not match build-matrix.json."
 }

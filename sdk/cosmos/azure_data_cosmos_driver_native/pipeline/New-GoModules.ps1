@@ -57,8 +57,20 @@ $ErrorActionPreference = 'Stop'
 
 $PipelineDir = $PSScriptRoot
 $MetadataFilename = 'rust-driver-native-interface-metadata.json'
-$CrateDir = Split-Path -Parent $PipelineDir
-$RepoRoot = (Resolve-Path (Join-Path $CrateDir '..' '..' '..')).Path
+. ([System.IO.Path]::Combine(
+    $PipelineDir,
+    '..',
+    '..',
+    '..',
+    '..',
+    'eng',
+    'common',
+    'scripts',
+    'common.ps1'
+))
+if (-not (Get-Variable -Name RepoRoot -ValueOnly -ErrorAction Ignore)) {
+    throw "eng/common/scripts/common.ps1 did not define RepoRoot."
+}
 . ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'shared', 'common.ps1'))
 
 if (-not $ToolchainConfigPath) {
@@ -302,6 +314,14 @@ foreach ($row in $rows) {
     if ($verboseRustcRelease -cne $rustcRelease) {
         throw "[$($row.id)] metadata rustc release '$rustcRelease' does not match rustc identity release '$verboseRustcRelease'."
     }
+    $rustcCommitMatches = [regex]::Matches(
+        $rustcVerboseVersion,
+        '(?m)^commit-hash:\s*(\S+)\s*$'
+    )
+    if ($rustcCommitMatches.Count -ne 1) {
+        throw "[$($row.id)] metadata rustc identity must report exactly one commit hash."
+    }
+    $rustcCommitHash = $rustcCommitMatches[0].Groups[1].Value
     $channelRelease = $channel.Substring('ms-prod-'.Length)
     if ($rustcRelease -notmatch "^$([regex]::Escape($channelRelease))(?:\.|$)") {
         throw "[$($row.id)] metadata Microsoft Rust release '$rustcRelease' does not match pinned channel '$channel'."
@@ -370,6 +390,7 @@ foreach ($row in $rows) {
         rust_toolchain_manager_version = $managerVersion
         rust_toolchain_channel = $channel
         rustc_release = $rustcRelease
+        rustc_commit_hash = $rustcCommitHash
         cargo_version = $cargoVersion
     }
     if ($null -eq $releaseIdentity) {
@@ -516,6 +537,7 @@ $provenance = [ordered]@{
         manager_version = $releaseIdentity['rust_toolchain_manager_version']
         channel         = $releaseIdentity['rust_toolchain_channel']
         rustc_release   = $releaseIdentity['rustc_release']
+        rustc_commit_hash = $releaseIdentity['rustc_commit_hash']
         cargo_version   = $releaseIdentity['cargo_version']
     }
     targets                  = @($provenanceTargets)

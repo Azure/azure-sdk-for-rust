@@ -69,10 +69,23 @@ $ErrorActionPreference = 'Stop'
 
 $PipelineDir = $PSScriptRoot
 $CrateDir    = Split-Path -Parent $PipelineDir
-$RepoRoot    = (Resolve-Path (Join-Path $CrateDir '..' '..' '..')).Path
 $MatrixPath  = Join-Path $PipelineDir 'build-matrix.json'
 $MetadataFilename = 'rust-driver-native-interface-metadata.json'
 
+. ([System.IO.Path]::Combine(
+    $PipelineDir,
+    '..',
+    '..',
+    '..',
+    '..',
+    'eng',
+    'common',
+    'scripts',
+    'common.ps1'
+))
+if (-not (Get-Variable -Name RepoRoot -ValueOnly -ErrorAction Ignore)) {
+    throw "eng/common/scripts/common.ps1 did not define RepoRoot."
+}
 . ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'shared', 'common.ps1'))
 
 if (-not $ToolchainConfigPath) {

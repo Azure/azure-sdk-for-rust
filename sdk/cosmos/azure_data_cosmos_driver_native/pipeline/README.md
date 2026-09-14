@@ -103,9 +103,12 @@ signature verifier.
 
 Each target artifact includes schema 4 metadata with the selected toolchain
 manager, pinned Microsoft Rust channel, manager and Cargo versions, complete
-`rustc -Vv` output, target triple, and linker command, resolved path, and version
-output. `New-GoModules.ps1` rejects missing or mixed toolchain identities before
-writing schema 2 `provenance.json`.
+`rustc -Vv` output and compiler commit, target triple, and linker command,
+resolved path, and version output. `New-GoModules.ps1` rejects missing or mixed
+toolchain identities before writing schema 2 `provenance.json`. The link smoke
+test remains toolchain-neutral so third-party builds can validate compatible
+artifacts; the Microsoft Rust policy applies only at the governed production
+build and publication boundaries.
 
 The native-driver pipeline is not part of the automatic pull-request pipeline.
 Authorized reviewers can run its registered pipeline definition against a pull
