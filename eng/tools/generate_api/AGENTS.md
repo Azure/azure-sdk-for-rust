@@ -200,6 +200,7 @@ Signature normalization:
 - render receivers spelled as `self: Self`, `self: &Self`, `self: &mut Self` as `self`, `&self`, `&mut self`
 - keep `Self` unchanged in non-receiver positions
 - keep inherent impls in their original impl-header shape including generics and bounds
+- render functions in inherent impls as `pub`; keep trait and trait-impl functions without visibility
 
 ## Async-trait rendering
 

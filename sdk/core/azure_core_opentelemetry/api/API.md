@@ -15,8 +15,8 @@
 pub struct OpenTelemetryTracerProvider {
 }
 impl OpenTelemetryTracerProvider {
-    fn from_global_provider() -> Arc<Self>;
-    fn new(provider: Arc<dyn ObjectSafeTracerProvider + Send + Sync>) -> Arc<Self>;
+    pub fn from_global_provider() -> Arc<Self>;
+    pub fn new(provider: Arc<dyn ObjectSafeTracerProvider + Send + Sync>) -> Arc<Self>;
 }
 impl Debug for OpenTelemetryTracerProvider {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;

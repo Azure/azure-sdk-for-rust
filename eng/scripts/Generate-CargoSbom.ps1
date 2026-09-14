@@ -39,18 +39,6 @@ $manifestPaths = Get-CargoManifestPaths `
   -ManifestDir $ManifestDir `
   -Workspace:$Workspace
 $workspaceManifestPath = [System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')
-$packageArgs = @('--manifest-path', "'$workspaceManifestPath'")
-if ($Workspace) {
-  $packageArgs += '--workspace'
-}
-else {
-  $packages = Get-CargoSelectedPackages `
-    -PackageName $PackageName `
-    -ManifestDir $ManifestDir
-  foreach ($package in $packages) {
-    $packageArgs += '--package', $package.name
-  }
-}
 
 # Cargo owns SBOM generation, so nightly Cargo can drive the stable compiler without
 # weakening the stable-toolchain validation performed by the rest of the pipeline.
@@ -58,9 +46,12 @@ $env:CARGO_BUILD_SBOM = 'true'
 $env:RUSTC = $stableRustc
 $env:RUSTUP_TOOLCHAIN = $stableToolchain
 
-Invoke-LoggedCommand `
-  "& `"$nightlyCargo`" -Z sbom build --locked --all-features --keep-going $($packageArgs -join ' ')" `
-  -GroupOutput
+foreach ($manifestPath in $manifestPaths) {
+  $workspaceArg = if ($Workspace) { '--workspace' } else { '' }
+  Invoke-LoggedCommand `
+    "& `"$nightlyCargo`" -Z sbom build --manifest-path '$manifestPath' $workspaceArg --locked --all-features --keep-going" `
+    -GroupOutput
+}
 
 $metadata = Invoke-LoggedCommand `
   "& `"$nightlyCargo`" metadata --manifest-path '$workspaceManifestPath' --no-deps --format-version 1 --locked" |
