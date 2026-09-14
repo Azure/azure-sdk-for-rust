@@ -32,7 +32,7 @@ use futures::{
 
 use crate::generated::{
     clients::BlobClient,
-    models::{BlobClientListLayoutOptions, BlobLayout},
+    models::{BlobClientGetLayoutOptions, BlobLayout},
 };
 
 /// A contiguous byte range of a blob and the endpoint that serves it.
@@ -242,13 +242,13 @@ pub(crate) struct LayoutPrefetch {
 pub(crate) async fn fetch_layout(
     client: &BlobClient,
     context: &Context<'_>,
-    options: &BlobClientListLayoutOptions<'_>,
+    options: &BlobClientGetLayoutOptions<'_>,
 ) -> Result<Option<LayoutPrefetch>> {
     let mut layout = Layout::default();
     let mut locked_etag = options.if_match.clone();
     let mut options = options.clone();
     options.method_options.context = context.clone().into_owned();
-    let mut pages = client.list_layout(Some(options))?;
+    let mut pages = client.get_layout(Some(options))?;
 
     while let Some(response) = pages.next().await {
         let response = match response {
@@ -295,7 +295,7 @@ const LAYOUT_REFRESH_TIMEOUT: azure_core::time::Duration = azure_core::time::Dur
 /// before it expires so range requests keep routing without blocking on a fetch.
 pub(crate) struct LayoutCache {
     client: Arc<BlobClient>,
-    layout_options: BlobClientListLayoutOptions<'static>,
+    layout_options: BlobClientGetLayoutOptions<'static>,
     state: Arc<Mutex<CachedLayout>>,
 }
 
@@ -323,7 +323,7 @@ impl CachedLayout {
 impl LayoutCache {
     pub fn new(
         client: Arc<BlobClient>,
-        layout_options: BlobClientListLayoutOptions<'static>,
+        layout_options: BlobClientGetLayoutOptions<'static>,
         layout: Arc<Layout>,
     ) -> Self {
         Self {
@@ -351,7 +351,7 @@ impl LayoutCache {
 
     async fn refresh(
         client: Arc<BlobClient>,
-        layout_options: BlobClientListLayoutOptions<'static>,
+        layout_options: BlobClientGetLayoutOptions<'static>,
         state: Arc<Mutex<CachedLayout>>,
     ) {
         let context = Context::new();
@@ -778,7 +778,7 @@ mod tests {
         let prefetch = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientListLayoutOptions::default(),
+            &BlobClientGetLayoutOptions::default(),
         )
         .await
         .unwrap()
@@ -824,7 +824,7 @@ mod tests {
         let prefetch = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientListLayoutOptions {
+            &BlobClientGetLayoutOptions {
                 if_match: Some(Etag::from("etag-1")),
                 ..Default::default()
             },
@@ -849,7 +849,7 @@ mod tests {
     // Once the emitter is fixed, this test should be changed to assert the corrected empty or
     // optional result generated for a successful 204 response.
     #[tokio::test]
-    async fn generated_list_layout_fails_to_deserialize_valid_no_content_response() {
+    async fn generated_get_layout_fails_to_deserialize_valid_no_content_response() {
         let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(|_req| {
             async move {
                 Ok(AsyncRawResponse::from_bytes(
@@ -862,7 +862,7 @@ mod tests {
         }));
 
         let client = layout_client(mock);
-        let mut pages = client.list_layout(None).unwrap();
+        let mut pages = client.get_layout(None).unwrap();
 
         let error = pages
             .next()
@@ -893,7 +893,7 @@ mod tests {
         let result = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientListLayoutOptions::default(),
+            &BlobClientGetLayoutOptions::default(),
         )
         .await
         .unwrap();
@@ -917,7 +917,7 @@ mod tests {
         let result = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientListLayoutOptions::default(),
+            &BlobClientGetLayoutOptions::default(),
         )
         .await
         .unwrap();
@@ -941,7 +941,7 @@ mod tests {
         let result = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientListLayoutOptions::default(),
+            &BlobClientGetLayoutOptions::default(),
         )
         .await
         .unwrap();
@@ -965,7 +965,7 @@ mod tests {
         let result = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientListLayoutOptions::default(),
+            &BlobClientGetLayoutOptions::default(),
         )
         .await;
         assert!(result.is_err());
@@ -993,7 +993,7 @@ mod tests {
 
     async fn seed_layout(
         client: &BlobClient,
-        layout_options: &BlobClientListLayoutOptions<'static>,
+        layout_options: &BlobClientGetLayoutOptions<'static>,
     ) -> Layout {
         fetch_layout(client, &Context::new(), layout_options)
             .await
@@ -1019,7 +1019,7 @@ mod tests {
             .boxed()
         }));
         let client = Arc::new(layout_client(mock));
-        let layout_options = BlobClientListLayoutOptions::default();
+        let layout_options = BlobClientGetLayoutOptions::default();
         let state = Arc::new(Mutex::new(CachedLayout {
             layout: Arc::new(seed_layout(&client, &layout_options).await),
             refresh_at: Instant::now(),
@@ -1056,7 +1056,7 @@ mod tests {
             .boxed()
         }));
         let client = Arc::new(layout_client(mock));
-        let layout_options = BlobClientListLayoutOptions::default();
+        let layout_options = BlobClientGetLayoutOptions::default();
         let cache = LayoutCache::new(
             Arc::clone(&client),
             layout_options.clone(),
@@ -1097,7 +1097,7 @@ mod tests {
             .boxed()
         }));
         let client = Arc::new(layout_client(mock));
-        let layout_options = BlobClientListLayoutOptions::default();
+        let layout_options = BlobClientGetLayoutOptions::default();
         let cache = LayoutCache::new(
             Arc::clone(&client),
             layout_options.clone(),
@@ -1159,7 +1159,7 @@ mod tests {
             .boxed()
         }));
         let client = Arc::new(layout_client(mock));
-        let layout_options = BlobClientListLayoutOptions::default();
+        let layout_options = BlobClientGetLayoutOptions::default();
         let expires_at = Instant::now() + Duration::from_secs(100);
         let state = Arc::new(Mutex::new(CachedLayout {
             layout: Arc::new(seed_layout(&client, &layout_options).await),
@@ -1209,7 +1209,7 @@ mod tests {
             .boxed()
         }));
         let client = Arc::new(layout_client(mock));
-        let layout_options = BlobClientListLayoutOptions::default();
+        let layout_options = BlobClientGetLayoutOptions::default();
         let cache = LayoutCache::new(
             Arc::clone(&client),
             layout_options.clone(),
