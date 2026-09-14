@@ -324,6 +324,14 @@ impl Token {
         Self::new(RntbdRequestToken::Match, TokenValue::String(value))
     }
 
+    /// Point-in-time change feed start (id `0x0047`, `String`).
+    pub(crate) fn if_modified_since(value: String) -> Self {
+        Self::new(
+            RntbdRequestToken::IfModifiedSince,
+            TokenValue::String(value),
+        )
+    }
+
     pub(crate) fn consistency_level(value: DefaultConsistencyLevel) -> Self {
         Self::new(
             RntbdRequestToken::ConsistencyLevel,
@@ -573,6 +581,7 @@ pub(crate) enum RntbdRequestToken {
     TransportRequestId,
     PartitionKey,
     PartitionKeyRangeId,
+    IfModifiedSince,
     EffectivePartitionKey,
     AllowTentativeWrites,
     ReturnPreference,
@@ -605,6 +614,7 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x002B => Ok(Self::PartitionKey),
             0x002C => Ok(Self::PartitionKeyRangeId),
             0x0035 => Ok(Self::CollectionRid),
+            0x0047 => Ok(Self::IfModifiedSince),
             0x004D => Ok(Self::TransportRequestId),
             0x005A => Ok(Self::EffectivePartitionKey),
             0x0066 => Ok(Self::AllowTentativeWrites),
@@ -639,6 +649,7 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::PartitionKey => 0x002B,
             RntbdRequestToken::PartitionKeyRangeId => 0x002C,
             RntbdRequestToken::CollectionRid => 0x0035,
+            RntbdRequestToken::IfModifiedSince => 0x0047,
             RntbdRequestToken::TransportRequestId => 0x004D,
             RntbdRequestToken::EffectivePartitionKey => 0x005A,
             RntbdRequestToken::AllowTentativeWrites => 0x0066,

@@ -43,14 +43,14 @@ pub mod clients {
     pub struct AppendBlobClient {
     }
     impl AppendBlobClient {
-        fn new(blob_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<AppendBlobClientOptions>) -> Result<Self>;
-        fn url(&self) -> &Url;
+        pub fn new(blob_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<AppendBlobClientOptions>) -> Result<Self>;
+        pub fn url(&self) -> &Url;
     }
     impl AppendBlobClient {
-        async fn append_block(&self, body: RequestContent<Bytes, NoFormat>, content_length: u64, options: Option<AppendBlobClientAppendBlockOptions<'_>>) -> Result<Response<AppendBlobClientAppendBlockResult, NoFormat>>;
-        async fn append_block_from_url(&self, source_url: String, content_length: u64, options: Option<AppendBlobClientAppendBlockFromUrlOptions<'_>>) -> Result<Response<AppendBlobClientAppendBlockFromUrlResult, NoFormat>>;
-        async fn create(&self, options: Option<AppendBlobClientCreateOptions<'_>>) -> Result<Response<AppendBlobClientCreateResult, NoFormat>>;
-        async fn seal(&self, options: Option<AppendBlobClientSealOptions<'_>>) -> Result<Response<AppendBlobClientSealResult, NoFormat>>;
+        pub async fn append_block(&self, body: RequestContent<Bytes, NoFormat>, content_length: u64, options: Option<AppendBlobClientAppendBlockOptions<'_>>) -> Result<Response<AppendBlobClientAppendBlockResult, NoFormat>>;
+        pub async fn append_block_from_url(&self, source_url: String, content_length: u64, options: Option<AppendBlobClientAppendBlockFromUrlOptions<'_>>) -> Result<Response<AppendBlobClientAppendBlockFromUrlResult, NoFormat>>;
+        pub async fn create(&self, options: Option<AppendBlobClientCreateOptions<'_>>) -> Result<Response<AppendBlobClientCreateResult, NoFormat>>;
+        pub async fn seal(&self, options: Option<AppendBlobClientSealOptions<'_>>) -> Result<Response<AppendBlobClientSealResult, NoFormat>>;
     }
     #[derive(Clone, Debug)]
     pub struct AppendBlobClientOptions {
@@ -63,39 +63,39 @@ pub mod clients {
     pub struct BlobClient {
     }
     impl BlobClient {
-        fn append_blob_client(&self) -> AppendBlobClient;
-        fn block_blob_client(&self) -> BlockBlobClient;
-        async fn download(&self, options: Option<BlobClientDownloadOptions<'_>>) -> Result<BlobClientDownloadResult>;
-        async fn download_into(&self, buffer: &mut [u8], options: Option<BlobClientDownloadOptions<'_>>) -> Result<BlobClientDownloadIntoResult>;
-        async fn exists(&self) -> Result<bool>;
-        fn new(blob_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<BlobClientOptions>) -> Result<Self>;
-        fn page_blob_client(&self) -> PageBlobClient;
-        async fn upload(&self, content: RequestContent<Bytes, NoFormat>, options: Option<BlobClientUploadOptions<'_>>) -> Result<BlobClientUploadResult>;
-        fn url(&self) -> &Url;
-        fn with_snapshot(&self, snapshot: &str) -> Result<Self>;
-        fn with_version(&self, version_id: &str) -> Result<Self>;
+        pub fn append_blob_client(&self) -> AppendBlobClient;
+        pub fn block_blob_client(&self) -> BlockBlobClient;
+        pub async fn download(&self, options: Option<BlobClientDownloadOptions<'_>>) -> Result<BlobClientDownloadResult>;
+        pub async fn download_into(&self, buffer: &mut [u8], options: Option<BlobClientDownloadOptions<'_>>) -> Result<BlobClientDownloadIntoResult>;
+        pub async fn exists(&self) -> Result<bool>;
+        pub fn new(blob_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<BlobClientOptions>) -> Result<Self>;
+        pub fn page_blob_client(&self) -> PageBlobClient;
+        pub async fn upload(&self, content: RequestContent<Bytes, NoFormat>, options: Option<BlobClientUploadOptions<'_>>) -> Result<BlobClientUploadResult>;
+        pub fn url(&self) -> &Url;
+        pub fn with_snapshot(&self, snapshot: &str) -> Result<Self>;
+        pub fn with_version(&self, version_id: &str) -> Result<Self>;
     }
     impl BlobClient {
-        async fn abort_copy(&self, copy_id: &str, options: Option<BlobClientAbortCopyOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn acquire_lease(&self, duration: i32, options: Option<BlobClientAcquireLeaseOptions<'_>>) -> Result<Response<BlobClientAcquireLeaseResult, NoFormat>>;
-        async fn break_lease(&self, options: Option<BlobClientBreakLeaseOptions<'_>>) -> Result<Response<BlobClientBreakLeaseResult, NoFormat>>;
-        async fn change_lease(&self, lease_id: String, proposed_lease_id: String, options: Option<BlobClientChangeLeaseOptions<'_>>) -> Result<Response<BlobClientChangeLeaseResult, NoFormat>>;
-        async fn create_snapshot(&self, options: Option<BlobClientCreateSnapshotOptions<'_>>) -> Result<Response<BlobClientCreateSnapshotResult, NoFormat>>;
-        async fn delete(&self, options: Option<BlobClientDeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn delete_immutability_policy(&self, options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn get_account_info(&self, options: Option<BlobClientGetAccountInfoOptions<'_>>) -> Result<Response<BlobClientGetAccountInfoResult, NoFormat>>;
-        async fn get_properties(&self, options: Option<BlobClientGetPropertiesOptions<'_>>) -> Result<Response<BlobClientGetPropertiesResult, NoFormat>>;
-        async fn get_tags(&self, options: Option<BlobClientGetTagsOptions<'_>>) -> Result<Response<BlobTags, XmlFormat>>;
-        async fn release_lease(&self, lease_id: String, options: Option<BlobClientReleaseLeaseOptions<'_>>) -> Result<Response<BlobClientReleaseLeaseResult, NoFormat>>;
-        async fn renew_lease(&self, lease_id: String, options: Option<BlobClientRenewLeaseOptions<'_>>) -> Result<Response<BlobClientRenewLeaseResult, NoFormat>>;
-        async fn set_immutability_policy(&self, expiry: &OffsetDateTime, options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn set_legal_hold(&self, legal_hold: bool, options: Option<BlobClientSetLegalHoldOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn set_metadata(&self, metadata: &HashMap<String, String>, options: Option<BlobClientSetMetadataOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn set_properties(&self, options: Option<BlobClientSetPropertiesOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn set_tags(&self, tags: RequestContent<BlobTags, XmlFormat>, options: Option<BlobClientSetTagsOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn set_tier(&self, tier: AccessTier, options: Option<BlobClientSetTierOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn start_copy_from_url(&self, copy_source: String, options: Option<BlobClientStartCopyFromUrlOptions<'_>>) -> Result<Response<BlobClientStartCopyFromUrlResult, NoFormat>>;
-        async fn undelete(&self, options: Option<BlobClientUndeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn abort_copy(&self, copy_id: &str, options: Option<BlobClientAbortCopyOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn acquire_lease(&self, duration: i32, options: Option<BlobClientAcquireLeaseOptions<'_>>) -> Result<Response<BlobClientAcquireLeaseResult, NoFormat>>;
+        pub async fn break_lease(&self, options: Option<BlobClientBreakLeaseOptions<'_>>) -> Result<Response<BlobClientBreakLeaseResult, NoFormat>>;
+        pub async fn change_lease(&self, lease_id: String, proposed_lease_id: String, options: Option<BlobClientChangeLeaseOptions<'_>>) -> Result<Response<BlobClientChangeLeaseResult, NoFormat>>;
+        pub async fn create_snapshot(&self, options: Option<BlobClientCreateSnapshotOptions<'_>>) -> Result<Response<BlobClientCreateSnapshotResult, NoFormat>>;
+        pub async fn delete(&self, options: Option<BlobClientDeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn delete_immutability_policy(&self, options: Option<BlobClientDeleteImmutabilityPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn get_account_info(&self, options: Option<BlobClientGetAccountInfoOptions<'_>>) -> Result<Response<BlobClientGetAccountInfoResult, NoFormat>>;
+        pub async fn get_properties(&self, options: Option<BlobClientGetPropertiesOptions<'_>>) -> Result<Response<BlobClientGetPropertiesResult, NoFormat>>;
+        pub async fn get_tags(&self, options: Option<BlobClientGetTagsOptions<'_>>) -> Result<Response<BlobTags, XmlFormat>>;
+        pub async fn release_lease(&self, lease_id: String, options: Option<BlobClientReleaseLeaseOptions<'_>>) -> Result<Response<BlobClientReleaseLeaseResult, NoFormat>>;
+        pub async fn renew_lease(&self, lease_id: String, options: Option<BlobClientRenewLeaseOptions<'_>>) -> Result<Response<BlobClientRenewLeaseResult, NoFormat>>;
+        pub async fn set_immutability_policy(&self, expiry: &OffsetDateTime, options: Option<BlobClientSetImmutabilityPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn set_legal_hold(&self, legal_hold: bool, options: Option<BlobClientSetLegalHoldOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn set_metadata(&self, metadata: &HashMap<String, String>, options: Option<BlobClientSetMetadataOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn set_properties(&self, options: Option<BlobClientSetPropertiesOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn set_tags(&self, tags: RequestContent<BlobTags, XmlFormat>, options: Option<BlobClientSetTagsOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn set_tier(&self, tier: AccessTier, options: Option<BlobClientSetTierOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn start_copy_from_url(&self, copy_source: String, options: Option<BlobClientStartCopyFromUrlOptions<'_>>) -> Result<Response<BlobClientStartCopyFromUrlResult, NoFormat>>;
+        pub async fn undelete(&self, options: Option<BlobClientUndeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
     }
     #[derive(Clone, Debug)]
     pub struct BlobClientOptions {
@@ -108,26 +108,26 @@ pub mod clients {
     pub struct BlobContainerClient {
     }
     impl BlobContainerClient {
-        fn blob_client(&self, blob_name: &str) -> BlobClient;
-        async fn exists(&self) -> Result<bool>;
-        fn new(container_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<BlobContainerClientOptions>) -> Result<Self>;
-        fn url(&self) -> &Url;
+        pub fn blob_client(&self, blob_name: &str) -> BlobClient;
+        pub async fn exists(&self) -> Result<bool>;
+        pub fn new(container_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<BlobContainerClientOptions>) -> Result<Self>;
+        pub fn url(&self) -> &Url;
     }
     impl BlobContainerClient {
-        async fn acquire_lease(&self, duration: i32, options: Option<BlobContainerClientAcquireLeaseOptions<'_>>) -> Result<Response<BlobContainerClientAcquireLeaseResult, NoFormat>>;
-        async fn break_lease(&self, options: Option<BlobContainerClientBreakLeaseOptions<'_>>) -> Result<Response<BlobContainerClientBreakLeaseResult, NoFormat>>;
-        async fn change_lease(&self, lease_id: String, proposed_lease_id: String, options: Option<BlobContainerClientChangeLeaseOptions<'_>>) -> Result<Response<BlobContainerClientChangeLeaseResult, NoFormat>>;
-        async fn create(&self, options: Option<BlobContainerClientCreateOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn delete(&self, options: Option<BlobContainerClientDeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        fn find_blobs_by_tags(&self, filter_expression: &str, options: Option<BlobContainerClientFindBlobsByTagsOptions<'_>>) -> Result<Pager<FilteredBlobResponse, XmlFormat>>;
-        async fn get_access_policy(&self, options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>) -> Result<Response<SignedIdentifiers, XmlFormat>>;
-        async fn get_account_info(&self, options: Option<BlobContainerClientGetAccountInfoOptions<'_>>) -> Result<Response<BlobContainerClientGetAccountInfoResult, NoFormat>>;
-        async fn get_properties(&self, options: Option<BlobContainerClientGetPropertiesOptions<'_>>) -> Result<Response<BlobContainerClientGetPropertiesResult, NoFormat>>;
-        fn list_blobs(&self, options: Option<BlobContainerClientListBlobsOptions<'_>>) -> Result<Pager<ListBlobsResponse, XmlFormat>>;
-        async fn release_lease(&self, lease_id: String, options: Option<BlobContainerClientReleaseLeaseOptions<'_>>) -> Result<Response<BlobContainerClientReleaseLeaseResult, NoFormat>>;
-        async fn renew_lease(&self, lease_id: String, options: Option<BlobContainerClientRenewLeaseOptions<'_>>) -> Result<Response<BlobContainerClientRenewLeaseResult, NoFormat>>;
-        async fn set_access_policy(&self, container_acl: RequestContent<SignedIdentifiers, XmlFormat>, options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
-        async fn set_metadata(&self, metadata: &HashMap<String, String>, options: Option<BlobContainerClientSetMetadataOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn acquire_lease(&self, duration: i32, options: Option<BlobContainerClientAcquireLeaseOptions<'_>>) -> Result<Response<BlobContainerClientAcquireLeaseResult, NoFormat>>;
+        pub async fn break_lease(&self, options: Option<BlobContainerClientBreakLeaseOptions<'_>>) -> Result<Response<BlobContainerClientBreakLeaseResult, NoFormat>>;
+        pub async fn change_lease(&self, lease_id: String, proposed_lease_id: String, options: Option<BlobContainerClientChangeLeaseOptions<'_>>) -> Result<Response<BlobContainerClientChangeLeaseResult, NoFormat>>;
+        pub async fn create(&self, options: Option<BlobContainerClientCreateOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn delete(&self, options: Option<BlobContainerClientDeleteOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub fn find_blobs_by_tags(&self, filter_expression: &str, options: Option<BlobContainerClientFindBlobsByTagsOptions<'_>>) -> Result<Pager<FilteredBlobResponse, XmlFormat>>;
+        pub async fn get_access_policy(&self, options: Option<BlobContainerClientGetAccessPolicyOptions<'_>>) -> Result<Response<SignedIdentifiers, XmlFormat>>;
+        pub async fn get_account_info(&self, options: Option<BlobContainerClientGetAccountInfoOptions<'_>>) -> Result<Response<BlobContainerClientGetAccountInfoResult, NoFormat>>;
+        pub async fn get_properties(&self, options: Option<BlobContainerClientGetPropertiesOptions<'_>>) -> Result<Response<BlobContainerClientGetPropertiesResult, NoFormat>>;
+        pub fn list_blobs(&self, options: Option<BlobContainerClientListBlobsOptions<'_>>) -> Result<Pager<ListBlobsResponse, XmlFormat>>;
+        pub async fn release_lease(&self, lease_id: String, options: Option<BlobContainerClientReleaseLeaseOptions<'_>>) -> Result<Response<BlobContainerClientReleaseLeaseResult, NoFormat>>;
+        pub async fn renew_lease(&self, lease_id: String, options: Option<BlobContainerClientRenewLeaseOptions<'_>>) -> Result<Response<BlobContainerClientRenewLeaseResult, NoFormat>>;
+        pub async fn set_access_policy(&self, container_acl: RequestContent<SignedIdentifiers, XmlFormat>, options: Option<BlobContainerClientSetAccessPolicyOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub async fn set_metadata(&self, metadata: &HashMap<String, String>, options: Option<BlobContainerClientSetMetadataOptions<'_>>) -> Result<Response<(), NoFormat>>;
     }
     #[derive(Clone, Debug)]
     pub struct BlobContainerClientOptions {
@@ -140,19 +140,19 @@ pub mod clients {
     pub struct BlobServiceClient {
     }
     impl BlobServiceClient {
-        fn blob_client(&self, container_name: &str, blob_name: &str) -> BlobClient;
-        fn blob_container_client(&self, container_name: &str) -> BlobContainerClient;
-        fn new(service_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<BlobServiceClientOptions>) -> Result<Self>;
-        fn url(&self) -> &Url;
+        pub fn blob_client(&self, container_name: &str, blob_name: &str) -> BlobClient;
+        pub fn blob_container_client(&self, container_name: &str) -> BlobContainerClient;
+        pub fn new(service_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<BlobServiceClientOptions>) -> Result<Self>;
+        pub fn url(&self) -> &Url;
     }
     impl BlobServiceClient {
-        fn find_blobs_by_tags(&self, filter_expression: &str, options: Option<BlobServiceClientFindBlobsByTagsOptions<'_>>) -> Result<Pager<FilteredBlobResponse, XmlFormat>>;
-        async fn get_account_info(&self, options: Option<BlobServiceClientGetAccountInfoOptions<'_>>) -> Result<Response<BlobServiceClientGetAccountInfoResult, NoFormat>>;
-        async fn get_properties(&self, options: Option<BlobServiceClientGetPropertiesOptions<'_>>) -> Result<Response<BlobServiceProperties, XmlFormat>>;
-        async fn get_statistics(&self, options: Option<BlobServiceClientGetStatisticsOptions<'_>>) -> Result<Response<StorageServiceStats, XmlFormat>>;
-        async fn get_user_delegation_key(&self, key_info: RequestContent<KeyInfo, XmlFormat>, options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>) -> Result<Response<UserDelegationKey, XmlFormat>>;
-        fn list_containers(&self, options: Option<BlobServiceClientListContainersOptions<'_>>) -> Result<Pager<ListContainersResponse, XmlFormat>>;
-        async fn set_properties(&self, storage_service_properties: RequestContent<BlobServiceProperties, XmlFormat>, options: Option<BlobServiceClientSetPropertiesOptions<'_>>) -> Result<Response<(), NoFormat>>;
+        pub fn find_blobs_by_tags(&self, filter_expression: &str, options: Option<BlobServiceClientFindBlobsByTagsOptions<'_>>) -> Result<Pager<FilteredBlobResponse, XmlFormat>>;
+        pub async fn get_account_info(&self, options: Option<BlobServiceClientGetAccountInfoOptions<'_>>) -> Result<Response<BlobServiceClientGetAccountInfoResult, NoFormat>>;
+        pub async fn get_properties(&self, options: Option<BlobServiceClientGetPropertiesOptions<'_>>) -> Result<Response<BlobServiceProperties, XmlFormat>>;
+        pub async fn get_statistics(&self, options: Option<BlobServiceClientGetStatisticsOptions<'_>>) -> Result<Response<StorageServiceStats, XmlFormat>>;
+        pub async fn get_user_delegation_key(&self, key_info: RequestContent<KeyInfo, XmlFormat>, options: Option<BlobServiceClientGetUserDelegationKeyOptions<'_>>) -> Result<Response<UserDelegationKey, XmlFormat>>;
+        pub fn list_containers(&self, options: Option<BlobServiceClientListContainersOptions<'_>>) -> Result<Pager<ListContainersResponse, XmlFormat>>;
+        pub async fn set_properties(&self, storage_service_properties: RequestContent<BlobServiceProperties, XmlFormat>, options: Option<BlobServiceClientSetPropertiesOptions<'_>>) -> Result<Response<(), NoFormat>>;
     }
     #[derive(Clone, Debug)]
     pub struct BlobServiceClientOptions {
@@ -165,16 +165,16 @@ pub mod clients {
     pub struct BlockBlobClient {
     }
     impl BlockBlobClient {
-        fn new(blob_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<BlockBlobClientOptions>) -> Result<Self>;
-        async fn upload(&self, content: RequestContent<Bytes, NoFormat>, options: Option<BlockBlobClientUploadOptions<'_>>) -> Result<BlockBlobClientUploadResult>;
-        fn url(&self) -> &Url;
+        pub fn new(blob_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<BlockBlobClientOptions>) -> Result<Self>;
+        pub async fn upload(&self, content: RequestContent<Bytes, NoFormat>, options: Option<BlockBlobClientUploadOptions<'_>>) -> Result<BlockBlobClientUploadResult>;
+        pub fn url(&self) -> &Url;
     }
     impl BlockBlobClient {
-        async fn commit_block_list(&self, blocks: RequestContent<BlockLookupList, XmlFormat>, options: Option<BlockBlobClientCommitBlockListOptions<'_>>) -> Result<Response<BlockBlobClientCommitBlockListResult, NoFormat>>;
-        async fn get_block_list(&self, list_type: BlockListType, options: Option<BlockBlobClientGetBlockListOptions<'_>>) -> Result<Response<BlockList, XmlFormat>>;
-        async fn stage_block(&self, block_id: &[u8], content_length: u64, body: RequestContent<Bytes, NoFormat>, options: Option<BlockBlobClientStageBlockOptions<'_>>) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>>;
-        async fn stage_block_from_url(&self, block_id: &[u8], content_length: u64, source_url: String, options: Option<BlockBlobClientStageBlockFromUrlOptions<'_>>) -> Result<Response<BlockBlobClientStageBlockFromUrlResult, NoFormat>>;
-        async fn upload_blob_from_url(&self, copy_source: String, options: Option<BlockBlobClientUploadBlobFromUrlOptions<'_>>) -> Result<Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat>>;
+        pub async fn commit_block_list(&self, blocks: RequestContent<BlockLookupList, XmlFormat>, options: Option<BlockBlobClientCommitBlockListOptions<'_>>) -> Result<Response<BlockBlobClientCommitBlockListResult, NoFormat>>;
+        pub async fn get_block_list(&self, list_type: BlockListType, options: Option<BlockBlobClientGetBlockListOptions<'_>>) -> Result<Response<BlockList, XmlFormat>>;
+        pub async fn stage_block(&self, block_id: &[u8], content_length: u64, body: RequestContent<Bytes, NoFormat>, options: Option<BlockBlobClientStageBlockOptions<'_>>) -> Result<Response<BlockBlobClientStageBlockResult, NoFormat>>;
+        pub async fn stage_block_from_url(&self, block_id: &[u8], content_length: u64, source_url: String, options: Option<BlockBlobClientStageBlockFromUrlOptions<'_>>) -> Result<Response<BlockBlobClientStageBlockFromUrlResult, NoFormat>>;
+        pub async fn upload_blob_from_url(&self, copy_source: String, options: Option<BlockBlobClientUploadBlobFromUrlOptions<'_>>) -> Result<Response<BlockBlobClientUploadBlobFromUrlResult, NoFormat>>;
     }
     #[derive(Clone, Debug)]
     pub struct BlockBlobClientOptions {
@@ -187,17 +187,17 @@ pub mod clients {
     pub struct PageBlobClient {
     }
     impl PageBlobClient {
-        fn new(blob_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<PageBlobClientOptions>) -> Result<Self>;
-        fn url(&self) -> &Url;
+        pub fn new(blob_url: Url, credential: Option<Arc<dyn TokenCredential>>, options: Option<PageBlobClientOptions>) -> Result<Self>;
+        pub fn url(&self) -> &Url;
     }
     impl PageBlobClient {
-        async fn clear_pages(&self, range: HttpRange, options: Option<PageBlobClientClearPagesOptions<'_>>) -> Result<Response<PageBlobClientClearPagesResult, NoFormat>>;
-        async fn create(&self, size: u64, options: Option<PageBlobClientCreateOptions<'_>>) -> Result<Response<PageBlobClientCreateResult, NoFormat>>;
-        fn list_page_ranges(&self, options: Option<PageBlobClientListPageRangesOptions<'_>>) -> Result<PageIterator<Response<PageList, XmlFormat>>>;
-        async fn resize(&self, size: u64, options: Option<PageBlobClientResizeOptions<'_>>) -> Result<Response<PageBlobClientResizeResult, NoFormat>>;
-        async fn set_sequence_number(&self, sequence_number_action: SequenceNumberActionType, options: Option<PageBlobClientSetSequenceNumberOptions<'_>>) -> Result<Response<PageBlobClientSetSequenceNumberResult, NoFormat>>;
-        async fn upload_pages(&self, body: RequestContent<Bytes, NoFormat>, content_length: u64, range: HttpRange, options: Option<PageBlobClientUploadPagesOptions<'_>>) -> Result<Response<PageBlobClientUploadPagesResult, NoFormat>>;
-        async fn upload_pages_from_url(&self, source_url: String, source_range: HttpRange, content_length: u64, range: HttpRange, options: Option<PageBlobClientUploadPagesFromUrlOptions<'_>>) -> Result<Response<PageBlobClientUploadPagesFromUrlResult, NoFormat>>;
+        pub async fn clear_pages(&self, range: HttpRange, options: Option<PageBlobClientClearPagesOptions<'_>>) -> Result<Response<PageBlobClientClearPagesResult, NoFormat>>;
+        pub async fn create(&self, size: u64, options: Option<PageBlobClientCreateOptions<'_>>) -> Result<Response<PageBlobClientCreateResult, NoFormat>>;
+        pub fn list_page_ranges(&self, options: Option<PageBlobClientListPageRangesOptions<'_>>) -> Result<PageIterator<Response<PageList, XmlFormat>>>;
+        pub async fn resize(&self, size: u64, options: Option<PageBlobClientResizeOptions<'_>>) -> Result<Response<PageBlobClientResizeResult, NoFormat>>;
+        pub async fn set_sequence_number(&self, sequence_number_action: SequenceNumberActionType, options: Option<PageBlobClientSetSequenceNumberOptions<'_>>) -> Result<Response<PageBlobClientSetSequenceNumberResult, NoFormat>>;
+        pub async fn upload_pages(&self, body: RequestContent<Bytes, NoFormat>, content_length: u64, range: HttpRange, options: Option<PageBlobClientUploadPagesOptions<'_>>) -> Result<Response<PageBlobClientUploadPagesResult, NoFormat>>;
+        pub async fn upload_pages_from_url(&self, source_url: String, source_range: HttpRange, content_length: u64, range: HttpRange, options: Option<PageBlobClientUploadPagesFromUrlOptions<'_>>) -> Result<Response<PageBlobClientUploadPagesFromUrlResult, NoFormat>>;
     }
     #[derive(Clone, Debug)]
     pub struct PageBlobClientOptions {
@@ -300,10 +300,10 @@ pub mod models {
         pub timeout: Option<i32>,
     }
     impl crate::models::AppendBlobClientCreateOptions<'_> {
-        fn if_not_exists(self) -> Self;
+        pub fn if_not_exists(self) -> Self;
     }
     impl crate::models::AppendBlobClientCreateOptions<'_> {
-        fn with_tags<impl Into<BlobTags>: Into<BlobTags>>(self, tags: impl Into<BlobTags>) -> Self;
+        pub fn with_tags<impl Into<BlobTags>: Into<BlobTags>>(self, tags: impl Into<BlobTags>) -> Self;
     }
     #[derive(Debug)]
     pub struct AppendBlobClientCreateResult;
@@ -659,7 +659,7 @@ pub mod models {
         pub timeout: Option<i32>,
     }
     impl BlobContainerClientFindBlobsByTagsOptions<'_> {
-        fn into_owned(self) -> BlobContainerClientFindBlobsByTagsOptions<'static>;
+        pub fn into_owned(self) -> BlobContainerClientFindBlobsByTagsOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct BlobContainerClientGetAccessPolicyOptions<'a> {
@@ -693,7 +693,7 @@ pub mod models {
         pub timeout: Option<i32>,
     }
     impl BlobContainerClientListBlobsOptions<'_> {
-        fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static>;
+        pub fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct BlobContainerClientReleaseLeaseOptions<'a> {
@@ -907,7 +907,7 @@ pub mod models {
         pub timeout: Option<i32>,
     }
     impl BlobServiceClientFindBlobsByTagsOptions<'_> {
-        fn into_owned(self) -> BlobServiceClientFindBlobsByTagsOptions<'static>;
+        pub fn into_owned(self) -> BlobServiceClientFindBlobsByTagsOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientGetAccountInfoOptions<'a> {
@@ -941,7 +941,7 @@ pub mod models {
         pub timeout: Option<i32>,
     }
     impl BlobServiceClientListContainersOptions<'_> {
-        fn into_owned(self) -> BlobServiceClientListContainersOptions<'static>;
+        pub fn into_owned(self) -> BlobServiceClientListContainersOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct BlobServiceClientSetPropertiesOptions<'a> {
@@ -1032,7 +1032,7 @@ pub mod models {
         pub transactional_content_md5: Option<Vec<u8>>,
     }
     impl crate::models::BlockBlobClientCommitBlockListOptions<'_> {
-        fn with_tags<impl Into<BlobTags>: Into<BlobTags>>(self, tags: impl Into<BlobTags>) -> Self;
+        pub fn with_tags<impl Into<BlobTags>: Into<BlobTags>>(self, tags: impl Into<BlobTags>) -> Self;
     }
     #[derive(Debug)]
     pub struct BlockBlobClientCommitBlockListResult;
@@ -1121,10 +1121,10 @@ pub mod models {
         pub transactional_content_md5: Option<Vec<u8>>,
     }
     impl crate::models::BlockBlobClientUploadBlobFromUrlOptions<'_> {
-        fn if_not_exists(self) -> Self;
+        pub fn if_not_exists(self) -> Self;
     }
     impl crate::models::BlockBlobClientUploadBlobFromUrlOptions<'_> {
-        fn with_tags<impl Into<BlobTags>: Into<BlobTags>>(self, tags: impl Into<BlobTags>) -> Self;
+        pub fn with_tags<impl Into<BlobTags>: Into<BlobTags>>(self, tags: impl Into<BlobTags>) -> Self;
     }
     #[derive(Debug)]
     pub struct BlockBlobClientUploadBlobFromUrlResult;
@@ -1158,10 +1158,10 @@ pub mod models {
         pub tier: Option<crate::models::AccessTier>,
     }
     impl crate::models::BlockBlobClientUploadOptions<'_> {
-        fn if_not_exists(self) -> Self;
+        pub fn if_not_exists(self) -> Self;
     }
     impl crate::models::BlockBlobClientUploadOptions<'_> {
-        fn with_tags<impl Into<BlobTags>: Into<BlobTags>>(self, tags: impl Into<BlobTags>) -> Self;
+        pub fn with_tags<impl Into<BlobTags>: Into<BlobTags>>(self, tags: impl Into<BlobTags>) -> Self;
     }
     #[derive(Debug)]
     pub struct BlockBlobClientUploadResult {
@@ -1329,8 +1329,8 @@ pub mod models {
     pub struct HttpRange {
     }
     impl HttpRange {
-        fn from_offset(offset: u64) -> Self;
-        fn new(offset: u64, length: u64) -> Self;
+        pub fn from_offset(offset: u64) -> Self;
+        pub fn new(offset: u64, length: u64) -> Self;
     }
     impl Display for HttpRange {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -1513,10 +1513,10 @@ pub mod models {
         pub timeout: Option<i32>,
     }
     impl crate::models::PageBlobClientCreateOptions<'_> {
-        fn if_not_exists(self) -> Self;
+        pub fn if_not_exists(self) -> Self;
     }
     impl crate::models::PageBlobClientCreateOptions<'_> {
-        fn with_tags<impl Into<BlobTags>: Into<BlobTags>>(self, tags: impl Into<BlobTags>) -> Self;
+        pub fn with_tags<impl Into<BlobTags>: Into<BlobTags>>(self, tags: impl Into<BlobTags>) -> Self;
     }
     #[derive(Debug)]
     pub struct PageBlobClientCreateResult;
@@ -1536,7 +1536,7 @@ pub mod models {
         pub timeout: Option<i32>,
     }
     impl PageBlobClientListPageRangesOptions<'_> {
-        fn into_owned(self) -> PageBlobClientListPageRangesOptions<'static>;
+        pub fn into_owned(self) -> PageBlobClientListPageRangesOptions<'static>;
     }
     #[derive(Clone, Debug, Default)]
     pub struct PageBlobClientResizeOptions<'a> {
@@ -2682,7 +2682,7 @@ pub mod stream {
         pub struct FileStream {
         }
         impl FileStream {
-            fn builder(file: File) -> FileStreamBuilder;
+            pub fn builder(file: File) -> FileStreamBuilder;
         }
         impl AsyncRead for FileStream {
             fn poll_read(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8]) -> Poll<std::io::Result<usize>>;
@@ -2700,8 +2700,8 @@ pub mod stream {
         pub struct FileStreamBuilder {
         }
         impl FileStreamBuilder {
-            async fn build(self) -> azure_core::Result<FileStream>;
-            fn with_buffer_size(self, buffer_size: usize) -> Self;
+            pub async fn build(self) -> azure_core::Result<FileStream>;
+            pub fn with_buffer_size(self, buffer_size: usize) -> Self;
         }
     }
 }

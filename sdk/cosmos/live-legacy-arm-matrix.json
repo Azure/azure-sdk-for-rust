@@ -17,6 +17,9 @@
       },
       "Session SingleWrite BinaryEncodingRoundtripFuzz": {
         "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; testCategory = 'binary_encoding' }"
+      },
+      "Session Partition Merge Preview": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; enablePartitionMerge = $true; testCategory = 'merge' }"
       }
     }
   }
