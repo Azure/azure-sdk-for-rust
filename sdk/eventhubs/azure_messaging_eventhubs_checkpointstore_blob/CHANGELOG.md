@@ -1,5 +1,11 @@
 # Release History
 
+## 0.11.0 (Unreleased)
+
+### Other Changes
+
+- Updated `azure_messaging_eventhubs` to 0.17.0, which withdraws AMQP-over-WebSockets support and removes the prohibited `sha1` dependency. ([#5261](https://github.com/Azure/azure-sdk-for-rust/issues/5261))
+
 ## 0.10.0 (2026-09-08)
 
 ### Other Changes

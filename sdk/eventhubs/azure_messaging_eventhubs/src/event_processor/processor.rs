@@ -761,7 +761,7 @@ pub mod builders {
         /// Builds the event processor with the specified consumer client and checkpoint store.
         /// Returns a `Result` containing the constructed `EventProcessor`.
         ///
-        /// # Connection options (including transport)
+        /// # Connection options
         ///
         /// The event processor does not open its own connection. It processes
         /// partitions using the [`ConsumerClient`] passed here, and every
@@ -770,10 +770,7 @@ pub mod builders {
         /// application id, are therefore configured on the [`ConsumerClient`] before
         /// it is passed to `build`.
         ///
-        /// To run the processor over AMQP-over-WebSockets (port 443, useful when the
-        /// native AMQP ports are blocked), select the transport on the consumer
-        /// client with
-        /// [`ConsumerClientBuilder::with_transport`](crate::builders::ConsumerClientBuilder::with_transport):
+        /// For example, select TCP on the consumer client before building the processor:
         ///
         /// ```no_run
         /// use azure_messaging_eventhubs::{EventProcessor, CheckpointStore, ConsumerClient};
@@ -786,7 +783,7 @@ pub mod builders {
         /// let eventhub_namespace = std::env::var("EVENTHUBS_HOST")?;
         /// let eventhub_name = std::env::var("EVENTHUB_NAME")?;
         /// let consumer = ConsumerClient::builder()
-        ///     .with_transport(AmqpTransport::WebSocket)
+        ///     .with_transport(AmqpTransport::Tcp)
         ///     .open(
         ///         &eventhub_namespace,
         ///         eventhub_name,
