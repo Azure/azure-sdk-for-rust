@@ -54,9 +54,34 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $global:SelectedRustSysroot = $global:MicrosoftRustSysroot
         $global:MicrosoftRustBin = Join-Path $global:MicrosoftRustSysroot 'bin'
         $env:RUST_BIN_PATH = $global:MicrosoftRustBin
+        $env:TEST_INSTALLER_RUST_SYSROOT = $global:MicrosoftRustSysroot
+        $env:TEST_INSTALLER_RUST_RELEASE = $global:MicrosoftRustRelease
+        $env:TEST_INSTALLER_CARGO_VERSION = 'cargo 1.0.0'
         $global:RustProxyBin = Join-Path $TestDrive 'cargo-home/bin'
         New-Item -ItemType Directory -Force -Path $global:RustProxyBin | Out-Null
         New-Item -ItemType Directory -Force -Path $global:MicrosoftRustBin | Out-Null
+        $global:InstallerRustcExecutable = Join-Path $global:MicrosoftRustBin 'rustc.ps1'
+        $global:InstallerCargoExecutable = Join-Path $global:MicrosoftRustBin 'cargo.ps1'
+        Set-Content $global:InstallerRustcExecutable @'
+$global:LASTEXITCODE = 0
+if ($args -contains 'sysroot') {
+    $env:TEST_INSTALLER_RUST_SYSROOT
+    return
+}
+@(
+    "rustc $env:TEST_INSTALLER_RUST_RELEASE (012345678 2026-08-01)"
+    'binary: rustc'
+    'commit-hash: 0123456789abcdef0123456789abcdef01234567'
+    'commit-date: 2026-08-01'
+    'host: x86_64-pc-windows-msvc'
+    "release: $env:TEST_INSTALLER_RUST_RELEASE"
+    'LLVM version: 21.1.0'
+)
+'@
+        Set-Content $global:InstallerCargoExecutable @'
+$global:LASTEXITCODE = 0
+$env:TEST_INSTALLER_CARGO_VERSION
+'@
         $global:RustcExecutable = Join-Path $global:RustProxyBin 'rustc'
         $global:CargoExecutable = Join-Path $global:RustProxyBin 'cargo'
         Set-Content $global:RustcExecutable ''
@@ -223,6 +248,10 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             $metadata.toolchain.sysroot | Should -Be $global:MicrosoftRustSysroot
             $metadata.toolchain.rustc_executable | Should -Be $global:RustcExecutable
             $metadata.toolchain.cargo_executable | Should -Be $global:CargoExecutable
+            $metadata.toolchain.installer_rustc_executable |
+                Should -Be $global:InstallerRustcExecutable
+            $metadata.toolchain.installer_cargo_executable |
+                Should -Be $global:InstallerCargoExecutable
             $metadata.toolchain.rustc_verbose_version | Should -Match 'release: 1\.95\.0'
             $metadata.toolchain.rustc_release | Should -Be '1.95.0'
             $metadata.toolchain.cargo_version | Should -Be 'cargo 1.0.0'
@@ -352,7 +381,23 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         } | Should -Throw '*Microsoft Rust installer bin path is required*'
     }
 
-    It 'rejects a rustc selection outside the msrustup toolchain' {
+    It 'accepts an installer alias path when compiler identities match' {
+        $aliasPath = Join-Path $TestDrive 'toolchains/ms-prod-1.95/bin'
+        New-Item -ItemType Directory -Force -Path $aliasPath | Out-Null
+        Copy-Item $global:InstallerRustcExecutable (Join-Path $aliasPath 'rustc.ps1')
+        Copy-Item $global:InstallerCargoExecutable (Join-Path $aliasPath 'cargo.ps1')
+        $env:RUST_BIN_PATH = $aliasPath
+
+        {
+            & $ScriptPath `
+                -TargetId 'windows-amd64' `
+                -OutputRoot (Join-Path $TestDrive 'artifacts') `
+                -CCompiler 'pwsh' `
+                -SkipBuild
+        } | Should -Not -Throw
+    }
+
+    It 'rejects a rustc selection outside the RustInstaller compiler' {
         $global:SelectedRustSysroot = Join-Path $TestDrive 'upstream-1.95'
         New-Item -ItemType Directory -Force -Path $global:SelectedRustSysroot | Out-Null
 
@@ -363,6 +408,18 @@ Describe 'Build-NativeMatrix target compiler configuration' {
                 -CCompiler 'pwsh' `
                 -SkipBuild
         } | Should -Throw '*refusing a possible upstream fallback*'
+    }
+
+    It 'rejects a selected compiler identity that differs from RustInstaller' {
+        $env:TEST_INSTALLER_RUST_RELEASE = '1.95.1'
+
+        {
+            & $ScriptPath `
+                -TargetId 'windows-amd64' `
+                -OutputRoot (Join-Path $TestDrive 'artifacts') `
+                -CCompiler 'pwsh' `
+                -SkipBuild
+        } | Should -Throw '*identity does not match the RustInstaller compiler*'
     }
 
     It 'accepts an explicit installer package version for local builds' {
@@ -381,6 +438,7 @@ Describe 'Build-NativeMatrix target compiler configuration' {
 
     It 'rejects a Microsoft compiler release that differs from the pinned channel' {
         $global:MicrosoftRustRelease = '1.96.0'
+        $env:TEST_INSTALLER_RUST_RELEASE = $global:MicrosoftRustRelease
 
         {
             & $ScriptPath `
@@ -607,5 +665,8 @@ targets = ["x86_64-pc-windows-gnu"]
     AfterAll {
         $env:RUST_VERSION = $OriginalRustVersion
         $env:RUST_BIN_PATH = $OriginalRustBinPath
+        Remove-Item Env:TEST_INSTALLER_RUST_SYSROOT -ErrorAction SilentlyContinue
+        Remove-Item Env:TEST_INSTALLER_RUST_RELEASE -ErrorAction SilentlyContinue
+        Remove-Item Env:TEST_INSTALLER_CARGO_VERSION -ErrorAction SilentlyContinue
     }
 }

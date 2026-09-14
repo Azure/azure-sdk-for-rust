@@ -59,7 +59,8 @@ The metadata records:
 - the native-interface and driver versions;
 - the `msrustup` executable and manager version, plus the explicitly selected
   pinned Microsoft Rust channel;
-- the invoked `rustc` and Cargo paths and the installer-bound selected sysroot;
+- the invoked and installer `rustc` and Cargo paths, with matching sysroot and
+  version identities;
 - the complete `rustc -Vv` output and Cargo version;
 - the linker command, resolved executable path, and version output;
 - the operating-system libraries required by the Go linker; and
@@ -204,7 +205,7 @@ binds the published static libraries back to their exact source:
   channel, exact RustInstaller package, Rust release, compiler commit, and Cargo
   version shared by every target; and
 - `targets[]` — one entry per built row with its `id`, `triple`, `module_path`,
-  invoked compiler paths, installer-bound sysroot, full `rustc -Vv` output,
+  invoked and installer compiler paths, selected sysroot, full `rustc -Vv` output,
   linker identity, and the SHA256 of the static library and C header.
 
 `New-GoModules.ps1` cross-validates that every selected target agrees on the

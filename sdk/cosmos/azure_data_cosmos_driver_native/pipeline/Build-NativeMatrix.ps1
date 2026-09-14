@@ -150,6 +150,24 @@ function Invoke-RequiredToolOutput(
     return $text.Trim()
 }
 
+function Resolve-InstallerToolPath(
+    [string] $Tool
+) {
+    $candidates = @(
+        (Join-Path $installerBinPath $Tool),
+        (Join-Path $installerBinPath "$Tool.exe"),
+        (Join-Path $installerBinPath "$Tool.ps1")
+    )
+    $toolPath = $candidates |
+        Where-Object { Test-Path $_ -PathType Leaf } |
+        Select-Object -First 1
+    if (-not $toolPath) {
+        throw "RustInstaller@1 bin path '$installerBinPath' does not contain '$Tool'."
+    }
+
+    return (Resolve-Path $toolPath).Path
+}
+
 # Programmatically parse the `native-static-libs:` note out of a
 # `--print native-static-libs` run. Returns a string[] of `-l...`/`-L...` flags.
 function Get-NativeStaticLibs([string] $triple) {
@@ -264,7 +282,8 @@ if (
     throw 'Microsoft Rust installer bin path is required. Use RustInstaller@1 or pass -InstallerBinPath.'
 }
 $installerBinPath = (Resolve-Path $InstallerBinPath).Path
-$installerSysroot = Split-Path -Parent $installerBinPath
+$installerRustcExecutable = Resolve-InstallerToolPath -Tool 'rustc'
+$installerCargoExecutable = Resolve-InstallerToolPath -Tool 'cargo'
 $rustcCommand = Get-Command 'rustc' -CommandType Application -ErrorAction SilentlyContinue
 $cargoCommand = Get-Command 'cargo' -CommandType Application -ErrorAction SilentlyContinue
 if (-not $rustcCommand -or -not $cargoCommand) {
@@ -273,6 +292,14 @@ if (-not $rustcCommand -or -not $cargoCommand) {
 $rustcExecutable = $rustcCommand.Source
 $cargoExecutable = $cargoCommand.Source
 
+$installerRustSysroot = Invoke-RequiredToolOutput `
+    -Executable $installerRustcExecutable `
+    -Arguments @('--print', 'sysroot') `
+    -Description 'RustInstaller rustc --print sysroot'
+if (-not (Test-Path $installerRustSysroot -PathType Container)) {
+    throw "RustInstaller rustc reported a missing sysroot '$installerRustSysroot'."
+}
+$installerRustSysroot = (Resolve-Path $installerRustSysroot).Path
 $selectedRustSysroot = Invoke-RequiredToolOutput `
     -Executable 'rustc' `
     -Arguments @($cargoToolchainArgument, '--print', 'sysroot') `
@@ -287,14 +314,21 @@ $pathComparison = if ($IsWindows) {
 else {
     [System.StringComparison]::Ordinal
 }
-if (-not [string]::Equals($selectedRustSysroot, $installerSysroot, $pathComparison)) {
-    throw "rustc $cargoToolchainArgument resolved sysroot '$selectedRustSysroot', but RustInstaller@1 installed '$installerSysroot'; refusing a possible upstream fallback."
+if (-not [string]::Equals($selectedRustSysroot, $installerRustSysroot, $pathComparison)) {
+    throw "rustc $cargoToolchainArgument resolved sysroot '$selectedRustSysroot', but the RustInstaller compiler uses '$installerRustSysroot'; refusing a possible upstream fallback."
 }
 
+$installerRustcVerboseVersion = Invoke-RequiredToolOutput `
+    -Executable $installerRustcExecutable `
+    -Arguments @('-Vv') `
+    -Description 'RustInstaller rustc -Vv'
 $rustcVerboseVersion = Invoke-RequiredToolOutput `
     -Executable 'rustc' `
     -Arguments @($cargoToolchainArgument, '-Vv') `
     -Description "rustc $cargoToolchainArgument -Vv"
+if ($rustcVerboseVersion -cne $installerRustcVerboseVersion) {
+    throw "rustc $cargoToolchainArgument identity does not match the RustInstaller compiler; refusing a possible upstream fallback."
+}
 $rustcReleaseMatch = [regex]::Match(
     $rustcVerboseVersion,
     '(?m)^release:\s*(\S+)\s*$'
@@ -314,6 +348,13 @@ $cargoVersion = Invoke-RequiredToolOutput `
     -Executable 'cargo' `
     -Arguments @($cargoToolchainArgument, '--version') `
     -Description "cargo $cargoToolchainArgument --version"
+$installerCargoVersion = Invoke-RequiredToolOutput `
+    -Executable $installerCargoExecutable `
+    -Arguments @('--version') `
+    -Description 'RustInstaller cargo --version'
+if ($cargoVersion -cne $installerCargoVersion) {
+    throw "cargo $cargoToolchainArgument identity does not match the RustInstaller cargo; refusing a possible upstream fallback."
+}
 
 $sourceCommit = (& git -C $RepoRoot rev-parse HEAD 2>$null)
 if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve the source commit.' }
@@ -500,6 +541,8 @@ foreach ($row in $rows) {
             sysroot                = $selectedRustSysroot
             rustc_executable       = $rustcExecutable
             cargo_executable       = $cargoExecutable
+            installer_rustc_executable = $installerRustcExecutable
+            installer_cargo_executable = $installerCargoExecutable
             rustc_verbose_version = $rustcVerboseVersion
             rustc_release         = $rustcRelease
             cargo_version         = $cargoVersion

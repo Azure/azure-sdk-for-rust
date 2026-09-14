@@ -18,12 +18,13 @@ draft pull request in `Azure/azure-cosmos-driver`.
 Production jobs install the centrally pinned Microsoft Rust toolchain from
 `eng/templates/ms-rust-toolchain.toml` through the internal `RustInstaller@1`
 feed. The native build invokes Cargo and rustc with the explicit pinned
-toolchain selector, verifies that the selected sysroot matches the
-`RUST_BIN_PATH` installation reported by `RustInstaller@1`, and rejects an
-upstream compiler, a different or unpinned channel, and targets that `msrustup`
-cannot install. Each matrix job validates its target against the centralized
-list and passes only that target to `RustInstaller@1`; it does not attempt to
-install targets assigned to other operating systems.
+toolchain selector, compares its sysroot and version identities with the
+compiler and Cargo binaries under the `RUST_BIN_PATH` reported by
+`RustInstaller@1`, and rejects an upstream compiler, a different or unpinned
+channel, and targets that `msrustup` cannot install. Each matrix job validates
+its target against the centralized list and passes only that target to
+`RustInstaller@1`; it does not attempt to install targets assigned to other
+operating systems.
 
 ## Configured release matrix
 
@@ -104,7 +105,7 @@ signature verifier.
 
 Each target artifact includes schema 4 metadata with the selected toolchain
 manager, pinned Microsoft Rust channel, exact RustInstaller package, manager and
-Cargo versions, invoked compiler and Cargo paths, installer-bound sysroot,
+Cargo versions, invoked and installer compiler paths, selected sysroot,
 complete `rustc -Vv` output and compiler commit, target triple, and linker
 command, resolved path, and version output. `New-GoModules.ps1` rejects missing
 or mixed toolchain identities before writing schema 2 `provenance.json`. The

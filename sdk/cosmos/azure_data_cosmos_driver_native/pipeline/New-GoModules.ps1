@@ -304,6 +304,14 @@ foreach ($row in $rows) {
         -TargetId $row.id `
         -Object $toolchain `
         -Name 'cargo_executable'
+    $installerRustcExecutable = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain `
+        -Name 'installer_rustc_executable'
+    $installerCargoExecutable = Get-RequiredMetadataString `
+        -TargetId $row.id `
+        -Object $toolchain `
+        -Name 'installer_cargo_executable'
     $rustcVerboseVersion = Get-RequiredMetadataString `
         -TargetId $row.id `
         -Object $toolchain `
@@ -436,6 +444,8 @@ foreach ($row in $rows) {
             sysroot               = $selectedRustSysroot
             rustc_executable      = $rustcExecutable
             cargo_executable      = $cargoExecutable
+            installer_rustc_executable = $installerRustcExecutable
+            installer_cargo_executable = $installerCargoExecutable
             rustc_verbose_version = $rustcVerboseVersion
             target                = [string]$toolchain.target
             linker = [ordered]@{

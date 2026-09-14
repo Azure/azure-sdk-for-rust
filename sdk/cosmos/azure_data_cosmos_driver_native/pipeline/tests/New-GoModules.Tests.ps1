@@ -93,6 +93,8 @@ BeforeAll {
                     sysroot = "/tools/$MicrosoftRustChannel"
                     rustc_executable = "/tools/$MicrosoftRustChannel/bin/rustc"
                     cargo_executable = "/tools/$MicrosoftRustChannel/bin/cargo"
+                    installer_rustc_executable = "/packages/ms-rust/tools/bin/rustc"
+                    installer_cargo_executable = "/packages/ms-rust/tools/bin/cargo"
                     rustc_verbose_version = @"
 rustc 1.95.0 (012345678 2026-08-01)
 binary: rustc
@@ -197,6 +199,10 @@ BeforeEach {
             Should -Be "/tools/$MicrosoftRustChannel/bin/rustc"
         $windowsEntry[0].toolchain.cargo_executable |
             Should -Be "/tools/$MicrosoftRustChannel/bin/cargo"
+        $windowsEntry[0].toolchain.installer_rustc_executable |
+            Should -Be '/packages/ms-rust/tools/bin/rustc'
+        $windowsEntry[0].toolchain.installer_cargo_executable |
+            Should -Be '/packages/ms-rust/tools/bin/cargo'
         $windowsEntry[0].toolchain.rustc_verbose_version | Should -Match 'release: 1\.95\.0'
         $windowsEntry[0].toolchain.target | Should -Be 'x86_64-pc-windows-gnu'
         $windowsEntry[0].toolchain.linker.command | Should -Be 'gcc'
