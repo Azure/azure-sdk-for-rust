@@ -10,10 +10,10 @@ the Cosmos Rust native driver for Go. The output is a static Rust library named
 `libazurecosmosdriver.a`, together with the C header and release evidence needed
 to review where the library came from.
 
-The production pipeline extends the repository's official 1ES wrapper but is
-not connected to a CI or release definition yet. After an owner registers it in
-the internal Azure SDK project, a successful manual main-branch build can open a
-draft pull request in `Azure/azure-cosmos-driver`.
+The production pipeline extends the repository's official 1ES wrapper and is
+registered for manual internal runs rather than automatic CI. A successful
+manual main-branch build can open a draft pull request in
+`Azure/azure-cosmos-driver`.
 
 Production jobs install the centrally pinned Microsoft Rust toolchain from
 `eng/templates/ms-rust-toolchain.toml` through the internal `RustInstaller@1`
@@ -28,21 +28,29 @@ operating systems.
 
 ## Configured release matrix
 
-The intended build targets are:
+This pull request does not add or remove build targets. It applies the Microsoft
+Rust policy to the six targets already configured on `main`.
 
-- Windows AMD64
-- Linux AMD64 using glibc
-- Linux ARM64 using glibc
-- Linux AMD64 using musl
-- Linux ARM64 using musl
-- macOS ARM64
+| OS and architecture | Rust target | Observed `ms-prod-1.95` status |
+| --- | --- | --- |
+| Windows AMD64 (GNU) | `x86_64-pc-windows-gnu` | Unavailable: `RustInstaller@1` reports that `rust.std` is missing |
+| Linux AMD64 (glibc) | `x86_64-unknown-linux-gnu` | Available: installation reached build validation |
+| Linux ARM64 (glibc) | `aarch64-unknown-linux-gnu` | Available: installation reached build validation |
+| Linux AMD64 (musl) | `x86_64-unknown-linux-musl` | Available: installation reached build validation |
+| Linux ARM64 (musl) | `aarch64-unknown-linux-musl` | Available: installation reached build validation |
+| macOS ARM64 | `aarch64-apple-darwin` | Available: installation reached build validation |
 
-This matrix is configured but not yet claimed as available. A manual run in the
-internal Azure DevOps project must confirm that the private Microsoft Rust feed
-supplies every target; unsupported targets fail closed.
+These observations come from internal pipeline runs with RustInstaller 1.0.92
+and Microsoft Rust package `1.95.0-ms-20260618.5`. The five available targets
+still require a fresh end-to-end run after the toolchain identity fixes in this
+pull request. Windows AMD64 GNU remains configured so its absence fails closed;
+the release cannot complete until Microsoft Rust publishes that target or the
+target is explicitly retired as a separate product decision.
 
-Windows ARM64 and Intel macOS are outside the supported matrix. Dynamic libraries
-for .NET, Java, and Python are also outside this pull request.
+Windows ARM64 MSVC (`aarch64-pc-windows-msvc`) is separate work tracked by
+[#5235](https://github.com/Azure/azure-sdk-for-rust/issues/5235). It does not
+replace or establish support for Windows AMD64 GNU. Intel macOS and dynamic
+libraries for .NET, Java, and Python are also outside this pull request.
 
 The generated Windows cgo linker file statically links the MinGW pthread runtime.
 This prevents the final Go application from requiring a separately distributed
@@ -208,14 +216,14 @@ the appropriate driver module, so users do not need a custom musl build tag.
 
 ## Work still required before release
 
-- Register `native-driver.yml` in the internal Azure SDK project so
-  `1es-redirect.yml` selects the official 1ES template.
 - Confirm with the central security owners that the official 1ES template is the
   approved trust boundary for these static libraries.
 - Run the registered pipeline manually in the internal project and confirm that
-  `ms-prod-1.95` supplies all six required targets. The checked-in configuration
-  intentionally fails closed if the private feed does not yet provide one; local
-  tests do not establish target availability.
+  the five available targets complete their build and link-smoke tests after the
+  toolchain identity fixes.
+- Resolve the Windows AMD64 GNU blocker before release by publishing
+  `x86_64-pc-windows-gnu` in the pinned Microsoft Rust channel or explicitly
+  retiring that downstream module. Upstream Rust fallback is not permitted.
 - Confirm that the Azure SDK Automation GitHub App installation includes the
   private `Azure/azure-cosmos-driver` repository and that this pipeline may use
   the `AzureSDKEngKeyVault Secrets` service connection.

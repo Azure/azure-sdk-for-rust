@@ -15,18 +15,28 @@ commands are documented in `pipeline/README.md`.
 
 ## Scope
 
-This pull request configures `libazurecosmosdriver.a` builds for the following
-intended release matrix:
+This pull request does not add or remove build targets. It applies the Microsoft
+Rust policy to the six targets already configured on `main`.
 
-- Windows AMD64
-- Linux AMD64 and ARM64 using glibc
-- Linux AMD64 and ARM64 using musl
-- macOS ARM64
+| OS and architecture | Rust target | Observed `ms-prod-1.95` status |
+| --- | --- | --- |
+| Windows AMD64 (GNU) | `x86_64-pc-windows-gnu` | Unavailable: `RustInstaller@1` reports that `rust.std` is missing |
+| Linux AMD64 (glibc) | `x86_64-unknown-linux-gnu` | Available: installation reached build validation |
+| Linux ARM64 (glibc) | `aarch64-unknown-linux-gnu` | Available: installation reached build validation |
+| Linux AMD64 (musl) | `x86_64-unknown-linux-musl` | Available: installation reached build validation |
+| Linux ARM64 (musl) | `aarch64-unknown-linux-musl` | Available: installation reached build validation |
+| macOS ARM64 | `aarch64-apple-darwin` | Available: installation reached build validation |
 
-Availability of all six target standard libraries in the private Microsoft Rust
-feed remains unverified until the pipeline completes a manual internal Azure
-DevOps run. A missing target fails the build rather than falling back to
-upstream Rust.
+These observations come from internal pipeline runs with RustInstaller 1.0.92
+and Microsoft Rust package `1.95.0-ms-20260618.5`. A fresh internal run is still
+required to prove the five available targets end to end after the toolchain
+identity fixes. Windows AMD64 GNU remains a fail-closed release blocker until
+Microsoft Rust publishes that target or the target is explicitly retired as a
+separate product decision. Upstream Rust fallback is not permitted.
+
+Windows ARM64 MSVC (`aarch64-pc-windows-msvc`) is separate work tracked by
+[#5235](https://github.com/Azure/azure-sdk-for-rust/issues/5235); it does not
+replace or establish support for Windows AMD64 GNU.
 
 The Go SDK links this static library into the customer's final executable.
 
@@ -129,13 +139,14 @@ The production native-driver jobs opt into the shared
 consumers continue to use the standard upstream Rust path.
 
 The configuration pins `ms-prod-1.95` and declares the six Rust target triples
-required by the release matrix. It does not list `rust-std` as a host component;
-cross-target standard libraries are installed through the toolchain target
-mechanism. Before invoking `RustInstaller@1`, the shared template validates the
-matrix target against this centralized allowlist and creates an installer
-configuration without the complete target list. It then supplies only that
-job's target through the task's `additionalTargets` input, preventing each host
-from eagerly installing targets assigned to other operating systems.
+required by the pre-existing release matrix. It does not list `rust-std` as a
+host component; cross-target standard libraries are installed through the
+toolchain target mechanism. Before invoking `RustInstaller@1`, the shared
+template validates the matrix target against this centralized allowlist and
+creates an installer configuration without the complete target list. It then
+supplies only that job's target through the task's `additionalTargets` input,
+preventing each host from eagerly installing targets assigned to other
+operating systems.
 
 `Build-NativeMatrix.ps1` uses `msrustup` only to manage the pinned toolchain and
 its targets. Every compiler and build command selects that toolchain explicitly
@@ -275,9 +286,9 @@ Receive GitHub code-owner review and approval
 
 The checked-in pipeline extends the official 1ES wrapper, uses the standard
 managed pool definitions for Linux, Windows, and Apple Silicon macOS, and
-installs Microsoft Rust from an internal feed. It remains unregistered, so an
-owner must create its internal Azure DevOps definition and confirm all six
-toolchain targets with a manual run before release.
+installs Microsoft Rust from an internal feed. An owner must rerun the five
+available targets after the toolchain identity fixes and resolve the unavailable
+Windows AMD64 GNU target before release.
 
 The publication stage runs only for a successful non-pull-request build of
 `refs/heads/main`. It uses the existing Azure SDK Automation GitHub App to clone
