@@ -257,58 +257,63 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
         return resolve_gateway_v2_env(test_mode);
     }
 
-    if std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad")) {
-        let endpoint = std::env::var(ACCOUNT_HOST_ENV_VAR)
-            .ok()
-            .filter(|value| !value.trim().is_empty());
-        let Some(endpoint) = endpoint else {
-            if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
-                panic!("{ACCOUNT_HOST_ENV_VAR} is not set but AAD test mode is required");
-            }
-            return Ok(None);
-        };
-        let credential = azure_core_test::credentials::from_env(None)?;
-        let account = AccountReference::with_credential(endpoint.parse()?, credential.clone());
-        return Ok(Some(TestEnv {
-            account,
-            connection_pool: ConnectionPoolOptions::builder().build()?,
-            arm_client: Some(CosmosArmClient::from_env(credential)?),
-        }));
-    }
-
-    #[allow(unreachable_code)]
-    let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
-        Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
-        Ok(val) => val,
-        Err(_) => {
-            if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
-                panic!(
-                    "{} is not set but test mode is required",
-                    CONNECTION_STRING_ENV_VAR
-                );
-            }
-            return Ok(None);
+    #[cfg(not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )))]
+    {
+        if std::env::var(AUTH_MODE_ENV_VAR).is_ok_and(|value| value.eq_ignore_ascii_case("aad")) {
+            let endpoint = std::env::var(ACCOUNT_HOST_ENV_VAR)
+                .ok()
+                .filter(|value| !value.trim().is_empty());
+            let Some(endpoint) = endpoint else {
+                if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
+                    panic!("{ACCOUNT_HOST_ENV_VAR} is not set but AAD test mode is required");
+                }
+                return Ok(None);
+            };
+            let credential = azure_core_test::credentials::from_env(None)?;
+            let account = AccountReference::with_credential(endpoint.parse()?, credential.clone());
+            return Ok(Some(TestEnv {
+                account,
+                connection_pool: ConnectionPoolOptions::builder().build()?,
+                arm_client: Some(CosmosArmClient::from_env(credential)?),
+            }));
         }
-    };
 
-    let conn_str: ConnectionString = connection_string.parse()?;
-    let endpoint = conn_str.account_endpoint().parse()?;
-    let key = conn_str.account_key().secret().to_string();
-    let account = AccountReference::with_master_key(endpoint, key);
+        let connection_string = match std::env::var(CONNECTION_STRING_ENV_VAR) {
+            Ok(val) if val.to_lowercase() == "emulator" => EMULATOR_CONNECTION_STRING.to_string(),
+            Ok(val) => val,
+            Err(_) => {
+                if test_mode == CosmosTestMode::Required || is_azure_pipelines() {
+                    panic!(
+                        "{} is not set but test mode is required",
+                        CONNECTION_STRING_ENV_VAR
+                    );
+                }
+                return Ok(None);
+            }
+        };
 
-    let mut connection_pool_builder = ConnectionPoolOptions::builder();
-    if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
-        connection_pool_builder = connection_pool_builder.with_server_certificate_validation(
-            ServerCertificateValidation::RequiredUnlessEmulator,
-        );
+        let conn_str: ConnectionString = connection_string.parse()?;
+        let endpoint = conn_str.account_endpoint().parse()?;
+        let key = conn_str.account_key().secret().to_string();
+        let account = AccountReference::with_master_key(endpoint, key);
+
+        let mut connection_pool_builder = ConnectionPoolOptions::builder();
+        if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
+            connection_pool_builder = connection_pool_builder.with_server_certificate_validation(
+                ServerCertificateValidation::RequiredUnlessEmulator,
+            );
+        }
+        let connection_pool = connection_pool_builder.build()?;
+
+        Ok(Some(TestEnv {
+            account,
+            connection_pool,
+            arm_client: None,
+        }))
     }
-    let connection_pool = connection_pool_builder.build()?;
-
-    Ok(Some(TestEnv {
-        account,
-        connection_pool,
-        arm_client: None,
-    }))
 }
 
 /// Builds a [`TestEnv`] from the pre-provisioned Gateway 2.0 account

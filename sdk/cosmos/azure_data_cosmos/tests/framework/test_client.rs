@@ -11,14 +11,14 @@ use azure_data_cosmos::{
     feed::FeedScope,
     models::{ItemResponse, PartitionKeyValue, ThroughputProperties},
     options::{
-        BinaryEncodingOptions, ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions,
-        ItemWriteOptions, Region, ServerCertificateValidation,
+        BinaryEncodingOptions, ChangeFeedStartFrom, ConnectionPoolOptions, CreateContainerOptions,
+        ItemReadOptions, ItemWriteOptions, Region, ServerCertificateValidation,
     },
     CosmosClient, CosmosError, CosmosRuntime, CosmosStatus, PartitionKey, Query, RoutingStrategy,
     SubStatusCode,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
-use futures::TryStreamExt;
+use futures::{StreamExt, TryStreamExt};
 use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
@@ -272,11 +272,9 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
 /// connection. Under key auth this is invisible because the master key bypasses
 /// RBAC entirely.
 ///
-/// The probe deletes an id that cannot exist: it mutates nothing on success
-/// (the delete answers a bare 404), reuses the same `items/*` grant tests need,
-/// and returns as soon as the data path answers with a normal not-found. It
-/// tolerates `5302` and `collection_create_in_progress` as retryable while the
-/// name registers on this client.
+/// The probe verifies item, query, and change-feed authorization because Cosmos
+/// can propagate those RBAC actions independently. It tolerates `5302` and
+/// collection metadata propagation errors while the name registers.
 pub async fn probe_data_plane_ready(
     label: &str,
     container: &ContainerClient,
@@ -310,7 +308,7 @@ pub async fn probe_data_plane_ready(
         };
 
         if item_not_found(&error) {
-            return Ok(());
+            break;
         }
 
         let retryable = rbac_name_based_data_not_ready(&error)
@@ -324,7 +322,73 @@ pub async fn probe_data_plane_ready(
         tokio::time::sleep(RETRY_DELAY).await;
     }
 
-    unreachable!("loop should be exited by 'return' when attempts are exhausted")
+    for attempt in 1..=MAX_ATTEMPTS {
+        let outcome = async {
+            container
+                .query_items::<i64>(
+                    "SELECT VALUE COUNT(1) FROM c",
+                    FeedScope::full_container(),
+                    None,
+                )
+                .await?
+                .try_collect::<Vec<_>>()
+                .await
+        }
+        .await;
+        match outcome {
+            Ok(_) => break,
+            Err(error)
+                if rbac_name_based_data_not_ready(&error)
+                    || collection_create_in_progress(&error)
+                    || owner_resource_not_found(&error) =>
+            {
+                if attempt == MAX_ATTEMPTS {
+                    return Err(error);
+                }
+                println!("waiting for query readiness on {label}: {error}");
+                tokio::time::sleep(RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    for attempt in 1..=MAX_ATTEMPTS {
+        let outcome = async {
+            let mut pages = container
+                .query_change_feed::<serde_json::Value>(
+                    FeedScope::full_container(),
+                    ChangeFeedStartFrom::Now,
+                    None,
+                )
+                .await?;
+            match pages.next().await {
+                Some(result) => result.map(|_| ()),
+                None => Err(azure_data_cosmos_driver::error::CosmosError::builder()
+                    .with_status(CosmosStatus::new(StatusCode::InternalServerError))
+                    .with_message("change-feed readiness probe returned no page")
+                    .build()
+                    .into()),
+            }
+        }
+        .await;
+        match outcome {
+            Ok(()) => return Ok(()),
+            Err(error)
+                if rbac_name_based_data_not_ready(&error)
+                    || collection_create_in_progress(&error)
+                    || owner_resource_not_found(&error) =>
+            {
+                if attempt == MAX_ATTEMPTS {
+                    return Err(error);
+                }
+                println!("waiting for change-feed readiness on {label}: {error}");
+                tokio::time::sleep(RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    unreachable!("the final change-feed readiness attempt returns above")
 }
 
 /// Options for configuring test execution.

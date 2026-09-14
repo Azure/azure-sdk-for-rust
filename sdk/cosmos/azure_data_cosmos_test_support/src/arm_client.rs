@@ -23,6 +23,8 @@ const RESOURCE_API_VERSION: &str = "2026-03-15";
 const PARTITION_MERGE_API_VERSION: &str = "2026-04-01-preview";
 const LRO_POLL_INTERVAL: Duration = Duration::from_secs(2);
 const LRO_TIMEOUT: Duration = Duration::from_secs(60 * 60);
+const LOCK_RETRY_INTERVAL: Duration = Duration::from_secs(15);
+const LOCK_RETRY_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 
 const SUBSCRIPTION_ID_ENV_VAR: &str = "COSMOS_SUBSCRIPTION_ID";
 const RESOURCE_GROUP_ENV_VAR: &str = "COSMOS_RESOURCE_GROUP";
@@ -163,6 +165,11 @@ struct AutoscaleThroughputPolicyResult {
 #[serde(rename_all = "camelCase")]
 struct PartitionMergeParameters {
     is_dry_run: bool,
+}
+
+enum OperationCompletion {
+    Succeeded,
+    Failed(serde_json::Value),
 }
 
 impl CosmosArmClient {
@@ -382,16 +389,39 @@ impl CosmosArmClient {
     where
         T: Serialize + ?Sized,
     {
-        let response = self.send(method, path, api_version, body).await?;
-        if method == Method::Delete && response.status() == StatusCode::NotFound {
-            return Ok(());
-        }
-        ensure_success(&response, "manage Cosmos ARM resource")?;
-        if response.status() == StatusCode::Accepted {
+        let retry_deadline = tokio::time::Instant::now() + LOCK_RETRY_TIMEOUT;
+        loop {
+            let response = self.send(method, path, api_version, body).await?;
+            if method == Method::Delete && response.status() == StatusCode::NotFound {
+                return Ok(());
+            }
+            if is_retryable_lock_response(&response) && tokio::time::Instant::now() < retry_deadline
+            {
+                tokio::time::sleep(retry_after(&response).unwrap_or(LOCK_RETRY_INTERVAL)).await;
+                continue;
+            }
+            ensure_success(&response, "manage Cosmos ARM resource")?;
+            if response.status() != StatusCode::Accepted {
+                return Ok(());
+            }
+
             let operation_url = operation_url(&response)?;
-            self.wait_for_operation(operation_url).await?;
+            match self.wait_for_operation(operation_url).await? {
+                OperationCompletion::Succeeded => return Ok(()),
+                OperationCompletion::Failed(body)
+                    if is_retryable_operation_failure(&body)
+                        && tokio::time::Instant::now() < retry_deadline =>
+                {
+                    tokio::time::sleep(LOCK_RETRY_INTERVAL).await;
+                }
+                OperationCompletion::Failed(body) => {
+                    return Err(azure_core::Error::with_message(
+                        azure_core::error::ErrorKind::Other,
+                        format!("ARM operation failed: {body}"),
+                    ));
+                }
+            }
         }
-        Ok(())
     }
 
     async fn send<T>(
@@ -425,7 +455,7 @@ impl CosmosArmClient {
             .await
     }
 
-    async fn wait_for_operation(&self, operation_url: Url) -> Result<()> {
+    async fn wait_for_operation(&self, operation_url: Url) -> Result<OperationCompletion> {
         let deadline = tokio::time::Instant::now() + LRO_TIMEOUT;
         loop {
             if tokio::time::Instant::now() >= deadline {
@@ -454,23 +484,20 @@ impl CosmosArmClient {
                 continue;
             }
             if response.body().is_empty() {
-                return Ok(());
+                return Ok(OperationCompletion::Succeeded);
             }
 
             let body: serde_json::Value = response.body().json()?;
             let status = operation_status(&body);
             match status.as_deref() {
-                Some("succeeded" | "completed") => return Ok(()),
+                Some("succeeded" | "completed") => return Ok(OperationCompletion::Succeeded),
                 Some("failed" | "canceled" | "cancelled") => {
-                    return Err(azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        format!("ARM operation failed: {body}"),
-                    ));
+                    return Ok(OperationCompletion::Failed(body));
                 }
                 Some(_) => {
                     tokio::time::sleep(retry_after(&response).unwrap_or(LRO_POLL_INTERVAL)).await;
                 }
-                None => return Ok(()),
+                None => return Ok(OperationCompletion::Succeeded),
             }
         }
     }
@@ -496,6 +523,33 @@ fn normalize_endpoint(endpoint: &str) -> Result<Url> {
         endpoint.set_path(&format!("{}/", endpoint.path()));
     }
     Ok(endpoint)
+}
+
+fn is_retryable_lock_response(response: &RawResponse) -> bool {
+    if response.status() == StatusCode::Locked {
+        return true;
+    }
+    if response.status() != StatusCode::Conflict {
+        return false;
+    }
+    serde_json::from_slice(response.body().as_ref())
+        .is_ok_and(|body| is_retryable_operation_failure(&body))
+}
+
+fn is_retryable_operation_failure(body: &serde_json::Value) -> bool {
+    [
+        body.pointer("/error/code"),
+        body.get("code"),
+        body.pointer("/properties/error/code"),
+    ]
+    .into_iter()
+    .flatten()
+    .any(|code| {
+        code.as_u64() == Some(423)
+            || code
+                .as_str()
+                .is_some_and(|code| code == "423" || code.eq_ignore_ascii_case("locked"))
+    })
 }
 
 fn create_update_options(throughput: ArmThroughput) -> CreateUpdateOptions {
@@ -596,7 +650,8 @@ fn operation_status(body: &serde_json::Value) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        create_update_options, operation_status, throughput_settings_resource, ArmThroughput,
+        create_update_options, is_retryable_operation_failure, operation_status,
+        throughput_settings_resource, ArmThroughput,
     };
 
     #[test]
@@ -643,5 +698,17 @@ mod tests {
     fn reads_nested_operation_status() {
         let body = serde_json::json!({"properties": {"provisioningState": "Succeeded"}});
         assert_eq!(operation_status(&body).as_deref(), Some("succeeded"));
+    }
+
+    #[test]
+    fn recognizes_retryable_locked_operation() {
+        let body = serde_json::json!({
+            "status": "Failed",
+            "error": {
+                "code": "423",
+                "message": "There is another scale-up operation currently in progress."
+            }
+        });
+        assert!(is_retryable_operation_failure(&body));
     }
 }

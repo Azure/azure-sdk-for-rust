@@ -6,18 +6,15 @@
 //! Integration tests exercising Entra ID (AAD) authentication against Azure
 //! Cosmos DB.
 //!
-//! These tests use a **dual-client** pattern: a key-auth client (provided by the
-//! framework) performs database/container management, while a separate
-//! AAD-authenticated client performs all data-plane item operations. This
-//! mirrors the data-plane RBAC role provisioned in `test-resources.bicep`, which
-//! grants item/metadata data actions but **not** management-plane permissions.
+//! Live tests use ARM for database/container lifecycle and AAD for all Cosmos
+//! data-plane operations. A second AAD client validates the explicit credential
+//! path independently from the framework client.
 //!
 //! Because these tests need AAD data-plane access, they gate on the
 //! `cosmos_aad_supported` cfg (set by the local emulator setup when started
 //! with `/enableaadauthentication`, and by bicep-provisioned live accounts
-//! that include the Cosmos data-plane role assignment). Fixed self-owned live
-//! accounts without that role assignment do not set this cfg, so these tests
-//! are skipped on those legs.
+//! that include the Cosmos data-plane role assignment). Fixed live accounts
+//! without that assignment do not set this cfg, so these tests are skipped.
 
 use super::framework;
 
