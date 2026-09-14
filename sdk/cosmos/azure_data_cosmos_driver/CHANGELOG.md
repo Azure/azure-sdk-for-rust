@@ -21,6 +21,8 @@
 
 ### Other Changes
 
+- Test-only: the driver test framework now applies the vnext emulator's disabled binary-encoding default at the runtime layer, so every framework-built `CosmosDriverRuntime` inherits it while explicit driver- or operation-level settings still win. No product behavior change. ([#5299](https://github.com/Azure/azure-sdk-for-rust/pull/5299))
+
 ## 0.7.0 (2026-09-02)
 
 ### Features Added
