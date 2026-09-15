@@ -10,7 +10,7 @@ use std::{
 use serde::Deserialize;
 use serde_json::Value;
 
-const DEFAULT_PROFILE: &str = "hostedEmulatorSmoke";
+const DEFAULT_PROFILE: &str = "smokeTests";
 const SCENARIO_SCHEMA_REFERENCE: &str = "../../schema/scenario.v1.json";
 const PROFILE_SCHEMA_REFERENCE: &str = "../schema/profile.v1.json";
 const SCENARIO_DIRECTORY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../e2e_tests/scenarios");
@@ -34,7 +34,7 @@ const SCENARIOS: &[&str] = &[
 ];
 
 const PROFILES: &[&str] = &[
-    include_str!("../../../e2e_tests/profiles/hostedEmulatorSmoke.json"),
+    include_str!("../../../e2e_tests/profiles/smokeTests.json"),
     include_str!("../../../e2e_tests/profiles/lifecycleConsistencyMatrix.json"),
     include_str!("../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"),
 ];

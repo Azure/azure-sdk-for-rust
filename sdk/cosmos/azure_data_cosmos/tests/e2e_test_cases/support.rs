@@ -69,8 +69,8 @@ pub(super) async fn should_run(scenario_id: &str) -> TestResult<bool> {
 pub(super) async fn selected_scenario_profile(scenario_id: &str) -> TestResult<Option<Profile>> {
     init_test_tracing();
     let Some(profile) = selected_profile_for(scenario_id)? else {
-        let selected = std::env::var("AZURE_COSMOS_E2E_PROFILE")
-            .unwrap_or_else(|_| "hostedEmulatorSmoke".to_owned());
+        let selected =
+            std::env::var("AZURE_COSMOS_E2E_PROFILE").unwrap_or_else(|_| "smokeTests".to_owned());
         eprintln!("SKIP {scenario_id}: profile '{selected}' does not select it");
         return Ok(None);
     };

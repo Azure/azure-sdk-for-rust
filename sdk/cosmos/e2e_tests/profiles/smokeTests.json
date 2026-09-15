@@ -1,7 +1,7 @@
 {
   "$schema": "../schema/profile.v1.json",
   "specVersion": "1.0",
-  "id": "hostedEmulatorSmoke",
+  "id": "smokeTests",
   "accounts": [
     {
       "id": "sessionSingleRegion",
