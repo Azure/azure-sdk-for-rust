@@ -21,7 +21,9 @@
 //! validated end-to-end independently of the real submit pipeline.
 
 use std::collections::VecDeque;
-use std::ffi::{c_char, c_void, CString};
+#[cfg(test)]
+use std::ffi::c_void;
+use std::ffi::{c_char, CString};
 use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 use std::time::{Duration, Instant};
@@ -31,8 +33,10 @@ use azure_data_cosmos_driver::models::{
     ContainerReference as DriverContainerReference, CosmosResponse, CosmosResponseHeaders,
     ResponseBody,
 };
+use azure_data_cosmos_driver::DiagnosticsContext;
 
 use crate::container_ref::ContainerRefHandle;
+use crate::diagnostics::CosmosDiagnostics;
 use crate::driver::DriverHandle;
 use crate::error::{CosmosErrorCode, CosmosStatusCode, COSMOS_STATUS_SUCCESS};
 use crate::response_header::{
@@ -314,8 +318,13 @@ pub struct CosmosCompletion {
     pub body: *const u8,
     /// Number of bytes addressable from `body`.
     pub body_len: usize,
-    /// Reserved for a future diagnostics handle; always NULL for now.
-    pub diagnostics: *mut c_void,
+    /// Borrowed read-only diagnostics handle for the operation (request
+    /// charge, elapsed time, attempt count, regions contacted, per-attempt
+    /// timeline), or NULL when the driver attached none. Populated on success
+    /// and on errors that carry diagnostics. Valid until the completion is
+    /// freed; do not free separately. Read via the
+    /// [`cosmos_diagnostics_*`](crate::diagnostics) accessors.
+    pub diagnostics: *const CosmosDiagnostics,
     /// Owned driver handle for a `get_or_create` completion, else NULL. Detach
     /// with [`cosmos_completion_take_driver`] or let the free reclaim it.
     pub driver: *mut DriverHandle,
@@ -342,6 +351,7 @@ pub struct CosmosCompletionBacking {
     next_continuation: Option<CString>,
     backtrace: Option<CString>,
     patch_tracking_id: Option<CString>,
+    diagnostics: Option<CosmosDiagnostics>,
 }
 
 /// Internal queue item: owns every allocation a completion needs before it is
@@ -359,6 +369,7 @@ pub(crate) struct PendingCompletion {
     patch_tracking_id: Option<CString>,
     headers: OwnedResponseHeaders,
     response: Option<CosmosResponse>,
+    diagnostics: Option<Arc<DiagnosticsContext>>,
     driver: Option<Arc<DriverHandle>>,
     container: Option<DriverContainerReference>,
     /// Producing operation's shared state (advanced to a terminal state at
@@ -414,6 +425,7 @@ impl PendingCompletion {
             patch_tracking_id,
             headers: OwnedResponseHeaders::empty(),
             response: None,
+            diagnostics: None,
             driver: None,
             container: None,
             op_inner,
@@ -458,6 +470,7 @@ impl PendingCompletion {
                 effective_headers.substatus = Some(sub);
             }
             p.headers = synthesize_response_headers(&effective_headers);
+            p.diagnostics = Some(resp.diagnostics());
             p.response = Some(resp);
         }
         p
@@ -513,6 +526,11 @@ impl PendingCompletion {
         p.patch_tracking_id = err
             .patch_tracking_id()
             .and_then(|id| to_cstring(id.to_string()));
+        // Diagnostics are operational telemetry, not error-detail content, so
+        // they are attached whenever the driver produced them regardless of
+        // `include_details` — this is what lets bounded-runtime errors (e.g. an
+        // end-to-end timeout) still carry their partial diagnostics.
+        p.diagnostics = err.diagnostics();
         if include_details {
             p.http_status_code = u16::from(err.status().status_code());
             p.is_from_wire = err.is_from_wire();
@@ -575,6 +593,7 @@ impl PendingCompletion {
             next_continuation: self.next_continuation,
             backtrace: self.backtrace,
             patch_tracking_id: self.patch_tracking_id,
+            diagnostics: self.diagnostics.map(CosmosDiagnostics::new),
         });
 
         // Borrowed pointers into the (now heap-stable) backing box.
@@ -586,6 +605,10 @@ impl PendingCompletion {
             .response
             .as_ref()
             .map_or((std::ptr::null(), 0), body_view);
+        let diagnostics = backing
+            .diagnostics
+            .as_ref()
+            .map_or(std::ptr::null(), |d| d as *const CosmosDiagnostics);
 
         CosmosCompletion {
             outcome,
@@ -600,7 +623,7 @@ impl PendingCompletion {
             headers_len,
             body,
             body_len,
-            diagnostics: std::ptr::null_mut(),
+            diagnostics,
             driver,
             container,
             backing: Box::into_raw(backing),
@@ -1580,6 +1603,9 @@ mod tests {
         );
         assert_eq!(c.user_data, token as isize);
         assert_eq!(c.status, COSMOS_STATUS_SUCCESS);
+        // Synthetic completions carry no driver diagnostics, so the borrowed
+        // handle must be NULL and inert (the accessors are NULL-safe).
+        assert!(c.diagnostics.is_null());
 
         free_one(c);
         cosmos_operation_handle_free(op);

@@ -1295,9 +1295,21 @@ if __name__ == "__main__":
    `cosmos_operation_request_t.body` / `.body_len`.
    Bytes are **copied** before the submit call returns; callers may release
    their source buffer immediately.
-6. **Diagnostics-on-error** is currently only available via the rich
-   `cosmos_error_t` on `outcome == ERROR` completions. The success-path
-   `cosmos_response_diagnostics` accessor is a planned follow-up.
+6. **Diagnostics on every completion.** When an operation produces driver
+   diagnostics, the completion's `diagnostics` field points at an opaque
+   `cosmos_diagnostics_t` owned by the completion (NULL when none are
+   available). It is populated on success and on errors that carry
+   diagnostics — including timeouts — and stays valid until the completion is
+   freed; do not free it separately. Read it with the NULL-safe
+   `cosmos_diagnostics_*` accessors: scalar rollups
+   (`total_request_charge`, `total_elapsed_micros`, `request_count`),
+   operation-level status (`is_completed`, `is_failure`),
+   the `iter_regions_contacted` / `iter_attempts` visitors (per-attempt
+   endpoint, region, status + sub-status, latency, and RU), and a borrowed
+   JSON snapshot via `to_json` (which takes a verbosity selector). Under a
+   retry storm the per-attempt list can be a compacted subset — `is_compacted`
+   / `retained_request_count` report that, while `request_count` and
+   `total_request_charge` stay exact.
 7. **Single-runtime caching.** Drivers are cached by endpoint URL on the
    `cosmos_runtime_t` that created them. Multiple `cosmos_runtime_t`
    instances do **not** share their caches — see

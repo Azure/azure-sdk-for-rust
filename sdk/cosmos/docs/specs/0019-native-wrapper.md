@@ -1620,33 +1620,75 @@ void cosmos_response_free(cosmos_response_t *r);
 
 The error-payload accessors (`cosmos_error_status_code`, `cosmos_error_sub_status`, `cosmos_error_is_throttled`, etc.) are defined in §3.5.2 and live on `cosmos_error_t` — they are **not** redundantly re-exposed on `cosmos_response_t`. A completion whose `outcome == OK` yields a `cosmos_response_t` whose `cosmos_response_status_code` may still be a Cosmos-success status (200, 201, 204, ...); a completion whose `outcome == ERROR` yields a `cosmos_error_t` whose accessors expose the equivalent service-error fields.
 
-### 4.8 Diagnostics (`src/handles/diagnostics.rs`)
+### 4.8 Diagnostics (`src/diagnostics.rs`)
 
-`DiagnosticsContext` exposes timings, regions contacted, retry attempts, and per-request `RequestDiagnostics`. We expose it as an opaque handle with accessors:
+`DiagnosticsContext` exposes timings, regions contacted, per-attempt
+`RequestDiagnostics`, and aggregate request charge. It is surfaced as an
+opaque, read-only handle borrowed from the completion's `diagnostics` field
+(NULL when the operation produced none). The handle is owned by the completion
+and stays valid until `cosmos_completion_queue_free_completions` reclaims it,
+so it is never freed on its own. It is populated on success and on errors that
+carry diagnostics (including deadline timeouts). Every accessor is NULL-safe:
 
 ```c
-/* Aggregate metrics */
-double  cosmos_diagnostics_total_request_charge(const cosmos_diagnostics_t *d);
+/* Aggregate metrics (exact even when the per-attempt list is compacted) */
+double   cosmos_diagnostics_total_request_charge(const cosmos_diagnostics_t *d);
 uint64_t cosmos_diagnostics_total_elapsed_micros(const cosmos_diagnostics_t *d);
-uint32_t cosmos_diagnostics_retry_count(const cosmos_diagnostics_t *d);
+uint32_t cosmos_diagnostics_request_count(const cosmos_diagnostics_t *d);
 
-/* Region info — iteration via visitor */
-typedef void (*cosmos_region_visitor)(
-    void *user_data, const char *region_name, const char *endpoint,
-    bool succeeded, uint64_t elapsed_micros);
+/* Operation-level status */
+bool cosmos_diagnostics_is_completed(const cosmos_diagnostics_t *d);
+bool cosmos_diagnostics_is_failure(const cosmos_diagnostics_t *d);
+
+/* Compaction signalling — under a retry storm the per-attempt list is capped.
+ * The retained count is what iter_attempts yields; the aggregates above stay
+ * exact against the true total. */
+uint32_t cosmos_diagnostics_retained_request_count(const cosmos_diagnostics_t *d);
+bool     cosmos_diagnostics_is_compacted(const cosmos_diagnostics_t *d);
+
+/* Regions contacted — one callback per distinct region, first-contact order */
 void cosmos_diagnostics_iter_regions_contacted(
     const cosmos_diagnostics_t *d,
-    cosmos_region_visitor visitor, void *user_data);
+    void (*visitor)(void *user_data, const char *region_name),
+    void *user_data);
 
-/* Full JSON snapshot for log/telemetry forwarding (allocates). The returned
- * cosmos_bytes_t is an opaque handle (see §3.3); free with cosmos_bytes_free. */
+/* Per-attempt retry timeline — one callback per retained attempt, in order.
+ * `region` is NULL when the attempt has no region; `sub_status` is -1 when the
+ * attempt recorded none; `server_duration_ms` is negative when the service did
+ * not report one. */
+void cosmos_diagnostics_iter_attempts(
+    const cosmos_diagnostics_t *d,
+    void (*visitor)(void *user_data, const char *endpoint, const char *region,
+                    uint16_t status_code, int32_t sub_status,
+                    uint64_t latency_ms, double request_charge,
+                    double server_duration_ms),
+    void *user_data);
+
+/* JSON snapshot for log/telemetry forwarding. Zero-copy: `*out_data` /
+ * `*out_len` borrow UTF-8 bytes cached inside the handle and valid until the
+ * completion is freed — the caller must not free them. `verbosity` selects the
+ * rendering (0 = runtime default, 1 = summary, 2 = detailed); an unrecognized
+ * value renders at the runtime default. */
 cosmos_status_code_t cosmos_diagnostics_to_json(
-    const cosmos_diagnostics_t *d, cosmos_bytes_t **out_json);
-
-void cosmos_diagnostics_free(cosmos_diagnostics_t *d);
+    const cosmos_diagnostics_t *d, cosmos_diagnostics_verbosity_t verbosity,
+    const uint8_t **out_data, uintptr_t *out_len);
 ```
 
-The JSON snapshot is the **only** place the wrapper serializes anything to JSON, and it's purely a debugging aid — schema-agnosticism is preserved on the data plane.
+The JSON snapshot is the **only** place the wrapper serializes anything to
+JSON, and it's purely a debugging aid — schema-agnosticism is preserved on the
+data plane. Because the handle is borrowed from the completion, there is no
+separate `cosmos_diagnostics_free`.
+
+`DiagnosticsContext::is_threshold_violated` is intentionally **not** exposed:
+it takes a `DiagnosticsThresholds` input that has no stable C-ABI form yet, so
+threshold classification stays a host-side concern until a diagnostics-options
+type is designed.
+
+`DiagnosticsContext::operation_name` is intentionally **not** exposed either:
+the driver only records it on test-constructed contexts (the production builder
+always leaves it unset), so the accessor would report nothing on every real
+completion. The host already knows which operation it submitted, so exposing a
+perpetually-empty field would only mislead.
 
 ### 4.9 Host token credentials (`src/credential.rs`)
 

@@ -879,6 +879,16 @@ typedef struct cosmos_container_ref_t cosmos_container_ref_t;
 typedef struct cosmos_completion_backing_t cosmos_completion_backing_t;
 
 /**
+ * Opaque, read-only diagnostics handle borrowed from a completion.
+ *
+ * Obtained through a completion's `diagnostics` field. The handle is owned by
+ * the completion and remains valid until the completion is freed; it must not
+ * be freed on its own. All accessors are safe to call from any thread while
+ * the owning completion is alive.
+ */
+typedef struct cosmos_diagnostics_t cosmos_diagnostics_t;
+
+/**
  * The C ABI handle for a database reference (`cosmos_database_ref_t`).
  *
  * Wraps the driver's database reference; the C side holds it as an opaque
@@ -1253,9 +1263,14 @@ typedef struct cosmos_completion_t {
    */
   uintptr_t body_len;
   /**
-   * Reserved for a future diagnostics handle; always NULL for now.
+   * Borrowed read-only diagnostics handle for the operation (request
+   * charge, elapsed time, attempt count, regions contacted, per-attempt
+   * timeline), or NULL when the driver attached none. Populated on success
+   * and on errors that carry diagnostics. Valid until the completion is
+   * freed; do not free separately. Read via the
+   * [`cosmos_diagnostics_*`](crate::diagnostics) accessors.
    */
-  void *diagnostics;
+  const struct cosmos_diagnostics_t *diagnostics;
   /**
    * Owned driver handle for a `get_or_create` completion, else NULL. Detach
    * with [`cosmos_completion_take_driver`] or let the free reclaim it.
@@ -1297,6 +1312,28 @@ typedef struct cosmos_completion_queue_options_t {
    */
   bool include_error_details;
 } cosmos_completion_queue_options_t;
+
+/**
+ * Verbosity selector for [`cosmos_diagnostics_to_json`].
+ *
+ * A newtype over the wire integer (rather than a Rust `enum`) so an
+ * unrecognized value is well-defined — it renders at
+ * [`CosmosDiagnosticsVerbosity::DEFAULT`] instead of being undefined
+ * behavior — matching the other integer-valued FFI selectors in this crate.
+ */
+typedef int32_t cosmos_diagnostics_verbosity_t;
+/**
+ * Render using the runtime's configured default verbosity.
+ */
+#define cosmos_diagnostics_verbosity_t_DEFAULT 0
+/**
+ * Render a compact, size-bounded summary.
+ */
+#define cosmos_diagnostics_verbosity_t_SUMMARY 1
+/**
+ * Render the full per-attempt detail.
+ */
+#define cosmos_diagnostics_verbosity_t_DETAILED 2
 
 /**
  * A single custom request/operation header. Both pointers are
@@ -2020,6 +2057,111 @@ cosmos_status_code_t cosmos_database_ref_create(const struct cosmos_account_ref_
  * Frees a database-reference handle. NULL is a no-op.
  */
 void cosmos_database_ref_free(struct cosmos_database_ref_t *database);
+
+/**
+ * Total request charge (RU) aggregated across every attempt. Returns `0.0`
+ * when `d` is NULL.
+ */
+double cosmos_diagnostics_total_request_charge(const struct cosmos_diagnostics_t *d);
+
+/**
+ * Total wall-clock time the operation took, in microseconds. Returns `0` when
+ * `d` is NULL, and saturates to `u64::MAX` for the (practically impossible)
+ * overflow.
+ */
+uint64_t cosmos_diagnostics_total_elapsed_micros(const struct cosmos_diagnostics_t *d);
+
+/**
+ * Number of attempts recorded for the operation (the initial try plus any
+ * retries, hedges, or failovers). A value of `1` means no retry occurred.
+ * Returns `0` when `d` is NULL.
+ */
+uint32_t cosmos_diagnostics_request_count(const struct cosmos_diagnostics_t *d);
+
+/**
+ * Number of per-attempt records actually retained for iteration by
+ * [`cosmos_diagnostics_iter_attempts`]. Under a retry storm the driver caps
+ * the retained set, so this can be smaller than
+ * [`cosmos_diagnostics_request_count`] (the true total). Returns `0` when `d`
+ * is NULL.
+ */
+uint32_t cosmos_diagnostics_retained_request_count(const struct cosmos_diagnostics_t *d);
+
+/**
+ * Returns `true` when the per-attempt list was compacted because the operation
+ * exceeded the driver's retained-attempt cap. When `true`, the attempts
+ * yielded by [`cosmos_diagnostics_iter_attempts`] are the retained subset
+ * (see [`cosmos_diagnostics_retained_request_count`]), not the full timeline,
+ * while [`cosmos_diagnostics_total_request_charge`] and
+ * [`cosmos_diagnostics_request_count`] remain exact. Returns `false` when `d`
+ * is NULL.
+ */
+bool cosmos_diagnostics_is_compacted(const struct cosmos_diagnostics_t *d);
+
+/**
+ * Returns `true` when the operation reached a terminal state (a final status
+ * was recorded or at least one attempt completed). A cancelled or still
+ * in-flight operation is not completed. Returns `false` when `d` is NULL.
+ */
+bool cosmos_diagnostics_is_completed(const struct cosmos_diagnostics_t *d);
+
+/**
+ * Returns `true` when the operation completed with a non-success status.
+ * Returns `false` when `d` is NULL or the operation succeeded.
+ */
+bool cosmos_diagnostics_is_failure(const struct cosmos_diagnostics_t *d);
+
+/**
+ * Invokes `visitor` once per distinct region contacted, in first-contact
+ * order. `region_name` is a NUL-terminated UTF-8 string valid only for the
+ * duration of the call. Does nothing when `d` or `visitor` is NULL.
+ */
+void cosmos_diagnostics_iter_regions_contacted(const struct cosmos_diagnostics_t *d,
+                                               void (*visitor)(void *user_data,
+                                                               const char *region_name),
+                                               void *user_data);
+
+/**
+ * Invokes `visitor` once per recorded attempt, in execution order.
+ *
+ * `endpoint` and `region` are NUL-terminated UTF-8 strings valid only for the
+ * duration of the call; `region` is NULL when the attempt has no associated
+ * region. `status_code` is the attempt's HTTP status and `sub_status` is the
+ * Cosmos sub-status, or `-1` when the attempt recorded none. `latency_ms` is
+ * the attempt's wall-clock duration in milliseconds, `request_charge` is its
+ * RU cost, and `server_duration_ms` is the service-reported processing time
+ * or a negative value when the service did not report one.
+ *
+ * When [`cosmos_diagnostics_is_compacted`] is `true` these are the retained
+ * attempts only, not the full timeline. Does nothing when `d` or `visitor` is
+ * NULL.
+ */
+void cosmos_diagnostics_iter_attempts(const struct cosmos_diagnostics_t *d,
+                                      void (*visitor)(void *user_data,
+                                                      const char *endpoint,
+                                                      const char *region,
+                                                      uint16_t status_code,
+                                                      int32_t sub_status,
+                                                      uint64_t latency_ms,
+                                                      double request_charge,
+                                                      double server_duration_ms),
+                                      void *user_data);
+
+/**
+ * Writes a borrowed, read-only JSON rendering of the diagnostics at the
+ * requested `verbosity`.
+ *
+ * On success writes `*out_data` / `*out_len` describing UTF-8 bytes (not
+ * NUL-terminated) owned by the diagnostics handle and valid until the
+ * completion is freed; the caller must not free them. An unrecognized
+ * `verbosity` value renders at the runtime default. Returns a NULL-argument
+ * error status without writing anything when `d`, `out_data`, or `out_len`
+ * is NULL.
+ */
+cosmos_status_code_t cosmos_diagnostics_to_json(const struct cosmos_diagnostics_t *d,
+                                                cosmos_diagnostics_verbosity_t verbosity,
+                                                const uint8_t **out_data,
+                                                uintptr_t *out_len);
 
 /**
  * Frees a driver handle. Drops the FFI-side `Arc` reference; the
