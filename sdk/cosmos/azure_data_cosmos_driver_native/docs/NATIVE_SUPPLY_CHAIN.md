@@ -15,9 +15,9 @@ commands are documented in `pipeline/README.md`.
 
 ## Scope
 
-This pull request applies the Microsoft Rust policy to the native driver's
-release matrix. Five targets are active. Windows AMD64 (GNU) is deferred from
-the active matrix and is documented below and in `pipeline/README.md`.
+The Microsoft Rust policy applies to the native driver's release matrix. Five
+targets are active. Windows AMD64 (GNU) is deferred from the active matrix and
+is documented below and in `pipeline/README.md`.
 
 | OS and architecture | Rust target | Observed `ms-prod-1.95` status |
 | --- | --- | --- |
@@ -42,7 +42,7 @@ replace or establish support for Windows AMD64 GNU.
 
 The Go SDK links this static library into the customer's final executable.
 
-This pull request does not distribute DLLs, macOS dynamic libraries, or Linux
+The release does not distribute DLLs, macOS dynamic libraries, or Linux
 shared objects. Dynamic-library distribution and signing belong to a future
 release path.
 

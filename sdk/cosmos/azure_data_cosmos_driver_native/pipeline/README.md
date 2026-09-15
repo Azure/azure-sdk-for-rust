@@ -28,9 +28,9 @@ operating systems.
 
 ## Configured release matrix
 
-This pull request applies the Microsoft Rust policy to the five targets that the
-`ms-prod-1.95` channel can build today. Windows AMD64 (GNU) is deferred and is
-no longer part of the active release matrix (see [Deferred targets](#deferred-targets)).
+The Microsoft Rust policy applies to the five targets that the `ms-prod-1.95`
+channel can build today. Windows AMD64 (GNU) is deferred and is not part of
+the active release matrix (see [Deferred targets](#deferred-targets)).
 
 | OS and architecture | Rust target | Observed `ms-prod-1.95` status |
 | --- | --- | --- |
@@ -67,7 +67,7 @@ it can be restored verbatim once a path is agreed. Restoring it requires one of:
 Windows ARM64 MSVC (`aarch64-pc-windows-msvc`) is separate work tracked by
 [#5235](https://github.com/Azure/azure-sdk-for-rust/issues/5235). It does not
 replace or establish support for Windows AMD64 GNU. Intel macOS and dynamic
-libraries for .NET, Java, and Python are also outside this pull request.
+libraries for .NET, Java, and Python remain outside the release matrix.
 
 ## Files
 
