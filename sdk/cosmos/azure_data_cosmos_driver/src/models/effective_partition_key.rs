@@ -487,11 +487,10 @@ pub(crate) fn effective_partition_key_v1_binary(pk_values: &[PartitionKeyValue])
     let mut buffer: Vec<u8> = Vec::new();
     write_number_v1_binary(hash32 as f64, &mut buffer);
 
-    // Truncate string components to MAX_STRING_BYTES_TO_APPEND, matching the
-    // truncation applied during hashing.
+    // Both writers use the same UTF-16-truncated logical strings; only the binary
+    // writer limits their encoded bytes.
     for v in pk_values {
-        v.truncated_for_v1_encoding()
-            .write_for_binary_encoding_v1(&mut buffer);
+        v.write_for_binary_encoding_v1(&mut buffer);
     }
 
     buffer
@@ -959,6 +958,102 @@ mod tests {
         assert_eq!(actual.to_hex(), expected);
     }
 
+    #[test]
+    fn v1_string_utf16_and_binary_boundaries() {
+        let cases = [
+            (
+                format!("tenant\0{}\u{e9}", "a".repeat(91)),
+                "05C1EFBD31E1740875666F626F750162626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262C4AA00",
+            ),
+            (
+                format!("tenant\0{}\u{e9}", "a".repeat(92)),
+                "05C1C7CDE1BBB00875666F626F75016262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262C4AA",
+            ),
+            (
+                format!("tenant\0{}\u{e9}z", "a".repeat(92)),
+                "05C1C7CDE1BBB00875666F626F75016262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262C4AA",
+            ),
+            (
+                format!("{}\u{1f600}", "a".repeat(97)),
+                "05C1C973BF79680862626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262F1A09981",
+            ),
+            (
+                format!("{}\u{1f600}", "a".repeat(98)),
+                "05C1DD87B7E74C086262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262F1A099",
+            ),
+            (
+                format!("{}\u{1f600}", "a".repeat(99)),
+                "05C1E153DB455808626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262F0C0",
+            ),
+            (
+                format!("{}\u{1f600}", "a".repeat(100)),
+                "05C1EB5921F706086262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626200",
+            ),
+            (
+                format!("{}\u{20ac}", "a".repeat(99)),
+                "05C1D747E54D9008626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262626262E383",
+            ),
+        ];
+        for (text, expected) in cases {
+            let actual = EffectivePartitionKey::compute(
+                &[PartitionKeyValue::from(text.clone())],
+                PartitionKeyKind::Hash,
+                PartitionKeyVersion::V1,
+            );
+            assert_eq!(actual.to_hex(), expected, "{text:?}");
+        }
+    }
+
+    #[test]
+    fn v1_non_latin_managed_native_expected_values() {
+        let text = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя".repeat(4);
+        let cases = [
+            (49, "05C1C1BD37FE08D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BF00"),
+            (50, "05C1B339EF472008D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C000"),
+            (51, "05C1EB1F29DBFA08D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D2"),
+            (99, "05C1E72F79C71608D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D2"),
+            (100, "05C1E3653D9F3E08D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D2"),
+            (101, "05C1E3653D9F3E08D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D281D282D283D284D285D286D287D288D289D28AD28BD28CD28DD28ED28FD290D1B1D1B2D1B3D1B4D1B5D1B6D292D1B7D1B8D1B9D1BAD1BBD1BCD1BDD1BED1BFD1C0D2"),
+        ];
+        for (length, expected) in cases {
+            let value = text.chars().take(length).collect::<String>();
+            let actual = EffectivePartitionKey::compute(
+                &[PartitionKeyValue::from(value)],
+                PartitionKeyKind::Hash,
+                PartitionKeyVersion::V1,
+            );
+            assert_eq!(actual.to_hex(), expected, "UTF-16 length {length}");
+        }
+    }
+
+    #[test]
+    fn non_v1_hashing_retains_full_unicode_strings() {
+        let cases = [
+            (
+                format!("tenant\0{}\u{e9}z", "a".repeat(92)),
+                "3C0D04FB07AECB6B45A1592465FDFAA7",
+            ),
+            (
+                format!("{}\u{1f600}", "a".repeat(99)),
+                "3DCDC7ABFC5BF49867B328ECDB14F0BF",
+            ),
+        ];
+        for (text, expected) in cases {
+            for kind in [
+                PartitionKeyKind::Hash,
+                PartitionKeyKind::MultiHash,
+                PartitionKeyKind::Range,
+            ] {
+                let actual = EffectivePartitionKey::compute(
+                    &[PartitionKeyValue::from(text.clone())],
+                    kind,
+                    PartitionKeyVersion::V2,
+                );
+                assert_eq!(actual.to_hex(), expected, "{kind:?}: {text:?}");
+            }
+        }
+    }
+
     /// V1 hash test cases.
     #[test]
     fn effective_partition_key_hash_v1() {
@@ -1405,7 +1500,7 @@ mod baseline_tests {
     /// [`PartitionKeyValue::write_for_hashing_v2`] and fixes up the string
     /// suffix byte from `0xFF` to `0x00`.  We cannot use the production
     /// [`PartitionKeyValue::write_for_hashing_v1`] here because it truncates
-    /// strings at 100 bytes, whereas the cross-SDK baselines use the full
+    /// strings at 100 UTF-16 units, whereas the cross-SDK baselines use the full
     /// canonical encoding (no truncation) so that the raw hash outputs are
     /// comparable.  Non-string types produce identical bytes for V1 and V2.
     ///

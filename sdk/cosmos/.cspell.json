@@ -12,6 +12,7 @@
     "apacsoutheast",
     "Appleby's",
     "AQID",
+    "AQIDBAUG",
     "argtypes",
     "asyncio",
     "australiacentral",
@@ -130,6 +131,7 @@
     "dlopen",
     "dlsym",
     "documentdb",
+    "données",
     "dotproduct",
     "downcallhandle",
     "drivercoll",
@@ -157,6 +159,7 @@
     "fanout",
     "fanouts",
     "Fatalf",
+    "FFFD",
     "fieldless",
     "FILETIME",
     "firewalled",
@@ -447,6 +450,7 @@
     "taiwannorth",
     "taiwannorthwest",
     "TEAMPROJECTID",
+    "tenanttrailing",
     "testcoll",
     "testcontainer",
     "testdata",
@@ -564,7 +568,8 @@
     "sdkci",
     "setvariable",
     "singlewrite",
-    "whatif"
+    "whatif",
+    "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
   ],
   "ignorePaths": [
     "live-platform-matrix.json",
