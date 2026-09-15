@@ -164,8 +164,8 @@ below for the production-shape guidance.
 > stores `_azsdkPatchTracking` on the item. Passing NULL for
 > `patch_tracking_id` generates an ID for the invocation. Retrieve the effective
 > UUID from `cosmos_completion_patch_tracking_id`, then persist and reuse it for
-> application retries. Cancelled completions also expose the resolved ID because
-> the wrapper generates it before starting the driver operation. Entries use a
+> application retries. The wrapper resolves the ID before starting the driver
+> operation, so it is available on the completion regardless of outcome. Entries use a
 > 5-minute retention window by default;
 > `patch_tracking_retention_seconds` configures a positive whole-second window.
 > The default capacity is 1024; when full, the oldest entry is evicted. Duplicate
@@ -205,7 +205,7 @@ below for the production-shape guidance.
 >   `cosmos_response_view_t` (status, RU, the four header strings, both
 >   continuation tokens, and the body pointer/len) in one call, replacing up
 >   to eight accessors. `cosmos_completion_view(c, &view)` does the same for a
->   completion's scalars (outcome, status, user-data, cancel flag). Every
+>   completion's scalars (outcome, status, user-data). Every
 >   borrowed pointer in a view stays valid until the owning handle is freed.
 >   The ownership-transfer accessors (`cosmos_completion_take_response` /
 >   `_take_error`) are intentionally not part of the views.
@@ -297,7 +297,6 @@ internal static class Cosmos
         public int     outcome;
         public int     status;
         public IntPtr  user_data;
-        public byte    was_cancel_requested;
         public ushort  http_status_code;
         public int     sub_status;
         public double  request_charge;
@@ -561,8 +560,6 @@ public final class CosmosSample {
         JAVA_INT.withName("outcome"),
         JAVA_INT.withName("status"),
         JAVA_LONG.withName("user_data"),
-        JAVA_BYTE.withName("was_cancel_requested"),
-        MemoryLayout.paddingLayout(1),
         JAVA_SHORT.withName("http_status_code"),
         JAVA_INT.withName("sub_status"),
         JAVA_DOUBLE.withName("request_charge"),
@@ -1083,7 +1080,6 @@ class CosmosCompletion(ctypes.Structure):
         ("outcome", ctypes.c_int32),
         ("status", ctypes.c_int32),
         ("user_data", intptr_t),
-        ("was_cancel_requested", ctypes.c_uint8),
         ("http_status_code", ctypes.c_uint16),
         ("sub_status", ctypes.c_int32),
         ("request_charge", ctypes.c_double),

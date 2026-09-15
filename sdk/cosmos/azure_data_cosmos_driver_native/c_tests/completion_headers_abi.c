@@ -38,7 +38,7 @@ extern cosmos_status_code_t
 __test_only_enqueue_ok_completion_with_all_value_kinds(cosmos_completion_queue_t *queue);
 
 // Small helper: build a runtime + queue, or return non-zero on failure so
-// the caller can SKIP cleanly (mirrors the pattern in `cancellation.c`).
+// the caller can SKIP cleanly (mirrors the pattern in `submit_and_response.c`).
 static int make_runtime_and_cq(cosmos_runtime_t **out_runtime,
                                cosmos_completion_queue_t **out_cq)
 {

@@ -59,8 +59,6 @@ pub mod completion {
     #[no_mangle]
     pub extern "C" fn cosmos_completion_take_driver(c: *mut CosmosCompletion) -> *mut crate::driver::DriverHandle;
     #[no_mangle]
-    pub extern "C" fn cosmos_operation_handle_cancel(op: *mut OperationHandle);
-    #[no_mangle]
     pub extern "C" fn cosmos_operation_handle_free(op: *mut OperationHandle);
     #[no_mangle]
     pub extern "C" fn cosmos_operation_handle_state(op: *const OperationHandle) -> CosmosOperationHandleState;
@@ -71,7 +69,6 @@ pub mod completion {
         pub outcome: CosmosCompletionOutcome,
         pub status: crate::error::CosmosStatusCode,
         pub user_data: isize,
-        pub was_cancel_requested: u8,
         pub http_status_code: u16,
         pub is_from_wire: u8,
         pub message: *const std::ffi::c_char,

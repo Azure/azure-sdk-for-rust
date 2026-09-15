@@ -77,8 +77,9 @@ enum cosmos_completion_outcome_t
    */
   COSMOS_COMPLETION_OUTCOME_ERROR = 1,
   /**
-   * The operation was cancelled via [`cosmos_operation_handle_cancel`] or
-   * [`cosmos_completion_queue_shutdown`].
+   * Reserved and unused. On-demand cancellation is not supported, so no
+   * operation produces this outcome. The value is kept fixed so it can be
+   * reused if cancellation is added in the future.
    */
   COSMOS_COMPLETION_OUTCOME_CANCELLED = 2,
   /**
@@ -251,7 +252,9 @@ enum cosmos_operation_handle_state_t
    */
   COSMOS_OPERATION_HANDLE_STATE_FAILED = 2,
   /**
-   * Completion was posted with `outcome == CosmosCompletionOutcomeCancelled`.
+   * Reserved and unused. No completion drives a handle into this state.
+   * The value is kept fixed so it can be reused if cancellation is added
+   * in the future.
    */
   COSMOS_OPERATION_HANDLE_STATE_CANCELLED = 3,
 };
@@ -801,7 +804,9 @@ enum cosmos_sub_status_t
    */
   COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_FULL = 20359,
   /**
-   * `CLIENT_FFI_OPERATION_CANCELLED` (20360).
+   * `CLIENT_FFI_OPERATION_CANCELLED` (20360). Reserved and unused: it
+   * mirrors the driver constant, but no wrapper path produces it. The
+   * value is kept fixed for future use.
    */
   COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED = 20360,
   /**
@@ -1154,7 +1159,7 @@ typedef struct cosmos_response_header_t {
  * non-header signals live inline:
  *
  * - The completion / operation lifecycle (outcome, coarse status,
- *   user data, cancellation flag).
+ *   user data).
  * - The wire HTTP status code and error metadata (`http_status_code`,
  *   `is_from_wire`, `message`, `backtrace`) — none of which appear as
  *   response headers.
@@ -1182,10 +1187,6 @@ typedef struct cosmos_completion_t {
    * submit; the wrapper never dereferences it.
    */
   intptr_t user_data;
-  /**
-   * `1` iff cancellation was observed before the completion posted.
-   */
-  uint8_t was_cancel_requested;
   /**
    * Wire HTTP status code, or `0` when there is no wire response.
    */
@@ -1819,8 +1820,8 @@ void cosmos_bytes_free(struct cosmos_bytes_t bytes);
  * The returned NUL-terminated UTF-8 string is borrowed from `completion` and
  * remains valid until that completion is freed. Returns NULL for non-PATCH
  * operations, untracked retry-safe PATCH operations, or an invalid completion
- * pointer. For tracked PATCH operations, the ID is also available on cancelled
- * completions because it is resolved before execution begins.
+ * pointer. For tracked PATCH operations, the ID is resolved before execution
+ * begins, so it is available on the completion regardless of outcome.
  */
 const char *cosmos_completion_patch_tracking_id(const struct cosmos_completion_t *completion);
 
@@ -1911,26 +1912,12 @@ void cosmos_completion_queue_shutdown(struct cosmos_completion_queue_t *queue);
 cosmos_completion_queue_state_t cosmos_completion_queue_state(const struct cosmos_completion_queue_t *queue);
 
 /**
- * Request cooperative cancellation. Idempotent and non-blocking.
- *
- * Sets the cancel-requested flag and wakes the submit task's
- * `tokio::select!` cancel branch (via a stored `Notify` permit, so a cancel
- * that races ahead of the task is still observed). The task then drops the
- * in-flight driver future and posts a `CANCELLED` completion. If the
- * operation already produced a completion before the cancel was observed,
- * the cancel is a no-op for the outcome but is still reflected in
- * `cosmos_completion_was_cancel_requested`.
- */
-void cosmos_operation_handle_cancel(struct cosmos_operation_handle_t *op);
-
-/**
  * Poll the operation's lifecycle state. Returns `InFlight` if `op` is NULL.
  */
 cosmos_operation_handle_state_t cosmos_operation_handle_state(const struct cosmos_operation_handle_t *op);
 
 /**
- * Free the FFI handle. Does NOT cancel the operation — call
- * `cosmos_operation_handle_cancel` first if needed. NULL is a no-op.
+ * Free the FFI handle. NULL is a no-op.
  *
  * Drops this handle's `Arc` reference. If the completion record still holds
  * its own reference, the inner operation state stays alive.
