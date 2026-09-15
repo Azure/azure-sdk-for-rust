@@ -723,7 +723,7 @@ impl EmulatorStore {
     pub(crate) fn replace_offer_internal(
         &self,
         offer_id: &str,
-        throughput: u32,
+        throughput: u64,
     ) -> Option<OfferMetadata> {
         let regions = self.regions.read().unwrap();
         let ts = current_timestamp();
@@ -1974,7 +1974,7 @@ pub(crate) struct ContainerMetadata {
     pub partition_key: PartitionKeyDefinition,
     pub partition_count: u32,
     pub partition_key_range_page_size: Option<u32>,
-    pub provisioned_throughput_ru: Option<u32>,
+    pub provisioned_throughput_ru: Option<u64>,
     /// Shared atomic counter for allocating new partition IDs (split/merge).
     /// Authoritative across *all* regions so partition IDs cannot diverge —
     /// real Cosmos DB pkrange IDs are properties of the container, not the
@@ -1994,7 +1994,7 @@ pub(crate) struct OfferMetadata {
     pub id: String,
     pub rid: String,
     pub offer_resource_id: String,
-    pub throughput: u32,
+    pub throughput: u64,
     pub ts: u64,
     pub self_link: String,
     pub etag: String,
@@ -2246,7 +2246,8 @@ fn create_partitions(
         let rid = pkrange_rid_for(meta, rid_gen, i);
 
         let per_partition_ru = if throttling_enabled {
-            meta.provisioned_throughput_ru.map(|total| total / n)
+            meta.provisioned_throughput_ru
+                .map(|total| total / u64::from(n))
         } else {
             None
         };
@@ -2400,7 +2401,7 @@ pub(crate) fn new_etag() -> String {
 /// - bursts cannot accidentally span a second boundary and double the available
 ///   budget when the wall clock happens to tick during the burst.
 pub(crate) struct ThroughputTracker {
-    provisioned_ru: u32,
+    provisioned_ru: u64,
     inner: std::sync::Mutex<ThroughputWindow>,
 }
 
@@ -2412,7 +2413,7 @@ struct ThroughputWindow {
 const THROUGHPUT_WINDOW: std::time::Duration = std::time::Duration::from_secs(1);
 
 impl ThroughputTracker {
-    pub fn new(provisioned_ru: u32) -> Self {
+    pub fn new(provisioned_ru: u64) -> Self {
         Self {
             provisioned_ru,
             inner: std::sync::Mutex::new(ThroughputWindow {
@@ -2423,7 +2424,7 @@ impl ThroughputTracker {
     }
 
     /// Returns the provisioned RU/s budget this tracker enforces.
-    pub fn provisioned_ru(&self) -> u32 {
+    pub fn provisioned_ru(&self) -> u64 {
         self.provisioned_ru
     }
 
@@ -2432,7 +2433,7 @@ impl ThroughputTracker {
     pub fn try_consume(&self, charge: f64) -> Result<(), u64> {
         let now = std::time::Instant::now();
         let charge_centiru = (charge * 100.0) as u64;
-        let budget_centiru = (self.provisioned_ru as u64) * 100;
+        let budget_centiru = self.provisioned_ru.saturating_mul(100);
         let mut w = self.inner.lock().unwrap();
         if now.duration_since(w.window_start) >= THROUGHPUT_WINDOW {
             w.window_start = now;
@@ -2814,7 +2815,7 @@ impl EmulatorStore {
                 child_id_2: u32,
                 child_rid_1: String,
                 child_rid_2: String,
-                total_throughput: Option<u32>,
+                total_throughput: Option<u64>,
             },
             AbortUnlock,
         }
@@ -2980,9 +2981,9 @@ impl EmulatorStore {
                     }
                 }
 
-                let n = state.physical_partitions.len() as f64 + 1.0;
+                let n = state.physical_partitions.len() as u64 + 1;
                 let per_partition_ru = if self.config.throttling_enabled() {
-                    total_throughput.map(|total| total / (n as u32))
+                    total_throughput.map(|total| total / n)
                 } else {
                     None
                 };
@@ -3003,7 +3004,7 @@ impl EmulatorStore {
                     session_state: child1_session,
                     rid: child_rid_1.clone(),
                     rid_prefix: child_id_1,
-                    throughput_fraction: 1.0 / n,
+                    throughput_fraction: 1.0 / n as f64,
                     parents: vec![partition_id],
                     locked: AtomicBool::new(false),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
@@ -3021,7 +3022,7 @@ impl EmulatorStore {
                     session_state: child2_session,
                     rid: child_rid_2.clone(),
                     rid_prefix: child_id_2,
-                    throughput_fraction: 1.0 / n,
+                    throughput_fraction: 1.0 / n as f64,
                     parents: vec![partition_id],
                     locked: AtomicBool::new(false),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
@@ -3237,7 +3238,7 @@ impl EmulatorStore {
         partition_id_b: u32,
     ) -> bool {
         enum MergePreview {
-            Ready((Epk, Epk, u64, u32, String, Option<u32>)),
+            Ready((Epk, Epk, u64, u32, String, Option<u64>)),
             NonAdjacent(Epk, Epk),
         }
 
@@ -3444,9 +3445,9 @@ impl EmulatorStore {
                     merged_session.set_force_unavailable_for(&epk_str);
                 }
 
-                let n = state.physical_partitions.len() as f64 - 1.0;
+                let n = state.physical_partitions.len().saturating_sub(1).max(1) as u64;
                 let per_partition_ru = if self.config.throttling_enabled() {
-                    total_throughput.map(|total| total / (n.max(1.0) as u32))
+                    total_throughput.map(|total| total / n)
                 } else {
                     None
                 };
@@ -3462,7 +3463,7 @@ impl EmulatorStore {
                     session_state: merged_session,
                     rid: child_rid.clone(),
                     rid_prefix: child_id,
-                    throughput_fraction: 1.0 / n.max(1.0),
+                    throughput_fraction: 1.0 / n as f64,
                     parents: vec![partition_id_a, partition_id_b],
                     locked: AtomicBool::new(false),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),

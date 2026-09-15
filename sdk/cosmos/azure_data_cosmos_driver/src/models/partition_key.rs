@@ -38,14 +38,30 @@ enum InnerPartitionKeyValue {
     Infinity,
 }
 
-/// Maximum number of string bytes to include in V1 hashing and binary encoding.
+/// V1 logical string limit, measured in UTF-16 code units.
+const MAX_STRING_UTF16_UNITS: usize = 100;
+/// V1 binary strings longer than this include one extra byte and no terminator.
 const MAX_STRING_BYTES_TO_APPEND: usize = 100;
 
-/// Preserves the driver's existing byte-count V1 behavior without requiring
-/// the truncated prefix to be valid UTF-8.
-fn v1_string_prefix(value: &str) -> &[u8] {
-    let bytes = value.as_bytes();
-    &bytes[..bytes.len().min(MAX_STRING_BYTES_TO_APPEND)]
+fn v1_string_bytes(value: &str) -> Cow<'_, [u8]> {
+    if value.len() <= MAX_STRING_UTF16_UNITS {
+        return Cow::Borrowed(value.as_bytes());
+    }
+    let mut units = 0;
+    for (offset, ch) in value.char_indices() {
+        if units == MAX_STRING_UTF16_UNITS {
+            return Cow::Borrowed(&value.as_bytes()[..offset]);
+        }
+        units += ch.len_utf16();
+        if units > MAX_STRING_UTF16_UNITS {
+            // The backend and .NET replace a surrogate split at unit 100 with U+FFFD.
+            // Java's default UTF-8 encoder uses '?' instead; it is not service-compatible here.
+            let mut bytes = value.as_bytes()[..offset].to_vec();
+            bytes.extend_from_slice("\u{FFFD}".as_bytes());
+            return Cow::Owned(bytes);
+        }
+    }
+    Cow::Borrowed(value.as_bytes())
 }
 
 /// Byte markers for partition key value encoding.
@@ -73,7 +89,7 @@ impl InnerPartitionKeyValue {
             InnerPartitionKeyValue::String(s) => {
                 writer.push(component::STRING);
                 if truncate {
-                    writer.extend_from_slice(v1_string_prefix(s));
+                    writer.extend_from_slice(&v1_string_bytes(s));
                 } else {
                     writer.extend_from_slice(s.as_bytes());
                 }
@@ -93,10 +109,13 @@ impl InnerPartitionKeyValue {
             }
             InnerPartitionKeyValue::String(s) => {
                 writer.push(component::STRING);
-                for item in v1_string_prefix(s) {
+                let utf8 = v1_string_bytes(s);
+                for item in utf8.iter().take(MAX_STRING_BYTES_TO_APPEND + 1) {
                     writer.push(item.wrapping_add(1));
                 }
-                writer.push(0x00);
+                if utf8.len() <= MAX_STRING_BYTES_TO_APPEND {
+                    writer.push(0x00);
+                }
             }
             InnerPartitionKeyValue::Null => writer.push(component::NULL),
             InnerPartitionKeyValue::Undefined => writer.push(component::UNDEFINED),
@@ -169,8 +188,8 @@ impl PartitionKeyValue {
 
     /// Writes this value using V1 binary encoding for the EPK output string.
     ///
-    /// Strings use the same first 100 UTF-8 bytes as V1 hashing. The prefix may
-    /// end inside a multi-byte character, so it is encoded directly from bytes.
+    /// Strings use the same UTF-16-truncated logical value as V1 hashing, then
+    /// limit the encoded byte representation to the service's V1 boundary.
     pub(crate) fn write_for_binary_encoding_v1(&self, writer: &mut Vec<u8>) {
         self.0.write_for_binary_encoding_v1(writer)
     }
@@ -508,25 +527,6 @@ mod tests {
     fn null_partition_key_value() {
         let pk = PartitionKey::from(None::<String>);
         assert_eq!(pk.len(), 1);
-    }
-
-    #[test]
-    fn v1_string_encoding_uses_the_same_raw_byte_prefix_as_hashing() {
-        let value = PartitionKeyValue::from(format!("{}éz", "a".repeat(99)));
-
-        let mut hashing = Vec::new();
-        value.write_for_hashing_v1(&mut hashing);
-        assert_eq!(hashing.len(), 102);
-        assert_eq!(hashing[0], component::STRING);
-        assert_eq!(hashing[100], 0xC3);
-        assert_eq!(hashing[101], 0x00);
-
-        let mut binary = Vec::new();
-        value.write_for_binary_encoding_v1(&mut binary);
-        assert_eq!(binary.len(), 102);
-        assert_eq!(binary[0], component::STRING);
-        assert_eq!(binary[100], 0xC4);
-        assert_eq!(binary[101], 0x00);
     }
 
     #[test]
