@@ -242,17 +242,16 @@ function Resolve-ConsumerNativeStaticLibs(
 }
 
 function Test-TripleInstalled([string] $triple) {
-    $installedTargets = @(
-        (& $msrustupExecutable target list --installed `
-            --toolchain $microsoftRustConfig.Channel 2>&1) |
-            Where-Object { $_ -match '\S' -and $_ -notmatch '^\s*(INFO|WARN)\b' } |
-            ForEach-Object { ([string]$_).Trim() }
-    )
-    if ($LASTEXITCODE -ne 0) {
-        throw "msrustup target list failed for '$($microsoftRustConfig.Channel)' with exit code $LASTEXITCODE."
-    }
+    # msrustup (unlike rustup) does not expose a stable 'target list' subcommand,
+    # so confirm target availability the way the compiler itself resolves it:
+    # ask the pinned toolchain for the target's library directory and verify the
+    # standard library was actually installed (by RustInstaller@1 through msrustup).
+    $targetLibDir = Invoke-RequiredToolOutput `
+        -Executable 'rustc' `
+        -Arguments @($cargoToolchainArgument, '--target', $triple, '--print', 'target-libdir') `
+        -Description "rustc $cargoToolchainArgument --print target-libdir --target $triple"
 
-    return $installedTargets -contains $triple
+    return (Test-Path -LiteralPath $targetLibDir -PathType Container)
 }
 
 $msrustupCommand = Get-Command 'msrustup' -ErrorAction SilentlyContinue
@@ -391,15 +390,7 @@ foreach ($row in $rows) {
     }
 
     if (-not (Test-TripleInstalled $row.triple)) {
-        Write-Host "    target not installed; attempting 'msrustup target add $($row.triple) --toolchain $($microsoftRustConfig.Channel)'"
-        & $msrustupExecutable target add $row.triple `
-            --toolchain $microsoftRustConfig.Channel *> $null
-        if ($LASTEXITCODE -ne 0) {
-            throw "msrustup target add failed for $($row.triple) with exit code $LASTEXITCODE"
-        }
-        if (-not (Test-TripleInstalled $row.triple)) {
-            throw "msrustup did not install required target '$($row.triple)' for '$($microsoftRustConfig.Channel)'."
-        }
+        throw "[$($row.id)] Microsoft Rust target '$($row.triple)' is not installed for '$($microsoftRustConfig.Channel)'. RustInstaller@1 must install it through msrustup (additionalTargets); refusing a possible upstream fallback."
     }
     $targetOut = Join-Path $OutputRoot $row.id
     New-Item -ItemType Directory -Force -Path $targetOut | Out-Null

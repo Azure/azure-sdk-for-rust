@@ -46,8 +46,6 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             'x86_64-pc-windows-gnu'
             'x86_64-unknown-linux-musl'
         )
-        $global:MicrosoftRustTargetAddExitCode = 0
-        $global:InstallMicrosoftRustTarget = $true
         $global:MicrosoftRustRelease = '1.95.0'
         $env:RUST_VERSION = '1.95.0-ms-20260618.5'
         $global:MicrosoftRustSysroot = Join-Path $TestDrive 'ms-prod-1.95'
@@ -119,20 +117,8 @@ $env:TEST_INSTALLER_CARGO_VERSION
                     $global:LASTEXITCODE = 0
                     'msrustup 1.0.0'
                 }
-                "target list --installed --toolchain $MicrosoftRustChannel" {
-                    $global:LASTEXITCODE = 0
-                    $global:InstalledMicrosoftRustTargets
-                }
                 default {
-                    if ($args[0] -eq 'target' -and $args[1] -eq 'add') {
-                        $global:LASTEXITCODE = $global:MicrosoftRustTargetAddExitCode
-                        if ($global:LASTEXITCODE -eq 0 -and $global:InstallMicrosoftRustTarget) {
-                            $global:InstalledMicrosoftRustTargets += $args[2]
-                        }
-                    }
-                    else {
-                        throw "Unexpected msrustup arguments: $args"
-                    }
+                    throw "Unexpected msrustup arguments: $args"
                 }
             }
         }
@@ -141,6 +127,19 @@ $env:TEST_INSTALLER_CARGO_VERSION
             $global:LASTEXITCODE = 0
             if ($args -contains 'sysroot') {
                 $global:SelectedRustSysroot
+                return
+            }
+            if ($args -contains 'target-libdir') {
+                $targetIndex = [array]::IndexOf([object[]]$args, '--target') + 1
+                $triple = [string]$args[$targetIndex]
+                $libDir = Join-Path $global:SelectedRustSysroot "lib/rustlib/$triple/lib"
+                if ($global:InstalledMicrosoftRustTargets -contains $triple) {
+                    New-Item -ItemType Directory -Force -Path $libDir | Out-Null
+                }
+                elseif (Test-Path $libDir) {
+                    Remove-Item -Recurse -Force $libDir
+                }
+                $libDir
                 return
             }
             @(
@@ -259,7 +258,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
             $metadata.toolchain.linker.command | Should -Be 'pwsh'
             $metadata.toolchain.linker.executable | Should -Not -BeNullOrEmpty
             $metadata.toolchain.linker.version | Should -Be 'PowerShell 7.0.0'
-            $global:ObservedRustcArguments.Count | Should -Be 2
+            $global:ObservedRustcArguments.Count | Should -Be 3
             foreach ($invocation in $global:ObservedRustcArguments) {
                 $invocation[0] | Should -Be "+$MicrosoftRustChannel"
             }
@@ -271,6 +270,13 @@ $env:TEST_INSTALLER_CARGO_VERSION
             $global:ObservedRustcArguments[1] | Should -Be @(
                 "+$MicrosoftRustChannel"
                 '-Vv'
+            )
+            $global:ObservedRustcArguments[2] | Should -Be @(
+                "+$MicrosoftRustChannel"
+                '--target'
+                'x86_64-pc-windows-gnu'
+                '--print'
+                'target-libdir'
             )
             foreach ($invocation in $global:ObservedCargoArguments) {
                 $invocation[0] | Should -Be "+$MicrosoftRustChannel"
@@ -467,9 +473,8 @@ targets = ["x86_64-pc-windows-gnu"]
         } | Should -Throw '*not an explicit pinned ms-prod channel*'
     }
 
-    It 'fails closed when msrustup cannot install a required target' {
+    It 'fails closed when a required Microsoft Rust target is not installed' {
         $global:InstalledMicrosoftRustTargets = @('x86_64-pc-windows-gnu')
-        $global:MicrosoftRustTargetAddExitCode = 1
 
         {
             & $ScriptPath `
@@ -477,20 +482,7 @@ targets = ["x86_64-pc-windows-gnu"]
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -SkipBuild
-        } | Should -Throw '*msrustup target add failed for x86_64-unknown-linux-musl*'
-    }
-
-    It 'fails closed when a target remains unavailable after msrustup succeeds' {
-        $global:InstalledMicrosoftRustTargets = @('x86_64-pc-windows-gnu')
-        $global:InstallMicrosoftRustTarget = $false
-
-        {
-            & $ScriptPath `
-                -TargetId 'linux-amd64-musl' `
-                -OutputRoot (Join-Path $TestDrive 'artifacts') `
-                -CCompiler 'pwsh' `
-                -SkipBuild
-        } | Should -Throw "*did not install required target 'x86_64-unknown-linux-musl'*"
+        } | Should -Throw "*target 'x86_64-unknown-linux-musl' is not installed*"
     }
 
     It 'generates one shared job-matrix row for every active build target' {
