@@ -14,7 +14,7 @@ use azure_data_cosmos::{
     options::{MaxItemCountHint, QueryOptions},
     Query,
 };
-use framework::{test_data, MockItem, TestClient, TestOptions};
+use framework::{test_data, MockItem, TestClient, TestOptions, TestRunContext};
 use futures::StreamExt;
 use serde::de::DeserializeOwned;
 
@@ -80,6 +80,7 @@ fn unordered_query_results_preserve_multiplicity() {
 }
 
 async fn execute_query_test<T>(
+    run_context: &TestRunContext,
     db_client: &DatabaseClient,
     items: Vec<MockItem>,
     query: impl Into<Query>,
@@ -90,7 +91,8 @@ async fn execute_query_test<T>(
 where
     T: DeserializeOwned + Send + Eq + std::fmt::Debug + 'static,
 {
-    let container_client = test_data::create_container_with_items(db_client, items, None).await?;
+    let container_client =
+        test_data::create_container_with_items(run_context, db_client, items, None).await?;
     let query: Query = query.into();
 
     let build_options = || -> QueryOptions {
@@ -194,12 +196,13 @@ async fn collect_ids_for_scope(
 )]
 pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let expected_items =
                 collect_matching_items(&items, |p| p.partition_key == "partition0");
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 "select * from docs c",
@@ -227,7 +230,7 @@ pub async fn single_partition_query_simple() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
 
             // Find a merge order value in partition1's items
@@ -243,6 +246,7 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
             let expected_items = collect_matching_items(&items, |p| p.merge_order == merge_order);
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 query,
@@ -270,7 +274,7 @@ pub async fn single_partition_query_with_parameters() -> Result<(), Box<dyn Erro
 )]
 pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let expected_items = items
                 .iter()
@@ -282,6 +286,7 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
                 .collect::<Vec<_>>();
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 "select c.id, c.mergeOrder from c",
@@ -309,7 +314,7 @@ pub async fn single_partition_query_with_projection() -> Result<(), Box<dyn Erro
 )]
 pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 2);
             let expected_items = items
                 .iter()
@@ -318,6 +323,7 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
                 .collect::<Vec<_>>();
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 "select value c.id from c where c.mergeOrder between 40 and 60",
@@ -349,13 +355,14 @@ pub async fn cross_partition_query_with_projection_and_filter() -> Result<(), Bo
 )]
 pub async fn cross_partition_query_with_order_by() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let mut expected = items.clone();
             expected.sort_by_key(|item| item.merge_order);
             let expected_ids = expected.into_iter().map(|item| item.id).collect();
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 "select value c.id from c order by c.mergeOrder",
@@ -397,10 +404,10 @@ pub async fn cross_partition_query_with_order_by() -> Result<(), Box<dyn Error>>
 )]
 pub async fn cross_partition_query_with_unordered_distinct() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let container_client =
-                test_data::create_container_with_items(db_client, items, None).await?;
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             let mut pages = container_client
                 .query_items::<String>(
@@ -463,12 +470,13 @@ pub async fn cross_partition_query_with_unordered_distinct() -> Result<(), Box<d
 )]
 pub async fn cross_partition_query_with_ordered_distinct_resumes() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let mut expected: Vec<String> = (0..10).map(|i| format!("partition{i}")).collect();
             expected.sort();
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 "select distinct value c.partitionKey from c order by c.partitionKey",
@@ -508,10 +516,10 @@ pub async fn cross_partition_query_with_ordered_distinct_resumes() -> Result<(),
 )]
 pub async fn unordered_distinct_refuses_a_continuation_token() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(10, 10);
             let container_client =
-                test_data::create_container_with_items(db_client, items, None).await?;
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             let mut pages = container_client
                 .query_items::<String>(
@@ -563,10 +571,16 @@ pub async fn unordered_distinct_refuses_a_continuation_token() -> Result<(), Box
 )]
 pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(5, 1);
             let container_client =
-                test_data::create_container_with_items(db_client, items.clone(), None).await?;
+                test_data::create_container_with_items(
+                    run_context,
+                    db_client,
+                    items.clone(),
+                    None,
+                )
+                .await?;
 
             // Enable both index metrics and query metrics via typed options.
             let options = QueryOptions::default()
@@ -658,7 +672,7 @@ pub async fn query_returns_index_and_query_metrics() -> Result<(), Box<dyn Error
 )]
 pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(1, 5);
             let expected_items =
                 collect_matching_items(&items, |p| p.partition_key == "partition0");
@@ -668,6 +682,7 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
             );
 
             execute_query_test(
+                run_context,
                 db_client,
                 items,
                 "select * from c",
@@ -699,9 +714,10 @@ pub async fn single_partition_query_pagination() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(3, 3);
             execute_query_test(
+                run_context,
                 db_client,
                 items.clone(),
                 "select * from c",
@@ -733,15 +749,19 @@ pub async fn cross_partition_query_pagination() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             // 10 logical partitions × 2 items. Provision 11000 RU/s so the
             // container splits into 2 physical partitions — a scoped query then
             // has a neighbouring range it must NOT touch.
             let items = test_data::generate_mock_items(10, 2);
             let throughput = ThroughputProperties::manual(11000);
-            let container_client =
-                test_data::create_container_with_items(db_client, items.clone(), Some(throughput))
-                    .await?;
+            let container_client = test_data::create_container_with_items(
+                run_context,
+                db_client,
+                items.clone(),
+                Some(throughput),
+            )
+            .await?;
 
             let ranges = container_client.read_feed_ranges(None).await?;
             assert_eq!(
@@ -807,13 +827,14 @@ pub async fn feed_range_scoped_query_honors_range() -> Result<(), Box<dyn Error>
 )]
 pub async fn cross_partition_query_suspend_resume() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             // Four logical partitions × three items per partition. With a
             // page size of one, this exercises both intra-partition and
             // cross-partition resume points.
             let items = test_data::generate_mock_items(4, 3);
 
             execute_query_test(
+                run_context,
                 db_client,
                 items.clone(),
                 "select * from c",
@@ -841,10 +862,10 @@ pub async fn cross_partition_query_suspend_resume() -> Result<(), Box<dyn Error>
 )]
 pub async fn query_rejects_newer_sdk_continuation_token() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(1, 1);
             let container_client =
-                test_data::create_container_with_items(db_client, items, None).await?;
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             // A `c2.` prefix indicates the token was issued by a future
             // SDK version this client does not understand.
@@ -881,10 +902,10 @@ pub async fn query_rejects_newer_sdk_continuation_token() -> Result<(), Box<dyn 
 )]
 pub async fn query_rejects_server_token_for_cross_partition() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(2, 1);
             let container_client =
-                test_data::create_container_with_items(db_client, items, None).await?;
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             // An un-prefixed token is treated as an opaque server
             // continuation, which is only valid for trivial (single-
@@ -925,7 +946,7 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
     use base64::Engine as _;
 
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             // One logical partition × five items so we get multiple pages
             // with `max_item_count(1)`.
             let items = test_data::generate_mock_items(1, 5);
@@ -937,7 +958,7 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
             );
 
             let container_client =
-                test_data::create_container_with_items(db_client, items, None).await?;
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
             let scope = FeedScope::partition("partition0");
 
             // --- Round 1: fetch the first page through the SDK and pull
@@ -1104,11 +1125,12 @@ pub async fn single_partition_query_resumes_with_raw_server_token() -> Result<()
 )]
 pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             // 4 partitions x 3 items: `partitionKey` repeats within a
             // partition, `id` is unique across the container.
             let items = test_data::generate_mock_items(4, 3);
-            let container = test_data::create_container_with_items(db_client, items, None).await?;
+            let container =
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             async fn count(
                 container: &ContainerClient,
@@ -1213,9 +1235,10 @@ pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
 )]
 pub async fn distinct_combined_with_unsupported_stages_is_rejected() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
-        async |_, db_client| {
+        async |run_context, db_client| {
             let items = test_data::generate_mock_items(4, 3);
-            let container = test_data::create_container_with_items(db_client, items, None).await?;
+            let container =
+                test_data::create_container_with_items(run_context, db_client, items, None).await?;
 
             // Each of these needs a composition stage the driver does not have
             // yet: GROUP BY and aggregates. `TOP` and `OFFSET`/`LIMIT` are no

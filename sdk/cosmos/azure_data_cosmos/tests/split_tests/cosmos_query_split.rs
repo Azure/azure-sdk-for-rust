@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use azure_data_cosmos::feed::ContinuationToken;
-use azure_data_cosmos::options::{CreateContainerOptions, ReadFeedRangesOptions};
+use azure_data_cosmos::options::ReadFeedRangesOptions;
 use azure_data_cosmos::{
     clients::ContainerClient,
     feed::FeedScope,
@@ -19,7 +19,7 @@ use azure_data_cosmos::{
     options::{MaxItemCountHint, QueryOptions},
 };
 use framework::{MockItem, TestClient, TestOptions};
-use futures::{StreamExt, TryStreamExt};
+use futures::StreamExt;
 
 // Backend splits can occasionally exceed 10 minutes under repeated test load.
 // Report a 15-minute miss as inconclusive rather than failing later assumptions.
@@ -39,35 +39,17 @@ const SPLIT_POLL_INTERVAL: Duration = Duration::from_secs(15);
 /// Returns [`InconclusiveError::SplitNotCompleted`] if a strictly larger
 /// topology has not appeared within [`SPLIT_POLL_TIMEOUT`].
 pub(crate) async fn force_split_and_wait(
+    run_context: &framework::TestRunContext,
+    db_client: &azure_data_cosmos::clients::DatabaseClient,
     container_client: &ContainerClient,
+    container_name: &str,
     starting_partitions: usize,
 ) -> Result<usize, Box<dyn Error>> {
     let split_start = Instant::now();
     let new_throughput = ThroughputProperties::manual(13000);
-    let mut poller = container_client
-        .begin_replace_throughput(new_throughput, None)
+    let final_throughput = run_context
+        .replace_container_throughput(db_client, container_name, new_throughput)
         .await?;
-    println!("Throughput update initiated, polling for completion...");
-    let mut last_throughput = None;
-    let mut poll_count = 0;
-    while let Some(status) = poller.try_next().await? {
-        if split_start.elapsed() >= SPLIT_POLL_TIMEOUT {
-            return Err(InconclusiveError::SplitNotCompleted.into());
-        }
-
-        assert!(status.status().is_success());
-        last_throughput = Some(status.into_model()?);
-        if poll_count % 15 == 0 {
-            println!(
-                "Throughput update in progress... polled {} times, last observed throughput: {} RU/s",
-                poll_count,
-                last_throughput.as_ref().and_then(|t| t.throughput()).unwrap_or(0)
-            );
-        }
-        poll_count += 1;
-    }
-    let final_throughput =
-        last_throughput.expect("throughput poller should have yielded at least one response");
     assert_eq!(Some(13000), final_throughput.throughput());
     println!(
         "Throughput update completed, new throughput: {} RU/s",
@@ -149,7 +131,7 @@ pub async fn query_resume_across_split_covers_both_snapshot_shapes() -> Result<(
                     .create_container(
                         db_client,
                         properties,
-                        Some(CreateContainerOptions::default().with_throughput(throughput)),
+                        Some(throughput),
                     )
                     .await?,
             );
@@ -235,7 +217,14 @@ pub async fn query_resume_across_split_covers_both_snapshot_shapes() -> Result<(
                 token_b_collected.len()
             );
             let partitions_after =
-                force_split_and_wait(&container_client, partitions_before).await?;
+                force_split_and_wait(
+                    run_context,
+                    db_client,
+                    &container_client,
+                    "QueryResumeAcrossSplit",
+                    partitions_before,
+                )
+                .await?;
             assert!(
                 partitions_after > partitions_before,
                 "split must increase partition count: before={partitions_before}, after={partitions_after}"

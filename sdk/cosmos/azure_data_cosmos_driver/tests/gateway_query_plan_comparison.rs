@@ -23,7 +23,7 @@
 
 mod framework;
 
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use tokio::sync::OnceCell;
@@ -36,7 +36,10 @@ use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::options::{OperationOptions, PlanOptions};
 use azure_data_cosmos_driver::CosmosDriver;
 
-use framework::resolve_test_env;
+use framework::{
+    probe_driver_data_plane_ready, resolve_driver_container_ready, resolve_test_env,
+    CosmosArmClient,
+};
 
 // ─── Test infrastructure ─────────────────────────────────────────────────────
 
@@ -63,7 +66,34 @@ async fn get_driver() -> Option<&'static Arc<CosmosDriver>> {
 
 const DB_NAME: &str = "query_plan_test_db";
 
+fn arm_client() -> Option<&'static CosmosArmClient> {
+    static ARM_CLIENT: OnceLock<Option<CosmosArmClient>> = OnceLock::new();
+    ARM_CLIENT
+        .get_or_init(|| {
+            if !std::env::var("AZURE_COSMOS_AUTH_MODE")
+                .is_ok_and(|value| value.eq_ignore_ascii_case("aad"))
+            {
+                return None;
+            }
+            let credential = azure_core_test::credentials::from_env(None)
+                .expect("failed to resolve federated test credential");
+            Some(
+                CosmosArmClient::from_env(credential)
+                    .expect("failed to resolve Cosmos ARM test environment"),
+            )
+        })
+        .as_ref()
+}
+
 async fn ensure_database(driver: &CosmosDriver) {
+    if let Some(arm_client) = arm_client() {
+        arm_client
+            .create_database(DB_NAME)
+            .await
+            .expect("failed to ensure query-plan test database through ARM");
+        return;
+    }
+
     let account = driver.account().clone();
     let op = CosmosOperation::create_database(account)
         .with_body(serde_json::to_vec(&serde_json::json!({"id": DB_NAME})).unwrap());
@@ -85,6 +115,29 @@ async fn ensure_container(
     pk_def: PartitionKeyDefinition,
 ) -> ContainerReference {
     ensure_database(driver).await;
+    let partition_key_component_count = pk_def.paths().len();
+
+    if let Some(arm_client) = arm_client() {
+        arm_client
+            .create_or_update_container(
+                DB_NAME,
+                container_name,
+                &serde_json::json!({
+                    "id": container_name,
+                    "partitionKey": pk_def,
+                }),
+                None,
+            )
+            .await
+            .expect("failed to ensure query-plan test container through ARM");
+        let container = resolve_driver_container_ready(driver, DB_NAME, container_name)
+            .await
+            .expect("failed to resolve container");
+        probe_driver_data_plane_ready(driver, &container, partition_key_component_count)
+            .await
+            .expect("query-plan container data path did not become ready");
+        return container;
+    }
 
     let body = serde_json::to_vec(&serde_json::json!({
         "id": container_name,
