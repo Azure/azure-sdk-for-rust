@@ -352,8 +352,9 @@ In CI, the harness runs automatically on the **`binary_encoding` live leg**
 `testCategory = 'binary_encoding'`). That federated leg's bicep emits
 `--cfg=test_category="binary_encoding"` into `RUSTFLAGS`, disables local
 authentication on the account, and provides `ACCOUNT_HOST`. The fuzzer uses
-Entra ID for all data-plane operations and the shared typed ARM test client for
-database and container lifecycle. The per-run iteration budget is set by
+Entra ID for all data-plane operations and the shared test support wrapper over
+`azure_mgmt_cosmosdb` for database and container lifecycle. The per-run
+iteration budget is set by
 `AZURE_COSMOS_FUZZ_ITERATIONS` in `sdk/cosmos/ci.yml`
 (default 180 there). Live tests only run on the weekly schedule or when a build
 is queued with **Run live tests** enabled.

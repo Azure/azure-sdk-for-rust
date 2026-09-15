@@ -35,6 +35,8 @@ members = [
   "sdk/storage/azure_storage_common",
   "sdk/storage/azure_storage_queue",
   "sdk/storage/azure_storage_sas",
+  "sdk/storage/azure_storage_stress",
+  "sdk/storage/azure_storage_stress_blob",
 ]
 exclude = [
   "eng/scripts/",
@@ -63,6 +65,10 @@ version = "1.0.0"
 default-features = false
 version = "1.1.0"
 
+[workspace.dependencies.azure_core_0_21]
+package = "azure_core"
+version = "0.21.0"
+
 [workspace.dependencies.azure_core_macros]
 version = "1.0.0"
 
@@ -85,6 +91,11 @@ version = "0.2.0"
 # azure_identity should only ever be in dev-dependencies herein
 version = "1.0.0"
 
+[workspace.dependencies.azure_mgmt_cosmosdb]
+version = "0.21.0"
+default-features = false
+features = ["enable_reqwest_rustls", "package-preview-2024-09"]
+
 [workspace.dependencies.azure_storage_blob]
 # azure_storage_blob should only ever be in dev-dependencies herein
 version = "1.0.0"
@@ -103,12 +114,12 @@ bytes = "1.11.1"
 cargo_metadata = "0.23.1"
 clap = { version = "4.5.58", features = ["derive"] }
 console-subscriber = "0.4"
+crc-fast = "~1.9"
 criterion = { version = "0.8", features = ["async_tokio"] }
 crossbeam = { version = "0.8", default-features = false }
 crossbeam-epoch = { version = "0.9", default-features = false }
 dyn-clone = "1.0"
 fe2o3-amqp = { version = "0.16", features = ["uuid"] }
-fe2o3-amqp-ws = { version = "0.16" }
 fe2o3-amqp-ext = { version = "0.16" }
 fe2o3-amqp-management = { version = "0.16" }
 fe2o3-amqp-cbs = { version = "0.16" }

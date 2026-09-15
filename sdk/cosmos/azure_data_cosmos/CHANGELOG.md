@@ -17,6 +17,8 @@
 
 ### Other Changes
 
+- Test-only: the emulator test framework keeps Cosmos binary JSON encoding disabled against the vnext emulator, which still rejects binary item writes ([#5240](https://github.com/Azure/azure-sdk-for-rust/issues/5240)); connection-string-built clients now apply it too. The `azure_data_cosmos_driver` crate carries an `#[ignore]`d, expected-to-fail canary that signals when the limitation is lifted and `effective_binary_encoding` can be removed. No product behavior change. ([#5299](https://github.com/Azure/azure-sdk-for-rust/pull/5299))
+
 ## 0.38.0 (2026-09-02)
 
 ### Features Added
