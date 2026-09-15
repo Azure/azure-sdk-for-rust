@@ -1887,7 +1887,7 @@ impl BlobContainerClientRenewLeaseResultHeaders
     }
 }
 
-/// Provides access to typed response headers for `BlobClient::list_layout()`
+/// Provides access to typed response headers for `BlobClient::get_layout()`
 ///
 /// # Examples
 ///

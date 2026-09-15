@@ -14,8 +14,8 @@ use crate::{
         PageBlobClientUploadPagesResult, PageList, SequenceNumberActionType,
     },
     models::HttpRange,
-    SessionOptions,
 };
+// use crate::SessionOptions;
 use azure_core::{
     base64,
     error::CheckSuccessOptions,
@@ -33,7 +33,7 @@ use azure_core::{
 pub struct PageBlobClient {
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
-    pub(crate) session_options: Option<SessionOptions>,
+    // pub(crate) session_options: Option<SessionOptions>,
     pub(crate) version: String,
 }
 
@@ -42,8 +42,8 @@ pub struct PageBlobClient {
 pub struct PageBlobClientOptions {
     /// Allows customization of the client.
     pub client_options: ClientOptions,
-    /// Options for session token authentication.
-    pub session_options: Option<SessionOptions>,
+    // /// Options for session token authentication.
+    // pub session_options: Option<SessionOptions>,
     /// Specifies the version of the operation to use for this request.
     pub version: String,
 }
@@ -1015,7 +1015,7 @@ impl Default for PageBlobClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            session_options: None,
+            // session_options: None,
             version: String::from(DEFAULT_VERSION),
         }
     }

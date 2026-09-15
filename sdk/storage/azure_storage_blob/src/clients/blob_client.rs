@@ -4,13 +4,15 @@
 pub use crate::generated::clients::{BlobClient, BlobClientOptions};
 
 use crate::{
+    blob_layout::{fetch_layout, LayoutCache, LayoutEndpoint},
     generated::{
-        clients::BlobClient as GeneratedBlobClient, models::BlobClientDownloadInternalOptions,
+        clients::BlobClient as GeneratedBlobClient,
+        models::{BlobClientDownloadInternalOptions, BlobClientGetLayoutOptions},
     },
     models::{
         BlobClientDownloadIntoResult, BlobClientDownloadOptions, BlobClientDownloadResult,
         BlobClientUploadOptions, BlobClientUploadResult, BlobDownloadProperties, HttpRange,
-        StorageErrorCode,
+        LayoutAwareRouting, StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
     AppendBlobClient, BlockBlobClient, PageBlobClient,
@@ -20,12 +22,16 @@ use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
     http::{
+        headers::Headers,
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         AsyncRawResponse, Etag, NoFormat, Pipeline, RequestContent, StatusCode, Url, UrlExt,
     },
     tracing, Bytes, Result,
 };
-use std::{ops::Range, sync::Arc};
+use std::{
+    ops::Range,
+    sync::{Arc, OnceLock},
+};
 
 impl BlobClient {
     /// Creates a new BlobClient from a blob URL.
@@ -194,14 +200,22 @@ impl BlobClient {
         let partition_size = options
             .partition_size
             .unwrap_or(crate::partitioned_transfer::defaults::DEFAULT_DOWNLOAD_PARTITION_SIZE);
-        let range = options.range.clone();
         let inner_client = GeneratedBlobClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         };
-        let behavior = BlobClientDownloadBehavior::new(inner_client, options.into());
+        let range = options.range.clone();
+        let layout_aware_routing = options.layout_aware_routing;
+        let layout_endpoint = options.layout_endpoint.clone();
+        let behavior = BlobClientDownloadBehavior::new(
+            inner_client,
+            options.into(),
+            layout_aware_routing,
+            layout_endpoint,
+            range.clone(),
+        );
         let response =
             partitioned_transfer::download(range, parallel, partition_size, Arc::new(behavior))
                 .await?;
@@ -238,14 +252,22 @@ impl BlobClient {
         let partition_size = options
             .partition_size
             .unwrap_or(crate::partitioned_transfer::defaults::DEFAULT_DOWNLOAD_PARTITION_SIZE);
-        let range = options.range.clone();
         let inner_client = GeneratedBlobClient {
             endpoint: self.endpoint.clone(),
             pipeline: self.pipeline.clone(),
             version: self.version.clone(),
             tracer: self.tracer.clone(),
         };
-        let behavior = BlobClientDownloadBehavior::new(inner_client, options.into());
+        let range = options.range.clone();
+        let layout_aware_routing = options.layout_aware_routing;
+        let layout_endpoint = options.layout_endpoint.clone();
+        let behavior = BlobClientDownloadBehavior::new(
+            inner_client,
+            options.into(),
+            layout_aware_routing,
+            layout_endpoint,
+            range.clone(),
+        );
         let (_, headers, len) = partitioned_transfer::download_into(
             buffer,
             range,
@@ -302,13 +324,68 @@ impl BlobClient {
 }
 
 struct BlobClientDownloadBehavior<'a> {
-    client: GeneratedBlobClient,
+    client: Arc<GeneratedBlobClient>,
     options: BlobClientDownloadInternalOptions<'a>,
+    layout_aware_routing: LayoutAwareRouting,
+    /// Caller-supplied endpoint that pins every request this download issues.
+    layout_endpoint: Option<String>,
+    /// The caller-requested range, which `options.range` does not retain because it is rewritten for each partition.
+    requested_range: Option<HttpRange>,
+    layout_cache: OnceLock<Option<LayoutCache>>,
 }
 
 impl<'a> BlobClientDownloadBehavior<'a> {
-    fn new(client: GeneratedBlobClient, options: BlobClientDownloadInternalOptions<'a>) -> Self {
-        Self { client, options }
+    fn new(
+        client: GeneratedBlobClient,
+        options: BlobClientDownloadInternalOptions<'a>,
+        layout_aware_routing: LayoutAwareRouting,
+        layout_endpoint: Option<String>,
+        requested_range: Option<HttpRange>,
+    ) -> Self {
+        Self {
+            client: Arc::new(client),
+            options,
+            layout_aware_routing,
+            layout_endpoint,
+            requested_range,
+            layout_cache: OnceLock::new(),
+        }
+    }
+
+    /// Resolves the endpoint a request covering `range` should be sent to, preferring a
+    /// caller-supplied endpoint over the fetched layout.
+    ///
+    /// A caller-supplied endpoint applies to every request, including the initial one,
+    /// because it pins the whole call rather than following the blob's layout.
+    async fn resolve_endpoint(&self, range: Option<&Range<usize>>) -> Option<String> {
+        if let Some(endpoint) = self.layout_endpoint.as_ref() {
+            return Some(endpoint.clone());
+        }
+        if let (Some(Some(cache)), Some(range)) = (self.layout_cache.get(), range) {
+            if let Some(layout) = cache.current().await {
+                return layout.ideal_endpoint(range.start as i64).map(str::to_owned);
+            }
+        }
+        None
+    }
+
+    fn layout_options(&self) -> BlobClientGetLayoutOptions<'static> {
+        BlobClientGetLayoutOptions {
+            encryption_algorithm: self.options.encryption_algorithm,
+            encryption_key: self.options.encryption_key.clone(),
+            encryption_key_sha256: self.options.encryption_key_sha256.clone(),
+            if_match: self.options.if_match.clone(),
+            if_modified_since: self.options.if_modified_since,
+            if_none_match: self.options.if_none_match.clone(),
+            if_tags: self.options.if_tags.clone(),
+            if_unmodified_since: self.options.if_unmodified_since,
+            lease_id: self.options.lease_id.clone(),
+            range: self.requested_range.clone(),
+            snapshot: self.options.snapshot.clone(),
+            timeout: self.options.timeout,
+            version_id: self.options.version_id.clone(),
+            ..Default::default()
+        }
     }
 }
 
@@ -320,6 +397,13 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
         etag_lock: Option<Etag>,
     ) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();
+        if let Some(endpoint) = self.resolve_endpoint(range.as_ref()).await {
+            opt.method_options.context = opt
+                .method_options
+                .context
+                .clone()
+                .with_value(LayoutEndpoint(endpoint));
+        }
         opt.range = range.map(HttpRange::from);
         if let Some(etag) = etag_lock {
             opt.if_match = Some(etag);
@@ -332,5 +416,33 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
             .download_internal(Some(opt))
             .await
             .map(AsyncRawResponse::from)
+    }
+
+    async fn prepare(&self, initial_headers: &Headers, etag_lock: Option<&Etag>) -> Result<()> {
+        if self.layout_endpoint.is_some()
+            || matches!(self.layout_aware_routing, LayoutAwareRouting::Disabled)
+        {
+            return Ok(());
+        }
+        if initial_headers.get_optional_str(&"x-ms-download-hint".into()) != Some("layout") {
+            let _ = self.layout_cache.set(None);
+            return Ok(());
+        }
+        let mut layout_options = self.layout_options();
+        if layout_options.if_match.is_none() {
+            layout_options.if_match = etag_lock.cloned();
+        }
+        let context = self.options.method_options.context.clone();
+        let cache = fetch_layout(&self.client, &context, &layout_options)
+            .await?
+            .map(|prefetch| {
+                LayoutCache::new(
+                    Arc::clone(&self.client),
+                    layout_options,
+                    Arc::new(prefetch.layout),
+                )
+            });
+        let _ = self.layout_cache.set(cache);
+        Ok(())
     }
 }
