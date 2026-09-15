@@ -260,7 +260,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
     // sub-op's per-request diagnostics, instead of just the final
     // Replace's. See `DiagnosticsContext::aggregate_sub_operations`.
     let mut sub_op_diagnostics: Vec<Arc<DiagnosticsContext>> =
-        Vec::with_capacity(2 * attempts as usize);
+        Vec::with_capacity(2 * (attempts as usize));
 
     // The aggregated context concatenates the Read + Replace sub-ops and would
     // otherwise inherit the *last* sub-op's `db.operation.name`. Stamp the
@@ -608,7 +608,9 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                         )
                         .await
                         {
-                            Ok(VerificationOutcome::Applied(response)) => return Ok(*response),
+                            Ok(VerificationOutcome::Applied(response)) => {
+                                return Ok(*response);
+                            }
                             Ok(VerificationOutcome::Absent) => {}
                             Ok(VerificationOutcome::ReadFailed(verification_error)) => {
                                 push_unique_diagnostics(
@@ -653,7 +655,9 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         )
         .await
         {
-            Ok(VerificationOutcome::Applied(response)) => return Ok(*response),
+            Ok(VerificationOutcome::Applied(response)) => {
+                return Ok(*response);
+            }
             Ok(VerificationOutcome::Absent) => {}
             Ok(VerificationOutcome::ReadFailed(verification_error)) => {
                 push_unique_diagnostics(&mut sub_op_diagnostics, verification_error.diagnostics());
@@ -725,14 +729,16 @@ fn stamp_patch_identity(
                     .with_patch_tracking_id(id)
                     .build(),
                 None => err,
-            }
+            };
         }
         [only] => Arc::new(only.clone_with_operation_name(operation_name)),
         many => match DiagnosticsContext::aggregate_sub_operations(many) {
             Some(ctx) => Arc::new(ctx.with_operation_name(operation_name)),
             // Unreachable: `many` is non-empty. Keep the error intact rather
             // than panicking if that ever changes.
-            None => return err,
+            None => {
+                return err;
+            }
         },
     };
     let stamped = match tracking_id {
@@ -811,7 +817,9 @@ async fn verify_committed_patch<D: SubOperationDispatcher + ?Sized>(
         .await
     {
         Ok(response) => response,
-        Err(error) => return Ok(VerificationOutcome::ReadFailed(error)),
+        Err(error) => {
+            return Ok(VerificationOutcome::ReadFailed(error));
+        }
     };
     let mut headers = response.headers().clone();
     let status = response.status();
@@ -881,13 +889,14 @@ fn terminal_error_requires_verification(err: &crate::error::CosmosError) -> bool
 fn inconclusive_tracking_verification_error(
     tracking_id: crate::models::PatchTrackingId,
 ) -> crate::error::CosmosError {
-    crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::new(
-            StatusCode::ServiceUnavailable,
-        ))
-        .with_message(format!(
-            "PATCH tracking verification for '{tracking_id}' was routed away from every usable write endpoint and did not observe the marker; refusing to apply because absence is inconclusive"
-        ))
+    crate::error::CosmosError
+        ::builder()
+        .with_status(crate::error::CosmosStatus::new(StatusCode::ServiceUnavailable))
+        .with_message(
+            format!(
+                "PATCH tracking verification for '{tracking_id}' was routed away from every usable write endpoint and did not observe the marker; refusing to apply because absence is inconclusive"
+            )
+        )
         .build()
 }
 
@@ -1130,6 +1139,16 @@ pub(crate) fn validate_partition_key_paths(
             _ => None,
         };
         for path in std::iter::once(dest).chain(from) {
+            if path_overlaps_partition_key(path, "/id") {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message(format!(
+                        "PATCH op '{path}' overlaps immutable item ID path '/id'"
+                    ))
+                    .build());
+            }
             if path_overlaps_partition_key(path, PATCH_TRACKING_POINTER) {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(crate::error::CosmosStatus::new(
@@ -1397,7 +1416,7 @@ mod tests {
             let err = cosmos_service_error(status, "non-412 service error", None, &[]);
             assert!(
                 !is_precondition_failed(&err),
-                "should not match status {status:?}",
+                "should not match status {status:?}"
             );
         }
     }
@@ -1592,9 +1611,11 @@ mod tests {
         );
         // (c) Typed payload from the underlying 412 is preserved verbatim.
         assert_eq!(
-            err.wire_payload().and_then(|p| match p.body() {
-                crate::models::ResponseBody::Bytes(b) => Some(b.as_ref()),
-                _ => None,
+            err.wire_payload().and_then(|p| {
+                match p.body() {
+                    crate::models::ResponseBody::Bytes(b) => Some(b.as_ref()),
+                    _ => None,
+                }
             }),
             Some(b"server-body".as_slice())
         );
@@ -1647,9 +1668,11 @@ mod tests {
 
         assert_eq!(err.status().status_code(), StatusCode::PreconditionFailed);
         assert_eq!(
-            err.wire_payload().and_then(|p| match p.body() {
-                crate::models::ResponseBody::Bytes(b) => Some(b.as_ref()),
-                _ => None,
+            err.wire_payload().and_then(|p| {
+                match p.body() {
+                    crate::models::ResponseBody::Bytes(b) => Some(b.as_ref()),
+                    _ => None,
+                }
             }),
             Some(
                 b"{\"code\":\"PreconditionFailed\",\"message\":\"server: stale etag\"}".as_slice()
@@ -1718,19 +1741,19 @@ mod tests {
         assert_eq!(
             diag.request_count(),
             4,
-            "aggregated diagnostics must concatenate every per-attempt RequestDiagnostics",
+            "aggregated diagnostics must concatenate every per-attempt RequestDiagnostics"
         );
         assert_eq!(
             diag.operation_name(),
             Some("patch_item"),
-            "aggregated PATCH diagnostics must carry the virtual operation's own name",
+            "aggregated PATCH diagnostics must carry the virtual operation's own name"
         );
         // And critically, the attached diagnostics must be distinct from
         // every input Arc — the aggregator returns a fresh context.
         for input in &attempt_diags {
             assert!(
                 !Arc::ptr_eq(&diag, input),
-                "exhaustion error must surface the aggregated context, not any input Arc",
+                "exhaustion error must surface the aggregated context, not any input Arc"
             );
         }
     }
@@ -3544,7 +3567,7 @@ mod tests {
         assert!(
             captured.iter().all(|be| *be == disabled),
             "patch must force binary_encoding OFF (explicit disabled, not inherit) \
-             on every forwarded sub-op, got {captured:?}",
+             on every forwarded sub-op, got {captured:?}"
         );
     }
 }

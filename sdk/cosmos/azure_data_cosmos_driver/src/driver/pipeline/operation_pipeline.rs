@@ -436,11 +436,21 @@ pub(crate) async fn execute_operation_pipeline(
         .read_consistency_strategy()
         .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
-    let effective_consistency =
-        resolve_effective_consistency(read_consistency_strategy, account_default_consistency);
-    let session_consistency_active = partition_key_range_cache_enabled
+    let operation_read_consistency_strategy =
+        read_consistency_strategy_for_operation(operation, read_consistency_strategy);
+    let effective_consistency = resolve_effective_consistency(
+        operation_read_consistency_strategy,
+        account_default_consistency,
+    );
+    let session_token_resolution_active = partition_key_range_cache_enabled
         && !session_capturing_disabled
-        && read_consistency_strategy.is_session_effective(account_default_consistency);
+        && operation_allows_automatic_session_token_resolution(
+            operation,
+            location_snapshot.account.multiple_write_locations_enabled,
+        )
+        && operation_read_consistency_strategy.is_session_effective(account_default_consistency);
+    let session_token_capture_active =
+        partition_key_range_cache_enabled && !session_capturing_disabled;
 
     // Rule 4 (RCS validation): GlobalStrong is
     // valid only on reads against accounts whose default consistency is Strong.
@@ -453,13 +463,7 @@ pub(crate) async fn execute_operation_pipeline(
     ) && operation.is_read_only()
         && account_default_consistency != DefaultConsistencyLevel::Strong
     {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
-            .with_message(
-                "ReadConsistencyStrategy::GlobalStrong is only valid against accounts whose \
-                 default consistency level is Strong",
-            )
-            .build());
+        return Err(global_strong_account_validation_error(diagnostics));
     }
     let max_session_retries = options
         .max_session_retry_count()
@@ -572,15 +576,20 @@ pub(crate) async fn execute_operation_pipeline(
             if operation.prefers_write_endpoints_for_read() && routing.routing_fallback.is_some() {
                 ReadConsistencyStrategy::Default
             } else {
-                read_consistency_strategy
+                operation_read_consistency_strategy
             };
         let attempt_effective_consistency = resolve_effective_consistency(
             attempt_read_consistency_strategy,
             account_default_consistency,
         );
-        let attempt_session_consistency_active = partition_key_range_cache_enabled
+        let attempt_session_token_resolution_active = partition_key_range_cache_enabled
             && !session_capturing_disabled
+            && operation_allows_automatic_session_token_resolution(
+                operation,
+                location.account.multiple_write_locations_enabled,
+            )
             && attempt_read_consistency_strategy.is_session_effective(account_default_consistency);
+        let attempt_session_token_capture_active = session_token_capture_active;
 
         // Emit one structured debug record per attempt with the chosen
         // routing decision. Tests and SREs filter on this to verify which
@@ -640,17 +649,19 @@ pub(crate) async fn execute_operation_pipeline(
                 &routing,
                 configured_request_timeout,
             )
-            .and_then(|upgrade| match hedge_budget.try_admit(pipeline_type) {
-                Some(permit) => Some((upgrade, permit)),
-                None => {
-                    // Refuse rather than queue: an operation that waits its turn
-                    // to hedge has already lost the latency argument. It falls
-                    // through to the ordinary sequential path instead.
-                    tracing::debug!(
-                        activity_id = %activity_id,
-                        "cosmos.hedge.concurrency_budget_exhausted",
-                    );
-                    None
+            .and_then(|upgrade| {
+                match hedge_budget.try_admit(pipeline_type) {
+                    Some(permit) => Some((upgrade, permit)),
+                    None => {
+                        // Refuse rather than queue: an operation that waits its turn
+                        // to hedge has already lost the latency argument. It falls
+                        // through to the ordinary sequential path instead.
+                        tracing::debug!(
+                            activity_id = %activity_id,
+                            "cosmos.hedge.concurrency_budget_exhausted",
+                        );
+                        None
+                    }
                 }
             });
             if let Some((upgrade, _hedge_permit)) = admitted {
@@ -670,7 +681,8 @@ pub(crate) async fn execute_operation_pipeline(
                     effective_consistency,
                     read_consistency_strategy,
                     session_manager,
-                    session_consistency_active,
+                    session_token_resolution_active,
+                    session_token_capture_active,
                     options,
                     throughput_control,
                     deadline,
@@ -708,7 +720,9 @@ pub(crate) async fn execute_operation_pipeline(
                 )
                 .await
                 {
-                    HedgedRaceResult::Terminal(result) => return result,
+                    HedgedRaceResult::Terminal(result) => {
+                        return result;
+                    }
                     HedgedRaceResult::BothTransient {
                         primary_region,
                         secondary_region,
@@ -781,7 +795,7 @@ pub(crate) async fn execute_operation_pipeline(
             } else {
                 ReadConsistencyStrategy::Default
             },
-            resolved_session_token: attempt_session_consistency_active
+            resolved_session_token: attempt_session_token_resolution_active
                 .then(|| {
                     // Scope the session token to the target partition-key-range
                     // only for thin-client (Gateway 2.0) requests: the RNTBD
@@ -842,7 +856,7 @@ pub(crate) async fn execute_operation_pipeline(
 
         let result = execute_transport_pipeline(
             transport_request,
-            &TransportPipelineContext {
+            &(TransportPipelineContext {
                 transport: &selected_transport,
                 allow_sent_transport_retry: operation.allows_ambiguous_outcome_retry(),
                 credential,
@@ -856,7 +870,7 @@ pub(crate) async fn execute_operation_pipeline(
                 max_throttle_attempts,
                 max_throttle_wait_time,
                 max_throttle_per_retry_delay,
-            },
+            }),
             &mut diagnostics,
         )
         .await;
@@ -884,7 +898,7 @@ pub(crate) async fn execute_operation_pipeline(
         // Abort, or a retry action. 409/412 map to Abort, and the Abort
         // variant does not carry headers — capturing after evaluation
         // would silently drop tokens from those responses.
-        if attempt_session_consistency_active {
+        if attempt_session_token_capture_active {
             if let Some(cosmos_headers) = result.cosmos_headers() {
                 if should_capture_session_token_from_status(
                     cosmos_headers.substatus.as_ref(),
@@ -944,7 +958,7 @@ pub(crate) async fn execute_operation_pipeline(
                         Box::pin(driver.pre_resolve_partition_key_range_id(
                             operation,
                             &overrides,
-                            session_consistency_active,
+                            session_token_resolution_active,
                             operation_options,
                         ))
                         .await;
@@ -1279,7 +1293,8 @@ pub(crate) async fn execute_operation_pipeline(
                     effective_consistency,
                     read_consistency_strategy,
                     session_manager,
-                    session_consistency_active,
+                    session_token_resolution_active,
+                    session_token_capture_active,
                     options,
                     throughput_control,
                     deadline,
@@ -1305,7 +1320,9 @@ pub(crate) async fn execute_operation_pipeline(
                 )
                 .await
                 {
-                    HedgedRaceResult::Terminal(result) => return result,
+                    HedgedRaceResult::Terminal(result) => {
+                        return result;
+                    }
                     HedgedRaceResult::BothTransient {
                         primary_region,
                         secondary_region,
@@ -1463,11 +1480,10 @@ fn is_effect_already_applied(effect: &LocationEffect, snapshot: &LocationSnapsho
             // and its current_endpoint is already a different region than the
             // failed one, the failover has already moved past — re-applying
             // would just bump last_failure_time without changing routing.
-            let already_moved = |entry: &crate::driver::routing::partition_endpoint_state::PartitionFailoverEntry| -> bool {
-                entry
-                    .current_endpoint
-                    .region()
-                    .is_some_and(|r| r != failed_region)
+            let already_moved = |
+                entry: &crate::driver::routing::partition_endpoint_state::PartitionFailoverEntry
+            | -> bool {
+                entry.current_endpoint.region().is_some_and(|r| r != failed_region)
             };
             partitions
                 .failover_overrides
@@ -1602,10 +1618,10 @@ fn resolve_endpoint(
                 operation,
                 retry_state,
                 account,
-                endpoint_unavailability_ttl,
+                endpoint_unavailability_ttl
             ),
             Some(
-                crate::driver::pipeline::components::RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded,
+                crate::driver::pipeline::components::RoutingFallbackReason::PatchVerificationReadWriteEndpointUnavailableOrExcluded
             ),
         )
     } else {
@@ -2909,9 +2925,10 @@ struct AttemptContext<'a> {
     /// rationale as `effective_consistency`.
     read_consistency_strategy: ReadConsistencyStrategy,
     session_manager: &'a SessionManager,
-    /// Whether session consistency is in effect for this operation
-    /// (drives session-token resolve/capture inside the attempt).
-    session_consistency_active: bool,
+    /// Whether cached session-token resolution is active for this operation.
+    session_token_resolution_active: bool,
+    /// Whether the winning response's session token should be captured.
+    session_token_capture_active: bool,
     options: &'a OperationOptionsView<'a>,
     throughput_control: Option<ResolvedThroughputControl>,
     /// End-to-end deadline (operation timeout) — passed through to each
@@ -3196,11 +3213,13 @@ fn maybe_upgrade_to_hedge<'a>(
         // replacing it with an immediate hedge. A zero delay carries no backoff
         // to preserve, so it stays hedge-eligible like `None`.
         OperationAction::FailoverRetry { delay: Some(d), .. } if !d.is_zero() => {
-            return (action, None)
+            return (action, None);
         }
         OperationAction::FailoverRetry { new_state, .. } => new_state.clone(),
         OperationAction::SessionRetry { new_state } => new_state.clone(),
-        _ => return (action, None),
+        _ => {
+            return (action, None);
+        }
     };
 
     match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
@@ -3214,7 +3233,7 @@ fn maybe_upgrade_to_hedge<'a>(
                 tracing::debug!(
                     failover_retry_count = new_state.failover_retry_count,
                     max_failover_retries = new_state.max_failover_retries,
-                    "cosmos.hedge.budget_exhausted_skipping_upgrade",
+                    "cosmos.hedge.budget_exhausted_skipping_upgrade"
                 );
                 return (action, None);
             }
@@ -3287,7 +3306,7 @@ async fn perform_single_attempt(
     // Scope to the target range only for thin-client (Gateway 2.0); classic
     // gateway keeps the composite token (see main-loop rationale).
     let resolved_session_token = ctx
-        .session_consistency_active
+        .session_token_resolution_active
         .then(|| {
             let scoped_pk_range_id = if matches!(routing.transport_mode, TransportMode::GatewayV2) {
                 ctx.partition_key_range_id.as_ref().map(|id| id.as_str())
@@ -3354,7 +3373,7 @@ async fn perform_single_attempt(
 
     let result = execute_transport_pipeline(
         transport_request,
-        &TransportPipelineContext {
+        &(TransportPipelineContext {
             transport: &selected_transport,
             allow_sent_transport_retry: ctx.operation.allows_ambiguous_outcome_retry(),
             credential: ctx.credential,
@@ -3368,7 +3387,7 @@ async fn perform_single_attempt(
             max_throttle_attempts,
             max_throttle_wait_time,
             max_throttle_per_retry_delay,
-        },
+        }),
         diagnostics,
     )
     .await;
@@ -3392,7 +3411,7 @@ async fn perform_single_attempt(
 /// whose response the caller never observes would leak stale state and
 /// violate read-your-writes against the winning region.
 fn capture_session_token_for_winner(ctx: &AttemptContext<'_>, result: &TransportResult) {
-    if !ctx.session_consistency_active {
+    if !ctx.session_token_capture_active {
         return;
     }
     if let Some(cosmos_headers) = result.cosmos_headers() {
@@ -3482,7 +3501,9 @@ async fn harvest_remaining_attempt<F>(
 {
     let window = match azure_core::time::Duration::try_from(harvest_window) {
         Ok(d) => d,
-        Err(_) => return,
+        Err(_) => {
+            return;
+        }
     };
     let timer = Box::pin(azure_core::sleep(window));
     if let Either::Left(((_result, diag), _timer)) = select(attempt, timer).await {
@@ -4349,6 +4370,41 @@ async fn execute_hedged(
     }
 }
 
+fn read_consistency_strategy_for_operation(
+    operation: &CosmosOperation,
+    read_consistency_strategy: ReadConsistencyStrategy,
+) -> ReadConsistencyStrategy {
+    if operation.is_read_only() {
+        read_consistency_strategy
+    } else {
+        ReadConsistencyStrategy::Default
+    }
+}
+
+fn operation_allows_automatic_session_token_resolution(
+    operation: &CosmosOperation,
+    multiple_write_locations_enabled: bool,
+) -> bool {
+    operation.is_read_only()
+        || operation.operation_type() == OperationType::Batch
+        || multiple_write_locations_enabled
+}
+
+fn global_strong_account_validation_error(
+    mut diagnostics: DiagnosticsContextBuilder,
+) -> crate::error::CosmosError {
+    let status = crate::error::CosmosStatus::CLIENT_BAD_REQUEST;
+    diagnostics.set_operation_status(status.status_code(), status.sub_status());
+    crate::error::CosmosError::builder()
+        .with_status(status)
+        .with_message(
+            "ReadConsistencyStrategy::GlobalStrong is only valid against accounts whose \
+             default consistency level is Strong",
+        )
+        .with_diagnostics(Arc::new(diagnostics.complete()))
+        .build()
+}
+
 /// Generic "both sides transient" error carried inside
 /// [`HedgedRaceResult::BothTransient`] when neither leg produced a
 /// final response and the deadline has not elapsed. The surrounding
@@ -4542,7 +4598,7 @@ fn try_advance_after_both_transient(
         tracing::debug!(
             failover_retry_count = retry_state.failover_retry_count,
             max_failover_retries = retry_state.max_failover_retries,
-            "hedge both-transient: failover budget exhausted; surfacing terminal error",
+            "hedge both-transient: failover budget exhausted; surfacing terminal error"
         );
         return Err(last_error);
     }
@@ -4594,7 +4650,7 @@ fn try_advance_after_both_transient(
     tracing::debug!(
         failover_retry_count = retry_state.failover_retry_count,
         max_failover_retries = retry_state.max_failover_retries,
-        "hedge both-transient: failover loop will continue against remaining regions",
+        "hedge both-transient: failover loop will continue against remaining regions"
     );
     Ok(())
 }
@@ -4636,7 +4692,7 @@ fn propagate_hedge_session_unavailable(
         max_session_retries = retry_state.max_session_retries,
         "hedge both-transient: 1002 observed by at least one leg; \
          flipped hub_region_processing_only latch and advanced \
-         session-retry counter for next attempt",
+         session-retry counter for next attempt"
     );
 }
 
@@ -4713,6 +4769,41 @@ mod tests {
         assert!(super::hedging_suppressed_for_attempt(
             &patch_read,
             &overrides
+        ));
+    }
+
+    #[test]
+    fn automatic_session_token_resolution_respects_operation_and_topology() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let write = CosmosOperation::create_item(item.clone()).with_body(b"{}".to_vec());
+        let read = CosmosOperation::read_item(item);
+        let batch = CosmosOperation::batch(test_container(), PartitionKey::from("pk1"));
+
+        assert_eq!(
+            super::read_consistency_strategy_for_operation(
+                &write,
+                crate::options::ReadConsistencyStrategy::Session
+            ),
+            crate::options::ReadConsistencyStrategy::Default
+        );
+        assert_eq!(
+            super::read_consistency_strategy_for_operation(
+                &read,
+                crate::options::ReadConsistencyStrategy::Eventual
+            ),
+            crate::options::ReadConsistencyStrategy::Eventual
+        );
+        assert!(super::operation_allows_automatic_session_token_resolution(
+            &read, false
+        ));
+        assert!(!super::operation_allows_automatic_session_token_resolution(
+            &write, false
+        ));
+        assert!(super::operation_allows_automatic_session_token_resolution(
+            &write, true
+        ));
+        assert!(super::operation_allows_automatic_session_token_resolution(
+            &batch, false
         ));
     }
 
@@ -4974,9 +5065,9 @@ mod tests {
 
         assert_eq!(
             request.headers.get_optional_str(&HeaderName::from_static(
-                request_header_names::INTENDED_COLLECTION_RID,
+                request_header_names::INTENDED_COLLECTION_RID
             )),
-            Some(test_container().rid()),
+            Some(test_container().rid())
         );
     }
 
@@ -5005,7 +5096,7 @@ mod tests {
         assert!(request
             .headers
             .get_optional_str(&HeaderName::from_static(
-                request_header_names::INTENDED_COLLECTION_RID,
+                request_header_names::INTENDED_COLLECTION_RID
             ))
             .is_none());
     }
@@ -6605,7 +6696,7 @@ mod tests {
 
         assert_eq!(
             routing.endpoint, hub,
-            "warm cache hit must route directly to the cached hub region",
+            "warm cache hit must route directly to the cached hub region"
         );
     }
 
@@ -6637,7 +6728,7 @@ mod tests {
 
         assert_eq!(
             routing.endpoint, eastus,
-            "without the latch, normal selection picks the first preferred read endpoint",
+            "without the latch, normal selection picks the first preferred read endpoint"
         );
     }
 
@@ -6667,7 +6758,7 @@ mod tests {
 
         assert_ne!(
             routing.endpoint, hub,
-            "without partition_key_range_id we cannot key into the cache",
+            "without partition_key_range_id we cannot key into the cache"
         );
     }
 
@@ -6738,7 +6829,7 @@ mod tests {
 
         assert_ne!(
             routing.endpoint, westus,
-            "warm-path hub cache must not route when PPAF is disabled on the partition state",
+            "warm-path hub cache must not route when PPAF is disabled on the partition state"
         );
     }
 
@@ -6773,11 +6864,11 @@ mod tests {
 
         assert_ne!(
             routing.endpoint, hub,
-            "warm-path hub cache must not route to an excluded region",
+            "warm-path hub cache must not route to an excluded region"
         );
         assert_eq!(
             routing.endpoint, eastus,
-            "selection must fall through to the non-excluded preferred region",
+            "selection must fall through to the non-excluded preferred region"
         );
     }
 
@@ -6853,11 +6944,11 @@ mod tests {
 
         assert_ne!(
             routing.endpoint, westus,
-            "warm-path hub cache must not route to an unavailable hub endpoint",
+            "warm-path hub cache must not route to an unavailable hub endpoint"
         );
         assert_eq!(
             routing.endpoint, eastus,
-            "with the hub unavailable, selection falls through to the next available read endpoint",
+            "with the hub unavailable, selection falls through to the next available read endpoint"
         );
     }
 
@@ -6873,7 +6964,7 @@ mod tests {
         assert_eq!(
             super::hub_region_cache_populate_target(&all_met, &read_op),
             Some(pk.parse().unwrap()),
-            "populate gate must fire when latch + pk_range_id + read are all present",
+            "populate gate must fire when latch + pk_range_id + read are all present"
         );
 
         // Latch off → None.
@@ -6881,7 +6972,7 @@ mod tests {
         no_latch.hub_region_processing_only = false;
         assert!(
             super::hub_region_cache_populate_target(&no_latch, &read_op).is_none(),
-            "populate gate must NOT fire when the hub-region latch is off",
+            "populate gate must NOT fire when the hub-region latch is off"
         );
 
         // No partition key range → None.
@@ -6889,13 +6980,13 @@ mod tests {
         no_pk.partition_key_range_id = None;
         assert!(
             super::hub_region_cache_populate_target(&no_pk, &read_op).is_none(),
-            "populate gate must NOT fire without a partition_key_range_id (cache cannot be keyed)",
+            "populate gate must NOT fire without a partition_key_range_id (cache cannot be keyed)"
         );
 
         // Write op → None (writes use PPAF write-side routing, not the hub cache).
         assert!(
             super::hub_region_cache_populate_target(&all_met, &write_op).is_none(),
-            "populate gate must NOT fire on write operations",
+            "populate gate must NOT fire on write operations"
         );
     }
 
@@ -7151,11 +7242,8 @@ mod tests {
 
     #[test]
     fn resolve_endpoint_falls_back_to_gateway_for_full_fidelity_change_feed() {
-        // A full-fidelity (AllVersionsAndDeletes) change feed is a
-        // `Document`/`ReadFeed` op — otherwise Gateway 2.0 eligible — but must
-        // route through the standard gateway because Gateway 2.0 does not
-        // forward the `A-IM` header. An incremental change feed on the same
-        // endpoint stays on Gateway 2.0.
+        // AllVersionsAndDeletes must use Gateway V1; incremental change feed
+        // remains eligible for Gateway V2.
         let full_fidelity = CosmosOperation::change_feed_all_versions_and_deletes(
             test_container(),
             Some(FeedRange::full()),
@@ -8144,12 +8232,12 @@ mod tests {
         assert_eq!(
             resolve(&read_op, &loc),
             r2,
-            "a both-affecting mark on r1 must demote it for reads",
+            "a both-affecting mark on r1 must demote it for reads"
         );
         assert_eq!(
             resolve(&write_op, &loc),
             r2,
-            "a both-affecting mark on r1 must demote it for writes",
+            "a both-affecting mark on r1 must demote it for writes"
         );
 
         // Case B — write-only reason (WriteForbidden): reads keep r1, writes
@@ -8166,12 +8254,12 @@ mod tests {
         assert_eq!(
             resolve(&read_op, &loc),
             r1,
-            "WriteForbidden must not demote r1 for reads",
+            "WriteForbidden must not demote r1 for reads"
         );
         assert_eq!(
             resolve(&write_op, &loc),
             r2,
-            "WriteForbidden must demote r1 for writes",
+            "WriteForbidden must demote r1 for writes"
         );
 
         // Case C — every candidate marked: the head is still returned (present,
@@ -8196,7 +8284,7 @@ mod tests {
             resolve(&read_op, &loc),
             r1,
             "when all candidates are marked, the marked head must still be \
-             returned rather than dropped from rotation",
+             returned rather than dropped from rotation"
         );
 
         // Case D — an aged mark (older than the TTL) makes r1 available again.
@@ -8212,7 +8300,7 @@ mod tests {
         assert_eq!(
             resolve(&read_op, &loc),
             r1,
-            "a mark older than the TTL must no longer demote r1",
+            "a mark older than the TTL must no longer demote r1"
         );
     }
 
@@ -8383,7 +8471,8 @@ mod tests {
             Duration::from_secs(60),
         );
         assert_eq!(
-            routing.endpoint, west,
+            routing.endpoint,
+            west,
             "PPAF write must use the read endpoint list (preferred order) as the primary candidate set"
         );
     }
@@ -8436,7 +8525,8 @@ mod tests {
             Duration::from_secs(60),
         );
         assert_eq!(
-            routing.endpoint, west,
+            routing.endpoint,
+            west,
             "PPAF write retry must fall back to a read region when all write regions are in the in-flight skip set"
         );
     }
@@ -8528,7 +8618,8 @@ mod tests {
             Duration::from_secs(60),
         );
         assert_eq!(
-            routing.endpoint, north,
+            routing.endpoint,
+            north,
             "PPAF override pointing at a region already in the in-flight skip set must be skipped, \
              so cross-region retry can rotate to a different region instead of looping on the failed override"
         );
@@ -9154,7 +9245,7 @@ mod tests {
                 first_failed_endpoint: central.clone(),
                 failed_endpoints: Default::default(),
                 read_failure_count: 0,
-                write_failure_count: write_threshold as i32 + 10,
+                write_failure_count: (write_threshold as i32) + 10,
                 first_failure_time: std::time::Instant::now(),
                 last_failure_time: std::time::Instant::now(),
                 health_status: HealthStatus::Unhealthy,
@@ -10081,7 +10172,7 @@ mod tests {
         ));
         assert!(
             value.is_none(),
-            "hub-region header must not be present when latch is unset, got {value:?}",
+            "hub-region header must not be present when latch is unset, got {value:?}"
         );
     }
 
@@ -10100,11 +10191,11 @@ mod tests {
 
         assert!(
             !state.hub_region_processing_only,
-            "multi-master must not latch hub_region_processing_only",
+            "multi-master must not latch hub_region_processing_only"
         );
         assert_eq!(
             state.session_token_retry_count, 1,
-            "session-retry counter must still advance on multi-master",
+            "session-retry counter must still advance on multi-master"
         );
     }
 
@@ -10120,7 +10211,7 @@ mod tests {
 
         assert!(
             state.hub_region_processing_only,
-            "single-master must latch hub_region_processing_only",
+            "single-master must latch hub_region_processing_only"
         );
         assert_eq!(state.session_token_retry_count, 1);
     }
@@ -10262,6 +10353,27 @@ mod tests {
     }
 
     #[test]
+    fn global_strong_account_validation_preserves_zero_request_diagnostics() {
+        let error = super::global_strong_account_validation_error(test_diagnostics());
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+        );
+        assert!(error.response().is_none());
+        let diagnostics = error
+            .diagnostics()
+            .expect("client-side validation must preserve diagnostics");
+        assert_eq!(diagnostics.request_count(), 0);
+        assert_eq!(
+            diagnostics
+                .effective_status()
+                .map(|status| status.status_code()),
+            Some(azure_core::http::StatusCode::BadRequest)
+        );
+    }
+
+    #[test]
     fn enforce_deadline_none_is_ok() {
         let options = empty_options_view();
         let diagnostics = test_diagnostics();
@@ -10321,23 +10433,23 @@ mod tests {
 
         assert!(super::is_container_recreation_signal(
             &http_result(400, Some(1024)),
-            &available,
+            &available
         ));
         assert!(super::is_container_recreation_signal(
             &http_result(410, Some(1000)),
-            &available,
+            &available
         ));
         assert!(!super::is_container_recreation_signal(
             &http_result(404, Some(1002)),
-            &available,
+            &available
         ));
         assert!(super::is_container_recreation_signal(
             &http_result(404, Some(1002)),
-            &exhausted,
+            &exhausted
         ));
         assert!(!super::is_container_recreation_signal(
             &http_result(410, Some(1024)),
-            &available,
+            &available
         ));
     }
 
@@ -10533,7 +10645,7 @@ mod tests {
         assert_eq!(
             unpinned.endpoint, west,
             "sanity check: normal routing must fail over off the unavailable region, \
-             otherwise this test proves nothing",
+             otherwise this test proves nothing"
         );
 
         // With the pin, STAGE 2 bypasses `resolve_endpoint` entirely and the
@@ -10552,11 +10664,11 @@ mod tests {
         assert_eq!(
             routing.endpoint, east,
             "a pinned continuation page must stay on its issuing region even when \
-             that region is unavailable and a failover retry is in flight",
+             that region is unavailable and a failover retry is in flight"
         );
         assert!(
             overrides.hedging_suppressed(),
-            "a pinned continuation page must also never be raced",
+            "a pinned continuation page must also never be raced"
         );
     }
 
@@ -10687,7 +10799,7 @@ mod tests {
             );
             assert_eq!(
                 by_peek, by_classify,
-                "result_is_final must agree with classify_hedge_result",
+                "result_is_final must agree with classify_hedge_result"
             );
         }
     }
@@ -10925,7 +11037,7 @@ mod tests {
     fn shared_hub_region_latch_eligibility_dataplane_single_master() {
         assert!(super::should_build_shared_hub_region_latch(
             super::PipelineKind::DataPlane,
-            false, // single-master
+            false // single-master
         ));
     }
 
@@ -10934,7 +11046,7 @@ mod tests {
     fn shared_hub_region_latch_eligibility_skip_multi_master() {
         assert!(!super::should_build_shared_hub_region_latch(
             super::PipelineKind::DataPlane,
-            true, // multi-master
+            true // multi-master
         ));
     }
 
@@ -10945,11 +11057,11 @@ mod tests {
     fn shared_hub_region_latch_eligibility_skip_metadata() {
         assert!(!super::should_build_shared_hub_region_latch(
             super::PipelineKind::Metadata,
-            false,
+            false
         ));
         assert!(!super::should_build_shared_hub_region_latch(
             super::PipelineKind::Metadata,
-            true,
+            true
         ));
     }
 
@@ -11138,7 +11250,7 @@ mod tests {
             Some("region-d"),
             "post-BothTransient LocationIndex must skip the raced primary and \
              the raced secondary (no matter where it sat) and land on the \
-             only untried region",
+             only untried region"
         );
         assert_eq!(state.failover_retry_count, 2);
     }
@@ -11170,7 +11282,7 @@ mod tests {
         assert_eq!(
             landed.map(crate::options::Region::as_str),
             Some("region-c"),
-            "secondary-after-primary case must still skip both raced regions",
+            "secondary-after-primary case must still skip both raced regions"
         );
     }
 
@@ -11204,7 +11316,7 @@ mod tests {
         );
         assert_eq!(
             state.failover_retry_count, 2,
-            "two slots are always charged regardless of layout",
+            "two slots are always charged regardless of layout"
         );
     }
 
@@ -11238,16 +11350,16 @@ mod tests {
         assert!(result.is_ok(), "budget remains, so the race must continue");
         assert_eq!(
             state.failover_retry_count, 2,
-            "the race charges the generic failover budget",
+            "the race charges the generic failover budget"
         );
         assert_eq!(
             state.backend_failover_retry_count, 3,
-            "the concurrent legs must neither consume nor reset the backend retry count",
+            "the concurrent legs must neither consume nor reset the backend retry count"
         );
         assert_eq!(
             state.backend_failover_cumulative_delay,
             Duration::from_millis(3_000),
-            "no backoff elapsed during the race, so no delay budget may be charged",
+            "no backoff elapsed during the race, so no delay budget may be charged"
         );
     }
 
@@ -11279,7 +11391,7 @@ mod tests {
         assert_eq!(
             state.location.index(),
             starting_index,
-            "exhausted budget must not mutate LocationIndex",
+            "exhausted budget must not mutate LocationIndex"
         );
         assert_eq!(state.failover_retry_count, 0);
     }
@@ -11348,7 +11460,7 @@ mod tests {
             hedge.terminal_state(),
             crate::diagnostics::HedgeTerminalState::BothTransient {
                 deadline_elapsed: false,
-            },
+            }
         );
         assert_eq!(hedge.primary_region(), &primary_for_diag);
         assert_eq!(hedge.alternate_region(), Some(&secondary_for_diag));

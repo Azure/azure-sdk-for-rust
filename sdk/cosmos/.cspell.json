@@ -431,6 +431,7 @@
     "stdlib",
     "streamable",
     "subnormals",
+    "subpartition",
     "subrange",
     "submitret",
     "subsec",

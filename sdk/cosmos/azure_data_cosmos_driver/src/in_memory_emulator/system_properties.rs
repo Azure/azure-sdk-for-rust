@@ -71,7 +71,7 @@ pub(crate) fn container_to_json(meta: &super::store::ContainerMetadata) -> serde
         .iter()
         .map(|p| p.as_ref())
         .collect();
-    serde_json::json!({
+    let mut body = serde_json::json!({
         "id": meta.id,
         "_rid": meta.rid,
         "_self": meta.self_link,
@@ -101,7 +101,19 @@ pub(crate) fn container_to_json(meta: &super::store::ContainerMetadata) -> serde
         "_triggers": "triggers/",
         "_udfs": "udfs/",
         "_conflicts": "conflicts/"
-    })
+    });
+    if let Some(object) = body.as_object_mut() {
+        for (name, value) in &meta.properties {
+            if name != "id"
+                && name != "partitionKey"
+                && name != "conflictResolutionPolicy"
+                && !name.starts_with('_')
+            {
+                object.insert(name.clone(), value.clone());
+            }
+        }
+    }
+    body
 }
 
 /// Returns a JSON representation of throughput offer metadata.

@@ -201,11 +201,11 @@ async fn default_operation_negotiates_binary_on_the_wire() {
     assert!(!formats.is_empty(), "expected at least one docs request");
     assert!(
         formats.iter().all(|f| f.as_deref() == Some("CosmosBinary")),
-        "default point op must advertise CosmosBinary; saw {formats:?}",
+        "default point op must advertise CosmosBinary; saw {formats:?}"
     );
     assert!(
         bodies.iter().all(|b| *b),
-        "default point op request body must carry the 0x80 preamble",
+        "default point op request body must carry the 0x80 preamble"
     );
 }
 
@@ -311,7 +311,7 @@ async fn replace_existing_item() {
 }
 
 #[tokio::test]
-async fn replace_rejects_body_id_mismatch() {
+async fn replace_changes_body_id_and_preserves_rid() {
     let ctx = setup_single_region().await;
 
     let body = serde_json::json!({"id": "item1", "pk": "pk1", "value": 42});
@@ -339,12 +339,10 @@ async fn replace_rejects_body_id_mismatch() {
         true,
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
-    let (status, _, body) = collect_response(response).await;
-    assert_eq!(status, StatusCode::BadRequest);
-    assert_eq!(
-        body["message"],
-        "Document id in request body must match the resource id in the request URI"
-    );
+    let (status, _, replaced) = collect_response(response).await;
+    assert_eq!(status, StatusCode::Ok);
+    assert_eq!(replaced["id"], "item2");
+    assert_eq!(replaced["_rid"], created["_rid"]);
 
     let req = read_item_request(
         &ctx.gateway_url,
@@ -354,10 +352,21 @@ async fn replace_rejects_body_id_mismatch() {
         r#"["pk1"]"#,
     );
     let response = ctx.emulator.execute_request(&req).await.unwrap();
+    assert_eq!(response.status(), StatusCode::NotFound);
+
+    let req = read_item_request(
+        &ctx.gateway_url,
+        "testdb",
+        "testcoll",
+        "item2",
+        r#"["pk1"]"#,
+    );
+    let response = ctx.emulator.execute_request(&req).await.unwrap();
     let (status, _, doc) = collect_response(response).await;
     assert_eq!(status, StatusCode::Ok);
-    assert_eq!(doc["id"], "item1");
-    assert_eq!(doc["value"], 42);
+    assert_eq!(doc["id"], "item2");
+    assert_eq!(doc["value"], 99);
+    assert_eq!(doc["_rid"], created["_rid"]);
 }
 
 #[tokio::test]
@@ -404,12 +413,12 @@ async fn replace_rejects_partition_key_mutation() {
     assert_eq!(
         status,
         StatusCode::BadRequest,
-        "PK mutation must be rejected; got body={body}",
+        "PK mutation must be rejected; got body={body}"
     );
     let msg = body["message"].as_str().unwrap_or("");
     assert!(
         msg.contains("Partition key") || msg.contains("partition key"),
-        "error message should mention partition key, got: {msg}",
+        "error message should mention partition key, got: {msg}"
     );
 
     // Original document must still be readable on its original PK.

@@ -12,9 +12,9 @@ use azure_data_cosmos::models::{
     ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions, ItemWriteOptions,
-    MaxItemCountHint, OperationOptionsBuilder, PartitionFailoverOptions, Precondition,
-    QueryOptions, ReadConsistencyStrategy, Region,
+    ChangeFeedStartFrom, ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions,
+    ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder, PartitionFailoverOptions,
+    Precondition, QueryOptions, ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
@@ -115,7 +115,9 @@ where
             .create_item(partition_key.clone(), item_id, item, None)
             .await
         {
-            Ok(response) => return Ok(response),
+            Ok(response) => {
+                return Ok(response);
+            }
             Err(error)
                 if error.status().status_code() == StatusCode::Unauthorized
                     && error.to_string().contains("MAC signature")
@@ -127,7 +129,9 @@ where
                 tokio::time::sleep(delay).await;
                 delay = (delay * 2).min(std::time::Duration::from_secs(5));
             }
-            Err(error) => return Err(error.into()),
+            Err(error) => {
+                return Err(error.into());
+            }
         }
     }
     unreachable!("the bounded retry loop always returns on its final attempt")
@@ -269,16 +273,21 @@ async fn wait_for_container_ready(
     for attempt in 0..MAX_ATTEMPTS {
         let last_err: Box<dyn std::error::Error> =
             match probe_ready(db_client, container_name).await {
-                Ok(container_client) => return Ok(container_client),
+                Ok(container_client) => {
+                    return Ok(container_client);
+                }
                 Err(e) if is_transient_not_ready(&e.status()) => Box::new(e),
-                Err(e) => return Err(Box::new(e)),
+                Err(e) => {
+                    return Err(Box::new(e));
+                }
             };
 
         if attempt + 1 == MAX_ATTEMPTS {
-            return Err(format!(
-                "container '{container_name}' did not become ready after {MAX_ATTEMPTS} polls (last error: {last_err})"
-            )
-            .into());
+            return Err(
+                format!(
+                    "container '{container_name}' did not become ready after {MAX_ATTEMPTS} polls (last error: {last_err})"
+                ).into()
+            );
         }
         tokio::time::sleep(POLL_INTERVAL).await;
     }
@@ -310,11 +319,15 @@ where
 
     for attempt in 0..MAX_ATTEMPTS {
         match run().await {
-            Ok(value) => return Ok(value),
+            Ok(value) => {
+                return Ok(value);
+            }
             Err(e) if attempt + 1 < MAX_ATTEMPTS && is_owner_resource_not_found(e.as_ref()) => {
                 tokio::time::sleep(POLL_INTERVAL).await;
             }
-            Err(e) => return Err(e),
+            Err(e) => {
+                return Err(e);
+            }
         }
     }
     unreachable!("loop above always returns on the final iteration");
@@ -484,7 +497,7 @@ async fn assert_item_readable_from_region(
                 let read_item: GwV2TestItem = read_resp.into_model()?;
                 assert_eq!(
                     &read_item, expected,
-                    "item read from region {region:?} must match what was written",
+                    "item read from region {region:?} must match what was written"
                 );
                 return Ok(());
             }
@@ -560,6 +573,67 @@ pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error
     Ok(())
 }
 
+/// Verifies incremental change feed carries `A-IM` through RNTBD and executes
+/// on Gateway V2. AllVersionsAndDeletes remains covered by its Gateway V1
+/// eligibility test because that mode is not supported by Gateway V2.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_incremental_change_feed() -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key).await?;
+    let (db_name, container) = provision_database_and_container(&client).await?;
+    let result = AssertUnwindSafe(async {
+        let pk = format!("pk-{}", azure_core::Uuid::new_v4());
+        let item = GwV2TestItem {
+            id: format!("item-{}", azure_core::Uuid::new_v4()),
+            pk: pk.clone(),
+            value: 1,
+            label: "change-feed".into(),
+        };
+        create_seed_item(&container, &pk, &item.id, &item).await?;
+
+        let page = retry_query_owner_not_found(|| async {
+            let mut pages = container
+                .query_change_feed::<GwV2TestItem>(
+                    FeedScope::partition(pk.clone()),
+                    ChangeFeedStartFrom::Beginning,
+                    None,
+                )
+                .await?;
+            Ok(pages
+                .next()
+                .await
+                .expect("incremental change feed must return a page")?)
+        })
+        .await?;
+        assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
+        assert!(
+            page.items()
+                .iter()
+                .any(|change| change.current() == Some(&item)),
+            "incremental change feed must contain the created item"
+        );
+        Ok::<_, Box<dyn std::error::Error>>(())
+    })
+    .catch_unwind()
+    .await;
+
+    drop_database(&client, &db_name).await;
+    match result {
+        Ok(result) => result,
+        Err(panic) => std::panic::resume_unwind(panic),
+    }
+}
+
 /// Regression test for the partition-key version-default bug: drives a point
 /// CRUD round-trip (create → read → replace → delete) against a legacy
 /// **partition key version 1** container over Gateway 2.0.
@@ -626,7 +700,9 @@ pub async fn gateway_v2_v1_container_point_crud_round_trip(
         const MAX_DELETE_POLLS: u32 = 20;
         for attempt in 0..MAX_DELETE_POLLS {
             match container.read_item(&pk_value, &item_id, None).await {
-                Err(err) if err.status().status_code() == StatusCode::NotFound => return Ok(()),
+                Err(err) if err.status().status_code() == StatusCode::NotFound => {
+                    return Ok(());
+                }
                 Err(err) => {
                     return Err(format!(
                         "expected NotFound after deleting V1 item, got {}",
@@ -1161,14 +1237,14 @@ pub async fn gateway_v2_cross_partition_query_full_container(
             pages_seen += 1;
             assert!(
                 !page.diagnostics().activity_id().as_str().is_empty(),
-                "every cross-partition Gateway 2.0 page must surface an activity-id",
+                "every cross-partition Gateway 2.0 page must surface an activity-id"
             );
             for item in page.items() {
                 assert!(
                     seen_ids.insert(item.id.clone()),
                     "item {} returned twice — sequential drain over physical \
                      partitions must not duplicate items across partition boundaries",
-                    item.id,
+                    item.id
                 );
             }
         }
@@ -1178,11 +1254,11 @@ pub async fn gateway_v2_cross_partition_query_full_container(
 
     assert!(
         pages_seen >= 1,
-        "expected at least one page from the cross-partition fanout",
+        "expected at least one page from the cross-partition fanout"
     );
     assert_eq!(
         seen_ids, expected_ids,
-        "cross-partition query must return every inserted item exactly once",
+        "cross-partition query must return every inserted item exactly once"
     );
 
     drop_database(&client, &db_name).await;
@@ -1245,7 +1321,7 @@ pub async fn gateway_v2_cross_partition_query_via_feed_range_full(
                     seen_ids.insert(item.id.clone()),
                     "item {} returned twice via FeedRange::full() — explicit \
                      feed-range fanout must not duplicate items",
-                    item.id,
+                    item.id
                 );
             }
         }
@@ -1255,7 +1331,7 @@ pub async fn gateway_v2_cross_partition_query_via_feed_range_full(
     assert_eq!(
         seen_ids, expected_ids,
         "FeedScope::range(FeedRange::full()) on Gateway 2.0 must yield \
-         the same complete result set as FeedScope::full_container()",
+         the same complete result set as FeedScope::full_container()"
     );
 
     drop_database(&client, &db_name).await;
@@ -1331,7 +1407,7 @@ pub async fn gateway_v2_session_read_your_writes_ppcb_disabled(
         let read_item: GwV2TestItem = read_resp.into_model()?;
         assert_eq!(
             read_item.id, *id,
-            "read-your-writes must return the item just written to partition {i}",
+            "read-your-writes must return the item just written to partition {i}"
         );
         assert_eq!(read_item.value, i as i64);
     }
@@ -1354,7 +1430,7 @@ pub async fn gateway_v2_session_read_your_writes_ppcb_disabled(
     }
     assert_eq!(
         seen_ids, expected_ids,
-        "cross-partition query with PPCB disabled must return every written item",
+        "cross-partition query with PPCB disabled must return every written item"
     );
 
     drop_database(&client, &db_name).await;
@@ -1442,7 +1518,7 @@ pub async fn gateway_v2_query_honors_max_item_count_page_size(
                 assert!(
                     len <= 3,
                     "page {pages_seen} returned {len} items, exceeding the requested \
-                     max_item_count of 3 — the PageSize token was not honored",
+                     max_item_count of 3 — the PageSize token was not honored"
                 );
             }
             Ok((pages_seen, total_seen, page_lens))
@@ -1453,14 +1529,14 @@ pub async fn gateway_v2_query_honors_max_item_count_page_size(
     assert_eq!(
         total_seen, total_items,
         "every inserted item must be returned across the paged result \
-         (page lengths: {page_lens:?})",
+         (page lengths: {page_lens:?})"
     );
     assert!(
         pages_seen >= 2,
         "max_item_count(3) over {total_items} items must paginate into \
          multiple pages; got {pages_seen} page(s) with lengths {page_lens:?} \
          — the PageSize token (0x0004) was not emitted/honored on the \
-         Gateway 2.0 wire",
+         Gateway 2.0 wire"
     );
 
     drop_database(&client, &db_name).await;
@@ -1533,7 +1609,7 @@ pub async fn gateway_v2_if_match_precondition_round_trip() -> Result<(), Box<dyn
     assert_ne!(
         etag_v1.to_string(),
         etag_v2.to_string(),
-        "a successful If-Match replace must roll the ETag forward",
+        "a successful If-Match replace must roll the ETag forward"
     );
 
     // Replace guarded by the now-STALE v1 etag → must be rejected with 412.
@@ -1557,7 +1633,7 @@ pub async fn gateway_v2_if_match_precondition_round_trip() -> Result<(), Box<dyn
             .status()
             .status_code(),
         "stale If-Match must return 412 PreconditionFailed; a 200 means the \
-         Match token was not honored on the Gateway 2.0 wire",
+         Match token was not honored on the Gateway 2.0 wire"
     );
 
     drop_database(&client, &db_name).await;
@@ -1630,7 +1706,7 @@ pub async fn gateway_v2_read_with_non_default_consistency_strategy(
                 let read_item: GwV2TestItem = read_resp.into_model()?;
                 assert_eq!(
                     read_item, item,
-                    "a LatestCommitted read must return the item unchanged",
+                    "a LatestCommitted read must return the item unchanged"
                 );
                 drop_database(&client, &db_name).await;
                 return Ok(());

@@ -6,6 +6,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 #[derive(Debug, Default)]
 pub(crate) struct HostMetrics {
     connectivity_probes: AtomicUsize,
+    gateway_requests: AtomicUsize,
     gateway20_requests: AtomicUsize,
 }
 
@@ -18,11 +19,19 @@ impl HostMetrics {
         self.gateway20_requests.fetch_add(1, Ordering::Relaxed);
     }
 
+    pub(crate) fn record_gateway_request(&self) {
+        self.gateway_requests.fetch_add(1, Ordering::Relaxed);
+    }
+
     pub(crate) fn connectivity_probes(&self) -> usize {
         self.connectivity_probes.load(Ordering::Relaxed)
     }
 
     pub(crate) fn gateway20_requests(&self) -> usize {
         self.gateway20_requests.load(Ordering::Relaxed)
+    }
+
+    pub(crate) fn gateway_requests(&self) -> usize {
+        self.gateway_requests.load(Ordering::Relaxed)
     }
 }
