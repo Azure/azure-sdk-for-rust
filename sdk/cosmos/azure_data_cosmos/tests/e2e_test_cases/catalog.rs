@@ -10,7 +10,7 @@ use std::{
 use serde::Deserialize;
 use serde_json::Value;
 
-const DEFAULT_PROFILE: &str = "hostedEmulatorSmoke";
+const DEFAULT_PROFILE: &str = "smokeTests";
 const SCENARIO_SCHEMA_REFERENCE: &str = "../../schema/scenario.v1.json";
 const PROFILE_SCHEMA_REFERENCE: &str = "../schema/profile.v1.json";
 const SCENARIO_DIRECTORY: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../e2e_tests/scenarios");
@@ -46,7 +46,7 @@ const SCENARIOS: &[&str] = &[
 ];
 
 const PROFILES: &[&str] = &[
-    include_str!("../../../e2e_tests/profiles/hostedEmulatorSmoke.json"),
+    include_str!("../../../e2e_tests/profiles/smokeTests.json"),
     include_str!("../../../e2e_tests/profiles/coreOperations.json"),
     include_str!("../../../e2e_tests/profiles/lifecycleConsistencyMatrix.json"),
     include_str!("../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"),
@@ -550,7 +550,7 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
             || scenario
                 .precedents
                 .iter()
-                .any(|precedent| (precedent.path.is_empty() || precedent.test.is_empty()))
+                .any(|precedent| precedent.path.is_empty() || precedent.test.is_empty())
         {
             return Err(format!(
                 "scenario '{}' is missing required metadata",
@@ -783,7 +783,7 @@ fn valid_first_scenario_segment(value: &str) -> bool {
         .is_some_and(|first| first.is_ascii_lowercase())
         && value
             .chars()
-            .all(|character| (character.is_ascii_lowercase() || character.is_ascii_digit()))
+            .all(|character| character.is_ascii_lowercase() || character.is_ascii_digit())
 }
 
 fn valid_slug(value: &str) -> bool {

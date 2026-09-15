@@ -114,7 +114,7 @@ impl E2eTestFixture {
     where
         F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
     {
-        let container_id = format!("items-{}", Uuid::new_v4());
+        let container_id = format!("items-{}", Uuid::now_v7());
         let properties = ContainerProperties::new(container_id, partition_key);
         Self::run_with_client_and_properties(client, properties, test).await
     }
@@ -149,7 +149,8 @@ impl E2eTestFixture {
     }
 
     async fn new(client: CosmosClient, properties: ContainerProperties) -> TestResult<Self> {
-        let database_id = format!("e2e-{}", Uuid::new_v4());
+        // Preserve creation time in leaked resource IDs so cleanup tooling can age them out.
+        let database_id = format!("e2e-{}", Uuid::now_v7());
         let container_id = properties.id.to_string();
         client.create_database(&database_id, None).await?;
         let database = client.database_client(&database_id);

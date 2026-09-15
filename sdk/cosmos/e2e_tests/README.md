@@ -46,7 +46,7 @@ selected profile.
 
 The item lifecycle implementation uses three profiles:
 
-- `hostedEmulatorSmoke` for the default PR smoke case;
+- `smokeTests` for the default PR smoke case on any supported backend;
 - `lifecycleConsistencyMatrix` for five account consistency configurations;
 - `readConsistencyOverrideMatrix` for runtime and client default precedence.
 

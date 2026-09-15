@@ -27,7 +27,7 @@ const RETRY_DELAY: Duration = Duration::from_millis(50);
 // The JSON profile selects the account, runtime, and client configuration. Rust then expands
 // that setup into the operation-level cases below:
 //
-// * hostedEmulatorSmoke: one account-default read;
+// * smokeTests: one account-default read;
 // * lifecycleConsistencyMatrix: Default, Eventual, Session, LatestCommitted, and GlobalStrong;
 // * readConsistencyOverrideMatrix: inherit defaults, restore account default, and Eventual.
 #[tokio::test]
@@ -198,7 +198,7 @@ fn read_cases_for_selected_profile(
     setup: &SelectedLifecycleSetup<'_>,
 ) -> TestResult<Vec<PostCreateReadCase>> {
     match setup.profile.id.as_str() {
-        "hostedEmulatorSmoke" => Ok(vec![PostCreateReadCase::new(
+        "smokeTests" => Ok(vec![PostCreateReadCase::new(
             "default_strategy_reads_created_item",
             Some(ReadConsistencyStrategy::Default),
             SessionTokenBehavior::SdkManaged,
@@ -726,7 +726,7 @@ fn record_request_statuses(
 
 fn lifecycle_read_region(profile: &Profile) -> TestResult<Region> {
     match profile.id.as_str() {
-        "hostedEmulatorSmoke" => Ok(Region::EAST_US),
+        "smokeTests" => Ok(Region::EAST_US),
         "lifecycleConsistencyMatrix" | "readConsistencyOverrideMatrix" => Ok(Region::WEST_US),
         profile => {
             Err(format!("item.lifecycle does not define a read region for '{profile}'").into())

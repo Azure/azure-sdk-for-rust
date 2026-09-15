@@ -13,7 +13,7 @@
         }
     ],
     "profiles": [
-        "hostedEmulatorSmoke",
+        "smokeTests",
         "lifecycleConsistencyMatrix",
         "readConsistencyOverrideMatrix"
     ],
