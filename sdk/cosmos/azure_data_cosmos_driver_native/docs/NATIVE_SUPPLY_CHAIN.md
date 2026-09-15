@@ -105,8 +105,11 @@ evidence bundle: `manifest.spdx.json`, `manifest.spdx.json.sha256`,
 and ESRP diagnostic logs may remain in the downloaded pipeline artifact, but
 are excluded when staging the downstream repository. Each module contains a
 `go.mod`, generated cgo linker files, the C header, and the matching static
-library. The root also carries a consolidated `provenance.json` binding the
-release identity (see [provenance.json](#provenancejson)).
+library at its module root. The cgo linker directive uses
+`-L${SRCDIR} -lazurecosmosdriver`, which allows `go mod vendor` to copy and link
+the archive without a nested native directory. The artifact root also carries a
+consolidated `provenance.json` binding the release identity (see
+[provenance.json](#provenancejson)).
 
 ## Why the static library is not code-signed
 
@@ -122,9 +125,13 @@ The Go release therefore uses this chain:
 1. The official 1ES template builds the `.a` from a recorded repository commit.
 2. The target job links a minimal Go/cgo program against the `.a`.
 3. 1ES publishes its standard SBOM and governed build provenance.
-4. The build writes a SHA256 checksum for the exact `.a` bytes.
-5. The downstream preparation step verifies the artifact metadata and checksums.
-6. The Go customer signs the final executable that contains the Rust library.
+4. The build verifies direct and vendored Go consumers against a real host
+   archive by calling `cosmos_version()`.
+5. The build writes a SHA256 checksum for the exact `.a` bytes at each module
+   root.
+6. The downstream preparation step verifies the artifact metadata, provenance
+   paths, and checksums.
+7. The Go customer signs the final executable that contains the Rust library.
 
 No unsigned Microsoft shared library is loaded at runtime in this model. The
 `.a` becomes part of the customer's Go executable.
@@ -215,8 +222,9 @@ binds the published static libraries back to their exact source:
   channel, exact RustInstaller package, Rust release, compiler commit, and Cargo
   version shared by every target; and
 - `targets[]` — one entry per built row with its `id`, `triple`, `module_path`,
-  invoked and installer compiler paths, selected sysroot, full `rustc -Vv` output,
-  linker identity, and the SHA256 of the static library and C header.
+  `static_library_path`, invoked and installer compiler paths, selected sysroot,
+  full `rustc -Vv` output, linker identity, and the SHA256 of the static
+  library and C header.
 
 `New-GoModules.ps1` cross-validates that every selected target agrees on the
 identity fields before emitting the file, so a mismatched or tampered target
@@ -271,6 +279,9 @@ Build and link-smoke each target, then publish through 1ES
 Generate the Go modules
     |
     v
+Build direct and vendored host consumers
+    |
+    v
 Publish the combined Go-module pipeline artifact and SHA256SUMS
     |
     v
@@ -314,7 +325,7 @@ It:
    skipped for the active targets);
 3. generates and validates a local SPDX inventory;
 4. writes SHA256 checksums;
-5. generates and tests the Go module; and
+5. generates the Go module and builds direct and vendored consumers; and
 6. creates a local branch, commit, and pull-request preview.
 
 The script never pushes the branch or opens a remote pull request. Its generated
@@ -328,6 +339,6 @@ internal pipeline run. It does not replace the governed official 1ES build.
 
 Linux glibc and musl use distinct Go module paths. The unmarked
 `linux/<arch>` modules contain glibc, while `linux/<arch>-musl` contains musl.
-Each module stores one archive under `native/`. The consuming Go package imports
-the correct driver module, avoiding a custom build tag and the risk of selecting
-the wrong libc archive.
+Each module stores one archive at its module root. The consuming Go package
+imports the correct driver module, avoiding a custom build tag and the risk of
+selecting the wrong libc archive.
