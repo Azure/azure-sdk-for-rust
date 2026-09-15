@@ -436,11 +436,21 @@ pub(crate) async fn execute_operation_pipeline(
         .read_consistency_strategy()
         .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
-    let effective_consistency =
-        resolve_effective_consistency(read_consistency_strategy, account_default_consistency);
-    let session_consistency_active = partition_key_range_cache_enabled
+    let operation_read_consistency_strategy =
+        read_consistency_strategy_for_operation(operation, read_consistency_strategy);
+    let effective_consistency = resolve_effective_consistency(
+        operation_read_consistency_strategy,
+        account_default_consistency,
+    );
+    let session_token_resolution_active = partition_key_range_cache_enabled
         && !session_capturing_disabled
-        && read_consistency_strategy.is_session_effective(account_default_consistency);
+        && operation_allows_automatic_session_token_resolution(
+            operation,
+            location_snapshot.account.multiple_write_locations_enabled,
+        )
+        && operation_read_consistency_strategy.is_session_effective(account_default_consistency);
+    let session_token_capture_active =
+        partition_key_range_cache_enabled && !session_capturing_disabled;
 
     // Rule 4 (RCS validation): GlobalStrong is
     // valid only on reads against accounts whose default consistency is Strong.
@@ -453,13 +463,7 @@ pub(crate) async fn execute_operation_pipeline(
     ) && operation.is_read_only()
         && account_default_consistency != DefaultConsistencyLevel::Strong
     {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
-            .with_message(
-                "ReadConsistencyStrategy::GlobalStrong is only valid against accounts whose \
-                 default consistency level is Strong",
-            )
-            .build());
+        return Err(global_strong_account_validation_error(diagnostics));
     }
     let max_session_retries = options
         .max_session_retry_count()
@@ -572,15 +576,20 @@ pub(crate) async fn execute_operation_pipeline(
             if operation.prefers_write_endpoints_for_read() && routing.routing_fallback.is_some() {
                 ReadConsistencyStrategy::Default
             } else {
-                read_consistency_strategy
+                operation_read_consistency_strategy
             };
         let attempt_effective_consistency = resolve_effective_consistency(
             attempt_read_consistency_strategy,
             account_default_consistency,
         );
-        let attempt_session_consistency_active = partition_key_range_cache_enabled
+        let attempt_session_token_resolution_active = partition_key_range_cache_enabled
             && !session_capturing_disabled
+            && operation_allows_automatic_session_token_resolution(
+                operation,
+                location.account.multiple_write_locations_enabled,
+            )
             && attempt_read_consistency_strategy.is_session_effective(account_default_consistency);
+        let attempt_session_token_capture_active = session_token_capture_active;
 
         // Emit one structured debug record per attempt with the chosen
         // routing decision. Tests and SREs filter on this to verify which
@@ -670,7 +679,8 @@ pub(crate) async fn execute_operation_pipeline(
                     effective_consistency,
                     read_consistency_strategy,
                     session_manager,
-                    session_consistency_active,
+                    session_token_resolution_active,
+                    session_token_capture_active,
                     options,
                     throughput_control,
                     deadline,
@@ -781,7 +791,7 @@ pub(crate) async fn execute_operation_pipeline(
             } else {
                 ReadConsistencyStrategy::Default
             },
-            resolved_session_token: attempt_session_consistency_active
+            resolved_session_token: attempt_session_token_resolution_active
                 .then(|| {
                     // Scope the session token to the target partition-key-range
                     // only for thin-client (Gateway 2.0) requests: the RNTBD
@@ -884,7 +894,7 @@ pub(crate) async fn execute_operation_pipeline(
         // Abort, or a retry action. 409/412 map to Abort, and the Abort
         // variant does not carry headers — capturing after evaluation
         // would silently drop tokens from those responses.
-        if attempt_session_consistency_active {
+        if attempt_session_token_capture_active {
             if let Some(cosmos_headers) = result.cosmos_headers() {
                 if should_capture_session_token_from_status(
                     cosmos_headers.substatus.as_ref(),
@@ -944,7 +954,7 @@ pub(crate) async fn execute_operation_pipeline(
                         Box::pin(driver.pre_resolve_partition_key_range_id(
                             operation,
                             &overrides,
-                            session_consistency_active,
+                            session_token_resolution_active,
                             operation_options,
                         ))
                         .await;
@@ -1279,7 +1289,8 @@ pub(crate) async fn execute_operation_pipeline(
                     effective_consistency,
                     read_consistency_strategy,
                     session_manager,
-                    session_consistency_active,
+                    session_token_resolution_active,
+                    session_token_capture_active,
                     options,
                     throughput_control,
                     deadline,
@@ -2909,9 +2920,10 @@ struct AttemptContext<'a> {
     /// rationale as `effective_consistency`.
     read_consistency_strategy: ReadConsistencyStrategy,
     session_manager: &'a SessionManager,
-    /// Whether session consistency is in effect for this operation
-    /// (drives session-token resolve/capture inside the attempt).
-    session_consistency_active: bool,
+    /// Whether cached session-token resolution is active for this operation.
+    session_token_resolution_active: bool,
+    /// Whether the winning response's session token should be captured.
+    session_token_capture_active: bool,
     options: &'a OperationOptionsView<'a>,
     throughput_control: Option<ResolvedThroughputControl>,
     /// End-to-end deadline (operation timeout) — passed through to each
@@ -3287,7 +3299,7 @@ async fn perform_single_attempt(
     // Scope to the target range only for thin-client (Gateway 2.0); classic
     // gateway keeps the composite token (see main-loop rationale).
     let resolved_session_token = ctx
-        .session_consistency_active
+        .session_token_resolution_active
         .then(|| {
             let scoped_pk_range_id = if matches!(routing.transport_mode, TransportMode::GatewayV2) {
                 ctx.partition_key_range_id.as_ref().map(|id| id.as_str())
@@ -3392,7 +3404,7 @@ async fn perform_single_attempt(
 /// whose response the caller never observes would leak stale state and
 /// violate read-your-writes against the winning region.
 fn capture_session_token_for_winner(ctx: &AttemptContext<'_>, result: &TransportResult) {
-    if !ctx.session_consistency_active {
+    if !ctx.session_token_capture_active {
         return;
     }
     if let Some(cosmos_headers) = result.cosmos_headers() {
@@ -4349,6 +4361,41 @@ async fn execute_hedged(
     }
 }
 
+fn read_consistency_strategy_for_operation(
+    operation: &CosmosOperation,
+    read_consistency_strategy: ReadConsistencyStrategy,
+) -> ReadConsistencyStrategy {
+    if operation.is_read_only() {
+        read_consistency_strategy
+    } else {
+        ReadConsistencyStrategy::Default
+    }
+}
+
+fn operation_allows_automatic_session_token_resolution(
+    operation: &CosmosOperation,
+    multiple_write_locations_enabled: bool,
+) -> bool {
+    operation.is_read_only()
+        || operation.operation_type() == OperationType::Batch
+        || multiple_write_locations_enabled
+}
+
+fn global_strong_account_validation_error(
+    mut diagnostics: DiagnosticsContextBuilder,
+) -> crate::error::CosmosError {
+    let status = crate::error::CosmosStatus::CLIENT_BAD_REQUEST;
+    diagnostics.set_operation_status(status.status_code(), status.sub_status());
+    crate::error::CosmosError::builder()
+        .with_status(status)
+        .with_message(
+            "ReadConsistencyStrategy::GlobalStrong is only valid against accounts whose \
+             default consistency level is Strong",
+        )
+        .with_diagnostics(Arc::new(diagnostics.complete()))
+        .build()
+}
+
 /// Generic "both sides transient" error carried inside
 /// [`HedgedRaceResult::BothTransient`] when neither leg produced a
 /// final response and the deadline has not elapsed. The surrounding
@@ -4713,6 +4760,41 @@ mod tests {
         assert!(super::hedging_suppressed_for_attempt(
             &patch_read,
             &overrides
+        ));
+    }
+
+    #[test]
+    fn automatic_session_token_resolution_respects_operation_and_topology() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let write = CosmosOperation::create_item(item.clone()).with_body(b"{}".to_vec());
+        let read = CosmosOperation::read_item(item);
+        let batch = CosmosOperation::batch(test_container(), PartitionKey::from("pk1"));
+
+        assert_eq!(
+            super::read_consistency_strategy_for_operation(
+                &write,
+                crate::options::ReadConsistencyStrategy::Session,
+            ),
+            crate::options::ReadConsistencyStrategy::Default
+        );
+        assert_eq!(
+            super::read_consistency_strategy_for_operation(
+                &read,
+                crate::options::ReadConsistencyStrategy::Eventual,
+            ),
+            crate::options::ReadConsistencyStrategy::Eventual
+        );
+        assert!(super::operation_allows_automatic_session_token_resolution(
+            &read, false
+        ));
+        assert!(!super::operation_allows_automatic_session_token_resolution(
+            &write, false
+        ));
+        assert!(super::operation_allows_automatic_session_token_resolution(
+            &write, true
+        ));
+        assert!(super::operation_allows_automatic_session_token_resolution(
+            &batch, false
         ));
     }
 
@@ -10259,6 +10341,27 @@ mod tests {
             crate::models::ActivityId::from_string("test-deadline".to_owned()),
             std::sync::Arc::new(crate::options::DiagnosticsOptions::default()),
         )
+    }
+
+    #[test]
+    fn global_strong_account_validation_preserves_zero_request_diagnostics() {
+        let error = super::global_strong_account_validation_error(test_diagnostics());
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+        );
+        assert!(error.response().is_none());
+        let diagnostics = error
+            .diagnostics()
+            .expect("client-side validation must preserve diagnostics");
+        assert_eq!(diagnostics.request_count(), 0);
+        assert_eq!(
+            diagnostics
+                .effective_status()
+                .map(|status| status.status_code()),
+            Some(azure_core::http::StatusCode::BadRequest)
+        );
     }
 
     #[test]
