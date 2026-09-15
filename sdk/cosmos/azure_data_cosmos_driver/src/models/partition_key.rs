@@ -38,8 +38,31 @@ enum InnerPartitionKeyValue {
     Infinity,
 }
 
-/// Maximum number of string bytes to include when hashing (V1 truncation).
+/// V1 logical string limit, measured in UTF-16 code units.
+const MAX_STRING_UTF16_UNITS: usize = 100;
+/// V1 binary strings longer than this include one extra byte and no terminator.
 const MAX_STRING_BYTES_TO_APPEND: usize = 100;
+
+fn v1_string_bytes(value: &str) -> Cow<'_, [u8]> {
+    if value.len() <= MAX_STRING_UTF16_UNITS {
+        return Cow::Borrowed(value.as_bytes());
+    }
+    let mut units = 0;
+    for (offset, ch) in value.char_indices() {
+        if units == MAX_STRING_UTF16_UNITS {
+            return Cow::Borrowed(&value.as_bytes()[..offset]);
+        }
+        units += ch.len_utf16();
+        if units > MAX_STRING_UTF16_UNITS {
+            // The backend and .NET replace a surrogate split at unit 100 with U+FFFD.
+            // Java's default UTF-8 encoder uses '?' instead; it is not service-compatible here.
+            let mut bytes = value.as_bytes()[..offset].to_vec();
+            bytes.extend_from_slice("\u{FFFD}".as_bytes());
+            return Cow::Owned(bytes);
+        }
+    }
+    Cow::Borrowed(value.as_bytes())
+}
 
 /// Byte markers for partition key value encoding.
 mod component {
@@ -65,11 +88,10 @@ impl InnerPartitionKeyValue {
             }
             InnerPartitionKeyValue::String(s) => {
                 writer.push(component::STRING);
-                let bytes = s.as_bytes();
-                if truncate && bytes.len() > MAX_STRING_BYTES_TO_APPEND {
-                    writer.extend_from_slice(&bytes[..MAX_STRING_BYTES_TO_APPEND]);
+                if truncate {
+                    writer.extend_from_slice(&v1_string_bytes(s));
                 } else {
-                    writer.extend_from_slice(bytes);
+                    writer.extend_from_slice(s.as_bytes());
                 }
                 writer.push(string_suffix);
             }
@@ -87,17 +109,11 @@ impl InnerPartitionKeyValue {
             }
             InnerPartitionKeyValue::String(s) => {
                 writer.push(component::STRING);
-                let utf8 = s.as_bytes();
-                let short = utf8.len() <= MAX_STRING_BYTES_TO_APPEND;
-                let write_len = if short {
-                    utf8.len()
-                } else {
-                    std::cmp::min(utf8.len(), MAX_STRING_BYTES_TO_APPEND + 1)
-                };
-                for item in utf8.iter().take(write_len) {
+                let utf8 = v1_string_bytes(s);
+                for item in utf8.iter().take(MAX_STRING_BYTES_TO_APPEND + 1) {
                     writer.push(item.wrapping_add(1));
                 }
-                if short {
+                if utf8.len() <= MAX_STRING_BYTES_TO_APPEND {
                     writer.push(0x00);
                 }
             }
@@ -178,23 +194,6 @@ impl PartitionKeyValue {
     /// Returns `true` if this value is the special Infinity sentinel.
     pub(crate) fn is_infinity(&self) -> bool {
         matches!(self.0, InnerPartitionKeyValue::Infinity)
-    }
-
-    /// Returns a truncated copy of this value for V1 binary encoding.
-    ///
-    /// String values longer than [`MAX_STRING_BYTES_TO_APPEND`] bytes are truncated
-    /// so that `write_for_binary_encoding_v1` sees them as "short" and appends the
-    /// `0x00` terminator, matching how the hashing step truncates strings.
-    pub(crate) fn truncated_for_v1_encoding(&self) -> PartitionKeyValue {
-        match &self.0 {
-            InnerPartitionKeyValue::String(s) if s.len() > MAX_STRING_BYTES_TO_APPEND => {
-                InnerPartitionKeyValue::String(Cow::Owned(
-                    s[..MAX_STRING_BYTES_TO_APPEND].to_string(),
-                ))
-                .into()
-            }
-            _ => self.clone(),
-        }
     }
 }
 

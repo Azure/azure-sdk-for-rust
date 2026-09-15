@@ -1583,7 +1583,7 @@ fn rand_fraction() -> f64 {
 pub struct ContainerConfig {
     partition_count: u32,
     partition_key_range_page_size: Option<u32>,
-    provisioned_throughput_ru: Option<u32>,
+    provisioned_throughput_ru: Option<u64>,
 }
 
 /// Inclusive upper bound on the number of physical partitions a container
@@ -1615,7 +1615,7 @@ impl ContainerConfig {
 
     /// Sets the provisioned throughput in RU/s. Validation is deferred to
     /// [`Self::build`].
-    pub fn with_throughput(mut self, ru_per_second: u32) -> Self {
+    pub fn with_throughput(mut self, ru_per_second: u64) -> Self {
         self.provisioned_throughput_ru = Some(ru_per_second);
         self
     }
@@ -1675,7 +1675,7 @@ impl ContainerConfig {
         self.partition_key_range_page_size
     }
 
-    pub fn provisioned_throughput_ru(&self) -> Option<u32> {
+    pub fn provisioned_throughput_ru(&self) -> Option<u64> {
         self.provisioned_throughput_ru
     }
 }

@@ -175,18 +175,18 @@ impl Sanitizer for OAuthResponseSanitizer {
 pub struct Recording {
 }
 impl Recording {
-    async fn add_sanitizer<S>(&self, sanitizer: S) -> azure_core::Result<()> where S: Sanitizer, azure_core::Error: From<<S as AsHeaders>::Error>;
-    fn credential(&self) -> Arc<dyn TokenCredential>;
-    fn instrument(&self, options: &mut ClientOptions);
-    fn instrument_perf(&self, options: &mut ClientOptions) -> azure_core::Result<()>;
-    fn random<T>(&self) -> T where StandardUniform: Distribution<T>;
-    fn random_string<const LEN: usize>(&self, prefix: Option<&str>) -> String;
-    async fn remove_sanitizers(&self, sanitizers: &[&str]) -> azure_core::Result<()>;
-    async fn set_matcher(&self, matcher: Matcher) -> azure_core::Result<()>;
-    fn skip(&self, skip: Skip) -> azure_core::Result<SkipGuard<'_>>;
-    fn test_mode(&self) -> TestMode;
-    fn var<K>(&self, key: K, options: Option<VarOptions>) -> String where K: AsRef<str>;
-    fn var_opt<K>(&self, key: K, options: Option<VarOptions>) -> Option<String> where K: AsRef<str>;
+    pub async fn add_sanitizer<S>(&self, sanitizer: S) -> azure_core::Result<()> where S: Sanitizer, azure_core::Error: From<<S as AsHeaders>::Error>;
+    pub fn credential(&self) -> Arc<dyn TokenCredential>;
+    pub fn instrument(&self, options: &mut ClientOptions);
+    pub fn instrument_perf(&self, options: &mut ClientOptions) -> azure_core::Result<()>;
+    pub fn random<T>(&self) -> T where StandardUniform: Distribution<T>;
+    pub fn random_string<const LEN: usize>(&self, prefix: Option<&str>) -> String;
+    pub async fn remove_sanitizers(&self, sanitizers: &[&str]) -> azure_core::Result<()>;
+    pub async fn set_matcher(&self, matcher: Matcher) -> azure_core::Result<()>;
+    pub fn skip(&self, skip: Skip) -> azure_core::Result<SkipGuard<'_>>;
+    pub fn test_mode(&self) -> TestMode;
+    pub fn var<K>(&self, key: K, options: Option<VarOptions>) -> String where K: AsRef<str>;
+    pub fn var_opt<K>(&self, key: K, options: Option<VarOptions>) -> Option<String> where K: AsRef<str>;
 }
 impl Drop for Recording {
     fn drop(&mut self);
@@ -232,13 +232,13 @@ impl Drop for SkipGuard<'_> {
 pub struct TestContext {
 }
 impl TestContext {
-    fn crate_dir(&self) -> &'static Path;
-    fn module_name(&self) -> &'static str;
-    fn name(&self) -> &'static str;
-    fn recording(&self) -> &Recording;
-    fn repo_dir(&self) -> &'static Path;
-    fn service_dir(&self) -> &'static str;
-    fn test_data_dir(&self) -> PathBuf;
+    pub fn crate_dir(&self) -> &'static Path;
+    pub fn module_name(&self) -> &'static str;
+    pub fn name(&self) -> &'static str;
+    pub fn recording(&self) -> &Recording;
+    pub fn repo_dir(&self) -> &'static Path;
+    pub fn service_dir(&self) -> &'static str;
+    pub fn test_data_dir(&self) -> PathBuf;
 }
 #[derive(Clone, Debug, Default, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -310,7 +310,7 @@ pub enum ErrorKind {
     Other,
 }
 impl ErrorKind {
-    fn into_error(self) -> Error;
+    pub fn into_error(self) -> Error;
 }
 impl Display for ErrorKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -361,8 +361,8 @@ pub enum TestMode {
     Live,
 }
 impl TestMode {
-    fn current() -> typespec::Result<Self>;
-    fn current_opt() -> typespec::Result<Option<Self>>;
+    pub fn current() -> typespec::Result<Self>;
+    pub fn current_opt() -> typespec::Result<Option<Self>>;
 }
 impl Debug for TestMode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -394,7 +394,7 @@ pub mod credentials {
     #[derive(Clone, Debug, Default)]
     pub struct MockCredential;
     impl MockCredential {
-        fn new() -> azure_core::Result<Arc<Self>>;
+        pub fn new() -> azure_core::Result<Arc<Self>>;
     }
     impl TokenCredential for MockCredential {
         #[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::diverging_sub_expression, clippy::let_unit_value, clippy::needless_arbitrary_self_type, clippy::no_effect_underscore_binding, clippy::shadow_same, clippy::type_complexity, clippy::type_repetition_in_bounds, clippy::used_underscore_binding)]
@@ -404,7 +404,7 @@ pub mod credentials {
 pub mod http {
     pub struct MockHttpClient<C>(/* private fields */);
     impl<C> MockHttpClient<C> where C: FnMut(&azure_core::http::request::Request) -> futures::future::BoxFuture<'_, azure_core::Result<azure_core::http::AsyncRawResponse>> + Send + Sync {
-        fn new(client: C) -> Self;
+        pub fn new(client: C) -> Self;
     }
     impl<C> Debug for MockHttpClient<C> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -423,10 +423,10 @@ pub mod perf {
     pub struct PerfRunner<T: PerfTestFactory> {
     }
     impl<T: PerfTestFactory> PerfRunner<T> {
-        fn new(package_dir: &'static str, module_name: &'static str) -> std::result::Result<Self, clap::Error>;
-        async fn run(&self) -> azure_core::Result<()>;
-        async fn run_test_for(&self, test_instances: &[Arc<dyn PerfTest>], test_contexts: &[Arc<TestContext>], duration: Duration, track_latency: bool) -> azure_core::Result<(f64, Vec<tokio::time::Duration>)>;
-        fn with_command_line(package_dir: &'static str, module_name: &'static str, args: Vec<&str>) -> std::result::Result<Self, clap::Error>;
+        pub fn new(package_dir: &'static str, module_name: &'static str) -> std::result::Result<Self, clap::Error>;
+        pub async fn run(&self) -> azure_core::Result<()>;
+        pub async fn run_test_for(&self, test_instances: &[Arc<dyn PerfTest>], test_contexts: &[Arc<TestContext>], duration: Duration, track_latency: bool) -> azure_core::Result<(f64, Vec<tokio::time::Duration>)>;
+        pub fn with_command_line(package_dir: &'static str, module_name: &'static str, args: Vec<&str>) -> std::result::Result<Self, clap::Error>;
     }
     #[async_trait]
     pub trait PerfTest: Send + Sync {
@@ -450,12 +450,12 @@ pub mod proxy {
     pub struct Proxy {
     }
     impl Proxy {
-        async fn stop(&mut self) -> Result<()>;
-        async fn wait(&mut self) -> Result<ExitStatus>;
+        pub async fn stop(&mut self) -> Result<()>;
+        pub async fn wait(&mut self) -> Result<ExitStatus>;
     }
     impl Proxy {
-        fn endpoint(&self) -> &Url;
-        fn existing() -> Result<Self>;
+        pub fn endpoint(&self) -> &Url;
+        pub fn existing() -> Result<Self>;
     }
     impl Drop for Proxy {
         fn drop(&mut self);
@@ -498,10 +498,10 @@ pub mod stream {
     }
     impl<I, const LENGTH: usize, const CHUNK: usize> GeneratedStream<I, LENGTH, CHUNK> where I: Iterator<Item = u8> + Clone {
         #[allow(clippy::should_implement_trait)]
-        fn from_iter(iter: I) -> Self;
+        pub fn from_iter(iter: I) -> Self;
     }
     impl<const LENGTH: usize, const CHUNK: usize> GeneratedStream<std::ops::Range<u8>, LENGTH, CHUNK> {
-        fn new() -> GeneratedStream<Range<u8>, LENGTH, CHUNK>;
+        pub fn new() -> GeneratedStream<Range<u8>, LENGTH, CHUNK>;
     }
     impl<I, const LENGTH: usize, const CHUNK: usize> AsyncRead for GeneratedStream<I, LENGTH, CHUNK> where I: Clone, std::iter::Cycle<I>: Iterator<Item = u8> + Unpin {
         fn poll_read(self: Pin<&mut Self>, _cx: &mut std::task::Context<'_>, buf: &mut [u8]) -> Poll<std::io::Result<usize>>;
@@ -612,7 +612,7 @@ pub mod tracing {
     pub struct MockTracingProvider {
     }
     impl MockTracingProvider {
-        fn new() -> Self;
+        pub fn new() -> Self;
     }
     impl Default for MockTracingProvider {
         fn default() -> Self;

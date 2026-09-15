@@ -13,7 +13,7 @@
 //! populates the optional `out_error` slot with a rich description for
 //! diagnostics.
 //!
-use std::ffi::{c_char, CStr};
+use crate::string::{required_text, CosmosStringView};
 
 use azure_core::credentials::Secret;
 use azure_data_cosmos_driver::models::AccountReference as DriverAccountReference;
@@ -68,18 +68,6 @@ impl AccountRefHandle {
 // FFI helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Borrows a NUL-terminated UTF-8 string from C. Returns
-/// `Err(INVALID_ARGUMENT)` for NULL and `Err(INVALID_UTF8)` for non-UTF-8.
-fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
-    if p.is_null() {
-        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-    }
-    // SAFETY: caller contract on every public setter.
-    let cstr = unsafe { CStr::from_ptr(p) };
-    cstr.to_str()
-        .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidUtf8)
-}
-
 /// Populates `*out_error` with a driver `CosmosError` when the caller
 /// supplied a non-NULL slot. NULL slots silently drop the error so the
 /// `out_error` parameter remains optional from the C side.
@@ -129,9 +117,9 @@ fn parse_endpoint(
 ///
 /// # Parameters
 ///
-/// - `endpoint` — NUL-terminated UTF-8 service endpoint URL (e.g.
+/// - `endpoint` — counted UTF-8 service endpoint URL (e.g.
 ///   `https://myaccount.documents.azure.com:443/`). Must be non-NULL.
-/// - `key` — NUL-terminated UTF-8 master key. Must be non-NULL. The
+/// - `key` — counted UTF-8 master key. Must be non-NULL and NUL-free. The
 ///   key is copied into a [`Secret`] on the Rust side; the caller may
 ///   free its copy immediately after this call returns.
 /// - `out_account` — receives the new FFI handle on success. Must be
@@ -140,6 +128,9 @@ fn parse_endpoint(
 ///   (`CLIENT_INVALID_ACCOUNT_ENDPOINT_URL`) receives a rich `cosmos_error_t *`
 ///   describing the failure; the NULL / UTF-8 preflight failures return a
 ///   status code only. NULL silently drops it.
+///
+/// Views follow [`CosmosStringView`]'s allocation contract. Embedded NUL in
+/// endpoints is rejected before URL parsing; keys reject it as an invalid option.
 ///
 /// # Returns
 ///
@@ -155,31 +146,39 @@ fn parse_endpoint(
 ///   parsable URL. `*out_error` is populated when non-NULL.
 #[no_mangle]
 pub extern "C" fn cosmos_account_ref_with_master_key(
-    endpoint: *const c_char,
-    key: *const c_char,
+    endpoint: CosmosStringView,
+    key: CosmosStringView,
     out_account: *mut *mut AccountRefHandle,
     out_error: *mut *mut CosmosError,
 ) -> CosmosStatusCode {
     if out_account.is_null() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
-    let endpoint_str = match try_cstr_to_str(endpoint) {
+    // SAFETY: input views are readable for the duration of this FFI call.
+    let endpoint_str = match unsafe {
+        required_text(
+            endpoint,
+            CosmosErrorCode::CosmosErrorCodeInvalidAccountReference,
+        )
+    } {
         Ok(s) => s,
         Err(code) => return code.as_status_code(),
     };
-    let key_str = match try_cstr_to_str(key) {
-        Ok(s) => s,
-        Err(code) => return code.as_status_code(),
-    };
+    // SAFETY: input views are readable for the duration of this FFI call.
+    let key_str =
+        match unsafe { required_text(key, CosmosErrorCode::CosmosErrorCodeInvalidOptionValue) } {
+            Ok(s) => s,
+            Err(code) => return code.as_status_code(),
+        };
 
-    let url = match parse_endpoint(endpoint_str, out_error) {
+    let url = match parse_endpoint(&endpoint_str, out_error) {
         Ok(u) => u,
         Err(code) => return code.as_status_code(),
     };
 
     // Copy the key into a `String` so the resulting `Secret` owns its
     // bytes (the C caller may free its copy after this call returns).
-    let secret = Secret::from(key_str.to_owned());
+    let secret = Secret::from(key_str);
     let driver_ref = DriverAccountReference::with_master_key(url, secret);
     let handle = AccountRefHandle::into_raw(driver_ref);
     // SAFETY: caller guarantees `out_account` is writable for one
@@ -198,6 +197,9 @@ pub extern "C" fn cosmos_account_ref_with_master_key(
 /// `user_data_free` callback runs after the final account/driver credential
 /// reference is released.
 ///
+/// `endpoint` follows [`CosmosStringView`]'s allocation contract and must be
+/// non-NULL and NUL-free. Its complete UTF-8 value is validated before URL parsing.
+///
 /// # Returns
 ///
 /// - `SUCCESS` (0) with `*out_account` populated.
@@ -207,7 +209,7 @@ pub extern "C" fn cosmos_account_ref_with_master_key(
 /// - `INVALID_ACCOUNT_REFERENCE` (4003) when `endpoint` is not a parsable URL.
 #[no_mangle]
 pub extern "C" fn cosmos_account_ref_with_credential(
-    endpoint: *const c_char,
+    endpoint: CosmosStringView,
     provider: CosmosTokenProvider,
     user_data: isize,
     out_account: *mut *mut AccountRefHandle,
@@ -216,11 +218,17 @@ pub extern "C" fn cosmos_account_ref_with_credential(
     if out_account.is_null() || provider.get_token.is_none() {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
-    let endpoint_str = match try_cstr_to_str(endpoint) {
+    // SAFETY: input view is readable for the duration of this FFI call.
+    let endpoint_str = match unsafe {
+        required_text(
+            endpoint,
+            CosmosErrorCode::CosmosErrorCodeInvalidAccountReference,
+        )
+    } {
         Ok(s) => s,
         Err(code) => return code.as_status_code(),
     };
-    let url = match parse_endpoint(endpoint_str, out_error) {
+    let url = match parse_endpoint(&endpoint_str, out_error) {
         Ok(u) => u,
         Err(code) => return code.as_status_code(),
     };
@@ -248,6 +256,45 @@ pub extern "C" fn cosmos_account_ref_free(account: *mut AccountRefHandle) {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
+    use crate::string::view;
+
+    #[test]
+    fn account_text_rejects_complete_invalid_values() {
+        for (endpoint, key, expected) in [
+            (
+                view(b"https://localhost/\0suffix"),
+                view(b"key"),
+                CosmosErrorCode::CosmosErrorCodeInvalidAccountReference,
+            ),
+            (
+                view(b"https://localhost/\0\xff"),
+                view(b"key"),
+                CosmosErrorCode::CosmosErrorCodeInvalidUtf8,
+            ),
+            (
+                view(b"https://localhost/"),
+                view(b"key\0suffix"),
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+            ),
+            (
+                view(b"https://localhost/"),
+                view(b"key\0\xff"),
+                CosmosErrorCode::CosmosErrorCodeInvalidUtf8,
+            ),
+        ] {
+            let mut account = std::ptr::null_mut();
+            assert_eq!(
+                cosmos_account_ref_with_master_key(
+                    endpoint,
+                    key,
+                    &mut account,
+                    std::ptr::null_mut()
+                ),
+                expected.as_status_code()
+            );
+            assert!(account.is_null());
+        }
+    }
     use std::ffi::CString;
     use std::ptr;
     use std::sync::{
@@ -267,7 +314,12 @@ pub(crate) mod tests {
         let k = ok_cstr(key);
         let mut out: *mut AccountRefHandle = ptr::null_mut();
         let mut err: *mut CosmosError = ptr::null_mut();
-        let rc = cosmos_account_ref_with_master_key(ep.as_ptr(), k.as_ptr(), &mut out, &mut err);
+        let rc = cosmos_account_ref_with_master_key(
+            view(ep.as_bytes()),
+            view(k.as_bytes()),
+            &mut out,
+            &mut err,
+        );
         assert_eq!(rc, CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code());
         assert!(!out.is_null());
         assert!(err.is_null());
@@ -296,15 +348,30 @@ pub(crate) mod tests {
         let mut err: *mut CosmosError = ptr::null_mut();
 
         assert_eq!(
-            cosmos_account_ref_with_master_key(ptr::null(), k.as_ptr(), &mut out, &mut err),
+            cosmos_account_ref_with_master_key(
+                CosmosStringView::default(),
+                view(k.as_bytes()),
+                &mut out,
+                &mut err
+            ),
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert_eq!(
-            cosmos_account_ref_with_master_key(s.as_ptr(), ptr::null(), &mut out, &mut err),
+            cosmos_account_ref_with_master_key(
+                view(s.as_bytes()),
+                CosmosStringView::default(),
+                &mut out,
+                &mut err
+            ),
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert_eq!(
-            cosmos_account_ref_with_master_key(s.as_ptr(), k.as_ptr(), ptr::null_mut(), &mut err),
+            cosmos_account_ref_with_master_key(
+                view(s.as_bytes()),
+                view(k.as_bytes()),
+                ptr::null_mut(),
+                &mut err
+            ),
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert!(out.is_null());
@@ -317,7 +384,12 @@ pub(crate) mod tests {
         let k = ok_cstr("k");
         let mut out: *mut AccountRefHandle = ptr::null_mut();
         let mut err: *mut CosmosError = ptr::null_mut();
-        let rc = cosmos_account_ref_with_master_key(bad.as_ptr(), k.as_ptr(), &mut out, &mut err);
+        let rc = cosmos_account_ref_with_master_key(
+            view(bad.as_bytes()),
+            view(k.as_bytes()),
+            &mut out,
+            &mut err,
+        );
         assert_eq!(
             rc,
             CosmosErrorCode::CosmosErrorCodeInvalidAccountReference.as_status_code()
@@ -333,8 +405,12 @@ pub(crate) mod tests {
         let bad = ok_cstr("not a url");
         let k = ok_cstr("k");
         let mut out: *mut AccountRefHandle = ptr::null_mut();
-        let rc =
-            cosmos_account_ref_with_master_key(bad.as_ptr(), k.as_ptr(), &mut out, ptr::null_mut());
+        let rc = cosmos_account_ref_with_master_key(
+            view(bad.as_bytes()),
+            view(k.as_bytes()),
+            &mut out,
+            ptr::null_mut(),
+        );
         assert_eq!(
             rc,
             CosmosErrorCode::CosmosErrorCodeInvalidAccountReference.as_status_code()
@@ -366,7 +442,7 @@ pub(crate) mod tests {
         };
 
         let rc = cosmos_account_ref_with_credential(
-            endpoint.as_ptr(),
+            view(endpoint.as_bytes()),
             provider,
             user_data,
             ptr::null_mut(),
@@ -397,7 +473,7 @@ pub(crate) mod tests {
         let mut out: *mut AccountRefHandle = ptr::null_mut();
 
         let rc = cosmos_account_ref_with_credential(
-            endpoint.as_ptr(),
+            view(endpoint.as_bytes()),
             provider,
             user_data,
             &mut out,
@@ -422,7 +498,7 @@ pub(crate) mod tests {
         let mut out: *mut AccountRefHandle = ptr::null_mut();
 
         let rc = cosmos_account_ref_with_credential(
-            endpoint.as_ptr(),
+            view(endpoint.as_bytes()),
             provider,
             user_data,
             &mut out,

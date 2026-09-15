@@ -28,8 +28,8 @@ pub mod constant_example {
     }
     impl Temperature {
         const ABSOLUTE_ZERO_C: f64 = -273.15;
-        fn is_below_freezing(&self) -> bool;
-        fn new(value: f64, unit: TemperatureUnit) -> Self;
+        pub fn is_below_freezing(&self) -> bool;
+        pub fn new(value: f64, unit: TemperatureUnit) -> Self;
     }
     #[derive(Clone, Copy, Debug, PartialEq)]
     pub enum TemperatureUnit {
@@ -74,8 +74,8 @@ pub mod enum_example {
         Complex { subject: String, content: String, urgent: bool },
     }
     impl Message {
-        fn as_string(&self) -> String;
-        fn text(content: &str) -> Self;
+        pub fn as_string(&self) -> String;
+        pub fn text(content: &str) -> Self;
     }
     #[derive(Clone, Debug, PartialEq)]
     pub enum Status {
@@ -99,7 +99,7 @@ pub mod function_example {
         pub count: u32,
     }
     impl Counter {
-        fn increment(&mut self);
+        pub fn increment(&mut self);
     }
 }
 pub mod modules_example {
@@ -133,7 +133,7 @@ pub mod modules_example {
             pub is_active: bool,
         }
         impl User {
-            fn new(username: String, email: String) -> Self;
+            pub fn new(username: String, email: String) -> Self;
         }
         pub mod auth {
             pub fn verify_access(role: &Role, resource: &str) -> bool;
@@ -174,7 +174,7 @@ pub mod struct_example {
         pub additional_text: Option<&'a str>,
     }
     impl<'a> Borrowed<'a> {
-        fn new(text: &'a str) -> Self;
+        pub fn new(text: &'a str) -> Self;
     }
     #[derive(Clone, Debug)]
     pub struct Container<T> {
@@ -188,7 +188,7 @@ pub mod struct_example {
         pub position: String,
     }
     impl Employee {
-        fn full_description(&self) -> String;
+        pub fn full_description(&self) -> String;
     }
     #[derive(Clone, Copy, Debug)]
     pub struct Empty;
@@ -199,14 +199,14 @@ pub mod struct_example {
         pub email: Option<String>,
     }
     impl Person {
-        fn new(name: String, age: u32) -> Self;
-        fn with_email(self, email: String) -> Self;
+        pub fn new(name: String, age: u32) -> Self;
+        pub fn with_email(self, email: String) -> Self;
     }
     #[derive(Clone, Copy, Debug, PartialEq)]
     pub struct Point2D(pub f32, pub f32);
     impl Point2D {
-        fn distance_to(&self, other: &Self) -> f32;
-        fn origin() -> Self;
+        pub fn distance_to(&self, other: &Self) -> f32;
+        pub fn origin() -> Self;
     }
 }
 pub mod struct_fields_example {

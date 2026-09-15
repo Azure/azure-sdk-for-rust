@@ -25,7 +25,7 @@
 //! the container/item-scope operation factories (`cosmos_operation_read_item`,
 //! `cosmos_operation_create_item`, etc.) consume.
 //!
-use std::ffi::{c_char, CStr};
+use crate::string::{required_text, CosmosStringView};
 use std::sync::Arc;
 
 use azure_data_cosmos_driver::{
@@ -72,16 +72,6 @@ impl ContainerRefHandle {
     }
 }
 
-fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
-    if p.is_null() {
-        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-    }
-    // SAFETY: caller contract on every entry point.
-    let cstr = unsafe { CStr::from_ptr(p) };
-    cstr.to_str()
-        .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidUtf8)
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // FFI: lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
@@ -111,8 +101,8 @@ pub extern "C" fn cosmos_container_ref_free(container: *mut ContainerRefHandle) 
 ///
 /// - `runtime` — non-NULL.
 /// - `driver` — non-NULL; the driver whose container cache to consult.
-/// - `database_id` — NUL-terminated UTF-8.
-/// - `container_id` — NUL-terminated UTF-8.
+/// - `database_id` — required counted UTF-8, per [`CosmosStringView`].
+/// - `container_id` — required counted UTF-8, per [`CosmosStringView`].
 /// - `out_container` — non-NULL slot for the resolved handle.
 /// - `out_error` — optional rich error on failure. NULL silently drops.
 ///
@@ -127,12 +117,14 @@ pub extern "C" fn cosmos_container_ref_free(container: *mut ContainerRefHandle) 
 ///   is not valid UTF-8.
 /// - The packed HTTP/sub-status derived from the driver-side error on resolve
 ///   failure; `*out_error` is populated when non-NULL.
+///
+/// Embedded NUL in either identifier is rejected as an invalid option.
 #[no_mangle]
 pub extern "C" fn cosmos_driver_resolve_container_blocking(
     runtime: *const RuntimeContext,
     driver: *const DriverHandle,
-    database_id: *const c_char,
-    container_id: *const c_char,
+    database_id: CosmosStringView,
+    container_id: CosmosStringView,
     out_container: *mut *mut ContainerRefHandle,
     out_error: *mut *mut CosmosError,
 ) -> CosmosStatusCode {
@@ -145,12 +137,24 @@ pub extern "C" fn cosmos_driver_resolve_container_blocking(
     let Some(driver_inner) = DriverHandle::inner_arc(driver) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
-    let db_id = match try_cstr_to_str(database_id) {
-        Ok(s) => s.to_owned(),
+    // SAFETY: input view is readable for the duration of this FFI call.
+    let db_id = match unsafe {
+        required_text(
+            database_id,
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+        )
+    } {
+        Ok(s) => s,
         Err(code) => return code.as_status_code(),
     };
-    let container_id = match try_cstr_to_str(container_id) {
-        Ok(s) => s.to_owned(),
+    // SAFETY: input view is readable for the duration of this FFI call.
+    let container_id = match unsafe {
+        required_text(
+            container_id,
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+        )
+    } {
+        Ok(s) => s,
         Err(code) => return code.as_status_code(),
     };
 
@@ -184,6 +188,9 @@ pub extern "C" fn cosmos_driver_resolve_container_blocking(
 }
 
 #[cfg(test)]
+mod counted_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use std::ptr;
@@ -203,8 +210,8 @@ mod tests {
             cosmos_driver_resolve_container_blocking(
                 ptr::null(),
                 ptr::null(),
-                std::ffi::CString::new("db").unwrap().as_ptr(),
-                std::ffi::CString::new("c").unwrap().as_ptr(),
+                crate::string::view(b"db"),
+                crate::string::view(b"c"),
                 &mut out,
                 &mut err,
             ),
