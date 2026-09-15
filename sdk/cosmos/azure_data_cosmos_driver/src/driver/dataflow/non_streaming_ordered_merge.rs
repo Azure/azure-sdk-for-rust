@@ -235,7 +235,7 @@ impl PipelineNode for NonStreamingOrderedMerge {
 
     fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
         Err(CosmosError::builder()
-            .with_status(CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED)
+            .with_status(CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
             .with_message(
                 "cross-partition non-streaming ORDER BY queries do not support continuation tokens",
             )
@@ -491,7 +491,7 @@ mod tests {
         let node = merge(Vec::new(), 1, 0, 1, None);
         assert_eq!(
             node.snapshot_state().unwrap_err().status(),
-            CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
+            CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
         );
     }
 
@@ -537,7 +537,7 @@ mod tests {
                 assert_eq!(node.retained.capacity(), 0);
                 assert_eq!(
                     node.snapshot_state().unwrap_err().status(),
-                    CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
+                    CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
                 );
                 let mut executor = NoopRequestExecutor;
                 let mut topology = NoopTopologyProvider;

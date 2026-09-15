@@ -393,7 +393,7 @@ pub(crate) async fn build_non_streaming_ordered_merge(
     if resume.is_some() {
         return Err(crate::error::CosmosError::builder()
             .with_status(
-                crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED,
+                crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
             )
             .with_message(
                 "cross-partition non-streaming ORDER BY queries cannot be resumed from a continuation token",
@@ -1635,7 +1635,7 @@ fn peel_distinct_resume(
                 // checkpoint.
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED,
+                        crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
                     )
                     .with_message(
                         "continuation token carries unordered DISTINCT state, which cannot be \
@@ -4079,8 +4079,10 @@ mod tests {
                     assert_eq!(actual, expected);
                     assert_eq!(charge, 5.0);
                     assert!(pipeline.next_page(&mut context).await.unwrap().is_none());
-                    assert_eq!(pipeline.snapshot_state().unwrap_err().status(),
-                        crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED);
+                    assert_eq!(
+                        pipeline.snapshot_state().unwrap_err().status(),
+                        crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+                    );
                     assert_eq!(
                         executor.continuation_calls,
                         vec![None, Some("a-next".into()), None, Some("b-next".into())]
@@ -4158,7 +4160,7 @@ mod tests {
         .unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
+            crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
         );
 
         let mut streaming_plan = non_streaming_order_by_plan();
@@ -4317,7 +4319,7 @@ mod tests {
         .expect_err("an unordered DISTINCT token is never resumable");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED)
+            Some(crate::error::SubStatusCode::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
         );
         assert!(err.to_string().contains("ORDER BY"));
     }

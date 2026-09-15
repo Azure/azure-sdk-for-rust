@@ -33,7 +33,7 @@
 //! Unordered `DISTINCT` is not. The set *is* the state, and serializing it
 //! would mean an unbounded token; truncating it would silently re-emit
 //! duplicates. [`Distinct::snapshot_state`] therefore fails with
-//! [`CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED`], which surfaces
+//! [`CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`], which surfaces
 //! at `OperationPlan::to_continuation_token` time — while the caller still
 //! holds a live plan and can either keep draining in-process or rewrite the
 //! query with a matching `ORDER BY`. .NET refuses here too, with the same
@@ -430,7 +430,7 @@ impl PipelineNode for Distinct {
             DistinctMap::Ordered { last_hash } => *last_hash,
             DistinctMap::Unordered { .. } => {
                 return Err(crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED)
+                    .with_status(CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
                     .with_message(UNORDERED_CONTINUATION_MESSAGE)
                     .build());
             }
@@ -914,7 +914,7 @@ mod tests {
             .expect_err("an unordered DISTINCT must not produce a resumable snapshot");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED),
+            Some(crate::error::SubStatusCode::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED),
         );
         assert!(
             err.to_string().contains("ORDER BY"),

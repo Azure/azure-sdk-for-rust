@@ -43,8 +43,10 @@ paginates the remaining rows. Admission is fixed when the plan is built.
 This is not a runtime memory budget or a guarantee that finite output bounds
 bound all memory: OFFSET and page-level DISTINCT processing add retained work.
 
-Neither bounds nor opt-out enable unsupported query compositions or continuation
-tokens (unordered DISTINCT: 400/20124; non-streaming ORDER BY: 400/20125).
+Neither bounds nor opt-out enable unsupported query compositions. Cross-partition
+plans using client-side unordered DISTINCT or non-streaming ORDER BY stages
+reject continuation tokens with 400/20124. Complete logical-partition-key queries
+bypass these stages and their client-side continuation restrictions.
 Service validation remains authoritative. In particular, a service rejection of
 a no-TOP vector query is not bypassed or replaced by a fabricated large TOP.
 Live no-TOP vector support must be verified against an enabled account before

@@ -12,6 +12,7 @@
 ### Breaking Changes
 
 - Unordered cross-partition DISTINCT now requires a global finite TOP/LIMIT or explicit `allow_unbounded_queries=true`; non-streaming ORDER BY shares this admission policy, without a fixed numeric ceiling. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
+- Unified client-buffered continuation errors under 400/20124, retaining the shape-specific constants as aliases; finite-window admission moved from 20126 to 20125 and non-streaming window/storage errors from 20127 to 20126. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 
 ### Bugs Fixed
 
