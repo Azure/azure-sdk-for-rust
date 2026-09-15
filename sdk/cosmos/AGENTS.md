@@ -79,7 +79,7 @@ Choose integer types deliberately; don't default to `usize` or `i32` out of habi
 - Use `usize` **only** for memory-related numbers (addresses, array indices, memory/buffer sizes) — including at FFI boundaries when the number refers to memory.
 - Use a specific-size integer when it's necessary for a specific, well-understood memory optimization (e.g., packing a struct), or to match an FFI/ABI requirement.
 - Use `u16` or `u32` for domain numbers when they will clearly fit — not just "`u16`/`u32` should be enough", but "more than 65,535/4 billion of these would be ridiculous" (e.g., retry counts, byte offsets within a single document).
-- Use `u64` for domain numbers when the expected range isn't clear, or is known to potentially exceed 32 bits (e.g., RU/s throughput).
+- Use `u64` for domain numbers when the expected range isn't clear, or is known to potentially exceed 32 bits.
 
 ### Cosmos-Specific Patterns
 
