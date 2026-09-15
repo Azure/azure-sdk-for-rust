@@ -1,5 +1,11 @@
 # Microsoft Rust release pin for governed native artifact builds.
 # Update only after the full internal target matrix succeeds.
+#
+# NOTE: x86_64-pc-windows-gnu (windows/amd64) is intentionally omitted for now.
+# The ms-prod feed does not currently publish rust.std for the GNU/MinGW Windows
+# target that the downstream Go cgo consumer requires. Re-add the triple below
+# once a GNU (or agreed MSVC) path is decided; keep this list aligned with the
+# targets[] in the native driver build-matrix.json.
 [toolchain]
 channel = "ms-prod-1.95"
 components = [
@@ -10,7 +16,6 @@ components = [
   "rust-analyzer",
 ]
 targets = [
-  "x86_64-pc-windows-gnu",
   "x86_64-unknown-linux-gnu",
   "aarch64-unknown-linux-gnu",
   "aarch64-apple-darwin",

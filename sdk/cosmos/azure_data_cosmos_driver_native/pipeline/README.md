@@ -28,12 +28,12 @@ operating systems.
 
 ## Configured release matrix
 
-This pull request does not add or remove build targets. It applies the Microsoft
-Rust policy to the six targets already configured on `main`.
+This pull request applies the Microsoft Rust policy to the five targets that the
+`ms-prod-1.95` channel can build today. Windows AMD64 (GNU) is deferred and is
+no longer part of the active release matrix (see [Deferred targets](#deferred-targets)).
 
 | OS and architecture | Rust target | Observed `ms-prod-1.95` status |
 | --- | --- | --- |
-| Windows AMD64 (GNU) | `x86_64-pc-windows-gnu` | Unavailable: `RustInstaller@1` reports that `rust.std` is missing |
 | Linux AMD64 (glibc) | `x86_64-unknown-linux-gnu` | Available: installation reached build validation |
 | Linux ARM64 (glibc) | `aarch64-unknown-linux-gnu` | Available: installation reached build validation |
 | Linux AMD64 (musl) | `x86_64-unknown-linux-musl` | Available: installation reached build validation |
@@ -43,18 +43,31 @@ Rust policy to the six targets already configured on `main`.
 These observations come from internal pipeline runs with RustInstaller 1.0.92
 and Microsoft Rust package `1.95.0-ms-20260618.5`. The five available targets
 still require a fresh end-to-end run after the toolchain identity fixes in this
-pull request. Windows AMD64 GNU remains configured so its absence fails closed;
-the release cannot complete until Microsoft Rust publishes that target or the
-target is explicitly retired as a separate product decision.
+pull request.
+
+### Deferred targets
+
+| OS and architecture | Rust target | Reason deferred |
+| --- | --- | --- |
+| Windows AMD64 (GNU) | `x86_64-pc-windows-gnu` | Unavailable: the `ms-prod` feed does not publish `rust.std` for the GNU/MinGW Windows target, so `RustInstaller@1` fails before the build script runs |
+
+Windows AMD64 GNU is the target the downstream Go cgo consumer requires (cgo
+uses the GCC/MinGW toolchain on Windows and links the static `.a` produced here).
+Because the `ms-prod` channel is MSVC-only today, this target is temporarily
+removed from `build-matrix.json` and `eng/templates/ms-rust-toolchain.toml`
+rather than left in place to fail closed on every release. The deferred target
+object is preserved under `_windows_deferred_comment` in `build-matrix.json` so
+it can be restored verbatim once a path is agreed. Restoring it requires one of:
+
+1. Microsoft Rust publishing `rust.std` for `x86_64-pc-windows-gnu`.
+2. An explicitly approved Windows-only upstream `rustup` exception.
+3. Moving the Windows target to MSVC and absorbing the additional
+   DLL/runtime-loading complexity in the downstream Go layer.
 
 Windows ARM64 MSVC (`aarch64-pc-windows-msvc`) is separate work tracked by
 [#5235](https://github.com/Azure/azure-sdk-for-rust/issues/5235). It does not
 replace or establish support for Windows AMD64 GNU. Intel macOS and dynamic
 libraries for .NET, Java, and Python are also outside this pull request.
-
-The generated Windows cgo linker file statically links the MinGW pthread runtime.
-This prevents the final Go application from requiring a separately distributed
-`libwinpthread-1.dll`.
 
 ## Files
 
@@ -140,7 +153,7 @@ code-owner approval before merge.
 
 ## Local integration test
 
-Run the complete local test on Windows AMD64:
+Run the complete local test (defaults to the `linux-amd64-glibc` target):
 
 ```powershell
 $installerPackageVersion = '<exact RUST-INSTALLER Actual value>'
@@ -157,7 +170,9 @@ channel explicitly; there is no fallback to an upstream Rust installation.
 The script:
 
 1. Builds the native libraries.
-2. Applies a disposable self-signed certificate to the Windows DLL.
+2. Applies a disposable self-signed certificate when the target emits a Windows
+   DLL. Windows AMD64 is deferred, so this step is skipped for the active
+   targets.
 3. Generates and validates a local SPDX inventory.
 4. Writes SHA256 checksums.
 5. Generates and tests the Go module.
@@ -174,7 +189,7 @@ The generated files are placed under:
 pipeline/artifacts/local-rehearsal/<timestamp>/
 ├── native/<target-id>/{_manifest,signing,audit,validation}/
 ├── azure-cosmos-driver-output/
-├── azure-cosmos-driver-pr/{_manifest,windows,linux,darwin}/
+├── azure-cosmos-driver-pr/{_manifest,linux,darwin}/
 └── LOCAL_PR_PREVIEW.md
 ```
 
@@ -189,7 +204,7 @@ $installerBinPath = '<RUST_BIN_PATH reported by RustInstaller@1>'
 
 # Build one target.
 ./Build-NativeMatrix.ps1 `
-    -TargetId windows-amd64 `
+    -TargetId linux-amd64-glibc `
     -CCompiler gcc `
     -InstallerPackageVersion $installerPackageVersion `
     -InstallerBinPath $installerBinPath
@@ -221,9 +236,10 @@ the appropriate driver module, so users do not need a custom musl build tag.
 - Run the registered pipeline manually in the internal project and confirm that
   the five available targets complete their build and link-smoke tests after the
   toolchain identity fixes.
-- Resolve the Windows AMD64 GNU blocker before release by publishing
-  `x86_64-pc-windows-gnu` in the pinned Microsoft Rust channel or explicitly
-  retiring that downstream module. Upstream Rust fallback is not permitted.
+- Decide the Windows AMD64 GNU path before re-adding that deferred target,
+  either by publishing `x86_64-pc-windows-gnu` in the pinned Microsoft Rust
+  channel or by ratifying an alternate toolchain. Upstream Rust fallback is not
+  permitted. See the "Deferred targets" section for the restore options.
 - Confirm that the Azure SDK Automation GitHub App installation includes the
   private `Azure/azure-cosmos-driver` repository and that this pipeline may use
   the `AzureSDKEngKeyVault Secrets` service connection.

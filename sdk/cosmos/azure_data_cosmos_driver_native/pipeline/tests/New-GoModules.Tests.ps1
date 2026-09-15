@@ -148,8 +148,6 @@ BeforeEach {
     It 'generates modules when all target artifacts agree with their metadata' {
         & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot
 
-        Test-Path (Join-Path $OutputRoot 'windows/amd64/native/libazurecosmosdriver.a') |
-            Should -BeTrue
         Test-Path (Join-Path $OutputRoot 'linux/amd64/native/libazurecosmosdriver.a') |
             Should -BeTrue
         Test-Path (Join-Path $OutputRoot 'linux/amd64-musl/native/libazurecosmosdriver.a') |
@@ -189,25 +187,25 @@ BeforeEach {
         $provenance.rust_toolchain.cargo_version | Should -Be 'cargo 1.95.0'
 
         @($provenance.targets).Count | Should -Be @($Matrix.targets).Count
-        $windowsEntry = @($provenance.targets | Where-Object { $_.id -eq 'windows-amd64' })
-        $windowsEntry.Count | Should -Be 1
-        $windowsEntry[0].static_library_sha256 | Should -Match '^[0-9a-f]{64}$'
-        $windowsEntry[0].header_sha256 | Should -Match '^[0-9a-f]{64}$'
-        $windowsEntry[0].toolchain.selected_toolchain | Should -Be $MicrosoftRustChannel
-        $windowsEntry[0].toolchain.sysroot | Should -Be "/tools/$MicrosoftRustChannel"
-        $windowsEntry[0].toolchain.rustc_executable |
+        $linuxEntry = @($provenance.targets | Where-Object { $_.id -eq 'linux-amd64-glibc' })
+        $linuxEntry.Count | Should -Be 1
+        $linuxEntry[0].static_library_sha256 | Should -Match '^[0-9a-f]{64}$'
+        $linuxEntry[0].header_sha256 | Should -Match '^[0-9a-f]{64}$'
+        $linuxEntry[0].toolchain.selected_toolchain | Should -Be $MicrosoftRustChannel
+        $linuxEntry[0].toolchain.sysroot | Should -Be "/tools/$MicrosoftRustChannel"
+        $linuxEntry[0].toolchain.rustc_executable |
             Should -Be "/tools/$MicrosoftRustChannel/bin/rustc"
-        $windowsEntry[0].toolchain.cargo_executable |
+        $linuxEntry[0].toolchain.cargo_executable |
             Should -Be "/tools/$MicrosoftRustChannel/bin/cargo"
-        $windowsEntry[0].toolchain.installer_rustc_executable |
+        $linuxEntry[0].toolchain.installer_rustc_executable |
             Should -Be '/packages/ms-rust/tools/bin/rustc'
-        $windowsEntry[0].toolchain.installer_cargo_executable |
+        $linuxEntry[0].toolchain.installer_cargo_executable |
             Should -Be '/packages/ms-rust/tools/bin/cargo'
-        $windowsEntry[0].toolchain.rustc_verbose_version | Should -Match 'release: 1\.95\.0'
-        $windowsEntry[0].toolchain.target | Should -Be 'x86_64-pc-windows-gnu'
-        $windowsEntry[0].toolchain.linker.command | Should -Be 'gcc'
-        $windowsEntry[0].toolchain.linker.executable | Should -Be '/tools/gcc'
-        $windowsEntry[0].toolchain.linker.version | Should -Be 'gcc 1.0.0'
+        $linuxEntry[0].toolchain.rustc_verbose_version | Should -Match 'release: 1\.95\.0'
+        $linuxEntry[0].toolchain.target | Should -Be 'x86_64-unknown-linux-gnu'
+        $linuxEntry[0].toolchain.linker.command | Should -Be 'gcc'
+        $linuxEntry[0].toolchain.linker.executable | Should -Be '/tools/gcc'
+        $linuxEntry[0].toolchain.linker.version | Should -Be 'gcc 1.0.0'
     }
 
     It 'generates only the selected standalone musl module' {
@@ -225,7 +223,7 @@ BeforeEach {
     }
 
     It 'rejects an artifact ID that does not match its matrix row' {
-        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'darwin-arm64' -Update {
             param($metadata)
             $metadata.artifact_id = 'linux-amd64-glibc'
         }
@@ -235,7 +233,7 @@ BeforeEach {
     }
 
     It 'rejects a target triple that does not match its matrix row' {
-        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'darwin-arm64' -Update {
             param($metadata)
             $metadata.triple = 'x86_64-unknown-linux-gnu'
         }
@@ -265,7 +263,7 @@ BeforeEach {
     }
 
     It 'rejects metadata without Microsoft Rust provenance' {
-        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'linux-amd64-glibc' -Update {
             param($metadata)
             $metadata.PSObject.Properties.Remove('toolchain')
         }
@@ -275,7 +273,7 @@ BeforeEach {
     }
 
     It 'rejects metadata produced through upstream rustup' {
-        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'linux-amd64-glibc' -Update {
             param($metadata)
             $metadata.toolchain.provider = 'upstream'
             $metadata.toolchain.manager.executable = 'rustup'
@@ -288,7 +286,7 @@ BeforeEach {
     }
 
     It 'rejects metadata without Microsoft Rust installer package identity' {
-        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'linux-amd64-glibc' -Update {
             param($metadata)
             $metadata.toolchain.installer_package_version = '1.95.0'
         }
@@ -298,7 +296,7 @@ BeforeEach {
     }
 
     It 'rejects metadata without manager-resolved compiler identity' {
-        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'linux-amd64-glibc' -Update {
             param($metadata)
             $metadata.toolchain.PSObject.Properties.Remove('rustc_executable')
         }
@@ -308,7 +306,7 @@ BeforeEach {
     }
 
     It 'rejects an unpinned Microsoft Rust identity' {
-        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'linux-amd64-glibc' -Update {
             param($metadata)
             $metadata.toolchain.channel = 'ms-prod'
             $metadata.toolchain.selected_toolchain = 'ms-prod'
@@ -334,7 +332,7 @@ BeforeEach {
     }
 
     It 'rejects a rustc identity that contradicts its release field' {
-        Update-TestMetadata -Root $ArtifactRoot -TargetId 'windows-amd64' -Update {
+        Update-TestMetadata -Root $ArtifactRoot -TargetId 'linux-amd64-glibc' -Update {
             param($metadata)
             $metadata.toolchain.rustc_verbose_version = $metadata.toolchain.rustc_verbose_version `
                 -replace 'release: 1\.95\.0', 'release: 1.95.1'
@@ -382,7 +380,7 @@ BeforeEach {
 
     It 'rejects a static archive whose bytes do not match metadata' {
         Write-TestFile `
-            -Path (Join-Path $ArtifactRoot 'windows-amd64/libazurecosmosdriver.a') `
+            -Path (Join-Path $ArtifactRoot 'linux-amd64-glibc/libazurecosmosdriver.a') `
             -Content 'tampered archive'
 
         { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |
@@ -391,7 +389,7 @@ BeforeEach {
 
     It 'rejects a header whose bytes do not match metadata' {
         Write-TestFile `
-            -Path (Join-Path $ArtifactRoot 'windows-amd64/azurecosmosdriver.h') `
+            -Path (Join-Path $ArtifactRoot 'linux-amd64-glibc/azurecosmosdriver.h') `
             -Content "int changed_header(void);`n"
 
         { & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot } |

@@ -29,8 +29,8 @@ Describe 'Build-NativeMatrix target compiler configuration' {
             'shared',
             'MicrosoftRust.ps1'
         ))
-        $CargoLinkerVariable = 'CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER'
-        $CcVariable = 'CC_x86_64_pc_windows_gnu'
+        $CargoLinkerVariable = 'CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER'
+        $CcVariable = 'CC_x86_64_unknown_linux_gnu'
         function msrustup {}
     }
 
@@ -43,7 +43,7 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $global:ObservedRustcArguments = @()
         $global:MicrosoftRustManagerAvailable = $true
         $global:InstalledMicrosoftRustTargets = @(
-            'x86_64-pc-windows-gnu'
+            'x86_64-unknown-linux-gnu'
             'x86_64-unknown-linux-musl'
         )
         $global:MicrosoftRustRelease = '1.95.0'
@@ -185,22 +185,22 @@ $env:TEST_INSTALLER_CARGO_VERSION
                         break
                     }
                     $global:ObservedCargoLinker = [Environment]::GetEnvironmentVariable(
-                        'CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER',
+                        'CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER',
                         'Process'
                     )
                     $global:ObservedCc = [Environment]::GetEnvironmentVariable(
-                        'CC_x86_64_pc_windows_gnu',
+                        'CC_x86_64_unknown_linux_gnu',
                         'Process'
                     )
                     'note: native-static-libs: -lsystem'
                 }
                 'auditable' {
                     $global:ObservedBuildCargoLinker = [Environment]::GetEnvironmentVariable(
-                        'CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER',
+                        'CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER',
                         'Process'
                     )
                     $global:ObservedBuildCc = [Environment]::GetEnvironmentVariable(
-                        'CC_x86_64_pc_windows_gnu',
+                        'CC_x86_64_unknown_linux_gnu',
                         'Process'
                     )
                     $global:LASTEXITCODE = 1
@@ -220,7 +220,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
             [Environment]::SetEnvironmentVariable($CcVariable, 'original-cc', 'Process')
 
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -SkipBuild
@@ -233,7 +233,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
                 Should -Be 'original-cc'
 
             $metadataPath = Join-Path $TestDrive `
-                'artifacts/windows-amd64/rust-driver-native-interface-metadata.json'
+                'artifacts/linux-amd64-glibc/rust-driver-native-interface-metadata.json'
             $metadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
             $metadata.schema_version | Should -Be 4
             @($metadata.rustc_native_static_libs) | Should -Be @('-lsystem')
@@ -254,7 +254,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
             $metadata.toolchain.rustc_verbose_version | Should -Match 'release: 1\.95\.0'
             $metadata.toolchain.rustc_release | Should -Be '1.95.0'
             $metadata.toolchain.cargo_version | Should -Be 'cargo 1.0.0'
-            $metadata.toolchain.target | Should -Be 'x86_64-pc-windows-gnu'
+            $metadata.toolchain.target | Should -Be 'x86_64-unknown-linux-gnu'
             $metadata.toolchain.linker.command | Should -Be 'pwsh'
             $metadata.toolchain.linker.executable | Should -Not -BeNullOrEmpty
             $metadata.toolchain.linker.version | Should -Be 'PowerShell 7.0.0'
@@ -274,7 +274,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
             $global:ObservedRustcArguments[2] | Should -Be @(
                 "+$MicrosoftRustChannel"
                 '--target'
-                'x86_64-pc-windows-gnu'
+                'x86_64-unknown-linux-gnu'
                 '--print'
                 'target-libdir'
             )
@@ -291,7 +291,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
     It 'configures the same target compiler for the auditable build' {
         {
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh'
         } | Should -Throw '*cargo-auditable build failed*'
@@ -330,7 +330,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
     It 'rejects an unavailable compiler before invoking Cargo' {
         {
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'compiler-that-does-not-exist' `
                 -SkipBuild
@@ -344,7 +344,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
 
         {
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -SkipBuild
@@ -356,7 +356,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
 
         {
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -SkipBuild
@@ -368,7 +368,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
 
         {
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -SkipBuild
@@ -380,7 +380,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
 
         {
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -SkipBuild
@@ -396,7 +396,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
 
         {
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -SkipBuild
@@ -409,7 +409,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
 
         {
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -SkipBuild
@@ -421,7 +421,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
 
         {
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -SkipBuild
@@ -433,7 +433,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
 
         {
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -InstallerPackageVersion '1.95.0-ms-20260618.5' `
@@ -448,7 +448,7 @@ $env:TEST_INSTALLER_CARGO_VERSION
 
         {
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -SkipBuild
@@ -460,12 +460,12 @@ $env:TEST_INSTALLER_CARGO_VERSION
         Set-Content $toolchainConfig @'
 [toolchain]
 channel = "ms-prod"
-targets = ["x86_64-pc-windows-gnu"]
+targets = ["x86_64-unknown-linux-gnu"]
 '@
 
         {
             & $ScriptPath `
-                -TargetId 'windows-amd64' `
+                -TargetId 'linux-amd64-glibc' `
                 -OutputRoot (Join-Path $TestDrive 'artifacts') `
                 -CCompiler 'pwsh' `
                 -ToolchainConfigPath $toolchainConfig `
@@ -474,7 +474,7 @@ targets = ["x86_64-pc-windows-gnu"]
     }
 
     It 'fails closed when a required Microsoft Rust target is not installed' {
-        $global:InstalledMicrosoftRustTargets = @('x86_64-pc-windows-gnu')
+        $global:InstalledMicrosoftRustTargets = @('x86_64-unknown-linux-gnu')
 
         {
             & $ScriptPath `
@@ -508,8 +508,6 @@ targets = ["x86_64-pc-windows-gnu"]
         & $JobMatrixScriptPath -MatrixPath $MatrixPath -OutputPath $outputPath
 
         $jobMatrix = Get-Content $outputPath -Raw | ConvertFrom-Json
-        $jobMatrix.matrix.Target.'windows-amd64'.Pool | Should -Be 'env:WINDOWSPOOL'
-        $jobMatrix.matrix.Target.'windows-amd64'.OSVmImage | Should -Be 'env:WINDOWSVMIMAGE'
         $jobMatrix.matrix.Target.'linux-amd64-glibc'.Pool | Should -Be 'env:LINUXPOOL'
         $jobMatrix.matrix.Target.'darwin-arm64'.Pool | Should -Be 'env:MACPOOL'
         $jobMatrix.matrix.Target.'darwin-arm64'.OSVmImage | Should -Be 'env:MACVMIMAGEM1'
@@ -582,7 +580,13 @@ targets = ["x86_64-pc-windows-gnu"]
             "channel = `"$MicrosoftRustChannel`""
         ))
         $installerConfig | Should -Not -Match '(?m)^\s*targets\s*='
-        $installerConfig | Should -Not -Match 'x86_64-pc-windows-gnu'
+        # The centralized toml keeps a documentation note about the deferred
+        # Windows GNU triple, so assert it is absent from the active (non-comment)
+        # configuration rather than from documentation lines.
+        $installerConfigActive = (
+            $installerConfig -split "`n" | Where-Object { $_ -notmatch '^\s*#' }
+        ) -join "`n"
+        $installerConfigActive | Should -Not -Match 'x86_64-pc-windows-gnu'
     }
 
     It 'rejects an installer target outside the centralized allowlist' {

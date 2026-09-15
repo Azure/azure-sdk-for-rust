@@ -22,7 +22,9 @@
     not claim Microsoft 1ES, ESRP, Azure Trusted Signing, or Apple trust.
 
 .PARAMETER TargetId
-    Matrix target to rehearse. The default is windows-amd64.
+    Matrix target to rehearse. The default is linux-amd64-glibc. Windows AMD64
+    (GNU) is deferred and no longer part of the active matrix; see the pipeline
+    README "Deferred targets" section.
 
 .PARAMETER PrepareGoPr
     Prepare a local-only Azure/azure-cosmos-driver branch and commit.
@@ -44,7 +46,7 @@
 #>
 [CmdletBinding()]
 param(
-    [string] $TargetId = 'windows-amd64',
+    [string] $TargetId = 'linux-amd64-glibc',
     [bool] $PrepareGoPr = $true,
     [switch] $SkipTestSigning,
     [Parameter(Mandatory = $true)]
