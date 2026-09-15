@@ -7,8 +7,8 @@ mod query_planning;
 
 use crate::{
     diagnostics::{
-        DiagnosticsContext, DiagnosticsContextBuilder, ExecutionContext, PipelineType,
-        RequestSentStatus, TransportHttpVersion, TransportSecurity,
+        DiagnosticsContextBuilder, ExecutionContext, PipelineKind, RequestSentStatus,
+        TransportHttpVersion, TransportSecurity,
     },
     driver::{
         cache::{PartitionKeyRangeCache, PkRangeFetchResult},
@@ -17,14 +17,16 @@ use crate::{
             Pipeline, PipelineContext, PipelineNodeState, RequestExecutor, RequestTarget,
             TopologyProvider,
         },
-        pipeline::components::{
-            ThrottleRetryState, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
-            METADATA_MAX_THROTTLE_WAIT,
-        },
-        pipeline::hedge_budget::HedgeBudget,
-        pipeline::operation_pipeline::{
-            ContainerRecreationRecoveryOutcome, ContainerRecreationRecoveryTracker,
-            OperationOverrides, RegionPin,
+        pipeline::{
+            components::{
+                ThrottleRetryState, METADATA_MAX_PER_RETRY_DELAY, METADATA_MAX_THROTTLE_ATTEMPTS,
+                METADATA_MAX_THROTTLE_WAIT,
+            },
+            hedge_budget::HedgeBudget,
+            operation_pipeline::{
+                ContainerRecreationRecoveryOutcome, ContainerRecreationRecoveryTracker,
+                OperationOverrides, RegionPin,
+            },
         },
         routing::{
             partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
@@ -42,7 +44,7 @@ use crate::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView, PlanOptions,
         QueryPlanMode, ResolvedThroughputControl, ThroughputControlGroupSnapshot,
     },
-    ActivityId, CosmosResponse,
+    ActivityId, CosmosResponse, DiagnosticsContext,
 };
 use arc_swap::ArcSwap;
 use futures::future::BoxFuture;
@@ -833,7 +835,7 @@ impl CosmosDriver {
         let (response, cosmos_headers, status_code, sub_status, cosmos_status) = loop {
             let request_handle = diagnostics.start_request(
                 execution_context,
-                PipelineType::Metadata,
+                PipelineKind::Metadata,
                 transport_security,
                 transport.diagnostics_kind(),
                 transport.diagnostics_http_version(),
@@ -3610,9 +3612,9 @@ impl CosmosDriver {
         }
 
         let pipeline_type = if is_dataplane {
-            PipelineType::DataPlane
+            PipelineKind::DataPlane
         } else {
-            PipelineType::Metadata
+            PipelineKind::Metadata
         };
 
         let user_agent =

@@ -41,30 +41,30 @@ pub use azure_messaging_servicebus::client::SubQueue;
 pub struct Message {
 }
 impl Message {
-    fn body(&self) -> &[u8];
-    fn body_as_string(&self) -> Result<String>;
-    fn content_type(&self) -> Option<&String>;
-    fn correlation_id(&self) -> Option<&String>;
-    fn message_id(&self) -> Option<&String>;
-    fn new<T: Into<Vec<u8>>>(body: T) -> Self;
-    fn properties(&self) -> &HashMap<String, String>;
-    fn property(&self, key: &str) -> Option<&String>;
-    fn reply_to(&self) -> Option<&String>;
-    fn reply_to_session_id(&self) -> Option<&String>;
-    fn scheduled_enqueue_time(&self) -> Option<OffsetDateTime>;
-    fn session_id(&self) -> Option<&String>;
-    fn set_content_type<impl Into<String>: Into<String>>(&mut self, content_type: impl Into<String>);
-    fn set_correlation_id<impl Into<String>: Into<String>>(&mut self, correlation_id: impl Into<String>);
-    fn set_message_id<impl Into<String>: Into<String>>(&mut self, message_id: impl Into<String>);
-    fn set_property<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(&mut self, key: impl Into<String>, value: impl Into<String>);
-    fn set_reply_to<impl Into<String>: Into<String>>(&mut self, reply_to: impl Into<String>);
-    fn set_reply_to_session_id<impl Into<String>: Into<String>>(&mut self, reply_to_session_id: impl Into<String>);
-    fn set_scheduled_enqueue_time(&mut self, scheduled_enqueue_time: OffsetDateTime);
-    fn set_session_id<impl Into<String>: Into<String>>(&mut self, session_id: impl Into<String>);
-    fn set_subject<impl Into<String>: Into<String>>(&mut self, subject: impl Into<String>);
-    fn set_time_to_live(&mut self, time_to_live: Duration);
-    fn subject(&self) -> Option<&String>;
-    fn time_to_live(&self) -> Option<Duration>;
+    pub fn body(&self) -> &[u8];
+    pub fn body_as_string(&self) -> Result<String>;
+    pub fn content_type(&self) -> Option<&String>;
+    pub fn correlation_id(&self) -> Option<&String>;
+    pub fn message_id(&self) -> Option<&String>;
+    pub fn new<T: Into<Vec<u8>>>(body: T) -> Self;
+    pub fn properties(&self) -> &HashMap<String, String>;
+    pub fn property(&self, key: &str) -> Option<&String>;
+    pub fn reply_to(&self) -> Option<&String>;
+    pub fn reply_to_session_id(&self) -> Option<&String>;
+    pub fn scheduled_enqueue_time(&self) -> Option<OffsetDateTime>;
+    pub fn session_id(&self) -> Option<&String>;
+    pub fn set_content_type<impl Into<String>: Into<String>>(&mut self, content_type: impl Into<String>);
+    pub fn set_correlation_id<impl Into<String>: Into<String>>(&mut self, correlation_id: impl Into<String>);
+    pub fn set_message_id<impl Into<String>: Into<String>>(&mut self, message_id: impl Into<String>);
+    pub fn set_property<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(&mut self, key: impl Into<String>, value: impl Into<String>);
+    pub fn set_reply_to<impl Into<String>: Into<String>>(&mut self, reply_to: impl Into<String>);
+    pub fn set_reply_to_session_id<impl Into<String>: Into<String>>(&mut self, reply_to_session_id: impl Into<String>);
+    pub fn set_scheduled_enqueue_time(&mut self, scheduled_enqueue_time: OffsetDateTime);
+    pub fn set_session_id<impl Into<String>: Into<String>>(&mut self, session_id: impl Into<String>);
+    pub fn set_subject<impl Into<String>: Into<String>>(&mut self, subject: impl Into<String>);
+    pub fn set_time_to_live(&mut self, time_to_live: Duration);
+    pub fn subject(&self) -> Option<&String>;
+    pub fn time_to_live(&self) -> Option<Duration>;
 }
 impl From<&str> for Message {
     fn from(body: &str) -> Self;
@@ -80,37 +80,37 @@ pub struct MessageBatch {
 }
 impl MessageBatch {
     const DEFAULT_MAX_SIZE_BYTES: usize = _;
-    fn count(&self) -> usize;
-    fn is_empty(&self) -> bool;
-    fn maximum_size_in_bytes(&self) -> usize;
-    fn size_in_bytes(&self) -> usize;
-    fn try_add_message(&mut self, message: Message) -> bool;
+    pub fn count(&self) -> usize;
+    pub fn is_empty(&self) -> bool;
+    pub fn maximum_size_in_bytes(&self) -> usize;
+    pub fn size_in_bytes(&self) -> usize;
+    pub fn try_add_message(&mut self, message: Message) -> bool;
 }
 #[derive(Clone, Debug)]
 pub struct ReceivedMessage {
 }
 impl ReceivedMessage {
-    fn body(&self) -> &[u8];
-    fn body_as_string(&self) -> Result<String>;
-    fn correlation_id(&self) -> Option<&String>;
-    fn delivery_count(&self) -> Option<u32>;
-    fn enqueued_time_utc(&self) -> Option<OffsetDateTime>;
-    fn lock_token(&self) -> Option<Uuid>;
-    fn message_id(&self) -> Option<&String>;
-    fn properties(&self) -> &HashMap<String, String>;
-    fn property(&self, key: &str) -> Option<&String>;
-    fn sequence_number(&self) -> Option<i64>;
-    fn session_id(&self) -> Option<&String>;
-    fn system_properties(&self) -> &SystemProperties;
+    pub fn body(&self) -> &[u8];
+    pub fn body_as_string(&self) -> Result<String>;
+    pub fn correlation_id(&self) -> Option<&String>;
+    pub fn delivery_count(&self) -> Option<u32>;
+    pub fn enqueued_time_utc(&self) -> Option<OffsetDateTime>;
+    pub fn lock_token(&self) -> Option<Uuid>;
+    pub fn message_id(&self) -> Option<&String>;
+    pub fn properties(&self) -> &HashMap<String, String>;
+    pub fn property(&self, key: &str) -> Option<&String>;
+    pub fn sequence_number(&self) -> Option<i64>;
+    pub fn session_id(&self) -> Option<&String>;
+    pub fn system_properties(&self) -> &SystemProperties;
 }
 #[derive(Debug)]
 pub struct ServiceBusError {
 }
 impl ServiceBusError {
-    fn kind(&self) -> &ErrorKind;
-    fn message(&self) -> &str;
-    fn new<impl Into<String>: Into<String>>(kind: ErrorKind, message: impl Into<String>) -> Self;
-    fn with_source<impl Into<String>: Into<String>>(kind: ErrorKind, message: impl Into<String>, source: Box<dyn std::error::Error + 'static>) -> Self;
+    pub fn kind(&self) -> &ErrorKind;
+    pub fn message(&self) -> &str;
+    pub fn new<impl Into<String>: Into<String>>(kind: ErrorKind, message: impl Into<String>) -> Self;
+    pub fn with_source<impl Into<String>: Into<String>>(kind: ErrorKind, message: impl Into<String>, source: Box<dyn std::error::Error + 'static>) -> Self;
 }
 impl Display for ServiceBusError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -157,20 +157,20 @@ pub mod client {
     pub struct ServiceBusClient {
     }
     impl ServiceBusClient {
-        fn builder() -> ServiceBusClientBuilder;
-        async fn close(&self) -> Result<()>;
-        async fn create_receiver(&self, queue_name: &str, options: Option<CreateReceiverOptions>) -> Result<Receiver>;
-        async fn create_receiver_for_subscription(&self, topic_name: &str, subscription_name: &str, options: Option<CreateReceiverOptions>) -> Result<Receiver>;
-        async fn create_sender(&self, queue_or_topic_name: &str, _options: Option<CreateSenderOptions>) -> Result<Sender>;
-        fn fully_qualified_namespace(&self) -> &str;
+        pub fn builder() -> ServiceBusClientBuilder;
+        pub async fn close(&self) -> Result<()>;
+        pub async fn create_receiver(&self, queue_name: &str, options: Option<CreateReceiverOptions>) -> Result<Receiver>;
+        pub async fn create_receiver_for_subscription(&self, topic_name: &str, subscription_name: &str, options: Option<CreateReceiverOptions>) -> Result<Receiver>;
+        pub async fn create_sender(&self, queue_or_topic_name: &str, _options: Option<CreateSenderOptions>) -> Result<Sender>;
+        pub fn fully_qualified_namespace(&self) -> &str;
     }
     #[derive(Default)]
     pub struct ServiceBusClientBuilder {
     }
     impl ServiceBusClientBuilder {
-        fn new() -> Self;
-        async fn open(self, fully_qualified_namespace: &str, credential: Arc<dyn TokenCredential>) -> Result<ServiceBusClient>;
-        fn with_application_id(self, application_id: String) -> Self;
+        pub fn new() -> Self;
+        pub async fn open(self, fully_qualified_namespace: &str, credential: Arc<dyn TokenCredential>) -> Result<ServiceBusClient>;
+        pub fn with_application_id(self, application_id: String) -> Self;
     }
     #[derive(Clone, Debug)]
     pub struct ServiceBusClientOptions {
@@ -359,20 +359,20 @@ pub mod receiver {
     pub struct Receiver {
     }
     impl Receiver {
-        async fn abandon_message(&self, message: &ReceivedMessage, _options: Option<AbandonMessageOptions>) -> Result<()>;
-        async fn close(&self) -> Result<()>;
-        async fn complete_message(&self, message: &ReceivedMessage, _options: Option<CompleteMessageOptions>) -> Result<()>;
-        async fn dead_letter_message(&self, message: &ReceivedMessage, options: Option<DeadLetterMessageOptions>) -> Result<()>;
-        async fn defer_message(&self, message: &ReceivedMessage, options: Option<DeferMessageOptions>) -> Result<()>;
-        fn entity_name(&self) -> &str;
-        async fn peek_messages(&self, max_count: u32, options: Option<PeekMessagesOptions>) -> Result<Vec<ReceivedMessage>>;
-        async fn receive_deferred_message(&self, sequence_number: i64, _options: Option<ReceiveDeferredMessagesOptions>) -> Result<Option<ReceivedMessage>>;
-        async fn receive_deferred_messages(&self, sequence_numbers: &[i64], _options: Option<ReceiveDeferredMessagesOptions>) -> Result<Vec<ReceivedMessage>>;
-        async fn receive_message(&self, options: Option<ReceiveMessageOptions>) -> Result<Option<ReceivedMessage>>;
-        async fn receive_messages(&self, max_message_count: usize, options: Option<ReceiveMessageOptions>) -> Result<Vec<ReceivedMessage>>;
-        fn receive_mode(&self) -> ReceiveMode;
-        async fn renew_message_lock(&self, message: &ReceivedMessage, _options: Option<RenewMessageLockOptions>) -> Result<OffsetDateTime>;
-        fn subscription_name(&self) -> Option<&str>;
+        pub async fn abandon_message(&self, message: &ReceivedMessage, _options: Option<AbandonMessageOptions>) -> Result<()>;
+        pub async fn close(&self) -> Result<()>;
+        pub async fn complete_message(&self, message: &ReceivedMessage, _options: Option<CompleteMessageOptions>) -> Result<()>;
+        pub async fn dead_letter_message(&self, message: &ReceivedMessage, options: Option<DeadLetterMessageOptions>) -> Result<()>;
+        pub async fn defer_message(&self, message: &ReceivedMessage, options: Option<DeferMessageOptions>) -> Result<()>;
+        pub fn entity_name(&self) -> &str;
+        pub async fn peek_messages(&self, max_count: u32, options: Option<PeekMessagesOptions>) -> Result<Vec<ReceivedMessage>>;
+        pub async fn receive_deferred_message(&self, sequence_number: i64, _options: Option<ReceiveDeferredMessagesOptions>) -> Result<Option<ReceivedMessage>>;
+        pub async fn receive_deferred_messages(&self, sequence_numbers: &[i64], _options: Option<ReceiveDeferredMessagesOptions>) -> Result<Vec<ReceivedMessage>>;
+        pub async fn receive_message(&self, options: Option<ReceiveMessageOptions>) -> Result<Option<ReceivedMessage>>;
+        pub async fn receive_messages(&self, max_message_count: usize, options: Option<ReceiveMessageOptions>) -> Result<Vec<ReceivedMessage>>;
+        pub fn receive_mode(&self) -> ReceiveMode;
+        pub async fn renew_message_lock(&self, message: &ReceivedMessage, _options: Option<RenewMessageLockOptions>) -> Result<OffsetDateTime>;
+        pub fn subscription_name(&self) -> Option<&str>;
     }
     impl Drop for Receiver {
         fn drop(&mut self);
@@ -405,14 +405,14 @@ pub mod sender {
     pub struct Sender {
     }
     impl Sender {
-        async fn cancel_scheduled_message(&self, sequence_number: i64, _options: Option<CancelScheduledMessagesOptions>) -> Result<()>;
-        async fn close(&self) -> Result<()>;
-        async fn create_message_batch(&self, options: Option<CreateMessageBatchOptions>) -> crate::Result<crate::MessageBatch>;
-        fn entity_name(&self) -> &str;
-        async fn schedule_message(&self, message: Message, scheduled_enqueue_time: time::OffsetDateTime, _options: Option<ScheduleMessageOptions>) -> Result<i64>;
-        async fn send_message(&self, message: Message, _options: Option<SendMessageOptions>) -> Result<()>;
-        async fn send_message_batch(&self, batch: crate::MessageBatch, _options: Option<SendMessageBatchOptions>) -> crate::Result<()>;
-        async fn send_messages(&self, messages: Vec<Message>, _options: Option<SendMessagesOptions>) -> Result<()>;
+        pub async fn cancel_scheduled_message(&self, sequence_number: i64, _options: Option<CancelScheduledMessagesOptions>) -> Result<()>;
+        pub async fn close(&self) -> Result<()>;
+        pub async fn create_message_batch(&self, options: Option<CreateMessageBatchOptions>) -> crate::Result<crate::MessageBatch>;
+        pub fn entity_name(&self) -> &str;
+        pub async fn schedule_message(&self, message: Message, scheduled_enqueue_time: time::OffsetDateTime, _options: Option<ScheduleMessageOptions>) -> Result<i64>;
+        pub async fn send_message(&self, message: Message, _options: Option<SendMessageOptions>) -> Result<()>;
+        pub async fn send_message_batch(&self, batch: crate::MessageBatch, _options: Option<SendMessageBatchOptions>) -> crate::Result<()>;
+        pub async fn send_messages(&self, messages: Vec<Message>, _options: Option<SendMessagesOptions>) -> Result<()>;
     }
     impl Drop for Sender {
         fn drop(&mut self);

@@ -12,11 +12,8 @@ pub use azure_core_amqp::AmqpValue;
 
 /// The transport that carries the AMQP protocol.
 ///
-/// Event Hubs is normally reached with AMQP framed directly over a TCP/TLS
-/// socket ([`AmqpTransport::Tcp`], port 5671). Some networks (for example
-/// corporate firewalls) only permit outbound connections on port 443; there,
-/// [`AmqpTransport::WebSocket`] tunnels AMQP over secure WebSockets instead.
-/// Select it with `with_transport` on a client builder.
+/// Event Hubs uses AMQP over a TCP/TLS socket ([`AmqpTransport::Tcp`], port 5671).
+/// Select the transport with `with_transport` on a client builder.
 ///
 /// # Examples
 ///
@@ -28,7 +25,7 @@ pub use azure_core_amqp::AmqpValue;
 /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ///     let credential = DeveloperToolsCredential::new(None)?;
 ///     let producer = ProducerClient::builder()
-///         .with_transport(AmqpTransport::WebSocket)
+///         .with_transport(AmqpTransport::Tcp)
 ///         .open("my_namespace.servicebus.windows.net", "my_eventhub", credential)
 ///         .await?;
 ///     Ok(())

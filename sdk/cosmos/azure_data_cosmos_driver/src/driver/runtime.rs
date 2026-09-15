@@ -13,7 +13,7 @@ use std::{
 };
 
 use crate::{
-    diagnostics::ProxyConfiguration,
+    diagnostics::ProxyConfig,
     models::{normalize_wrapping_sdk_identifier, UserAgent, UserAgentFeatureFlags},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DiagnosticsOptions,
@@ -183,7 +183,7 @@ pub struct CosmosDriverRuntime {
     machine_id: Arc<String>,
 
     /// Proxy configuration snapshot for diagnostics.
-    proxy_configuration: ProxyConfiguration,
+    proxy_configuration: ProxyConfig,
 }
 
 impl CosmosDriverRuntime {
@@ -252,7 +252,7 @@ impl CosmosDriverRuntime {
     ///
     /// Captures whether proxy is allowed and the proxy environment variable
     /// values at client creation time, for diagnostic purposes.
-    pub fn proxy_configuration(&self) -> &ProxyConfiguration {
+    pub fn proxy_configuration(&self) -> &ProxyConfig {
         &self.proxy_configuration
     }
 
@@ -613,7 +613,7 @@ impl CosmosDriverRuntimeBuilder {
             user_agent_feature_flags,
         ));
 
-        let proxy_configuration = ProxyConfiguration::from_env(connection_pool.proxy_allowed());
+        let proxy_configuration = ProxyConfig::from_env(connection_pool.proxy_allowed());
         let http_client_factory: Arc<dyn HttpClientFactory> = {
             #[cfg(any(
                 test,

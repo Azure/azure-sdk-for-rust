@@ -14,8 +14,8 @@ jobs:
   timeoutInMinutes: 90
   variables:
     ComponentDetection.SourcePath: $(Build.SourcesDirectory)
-    # Exclude non-shipping samples and tests.
-    ComponentDetection.DirectoryExclusionPatterns: '$(Build.SourcesDirectory)/samples/**;$(Build.SourcesDirectory)/**/tests/**'
+    # Exclude non-shipping samples and tests. Also exclude copy of baseline revision source for cargo-semver-checks.
+    ComponentDetection.DirectoryExclusionPatterns: '$(Build.SourcesDirectory)/samples/**;$(Build.SourcesDirectory)/**/tests/**;$(Build.SourcesDirectory)/target/semver-checks/'
 
   pool:
     name: $(LINUXPOOL)

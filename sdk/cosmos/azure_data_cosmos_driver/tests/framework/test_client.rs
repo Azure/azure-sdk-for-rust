@@ -9,7 +9,7 @@ use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
 #[cfg(feature = "__internal_testing")]
 use azure_data_cosmos_driver::CosmosDriver;
 use azure_data_cosmos_driver::{
-    diagnostics::{DiagnosticsContext, PipelineType, TransportSecurity},
+    diagnostics::{DiagnosticsContext, PipelineKind, TransportSecurity},
     driver::CosmosDriverRuntime,
     error::CosmosError,
     models::{
@@ -31,6 +31,31 @@ use super::env::{
     EMULATOR_CONNECTION_STRING, GATEWAY_V2_ENDPOINT_ENV_VAR, GATEWAY_V2_KEY_ENV_VAR,
     GATEWAY_V2_MULTI_REGION_ENDPOINT_ENV_VAR, GATEWAY_V2_MULTI_REGION_KEY_ENV_VAR,
 };
+
+/// Applies the runtime-level test defaults every framework-built
+/// [`CosmosDriverRuntime`] shares.
+///
+/// Under `test_category = "emulator_vnext"` this defaults binary encoding off:
+/// the vnext emulator cannot decode a binary request body and rejects item
+/// writes with `400/1001 PartitionKeyMismatch` (#5240). Runtime is the lowest
+/// explicit layer, so a test that sets binary encoding at the driver or
+/// operation layer still wins.
+///
+/// `emulator_tests::driver_vnext_binary_encoding_canary` goes red when vnext
+/// starts accepting binary writes, which is the signal to delete this.
+fn runtime_operation_options(options: OperationOptions) -> OperationOptions {
+    #[cfg(test_category = "emulator_vnext")]
+    let options = {
+        let mut options = options;
+        if options.binary_encoding.is_none() {
+            options.binary_encoding = Some(
+                azure_data_cosmos_driver::options::BinaryEncodingOptions::new().with_enabled(false),
+            );
+        }
+        options
+    };
+    options
+}
 
 fn test_env_filter() -> EnvFilter {
     match std::env::var("RUST_LOG") {
@@ -262,6 +287,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
+            .with_default_operation_options(runtime_operation_options(OperationOptions::default()))
             .build()
             .await?;
 
@@ -289,6 +315,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
+            .with_default_operation_options(runtime_operation_options(OperationOptions::default()))
             .build()
             .await?;
 
@@ -383,7 +410,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
-            .with_default_operation_options(operation_options)
+            .with_default_operation_options(runtime_operation_options(operation_options))
             .build()
             .await?;
 
@@ -433,6 +460,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
+            .with_default_operation_options(runtime_operation_options(OperationOptions::default()))
             .build()
             .await?;
 
@@ -469,7 +497,7 @@ impl DriverTestClient {
     #[cfg(feature = "fault_injection")]
     pub async fn run_with_unique_db_and_hedging<F, Fut>(
         rules: Vec<Arc<FaultInjectionRule>>,
-        runtime_operation_options: OperationOptions,
+        operation_options: OperationOptions,
         preferred_regions: Vec<Region>,
         f: F,
     ) -> Result<(), Box<dyn Error>>
@@ -484,7 +512,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
-            .with_default_operation_options(runtime_operation_options)
+            .with_default_operation_options(runtime_operation_options(operation_options))
             .build()
             .await?;
 
@@ -545,7 +573,7 @@ impl DriverTestClient {
 
         let runtime = CosmosDriverRuntime::builder()
             .with_connection_pool(env.connection_pool)
-            .with_default_operation_options(operation_options)
+            .with_default_operation_options(runtime_operation_options(operation_options))
             .build()
             .await?;
 
@@ -617,26 +645,6 @@ impl DriverTestRunContext {
     /// these helpers inherits them.
     fn driver_options(&self) -> Result<DriverOptions, Box<dyn Error>> {
         let mut builder = DriverOptions::builder(self.client.account.clone());
-        #[cfg(test_category = "emulator_vnext")]
-        {
-            // Temporary workaround for #5240; product code should eventually
-            // negotiate vNext binary support. Explicit test configuration wins.
-            if self
-                .client
-                .runtime
-                .default_operation_options()
-                .binary_encoding
-                .is_none()
-            {
-                let options = OperationOptionsBuilder::new()
-                    .with_binary_encoding(
-                        azure_data_cosmos_driver::options::BinaryEncodingOptions::new()
-                            .with_enabled(false),
-                    )
-                    .build();
-                builder = builder.with_operation_options(options);
-            }
-        }
         if !self.client.preferred_regions.is_empty() {
             builder = builder.with_preferred_regions(self.client.preferred_regions.clone());
         }
@@ -833,8 +841,17 @@ impl DriverTestRunContext {
         let operation =
             CosmosOperation::create_container(database.clone()).with_body(body.into_bytes());
 
-        let create_result = driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+        let create_result = self
+            .retry_transient_transport("create container", || {
+                let operation = operation.clone();
+                let driver = driver.clone();
+                async move {
+                    driver
+                        .execute_singleton_operation(operation, OperationOptions::default())
+                        .await
+                        .map_err(Into::into)
+                }
+            })
             .await;
         // Tolerate a 409 Conflict from the create itself: a client-side
         // timeout (surfaced as a synthetic `TransportGenerated503`) doesn't
@@ -843,8 +860,15 @@ impl DriverTestRunContext {
         // already exists. Fall through to the resolve-retry loop below
         // exactly as a successful create would, since that's what actually
         // produces the `ContainerReference` this method returns.
-        match create_result {
-            Err(error) if error.status().status_code() == StatusCode::Conflict => {}
+        let mut ambiguous_create_error = match create_result {
+            Err(error)
+                if error
+                    .downcast_ref::<CosmosError>()
+                    .is_some_and(|error| error.status().status_code() == StatusCode::Conflict) =>
+            {
+                None
+            }
+            Err(error) if Self::is_transport_generated_503(error.as_ref()) => Some(error),
             other => {
                 let result = other?;
                 // Check for success status (201 Created)
@@ -853,8 +877,9 @@ impl DriverTestRunContext {
                 if !status.map(|s| s.is_success()).unwrap_or(false) {
                     return Err(format!("Failed to create container, status: {:?}", status).into());
                 }
+                None
             }
-        }
+        };
         let db_name = database
             .name()
             .ok_or_else(|| "database reference must be name-based".to_string())?;
@@ -881,15 +906,23 @@ impl DriverTestRunContext {
                     let create_in_progress = status.status_code() == StatusCode::NotFound
                         && status.sub_status()
                             == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
-                    if create_in_progress {
+                    let ambiguous_not_found = ambiguous_create_error.is_some()
+                        && status.status_code() == StatusCode::NotFound;
+                    if create_in_progress || ambiguous_not_found {
                         tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
                         delay_ms = (delay_ms * 2).min(5000);
                         last_err_msg = Some(format!("{e}"));
                         continue;
                     }
+                    if let Some(error) = ambiguous_create_error.take() {
+                        return Err(error);
+                    }
                     return Err(e.into());
                 }
             }
+        }
+        if let Some(error) = ambiguous_create_error.take() {
+            return Err(error);
         }
         Err(format!(
             "resolve_container_by_name failed after 12 retries: {}",
@@ -912,6 +945,26 @@ impl DriverTestRunContext {
         partition_key: impl Into<PartitionKey>,
         body: &[u8],
     ) -> Result<CosmosResponse, Box<dyn Error>> {
+        self.create_item_with_operation_options(
+            container,
+            item_id,
+            partition_key,
+            body,
+            OperationOptions::default(),
+        )
+        .await
+    }
+
+    /// Creates an item with explicit operation-level options, which override
+    /// the runtime defaults applied by [`runtime_operation_options`].
+    pub async fn create_item_with_operation_options(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        body: &[u8],
+        options: OperationOptions,
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
             .client
             .runtime
@@ -923,7 +976,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::create_item(item_ref).with_body(body.to_vec());
 
         let result = driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, options)
             .await?;
 
         Ok(result)
@@ -1157,7 +1210,7 @@ impl DriverTestRunContext {
         let first_request = &requests[0];
         assert_eq!(
             first_request.pipeline_type(),
-            PipelineType::DataPlane,
+            PipelineKind::DataPlane,
             "Should use data plane pipeline for item operations"
         );
 
@@ -1187,5 +1240,35 @@ impl DriverTestRunContext {
             first_request.request_charge().value() >= 0.0,
             "Request charge should be non-negative"
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::runtime_operation_options;
+    use azure_data_cosmos_driver::options::{BinaryEncodingOptions, OperationOptions};
+
+    #[test]
+    #[cfg(test_category = "emulator_vnext")]
+    fn vnext_disables_binary_encoding_by_default() {
+        let defaulted = runtime_operation_options(OperationOptions::default());
+        assert!(!defaulted.binary_encoding.unwrap().enabled);
+
+        let mut explicit = OperationOptions::default();
+        explicit.binary_encoding = Some(BinaryEncodingOptions::new().with_enabled(true));
+        assert!(
+            runtime_operation_options(explicit)
+                .binary_encoding
+                .unwrap()
+                .enabled
+        );
+    }
+
+    #[test]
+    #[cfg(not(test_category = "emulator_vnext"))]
+    fn binary_encoding_is_untouched_outside_vnext() {
+        assert!(runtime_operation_options(OperationOptions::default())
+            .binary_encoding
+            .is_none());
     }
 }
