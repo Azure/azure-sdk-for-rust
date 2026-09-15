@@ -70,8 +70,29 @@ pub struct BlobClientDownloadOptions<'a> {
     /// requests issued by this download. This is a performance optimization only:
     /// the bytes returned are identical regardless of the mode.
     ///
-    /// Defaults to [`LayoutAwareRouting::Enabled`].
+    /// Defaults to [`LayoutAwareRouting::Enabled`]. Ignored when
+    /// [`layout_endpoint`](Self::layout_endpoint) is set.
     pub layout_aware_routing: LayoutAwareRouting,
+
+    /// Optional. The layout endpoint (`host:port`) that every request issued by this
+    /// download is sent to, with the client's configured authority preserved as the
+    /// `Host` header.
+    ///
+    /// Setting this disables automatic layout lookup: the blob's layout is not fetched
+    /// and [`layout_aware_routing`](Self::layout_aware_routing) is ignored. To choose an
+    /// endpoint, enumerate the pages returned by
+    /// [`BlobClient::get_layout()`](crate::BlobClient::get_layout) and select the endpoint
+    /// whose layout range covers the offset of the requested [`range`](Self::range).
+    ///
+    /// Because the endpoint applies to every request the download issues, set a
+    /// [`range`](Self::range) that falls within a single layout range; a range spanning
+    /// several layout ranges still returns the correct bytes, but sends them all to one
+    /// endpoint. A malformed or unreachable endpoint fails the download; the request is
+    /// not retried against the client's configured endpoint.
+    ///
+    /// When `None` (the default), requests are sent to the client's configured endpoint
+    /// unless automatic routing applies.
+    pub layout_endpoint: Option<String>,
 
     /// Allows customization of the method call.
     pub method_options: ClientMethodOptions<'a>,
