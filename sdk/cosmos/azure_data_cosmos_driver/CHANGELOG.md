@@ -4,11 +4,15 @@
 
 ### Features Added
 
+- Added layered `OperationOptions::allow_unbounded_queries` and incremental unbounded non-streaming ORDER BY execution, preserving finite top-k execution and continuation restrictions. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Extended Cosmos binary JSON query-page handling to cross-partition `DISTINCT`, including composition with streaming `ORDER BY` and `OFFSET`/`LIMIT`/`TOP`. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 - Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes. Added layered `OperationOptions::query_plan_mode`, `QueryPlanMode::{LocalPreferred, GatewayOnly}`, and the authoritative `AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE=gateway` break-glass setting to force Gateway planning globally or per operation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
-- Added a fully buffered cross-partition merge for finite non-streaming `ORDER BY` plans, including `VectorDistance(...)`. Unbounded, resumed, DISTINCT, and hybrid non-streaming plans are rejected with typed statuses. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
+- Added a fully buffered cross-partition merge for finite non-streaming `ORDER BY` plans, including `VectorDistance(...)`. Resumed, DISTINCT, and hybrid non-streaming plans are rejected with typed statuses. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
 
 ### Breaking Changes
+
+- Unordered cross-partition DISTINCT and non-streaming ORDER BY require a global finite TOP/LIMIT or explicit `allow_unbounded_queries=true`, sharing 400/20125 (`CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW`); the existing non-streaming status constant remains an alias. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
+- Unified client-buffered continuation errors under 400/20124 (`CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`), retaining the shape-specific constants as aliases; finite-window admission moved from 20126 to 20125 and non-streaming window/storage errors from 20127 to 20126. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 
 - `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
 - Renamed several types for naming consistency: `diagnostics::PipelineType` is now `diagnostics::PipelineKind` (following the `Kind`-over-`Type` convention), `diagnostics::ProxyConfiguration` is now `diagnostics::ProxyConfig` (matching the `Config` naming used elsewhere), and `in_memory_emulator::RuChargingModel` is now `in_memory_emulator::RequestUnitChargingModel` (expanding the `RU` acronym). The unstable `testing` module (`__internal_mocking` feature) was renamed to `test`. ([#5203](https://github.com/Azure/azure-sdk-for-rust/pull/5203))

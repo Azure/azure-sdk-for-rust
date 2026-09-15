@@ -28,6 +28,7 @@ use azure_data_cosmos_driver::models::{
 };
 use azure_data_cosmos_driver::options::{
     BinaryEncodingOptions, DriverOptions, OperationOptions, OperationOptionsBuilder, PlanOptions,
+    QueryPlanMode,
 };
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
@@ -123,6 +124,14 @@ async fn setup() -> (Arc<InMemoryEmulatorHttpClient>, Arc<CosmosDriver>) {
 async fn setup_with_observer(
     observer: Option<Arc<dyn RequestObserver>>,
 ) -> (Arc<InMemoryEmulatorHttpClient>, Arc<CosmosDriver>) {
+    setup_with_policy(observer, OperationOptions::default(), 2).await
+}
+
+async fn setup_with_policy(
+    observer: Option<Arc<dyn RequestObserver>>,
+    client_options: OperationOptions,
+    partition_count: u32,
+) -> (Arc<InMemoryEmulatorHttpClient>, Arc<CosmosDriver>) {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         Url::parse(GATEWAY_URL).unwrap(),
@@ -139,7 +148,7 @@ async fn setup_with_observer(
     let store = emulator.store();
     store.create_database("testdb");
     let container_config = ContainerConfig::new()
-        .with_partition_count(2)
+        .with_partition_count(partition_count)
         .build()
         .unwrap();
     store.create_container_with_config(
@@ -159,7 +168,11 @@ async fn setup_with_observer(
         "ZW11bGF0b3Ita2V5",
     );
     let driver = runtime
-        .create_driver(DriverOptions::builder(account).build())
+        .create_driver(
+            DriverOptions::builder(account)
+                .with_operation_options(client_options)
+                .build(),
+        )
         .await
         .expect("driver initializes against the emulator");
     (emulator, driver)
@@ -174,6 +187,166 @@ async fn setup_with_query_recorder() -> (
     let observer: Arc<dyn RequestObserver> = recorder.clone();
     let (emulator, driver) = setup_with_observer(Some(observer)).await;
     (emulator, driver, recorder)
+}
+
+#[tokio::test]
+async fn buffered_admission_precedes_items_and_resolves_client_query_overrides() {
+    use azure_data_cosmos_driver::error::CosmosStatus;
+
+    for partition_count in [1, 2] {
+        for mode in [QueryPlanMode::LocalPreferred, QueryPlanMode::GatewayOnly] {
+            for client in [None, Some(false), Some(true)] {
+                let recorder = Arc::new(QueryRequestRecorder::default());
+                let mut defaults = OperationOptions::default();
+                defaults.allow_unbounded_queries = client;
+                defaults.query_plan_mode = Some(mode);
+                let (_, driver) =
+                    setup_with_policy(Some(recorder.clone()), defaults, partition_count).await;
+                let container = driver
+                    .resolve_container("testdb", "testcoll", OperationOptions::default())
+                    .await
+                    .unwrap();
+                let documents: Vec<_> = (0..18)
+                    .map(|n| {
+                        serde_json::json!({
+                            "id": format!("id-{n}"), "pk": format!("pk-{n}"), "value": n % 6,
+                        })
+                    })
+                    .collect();
+                seed(&driver, &container, &documents).await;
+
+                for request in [None, Some(false), Some(true)] {
+                    for (sql, parameters, bound, expected) in [
+                        ("SELECT DISTINCT VALUE c.value FROM c", vec![], false, 6),
+                        (
+                            "SELECT DISTINCT TOP @take VALUE c.value FROM c",
+                            vec![serde_json::json!({"name":"@take","value":3})],
+                            true,
+                            3,
+                        ),
+                        (
+                            "SELECT DISTINCT VALUE c.value FROM c OFFSET @skip LIMIT @take",
+                            vec![
+                                serde_json::json!({"name":"@skip","value":1}),
+                                serde_json::json!({"name":"@take","value":2}),
+                            ],
+                            true,
+                            2,
+                        ),
+                        (
+                            "SELECT DISTINCT TOP 0 VALUE c.value FROM c",
+                            vec![],
+                            true,
+                            0,
+                        ),
+                        (
+                            "SELECT DISTINCT VALUE c.value FROM c OFFSET 0 LIMIT 0",
+                            vec![],
+                            true,
+                            0,
+                        ),
+                    ] {
+                        let query = QuerySpec {
+                            text: sql.into(),
+                            parameters,
+                            distinct_type: "Unordered".into(),
+                        };
+                        let mut options = OperationOptions::default();
+                        options.allow_unbounded_queries = request;
+                        for page_size in [1, 1000, u32::MAX] {
+                            recorder.take();
+                            let result = Box::pin(driver.plan_operation(
+                                query_operation(&container, &query, page_size),
+                                &options,
+                                None,
+                                &PlanOptions::default().with_max_fan_out(
+                                    if !bound && !request.or(client).unwrap_or(false) {
+                                        1
+                                    } else {
+                                        partition_count
+                                    },
+                                ),
+                            ))
+                            .await;
+                            assert!(recorder.take().is_empty(), "planning must not query items");
+                            if !bound && !request.or(client).unwrap_or(false) {
+                                let error = result.err().expect("unbounded query must be denied");
+                                assert_eq!(
+                                    error.status(),
+                                    CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+                                );
+                                let message = error.to_string();
+                                assert!(message.contains("unordered DISTINCT"));
+                                assert!(message.contains("TOP or LIMIT"));
+                                assert!(message.contains("allow_unbounded_queries"));
+                                assert!(!message.contains(sql));
+                                continue;
+                            }
+                            let mut plan = result.unwrap();
+                            let mut values = Vec::new();
+                            while let Some(response) = driver
+                                .execute_plan(
+                                    &mut plan,
+                                    Some(container.clone()),
+                                    OperationOptions::default(),
+                                )
+                                .await
+                                .unwrap()
+                            {
+                                values.extend(documents_of(response));
+                            }
+                            let unique = sorted(values.clone());
+                            assert_eq!(values.len(), expected);
+                            let mut deduped = unique.clone();
+                            deduped.dedup();
+                            assert_eq!(deduped, unique);
+                            if !bound {
+                                assert_eq!(
+                                    unique,
+                                    (0..6).map(|value| value.to_string()).collect::<Vec<_>>()
+                                );
+                            }
+                        }
+                    }
+                }
+
+                // A complete logical key bypasses client deduplication even with an explicit denial.
+                let query = QuerySpec {
+                    text: "SELECT DISTINCT VALUE c.value FROM c".into(),
+                    parameters: vec![],
+                    distinct_type: "Unordered".into(),
+                };
+                let operation = CosmosOperation::query_items(
+                    container.clone(),
+                    Some(FeedRange::for_partition(
+                        PartitionKey::from("pk-0"),
+                        &PartitionKeyDefinition::new(vec!["/pk".into()]),
+                    )),
+                )
+                .with_body(query_body(&query));
+                let options = OperationOptionsBuilder::new()
+                    .with_allow_unbounded_queries(false)
+                    .build();
+                let mut plan = Box::pin(driver.plan_operation(
+                    operation,
+                    &options,
+                    None,
+                    &PlanOptions::default(),
+                ))
+                .await
+                .unwrap();
+                let mut values = Vec::new();
+                while let Some(response) = driver
+                    .execute_plan(&mut plan, Some(container.clone()), options.clone())
+                    .await
+                    .unwrap()
+                {
+                    values.extend(documents_of(response));
+                }
+                assert_eq!(values, vec![serde_json::json!(0)]);
+            }
+        }
+    }
 }
 
 async fn seed(
@@ -419,12 +592,16 @@ async fn drain_all(
     query: &QuerySpec,
     page_size: u32,
 ) -> Vec<serde_json::Value> {
-    let mut plan = Box::pin(driver.plan_operation(
-        query_operation(container, query, page_size),
-        &OperationOptions::default(),
-        None,
-        &PlanOptions::default(),
-    ))
+    let mut plan = Box::pin(
+        driver.plan_operation(
+            query_operation(container, query, page_size),
+            &OperationOptionsBuilder::new()
+                .with_allow_unbounded_queries(query.distinct_type == "Unordered")
+                .build(),
+            None,
+            &PlanOptions::default(),
+        ),
+    )
     .await
     .expect("plan builds");
 
@@ -512,23 +689,31 @@ async fn catalog_emulator_error_scenarios_fail_as_expected() {
 
         let outcome = match expected.category.as_str() {
             // The unsupported-feature check happens while planning.
-            "clientUnsupportedQueryFeature" => Box::pin(driver.plan_operation(
-                query_operation(&container, &scenario.query, 10),
-                &OperationOptions::default(),
-                None,
-                &PlanOptions::default(),
-            ))
+            "clientUnsupportedQueryFeature" => Box::pin(
+                driver.plan_operation(
+                    query_operation(&container, &scenario.query, 10),
+                    &OperationOptionsBuilder::new()
+                        .with_allow_unbounded_queries(true)
+                        .build(),
+                    None,
+                    &PlanOptions::default(),
+                ),
+            )
             .await
             .err()
             .map(|e| e.to_string()),
             // The continuation refusal happens when the caller mints a token.
             "clientDistinctContinuationUnsupported" => {
-                let mut plan = Box::pin(driver.plan_operation(
-                    query_operation(&container, &scenario.query, 1),
-                    &OperationOptions::default(),
-                    None,
-                    &PlanOptions::default(),
-                ))
+                let mut plan = Box::pin(
+                    driver.plan_operation(
+                        query_operation(&container, &scenario.query, 1),
+                        &OperationOptionsBuilder::new()
+                            .with_allow_unbounded_queries(true)
+                            .build(),
+                        None,
+                        &PlanOptions::default(),
+                    ),
+                )
                 .await
                 .expect("an unordered DISTINCT query plans successfully");
                 let _ = driver
@@ -673,12 +858,16 @@ async fn ordered_distinct_resume_matches_a_single_drain() {
     let mut resumed = Vec::new();
     let mut token = None;
     loop {
-        let mut plan = Box::pin(driver.plan_operation(
-            query_operation(&container, &scenario.query, 1),
-            &OperationOptions::default(),
-            token.as_ref(),
-            &PlanOptions::default(),
-        ))
+        let mut plan = Box::pin(
+            driver.plan_operation(
+                query_operation(&container, &scenario.query, 1),
+                &OperationOptionsBuilder::new()
+                    .with_allow_unbounded_queries(scenario.query.distinct_type == "Unordered")
+                    .build(),
+                token.as_ref(),
+                &PlanOptions::default(),
+            ),
+        )
         .await
         .expect("plan builds (fresh or resumed)");
 
@@ -750,12 +939,16 @@ async fn split_mid_drain_does_not_reemit_deduplicated_values() {
             .expect("container resolves");
         seed(&driver, &container, &scenario.documents).await;
 
-        let mut plan = Box::pin(driver.plan_operation(
-            query_operation(&container, &scenario.query, 1),
-            &OperationOptions::default(),
-            None,
-            &PlanOptions::default(),
-        ))
+        let mut plan = Box::pin(
+            driver.plan_operation(
+                query_operation(&container, &scenario.query, 1),
+                &OperationOptionsBuilder::new()
+                    .with_allow_unbounded_queries(scenario.query.distinct_type == "Unordered")
+                    .build(),
+                None,
+                &PlanOptions::default(),
+            ),
+        )
         .await
         .expect("plan builds");
 
@@ -845,6 +1038,7 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
         },
     ] {
         let text_options = OperationOptionsBuilder::new()
+            .with_allow_unbounded_queries(query.distinct_type == "Unordered")
             .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(false))
             .build();
         let (text, text_formats) = drain_query_with_options(
@@ -857,6 +1051,7 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
         .await;
         let text_request_modes = recorder.take();
         let binary_options = OperationOptionsBuilder::new()
+            .with_allow_unbounded_queries(query.distinct_type == "Unordered")
             .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(true))
             .build();
         let (binary, binary_formats) = drain_query_with_options(
@@ -869,6 +1064,7 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
         .await;
         let binary_request_modes = recorder.take();
         let binary_as_text_options = OperationOptionsBuilder::new()
+            .with_allow_unbounded_queries(query.distinct_type == "Unordered")
             .with_binary_encoding(
                 BinaryEncodingOptions::new()
                     .with_enabled(true)

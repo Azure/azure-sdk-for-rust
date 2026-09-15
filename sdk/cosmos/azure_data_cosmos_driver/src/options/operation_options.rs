@@ -40,6 +40,14 @@ use crate::{
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct OperationOptions {
+    /// Allows client-buffered queries without a global finite TOP or LIMIT.
+    ///
+    /// `None` inherits; the final default is false. Explicit false overrides a
+    /// client opt-out. Enabling this can consume unbounded memory and does not
+    /// relax service restrictions or enable buffered-query continuation tokens.
+    #[option(env = "AZURE_COSMOS_ALLOW_UNBOUNDED_QUERIES")]
+    pub allow_unbounded_queries: Option<bool>,
+
     /// Query-plan provider selection for query operations.
     ///
     /// `None` inherits from a lower layer (default:
@@ -395,6 +403,49 @@ mod tests {
         // Not set anywhere
         assert!(view.excluded_regions().is_none());
         assert!(view.max_session_retry_count().is_none());
+    }
+
+    #[test]
+    fn unbounded_admission_resolves_each_layer_and_explicit_false() {
+        use crate::driver::dataflow::{
+            planner::validate_buffered_query,
+            query_plan::{DistinctType, QueryInfo, QueryPlan},
+        };
+        use std::sync::Arc;
+
+        let plan = QueryPlan {
+            query_info: Some(QueryInfo {
+                distinct_type: DistinctType::Unordered,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        for env in [None, Some(false), Some(true)] {
+            for runtime in [None, Some(false), Some(true)] {
+                for account in [None, Some(false), Some(true)] {
+                    for operation in [None, Some(false), Some(true)] {
+                        let layer = |value| {
+                            Arc::new(OperationOptions {
+                                allow_unbounded_queries: value,
+                                ..Default::default()
+                            })
+                        };
+                        let request = layer(operation);
+                        let view = OperationOptionsView::new(
+                            Some(layer(env)),
+                            Some(layer(runtime)),
+                            Some(layer(account)),
+                            Some(&request),
+                        );
+                        let allowed = view.allow_unbounded_queries().copied().unwrap_or(false);
+                        assert_eq!(
+                            validate_buffered_query(&plan, allowed).is_ok(),
+                            operation.or(account).or(runtime).or(env).unwrap_or(false)
+                        );
+                    }
+                }
+            }
+        }
     }
 
     /// Rule 2 + Rule 3 (RCS resolution):

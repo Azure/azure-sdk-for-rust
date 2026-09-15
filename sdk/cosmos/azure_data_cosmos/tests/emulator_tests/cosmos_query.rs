@@ -11,8 +11,11 @@ use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
     feed::FeedScope,
     models::ThroughputProperties,
-    options::{MaxItemCountHint, QueryOptions},
-    Query,
+    options::{
+        BinaryEncodingOptions, MaxItemCountHint, OperationOptions, QueryOptions, QueryPlanMode,
+        Region,
+    },
+    AccountReference, CosmosClient, CosmosStatus, Query, RoutingStrategy,
 };
 use framework::{test_data, MockItem, TestClient, TestOptions};
 use futures::StreamExt;
@@ -77,6 +80,120 @@ fn unordered_query_results_allow_different_order() {
 #[should_panic(expected = "query result is missing")]
 fn unordered_query_results_preserve_multiplicity() {
     assert_query_results(vec![1, 1], vec![1, 2], QueryResultOrder::Unordered);
+}
+
+#[tokio::test]
+#[cfg_attr(not(test_category = "emulator"), ignore = "requires live account")]
+async fn live_distinct_admission_and_option_precedence() -> Result<(), Box<dyn Error>> {
+    if framework::targets_emulator() {
+        eprintln!("live DISTINCT admission coverage requires a live account");
+        return Ok(());
+    }
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            println!("Live DISTINCT test database: {}", run_context.db_name());
+            test_data::create_container_with_items(
+                db_client,
+                test_data::generate_mock_items(4, 3),
+                None,
+            )
+            .await?;
+            let connection = framework::resolve_connection_string()
+                .expect("the live harness already resolved a connection string");
+            let account = AccountReference::with_authentication_key(
+                connection.account_endpoint().parse()?,
+                connection.account_key().clone(),
+            );
+            let expected: Vec<String> = (0..4).map(|i| format!("partition{i}")).collect();
+            let unbounded = "SELECT DISTINCT VALUE c.partitionKey FROM c";
+            for mode in [QueryPlanMode::LocalPreferred, QueryPlanMode::GatewayOnly] {
+                for client_allow in [None, Some(false), Some(true)] {
+                    let mut defaults = OperationOptions::default();
+                    defaults.query_plan_mode = Some(mode);
+                    defaults.allow_unbounded_queries = client_allow;
+                    let client = CosmosClient::builder()
+                        .with_default_operation_options(defaults)
+                        .build(account.clone(), RoutingStrategy::ProximityTo(Region::EAST_US))
+                        .await?;
+                    let container = client
+                        .database_client(run_context.db_name())
+                        .container_client("TestContainer", None)
+                        .await?;
+                    for binary in [false, true] {
+                        let mut operation = OperationOptions::default();
+                        operation.binary_encoding =
+                            Some(BinaryEncodingOptions::new().with_enabled(binary));
+                        let options = QueryOptions::default()
+                            .with_operation_options(operation)
+                            .with_max_item_count(MaxItemCountHint::Limit(
+                                std::num::NonZeroU32::new(1).unwrap(),
+                            ));
+                        for request_allow in [None, Some(false), Some(true)] {
+                            let mut options = options.clone();
+                            if let Some(allow) = request_allow {
+                                options = options.with_allow_unbounded_queries(allow);
+                            }
+                            let result = container
+                                .query_items::<String>(
+                                    unbounded,
+                                    FeedScope::full_container(),
+                                    Some(options),
+                                )
+                                .await;
+                            if !request_allow.or(client_allow).unwrap_or(false) {
+                                let error = match result {
+                                    Err(error) => error,
+                                    Ok(_) => panic!("unbounded DISTINCT must fail at admission"),
+                                };
+                                assert_eq!(
+                                    error.status(),
+                                    CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW,
+                                    "{mode:?}, client={client_allow:?}, request={request_allow:?}, binary={binary}"
+                                );
+                            } else {
+                                let mut pages = result?.into_pages();
+                                assert_eq!(
+                                    pages.to_continuation_token().unwrap_err().status(),
+                                    CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
+                                );
+                                let mut actual = Vec::new();
+                                while let Some(page) = pages.next().await {
+                                    actual.extend(page?.into_items());
+                                }
+                                actual.sort();
+                                assert_eq!(actual, expected);
+                            }
+                        }
+                        for query in [
+                            "SELECT DISTINCT TOP @bound VALUE c.partitionKey FROM c",
+                            "SELECT DISTINCT VALUE c.partitionKey FROM c OFFSET 1 LIMIT @bound",
+                        ] {
+                            let mut pages = container
+                                .query_items::<String>(
+                                    Query::from(query).with_parameter("@bound", 2)?,
+                                    FeedScope::full_container(),
+                                    Some(options.clone().with_allow_unbounded_queries(false)),
+                                )
+                                .await?
+                                .into_pages();
+                            let mut actual = Vec::new();
+                            while let Some(page) = pages.next().await {
+                                actual.extend(page?.into_items());
+                            }
+                            assert_eq!(actual.len(), 2);
+                            actual.sort();
+                            actual.dedup();
+                            assert_eq!(actual.len(), 2);
+                            assert!(actual.iter().all(|value| expected.contains(value)));
+                        }
+                    }
+                }
+            }
+            Ok(())
+        },
+        Some(TestOptions::default()),
+    )
+    .await
 }
 
 async fn execute_query_test<T>(
@@ -407,9 +524,11 @@ pub async fn cross_partition_query_with_unordered_distinct() -> Result<(), Box<d
                     "select distinct value c.partitionKey from c",
                     FeedScope::full_container(),
                     Some(
-                        QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
-                            std::num::NonZeroU32::new(3).unwrap(),
-                        )),
+                        QueryOptions::default()
+                            .with_allow_unbounded_queries(true)
+                            .with_max_item_count(MaxItemCountHint::Limit(
+                                std::num::NonZeroU32::new(3).unwrap(),
+                            )),
                     ),
                 )
                 .await?
@@ -518,9 +637,11 @@ pub async fn unordered_distinct_refuses_a_continuation_token() -> Result<(), Box
                     "select distinct value c.partitionKey from c",
                     FeedScope::full_container(),
                     Some(
-                        QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
-                            std::num::NonZeroU32::new(1).unwrap(),
-                        )),
+                        QueryOptions::default()
+                            .with_allow_unbounded_queries(true)
+                            .with_max_item_count(MaxItemCountHint::Limit(
+                                std::num::NonZeroU32::new(1).unwrap(),
+                            )),
                     ),
                 )
                 .await?
@@ -1116,7 +1237,11 @@ pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
                 scope: FeedScope,
             ) -> Result<usize, Box<dyn Error>> {
                 let mut pages = container
-                    .query_items::<serde_json::Value>(query, scope, None)
+                    .query_items::<serde_json::Value>(
+                        query,
+                        scope,
+                        Some(QueryOptions::default().with_allow_unbounded_queries(true)),
+                    )
                     .await?
                     .into_pages();
                 let mut n = 0;
@@ -1228,7 +1353,11 @@ pub async fn distinct_combined_with_unsupported_stages_is_rejected() -> Result<(
 
             for query in unsupported {
                 let outcome = container
-                    .query_items::<serde_json::Value>(query, FeedScope::full_container(), None)
+                    .query_items::<serde_json::Value>(
+                        query,
+                        FeedScope::full_container(),
+                        Some(QueryOptions::default().with_allow_unbounded_queries(true)),
+                    )
                     .await;
                 let error = match outcome {
                     Err(error) => error,

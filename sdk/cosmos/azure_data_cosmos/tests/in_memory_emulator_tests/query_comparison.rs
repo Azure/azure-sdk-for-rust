@@ -310,6 +310,92 @@ enum FixtureKind {
     Hpk,
 }
 
+#[tokio::test]
+async fn buffered_query_policy_sdk_overrides_and_hierarchical_routing() -> Result<(), Box<dyn Error>>
+{
+    let harness = QueryComparisonHarness::setup_in_memory_only().await?;
+    let handles = provision_fixture_with_topology(
+        &harness,
+        "buffered-policy",
+        FixtureKind::Hpk,
+        Some(ContainerConfig::new().with_partition_count(1).build()?),
+        &[],
+    )
+    .await?;
+    let query = "SELECT DISTINCT VALUE c.value FROM c";
+    let ranges = handles.emulator_container.read_feed_ranges(None).await?;
+    assert_eq!(ranges.len(), 1);
+    for client_allow in [false, true] {
+        let mut defaults = OperationOptions::default();
+        defaults.allow_unbounded_queries = Some(client_allow);
+        let client = CosmosClientBuilder::new()
+            .with_runtime(
+                CosmosRuntimeBuilder::from(harness.emulator_http.runtime_builder())
+                    .build()
+                    .await?,
+            )
+            .with_default_operation_options(defaults)
+            .build(
+                AccountReference::with_authentication_key(
+                    EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>()?,
+                    Secret::new("dGVzdGtleQ=="),
+                ),
+                RoutingStrategy::ProximityTo(Region::EAST_US),
+            )
+            .await?;
+        let container = client
+            .database_client("buffered-policy")
+            .container_client("hpk", None)
+            .await?;
+        for (scope, buffered, expected_count) in [
+            (FeedScope::full_container(), true, handles.documents.len()),
+            (
+                FeedScope::range(ranges[0].clone()),
+                true,
+                handles.documents.len(),
+            ),
+            (FeedScope::partition("tenant-a"), true, 7),
+            (
+                FeedScope::partition(("tenant-a", "user-1", "session-1")),
+                false,
+                1,
+            ),
+        ] {
+            for request in [None, Some(false), Some(true)] {
+                let mut options = QueryOptions::default()
+                    .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
+                if let Some(allow) = request {
+                    options = options.with_allow_unbounded_queries(allow);
+                }
+                let result = container
+                    .query_items::<Value>(query, scope.clone(), Some(options))
+                    .await;
+                if buffered && !request.unwrap_or(client_allow) {
+                    let error = match result {
+                        Err(error) => error,
+                        Ok(_) => {
+                            panic!("unbounded buffered query must fail before creating a pager")
+                        }
+                    };
+                    assert_eq!(error.status(), azure_data_cosmos::models::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW);
+                } else {
+                    let mut pages = result?.into_pages();
+                    if buffered {
+                        assert_eq!(pages.to_continuation_token().unwrap_err().status(),
+                            azure_data_cosmos::models::CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED);
+                    }
+                    let mut values = Vec::new();
+                    while let Some(page) = pages.next().await {
+                        values.extend(page?.into_items());
+                    }
+                    assert_eq!(values.len(), expected_count);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 impl FixtureKind {
     fn container_name(self) -> &'static str {
         match self {

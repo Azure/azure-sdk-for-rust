@@ -203,6 +203,7 @@ pub struct OperationOptions { /* fields below */ }
 
 | Option                                         | Type                              | Env Var                                  | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | ---------------------------------------------- | --------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `allow_unbounded_queries` | `Option<bool>` | `AZURE_COSMOS_ALLOW_UNBOUNDED_QUERIES` | Allows client-buffered queries without a global finite TOP/LIMIT. `None` inherits; the final default is false. See section 5.3 for query usage. |
 | `read_consistency_strategy`                    | `Option<ReadConsistencyStrategy>` | `AZURE_COSMOS_READ_CONSISTENCY_STRATEGY` | Read consistency for the operation. Replaces the legacy `consistency_level` field. The SDK enforces weakening-only semantics relative to the account default.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `excluded_regions`                             | `Option<Vec<RegionName>>`         | `AZURE_COSMOS_EXCLUDED_REGIONS`          | Regions to exclude from routing. `None` inherits from a lower layer; `Some(vec![])` explicitly clears exclusions. Env var is comma-separated (e.g. `"West US,East US"`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `content_response_on_write`                    | `Option<bool>`                    | `AZURE_COSMOS_CONTENT_RESPONSE_ON_WRITE` | Whether write operations return the resource body in the response. Only applicable to write operations; ignored by reads and queries. Cascades from runtime → account → operation, matching .NET/Java/Go behavior.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -431,11 +432,42 @@ pub struct QueryOptions {
 
 | Option                    | Type                   | Notes                                                                                                                                                                       |
 | ------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `operation`               | `OperationOptions`     | Layered group; `content_response_on_write` is ignored for queries.                                                                                                          |
+| `operation`               | `OperationOptions`     | Layered group, including `allow_unbounded_queries`; `content_response_on_write` is ignored for queries.                                                                                                          |
 | `session_token`           | `Option<SessionToken>` | Session token for session-consistent queries. Operation-only.                                                                                                               |
 | `enable_scan_if_no_index` | `Option<bool>`         | If the query can't be served by indexes because the relevant paths are not indexed, setting this permits the query engine to perform a full container scan. Operation-only. |
 | `populate_index_metrics`  | `Option<bool>`         | If set to `true`, the response will contain metrics regarding indexes used. Operation-only.                                                                                 |
 | `populate_query_advice`   | `Option<bool>`         | If set to `true`, the response will include query optimization suggestions from the query advisor. Operation-only.                                                          |
+
+#### Buffered-query opt-out
+
+`OperationOptions::allow_unbounded_queries: Option<bool>` participates in the
+existing operation > account/client > runtime > environment precedence.
+Unset inherits; the final default is false. Explicit false overrides inherited
+true. `AZURE_COSMOS_ALLOW_UNBOUNDED_QUERIES=true` is a low-priority explicit
+opt-out; there is no authoritative `_OVERRIDE` variant.
+
+The SDK convenience setter
+`QueryOptions::with_allow_unbounded_queries(bool)` writes the nested operation
+option, not a second setting. Prefer a global TOP or LIMIT where practical:
+
+```rust
+use azure_data_cosmos::{
+    CosmosClientBuilder,
+    options::{OperationOptionsBuilder, QueryOptions},
+};
+
+// SQL alternative: SELECT DISTINCT TOP 100 VALUE c.category FROM c
+let defaults = OperationOptionsBuilder::new()
+    .with_allow_unbounded_queries(true)
+    .build();
+let client_builder = CosmosClientBuilder::new()
+    .with_default_operation_options(defaults);
+let query_options = QueryOptions::default().with_allow_unbounded_queries(false);
+```
+
+The Rust SDK and driver use the same operation-options hierarchy. This
+setting only admits potentially unbounded client buffering; it supplies no
+memory budget and does not change service or continuation restrictions.
 
 ### 5.4 `TransactionalBatchOptions`
 

@@ -1034,6 +1034,23 @@ impl DriverTestRunContext {
         item_id: &str,
         partition_key: impl Into<PartitionKey>,
     ) -> Result<CosmosResponse, Box<dyn Error>> {
+        self.read_item_with_options(
+            container,
+            item_id,
+            partition_key,
+            OperationOptions::default(),
+        )
+        .await
+    }
+
+    /// Reads an item with options scoped to the read, not driver initialization.
+    pub async fn read_item_with_options(
+        &self,
+        container: &ContainerReference,
+        item_id: &str,
+        partition_key: impl Into<PartitionKey>,
+        options: OperationOptions,
+    ) -> Result<CosmosResponse, Box<dyn Error>> {
         let driver = self
             .client
             .runtime
@@ -1045,7 +1062,7 @@ impl DriverTestRunContext {
         let operation = CosmosOperation::read_item(item_ref);
 
         let result = driver
-            .execute_singleton_operation(operation, OperationOptions::default())
+            .execute_singleton_operation(operation, options)
             .await?;
 
         Ok(result)

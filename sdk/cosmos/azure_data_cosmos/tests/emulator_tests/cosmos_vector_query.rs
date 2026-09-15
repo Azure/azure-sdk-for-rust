@@ -666,6 +666,66 @@ pub async fn cross_partition_vector_search() -> Result<(), Box<dyn Error>> {
     .await
 }
 
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires live vector-enabled account"
+)]
+pub async fn unbounded_vector_query_admission_and_execution() -> Result<(), Box<dyn Error>> {
+    if framework::targets_emulator() {
+        eprintln!("live vector admission coverage unavailable on local emulators");
+        return Ok(());
+    }
+    TestClient::run_with_unique_db(
+        async |run_context, db_client| {
+            let container = seed_vector_container(
+                run_context, db_client, Some(CROSS_PARTITION_THROUGHPUT),
+            ).await?;
+            assert_seeded_across_physical_partitions(&container, vector_documents().len()).await?;
+            let query = Query::from(
+                "SELECT c.id, VectorDistance(c.embedding, @queryVector, true) AS score \
+                 FROM c WHERE c.active = true \
+                 ORDER BY VectorDistance(c.embedding, @queryVector, true)",
+            ).with_parameter("@queryVector", QUERY_VECTOR.as_slice())?;
+            let denied = container.query_items::<VectorMatch>(
+                query.clone(), FeedScope::full_container(), None,
+            ).await;
+            let error = match denied {
+                Err(error) => error,
+                Ok(_) => panic!("missing global bound must be rejected"),
+            };
+            // A service rejection is not evidence of client admission or executable opt-out.
+            assert_eq!(error.status(), CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW,
+                "the service must supply a no-TOP vector plan to validate client admission: {error}");
+            let mut pages = container.query_items::<VectorMatch>(
+                query.clone(), FeedScope::full_container(),
+                Some(QueryOptions::default().with_allow_unbounded_queries(true).with_max_item_count(
+                    MaxItemCountHint::Limit(NonZeroU32::new(2).unwrap()),
+                )),
+            ).await?.into_pages();
+            assert_eq!(pages.to_continuation_token().unwrap_err().status(),
+                CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED);
+            let mut ids = Vec::new();
+            while let Some(page) = pages.next().await {
+                ids.extend(page?.into_items().into_iter().map(|item| item.id));
+            }
+            assert_eq!(ids, ["origin", "other-partition-origin", "near",
+                "other-partition-near", "far", "farthest"]);
+            let mut pages = container.query_items::<VectorMatch>(
+                query, FeedScope::partition(SEARCH_PARTITION),
+                Some(QueryOptions::default().with_allow_unbounded_queries(false)),
+            ).await?.into_pages();
+            let mut ids = Vec::new();
+            while let Some(page) = pages.next().await {
+                ids.extend(page?.into_items().into_iter().map(|item| item.id));
+            }
+            assert_eq!(ids, ["origin", "near", "far", "farthest"]);
+            Ok(())
+        },
+        Some(TestOptions::default()),
+    ).await
+}
+
 #[test]
 fn precomputed_vector_fixture_has_expected_shape() {
     precomputed_vector_fixture();

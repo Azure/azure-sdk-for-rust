@@ -1208,6 +1208,8 @@ pub mod models {
     impl CosmosStatus {
         const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: CosmosStatus = _;
         const CLIENT_BAD_REQUEST: CosmosStatus = _;
+        const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
+        const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: CosmosStatus = _;
         const CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE: CosmosStatus = _;
         const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: CosmosStatus = _;
         const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: CosmosStatus = _;
@@ -1226,7 +1228,7 @@ pub mod models {
         const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: CosmosStatus = _;
         const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: CosmosStatus = _;
         const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = _;
-        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
+        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
         const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: CosmosStatus = _;
         const CLIENT_DRIVER_NOT_INITIALIZED: CosmosStatus = _;
         const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: CosmosStatus = _;
@@ -1240,8 +1242,8 @@ pub mod models {
         const CLIENT_INVALID_URL: CosmosStatus = _;
         const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = _;
         const CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH: CosmosStatus = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus = _;
+        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
+        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
         const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: CosmosStatus = _;
         const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: CosmosStatus = _;
         const CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE: CosmosStatus = _;
@@ -2456,6 +2458,7 @@ pub mod options {
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct OperationOptions {
+        pub allow_unbounded_queries: Option<bool>,
         pub query_plan_mode: Option<crate::options::QueryPlanMode>,
         pub patch_strategy: Option<crate::options::PatchStrategy>,
         pub read_consistency_strategy: Option<crate::options::ReadConsistencyStrategy>,
@@ -2489,6 +2492,7 @@ pub mod options {
         #[must_use]
         pub fn build(self) -> OperationOptions;
         pub fn new() -> Self;
+        pub fn with_allow_unbounded_queries(self, value: bool) -> Self;
         pub fn with_availability_strategy(self, value: AvailabilityStrategy) -> Self;
         pub fn with_binary_encoding(self, value: BinaryEncodingOptions) -> Self;
         pub fn with_content_response_on_write(self, value: ContentResponseOnWrite) -> Self;
@@ -2513,6 +2517,7 @@ pub mod options {
     #[doc(inline)]
     #[automatically_derived]
     impl<'a> OperationOptionsView<'a> {
+        pub fn allow_unbounded_queries(&self) -> Option<&bool>;
         pub fn availability_strategy(&self) -> Option<&AvailabilityStrategy>;
         pub fn binary_encoding(&self) -> Option<&BinaryEncodingOptions>;
         pub fn content_response_on_write(&self) -> Option<&ContentResponseOnWrite>;
@@ -2623,6 +2628,7 @@ pub mod options {
         pub populate_query_metrics: Option<bool>,
     }
     impl QueryOptions {
+        pub fn with_allow_unbounded_queries(self, allow: bool) -> Self;
         pub fn with_continuation_token(self, continuation_token: ContinuationToken) -> Self;
         pub fn with_feed_options(self, feed: FeedOptions) -> Self;
         pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;

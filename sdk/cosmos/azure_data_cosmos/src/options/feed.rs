@@ -145,6 +145,15 @@ pub struct QueryOptions {
 }
 
 impl QueryOptions {
+    /// Allows client-buffered queries without a global finite TOP or LIMIT.
+    ///
+    /// Overrides the client default, including when false. Enabling this can
+    /// consume unbounded memory; service and continuation restrictions still apply.
+    pub fn with_allow_unbounded_queries(mut self, allow: bool) -> Self {
+        self.operation.allow_unbounded_queries = Some(allow);
+        self
+    }
+
     /// Sets the session token for this request.
     pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
         self.session_token = Some(session_token.into());

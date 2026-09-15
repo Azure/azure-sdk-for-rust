@@ -16,6 +16,43 @@ The supported SDK query path now integrates the local planner as a pre-Gateway o
 
 ## Architecture
 
+### Buffered-query admission
+
+Before allocating a client-buffering pipeline or issuing item-query requests,
+the driver validates the normalized global plan from every provider. Metadata
+and query-plan requests may precede this check. Non-streaming ORDER BY (including
+buffered vector search) and unordered DISTINCT require a finite global TOP or
+LIMIT, unless resolved `allow_unbounded_queries` is true. Ordering metadata does
+not exempt an unordered DISTINCT stage.
+
+Any representable finite bound is accepted: there is no fixed numeric ceiling.
+Zero is a bound, and TOP combined with LIMIT uses the smaller value.
+OFFSET alone, page-size hints, fan-out, consumer-side take, nested subquery TOP,
+and per-range rewritten bounds do not establish a global output bound.
+
+Complete logical-partition-key pass-through and provably empty local resolutions
+are exempt. Partial hierarchical keys and explicit ranges still use the policy,
+even if they currently touch only one physical partition. Ordinary streaming
+queries, streaming ORDER BY without unordered DISTINCT, and ordered DISTINCT
+retain their existing behavior.
+
+Bounded non-streaming execution retains its top-k heap and checked OFFSET + take
+window. Explicit unbounded execution grows candidate storage incrementally,
+sorts all candidates with the same key/ordinal comparison, applies OFFSET, and
+paginates the remaining rows. Admission is fixed when the plan is built.
+This is not a runtime memory budget or a guarantee that finite output bounds
+bound all memory: OFFSET and page-level DISTINCT processing add retained work.
+
+Neither bounds nor opt-out enable unsupported query compositions. Cross-partition
+plans using client-side unordered DISTINCT or non-streaming ORDER BY stages
+reject continuation tokens with 400/20124. Complete logical-partition-key queries
+bypass these stages and their client-side continuation restrictions.
+Service validation remains authoritative. In particular, a service rejection of
+a no-TOP vector query is not bypassed or replaced by a fabricated large TOP.
+Live no-TOP vector support must be verified against an enabled account before
+promising that service scenario; deterministic buffered-node tests cover the
+client execution mode independently.
+
 ```text
 SQL Text
   → Lexer (hand-crafted tokenizer)

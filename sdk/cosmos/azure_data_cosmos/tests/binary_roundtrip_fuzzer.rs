@@ -41,7 +41,7 @@ use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::options::{
     BinaryEncodingOptions, ConnectionPoolOptions, ContentResponseOnWrite, ItemWriteOptions,
-    OperationOptions, Region, ServerCertificateValidation,
+    OperationOptions, QueryOptions, Region, ServerCertificateValidation,
 };
 use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
@@ -2012,13 +2012,18 @@ async fn query_values<T: DeserializeOwned + Send + 'static>(
     sql: &str,
     run_id: &str,
     context: &str,
+    allow_unbounded_queries: bool,
 ) -> Result<Vec<T>, Box<dyn Error>> {
     let mut attempt = 0;
     loop {
         attempt += 1;
         let query = Query::from(sql).with_parameter("@run", run_id)?;
         let result = match container
-            .query_items(query, FeedScope::full_container(), None)
+            .query_items(
+                query,
+                FeedScope::full_container(),
+                Some(QueryOptions::default().with_allow_unbounded_queries(allow_unbounded_queries)),
+            )
             .await
         {
             Ok(iterator) => Box::pin(iterator.try_collect()).await,
@@ -2410,7 +2415,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
                     .await?;
                 let context = format!("iter={iter} config={label} query={phase} seed={}", cfg.seed);
                 let actual = canonical_query_results(
-                    query_values(&container, sql, &run_id, &context).await?,
+                    query_values(&container, sql, &run_id, &context, phase == "distinct").await?,
                     ordered,
                 );
                 if let Some(expected) = &expected {
@@ -2440,6 +2445,7 @@ async fn binary_encoding_roundtrip_fuzz() -> Result<(), Box<dyn Error>> {
                 "SELECT VALUE {\"int\": 7} FROM c WHERE c.fuzzRun = @run",
                 &run_id,
                 &context,
+                false,
             )
             .await?;
             assert!(

@@ -4,6 +4,27 @@ This document describes the implemented retry behavior for the Azure Cosmos DB R
 
 ## Design Philosophy
 
+### Buffered-query input validation
+
+| Status | Symbol | Remedy |
+| --- | --- | --- |
+| 400/20124 | `CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED` | Drain the cross-partition client-buffered query in-process rather than using continuation tokens. |
+| 400/20125 | `CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW` | Add a finite global TOP/LIMIT to non-streaming ORDER BY (including buffered vector search) or unordered DISTINCT, or explicitly set `allow_unbounded_queries=true`. |
+| 400/20126 | `CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE` | Reduce the non-streaming candidate window or required storage. |
+
+The existing `CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW` constant
+remains a compatibility alias. Both shapes report the symbolic name
+`ClientBufferedQueryRequiresFiniteWindow`; no separate DISTINCT code is allocated.
+
+This is a non-retryable client input error. Messages identify the query shape
+and remedies without SQL or parameter values. No fixed numeric ceiling applies.
+400/20126 reports unrepresentable non-streaming windows/candidate storage.
+Cross-partition plans using client-side unordered DISTINCT or non-streaming
+ORDER BY stages share continuation restriction 400/20124, with or without an
+opt-out. Complete logical-partition-key queries bypass these stages and their
+client-side continuation restrictions. The existing shape-specific continuation
+constants remain aliases of `CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`.
+
 The Rust driver retries writes by default for retryable status codes. This is safe because Cosmos DB's write APIs are designed to be idempotent when used correctly:
 
 - **503 (Service Unavailable)**: Cosmos DB intentionally returns 503 when a write was **not processed** — it is always safe to retry.

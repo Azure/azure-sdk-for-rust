@@ -110,7 +110,10 @@ async fn start_query(
         .query_items::<String>(
             query,
             FeedScope::full_container(),
-            Some(query_options(binary, page_size)),
+            Some(
+                query_options(binary, page_size)
+                    .with_allow_unbounded_queries(query == UNORDERED_QUERY),
+            ),
         )
         .await?
         .into_pages();
