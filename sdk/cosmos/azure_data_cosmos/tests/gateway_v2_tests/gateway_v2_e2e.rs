@@ -1019,6 +1019,89 @@ pub async fn gateway_v2_binary_encoding_wire_format_differential(
     Ok(())
 }
 
+/// Cross-partition `SELECT *` on Gateway 2.0 with binary encoding enabled.
+///
+/// Seeds items across many partition keys so they span multiple physical
+/// partitions, then runs a binary-negotiated query and asserts every item is
+/// returned once and decodes correctly. Unlike the single-partition test, this
+/// exercises `SequentialDrain` reassembling binary pages across partitions.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_binary_encoding_cross_partition_query_round_trip(
+) -> Result<(), Box<dyn std::error::Error>> {
+    use std::collections::HashSet;
+
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client_with_binary_encoding(&endpoint, &key).await?;
+    let (db_name, container) = provision_database_and_multi_partition_container(&client).await?;
+
+    // 32 distinct logical PKs spread the items across the multiple physical
+    // partitions provisioned above.
+    let total_items: usize = 32;
+    let mut expected_ids: HashSet<String> = HashSet::new();
+    for i in 0..total_items {
+        let pk = format!("pk-{i:02}-{}", azure_core::Uuid::new_v4());
+        let id = format!("bin-xpart-item-{i:02}");
+        let item = GwV2TestItem {
+            id: id.clone(),
+            pk: pk.clone(),
+            value: i as i64,
+            label: format!("row-{i}"),
+        };
+        create_seed_item(&container, &pk, &id, &item).await?;
+        expected_ids.insert(id);
+    }
+
+    let seen_ids = retry_query_owner_not_found(|| async {
+        let query = Query::from("SELECT * FROM c");
+        let mut pages = container
+            .query_items::<GwV2TestItem>(query, FeedScope::full_container(), None)
+            .await?
+            .into_pages();
+
+        let mut seen_ids: HashSet<String> = HashSet::new();
+        while let Some(page) = pages.next().await {
+            let page = page?;
+            assert!(
+                !page.diagnostics().activity_id().as_str().is_empty(),
+                "every binary cross-partition Gateway 2.0 page must surface an activity-id",
+            );
+            for item in page.items() {
+                assert!(
+                    seen_ids.insert(item.id.clone()),
+                    "binary cross-partition query returned item {} twice",
+                    item.id,
+                );
+                assert_eq!(
+                    item.label,
+                    format!("row-{}", item.value),
+                    "binary-decoded cross-partition item {} has mismatched fields",
+                    item.id,
+                );
+            }
+        }
+        Ok(seen_ids)
+    })
+    .await?;
+
+    assert_eq!(
+        seen_ids, expected_ids,
+        "a binary-negotiated cross-partition query over Gateway 2.0 must return every seeded item exactly once",
+    );
+
+    drop_database(&client, &db_name).await;
+    Ok(())
+}
+
 /// Regression test for the partition-key version-default bug: drives a point
 /// CRUD round-trip (create → read → replace → delete) against a legacy
 /// **partition key version 1** container over Gateway 2.0.
