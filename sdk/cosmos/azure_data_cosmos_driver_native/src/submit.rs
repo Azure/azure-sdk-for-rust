@@ -178,28 +178,11 @@ fn spawn_oneshot<Fut, R>(
         // leaks. Catching the panic here lets us still publish exactly one
         // completion, honoring the spec section 3.6 invariant.
         let work = std::panic::AssertUnwindSafe(async move { fut.await.map(to_success) });
-        let work = work.catch_unwind();
-        tokio::pin!(work);
-
-        // Race the driver work against a cancel signal. `notify_one` (in
-        // `cosmos_operation_handle_cancel`) stores a permit, so a cancel that
-        // arrives before this task starts waiting is still observed on the
-        // first poll of `notified()`. `biased` makes a pending cancel win
-        // deterministically over a simultaneously-ready result. On cancel we
-        // simply stop awaiting `work`; dropping it cancels the driver future
-        // (best-effort cooperative cancellation per spec section 3.6.3).
-        let outcome = tokio::select! {
-            biased;
-            _ = ctx.op_inner.cancel_notify.notified() => None,
-            done = &mut work => Some(done),
-        };
+        let done = work.catch_unwind().await;
 
         let user_data = ctx.user_data.as_isize();
-        let completion = match outcome {
-            // Cancelled: drop the driver future and synthesize a CANCELLED
-            // completion so the host's continuation is released.
-            None => PendingCompletion::cancelled(user_data, ctx.op_inner.clone()),
-            Some(Ok(Ok(success))) => match success {
+        let completion = match done {
+            Ok(Ok(success)) => match success {
                 SuccessKind::Response {
                     response,
                     next_continuation,
@@ -216,13 +199,13 @@ fn spawn_oneshot<Fut, R>(
                     PendingCompletion::ok_container(user_data, ctx.op_inner.clone(), *container)
                 }
             },
-            Some(Ok(Err(err))) => PendingCompletion::error(
+            Ok(Err(err)) => PendingCompletion::error(
                 user_data,
                 ctx.op_inner.clone(),
                 err,
                 ctx.include_error_details,
             ),
-            Some(Err(panic_payload)) => {
+            Err(panic_payload) => {
                 // The driver future (or success conversion) panicked. Synthesize
                 // a driver error carrying the CLIENT_FFI_PANIC status and route
                 // it through the normal rich-error path so the completion's
@@ -800,13 +783,13 @@ mod tests {
     }
 
     #[test]
-    fn spawn_oneshot_cancellation_yields_cancelled_completion() {
+    fn spawn_oneshot_delivers_ok_completion_with_patch_tracking_id() {
         use crate::completion::{
             cosmos_completion_patch_tracking_id, cosmos_completion_queue_create,
             cosmos_completion_queue_free, cosmos_completion_queue_free_completions,
-            cosmos_completion_queue_wait, cosmos_operation_handle_cancel,
-            cosmos_operation_handle_free, CosmosCompletion, CosmosCompletionOutcome,
-            CosmosCompletionQueueOptions,
+            cosmos_completion_queue_wait, cosmos_operation_handle_free,
+            cosmos_operation_handle_state, CosmosCompletion, CosmosCompletionOutcome,
+            CosmosCompletionQueueOptions, CosmosOperationHandleState,
         };
         use crate::runtime::{__test_only_create_default_runtime, cosmos_runtime_free};
         use std::mem::MaybeUninit;
@@ -825,21 +808,19 @@ mod tests {
         ctx.op_inner.set_patch_tracking_id(tracking_id.to_owned());
         let runtime = Arc::clone(ctx.queue.runtime());
 
-        // A future that never resolves on its own — only cancellation can end
-        // this operation.
+        // A ready future drives the happy path: the spawned task awaits it and
+        // publishes exactly one OK completion. An end-of-feed shell (no
+        // response) keeps the op's resolved patch tracking id, which is set
+        // before execution begins.
         spawn_oneshot(
             ctx,
             runtime,
-            futures::future::pending::<azure_data_cosmos_driver::error::Result<CosmosResponse>>(),
-            |r: CosmosResponse| SuccessKind::Response {
-                response: Some(Box::new(r)),
+            futures::future::ready(Ok::<(), azure_data_cosmos_driver::error::CosmosError>(())),
+            |_: ()| SuccessKind::Response {
+                response: None,
                 next_continuation: None,
             },
         );
-
-        // Request cancellation; the spawned task's select must observe it and
-        // post a CANCELLED completion instead of hanging forever.
-        cosmos_operation_handle_cancel(op_handle);
 
         let mut slot = MaybeUninit::<CosmosCompletion>::uninit();
         let n = cosmos_completion_queue_wait(queue, slot.as_mut_ptr(), 1, u32::MAX);
@@ -848,9 +829,12 @@ mod tests {
         let mut c = unsafe { slot.assume_init() };
         assert_eq!(
             c.outcome,
-            CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled
+            CosmosCompletionOutcome::CosmosCompletionOutcomeOk
         );
-        assert_eq!(c.was_cancel_requested, 1);
+        assert_eq!(
+            cosmos_operation_handle_state(op_handle),
+            CosmosOperationHandleState::CosmosOperationHandleStateCompleted
+        );
         let actual = cosmos_completion_patch_tracking_id(&c);
         assert!(!actual.is_null());
         // SAFETY: the pointer is borrowed from the live completion backing.
