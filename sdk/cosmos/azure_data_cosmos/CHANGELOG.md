@@ -11,12 +11,16 @@
 
 ### Breaking Changes
 
+- Reviewed public API type consistency for time durations and integer sizes. `ResponseHeaders::server_duration_ms()` and `retry_after_ms()` are replaced by `server_duration()` and `retry_after()`, both returning `Option<Duration>`; `TransactionalBatchOperationResult::retry_after_milliseconds()` and `DistributedTransactionResponse::retry_after_ms()` are similarly replaced by `retry_after() -> Option<Duration>`. `ThroughputProperties::manual`, `autoscale`, `throughput()`, and `autoscale_maximum()` now use `u64` instead of the platform-dependent `usize`, allowing RU/s values above 4 billion; `autoscale_increment()` now uses `u32` because it returns a percentage. ([#5204](https://github.com/Azure/azure-sdk-for-rust/pull/5204))
+
 ### Bugs Fixed
 
 - Added partition-merge support and preserved point-in-time change feed filtering across merged partitions by retaining `If-Modified-Since` alongside continuations on Gateway V1 and Gateway V2. ([#4122](https://github.com/Azure/azure-sdk-for-rust/issues/4122))
 - Name-based container clients now automatically recover when a container is deleted and recreated. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
 
 ### Other Changes
+
+- Test-only: the emulator test framework keeps Cosmos binary JSON encoding disabled against the vnext emulator, which still rejects binary item writes ([#5240](https://github.com/Azure/azure-sdk-for-rust/issues/5240)); connection-string-built clients now apply it too. The `azure_data_cosmos_driver` crate carries an `#[ignore]`d, expected-to-fail canary that signals when the limitation is lifted and `effective_binary_encoding` can be removed. No product behavior change. ([#5299](https://github.com/Azure/azure-sdk-for-rust/pull/5299))
 
 ## 0.38.0 (2026-09-02)
 

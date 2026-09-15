@@ -93,7 +93,7 @@ static int make_runtime_and_cq(cosmos_runtime_t **out_runtime,
 
     // Best-effort identifier; failure here is non-fatal to the test intent.
     cosmos_runtime_options_t opts = cosmos_runtime_options_default();
-    opts.user_agent_suffix = "cancel-c-tests";
+    opts.user_agent_suffix = SV("cancel-c-tests");
 
     cosmos_runtime_t *runtime = NULL;
     cosmos_error_t *err = NULL;
@@ -131,7 +131,7 @@ static int test_cancel_before_drain_yields_cancelled_completion(void)
 
     cosmos_error_t *acct_err = NULL;
     int32_t rc = cosmos_account_ref_with_master_key(
-        kBlackholeEndpoint, kEmulatorKey, &account, &acct_err);
+        string_view(kBlackholeEndpoint), string_view(kEmulatorKey), &account, &acct_err);
     REQUIRE(rc == COSMOS_STATUS_SUCCESS && account != NULL,
             "account_ref built for black-hole endpoint (rc=%d)", rc);
     cosmos_error_free(acct_err);

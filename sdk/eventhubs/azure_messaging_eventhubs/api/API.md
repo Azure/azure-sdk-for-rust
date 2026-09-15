@@ -9,8 +9,6 @@
   - `azure_core_amqp/default`
 - `fe2o3_amqp`
 - `fe2o3_amqp_rustls`
-- `fe2o3_amqp_ws`
-- `fe2o3_amqp_ws_rustls`
 - `in_memory_checkpoint_store`
 
 ```rust
@@ -800,7 +798,6 @@ pub mod models {
     pub enum AmqpTransport {
         #[default]
         Tcp,
-        WebSocket,
     }
     #[derive(Clone, Debug, Default, PartialEq)]
     pub enum AmqpValue {

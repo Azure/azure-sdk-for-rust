@@ -16,7 +16,7 @@
 //! Container handles therefore arrive alongside the response surface that
 //! delivers a resolved container.
 //!
-use std::ffi::{c_char, CStr};
+use crate::string::{required_text, CosmosStringView};
 
 use azure_data_cosmos_driver::models::DatabaseReference as DriverDatabaseReference;
 
@@ -62,16 +62,6 @@ impl DatabaseRefHandle {
     }
 }
 
-fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
-    if p.is_null() {
-        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-    }
-    // SAFETY: caller contract on every public setter.
-    let cstr = unsafe { CStr::from_ptr(p) };
-    cstr.to_str()
-        .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidUtf8)
-}
-
 /// Creates a name-based database reference parented to `account`.
 ///
 /// Mirrors `DatabaseReference::from_name`. Pure value-type construction;
@@ -82,8 +72,8 @@ fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
 /// # Parameters
 ///
 /// - `account` — parent account reference. Must be non-NULL.
-/// - `database_id` — NUL-terminated UTF-8 database name. Must be
-///   non-NULL.
+/// - `database_id` — counted UTF-8 database name following [`CosmosStringView`].
+///   Must be non-NULL; embedded NUL is rejected as an invalid option.
 /// - `out_database` — receives the new FFI handle on success. Must be
 ///   non-NULL.
 ///
@@ -99,7 +89,7 @@ fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
 #[no_mangle]
 pub extern "C" fn cosmos_database_ref_create(
     account: *const AccountRefHandle,
-    database_id: *const c_char,
+    database_id: CosmosStringView,
     out_database: *mut *mut DatabaseRefHandle,
 ) -> CosmosStatusCode {
     if out_database.is_null() {
@@ -108,7 +98,13 @@ pub extern "C" fn cosmos_database_ref_create(
     let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     };
-    let name = match try_cstr_to_str(database_id) {
+    // SAFETY: input view is readable for the duration of this FFI call.
+    let name = match unsafe {
+        required_text(
+            database_id,
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+        )
+    } {
         Ok(s) => s,
         Err(code) => return code.as_status_code(),
     };
@@ -116,8 +112,7 @@ pub extern "C" fn cosmos_database_ref_create(
     // `from_name` accepts any `Into<Cow<'static, str>>` — owned `String`
     // (cloned from the C buffer) becomes `Cow::Owned` and keeps the
     // database reference independent of the caller's buffer.
-    let driver_ref =
-        DriverDatabaseReference::from_name(account_inner.inner.clone(), name.to_owned());
+    let driver_ref = DriverDatabaseReference::from_name(account_inner.inner.clone(), name);
     let handle = DatabaseRefHandle::into_raw(driver_ref);
     // SAFETY: caller guarantees `out_database` is writable for one
     // `*mut DatabaseRefHandle`.
@@ -140,6 +135,42 @@ pub extern "C" fn cosmos_database_ref_free(database: *mut DatabaseRefHandle) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::string::view;
+
+    #[test]
+    fn identifiers_are_not_truncated_and_owned_after_return() {
+        let account = make_account();
+        let mut out = std::ptr::null_mut();
+        for (bytes, error) in [
+            (
+                &b"doc\0suffix"[..],
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+            ),
+            (
+                &b"doc\0\xff"[..],
+                CosmosErrorCode::CosmosErrorCodeInvalidUtf8,
+            ),
+        ] {
+            assert_eq!(
+                cosmos_database_ref_create(account, view(bytes), &mut out),
+                error.as_status_code()
+            );
+            assert!(out.is_null());
+        }
+        {
+            let input = "水-db".as_bytes().to_vec();
+            assert_eq!(
+                cosmos_database_ref_create(account, view(&input), &mut out),
+                CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+            );
+        }
+        assert_eq!(
+            DatabaseRefHandle::from_ptr(out).unwrap().inner.name(),
+            Some("水-db")
+        );
+        cosmos_database_ref_free(out);
+        crate::account_ref::cosmos_account_ref_free(account);
+    }
     use std::ffi::CString;
     use std::ptr;
 
@@ -164,7 +195,7 @@ mod tests {
         let account = make_account();
         let db_id = ok_cstr("mydb");
         let mut out: *mut DatabaseRefHandle = ptr::null_mut();
-        let rc = cosmos_database_ref_create(account, db_id.as_ptr(), &mut out);
+        let rc = cosmos_database_ref_create(account, view(db_id.as_bytes()), &mut out);
         assert_eq!(rc, CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code());
         assert!(!out.is_null());
 
@@ -182,15 +213,15 @@ mod tests {
         let db_id = ok_cstr("mydb");
         let mut out: *mut DatabaseRefHandle = ptr::null_mut();
         assert_eq!(
-            cosmos_database_ref_create(ptr::null(), db_id.as_ptr(), &mut out),
+            cosmos_database_ref_create(ptr::null(), view(db_id.as_bytes()), &mut out),
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert_eq!(
-            cosmos_database_ref_create(account, ptr::null(), &mut out),
+            cosmos_database_ref_create(account, CosmosStringView::default(), &mut out),
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         assert_eq!(
-            cosmos_database_ref_create(account, db_id.as_ptr(), ptr::null_mut()),
+            cosmos_database_ref_create(account, view(db_id.as_bytes()), ptr::null_mut()),
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
         cosmos_account_ref_free_for_tests(account);

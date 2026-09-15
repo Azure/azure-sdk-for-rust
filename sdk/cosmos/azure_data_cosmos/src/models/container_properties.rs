@@ -35,7 +35,8 @@ pub enum TimeToLive {
     /// Individual items can still define their own TTL.
     NoDefault,
 
-    /// TTL is enabled with a default expiration of the given number of seconds.
+    /// TTL is enabled with a default expiration, in seconds. Items expire after
+    /// this many seconds unless they override it with their own `ttl` property.
     Seconds(u32),
 }
 
@@ -60,7 +61,7 @@ impl Serialize for TimeToLive {
         match self {
             TimeToLive::Forever => serializer.serialize_none(),
             TimeToLive::NoDefault => serializer.serialize_i32(-1),
-            TimeToLive::Seconds(n) => serializer.serialize_u32(*n),
+            TimeToLive::Seconds(seconds) => serializer.serialize_u32(*seconds),
         }
     }
 }
