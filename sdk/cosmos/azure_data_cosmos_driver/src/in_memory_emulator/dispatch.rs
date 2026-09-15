@@ -79,7 +79,7 @@ pub(crate) struct ParsedRequest {
     /// Forwarded to container creation so the emulator honors caller-specified
     /// throughput instead of silently falling back to `ContainerConfig::default()`
     /// (which has no provisioned RU/s and disables throttling for the container).
-    pub offer_throughput: Option<u32>,
+    pub offer_throughput: Option<u64>,
     /// Whether the client advertised that it accepts Cosmos binary JSON in the
     /// response, via `x-ms-cosmos-supported-serialization-formats` containing
     /// `CosmosBinary`. When set, item read/write responses encode their body as
@@ -213,7 +213,7 @@ pub(crate) fn parse_request(request: &Request) -> ParsedRequest {
     // legacy values still succeed (matching real-service tolerance).
     let offer_throughput = headers
         .get_optional_str(&OFFER_THROUGHPUT)
-        .and_then(|s| s.trim().parse::<u32>().ok());
+        .and_then(|s| s.trim().parse::<u64>().ok());
     let offer_autopilot_settings = headers
         .get_optional_str(&OFFER_AUTOPILOT_SETTINGS)
         .map(|s| s.to_string());

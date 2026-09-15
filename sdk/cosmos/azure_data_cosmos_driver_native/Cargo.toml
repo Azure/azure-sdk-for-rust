@@ -45,12 +45,13 @@ tracing.workspace = true
 
 [dev-dependencies]
 # Path-only — the driver crate is not (yet) a workspace dependency.
-# `__internal_test_diagnostics_construction` unlocks the driver's hidden
+# `__internal_mocking` backs the driver mocking helpers used by the wrapper's
+# tests; `__internal_test_diagnostics_construction` unlocks the driver's hidden
 # `DiagnosticsContext`/`RequestDiagnostics` test constructors so the diagnostics
 # accessors can be exercised against populated data without a live service.
-# Dev-only: this internal, unstable feature is never enabled for the shipped
+# Both are dev-only, internal, unstable features never enabled for the shipped
 # `cdylib`/`staticlib`.
-azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.8.0", default-features = false, features = ["tokio", "rustls", "__internal_test_diagnostics_construction"] }
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.8.0", default-features = false, features = ["__internal_mocking", "__internal_test_diagnostics_construction"] }
 azure_core = { workspace = true, default-features = false }
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macros", "test-util"] }
 

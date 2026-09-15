@@ -437,7 +437,8 @@ fn effective_binary_encoding(
     #[cfg(test_category = "emulator_vnext")]
     {
         // Temporary workaround for #5240; product code should eventually
-        // negotiate vNext binary support.
+        // negotiate vNext binary support. The driver crate's
+        // `driver_vnext_binary_encoding_canary` test signals when it can go.
         Some(binary_encoding.unwrap_or_else(|| BinaryEncodingOptions::new().with_enabled(false)))
     }
 
@@ -1735,7 +1736,7 @@ impl TestRunContext {
         let parsed: ConnectionString = connection_string.parse()?;
 
         let endpoint: azure_data_cosmos::AccountEndpoint = parsed.account_endpoint().parse()?;
-        let builder = CosmosClient::builder().with_runtime(
+        let mut builder = CosmosClient::builder().with_runtime(
             CosmosRuntime::builder()
                 .with_connection_pool(
                     ConnectionPoolOptions::builder()
@@ -1747,6 +1748,10 @@ impl TestRunContext {
                 .build()
                 .await?,
         );
+
+        if let Some(options) = effective_binary_encoding(None) {
+            builder = builder.with_binary_encoding_options(options);
+        }
 
         builder
             .build(
