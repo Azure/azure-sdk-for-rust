@@ -94,7 +94,7 @@ version = "1.0.0"
 [workspace.dependencies.azure_mgmt_cosmosdb]
 version = "0.21.0"
 default-features = false
-features = ["enable_reqwest_rustls", "package-preview-2024-09"]
+features = ["enable_reqwest", "package-preview-2024-09"]
 
 [workspace.dependencies.azure_storage_blob]
 # azure_storage_blob should only ever be in dev-dependencies herein
