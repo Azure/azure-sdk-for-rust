@@ -187,6 +187,9 @@ impl PartitionKeyValue {
     }
 
     /// Writes this value using V1 binary encoding for the EPK output string.
+    ///
+    /// Strings use the same UTF-16-truncated logical value as V1 hashing, then
+    /// limit the encoded byte representation to the service's V1 boundary.
     pub(crate) fn write_for_binary_encoding_v1(&self, writer: &mut Vec<u8>) {
         self.0.write_for_binary_encoding_v1(writer)
     }
