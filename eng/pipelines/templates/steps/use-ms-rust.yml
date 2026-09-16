@@ -1,0 +1,30 @@
+parameters:
+  - name: ToolchainConfig
+    type: string
+    default: $(Build.SourcesDirectory)/eng/templates/ms-rust-toolchain.toml
+  - name: TargetTriple
+    type: string
+  - name: ConfigureRegistry
+    type: boolean
+    default: true
+
+steps:
+  - pwsh: |
+      $source = '${{ parameters.ToolchainConfig }}'
+      . '$(Build.SourcesDirectory)/eng/scripts/shared/MicrosoftRust.ps1'
+      New-MicrosoftRustInstallerConfiguration `
+        -Path $source `
+        -Target '${{ parameters.TargetTriple }}' `
+        -OutputPath '$(Build.SourcesDirectory)/rust-toolchain.toml'
+    displayName: Configure pinned Microsoft Rust toolchain
+
+  - task: RustInstaller@1
+    displayName: Install Microsoft Rust toolchain
+    inputs:
+      toolchainFeed: https://pkgs.dev.azure.com/azure-sdk/internal/_packaging/ms-rust-tools/nuget/v3/index.json
+      additionalTargets: ${{ parameters.TargetTriple }}
+
+  - template: /eng/pipelines/templates/steps/use-rust.yml@self
+    parameters:
+      ConfigureRegistry: ${{ parameters.ConfigureRegistry }}
+      InstallToolchain: false

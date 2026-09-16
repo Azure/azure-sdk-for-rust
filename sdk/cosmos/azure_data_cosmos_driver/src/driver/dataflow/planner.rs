@@ -360,14 +360,11 @@ pub(crate) fn is_non_streaming_order_by(info: &QueryInfo) -> bool {
 /// Validates admission using global, normalized metadata, never partition rewrites.
 pub(crate) fn validate_buffered_query(
     query_plan: &QueryPlan,
-    allow_unbounded_queries: bool,
+    max_buffered_query_window: u64,
 ) -> crate::error::Result<()> {
     let Some(info) = query_plan.query_info.as_ref() else {
         return Ok(());
     };
-    if allow_unbounded_queries || combine_take(info).is_some() {
-        return Ok(());
-    }
     let shape = if is_non_streaming_order_by(info) {
         "non-streaming ORDER BY (including buffered vector search)"
     } else if info.distinct_type == DistinctType::Unordered {
@@ -375,10 +372,21 @@ pub(crate) fn validate_buffered_query(
     } else {
         return Ok(());
     };
+    buffered_query_window(info, max_buffered_query_window, shape).map(|_| ())
+}
+
+fn buffered_query_window(info: &QueryInfo, maximum: u64, shape: &str) -> crate::error::Result<u64> {
+    if let Some(window) =
+        combine_take(info).and_then(|take| info.offset.unwrap_or(0).checked_add(take))
+    {
+        if window <= maximum {
+            return Ok(window);
+        }
+    }
     Err(crate::error::CosmosError::builder()
         .with_status(crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW)
         .with_message(format!(
-            "cross-partition {shape} requires a finite global TOP or LIMIT; set allow_unbounded_queries to true to allow unbounded client buffering"
+            "cross-partition {shape} requires a finite global TOP or LIMIT and OFFSET plus effective take at most max_buffered_query_window ({maximum})"
         ))
         .build())
 }
@@ -456,50 +464,21 @@ pub(crate) async fn build_non_streaming_ordered_merge(
     }
 
     let skip = info.offset.unwrap_or(0);
-    let take = combine_take(info);
-    let retention_limit = take
-        .map(|take| {
-            skip.checked_add(take).ok_or_else(|| {
-                crate::error::CosmosError::builder()
-                    .with_status(
-                        crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE,
-                    )
-                    .with_message(
-                        "non-streaming ORDER BY OFFSET plus take overflows the supported window",
-                    )
-                    .build()
-            })
-        })
-        .transpose()?;
-    let retention_limit =
-        retention_limit
-            .map(|limit| {
-                usize::try_from(limit).map_err(|_| {
-                    crate::error::CosmosError::builder()
+    // Admission has checked the per-query policy; enforce a finite representation here too.
+    let window = buffered_query_window(info, u64::MAX, "non-streaming ORDER BY")?;
+    let retention_limit = usize::try_from(window).map_err(|_| {
+        crate::error::CosmosError::builder()
             .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
             .with_message("non-streaming ORDER BY candidate window does not fit in memory")
             .build()
-                })
-            })
-            .transpose()?;
+    })?;
     let skip = usize::try_from(skip).map_err(|_| {
         crate::error::CosmosError::builder()
             .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
             .with_message("non-streaming ORDER BY OFFSET does not fit in memory")
             .build()
     })?;
-    let take = take
-        .map(|take| {
-            usize::try_from(take).map_err(|_| {
-                crate::error::CosmosError::builder()
-                    .with_status(
-                        crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE,
-                    )
-                    .with_message("non-streaming ORDER BY take does not fit in memory")
-                    .build()
-            })
-        })
-        .transpose()?;
+    let take = retention_limit - skip;
 
     let effective_operation = rewritten_operation(operation, query_plan)?;
     let request_nodes = plan_fresh(query_plan, topology_provider, &effective_operation).await?;
@@ -3873,15 +3852,14 @@ mod tests {
     }
 
     #[test]
-    fn non_streaming_ordered_merge_requires_finite_window_or_opt_out() {
+    fn non_streaming_ordered_merge_always_requires_finite_window() {
         let mut plan = non_streaming_order_by_plan();
         plan.query_info.as_mut().unwrap().top = None;
-        let err = validate_buffered_query(&plan, false).unwrap_err();
+        let err = validate_buffered_query(&plan, u64::MAX).unwrap_err();
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
         );
-        validate_buffered_query(&plan, true).unwrap();
     }
 
     #[test]
@@ -3893,53 +3871,56 @@ mod tests {
                 DistinctType::Unordered,
             ] {
                 for order_by in [Vec::new(), vec![SortOrder::Ascending]] {
-                    for (top, limit) in [
-                        (None, None),
-                        (Some(0), None),
-                        (None, Some(0)),
-                        (Some(1), None),
-                        (None, Some(1)),
-                        (Some(50_003), None),
-                        (Some(10), Some(3)),
-                        (Some(u64::MAX), None),
+                    for (top, limit, offset, maximum, accepted) in [
+                        (None, None, 0, u64::MAX, false),
+                        (Some(0), None, 0, 0, true),
+                        (None, Some(0), 1, 0, false),
+                        (Some(0), None, u64::MAX, u64::MAX, true),
+                        (Some(1), None, 0, 0, false),
+                        (Some(1000), None, 0, 1000, true),
+                        (None, Some(1001), 0, 1000, false),
+                        (Some(1001), None, 0, 1001, true),
+                        (Some(3), None, 997, 1000, true),
+                        (None, Some(3), 998, 1000, false),
+                        (Some(10), Some(3), 997, 1000, true),
+                        (Some(3), Some(10), 997, 1000, true),
+                        (Some(u64::MAX), Some(0), 0, 0, true),
+                        (Some(u64::MAX), None, 1, u64::MAX, false),
+                        (Some(1), None, u64::MAX, u64::MAX, false),
                     ] {
-                        for allow in [false, true] {
-                            let plan = QueryPlan {
-                                query_info: Some(QueryInfo {
-                                    top,
-                                    limit,
-                                    offset: Some(50_000),
-                                    has_non_streaming_order_by: non_streaming,
-                                    distinct_type,
-                                    order_by: order_by.clone(),
-                                    rewritten_query: Some(
-                                        "SELECT TOP 1 VALUE 'private SQL' FROM c".into(),
-                                    ),
-                                    ..Default::default()
-                                }),
+                        let plan = QueryPlan {
+                            query_info: Some(QueryInfo {
+                                top,
+                                limit,
+                                offset: Some(offset),
+                                has_non_streaming_order_by: non_streaming,
+                                distinct_type,
+                                order_by: order_by.clone(),
+                                rewritten_query: Some(
+                                    "SELECT TOP 1 VALUE 'private SQL' FROM c".into(),
+                                ),
                                 ..Default::default()
-                            };
-                            let denied = !allow
-                                && top.is_none()
-                                && limit.is_none()
-                                && (non_streaming || distinct_type == DistinctType::Unordered);
-                            let result = validate_buffered_query(&plan, allow);
-                            assert_eq!(result.is_err(), denied);
-                            if let Err(error) = result {
-                                let message = error.to_string();
-                                assert!(message.contains("TOP or LIMIT"));
-                                assert!(message.contains("allow_unbounded_queries"));
-                                assert!(!message.contains("private SQL"));
-                                assert!(message.contains(if non_streaming {
-                                    "non-streaming ORDER BY"
-                                } else {
-                                    "unordered DISTINCT"
-                                }));
-                                assert_eq!(
+                            }),
+                            ..Default::default()
+                        };
+                        let denied = !accepted
+                            && (non_streaming || distinct_type == DistinctType::Unordered);
+                        let result = validate_buffered_query(&plan, maximum);
+                        assert_eq!(result.is_err(), denied);
+                        if let Err(error) = result {
+                            let message = error.to_string();
+                            assert!(message.contains("TOP or LIMIT"));
+                            assert!(message.contains("max_buffered_query_window"));
+                            assert!(!message.contains("private SQL"));
+                            assert!(message.contains(if non_streaming {
+                                "non-streaming ORDER BY"
+                            } else {
+                                "unordered DISTINCT"
+                            }));
+                            assert_eq!(
                                     error.status(),
                                     crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
                                 );
-                            }
                         }
                     }
                 }
@@ -3970,7 +3951,7 @@ mod tests {
     #[test]
     fn native_and_gateway_metadata_share_buffered_admission() {
         for native in [false, true] {
-            for top in [None, Some(0), Some(10)] {
+            for top in [None, Some(0), Some(1000), Some(1001)] {
                 let wire = serde_json::json!({
                     "queryInfo": {
                         "hasNonStreamingOrderBy": if native { serde_json::json!(1) } else { serde_json::json!(true) },
@@ -3991,21 +3972,27 @@ mod tests {
                         serde_json::from_value(wire).unwrap();
                     raw.resolve(&test_partition_key_definition()).unwrap()
                 };
-                assert_eq!(validate_buffered_query(&plan, false).is_ok(), top.is_some());
-                validate_buffered_query(&plan, true).unwrap();
+                assert_eq!(
+                    validate_buffered_query(&plan, 1000).is_ok(),
+                    top.is_some_and(|take| take <= 1000)
+                );
+                assert_eq!(
+                    validate_buffered_query(&plan, u64::MAX).is_ok(),
+                    top.is_some()
+                );
             }
         }
     }
 
     #[tokio::test]
-    async fn admitted_unbounded_non_streaming_plan_preserves_partition_rewrite() {
+    async fn admitted_finite_non_streaming_plan_preserves_partition_rewrite() {
         for input_binary in [false, true] {
             for output_binary in [false, true] {
                 for (offset, limit, expected) in [
-                    (0, None, vec!["a", "b", "c", "d", "e", "f"]),
-                    (1, None, vec!["b", "c", "d", "e", "f"]),
+                    (0, Some(6), vec!["a", "b", "c", "d", "e", "f"]),
+                    (1, Some(6), vec!["b", "c", "d", "e", "f"]),
                     (1, Some(3), vec!["b", "c", "d"]),
-                    (20, None, vec![]),
+                    (20, Some(6), vec![]),
                 ] {
                     let mut plan = non_streaming_order_by_plan();
                     let info = plan.query_info.as_mut().unwrap();
@@ -4023,7 +4010,7 @@ mod tests {
                             .with_max_item_count(MaxItemCountHint::Limit(2.try_into().unwrap()))
                             .with_supported_serialization_formats(if output_binary { "CosmosBinary" } else { "JsonText" }),
                     );
-                    validate_buffered_query(&plan, true).unwrap();
+                    validate_buffered_query(&plan, 1000).unwrap();
                     let mut topology = MockTopologyProvider::new(vec![Ok(vec![
                         rr("", "80", "a"),
                         rr("80", "FF", "b"),
@@ -4122,7 +4109,7 @@ mod tests {
         .unwrap_err();
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE
+            crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
         );
     }
 
@@ -4134,11 +4121,12 @@ mod tests {
         info.top = None;
         info.offset = Some(50_000);
         info.limit = Some(3);
+        validate_buffered_query(&plan, 50_003).unwrap();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-range")])]);
 
         let pipeline = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
             .await
-            .expect("finite windows are not capped by the client");
+            .expect("explicitly admitted finite window builds");
         assert!(pipeline
             .into_root()
             .downcast::<crate::driver::dataflow::NonStreamingOrderedMerge>()

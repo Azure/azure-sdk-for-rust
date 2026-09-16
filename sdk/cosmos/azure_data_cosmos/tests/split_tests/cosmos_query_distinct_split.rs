@@ -51,7 +51,7 @@ const PK_COUNT: usize = 40;
 const GROUP_COUNT: usize = 8;
 const PAGE_SIZE: u32 = 5;
 
-const UNORDERED_QUERY: &str = "SELECT DISTINCT VALUE c.groupKey FROM c";
+const UNORDERED_QUERY: &str = "SELECT DISTINCT TOP 1000 VALUE c.groupKey FROM c";
 const ORDERED_QUERY: &str = "SELECT DISTINCT VALUE c.groupKey FROM c ORDER BY c.groupKey";
 /// `DISTINCT` composed under a global row window. `GROUP_COUNT` distinct keys
 /// exist, so skipping one and taking two must yield exactly two — the window
@@ -110,10 +110,7 @@ async fn start_query(
         .query_items::<String>(
             query,
             FeedScope::full_container(),
-            Some(
-                query_options(binary, page_size)
-                    .with_allow_unbounded_queries(query == UNORDERED_QUERY),
-            ),
+            Some(query_options(binary, page_size)),
         )
         .await?
         .into_pages();

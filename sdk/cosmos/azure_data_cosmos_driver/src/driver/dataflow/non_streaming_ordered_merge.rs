@@ -29,9 +29,9 @@ struct RetainedRow {
 pub(crate) struct NonStreamingOrderedMerge {
     child: Box<dyn PipelineNode>,
     directions: Arc<[SortOrder]>,
-    retention_limit: Option<usize>,
+    retention_limit: usize,
     skip: usize,
-    take: Option<usize>,
+    take: usize,
     page_size: usize,
     emit_binary: bool,
     retained: Vec<RetainedRow>,
@@ -47,9 +47,9 @@ impl NonStreamingOrderedMerge {
     pub(crate) fn new(
         child: Box<dyn PipelineNode>,
         directions: Vec<SortOrder>,
-        retention_limit: Option<usize>,
+        retention_limit: usize,
         skip: usize,
-        take: Option<usize>,
+        take: usize,
         max_item_count: Option<MaxItemCountHint>,
         emit_binary: bool,
     ) -> Self {
@@ -86,6 +86,9 @@ impl NonStreamingOrderedMerge {
     }
 
     fn retain(&mut self, row: EnvelopeRow) -> crate::error::Result<()> {
+        if self.take == 0 {
+            return Ok(());
+        }
         let ordinal = self.next_ordinal;
         self.next_ordinal = self.next_ordinal.checked_add(1).ok_or_else(|| {
             CosmosError::builder()
@@ -94,25 +97,14 @@ impl NonStreamingOrderedMerge {
                 .build()
         })?;
 
-        if self.retention_limit == Some(0) {
-            return Ok(());
-        }
-
         let candidate = RetainedRow { row, ordinal };
-        if self
-            .retention_limit
-            .is_none_or(|limit| self.retained.len() < limit)
-        {
+        if self.retained.len() < self.retention_limit {
             self.retained.try_reserve(1).map_err(|_| {
                 CosmosError::builder()
                     .with_status(CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
                     .with_message("non-streaming ORDER BY candidate storage could not be allocated")
                     .build()
             })?;
-            if self.retention_limit.is_none() {
-                self.retained.push(candidate);
-                return Ok(());
-            }
             let directions = &self.directions;
             binary_heap::push_by(&mut self.retained, candidate, |left, right| {
                 compare_key_tuples(left.row.keys.as_ref(), right.row.keys.as_ref(), directions)
@@ -142,10 +134,7 @@ impl NonStreamingOrderedMerge {
             .into_iter()
             .skip(self.skip)
             .map(|retained| retained.row.payload);
-        self.results = match self.take {
-            Some(take) => results.take(take).collect(),
-            None => results.collect(),
-        };
+        self.results = results.take(self.take).collect();
         self.session_token = self
             .aggregator
             .as_ref()
@@ -296,9 +285,9 @@ mod tests {
         NonStreamingOrderedMerge::new(
             Box::new(MockLeaf::with_pages(pages.into_iter().map(Ok).collect())),
             vec![SortOrder::Ascending],
-            Some(retention_limit),
+            retention_limit,
             skip,
-            Some(take),
+            take,
             page_size
                 .map(|value| MaxItemCountHint::Limit(std::num::NonZeroU32::new(value).unwrap())),
             false,
@@ -418,6 +407,34 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn zero_take_retains_no_candidates_even_with_offset() {
+        for skip in [0, 1000] {
+            let mut node = merge(
+                vec![page(&[("a", 1.0, "a"), ("b", 2.0, "b")], 3.5, true)],
+                skip,
+                skip,
+                0,
+                None,
+            );
+            let mut executor = NoopRequestExecutor;
+            let mut topology = NoopTopologyProvider;
+            let mut context = context(&mut executor, &mut topology);
+            let PageResult::Page {
+                response,
+                is_terminal,
+            } = node.next_page(&mut context).await.unwrap()
+            else {
+                panic!("expected charged empty page");
+            };
+            assert!(is_terminal);
+            assert!(ids(&response).is_empty());
+            assert_eq!(response.headers().request_charge.unwrap().value(), 3.5);
+            assert_eq!(node.next_ordinal, 0);
+            assert_eq!(node.retained.capacity(), 0);
+        }
+    }
+
+    #[tokio::test]
     async fn emits_binary_items_when_negotiated() {
         let mut node = NonStreamingOrderedMerge::new(
             Box::new(MockLeaf::with_pages(vec![Ok(page(
@@ -426,9 +443,9 @@ mod tests {
                 true,
             ))])),
             vec![SortOrder::Ascending],
-            Some(1),
+            1,
             0,
-            Some(1),
+            1,
             None,
             true,
         );
@@ -468,9 +485,9 @@ mod tests {
                 is_terminal: true,
             })])),
             vec![SortOrder::Ascending],
-            Some(1),
+            1,
             0,
-            Some(1),
+            1,
             None,
             true,
         );
@@ -496,7 +513,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn unbounded_merge_orders_all_rows_with_offset_and_encoding_parity() {
+    async fn finite_merge_orders_all_rows_with_offset_and_encoding_parity() {
         for emit_binary in [false, true] {
             for skip in [0, 2, 20] {
                 let rows = [
@@ -526,9 +543,9 @@ mod tests {
                 let mut node = NonStreamingOrderedMerge::new(
                     Box::new(MockLeaf::with_pages(pages)),
                     vec![SortOrder::Ascending, SortOrder::Descending],
-                    None,
+                    skip + rows.len(),
                     skip,
-                    None,
+                    rows.len(),
                     Some(MaxItemCountHint::Limit(
                         std::num::NonZeroU32::new(2).unwrap(),
                     )),
@@ -587,7 +604,7 @@ mod tests {
 
     #[tokio::test]
     async fn buffering_preserves_upstream_failure_without_partial_results() {
-        for limit in [None, Some(2)] {
+        for limit in [0, 2, 1000] {
             let error = CosmosError::builder()
                 .with_status(CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
                 .with_message("upstream failure")
@@ -644,9 +661,9 @@ mod tests {
         let node = NonStreamingOrderedMerge::new(
             Box::new(MockLeaf::with_pages(Vec::new())),
             vec![SortOrder::Ascending, SortOrder::Ascending],
-            Some(1),
+            1,
             0,
-            Some(1),
+            1,
             None,
             false,
         );

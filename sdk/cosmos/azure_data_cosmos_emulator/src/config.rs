@@ -76,7 +76,7 @@ struct ContainerSettings {
     partition_key: PartitionKeyDefinition,
     #[serde(default = "default_partition_count")]
     partition_count: u32,
-    throughput: Option<u32>,
+    throughput: Option<u64>,
     #[serde(default)]
     seed_items: Vec<SeedItem>,
 }

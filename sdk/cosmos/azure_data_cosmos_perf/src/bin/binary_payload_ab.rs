@@ -141,7 +141,7 @@ struct Args {
 
     /// Provisioned throughput used when the container has to be created.
     #[arg(long, default_value_t = 10000)]
-    throughput: usize,
+    throughput: u64,
 
     /// Number of documents to seed before measuring.
     #[arg(long, default_value_t = 200)]

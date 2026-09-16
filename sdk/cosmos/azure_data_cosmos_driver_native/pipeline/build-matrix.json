@@ -11,24 +11,8 @@
   "go_toolchain_version": "1.25.12",
   "module_root": "github.com/Azure/azure-cosmos-driver",
   "go_package": "driver",
+  "_windows_deferred_comment": "windows/amd64 (x86_64-pc-windows-gnu) is intentionally deferred: the Microsoft Rust ms-prod feed does not currently publish rust.std for x86_64-pc-windows-gnu (GNU/MinGW), and the downstream Go cgo consumer requires the GNU ABI rather than MSVC. Restore the target object below once a GNU (or agreed MSVC) path is decided. Reference syslibs for the target are retained under reference_syslibs for that restore. Deferred target object for easy restore: { \"id\": \"windows-amd64\", \"goos\": \"windows\", \"goarch\": \"amd64\", \"libc\": null, \"triple\": \"x86_64-pc-windows-gnu\", \"c_compiler\": \"gcc\", \"module_path\": \"windows/amd64\", \"native_subdir\": null, \"build_tag_extra\": null, \"static_runtime_ldflags\": [\"-Wl,-Bstatic\", \"-lwinpthread\", \"-Wl,-Bdynamic\"], \"risk\": null }",
   "targets": [
-    {
-      "id": "windows-amd64",
-      "goos": "windows",
-      "goarch": "amd64",
-      "libc": null,
-      "triple": "x86_64-pc-windows-gnu",
-      "c_compiler": "gcc",
-      "module_path": "windows/amd64",
-      "native_subdir": null,
-      "build_tag_extra": null,
-      "static_runtime_ldflags": [
-        "-Wl,-Bstatic",
-        "-lwinpthread",
-        "-Wl,-Bdynamic"
-      ],
-      "risk": null
-    },
     {
       "id": "linux-amd64-glibc",
       "goos": "linux",

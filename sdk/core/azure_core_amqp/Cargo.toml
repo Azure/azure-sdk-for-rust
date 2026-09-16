@@ -3,7 +3,7 @@
 # AMQP Stack for consumption by packages in the Azure SDK.
 [package]
 name = "azure_core_amqp"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 description = "Rust client library for the AMQP protocol"
 readme = "README.md"
 authors.workspace = true
@@ -21,7 +21,6 @@ edition.workspace = true
 async-trait.workspace = true
 azure_core = { path = "../azure_core", version = "1.2.0-beta.1", default-features = false }
 fe2o3-amqp = { workspace = true, optional = true }
-fe2o3-amqp-ws = { workspace = true, optional = true }
 fe2o3-amqp-cbs = { workspace = true, optional = true }
 fe2o3-amqp-ext = { workspace = true, optional = true }
 fe2o3-amqp-management = { workspace = true, optional = true }
@@ -45,8 +44,6 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 default = [
   "fe2o3_amqp",
   "fe2o3_amqp_rustls",
-  "fe2o3_amqp_ws",
-  "fe2o3_amqp_ws_rustls",
 ]
 ffi = []
 test = []
@@ -82,8 +79,7 @@ fe2o3_amqp = [
 # `rustls` give aws-lc-rs, std, and tls12, and `deny.toml` bans `ring`, so this
 # repository cannot reach that panic. An application that unifies a second
 # provider into the graph makes the choice ambiguous again, and it must call
-# `CryptoProvider::install_default()` before it opens a connection. The
-# WebSocket feature below carries the same condition.
+# `CryptoProvider::install_default()` before it opens a connection.
 #
 # This feature needs `fe2o3-amqp` 0.16 or later. The rustls backend of 0.14 was
 # built on `ring`, which `deny.toml` bans (#4189).
@@ -108,44 +104,6 @@ fe2o3_amqp_rustls = [
   "dep:rustls-platform-verifier",
   "dep:tokio-rustls",
 ]
-# AMQP over WebSockets. `fe2o3_amqp_ws` is the base feature: it turns on the
-# transport code and the `fe2o3-amqp-ws` dependency, and it names no TLS stack.
-# `fe2o3_amqp_ws_rustls` adds the stack that the rest of `sdk/core` uses, rustls
-# with the aws-lc-rs provider, and `default` selects it.
-#
-# To build the transport on another TLS stack, turn off the default features,
-# name `fe2o3_amqp_ws`, and take a direct dependency on the backend crate with
-# the stack you want. Cargo unifies the features, so the transport then uses
-# your stack and nothing pulls rustls in:
-#
-#   azure_core_amqp = { version = "...", default-features = false, features = [
-#     "fe2o3_amqp", "fe2o3_amqp_ws",
-#   ] }
-#   fe2o3-amqp = { version = "0.16", features = ["native-tls"] }
-#   fe2o3-amqp-ws = { version = "0.16", features = ["native-tls"] }
-#
-# `samples/list_blobs_native_tls` shows the same pattern for `reqwest`.
-#
-# One stack must be selected somewhere in the graph. `fe2o3_amqp_ws` on its own
-# builds, and the connection reports `TlsFeatureNotEnabled` when it opens.
-# `reqwest` behaves the same way.
-fe2o3_amqp_ws = ["fe2o3_amqp", "dep:fe2o3-amqp-ws"]
-# The direct `rustls` dependency is only here to select the crypto provider.
-# This crate names no `rustls` type. `reqwest/rustls` selects aws-lc-rs itself,
-# so `typespec_client_core` needs no such dependency. The `tokio-tungstenite`
-# chain under `fe2o3-amqp-ws` is different. It takes rustls with
-# `default-features = false` and names no provider, so `ClientConfig::builder()`
-# panics when no process-level default is installed. The default features of
-# `rustls` give aws-lc-rs, std, and tls12.
-#
-# `fe2o3_amqp_rustls` selects the same provider, so the dependency is redundant
-# when `default` is on. This feature has to stand on its own, because a consumer
-# can turn the default features off and name only the WebSocket transport.
-fe2o3_amqp_ws_rustls = [
-  "fe2o3_amqp_ws",
-  "fe2o3-amqp-ws/rustls-tls-native-roots",
-  "dep:rustls",
-]
 
 [lints]
 workspace = true
@@ -154,6 +112,4 @@ workspace = true
 features = [
   "fe2o3_amqp",
   "fe2o3_amqp_rustls",
-  "fe2o3_amqp_ws",
-  "fe2o3_amqp_ws_rustls",
 ]

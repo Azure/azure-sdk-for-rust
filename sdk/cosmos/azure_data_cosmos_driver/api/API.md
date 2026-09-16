@@ -1259,10 +1259,10 @@ pub mod in_memory_emulator {
         pub fn new() -> Self;
         pub fn partition_count(&self) -> u32;
         pub fn partition_key_range_page_size(&self) -> Option<u32>;
-        pub fn provisioned_throughput_ru(&self) -> Option<u32>;
+        pub fn provisioned_throughput_ru(&self) -> Option<u64>;
         pub fn with_partition_count(self, count: u32) -> Self;
         pub fn with_partition_key_range_page_size(self, page_size: u32) -> Self;
-        pub fn with_throughput(self, ru_per_second: u32) -> Self;
+        pub fn with_throughput(self, ru_per_second: u64) -> Self;
     }
     impl Default for ContainerConfig {
         fn default() -> Self;
@@ -1554,7 +1554,7 @@ pub mod models {
     #[non_exhaustive]
     #[serde(rename_all = "camelCase")]
     pub struct AutoscaleThroughputPolicy {
-        pub increment_percent: usize,
+        pub increment_percent: u32,
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[non_exhaustive]
@@ -1685,7 +1685,7 @@ pub mod models {
         pub activity_id: Option<crate::models::ActivityId>,
         pub session_token: Option<crate::models::SessionToken>,
         pub precondition: Option<crate::models::Precondition>,
-        pub offer_throughput: Option<usize>,
+        pub offer_throughput: Option<u64>,
         pub offer_autopilot_settings: Option<OfferAutoscaleSettings>,
         pub max_item_count: Option<MaxItemCountHint>,
         pub incremental_feed: bool,
@@ -2081,13 +2081,13 @@ pub mod models {
     #[non_exhaustive]
     #[serde(rename_all = "camelCase")]
     pub struct OfferAutoscaleSettings {
-        pub max_throughput: usize,
+        pub max_throughput: u64,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
     }
     impl OfferAutoscaleSettings {
-        pub fn new(max_throughput: usize) -> Self;
-        pub fn with_increment_percent(self, increment_percent: usize) -> Self;
+        pub fn new(max_throughput: u64) -> Self;
+        pub fn with_increment_percent(self, increment_percent: u32) -> Self;
     }
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     #[non_exhaustive]
@@ -3269,8 +3269,6 @@ pub mod options {
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct OperationOptions {
-        pub allow_unbounded_queries: Option<bool>,
-        pub query_plan_mode: Option<crate::options::QueryPlanMode>,
         pub patch_strategy: Option<crate::options::PatchStrategy>,
         pub read_consistency_strategy: Option<crate::options::ReadConsistencyStrategy>,
         pub excluded_regions: Option<crate::options::ExcludedRegions>,
@@ -3300,7 +3298,6 @@ pub mod options {
         #[must_use]
         pub fn build(self) -> OperationOptions;
         pub fn new() -> Self;
-        pub fn with_allow_unbounded_queries(self, value: bool) -> Self;
         pub fn with_availability_strategy(self, value: AvailabilityStrategy) -> Self;
         pub fn with_binary_encoding(self, value: BinaryEncodingOptions) -> Self;
         pub fn with_content_response_on_write(self, value: ContentResponseOnWrite) -> Self;
@@ -3312,7 +3309,6 @@ pub mod options {
         pub fn with_max_failover_retry_count(self, value: u32) -> Self;
         pub fn with_max_session_retry_count(self, value: u32) -> Self;
         pub fn with_patch_strategy(self, value: PatchStrategy) -> Self;
-        pub fn with_query_plan_mode(self, value: QueryPlanMode) -> Self;
         pub fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
         pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
@@ -3323,7 +3319,6 @@ pub mod options {
     }
     #[automatically_derived]
     impl<'a> OperationOptionsView<'a> {
-        pub fn allow_unbounded_queries(&self) -> Option<&bool>;
         pub fn availability_strategy(&self) -> Option<&AvailabilityStrategy>;
         pub fn binary_encoding(&self) -> Option<&BinaryEncodingOptions>;
         pub fn content_response_on_write(&self) -> Option<&ContentResponseOnWrite>;
@@ -3337,7 +3332,6 @@ pub mod options {
         pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
-        pub fn query_plan_mode(&self) -> Option<&QueryPlanMode>;
         pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
         pub fn session_capturing_disabled(&self) -> Option<&bool>;
         pub fn throttling_retry_options(&self) -> ThrottlingRetryOptionsView<'_>;
@@ -3378,10 +3372,14 @@ pub mod options {
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct PlanOptions {
+        pub max_buffered_query_window: u64,
+        pub query_plan_mode: crate::options::QueryPlanMode,
         pub max_fan_out: u32,
     }
     impl PlanOptions {
+        pub fn with_max_buffered_query_window(self, max_buffered_query_window: u64) -> Self;
         pub fn with_max_fan_out(self, max_fan_out: u32) -> Self;
+        pub fn with_query_plan_mode(self, mode: QueryPlanMode) -> Self;
     }
     impl Default for PlanOptions {
         fn default() -> Self;
@@ -3758,6 +3756,7 @@ pub mod options {
         #[default]
         Rustls,
     }
+    pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
     pub const DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS: usize = 32;
     pub const DEFAULT_MAX_FAN_OUT: u32 = 100;
 }

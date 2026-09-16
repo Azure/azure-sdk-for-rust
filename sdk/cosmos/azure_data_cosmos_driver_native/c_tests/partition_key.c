@@ -36,6 +36,14 @@ static cosmos_partition_key_component_t pk_component(uint8_t kind)
     return c;
 }
 
+static cosmos_partition_key_component_t pk_string(const uint8_t *data, uintptr_t len)
+{
+    cosmos_partition_key_component_t c = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING);
+    c.value.string_value.data = data;
+    c.value.string_value.len = len;
+    return c;
+}
+
 static int test_lifecycle_null_safe(void)
 {
     int result = TEST_PASS;
@@ -73,8 +81,8 @@ static int test_single_string_component(void)
 {
     int result = TEST_PASS;
     cosmos_partition_key_component_t comps[1];
-    comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING);
-    comps[0].value.string_value = "tenant-42";
+    const uint8_t value[] = "tenant-42";
+    comps[0] = pk_string(value, sizeof(value) - 1);
 
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 1, &pk);
@@ -95,8 +103,8 @@ static int test_hierarchical_all_value_kinds(void)
 {
     int result = TEST_PASS;
     cosmos_partition_key_component_t comps[3];
-    comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING);
-    comps[0].value.string_value = "region-1";
+    const uint8_t value[] = "region-1";
+    comps[0] = pk_string(value, sizeof(value) - 1);
     comps[1] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_NUMBER);
     comps[1].value.number_value = 42.0;
     comps[2] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_BOOL);
@@ -186,18 +194,104 @@ static int test_number_rejects_non_finite(void)
     return result;
 }
 
-static int test_string_null_value_rejected(void)
+static int test_string_null_data_with_nonzero_length_rejected(void)
 {
     int result = TEST_PASS;
     cosmos_partition_key_component_t comps[1];
-    comps[0] = pk_component(COSMOS_PARTITION_KEY_COMPONENT_KIND_STRING);
-    comps[0].value.string_value = NULL;
+    comps[0] = pk_string(NULL, 1);
 
     cosmos_partition_key_t *pk = NULL;
     int32_t rc = cosmos_partition_key_create(comps, 1, &pk);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT,
            "string component with NULL value rejected (rc=%d)", rc);
     ASSERT(pk == NULL, "no handle on NULL string value");
+    return result;
+}
+
+static int test_embedded_nul_string_component(void)
+{
+    int result = TEST_PASS;
+    const uint8_t value[] = {'t', 'e', 'n', 'a', 'n', 't', '\0', 'a', 'd', 'm', 'i', 'n'};
+    cosmos_partition_key_component_t comp = pk_string(value, sizeof(value));
+    cosmos_partition_key_t *pk = NULL;
+
+    int32_t rc = cosmos_partition_key_create(&comp, 1, &pk);
+    ASSERT(rc == COSMOS_STATUS_SUCCESS,
+           "embedded-NUL string creates successfully (rc=%d)", rc);
+    REQUIRE(pk != NULL, "embedded-NUL string produced a handle");
+    ASSERT(cosmos_partition_key_component_count(pk) == 1,
+           "embedded-NUL key has one component");
+
+cleanup:
+    cosmos_partition_key_free(pk);
+    return result;
+}
+
+static int test_hierarchical_embedded_nul_components(void)
+{
+    int result = TEST_PASS;
+    const uint8_t first[] = {'r', '\0', '1'};
+    const uint8_t second[] = {'\0', 't'};
+    const uint8_t third[] = {'u', '\0'};
+    cosmos_partition_key_component_t comps[] = {
+        pk_string(first, sizeof(first)),
+        pk_string(second, sizeof(second)),
+        pk_string(third, sizeof(third)),
+    };
+    cosmos_partition_key_t *pk = NULL;
+
+    int32_t rc = cosmos_partition_key_create(comps, 3, &pk);
+    ASSERT(rc == COSMOS_STATUS_SUCCESS,
+           "hierarchical embedded-NUL strings create successfully (rc=%d)", rc);
+    REQUIRE(pk != NULL, "hierarchical embedded-NUL strings produced a handle");
+    ASSERT(cosmos_partition_key_component_count(pk) == 3,
+           "hierarchical embedded-NUL key has three components");
+
+cleanup:
+    cosmos_partition_key_free(pk);
+    return result;
+}
+
+static int test_empty_string_views(void)
+{
+    int result = TEST_PASS;
+    const uint8_t value = 0xff;
+    cosmos_partition_key_t *pk = NULL;
+    cosmos_partition_key_component_t comps[] = {
+        pk_string(&value, 0),
+        pk_string(NULL, 0),
+    };
+
+    for (uintptr_t i = 0; i < 2; i++) {
+        pk = NULL;
+        int32_t rc = cosmos_partition_key_create(&comps[i], 1, &pk);
+        ASSERT(rc == COSMOS_STATUS_SUCCESS,
+               "empty string view %zu creates successfully (rc=%d)", (size_t)i, rc);
+        REQUIRE(pk != NULL, "empty string view produced a handle");
+        ASSERT(cosmos_partition_key_component_count(pk) == 1,
+               "empty string remains one component");
+        ASSERT(!cosmos_partition_key_is_empty(pk),
+               "empty string is not a cross-partition key");
+        cosmos_partition_key_free(pk);
+        pk = NULL;
+    }
+
+cleanup:
+    cosmos_partition_key_free(pk);
+    return result;
+}
+
+static int test_invalid_utf8_rejected(void)
+{
+    int result = TEST_PASS;
+    const uint8_t value[] = {0x66, 0x80, 0x6f};
+    cosmos_partition_key_component_t comp = pk_string(value, sizeof(value));
+    cosmos_partition_key_t *pk = NULL;
+
+    int32_t rc = cosmos_partition_key_create(&comp, 1, &pk);
+    ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_UTF8,
+           "invalid UTF-8 rejected with typed error (rc=%d)", rc);
+    ASSERT(pk == NULL, "no handle on invalid UTF-8");
     return result;
 }
 
@@ -222,6 +316,10 @@ TEST_REGISTER(null_and_undefined_components)
 TEST_REGISTER(empty_create_rejected)
 TEST_REGISTER(over_cap_rejected)
 TEST_REGISTER(number_rejects_non_finite)
-TEST_REGISTER(string_null_value_rejected)
+TEST_REGISTER(string_null_data_with_nonzero_length_rejected)
+TEST_REGISTER(embedded_nul_string_component)
+TEST_REGISTER(hierarchical_embedded_nul_components)
+TEST_REGISTER(empty_string_views)
+TEST_REGISTER(invalid_utf8_rejected)
 TEST_REGISTER(create_rejects_null_out)
 TEST_SUITE_END("Partition Key Construction")

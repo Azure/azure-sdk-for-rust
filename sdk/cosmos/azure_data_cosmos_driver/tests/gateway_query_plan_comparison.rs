@@ -32,9 +32,7 @@ use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, FeedRange, PartitionKeyDefinition,
 };
-use azure_data_cosmos_driver::options::{
-    DriverOptions, OperationOptions, OperationOptionsBuilder, PlanOptions,
-};
+use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions, PlanOptions};
 use azure_data_cosmos_driver::CosmosDriver;
 
 use framework::resolve_test_env;
@@ -497,7 +495,7 @@ fn query_spec_body(sql: &str, parameters: &[(&str, serde_json::Value)]) -> Vec<u
 async fn validate_production_local_plan(
     sql: &str,
     parameters: &[(&str, serde_json::Value)],
-    execution_options: Option<OperationOptions>,
+    plan_options: Option<PlanOptions>,
 ) {
     let (driver, container) = require_driver_and(get_driver().await, c_pk().await);
     let body = query_spec_body(sql, parameters);
@@ -548,11 +546,12 @@ async fn validate_production_local_plan(
         "query ranges differ for '{sql}'"
     );
 
-    if let Some(options) = execution_options {
+    if let Some(plan_options) = plan_options {
+        let options = OperationOptions::default();
         let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
             .with_body(body);
         let mut plan = driver
-            .plan_operation(operation, &options, None, &PlanOptions::default())
+            .plan_operation(operation, &options, None, &plan_options)
             .await
             .unwrap_or_else(|error| panic!("local plan failed for '{sql}': {error}"));
         while driver
@@ -1052,7 +1051,7 @@ async fn gw_production_local_plan_supported_surface() {
         "SELECT (SELECT VALUE 1) AS x FROM c",
         "SELECT * FROM c WHERE c.pk = 'production-local-plan'",
     ] {
-        validate_production_local_plan(sql, &[], Some(OperationOptions::default())).await;
+        validate_production_local_plan(sql, &[], Some(PlanOptions::default())).await;
     }
 
     validate_production_local_plan("SELECT VALUE udf.transform(c.data) FROM c", &[], None).await;
@@ -1077,16 +1076,18 @@ async fn gw_production_local_plan_unbounded_distinct_requires_opt_out() {
         )
         .await
         .err()
-        .expect("unbounded unordered DISTINCT must require an explicit opt-out");
+        .expect("unordered DISTINCT must require a finite global window");
     assert_eq!(
         error.status(),
         azure_data_cosmos_driver::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
     );
 
-    let options = OperationOptionsBuilder::new()
-        .with_allow_unbounded_queries(true)
-        .build();
-    validate_production_local_plan(sql, &[], Some(options)).await;
+    validate_production_local_plan(
+        "SELECT DISTINCT TOP 1000 VALUE c.city FROM c",
+        &[],
+        Some(PlanOptions::default()),
+    )
+    .await;
 }
 
 #[tokio::test]

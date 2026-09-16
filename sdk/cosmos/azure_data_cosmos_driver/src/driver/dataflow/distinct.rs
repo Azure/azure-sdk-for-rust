@@ -80,9 +80,8 @@ enum DistinctMap {
 
     /// Global deduplication over an unordered stream.
     ///
-    /// Unbounded by design, matching .NET's `UnorderedDistinctMap` and Java's
-    /// `UnorderedDistinctMap`: ~16 bytes per *distinct* value seen. Since the
-    /// query cannot be resumed anyway, the set only has to survive one drain.
+    /// Retained for one drain; admission requires a finite global window and
+    /// the enclosing SkipTake stops pulling after that window.
     Unordered { seen: HashSet<Hash128> },
 }
 

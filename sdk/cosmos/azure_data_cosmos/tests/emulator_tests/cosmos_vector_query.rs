@@ -29,7 +29,7 @@ use serde::{Deserialize, Serialize};
 
 const SEARCH_PARTITION: &str = "tenant-a";
 const OTHER_PARTITION: &str = "tenant-b";
-const CROSS_PARTITION_THROUGHPUT: usize = 11_000;
+const CROSS_PARTITION_THROUGHPUT: u64 = 11_000;
 const QUERY_VECTOR: [f32; 2] = [0.0, 0.0];
 const PRECOMPUTED_VECTOR_DIMENSIONS: usize = 300;
 const PRECOMPUTED_VECTOR_TOP: usize = 9;
@@ -254,7 +254,7 @@ fn vector_documents() -> [VectorDocument; 7] {
 async fn seed_vector_container(
     run_context: &framework::TestRunContext,
     db_client: &azure_data_cosmos::clients::DatabaseClient,
-    throughput: Option<usize>,
+    throughput: Option<u64>,
 ) -> azure_data_cosmos::Result<ContainerClient> {
     let mut indexing_policy = IndexingPolicy::default()
         .with_indexing_mode(IndexingMode::Consistent)
@@ -671,7 +671,7 @@ pub async fn cross_partition_vector_search() -> Result<(), Box<dyn Error>> {
     not(test_category = "emulator"),
     ignore = "requires live vector-enabled account"
 )]
-pub async fn unbounded_vector_query_admission_and_execution() -> Result<(), Box<dyn Error>> {
+pub async fn finite_vector_query_admission_and_execution() -> Result<(), Box<dyn Error>> {
     if framework::targets_emulator() {
         eprintln!("live vector admission coverage unavailable on local emulators");
         return Ok(());
@@ -694,12 +694,17 @@ pub async fn unbounded_vector_query_admission_and_execution() -> Result<(), Box<
                 Err(error) => error,
                 Ok(_) => panic!("missing global bound must be rejected"),
             };
-            // A service rejection is not evidence of client admission or executable opt-out.
+            // A service rejection is not evidence of client admission.
             assert_eq!(error.status(), CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW,
                 "the service must supply a no-TOP vector plan to validate client admission: {error}");
+            let bounded = Query::from(
+                "SELECT TOP 6 c.id, VectorDistance(c.embedding, @queryVector, true) AS score \
+                 FROM c WHERE c.active = true \
+                 ORDER BY VectorDistance(c.embedding, @queryVector, true)",
+            ).with_parameter("@queryVector", QUERY_VECTOR.as_slice())?;
             let mut pages = container.query_items::<VectorMatch>(
-                query.clone(), FeedScope::full_container(),
-                Some(QueryOptions::default().with_allow_unbounded_queries(true).with_max_item_count(
+                bounded, FeedScope::full_container(),
+                Some(QueryOptions::default().with_max_buffered_query_window(6).with_max_item_count(
                     MaxItemCountHint::Limit(NonZeroU32::new(2).unwrap()),
                 )),
             ).await?.into_pages();
@@ -713,7 +718,7 @@ pub async fn unbounded_vector_query_admission_and_execution() -> Result<(), Box<
                 "other-partition-near", "far", "farthest"]);
             let mut pages = container.query_items::<VectorMatch>(
                 query, FeedScope::partition(SEARCH_PARTITION),
-                Some(QueryOptions::default().with_allow_unbounded_queries(false)),
+                Some(QueryOptions::default().with_max_buffered_query_window(0)),
             ).await?.into_pages();
             let mut ids = Vec::new();
             while let Some(page) = pages.next().await {

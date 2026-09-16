@@ -1405,16 +1405,16 @@ impl SubStatusCode {
     pub const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: SubStatusCode =
         Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
 
-    /// A buffered query requires a finite global TOP/LIMIT or explicit opt-out
-    /// (20125), including non-streaming ORDER BY and unordered DISTINCT.
+    /// A buffered query requires finite global TOP/LIMIT and OFFSET plus take
+    /// within its configured maximum (20125).
     pub const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: SubStatusCode = SubStatusCode(20125);
 
     /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW`].
     pub const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: SubStatusCode =
         Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
 
-    /// A non-streaming `ORDER BY` query's candidate window cannot be represented
-    /// by the current process (20126).
+    /// A non-streaming `ORDER BY` query's candidate storage cannot be represented
+    /// or allocated by the current process (20126).
     pub const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: SubStatusCode = SubStatusCode(20126);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
@@ -2397,8 +2397,8 @@ impl CosmosStatus {
     pub const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus =
         Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
 
-    /// 400 / 20125 — a buffered query requires a finite global TOP/LIMIT or
-    /// explicit opt-out, including non-streaming ORDER BY and unordered DISTINCT.
+    /// 400 / 20125 — a buffered query requires finite global TOP/LIMIT and
+    /// OFFSET plus take within its configured maximum.
     pub const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW),
@@ -2409,7 +2409,7 @@ impl CosmosStatus {
         Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
 
     /// 400 / 20126 — the non-streaming `ORDER BY` candidate window cannot be
-    /// represented by the current process.
+    /// represented or allocated by the current process.
     pub const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE),

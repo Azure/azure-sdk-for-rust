@@ -14,7 +14,7 @@ use crate::{
     options::{
         AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
         EndToEndOperationLatencyPolicy, ExcludedRegions, PatchStrategy, PriorityLevel,
-        QueryPlanMode, ReadConsistencyStrategy,
+        ReadConsistencyStrategy,
     },
 };
 
@@ -40,23 +40,6 @@ use crate::{
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct OperationOptions {
-    /// Allows client-buffered queries without a global finite TOP or LIMIT.
-    ///
-    /// `None` inherits; the final default is false. Explicit false overrides a
-    /// client opt-out. Enabling this can consume unbounded memory and does not
-    /// relax service restrictions or enable buffered-query continuation tokens.
-    #[option(env = "AZURE_COSMOS_ALLOW_UNBOUNDED_QUERIES")]
-    pub allow_unbounded_queries: Option<bool>,
-
-    /// Query-plan provider selection for query operations.
-    ///
-    /// `None` inherits from a lower layer (default:
-    /// [`QueryPlanMode::LocalPreferred`]). The
-    /// `AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE` environment variable takes
-    /// precedence over every programmatic layer as a livesite kill switch.
-    #[option(env = "AZURE_COSMOS_QUERY_PLAN_MODE", overridable)]
-    pub query_plan_mode: Option<QueryPlanMode>,
-
     /// How PATCH operations are executed.
     ///
     /// `None` inherits from a lower layer (default: [`PatchStrategy::Auto`]).
@@ -405,49 +388,6 @@ mod tests {
         assert!(view.max_session_retry_count().is_none());
     }
 
-    #[test]
-    fn unbounded_admission_resolves_each_layer_and_explicit_false() {
-        use crate::driver::dataflow::{
-            planner::validate_buffered_query,
-            query_plan::{DistinctType, QueryInfo, QueryPlan},
-        };
-        use std::sync::Arc;
-
-        let plan = QueryPlan {
-            query_info: Some(QueryInfo {
-                distinct_type: DistinctType::Unordered,
-                ..Default::default()
-            }),
-            ..Default::default()
-        };
-        for env in [None, Some(false), Some(true)] {
-            for runtime in [None, Some(false), Some(true)] {
-                for account in [None, Some(false), Some(true)] {
-                    for operation in [None, Some(false), Some(true)] {
-                        let layer = |value| {
-                            Arc::new(OperationOptions {
-                                allow_unbounded_queries: value,
-                                ..Default::default()
-                            })
-                        };
-                        let request = layer(operation);
-                        let view = OperationOptionsView::new(
-                            Some(layer(env)),
-                            Some(layer(runtime)),
-                            Some(layer(account)),
-                            Some(&request),
-                        );
-                        let allowed = view.allow_unbounded_queries().copied().unwrap_or(false);
-                        assert_eq!(
-                            validate_buffered_query(&plan, allowed).is_ok(),
-                            operation.or(account).or(runtime).or(env).unwrap_or(false)
-                        );
-                    }
-                }
-            }
-        }
-    }
-
     /// Rule 2 + Rule 3 (RCS resolution):
     /// An explicit per-request `Default` overrides a client-level non-`Default`,
     /// resulting in no RCS being emitted on the wire.
@@ -774,94 +714,6 @@ mod tests {
         );
 
         assert_eq!(view.hedging_enabled(), Some(&true));
-    }
-
-    #[test]
-    fn query_plan_mode_resolves_across_all_layers() {
-        let env = std::sync::Arc::new(OperationOptions {
-            query_plan_mode: Some(QueryPlanMode::LocalPreferred),
-            ..Default::default()
-        });
-        let runtime = std::sync::Arc::new(OperationOptions {
-            query_plan_mode: Some(QueryPlanMode::GatewayOnly),
-            ..Default::default()
-        });
-        let account = std::sync::Arc::new(OperationOptions {
-            query_plan_mode: Some(QueryPlanMode::LocalPreferred),
-            ..Default::default()
-        });
-        let operation = OperationOptions {
-            query_plan_mode: Some(QueryPlanMode::GatewayOnly),
-            ..Default::default()
-        };
-
-        let view =
-            OperationOptionsView::new(Some(env), Some(runtime), Some(account), Some(&operation));
-
-        assert_eq!(view.query_plan_mode(), Some(&QueryPlanMode::GatewayOnly));
-    }
-
-    #[test]
-    fn query_plan_mode_environment_override_is_authoritative() {
-        let env_override = std::sync::Arc::new(OperationOptions {
-            query_plan_mode: Some(QueryPlanMode::GatewayOnly),
-            ..Default::default()
-        });
-        let operation = OperationOptions {
-            query_plan_mode: Some(QueryPlanMode::LocalPreferred),
-            ..Default::default()
-        };
-
-        let view = OperationOptionsView::new_with_override(
-            Some(env_override),
-            None,
-            None,
-            None,
-            Some(&operation),
-        );
-
-        assert_eq!(view.query_plan_mode(), Some(&QueryPlanMode::GatewayOnly));
-    }
-
-    #[test]
-    fn query_plan_mode_environment_variables_are_parsed() {
-        let base = OperationOptions::from_env_vars(|key| match key {
-            "AZURE_COSMOS_QUERY_PLAN_MODE" => Ok("LocalPreferred".to_string()),
-            _ => Err(std::env::VarError::NotPresent),
-        });
-        let override_options = OperationOptions::from_env_override_vars(|key| match key {
-            "AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE" => Ok("gateway".to_string()),
-            _ => Err(std::env::VarError::NotPresent),
-        });
-
-        assert_eq!(base.query_plan_mode, Some(QueryPlanMode::LocalPreferred));
-        assert_eq!(
-            override_options.query_plan_mode,
-            Some(QueryPlanMode::GatewayOnly)
-        );
-    }
-
-    #[test]
-    fn invalid_query_plan_mode_override_falls_through() {
-        let env_override =
-            std::sync::Arc::new(OperationOptions::from_env_override_vars(|key| match key {
-                "AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE" => Ok("invalid".to_string()),
-                _ => Err(std::env::VarError::NotPresent),
-            }));
-        let operation = OperationOptions {
-            query_plan_mode: Some(QueryPlanMode::GatewayOnly),
-            ..Default::default()
-        };
-
-        let view = OperationOptionsView::new_with_override(
-            Some(env_override),
-            None,
-            None,
-            None,
-            Some(&operation),
-        );
-
-        assert_eq!(view.query_plan_mode(), Some(&QueryPlanMode::GatewayOnly));
     }
 
     /// `from_env_override_vars` populates only the `overridable` fields from

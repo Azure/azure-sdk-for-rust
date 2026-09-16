@@ -21,7 +21,6 @@ use azure_data_cosmos::feed::FeedScope;
 use azure_data_cosmos::models::{
     ContainerProperties, PartitionKeyKind, PatchInstructions, PatchOperation,
 };
-use azure_data_cosmos::options::QueryOptions;
 use azure_data_cosmos::{PartitionKey, Query, SubStatusCode, TransactionalBatch};
 use framework::{TestClient, TestOptions, TestRunContext};
 use futures::{StreamExt, TryStreamExt};
@@ -836,8 +835,8 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
             // Servable: DISTINCT has a client-side stage, and it must
             // deduplicate correctly across the container's physical partitions.
             let mut countries = container.query_items::<String>(
-                "SELECT DISTINCT VALUE c.country FROM c", FeedScope::full_container(),
-                Some(QueryOptions::default().with_allow_unbounded_queries(true)),
+                "SELECT DISTINCT TOP 1000 VALUE c.country FROM c", FeedScope::full_container(),
+                None,
             )
             .await?
             .try_collect::<Vec<_>>().await?;

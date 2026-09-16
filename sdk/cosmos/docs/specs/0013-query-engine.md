@@ -22,11 +22,14 @@ Before allocating a client-buffering pipeline or issuing item-query requests,
 the driver validates the normalized global plan from every provider. Metadata
 and query-plan requests may precede this check. Non-streaming ORDER BY (including
 buffered vector search) and unordered DISTINCT require a finite global TOP or
-LIMIT, unless resolved `allow_unbounded_queries` is true. Ordering metadata does
-not exempt an unordered DISTINCT stage.
+LIMIT, with OFFSET plus effective take at most the per-query
+`max_buffered_query_window: u64` (default 1000). There is no opt-out, including
+when the configured maximum is `u64::MAX`. Ordering metadata does not exempt
+an unordered DISTINCT stage.
 
-Any representable finite bound is accepted: there is no fixed numeric ceiling.
-Zero is a bound, and TOP combined with LIMIT uses the smaller value.
+Zero is a valid maximum and bound; TOP combined with LIMIT uses the smaller
+value. OFFSET still counts when take is zero. Checked addition rejects overflow
+as an admission error (400/20125), as it does missing bounds or excess windows.
 OFFSET alone, page-size hints, fan-out, consumer-side take, nested subquery TOP,
 and per-range rewritten bounds do not establish a global output bound.
 
@@ -36,22 +39,20 @@ even if they currently touch only one physical partition. Ordinary streaming
 queries, streaming ORDER BY without unordered DISTINCT, and ordered DISTINCT
 retain their existing behavior.
 
-Bounded non-streaming execution retains its top-k heap and checked OFFSET + take
-window. Explicit unbounded execution grows candidate storage incrementally,
-sorts all candidates with the same key/ordinal comparison, applies OFFSET, and
-paginates the remaining rows. Admission is fixed when the plan is built.
+Non-streaming execution uses a bounded top-k heap with a checked OFFSET + take
+window, then sorts retained candidates, applies OFFSET, and paginates the result.
+There is no unbounded execution representation. Admission is fixed when the plan is built.
 This is not a runtime memory budget or a guarantee that finite output bounds
-bound all memory: OFFSET and page-level DISTINCT processing add retained work.
+bound all memory: document sizes and page-level DISTINCT processing add retained work.
 
-Neither bounds nor opt-out enable unsupported query compositions. Cross-partition
+Raising the maximum does not enable unsupported query compositions. Cross-partition
 plans using client-side unordered DISTINCT or non-streaming ORDER BY stages
 reject continuation tokens with 400/20124. Complete logical-partition-key queries
 bypass these stages and their client-side continuation restrictions.
 Service validation remains authoritative. In particular, a service rejection of
 a no-TOP vector query is not bypassed or replaced by a fabricated large TOP.
-Live no-TOP vector support must be verified against an enabled account before
-promising that service scenario; deterministic buffered-node tests cover the
-client execution mode independently.
+Deterministic buffered-node tests cover finite-window execution independently
+of live service availability.
 
 ```text
 SQL Text
@@ -195,18 +196,11 @@ Normal builds resolve cross-partition query plans in this order:
 1. Local Rust planner.
 2. Gateway query-plan endpoint.
 
-Set `QueryPlanMode::GatewayOnly` on `OperationOptions` to bypass local planning.
-Use `DriverOptionsBuilder::with_operation_options` or
-`CosmosClientBuilder::with_default_operation_options` to change the default for
-a driver or client, and the operation-specific `with_operation_options` setter
-to override it for one query.
-
-Query-plan mode follows the standard operation → account → runtime →
-environment option hierarchy. `AZURE_COSMOS_QUERY_PLAN_MODE` supplies the
-lowest-priority process default. For livesite mitigation,
-`AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE=gateway` authoritatively forces Gateway
-planning above every programmatic layer. Environment settings are captured
-when the runtime is constructed.
+Set `PlanOptions::query_plan_mode` to `QueryPlanMode::GatewayOnly` to bypass
+local planning, or use `QueryOptions::with_query_plan_mode` in the SDK.
+Query-plan mode and `max_buffered_query_window` are per-query only, with defaults
+of `LocalPreferred` and 1000. They have no client, account, runtime, or
+environment defaults and no authoritative environment override.
 
 When `__internal_native_query_plan` is enabled, the existing native-first behavior is preserved:
 

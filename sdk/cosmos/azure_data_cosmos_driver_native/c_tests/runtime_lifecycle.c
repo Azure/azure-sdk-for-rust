@@ -27,9 +27,9 @@ static int test_options_default_all_unset(void)
     int result = TEST_PASS;
     cosmos_runtime_options_t opts = cosmos_runtime_options_default();
     ASSERT(opts.workload_id == 0, "workload_id defaults to 0 (unset)");
-    ASSERT(opts.correlation_id == NULL, "correlation_id defaults to NULL");
-    ASSERT(opts.user_agent_suffix == NULL, "user_agent_suffix defaults to NULL");
-    ASSERT(opts.wrapping_sdk_identifier == NULL,
+    ASSERT(opts.correlation_id.data == NULL && opts.correlation_id.len == 0, "correlation_id defaults to NULL/0");
+    ASSERT(opts.user_agent_suffix.data == NULL && opts.user_agent_suffix.len == 0, "user_agent_suffix defaults to NULL/0");
+    ASSERT(opts.wrapping_sdk_identifier.data == NULL && opts.wrapping_sdk_identifier.len == 0,
            "wrapping_sdk_identifier defaults to NULL");
     ASSERT(opts.cpu_refresh_interval_ms == 0,
            "cpu_refresh_interval_ms defaults to 0 (unset)");
@@ -72,7 +72,7 @@ static int test_string_field_validation(void)
 
     // Correlation id: 51 chars — one over the cap.
     cosmos_runtime_options_t opts = cosmos_runtime_options_default();
-    opts.correlation_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    opts.correlation_id = SV("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
            "correlation_id too-long rejected (rc=%d)", rc);
@@ -80,7 +80,7 @@ static int test_string_field_validation(void)
 
     // Correlation id: invalid charset (space).
     opts = cosmos_runtime_options_default();
-    opts.correlation_id = "has space";
+    opts.correlation_id = SV("has space");
     rc = cosmos_runtime_build(&opts, &runtime, &err);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
            "correlation_id invalid charset rejected (rc=%d)", rc);
@@ -88,7 +88,7 @@ static int test_string_field_validation(void)
 
     // User-agent suffix: 26 chars — one over the cap.
     opts = cosmos_runtime_options_default();
-    opts.user_agent_suffix = "xxxxxxxxxxxxxxxxxxxxxxxxxx";
+    opts.user_agent_suffix = SV("xxxxxxxxxxxxxxxxxxxxxxxxxx");
     rc = cosmos_runtime_build(&opts, &runtime, &err);
     ASSERT(COSMOS_STATUS_SUB(rc) == COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE,
            "user_agent_suffix too-long rejected (rc=%d)", rc);
@@ -131,7 +131,7 @@ static int test_build_happy_path(void)
     // Configure a couple of valid fields and build.
     cosmos_runtime_options_t opts = cosmos_runtime_options_default();
     opts.workload_id = 7;
-    opts.user_agent_suffix = "c-tests";
+    opts.user_agent_suffix = SV("c-tests");
     opts.cpu_refresh_interval_ms = 5000;
 
     int32_t rc = cosmos_runtime_build(&opts, &runtime, &err);

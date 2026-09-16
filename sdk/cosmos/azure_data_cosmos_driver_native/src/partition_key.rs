@@ -21,12 +21,12 @@
 //! instead of an abort. Likewise, `From<f64>` for `PartitionKeyValue` panics
 //! on non-finite values — a numeric component with NaN / ±∞ is rejected
 //! up-front with `INVALID_OPTION_VALUE` (4014).
-//!
-use std::ffi::{c_char, CStr};
 
 use azure_data_cosmos_driver::models::{PartitionKey as DriverPartitionKey, PartitionKeyValue};
 
 use crate::error::{CosmosErrorCode, CosmosStatusCode};
+use crate::string::copy_utf8;
+pub use crate::string::CosmosStringView;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -84,8 +84,8 @@ impl CosmosPartitionKeyComponentKind {
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub union CosmosPartitionKeyComponentValue {
-    /// String payload (NUL-terminated UTF-8). Read iff `kind` is `String`.
-    pub string_value: *const c_char,
+    /// Borrowed counted UTF-8 payload. Read iff `kind` is `String`.
+    pub string_value: CosmosStringView,
     /// Numeric payload. Read iff `kind` is `Number`. Must be finite.
     pub number_value: f64,
     /// Boolean payload as `u8`: `0` encodes `false`, any non-zero byte
@@ -123,8 +123,9 @@ pub struct CosmosPartitionKeyComponent {
 /// # Safety
 ///
 /// `components` must point to `len` initialized [`CosmosPartitionKeyComponent`]
-/// values, and each `String` component's `string_value` must be a valid
-/// NUL-terminated UTF-8 string that outlives the call.
+/// values. Each `String` component's `string_value.data` must point to
+/// `string_value.len` readable bytes that outlive the call, unless the length
+/// is zero. The complete byte slice must be valid UTF-8.
 pub(crate) unsafe fn partition_key_from_components(
     components: *const CosmosPartitionKeyComponent,
     len: usize,
@@ -144,10 +145,12 @@ pub(crate) unsafe fn partition_key_from_components(
         let value = match CosmosPartitionKeyComponentKind(component.kind) {
             CosmosPartitionKeyComponentKind::STRING => {
                 // SAFETY: kind == String → caller populated `value.string_value`
-                // with a valid NUL-terminated UTF-8 pointer per the FFI contract.
-                let ptr = unsafe { component.value.string_value };
-                let s = try_cstr_to_str(ptr)?;
-                PartitionKeyValue::from(s.to_owned())
+                // with a valid borrowed view per the FFI contract.
+                let view = unsafe { component.value.string_value };
+                // SAFETY: the caller contract guarantees the view remains
+                // readable for the duration of this call.
+                let s = unsafe { copy_utf8(view) }?;
+                PartitionKeyValue::from(s)
             }
             CosmosPartitionKeyComponentKind::NUMBER => {
                 // SAFETY: kind == Number → caller populated `value.number_value`
@@ -230,16 +233,6 @@ impl PartitionKeyHandle {
 // FFI helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
-    if p.is_null() {
-        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-    }
-    // SAFETY: caller contract on every public setter.
-    let cstr = unsafe { CStr::from_ptr(p) };
-    cstr.to_str()
-        .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidUtf8)
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // FFI: PartitionKey lifecycle + accessors
 // ─────────────────────────────────────────────────────────────────────────────
@@ -258,8 +251,8 @@ fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
 /// # Parameters
 ///
 /// - `components` — array of `len` [`CosmosPartitionKeyComponent`] values.
-///   Each `String` component's `string_value` must be valid NUL-terminated
-///   UTF-8 for the duration of the call; the wrapper copies what it needs.
+///   Each `String` component's `string_value` must describe valid UTF-8 bytes
+///   for the duration of the call; the wrapper copies the complete slice.
 /// - `len` — number of components (`1..=3`).
 /// - `out_pk` — receives the new handle on success. Must be non-NULL.
 ///
@@ -287,8 +280,8 @@ pub extern "C" fn cosmos_partition_key_create(
         return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
     }
     // SAFETY: caller guarantees `components` points at `len` initialized
-    // components whose string payloads are valid NUL-terminated UTF-8 for the
-    // duration of the call (documented contract above).
+    // components whose string views are valid for the duration of the call
+    // (documented contract above).
     let pk = match unsafe { partition_key_from_components(components, len) } {
         Ok(pk) => pk,
         Err(code) => return code.as_status_code(),
@@ -352,11 +345,22 @@ pub extern "C" fn cosmos_partition_key_is_empty(pk: *const PartitionKeyHandle) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::ffi::CString;
     use std::ptr;
 
-    fn ok_cstr(s: &str) -> CString {
-        CString::new(s).expect("test inputs must be NUL-free")
+    fn string_view(bytes: &[u8]) -> CosmosStringView {
+        CosmosStringView {
+            data: bytes.as_ptr(),
+            len: bytes.len(),
+        }
+    }
+
+    fn string_component(bytes: &[u8]) -> CosmosPartitionKeyComponent {
+        CosmosPartitionKeyComponent {
+            kind: CosmosPartitionKeyComponentKind::STRING.0,
+            value: CosmosPartitionKeyComponentValue {
+                string_value: string_view(bytes),
+            },
+        }
     }
 
     #[test]
@@ -390,21 +394,19 @@ mod tests {
             // matching `kind` is ever read, so this initialization does not
             // affect behavior.
             value: CosmosPartitionKeyComponentValue {
-                string_value: ptr::null(),
+                string_value: CosmosStringView {
+                    data: ptr::null(),
+                    len: 0,
+                },
             },
         }
     }
 
     #[test]
     fn inline_components_match_builder_for_hierarchical_key() {
-        let s = ok_cstr("tenant-42");
+        let s = "tenant-42";
         let comps = [
-            CosmosPartitionKeyComponent {
-                kind: CosmosPartitionKeyComponentKind::STRING.0,
-                value: CosmosPartitionKeyComponentValue {
-                    string_value: s.as_ptr(),
-                },
-            },
+            string_component(s.as_bytes()),
             CosmosPartitionKeyComponent {
                 kind: CosmosPartitionKeyComponentKind::NUMBER.0,
                 value: CosmosPartitionKeyComponentValue { number_value: 7.0 },
@@ -482,7 +484,10 @@ mod tests {
         let comps = [CosmosPartitionKeyComponent {
             kind: 99,
             value: CosmosPartitionKeyComponentValue {
-                string_value: ptr::null(),
+                string_value: CosmosStringView {
+                    data: ptr::null(),
+                    len: 0,
+                },
             },
         }];
         // SAFETY: live array.
@@ -516,14 +521,9 @@ mod tests {
 
     #[test]
     fn create_produces_handle_matching_driver() {
-        let s = ok_cstr("tenant-42");
+        let s = "tenant-42";
         let comps = [
-            CosmosPartitionKeyComponent {
-                kind: CosmosPartitionKeyComponentKind::STRING.0,
-                value: CosmosPartitionKeyComponentValue {
-                    string_value: s.as_ptr(),
-                },
-            },
+            string_component(s.as_bytes()),
             CosmosPartitionKeyComponent {
                 kind: CosmosPartitionKeyComponentKind::NUMBER.0,
                 value: CosmosPartitionKeyComponentValue { number_value: 7.0 },
@@ -550,6 +550,131 @@ mod tests {
             cosmos_partition_key_create(comps.as_ptr(), comps.len(), ptr::null_mut()),
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
         );
+    }
+
+    #[test]
+    fn create_preserves_embedded_nul_after_input_is_released() {
+        let mut out = ptr::null_mut();
+        {
+            let mut bytes = b"tenant\0admin".to_vec();
+            let components = [string_component(&bytes)];
+            assert_eq!(
+                cosmos_partition_key_create(components.as_ptr(), components.len(), &mut out),
+                CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+            );
+            bytes.fill(b'x');
+        }
+
+        let built = PartitionKeyHandle::from_ptr(out).expect("create produced a handle");
+        assert_eq!(built.inner, DriverPartitionKey::from("tenant\0admin"));
+        assert_ne!(built.inner, DriverPartitionKey::from("tenant"));
+        cosmos_partition_key_free(out);
+    }
+
+    #[test]
+    fn embedded_nul_is_preserved_and_distinct() {
+        let plain = [string_component(b"tenant")];
+        let with_nul = [string_component(b"tenant\0admin")];
+
+        // SAFETY: both component arrays and their borrowed byte buffers are live.
+        let plain = unsafe { partition_key_from_components(plain.as_ptr(), plain.len()) }.unwrap();
+        // SAFETY: both component arrays and their borrowed byte buffers are live.
+        let with_nul =
+            unsafe { partition_key_from_components(with_nul.as_ptr(), with_nul.len()) }.unwrap();
+
+        assert_ne!(plain, with_nul);
+        assert_eq!(
+            with_nul,
+            DriverPartitionKey::from("tenant\0admin".to_owned())
+        );
+    }
+
+    #[test]
+    fn counted_string_uses_exact_declared_bytes_without_terminator() {
+        let bytes = b"tenanttrailing";
+        let comps = [CosmosPartitionKeyComponent {
+            kind: CosmosPartitionKeyComponentKind::STRING.0,
+            value: CosmosPartitionKeyComponentValue {
+                string_value: CosmosStringView {
+                    data: bytes.as_ptr(),
+                    len: b"tenant".len(),
+                },
+            },
+        }];
+
+        // SAFETY: the declared prefix is readable and remains live.
+        let built = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) }.unwrap();
+        assert_eq!(built, DriverPartitionKey::from("tenant".to_owned()));
+    }
+
+    #[test]
+    fn hierarchical_strings_preserve_nul_in_each_component() {
+        let comps = [
+            string_component(b"region\0east"),
+            string_component(b"\0tenant"),
+            string_component(b"user\0"),
+        ];
+
+        // SAFETY: the component array and all borrowed byte buffers are live.
+        let built = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) }.unwrap();
+        assert_eq!(
+            built,
+            DriverPartitionKey::from(vec![
+                PartitionKeyValue::from("region\0east".to_owned()),
+                PartitionKeyValue::from("\0tenant".to_owned()),
+                PartitionKeyValue::from("user\0".to_owned()),
+            ])
+        );
+    }
+
+    #[test]
+    fn empty_string_views_are_valid_components() {
+        let non_null = [string_component(b"")];
+        let null = [CosmosPartitionKeyComponent {
+            kind: CosmosPartitionKeyComponentKind::STRING.0,
+            value: CosmosPartitionKeyComponentValue {
+                string_value: CosmosStringView {
+                    data: ptr::null(),
+                    len: 0,
+                },
+            },
+        }];
+
+        // SAFETY: zero-length views do not dereference their pointers.
+        let non_null =
+            unsafe { partition_key_from_components(non_null.as_ptr(), non_null.len()) }.unwrap();
+        // SAFETY: zero-length views do not dereference their pointers.
+        let null = unsafe { partition_key_from_components(null.as_ptr(), null.len()) }.unwrap();
+        let expected = DriverPartitionKey::from(String::new());
+        assert_eq!(non_null, expected);
+        assert_eq!(null, expected);
+        assert!(!null.is_empty());
+    }
+
+    #[test]
+    fn string_view_rejects_null_data_with_nonzero_length() {
+        let comps = [CosmosPartitionKeyComponent {
+            kind: CosmosPartitionKeyComponentKind::STRING.0,
+            value: CosmosPartitionKeyComponentValue {
+                string_value: CosmosStringView {
+                    data: ptr::null(),
+                    len: 1,
+                },
+            },
+        }];
+
+        // SAFETY: invalid pointer/length pairs are rejected before dereference.
+        let result = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) };
+        assert_eq!(result, Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument));
+    }
+
+    #[test]
+    fn string_view_rejects_invalid_utf8() {
+        let comps = [string_component(&[0x66, 0x80, 0x6f])];
+
+        // SAFETY: the byte buffer is readable, but intentionally invalid UTF-8.
+        let result = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) };
+        assert_eq!(result, Err(CosmosErrorCode::CosmosErrorCodeInvalidUtf8));
     }
 
     #[test]

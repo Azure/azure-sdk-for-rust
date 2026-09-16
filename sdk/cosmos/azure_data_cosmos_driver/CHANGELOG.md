@@ -4,26 +4,31 @@
 
 ### Features Added
 
-- Added layered `OperationOptions::allow_unbounded_queries` and incremental unbounded non-streaming ORDER BY execution, preserving finite top-k execution and continuation restrictions. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
+- Added per-query `PlanOptions::max_buffered_query_window`, `with_max_buffered_query_window`, and `DEFAULT_MAX_BUFFERED_QUERY_WINDOW` (1000) to cap global OFFSET plus effective take for client-buffered queries, with no opt-out. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Extended Cosmos binary JSON query-page handling to cross-partition `DISTINCT`, including composition with streaming `ORDER BY` and `OFFSET`/`LIMIT`/`TOP`. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
-- Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes. Added layered `OperationOptions::query_plan_mode`, `QueryPlanMode::{LocalPreferred, GatewayOnly}`, and the authoritative `AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE=gateway` break-glass setting to force Gateway planning globally or per operation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
+- Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes, and `QueryPlanMode::{LocalPreferred, GatewayOnly}` to select providers per query. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
 - Added a fully buffered cross-partition merge for finite non-streaming `ORDER BY` plans, including `VectorDistance(...)`. Resumed, DISTINCT, and hybrid non-streaming plans are rejected with typed statuses. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
 
 ### Breaking Changes
 
-- Unordered cross-partition DISTINCT and non-streaming ORDER BY require a global finite TOP/LIMIT or explicit `allow_unbounded_queries=true`, sharing 400/20125 (`CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW`); the existing non-streaming status constant remains an alias. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
+- Moved `query_plan_mode` from `OperationOptions` to `PlanOptions`; removed account/runtime defaults and environment settings, including the query-plan-mode override. The default remains `LocalPreferred`. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
+- Unordered cross-partition DISTINCT and non-streaming ORDER BY require finite global TOP/LIMIT with OFFSET plus effective take within the configured maximum; missing bounds, excess windows, and overflow share 400/20125 (`CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW`). ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Unified client-buffered continuation errors under 400/20124 (`CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`), retaining the shape-specific constants as aliases; finite-window admission moved from 20126 to 20125 and non-streaming window/storage errors from 20127 to 20126. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 
 - `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
+- `CosmosRequestHeaders::offer_throughput`, `OfferAutoscaleSettings::max_throughput`, `OfferAutoscaleSettings::new`, `OfferAutoscaleSettings::with_increment_percent`, and `AutoscaleThroughputPolicy::increment_percent` now use `u32` instead of the platform-dependent `usize`, matching the RU/s values Cosmos DB actually returns. ([#5204](https://github.com/Azure/azure-sdk-for-rust/pull/5204))
 - Renamed several types for naming consistency: `diagnostics::PipelineType` is now `diagnostics::PipelineKind` (following the `Kind`-over-`Type` convention), `diagnostics::ProxyConfiguration` is now `diagnostics::ProxyConfig` (matching the `Config` naming used elsewhere), and `in_memory_emulator::RuChargingModel` is now `in_memory_emulator::RequestUnitChargingModel` (expanding the `RU` acronym). The unstable `testing` module (`__internal_mocking` feature) was renamed to `test`. ([#5203](https://github.com/Azure/azure-sdk-for-rust/pull/5203))
 
 ### Bugs Fixed
 
+- Fixed V1 partition key routing for non-ASCII strings by truncating at 100 UTF-16 code units and applying the service's separate binary byte limit without panicking on split characters. ([#5280](https://github.com/Azure/azure-sdk-for-rust/pull/5280))
 - Added partition-merge routing support, advertised the merge capability bits, and retained point-in-time change feed filtering across merged partitions on Gateway V1 and Gateway V2. ([#4122](https://github.com/Azure/azure-sdk-for-rust/issues/4122))
 - Cosmos driver user agents now include the build-time Rust compiler version instead of `rustc/unknown`. ([#5201](https://github.com/Azure/azure-sdk-for-rust/pull/5201))
 - Name-addressed container operations now refresh metadata and retry once after container recreation, clearing generation-specific session and partition-routing state before targeting the replacement. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
 
 ### Other Changes
+
+- Test-only: the driver test framework applies the vnext emulator's disabled binary-encoding default at the runtime layer, so every framework-built `CosmosDriverRuntime` inherits it while explicit driver- or operation-level settings still win. `driver_vnext_binary_encoding_canary` reproduces the exact seed documents from [#5240](https://github.com/Azure/azure-sdk-for-rust/issues/5240) with binary forced on and asserts they **succeed**, so it is **expected to fail today** and is `#[ignore]`d to keep the vnext pipeline green; run it with `--ignored`, and when it passes the binary overrides and the canary can all be removed. No product behavior change. ([#5299](https://github.com/Azure/azure-sdk-for-rust/pull/5299))
 
 ## 0.7.0 (2026-09-02)
 
