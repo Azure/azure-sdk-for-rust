@@ -31,8 +31,8 @@
 //! node needs, because a value it has moved past can never reappear.
 //!
 //! Unordered `DISTINCT` is not. The set *is* the state, and serializing it
-//! would mean an unbounded token; truncating it would silently re-emit
-//! duplicates. [`Distinct::snapshot_state`] therefore fails with
+//! can produce impractically large tokens even with a finite admission window;
+//! truncating it would silently re-emit duplicates. [`Distinct::snapshot_state`] fails with
 //! [`CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`], which surfaces
 //! at `OperationPlan::to_continuation_token` time — while the caller still
 //! holds a live plan and can either keep draining in-process or rewrite the
