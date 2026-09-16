@@ -981,7 +981,7 @@ mod tests {
     }
 
     #[test]
-    fn binary_negotiation_reemits_serialization_formats_header() {
+    fn binary_negotiation_re_emits_serialization_formats_header() {
         let frame = RntbdRequestFrame {
             resource_type: ResourceType::Document,
             operation_type: OperationType::Read,
