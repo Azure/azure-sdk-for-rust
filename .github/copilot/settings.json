@@ -4,7 +4,7 @@
     "Use `/analyze-code` when you're done making code changes to check code like pull request checks and avoid surprises later. See the `.github/skills` directory for more skills.",
     "Use `/create-recorded-test` to create new recorded tests. See the `.github/skills` directory for more skills.",
     "Use `/create-crate` to create a new crate and, optionally, a new service directory. See the `.github/skills` directory for more skills.",
-    "Use `/export-api` to export your public API before submitted a pull request or just to see what the final public API looks like. See the `.github/skills` directory for more skills.",
+    "Use `/export-api` to export your public API before submitting a pull request or just to see what the final public API looks like. See the `.github/skills` directory for more skills.",
     "Use the `sdk-reviewer` custom agent to review your crate against the [general](https://azure.github.io/azure-sdk/general_introduction.html) and [Rust Guidelines](https://azure.github.io/azure-sdk/rust_introduction.html)."
   ]
 }

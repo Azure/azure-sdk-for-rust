@@ -7,10 +7,10 @@ description: Run repository code analysis as a final check after completing prom
 
 Run this as a final check after completing any prompt that changes repository files.
 
-1. Collect changed non-deleted files from Git, including staged, unstaged, and untracked files:
+1. Collect changed files from Git, including staged, unstaged, untracked, and deleted files:
 
    ```bash
-   { git diff --staged --name-only --diff-filter=d; git diff --name-only --diff-filter=d; git ls-files --others --exclude-standard -- 'sdk'; } | sort -u
+   { git diff --staged --name-only; git diff --name-only; git ls-files --others --exclude-standard -- 'sdk'; } | sort -u
    ```
 
 2. Assume service crates live under `sdk/<service-directory>/<crate-name>`. For each changed file under `sdk/`,
