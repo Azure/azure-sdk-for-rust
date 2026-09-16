@@ -65,10 +65,6 @@ version = "1.0.0"
 default-features = false
 version = "1.1.0"
 
-[workspace.dependencies.azure_core_0_21]
-package = "azure_core"
-version = "0.21.0"
-
 [workspace.dependencies.azure_core_macros]
 version = "1.0.0"
 
@@ -90,11 +86,6 @@ version = "0.2.0"
 [workspace.dependencies.azure_identity]
 # azure_identity should only ever be in dev-dependencies herein
 version = "1.0.0"
-
-[workspace.dependencies.azure_mgmt_cosmosdb]
-version = "0.21.0"
-default-features = false
-features = ["enable_reqwest", "package-preview-2024-09"]
 
 [workspace.dependencies.azure_storage_blob]
 # azure_storage_blob should only ever be in dev-dependencies herein

@@ -9,10 +9,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-async-trait.workspace = true
-azure_core.workspace = true
-azure_core_0_21.workspace = true
-azure_mgmt_cosmosdb.workspace = true
+azure_core = { workspace = true, features = ["reqwest_rustls"] }
 serde.workspace = true
 serde_json.workspace = true
 tokio = { workspace = true, features = ["time"] }
