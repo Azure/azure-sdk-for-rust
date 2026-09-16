@@ -138,6 +138,14 @@ fn is_container_recreation_signal(
         || (status.is_read_session_not_available() && !retry_state.can_retry_session())
 }
 
+fn partition_key_range_id_from_overrides(
+    overrides: &OperationOverrides,
+) -> Option<PartitionKeyRangeId> {
+    overrides
+        .effective_partition_key_range_id()
+        .map(|id| PartitionKeyRangeId::from(id.to_owned()))
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ContainerRecreationRecoveryOutcome {
     NotAttempted = 0,
@@ -229,6 +237,13 @@ pub(crate) struct OperationOverrides {
     /// Physical partition key range ID (emits `x-ms-documentdb-partitionkeyrangeid`).
     pub partition_key_range_id: Option<String>,
 
+    /// Physical partition identity resolved for a logical-partition request.
+    ///
+    /// This seeds PPCB/PPAF and thin-client session-token scoping but is never
+    /// emitted as a request header; the logical partition key remains the
+    /// authoritative wire-routing target.
+    pub resolved_partition_key_range_id: Option<String>,
+
     /// Logical partition key (emits `x-ms-documentdb-partitionkey`).
     pub partition_key: Option<crate::models::PartitionKey>,
 
@@ -261,6 +276,25 @@ pub(crate) struct OperationOverrides {
 }
 
 impl OperationOverrides {
+    /// Returns the physical partition identity available to pipeline consumers.
+    pub(crate) fn effective_partition_key_range_id(&self) -> Option<&str> {
+        self.partition_key_range_id
+            .as_deref()
+            .or(self.resolved_partition_key_range_id.as_deref())
+    }
+
+    /// Whether this request carries wire-routing constraints tied to one
+    /// container generation and therefore needs its dataflow plan rebuilt after
+    /// recreation.
+    ///
+    /// The internal logical-partition identity is intentionally excluded: it is
+    /// not emitted on the wire and can be cleared for an in-place retry.
+    pub(crate) fn requires_plan_rebuild_after_container_recreation(&self) -> bool {
+        self.partition_key_range_id.is_some()
+            || self.feed_range.is_some()
+            || self.pkrange_bounds.is_some()
+    }
+
     /// The endpoint this attempt is pinned to, if any.
     ///
     /// `None` either because there is no pin at all, or because the pin only
@@ -367,9 +401,9 @@ impl OperationOverrides {
 /// This is the entry point called by `CosmosDriver::execute_operation`.
 /// It orchestrates the 7-stage operation loop.
 ///
-/// When `pre_resolved_pk_range_id` is `Some`, it is used to seed the
-/// `OperationRetryState` so that partition-level failover overrides (PPAF/PPCB)
-/// can take effect from the very first attempt.
+/// Physical partition identity supplied by the dataflow request target seeds
+/// `OperationRetryState` so partition-level failover overrides (PPAF/PPCB) can
+/// take effect from the first attempt.
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     driver: &CosmosDriver,
@@ -391,7 +425,6 @@ pub(crate) async fn execute_operation_pipeline(
     session_manager: &SessionManager,
     account_default_consistency: DefaultConsistencyLevel,
     throughput_control: Option<ResolvedThroughputControl>,
-    pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
     partition_key_range_cache_enabled: bool,
     hedge_budget: &HedgeBudget,
 ) -> crate::error::Result<CosmosResponse> {
@@ -488,10 +521,9 @@ pub(crate) async fn execute_operation_pipeline(
         max_failover_retries,
         max_session_retries,
     );
-    // Seed the partition key range ID from pre-resolution (PK range cache).
-    // This enables PPAF/PPCB partition-level overrides from the very first attempt
-    // instead of only after the first retry captures it from response headers.
-    retry_state.partition_key_range_id = pre_resolved_pk_range_id;
+    // Dataflow resolves physical identity before execution. EPK targets carry
+    // their wire-routing range ID; logical targets carry internal-only metadata.
+    retry_state.partition_key_range_id = partition_key_range_id_from_overrides(&overrides);
 
     // PPAF write-retry: on single-master accounts with per-partition automatic
     // failover enabled, only PPAF-eligible operations (partitioned writes) may
@@ -940,14 +972,11 @@ pub(crate) async fn execute_operation_pipeline(
                             .build());
                     }
                     retry_state.pending_write_effects.clear();
-                    retry_state.partition_key_range_id =
-                        Box::pin(driver.pre_resolve_partition_key_range_id(
-                            operation,
-                            &overrides,
-                            session_consistency_active,
-                            operation_options,
-                        ))
-                        .await;
+                    // The container generation changed, so any identity learned
+                    // before recovery is stale. Logical-key routing remains
+                    // valid without it; response-header capture can repopulate
+                    // the new generation's ID.
+                    retry_state.partition_key_range_id = None;
                     throughput_control = operation
                         .container()
                         .map(|container| driver.effective_throughput_control(options, container))
@@ -4647,9 +4676,10 @@ mod tests {
     use azure_core::http::headers::HeaderName;
     use url::Url;
 
-    use super::build_transport_request;
-    use super::OperationOverrides;
-    use super::TransportRequestContext;
+    use super::{
+        build_transport_request, container_recreation_retry_eligible,
+        partition_key_range_id_from_overrides, OperationOverrides, TransportRequestContext,
+    };
     use crate::{
         diagnostics::ExecutionContext,
         driver::{
@@ -4828,6 +4858,75 @@ mod tests {
             transport_mode: TransportMode::Gateway,
             routing_fallback: None,
         }
+    }
+
+    #[test]
+    fn resolved_logical_partition_identity_is_not_emitted_as_range_header() {
+        let overrides = OperationOverrides {
+            resolved_partition_key_range_id: Some("7".to_string()),
+            partition_key: Some(PartitionKey::from("pk")),
+            ..Default::default()
+        };
+        let mut headers = azure_core::http::headers::Headers::new();
+
+        overrides
+            .apply_headers(&mut headers, false)
+            .expect("apply_headers should succeed");
+
+        assert_eq!(overrides.effective_partition_key_range_id(), Some("7"));
+        assert!(headers
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::PARTITION_KEY_RANGE_ID
+            ))
+            .is_none());
+        assert!(headers
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::PARTITION_KEY
+            ))
+            .is_some());
+    }
+
+    #[test]
+    fn operation_pipeline_seeds_resolved_logical_partition_identity() {
+        let overrides = OperationOverrides {
+            resolved_partition_key_range_id: Some("7".to_string()),
+            ..Default::default()
+        };
+
+        let resolved = partition_key_range_id_from_overrides(&overrides);
+
+        assert_eq!(resolved.as_ref().map(|id| id.as_str()), Some("7"));
+    }
+
+    #[test]
+    fn routed_physical_identity_takes_precedence_over_internal_identity() {
+        let overrides = OperationOverrides {
+            partition_key_range_id: Some("routed".to_string()),
+            resolved_partition_key_range_id: Some("internal".to_string()),
+            ..Default::default()
+        };
+
+        let resolved = partition_key_range_id_from_overrides(&overrides);
+
+        assert_eq!(resolved.as_ref().map(|id| id.as_str()), Some("routed"));
+    }
+
+    #[test]
+    fn internal_identity_allows_container_recreation_retry_in_place() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let overrides = OperationOverrides {
+            resolved_partition_key_range_id: Some("old-generation".to_string()),
+            ..Default::default()
+        };
+
+        assert!(container_recreation_retry_eligible(
+            &operation, &overrides, None, false
+        ));
+        assert!(!overrides.requires_plan_rebuild_after_container_recreation());
     }
 
     #[test]

@@ -59,7 +59,8 @@ mod topology;
 mod unordered_merge;
 
 pub(crate) use context::{
-    PartitionRoutingRefresh, PipelineContext, RequestExecutor, ResolvedRange, TopologyProvider,
+    single_resolved_range_id, PartitionRoutingRefresh, PipelineContext, RequestExecutor,
+    ResolvedRange, TopologyProvider,
 };
 pub(crate) use distinct::Distinct;
 pub(crate) use drain::SequentialDrain;
