@@ -98,6 +98,7 @@ fn full_range_plan() -> QueryPlan {
 fn resolved(min: &str, max: &str, pk_range_id: &str) -> ResolvedRange {
     ResolvedRange {
         partition_key_range_id: pk_range_id.to_string(),
+        parents: Vec::new(),
         range: FeedRange::new(
             EffectivePartitionKey::from(min),
             EffectivePartitionKey::from(max),

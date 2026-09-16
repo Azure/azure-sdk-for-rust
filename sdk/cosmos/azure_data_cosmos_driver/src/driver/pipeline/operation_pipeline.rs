@@ -244,6 +244,9 @@ pub(crate) struct OperationOverrides {
     /// authoritative wire-routing target.
     pub resolved_partition_key_range_id: Option<String>,
 
+    /// Ancestors whose session vectors remain valid for the resolved child.
+    pub resolved_partition_key_range_parents: Vec<String>,
+
     /// Logical partition key (emits `x-ms-documentdb-partitionkey`).
     pub partition_key: Option<crate::models::PartitionKey>,
 
@@ -281,6 +284,26 @@ impl OperationOverrides {
         self.partition_key_range_id
             .as_deref()
             .or(self.resolved_partition_key_range_id.as_deref())
+    }
+
+    /// Parent range IDs for the effective internal logical identity.
+    pub(crate) fn effective_partition_key_range_parents(
+        &self,
+        partition_key_range_id: &str,
+    ) -> &[String] {
+        if self.partition_key_range_id.is_none()
+            && self.resolved_partition_key_range_id.as_deref() == Some(partition_key_range_id)
+        {
+            &self.resolved_partition_key_range_parents
+        } else {
+            &[]
+        }
+    }
+
+    /// Clears generation-specific logical identity while preserving wire routing.
+    pub(crate) fn clear_resolved_partition_key_range(&mut self) {
+        self.resolved_partition_key_range_id = None;
+        self.resolved_partition_key_range_parents.clear();
     }
 
     /// Whether this request carries wire-routing constraints tied to one
@@ -830,10 +853,14 @@ pub(crate) async fn execute_operation_pipeline(
                         } else {
                             None
                         };
-                    session_manager.resolve_session_token(
+                    let parents = scoped_pk_range_id
+                        .map(|id| overrides.effective_partition_key_range_parents(id))
+                        .unwrap_or(&[]);
+                    session_manager.resolve_session_token_with_parents(
                         operation,
                         operation.request_headers().session_token.as_ref(),
                         scoped_pk_range_id,
+                        parents,
                     )
                 })
                 .flatten(),
@@ -4864,6 +4891,7 @@ mod tests {
     fn resolved_logical_partition_identity_is_not_emitted_as_range_header() {
         let overrides = OperationOverrides {
             resolved_partition_key_range_id: Some("7".to_string()),
+            resolved_partition_key_range_parents: vec!["6".to_string()],
             partition_key: Some(PartitionKey::from("pk")),
             ..Default::default()
         };
@@ -4874,6 +4902,10 @@ mod tests {
             .expect("apply_headers should succeed");
 
         assert_eq!(overrides.effective_partition_key_range_id(), Some("7"));
+        assert_eq!(
+            overrides.effective_partition_key_range_parents("7"),
+            &["6".to_string()]
+        );
         assert!(headers
             .get_optional_str(&HeaderName::from_static(
                 request_header_names::PARTITION_KEY_RANGE_ID

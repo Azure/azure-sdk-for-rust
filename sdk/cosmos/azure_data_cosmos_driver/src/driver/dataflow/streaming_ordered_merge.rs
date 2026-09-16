@@ -2256,6 +2256,7 @@ mod tests {
     fn resolved_range(min: &str, max: &str, id: &str) -> ResolvedRange {
         ResolvedRange {
             partition_key_range_id: id.to_owned(),
+            parents: Vec::new(),
             range: range(min, max),
         }
     }

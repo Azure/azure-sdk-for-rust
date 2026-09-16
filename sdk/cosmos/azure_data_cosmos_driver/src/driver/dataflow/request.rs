@@ -28,6 +28,8 @@ pub(crate) enum RequestTarget {
         /// Cache-resolved physical identity. This is internal metadata and is
         /// not emitted as the partition-key-range request header.
         resolved_partition_key_range_id: Option<String>,
+        /// Ancestors whose session vectors can seed a freshly split child.
+        resolved_partition_key_range_parents: Vec<String>,
     },
 
     /// An EPK slice that must be queried inside a broader physical partition key range
@@ -51,6 +53,20 @@ impl RequestTarget {
         Self::LogicalPartitionKey {
             partition_key,
             resolved_partition_key_range_id,
+            resolved_partition_key_range_parents: Vec::new(),
+        }
+    }
+
+    /// Creates a logical target with a parent-aware physical identity.
+    pub(crate) fn logical_partition_key_with_parents(
+        partition_key: PartitionKey,
+        resolved_partition_key_range_id: String,
+        resolved_partition_key_range_parents: Vec<String>,
+    ) -> Self {
+        Self::LogicalPartitionKey {
+            partition_key,
+            resolved_partition_key_range_id: Some(resolved_partition_key_range_id),
+            resolved_partition_key_range_parents,
         }
     }
 
@@ -168,17 +184,24 @@ impl PipelineNode for Request {
         &mut self,
         context: &mut PipelineContext<'_>,
     ) -> crate::error::Result<PageResult> {
-        tracing::trace!(
-            target = ?self.target,
-            state = ?self.state,
-            "executing request node"
-        );
-
         let continuation = match &self.state {
             RequestState::Initial => None,
             RequestState::Continuing { continuation } => Some(continuation.clone()),
             RequestState::Drained => return Ok(PageResult::Drained),
         };
+
+        // A different operation may have refreshed the shared routing map after
+        // this reusable leaf was planned. Keep internal PPCB/PPAF and session
+        // identity current before every page while preserving logical-key
+        // routing when resolution is unavailable.
+        self.refresh_logical_partition_identity(context, PartitionRoutingRefresh::UseCached)
+            .await;
+
+        tracing::trace!(
+            target = ?self.target,
+            state = ?self.state,
+            "executing request node"
+        );
 
         match context
             .execute_request(
@@ -237,6 +260,50 @@ impl PipelineNode for Request {
 }
 
 impl Request {
+    async fn refresh_logical_partition_identity(
+        &mut self,
+        context: &mut PipelineContext<'_>,
+        refresh: PartitionRoutingRefresh,
+    ) {
+        let partition_key = match &self.target {
+            RequestTarget::LogicalPartitionKey { partition_key, .. } => partition_key.clone(),
+            _ => return,
+        };
+
+        let resolved = match self.operation.target() {
+            Some(range) => match context.resolve_ranges_if_available(range, refresh).await {
+                Ok(Some(ranges)) => {
+                    let resolved = super::single_resolved_range(&ranges);
+                    if resolved.is_none() {
+                        tracing::debug!(
+                            resolved_range_count = ranges.len(),
+                            "logical partition resolution did not return exactly one physical partition"
+                        );
+                    }
+                    resolved
+                        .map(|range| (range.partition_key_range_id.clone(), range.parents.clone()))
+                }
+                Ok(None) => None,
+                Err(error) => {
+                    tracing::debug!(
+                        error = %error,
+                        ?refresh,
+                        "logical partition resolution failed; continuing without a physical partition identity"
+                    );
+                    None
+                }
+            },
+            None => None,
+        };
+
+        self.target = match resolved {
+            Some((id, parents)) => {
+                RequestTarget::logical_partition_key_with_parents(partition_key, id, parents)
+            }
+            None => RequestTarget::logical_partition_key(partition_key, None),
+        };
+    }
+
     fn handle_response(&mut self, response: CosmosResponse) -> PageResult {
         if self.operation.is_change_feed() {
             return self.handle_change_feed_response(response);
@@ -319,43 +386,18 @@ impl Request {
                 // Non-partitioned resources don't have partition topology changes.
                 Err(error)
             }
-            RequestTarget::LogicalPartitionKey { partition_key, .. } => {
+            RequestTarget::LogicalPartitionKey { .. } => {
                 // This shouldn't really happen, but it's been observed.
                 // Since the original request had a logical partition key,
                 // the gateway should have been able to route the request
                 // to the correct partition even if it has split.
                 // Refresh the internal physical identity for PPCB/PPAF, then
                 // retry once while continuing to route by the logical key.
-                let refreshed_partition_key_range_id = match self.operation.target() {
-                    Some(range) => match context
-                        .resolve_ranges_if_available(range, PartitionRoutingRefresh::ForceRefresh)
-                        .await
-                    {
-                        Ok(Some(ranges)) => {
-                            let resolved = super::single_resolved_range_id(&ranges);
-                            if resolved.is_none() {
-                                tracing::debug!(
-                                    resolved_range_count = ranges.len(),
-                                    "logical partition topology refresh did not resolve exactly one physical partition"
-                                );
-                            }
-                            resolved
-                        }
-                        Ok(None) => None,
-                        Err(refresh_error) => {
-                            tracing::debug!(
-                                error = %refresh_error,
-                                "logical partition topology refresh failed; retrying without a physical partition identity"
-                            );
-                            None
-                        }
-                    },
-                    None => None,
-                };
-                self.target = RequestTarget::logical_partition_key(
-                    partition_key.clone(),
-                    refreshed_partition_key_range_id,
-                );
+                self.refresh_logical_partition_identity(
+                    context,
+                    PartitionRoutingRefresh::ForceRefresh,
+                )
+                .await;
                 context
                     .execute_request(
                         &self.operation,
@@ -428,6 +470,7 @@ impl Request {
                 let ResolvedRange {
                     partition_key_range_id,
                     range: resolved_range,
+                    ..
                 } = resolved_range;
                 // A non-overlapping range means the topology provider broke its
                 // contract; surface it as the same typed error the tiling check
@@ -494,6 +537,7 @@ mod tests {
                     .iter()
                     .map(|partition| ResolvedRange {
                         partition_key_range_id: partition.partition_key_range_id.clone(),
+                        parents: Vec::new(),
                         range: partition.range.clone(),
                     })
                     .collect(),
@@ -581,6 +625,14 @@ mod tests {
             PartitionKey::from("pk"),
             "item",
         ))
+    }
+
+    fn logical_resolved_range(id: &str, parents: &[&str]) -> ResolvedRange {
+        ResolvedRange {
+            partition_key_range_id: id.to_string(),
+            parents: parents.iter().map(|parent| (*parent).to_string()).collect(),
+            range: FeedRange::full(),
+        }
     }
 
     fn request_spec(target: RequestTarget, continuation: Option<&str>) -> RequestSpec {
@@ -713,11 +765,10 @@ mod tests {
             RequestTarget::logical_partition_key(PartitionKey::from("pk"), Some("old".to_string()));
         let mut request = Request::new(Arc::new(logical_partition_operation()), target, None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error()), Ok(response(b"ok"))]);
-        let refreshed = ResolvedRange {
-            partition_key_range_id: "new".to_string(),
-            range: FeedRange::full(),
-        };
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![refreshed])]);
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![logical_resolved_range("old", &[])]),
+            Ok(vec![logical_resolved_range("new", &["old"])]),
+        ]);
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let page = unwrap_page(request.next_page(&mut context).await);
@@ -738,15 +789,19 @@ mod tests {
                     PartitionKey::from("pk"),
                     Some("old".to_string())
                 ),
-                RequestTarget::logical_partition_key(
+                RequestTarget::logical_partition_key_with_parents(
                     PartitionKey::from("pk"),
-                    Some("new".to_string())
+                    "new".to_string(),
+                    vec!["old".to_string()],
                 ),
             ]
         );
         assert_eq!(
             topology.refresh_calls,
-            vec![PartitionRoutingRefresh::ForceRefresh]
+            vec![
+                PartitionRoutingRefresh::UseCached,
+                PartitionRoutingRefresh::ForceRefresh
+            ]
         );
     }
 
@@ -756,11 +811,10 @@ mod tests {
             RequestTarget::logical_partition_key(PartitionKey::from("pk"), Some("old".to_string()));
         let mut request = Request::new(Arc::new(logical_partition_operation()), target, None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error()), Err(gone_error())]);
-        let refreshed = ResolvedRange {
-            partition_key_range_id: "new".to_string(),
-            range: FeedRange::full(),
-        };
-        let mut topology = MockTopologyProvider::new(vec![Ok(vec![refreshed])]);
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![logical_resolved_range("old", &[])]),
+            Ok(vec![logical_resolved_range("new", &["old"])]),
+        ]);
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let error = request.next_page(&mut context).await.unwrap_err();
@@ -776,7 +830,10 @@ mod tests {
         assert_eq!(executor.continuation_calls, vec![None, None]);
         assert_eq!(
             topology.refresh_calls,
-            vec![PartitionRoutingRefresh::ForceRefresh]
+            vec![
+                PartitionRoutingRefresh::UseCached,
+                PartitionRoutingRefresh::ForceRefresh
+            ]
         );
     }
 
@@ -786,7 +843,10 @@ mod tests {
             RequestTarget::logical_partition_key(PartitionKey::from("pk"), Some("old".to_string()));
         let mut request = Request::new(Arc::new(logical_partition_operation()), target, None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error()), Ok(response(b"ok"))]);
-        let mut topology = MockTopologyProvider::new(vec![Err(gone_error())]);
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![logical_resolved_range("old", &[])]),
+            Err(gone_error()),
+        ]);
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
 
         let page = unwrap_page(request.next_page(&mut context).await);
@@ -798,7 +858,10 @@ mod tests {
         );
         assert_eq!(
             topology.refresh_calls,
-            vec![PartitionRoutingRefresh::ForceRefresh]
+            vec![
+                PartitionRoutingRefresh::UseCached,
+                PartitionRoutingRefresh::ForceRefresh
+            ]
         );
     }
 
@@ -816,6 +879,53 @@ mod tests {
         assert_eq!(
             executor.target_calls[1],
             RequestTarget::logical_partition_key(PartitionKey::from("pk"), None)
+        );
+    }
+
+    #[tokio::test]
+    async fn logical_partition_refreshes_identity_before_each_page() {
+        let target =
+            RequestTarget::logical_partition_key(PartitionKey::from("pk"), Some("0".to_string()));
+        let mut request = Request::new(Arc::new(logical_partition_operation()), target, None);
+        let mut executor = MockRequestExecutor::new(vec![
+            Ok(response_with_continuation(b"page1", Some("token"))),
+            Ok(response(b"page2")),
+        ]);
+        let mut topology = MockTopologyProvider::new(vec![
+            Ok(vec![logical_resolved_range("0", &[])]),
+            Ok(vec![logical_resolved_range("1", &["0"])]),
+        ]);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        assert_eq!(
+            unwrap_page(request.next_page(&mut context).await).body_bytes(),
+            b"page1"
+        );
+        assert_eq!(
+            unwrap_page(request.next_page(&mut context).await).body_bytes(),
+            b"page2"
+        );
+
+        assert_eq!(
+            executor.target_calls,
+            vec![
+                RequestTarget::logical_partition_key(
+                    PartitionKey::from("pk"),
+                    Some("0".to_string())
+                ),
+                RequestTarget::logical_partition_key_with_parents(
+                    PartitionKey::from("pk"),
+                    "1".to_string(),
+                    vec!["0".to_string()],
+                ),
+            ]
+        );
+        assert_eq!(
+            topology.refresh_calls,
+            vec![
+                PartitionRoutingRefresh::UseCached,
+                PartitionRoutingRefresh::UseCached
+            ]
         );
     }
 

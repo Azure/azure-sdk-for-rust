@@ -173,9 +173,11 @@ fn request_target_overrides(
         RequestTarget::LogicalPartitionKey {
             partition_key,
             resolved_partition_key_range_id,
+            resolved_partition_key_range_parents,
         } => OperationOverrides {
             partition_key: Some(partition_key),
             resolved_partition_key_range_id,
+            resolved_partition_key_range_parents,
             continuation,
             ..Default::default()
         },
@@ -3157,11 +3159,14 @@ impl CosmosDriver {
                 self.partition_key_range_cache()?;
             }
 
-            let absolute_deadline = plan.operation.absolute_deadline().or_else(|| {
-                self.operation_options_view(&options)
-                    .end_to_end_latency_policy()
-                    .map(|policy| Instant::now() + policy.timeout())
-            });
+            let absolute_deadline = plan
+                .take_initial_execution_deadline()
+                .or_else(|| plan.operation.absolute_deadline())
+                .or_else(|| {
+                    self.operation_options_view(&options)
+                        .end_to_end_latency_policy()
+                        .map(|policy| Instant::now() + policy.timeout())
+                });
             let recovery_allowed = !plan.is_resumed
                 && !plan.has_progressed
                 && !plan.container_recreation_recovery_attempted;
@@ -3206,9 +3211,11 @@ impl CosmosDriver {
             let prior_diagnostics = error.diagnostics();
             let replacement_container = operation.container().cloned();
             let plan_options = plan.plan_options.clone();
+            let operation = operation.with_absolute_deadline(absolute_deadline);
             *plan = self
                 .plan_operation(operation, &options, None, &plan_options)
                 .await?;
+            plan.clear_execution_deadlines();
             plan.container_recreation_recovery_attempted = true;
             let (retry_result, retry_successes, _) = self
                 .execute_plan_once(plan, replacement_container, &options, absolute_deadline)
@@ -3385,7 +3392,7 @@ impl CosmosDriver {
             }
             // This metadata belongs to the prior container generation. It does
             // not affect wire routing, so clear it and continue by logical key.
-            overrides.resolved_partition_key_range_id = None;
+            overrides.clear_resolved_partition_key_range();
         }
         tracing::debug!(
             operation_type = ?operation.operation_type(),
@@ -3549,7 +3556,7 @@ impl CosmosDriver {
         // Hedged recovery retries in place after retargeting the operation.
         // Drop the old generation's internal identity; logical-key routing is
         // still authoritative and response capture can learn the replacement.
-        overrides.resolved_partition_key_range_id = None;
+        overrides.clear_resolved_partition_key_range();
 
         let prior_diagnostics = error.diagnostics();
         let retry_throughput_control = operation
@@ -3941,15 +3948,17 @@ impl CosmosDriver {
         // one-shot execute path and direct plan_operation callers. Query-plan
         // and partition-topology requests are part of the caller-visible
         // operation rather than a separate unbounded phase.
-        let operation = if operation.absolute_deadline().is_none() {
+        let derived_deadline = if operation.absolute_deadline().is_none() {
             let deadline = self
                 .operation_options_view(options)
                 .end_to_end_latency_policy()
                 .map(|policy| Instant::now() + policy.timeout());
-            operation.with_absolute_deadline(deadline)
+            deadline
         } else {
-            operation
+            None
         };
+        let effective_deadline = operation.absolute_deadline().or(derived_deadline);
+        let operation = operation.with_absolute_deadline(effective_deadline);
 
         // Reject mixed name/RID addressing before any IO work is done. The
         // service classifies a request as name-based or RID-based from its `dbs`
@@ -3973,7 +3982,7 @@ impl CosmosDriver {
         // here so every caller awaits a pointer-sized future instead of having
         // to pin at its own call site and rediscover this each time the state
         // grows.
-        Box::pin(async move {
+        let mut plan = Box::pin(async move {
             self.plan_operation_inner(
                 operation,
                 options,
@@ -3983,7 +3992,11 @@ impl CosmosDriver {
             )
             .await
         })
-        .await
+        .await?;
+        if let Some(deadline) = derived_deadline {
+            plan.set_initial_execution_deadline(deadline);
+        }
+        Ok(plan)
     }
 
     async fn plan_operation_inner(
@@ -4856,7 +4869,7 @@ mod tests {
         );
         let started = Instant::now();
 
-        let plan = driver
+        let mut plan = driver
             .plan_operation(
                 CosmosOperation::read_database(DatabaseReference::from_name(
                     test_account(),
@@ -4870,12 +4883,19 @@ mod tests {
             .unwrap();
         let finished = Instant::now();
 
+        assert!(
+            plan.operation.absolute_deadline().is_none(),
+            "policy-derived planning deadlines must not remain on reusable plans"
+        );
         let deadline = plan
-            .operation
-            .absolute_deadline()
-            .expect("planning should stamp the operation deadline");
+            .take_initial_execution_deadline()
+            .expect("planning should preserve the first-page deadline");
         assert!(deadline >= started + Duration::from_secs(5));
         assert!(deadline <= finished + Duration::from_secs(5));
+        assert!(
+            plan.take_initial_execution_deadline().is_none(),
+            "the planning deadline must be consumed only once"
+        );
     }
 
     #[tokio::test]
@@ -5668,7 +5688,11 @@ mod tests {
         let pk = PartitionKey::from("pk");
         let overrides = request_target_overrides(
             None,
-            RequestTarget::logical_partition_key(pk.clone(), Some("7".to_string())),
+            RequestTarget::logical_partition_key_with_parents(
+                pk.clone(),
+                "7".to_string(),
+                vec!["6".to_string()],
+            ),
             None,
         );
 
@@ -5676,6 +5700,10 @@ mod tests {
         assert_eq!(
             overrides.resolved_partition_key_range_id.as_deref(),
             Some("7")
+        );
+        assert_eq!(
+            overrides.resolved_partition_key_range_parents,
+            vec!["6".to_string()]
         );
         assert_eq!(overrides.partition_key_range_id, None);
         assert_eq!(overrides.effective_partition_key_range_id(), Some("7"));

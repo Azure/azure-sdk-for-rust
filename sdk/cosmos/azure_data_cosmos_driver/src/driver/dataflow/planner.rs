@@ -94,21 +94,23 @@ pub(crate) async fn build_trivial_pipeline(
         None => RequestTarget::NonPartitioned,
         Some(f) => {
             if let Some(pk) = f.partition_key() {
-                let resolved_partition_key_range_id = match topology_provider {
+                let resolved_partition_key_range = match topology_provider {
                     Some(provider) => {
                         match provider
                             .resolve_ranges(f, PartitionRoutingRefresh::UseCached)
                             .await
                         {
                             Ok(ranges) => {
-                                let resolved = super::single_resolved_range_id(&ranges);
+                                let resolved = super::single_resolved_range(&ranges);
                                 if resolved.is_none() {
                                     tracing::debug!(
                                         resolved_range_count = ranges.len(),
                                         "logical partition planning did not resolve exactly one physical partition"
                                     );
                                 }
-                                resolved
+                                resolved.map(|range| {
+                                    (range.partition_key_range_id.clone(), range.parents.clone())
+                                })
                             }
                             Err(error) => {
                                 tracing::debug!(
@@ -121,7 +123,12 @@ pub(crate) async fn build_trivial_pipeline(
                     }
                     None => None,
                 };
-                RequestTarget::logical_partition_key(pk.clone(), resolved_partition_key_range_id)
+                match resolved_partition_key_range {
+                    Some((id, parents)) => {
+                        RequestTarget::logical_partition_key_with_parents(pk.clone(), id, parents)
+                    }
+                    None => RequestTarget::logical_partition_key(pk.clone(), None),
+                }
             } else {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
@@ -2187,6 +2194,7 @@ mod tests {
     fn rr(min: &str, max: &str, pk_range_id: &str) -> ResolvedRange {
         ResolvedRange {
             partition_key_range_id: pk_range_id.to_string(),
+            parents: Vec::new(),
             range: FeedRange::new(
                 EffectivePartitionKey::from(min),
                 EffectivePartitionKey::from(max),

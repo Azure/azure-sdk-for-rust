@@ -56,15 +56,16 @@ pub(crate) trait TopologyProvider: Send {
 pub(crate) struct ResolvedRange {
     /// The partition key range ID for this physical partition.
     pub partition_key_range_id: String,
+    /// Ancestor range IDs whose session vectors remain valid after a split.
+    pub parents: Vec<String>,
     /// The EPK sub-range within this physical partition.
     pub range: FeedRange,
 }
 
-/// Returns the physical partition key range ID when resolution produced exactly
-/// one range.
-pub(crate) fn single_resolved_range_id(ranges: &[ResolvedRange]) -> Option<String> {
+/// Returns the physical partition when resolution produced exactly one range.
+pub(crate) fn single_resolved_range(ranges: &[ResolvedRange]) -> Option<&ResolvedRange> {
     match ranges {
-        [range] => Some(range.partition_key_range_id.clone()),
+        [range] => Some(range),
         _ => None,
     }
 }
