@@ -133,7 +133,9 @@ flowchart TD
    - When PPAF/PPCB is enabled and the operation targets a partitioned resource
      with a known container and partition key, `pre_resolve_partition_key_range_id()`
      uses the `PartitionKeyRangeCache` to look up the partition key range ID.
-   - The cache fetches from the service on cache miss (via `/pkranges` changefeed).
+   - In the default eager mode, container resolution has already loaded the
+     complete map. In lazy mode or after invalidation, the cache fetches from
+     the service on cache miss via the `/pkranges` change feed.
    - The resolved ID is passed to `execute_operation_pipeline` and seeded on
      `OperationRetryState.partition_key_range_id`.
 
@@ -178,6 +180,7 @@ flowchart TD
 
 | Flag | Source | Default | Description |
 |---|---|---|---|
+| `partition_topology_cache_mode` | `PartitionFailoverOptions` or `AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE` | `Eager` | `Eager` loads topology during container resolution and fails resolution when no valid map can be loaded. `Lazy` defers the same load until first use. The cache is always present. |
 | `per_partition_circuit_breaker_enabled` | Layered `OperationOptionsView` (env → runtime → account) → env var `AZURE_COSMOS_PER_PARTITION_CIRCUIT_BREAKER_ENABLED` | `false` | Fallback enablement for PPCB when the server flag is not set. Resolved via the layered `OperationOptionsView` at construction time. The effective PPCB value is `server_flag \|\| options_value`, so PPCB remains enabled if the server flag is `true` regardless of this option. |
 | `per_partition_automatic_failover_enabled` | Server-side `AccountProperties.enable_per_partition_failover_behavior` | `false` | PPAF is enabled when the Cosmos DB account has this flag set. Updated dynamically on each account properties refresh. |
 
@@ -930,11 +933,10 @@ if retry_state.partition_key_range_id.is_none() {
 }
 ```
 
-This means that on the **first attempt**, if `pre_resolve_partition_key_range_id()`
-was unable to resolve the ID (e.g., due to a cache miss that fails to fetch from
-the service), no partition-level override is possible. In practice, the PK range
-cache successfully resolves the ID before the first attempt for most operations,
-so partition-level routing is effective from the very first attempt.
+In eager mode, container resolution fails before an operation can be created if
+the initial topology load fails. In lazy mode, or after a later invalidation, a
+failed pre-resolution can still leave the first attempt without a partition
+override; a response header may then supply the range ID for a retry.
 
 #### 8.1.3 Stage 5: Retry Evaluation Emits Effects
 

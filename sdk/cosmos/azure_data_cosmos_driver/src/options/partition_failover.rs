@@ -40,14 +40,19 @@ impl std::str::FromStr for PartitionTopologyCacheMode {
     }
 }
 
-/// Configuration for partition-level failover and the per-partition circuit
-/// breaker (PPCB).
+/// Configuration for partition topology loading, partition-level failover, and
+/// the per-partition circuit breaker (PPCB).
 ///
 /// These knobs are read **once** when the driver is constructed and are not
 /// resolved per-operation. Use [`PartitionFailoverOptionsBuilder`] to build a
 /// value, then attach it to
 /// [`DriverOptions`](crate::options::DriverOptions) via
 /// [`DriverOptionsBuilder::with_partition_failover_options`](crate::options::DriverOptionsBuilder::with_partition_failover_options).
+///
+/// Partition topology loads eagerly by default. This is strongly recommended
+/// because topology is important to most operations and can become necessary
+/// unexpectedly; lazy loading can add a full-cache latency spike to the first
+/// operation that needs it.
 ///
 /// # Example
 ///
