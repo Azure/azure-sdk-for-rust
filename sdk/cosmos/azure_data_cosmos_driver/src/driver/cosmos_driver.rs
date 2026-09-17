@@ -42,7 +42,8 @@ use crate::{
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView, PlanOptions,
-        ResolvedThroughputControl, ThroughputControlGroupSnapshot,
+        PartitionTopologyCacheMode, ResolvedThroughputControl,
+        ThroughputControlGroupSnapshot,
     },
     ActivityId, CosmosResponse, DiagnosticsContext,
 };
@@ -2122,13 +2123,15 @@ impl CosmosDriver {
         Ok(())
     }
 
-    /// Eagerly primes the container metadata cache.
+    /// Eagerly primes the container metadata and, by default, partition topology caches.
     ///
     /// Resolves container properties (partition key definition, resource ID)
-    /// and caches them so that subsequent operations targeting this container
-    /// can skip the metadata lookup round-trip.
+    /// and caches them. When partition topology mode is
+    /// [`Eager`](PartitionTopologyCacheMode::Eager), this also loads the complete
+    /// partition key range map.
     ///
-    /// Returns an error if the container does not exist or is unreachable.
+    /// Returns an error if the container or its eagerly loaded topology cannot
+    /// be resolved.
     pub async fn prime_container(
         &self,
         db_name: &str,
@@ -3860,8 +3863,10 @@ impl CosmosDriver {
     /// Resolves a container by database and container name.
     ///
     /// Reads the database and container from the service to obtain their
-    /// resource IDs (RIDs) and container properties (partition key, unique key
-    /// policy).
+    /// resource IDs (RIDs) and container properties. By default, it also loads
+    /// the complete partition topology before returning. Set
+    /// [`PartitionTopologyCacheMode::Lazy`] only as a compatibility escape
+    /// hatch when container-resolution I/O cannot yet be tolerated.
     ///
     /// # Parameters
     ///
@@ -3888,7 +3893,7 @@ impl CosmosDriver {
     ///     .create_driver(azure_data_cosmos_driver::options::DriverOptions::builder(account).build())
     ///     .await?;
     ///
-    /// // Resolve the container (fetched from service on each call)
+    /// // Resolve the container and eagerly load its partition topology.
     /// let container = driver.resolve_container("mydb", "mycontainer", OperationOptions::default()).await?;
     ///
     /// // Use the resolved container for item operations
@@ -3912,7 +3917,9 @@ impl CosmosDriver {
     /// Resolves a container by database name and container name.
     ///
     /// Attempts to resolve from `ContainerCache` first. On cache miss, fetches
-    /// metadata from the service and populates the cache.
+    /// metadata from the service and populates the cache. In eager topology
+    /// mode, resolution also primes this driver's partition topology cache and
+    /// fails if no valid routing map can be loaded.
     pub async fn resolve_container_by_name(
         &self,
         db_name: &str,
@@ -3922,6 +3929,7 @@ impl CosmosDriver {
         let endpoint = self.account().endpoint().as_str().to_owned();
         let db_name_owned = db_name.to_owned();
         let container_name_owned = container_name.to_owned();
+        let topology_options = operation_options.clone();
 
         let resolved = self
             .runtime
@@ -3944,15 +3952,20 @@ impl CosmosDriver {
             })
             .await?;
 
-        Ok(resolved.as_ref().clone())
+        let resolved = resolved.as_ref().clone();
+        self.prime_partition_topology(&resolved, topology_options)
+            .await?;
+        Ok(resolved)
     }
 
     /// Resolves a container by its RID.
     ///
     /// Attempts to resolve from `ContainerCache` (by-RID index) first. On a cache
     /// miss, fetches metadata from the service addressing the container by RID and
-    /// populates the cache. The returned [`ContainerReference`] is RID-addressed
-    /// (it carries no database name).
+    /// populates the cache. In eager topology mode, resolution also primes this
+    /// driver's partition topology cache and fails if no valid routing map can be
+    /// loaded. The returned [`ContainerReference`] is RID-addressed (it carries no
+    /// database name).
     pub async fn resolve_container_by_rid(
         &self,
         container_rid: &str,
@@ -3960,6 +3973,7 @@ impl CosmosDriver {
     ) -> crate::error::Result<ContainerReference> {
         let endpoint = self.account().endpoint().as_str().to_owned();
         let container_rid_owned = container_rid.to_owned();
+        let topology_options = operation_options.clone();
 
         let resolved = self
             .runtime
@@ -3977,7 +3991,47 @@ impl CosmosDriver {
             })
             .await?;
 
-        Ok(resolved.as_ref().clone())
+        let resolved = resolved.as_ref().clone();
+        self.prime_partition_topology(&resolved, topology_options)
+            .await?;
+        Ok(resolved)
+    }
+
+    async fn prime_partition_topology(
+        &self,
+        container: &ContainerReference,
+        operation_options: OperationOptions,
+    ) -> crate::error::Result<()> {
+        if self
+            .options
+            .partition_failover_options()
+            .partition_topology_cache_mode()
+            == PartitionTopologyCacheMode::Lazy
+        {
+            return Ok(());
+        }
+
+        let routing_map = self
+            .pk_range_cache
+            .try_lookup(
+                container,
+                false,
+                self.pk_range_page_fetcher(operation_options, None),
+            )
+            .await;
+
+        if routing_map.is_some() {
+            return Ok(());
+        }
+
+        Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+            .with_message(format!(
+                "failed to load partition topology while resolving container '{}' (RID '{}')",
+                container.name(),
+                container.rid()
+            ))
+            .build())
     }
 
     /// Plans the execution of a Cosmos DB operation.

@@ -72,9 +72,13 @@ impl DatabaseClient {
     /// Gets a [`ContainerClient`] that can be used to access the container with the
     /// specified identity.
     ///
-    /// This method eagerly resolves immutable container metadata (resource ID and partition key
-    /// definition) from the service, so the returned client is ready for immediate use without
-    /// per-operation cache lookups.
+    /// This method eagerly resolves immutable container metadata (resource ID
+    /// and partition key definition) from the service. By default, it also
+    /// loads the complete partition topology so later operations avoid an
+    /// unexpected full-cache latency spike. Eager topology loading is strongly
+    /// recommended; configure
+    /// [`PartitionTopologyCacheMode::Lazy`](crate::options::PartitionTopologyCacheMode::Lazy)
+    /// only as a compatibility escape hatch.
     ///
     /// The container's addressing mode must match this database's: a name-addressed
     /// database accepts only name-addressed containers, and a RID-addressed database
@@ -85,14 +89,13 @@ impl DatabaseClient {
     ///
     /// # Errors
     ///
-    /// Returns an error if the container does not exist, the metadata cannot be
-    /// resolved, or the addressing mode does not match this database's.
     /// * `options` - Optional parameters for creating the client.
     ///
     /// # Errors
     ///
-    /// Returns an error if the container does not exist, the metadata cannot be
-    /// resolved, or the addressing mode does not match this database's.
+    /// Returns an error if the container does not exist, its metadata or eagerly
+    /// loaded partition topology cannot be resolved, or the addressing mode does
+    /// not match this database's.
     pub async fn container_client(
         &self,
         container: impl Into<ResourceIdentity>,

@@ -149,7 +149,7 @@ async fn eligible_query_skips_gateway_query_plan() {
         .await
         .unwrap();
     assert_eq!(recorder.query_plan_count(), 0);
-    assert!(recorder.routing_metadata_count() > 0);
+    assert_eq!(recorder.routing_metadata_count(), 0);
 
     while driver
         .execute_plan(

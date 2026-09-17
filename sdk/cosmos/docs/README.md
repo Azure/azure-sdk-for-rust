@@ -80,6 +80,7 @@ directly by Rust source remain with their crates.
 | 0012 | Regional endpoint routing (`adrs/0012-regional-endpoint-routing.md`) |
 | 0013 | Basic control-plane operations (`adrs/0013-basic-control-plane-operations.md`) |
 | 0014 | Diagnostics collection and emission (`adrs/0014-diagnostics-collection-and-emission.md`) |
+| 0015 | Eager partition topology loading (`adrs/0015-eager-partition-topology-loading.md`) |
 
 ## Reports
 
