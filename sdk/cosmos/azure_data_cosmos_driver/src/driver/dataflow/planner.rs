@@ -1081,9 +1081,10 @@ fn push_change_feed_leaf(
     resolved_range: &ResolvedRange,
     continuation: Option<String>,
 ) {
-    let target = RequestTarget::effective_partition_key_range(
+    let target = RequestTarget::effective_partition_key_range_with_parents(
         leaf_range,
         resolved_range.partition_key_range_id.clone(),
+        resolved_range.parents.clone(),
         resolved_range.range.clone(),
     );
     request_nodes.push(Box::new(Request::new(
@@ -1136,9 +1137,10 @@ async fn plan_fresh(
                     topology_range_not_overlapping_error(&resolved_range.range, &feed_range)
                 })?;
 
-            let target = RequestTarget::effective_partition_key_range(
+            let target = RequestTarget::effective_partition_key_range_with_parents(
                 range,
                 resolved_range.partition_key_range_id,
+                resolved_range.parents,
                 resolved_range.range,
             );
             nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
@@ -1241,9 +1243,10 @@ async fn plan_resume_from_saved_snapshot(
                 if overlap_min > cursor_within_leaf {
                     // Gap before this token entry — fresh-start sub-leaf.
                     let gap = FeedRange::new(cursor_within_leaf.clone(), overlap_min.clone())?;
-                    let target = RequestTarget::effective_partition_key_range(
+                    let target = RequestTarget::effective_partition_key_range_with_parents(
                         gap,
                         resolved_range.partition_key_range_id.clone(),
+                        resolved_range.parents.clone(),
                         resolved_range.range.clone(),
                     );
                     nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
@@ -1251,9 +1254,10 @@ async fn plan_resume_from_saved_snapshot(
 
                 let intersection = FeedRange::new(overlap_min, overlap_max.clone())?;
                 coverage[idx].push(intersection.clone());
-                let target = RequestTarget::effective_partition_key_range(
+                let target = RequestTarget::effective_partition_key_range_with_parents(
                     intersection,
                     resolved_range.partition_key_range_id.clone(),
+                    resolved_range.parents.clone(),
                     resolved_range.range.clone(),
                 );
                 nodes.push(Box::new(Request::new(
@@ -1269,9 +1273,10 @@ async fn plan_resume_from_saved_snapshot(
                 // Trailing gap after the last overlapping token entry.
                 let gap =
                     FeedRange::new(cursor_within_leaf, effective_leaf.max_exclusive().clone())?;
-                let target = RequestTarget::effective_partition_key_range(
+                let target = RequestTarget::effective_partition_key_range_with_parents(
                     gap,
                     resolved_range.partition_key_range_id.clone(),
+                    resolved_range.parents.clone(),
                     resolved_range.range.clone(),
                 );
                 nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));

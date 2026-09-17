@@ -176,6 +176,7 @@ fn request_target_overrides(
             resolved_partition_key_range_parents,
         } => OperationOverrides {
             partition_key: Some(partition_key),
+            logical_partition_key_target: true,
             resolved_partition_key_range_id,
             resolved_partition_key_range_parents,
             continuation,
@@ -183,10 +184,12 @@ fn request_target_overrides(
         },
         RequestTarget::EffectivePartitionKeyRange {
             partition_key_range_id,
+            partition_key_range_parents,
             range,
             partition_key_range,
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
+            resolved_partition_key_range_parents: partition_key_range_parents,
             // Only emit `x-ms-start-epk`/`x-ms-end-epk` for the narrowed case
             // (range < partition_key_range). The public EPK headers paired with
             // `partitionkeyrangeid` are accepted by Gateway 2.0 but rejected by
@@ -5723,9 +5726,10 @@ mod tests {
         .unwrap();
         let overrides = request_target_overrides(
             None,
-            RequestTarget::effective_partition_key_range(
+            RequestTarget::effective_partition_key_range_with_parents(
                 range.clone(),
                 "merged".to_string(),
+                vec!["parent".to_string()],
                 pkrange.clone(),
             ),
             Some("ct".to_string()),
@@ -5735,6 +5739,10 @@ mod tests {
         assert_eq!(overrides.continuation.as_deref(), Some("ct"));
         assert_eq!(overrides.feed_range, Some(range));
         assert_eq!(overrides.pkrange_bounds, Some(pkrange));
+        assert_eq!(
+            overrides.effective_partition_key_range_parents("merged"),
+            &["parent".to_string()]
+        );
     }
 
     #[test]

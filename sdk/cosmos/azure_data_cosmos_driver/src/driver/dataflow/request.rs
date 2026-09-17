@@ -39,6 +39,8 @@ pub(crate) enum RequestTarget {
         range: Option<FeedRange>,
         /// Partition key range ID containing `range`.
         partition_key_range_id: String,
+        /// Ancestors whose session vectors can seed this range after a split.
+        partition_key_range_parents: Vec<String>,
         /// EPK range owned by the physical partition key range ID.
         partition_key_range: FeedRange,
     },
@@ -71,9 +73,25 @@ impl RequestTarget {
     }
 
     /// Creates a target for an effective partition key range inside a physical partition.
+    #[cfg(test)]
     pub(crate) fn effective_partition_key_range(
         range: FeedRange,
         partition_key_range_id: String,
+        partition_key_range: FeedRange,
+    ) -> Self {
+        Self::effective_partition_key_range_with_parents(
+            range,
+            partition_key_range_id,
+            Vec::new(),
+            partition_key_range,
+        )
+    }
+
+    /// Creates an effective-range target with parent-aware physical identity.
+    pub(crate) fn effective_partition_key_range_with_parents(
+        range: FeedRange,
+        partition_key_range_id: String,
+        partition_key_range_parents: Vec<String>,
         partition_key_range: FeedRange,
     ) -> Self {
         let range = if range == partition_key_range {
@@ -85,6 +103,7 @@ impl RequestTarget {
         Self::EffectivePartitionKeyRange {
             range,
             partition_key_range_id,
+            partition_key_range_parents,
             partition_key_range,
         }
     }
@@ -469,8 +488,8 @@ impl Request {
             .map(|resolved_range| {
                 let ResolvedRange {
                     partition_key_range_id,
+                    parents,
                     range: resolved_range,
-                    ..
                 } = resolved_range;
                 // A non-overlapping range means the topology provider broke its
                 // contract; surface it as the same typed error the tiling check
@@ -485,9 +504,10 @@ impl Request {
                     ))
                 })?;
 
-                let target = RequestTarget::effective_partition_key_range(
+                let target = RequestTarget::effective_partition_key_range_with_parents(
                     owned_range,
                     partition_key_range_id,
+                    parents,
                     resolved_range,
                 );
 
@@ -517,6 +537,7 @@ mod tests {
     #[derive(Clone, Debug)]
     struct PhysicalPartitionSpec {
         partition_key_range_id: String,
+        parents: Vec<String>,
         range: FeedRange,
     }
 
@@ -537,7 +558,7 @@ mod tests {
                     .iter()
                     .map(|partition| ResolvedRange {
                         partition_key_range_id: partition.partition_key_range_id.clone(),
-                        parents: Vec::new(),
+                        parents: partition.parents.clone(),
                         range: partition.range.clone(),
                     })
                     .collect(),
@@ -597,12 +618,24 @@ mod tests {
     ) -> PhysicalPartitionSpec {
         PhysicalPartitionSpec {
             partition_key_range_id: partition_key_range_id.to_string(),
+            parents: Vec::new(),
             range: FeedRange::new(
                 EffectivePartitionKey::from(min),
                 EffectivePartitionKey::from(max),
             )
             .unwrap(),
         }
+    }
+
+    fn physical_partition_with_parents(
+        min: &str,
+        max: &str,
+        partition_key_range_id: &str,
+        parents: &[&str],
+    ) -> PhysicalPartitionSpec {
+        let mut partition = physical_partition(min, max, partition_key_range_id);
+        partition.parents = parents.iter().map(|parent| (*parent).to_string()).collect();
+        partition
     }
 
     fn logical_partition_operation() -> CosmosOperation {
@@ -650,6 +683,29 @@ mod tests {
     ) -> RequestSpec {
         request_spec(
             effective_partition_key_range_target(min, max, partition_key_range_id, min, max),
+            continuation,
+        )
+    }
+
+    fn partition_key_request_with_parents(
+        min: &str,
+        max: &str,
+        partition_key_range_id: &str,
+        parents: &[&str],
+        continuation: Option<&str>,
+    ) -> RequestSpec {
+        let range = FeedRange::new(
+            EffectivePartitionKey::from(min),
+            EffectivePartitionKey::from(max),
+        )
+        .unwrap();
+        request_spec(
+            RequestTarget::effective_partition_key_range_with_parents(
+                range.clone(),
+                partition_key_range_id.to_string(),
+                parents.iter().map(|parent| (*parent).to_string()).collect(),
+                range,
+            ),
             continuation,
         )
     }
@@ -1001,12 +1057,12 @@ mod tests {
         assert_topology_rewrite(
             vec![partition_key_request("", "80", "0", Some("server-token"))],
             vec![vec![
-                physical_partition("", "40", "1"),
-                physical_partition("40", "80", "2"),
+                physical_partition_with_parents("", "40", "1", &["0"]),
+                physical_partition_with_parents("40", "80", "2", &["0"]),
             ]],
             vec![
-                partition_key_request("", "40", "1", Some("server-token")),
-                partition_key_request("40", "80", "2", Some("server-token")),
+                partition_key_request_with_parents("", "40", "1", &["0"], Some("server-token")),
+                partition_key_request_with_parents("40", "80", "2", &["0"], Some("server-token")),
             ],
         )
         .await;
