@@ -8,6 +8,7 @@ use azure_core::{
     Error, Result,
 };
 use bitflags::bitflags;
+use bytes::Bytes;
 
 /// Structured Message version 1.
 pub(crate) const MESSAGE_VERSION: u8 = 1;
@@ -85,9 +86,24 @@ impl StreamHeader {
         })
     }
 
+    pub(crate) fn as_bytes(&self) -> Bytes {
+        let mut buffer = vec![0u8; STREAM_HEADER_LENGTH];
+        // SAFETY: The buffer has been created above with the required length.
+        unsafe { self.write_unchecked(&mut buffer) };
+        buffer.into()
+    }
+
     pub(crate) fn write(&self, buffer: &mut [u8]) -> Result<()> {
         validate_buffer_length(buffer, STREAM_HEADER_LENGTH, format!("Structured message stream header is exactly {STREAM_HEADER_LENGTH} bytes, buffer to write to was {}.", buffer.len()))?;
+        // SAFETY: The buffer length has been validated above.
+        unsafe { self.write_unchecked(buffer) };
+        Ok(())
+    }
 
+    /// Writes the stream header to the provided buffer without validating its length.
+    /// # Safety
+    /// The caller must ensure that the buffer is at least `STREAM_HEADER_LENGTH` bytes long.
+    unsafe fn write_unchecked(&self, buffer: &mut [u8]) {
         let mut remaining = buffer;
 
         remaining[0] = MESSAGE_VERSION;
@@ -100,8 +116,6 @@ impl StreamHeader {
         remaining = &mut remaining[2..];
 
         remaining[..2].copy_from_slice(&self.segment_count.to_le_bytes());
-
-        Ok(())
     }
 }
 
@@ -155,17 +169,30 @@ impl SegmentHeader {
         })
     }
 
+    pub(crate) fn as_bytes(&self) -> Bytes {
+        let mut buffer = vec![0u8; SEGMENT_HEADER_LENGTH];
+        // SAFETY: The buffer has been created above with the required length.
+        unsafe { self.write_unchecked(&mut buffer) };
+        buffer.into()
+    }
+
     pub(crate) fn write(&self, buffer: &mut [u8]) -> Result<()> {
         validate_buffer_length(buffer, SEGMENT_HEADER_LENGTH, format!("Structured message segment header is exactly {SEGMENT_HEADER_LENGTH} bytes, buffer to write to was {}.", buffer.len()))?;
+        // SAFETY: The buffer length has been validated above.
+        unsafe { self.write_unchecked(buffer) };
+        Ok(())
+    }
 
+    /// Writes the segment header to the provided buffer without validating its length.
+    /// # Safety
+    /// The caller must ensure that the buffer is at least `SEGMENT_HEADER_LENGTH` bytes long.
+    unsafe fn write_unchecked(&self, buffer: &mut [u8]) {
         let mut remaining = buffer;
 
         remaining[..2].copy_from_slice(&self.segment_number.to_le_bytes());
         remaining = &mut remaining[2..];
 
         remaining[..8].copy_from_slice(&self.content_length.to_le_bytes());
-
-        Ok(())
     }
 }
 
@@ -215,6 +242,20 @@ mod tests {
         StreamHeader::parse(&buffer)
             .err()
             .expect("unsupported version should fail");
+    }
+
+    #[test]
+    fn parse_stream_header_rejects_unsupported_flags() {
+        let buffer = [
+            1, // Version
+            0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, // Message length
+            0x99, 0x99, // Flags
+            0x03, 0x00, // Segment count
+        ];
+
+        StreamHeader::parse(&buffer)
+            .err()
+            .expect("unsupported flags should fail");
     }
 
     #[test]

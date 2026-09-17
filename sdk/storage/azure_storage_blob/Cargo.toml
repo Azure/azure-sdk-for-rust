@@ -24,6 +24,7 @@ azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", feature
 azure_storage_common = { path = "../azure_storage_common", version = "1.1.0-beta.1" }
 bitflags.workspace = true
 bytes.workspace = true
+crc-fast.workspace = true
 futures.workspace = true
 percent-encoding.workspace = true
 pin-project.workspace = true

@@ -966,6 +966,7 @@ dependencies = [
  "bitflags",
  "bytes",
  "clap",
+ "crc-fast",
  "flate2",
  "futures",
  "percent-encoding",
