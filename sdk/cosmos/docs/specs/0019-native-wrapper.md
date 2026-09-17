@@ -393,7 +393,7 @@ void         cosmos_cq_free(cosmos_cq_t *queue);   /* NULL is a no-op */
 const cosmos_runtime_t *cosmos_cq_runtime(const cosmos_cq_t *queue);
 ```
 
-**Freeing a queue with operations still in-flight** is a programming error: `cosmos_cq_free` will block until all in-flight submissions targeting that queue have completed (running each one to its natural completion — there is no cancellation, see §3.6.3). Host SDKs that need a non-blocking shutdown must call `cosmos_cq_shutdown` and drain via `cosmos_cq_wait` until `cosmos_cq_state` returns `DRAINED`, then `_free`. See §3.6.4.
+**Freeing a queue with operations still in-flight** is a programming error, but a memory-safe one: `cosmos_cq_free` does **not** block or wait — it drops the producer-side handle immediately. In-flight submissions keep the queue state alive through their own reference counts and still run to their natural completion (there is no cancellation, see §3.6.3), but once the handle is freed nothing can observe those completions and the diagnostics they carry are dropped. Host SDKs that must observe every completion call `cosmos_cq_shutdown` and drain via `cosmos_cq_wait` until `cosmos_cq_state` returns `DRAINED`, then `_free`. See §3.6.4.
 
 #### 3.1.3 Waiting for completions
 
@@ -561,7 +561,7 @@ Rationale:
 | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `cosmos_runtime_t*`                                  | `cosmos_runtime_builder_build`                                                                           | `cosmos_runtime_free`                                                                                 | No (use one per process; see §4.1)                                                             |
 | `cosmos_driver_t*`                                   | `cosmos_driver_get_or_create`                                                                            | `cosmos_driver_free`                                                                                  | Internally `Arc`; FFI handle is a single owner                                                 |
-| `cosmos_cq_t*`                                       | `cosmos_cq_create(runtime, options)`                                                                     | `cosmos_cq_free` (blocks until drained — call `cosmos_cq_shutdown` first for non-blocking)            | No                                                                                             |
+| `cosmos_cq_t*`                                       | `cosmos_cq_create(runtime, options)`                                                                     | `cosmos_cq_free` (non-blocking; abandons any in-flight completions — `cosmos_cq_shutdown` + drain first to observe them) | No                                                                                             |
 | `cosmos_operation_handle_t*`                         | every `cosmos_*_submit`                                                                                  | `cosmos_operation_handle_free` (independent of completion lifetime — see §3.6.2)                      | No                                                                                             |
 | `cosmos_completion_t*`                               | `cosmos_cq_wait` / `cosmos_cq_try_wait`                                                                  | `cosmos_completion_free` (response/error obtained via `_take_*` remain owned by caller)               | No                                                                                             |
 | `cosmos_account_ref_t*`                              | `cosmos_account_ref_with_*`                                                                              | `cosmos_account_ref_free`                                                                             | Yes, via `cosmos_account_ref_clone` (cheap; new strong handle to the same `Arc`)               |
@@ -956,7 +956,7 @@ cancel signal is a separate `azure_data_cosmos_driver` change. Tracked in §9 Q1
 3. Wakes any thread currently blocked in `cosmos_cq_wait` once the queue has drained — it returns NULL.
 4. Subsequent submits targeting this queue fail their pre-flight check with a `503 + COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_SHUTDOWN` packed status.
 
-The consumer drains by calling `cosmos_cq_wait` until it returns NULL **and** `cosmos_cq_state` returns `DRAINED`. Only at that point is `cosmos_cq_free` safe to call without blocking on in-flight work.
+The consumer drains by calling `cosmos_cq_wait` until it returns NULL **and** `cosmos_cq_state` returns `DRAINED`. Only at that point can `cosmos_cq_free` reclaim the queue without abandoning in-flight completions (the free call itself never blocks — see §3.1.2).
 
 ---
 

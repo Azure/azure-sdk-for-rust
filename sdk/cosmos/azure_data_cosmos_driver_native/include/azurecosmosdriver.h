@@ -1897,9 +1897,15 @@ struct cosmos_completion_queue_t *cosmos_completion_queue_create(const struct co
 /**
  * Free a completion queue. NULL is a no-op.
  *
- * The "blocks until in-flight ops drain" contract from spec section 3.1.2 is
- * observable here: if anyone enqueued completions but never drained, this
- * drops them (and thus their pending allocations).
+ * Does **not** block or wait for in-flight operations — it drops the
+ * producer-side handle immediately. In-flight submissions keep the shared
+ * queue state alive through their own `Arc`s and still run to completion
+ * (there is no cancellation), but once the handle is freed their completions,
+ * and the diagnostics they carry, can no longer be observed and are dropped
+ * with any pending allocations. Hosts that must observe every completion first
+ * call `cosmos_completion_queue_shutdown` and drain via
+ * `cosmos_completion_queue_wait` until `cosmos_completion_queue_state` reports
+ * `DRAINED`, then free.
  */
 void cosmos_completion_queue_free(struct cosmos_completion_queue_t *queue);
 

@@ -29,8 +29,22 @@
 #include "test_common.h"
 
 #include <inttypes.h>
+#include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+// Pin the `cosmos_completion_t` layout so an accidental field add/remove or a
+// padding mistake (e.g. a host binding mirroring the struct) is caught at
+// compile time instead of corrupting every pointer past the change. Offsets
+// assume 64-bit pointers; the 32-bit ABI is not a shipping target.
+#if UINTPTR_MAX == UINT64_MAX
+_Static_assert(sizeof(cosmos_completion_t) == 112, "completion layout");
+_Static_assert(offsetof(cosmos_completion_t, http_status_code) == 16, "http_status_code offset");
+_Static_assert(offsetof(cosmos_completion_t, is_from_wire) == 18, "is_from_wire offset");
+_Static_assert(offsetof(cosmos_completion_t, message) == 24, "message offset");
+_Static_assert(offsetof(cosmos_completion_t, diagnostics) == 80, "diagnostics offset");
+_Static_assert(offsetof(cosmos_completion_t, backing) == 104, "backing offset");
+#endif
 
 // Test-only enqueue helper. Not part of the public ABI, forward-declared
 // so the auto-discovered CMake target can link against it.

@@ -610,7 +610,7 @@ public final class CosmosSample {
         JAVA_LONG.withName("user_data"),
         JAVA_SHORT.withName("http_status_code"),
         JAVA_BYTE.withName("is_from_wire"),
-        MemoryLayout.paddingLayout(3),
+        MemoryLayout.paddingLayout(5),
         ADDRESS.withName("message"),
         ADDRESS.withName("next_continuation"),
         ADDRESS.withName("backtrace"),

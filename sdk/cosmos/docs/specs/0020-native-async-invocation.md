@@ -355,7 +355,7 @@ stateDiagram-v2
     SHUTDOWN --> SHUTDOWN : pending completions drain<br/>new submits fail with QUEUE_SHUTDOWN
     SHUTDOWN --> DRAINED : queue empty + no in-flight ops
     DRAINED --> [*] : cosmos_cq_free (non-blocking)
-    RUNNING --> [*] : cosmos_cq_free (blocks: implicit shutdown + drain)
+    RUNNING --> [*] : cosmos_cq_free (non-blocking; abandons in-flight completions)
 ```
 
 Submits against a queue at hard capacity
