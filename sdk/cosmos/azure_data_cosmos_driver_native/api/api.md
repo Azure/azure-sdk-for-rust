@@ -277,7 +277,6 @@ pub mod error {
         CosmosSubStatusClientRequestUrlMissingKnownPort = 20156,
         CosmosSubStatusClientImdsHttpClientConstructionFailed = 20157,
         CosmosSubStatusClientImdsReqwestFeatureRequired = 20158,
-        CosmosSubStatusClientPartitionKeyRangeCacheRequired = 20159,
         CosmosSubStatusClientContinuationTokenFetchInFlight = 20200,
         CosmosSubStatusClientTopologyProviderMissing = 20201,
         CosmosSubStatusClientDriverNotInitialized = 20202,
