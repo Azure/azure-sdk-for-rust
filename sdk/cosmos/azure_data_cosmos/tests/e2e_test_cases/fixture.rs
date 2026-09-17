@@ -24,6 +24,13 @@ pub struct E2eTestFixture {
     pub container: ContainerClient,
 }
 
+pub struct E2eTest;
+
+pub struct E2eTestBuilder {
+    client: Option<CosmosClient>,
+    partition_key: PartitionKeyDefinition,
+}
+
 pub struct ClientSetup {
     pub routing_strategy: RoutingStrategy,
     pub runtime_read_consistency: Option<ReadConsistencyStrategy>,
@@ -76,26 +83,40 @@ struct DatabaseCleanup {
     database_id: String,
 }
 
+impl E2eTest {
+    pub fn builder() -> E2eTestBuilder {
+        E2eTestBuilder {
+            client: None,
+            partition_key: "/pk".into(),
+        }
+    }
+}
+
+impl E2eTestBuilder {
+    pub fn with_client(mut self, client: CosmosClient) -> Self {
+        self.client = Some(client);
+        self
+    }
+
+    pub fn with_partition_key_definition(mut self, partition_key: PartitionKeyDefinition) -> Self {
+        self.partition_key = partition_key;
+        self
+    }
+
+    pub async fn run<F>(self, test: F) -> TestResult
+    where
+        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+    {
+        let client = match self.client {
+            Some(client) => client,
+            None => build_client().await?,
+        };
+        E2eTestFixture::run(client, self.partition_key, test).await
+    }
+}
+
 impl E2eTestFixture {
-    pub async fn run<F>(test: F) -> TestResult
-    where
-        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
-    {
-        Self::run_with_partition_key("/pk".into(), test).await
-    }
-
-    pub async fn run_with_partition_key<F>(
-        partition_key: PartitionKeyDefinition,
-        test: F,
-    ) -> TestResult
-    where
-        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
-    {
-        let client = build_client().await?;
-        Self::run_with_client(client, partition_key, test).await
-    }
-
-    pub async fn run_with_client<F>(
+    async fn run<F>(
         client: CosmosClient,
         partition_key: PartitionKeyDefinition,
         test: F,

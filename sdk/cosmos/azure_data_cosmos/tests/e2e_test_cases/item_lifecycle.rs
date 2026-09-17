@@ -14,7 +14,7 @@ use azure_data_cosmos::{
 
 use crate::e2e_test_cases::{
     catalog::{AccountDefinition, ClientDefinition, Profile, RuntimeDefinition},
-    fixture::{build_client_with_defaults, ClientSetup, E2eTestFixture, TestResult},
+    fixture::{build_client_with_defaults, ClientSetup, E2eTest, TestResult},
     support::{
         assert_critical_diagnostics, item, selected_scenario_profile, write_options_with_content,
         Item,
@@ -40,12 +40,7 @@ async fn crud_lifecycle() -> TestResult {
         return Ok(());
     };
     let setup = SelectedLifecycleSetup::from_profile(&profile)?;
-    let read_cases = read_cases_for_selected_profile(&setup)?;
-
-    for read_case in read_cases {
-        run_lifecycle_case(&setup, &read_case).await?;
-    }
-    Ok(())
+    run_selected_lifecycle_cases(&setup).await
 }
 
 // This is the lifecycle contract. Keep the operation sequence and its assertions visible here;
@@ -57,78 +52,296 @@ async fn run_lifecycle_case(
     let execution = setup.execution_name(read_case.name);
     let client = setup.build_client().await?;
 
-    E2eTestFixture::run_with_client(client, "/pk".into(), async |fixture| {
-        let item_id = format!("lifecycle-{}", execution.replace('/', "-"));
+    E2eTest::builder()
+        .with_client(client)
+        .run(async |fixture| {
+            let item_id = format!("lifecycle-{}", execution.replace('/', "-"));
 
-        // Create an item and capture the session token used by explicit Session reads.
-        let created = fixture
-            .container
-            .create_item("A", &item_id, item(&item_id, "A", 1), None)
-            .await?;
-        assert_eq!(created.status().status_code(), StatusCode::Created);
-        assert_critical_diagnostics(&created.diagnostics(), "create_item", StatusCode::Created);
-        let create_session_token = created
-            .headers()
-            .session_token()
-            .map(|token| token.as_str().to_owned());
+            // Create an item and capture the session token used by explicit Session reads.
+            let created = fixture
+                .container
+                .create_item("A", &item_id, item(&item_id, "A", 1), None)
+                .await?;
+            assert_eq!(created.status().status_code(), StatusCode::Created);
+            assert_critical_diagnostics(&created.diagnostics(), "create_item", StatusCode::Created);
+            let create_session_token = created
+                .headers()
+                .session_token()
+                .map(|token| token.as_str().to_owned());
 
-        // Read the created item using this case's operation-level consistency behavior.
-        let read_outcome = read_created_item(
-            &fixture.container,
-            &item_id,
-            create_session_token,
-            read_case,
-            &execution,
-            &setup.read_region,
-        )
-        .await?;
-        match read_outcome {
-            PostCreateReadOutcome::Item(actual) => assert_eq!(
-                actual,
-                item(&item_id, "A", 1),
-                "read returned the wrong item for '{execution}'"
-            ),
-            PostCreateReadOutcome::RejectedBeforeTransport => assert_eq!(
-                read_case.expectation,
-                ReadExpectation::RejectedBeforeTransport,
-                "read was rejected unexpectedly for '{execution}'"
-            ),
-        }
-
-        // Replace the item and verify the returned model.
-        let replaced = fixture
-            .container
-            .replace_item(
-                "A",
+            // Read the created item using this case's operation-level consistency behavior.
+            let read_outcome = read_created_item(
+                &fixture.container,
                 &item_id,
-                item(&item_id, "A", 2),
-                Some(write_options_with_content()),
+                create_session_token,
+                read_case,
+                &execution,
+                &setup.read_region,
             )
             .await?;
-        assert_eq!(replaced.status().status_code(), StatusCode::Ok);
-        assert_critical_diagnostics(&replaced.diagnostics(), "replace_item", StatusCode::Ok);
-        assert_eq!(replaced.into_model::<Item>()?, item(&item_id, "A", 2));
+            match read_outcome {
+                PostCreateReadOutcome::Item(actual) => assert_eq!(
+                    actual,
+                    item(&item_id, "A", 1),
+                    "read returned the wrong item for '{execution}'"
+                ),
+                PostCreateReadOutcome::RejectedBeforeTransport => assert_eq!(
+                    read_case.expectation,
+                    ReadExpectation::RejectedBeforeTransport,
+                    "read was rejected unexpectedly for '{execution}'"
+                ),
+            }
 
-        // Delete the item, then use the delete session token to verify a plain 404/0.
-        let deleted = fixture.container.delete_item("A", &item_id, None).await?;
-        assert_eq!(deleted.status().status_code(), StatusCode::NoContent);
-        assert_critical_diagnostics(&deleted.diagnostics(), "delete_item", StatusCode::NoContent);
-        let delete_session_token = deleted
-            .headers()
-            .session_token()
-            .map(|token| token.as_str().to_owned())
-            .ok_or("delete response must carry a session token")?;
-        assert_item_deleted(
-            &fixture.container,
-            &item_id,
-            delete_session_token,
-            &execution,
-        )
-        .await?;
+            // Replace the item and verify the returned model.
+            let replaced = fixture
+                .container
+                .replace_item(
+                    "A",
+                    &item_id,
+                    item(&item_id, "A", 2),
+                    Some(write_options_with_content()),
+                )
+                .await?;
+            assert_eq!(replaced.status().status_code(), StatusCode::Ok);
+            assert_critical_diagnostics(&replaced.diagnostics(), "replace_item", StatusCode::Ok);
+            assert_eq!(replaced.into_model::<Item>()?, item(&item_id, "A", 2));
 
-        Ok(())
-    })
+            // Delete the item, then use the delete session token to verify a plain 404/0.
+            let deleted = fixture.container.delete_item("A", &item_id, None).await?;
+            assert_eq!(deleted.status().status_code(), StatusCode::NoContent);
+            assert_critical_diagnostics(
+                &deleted.diagnostics(),
+                "delete_item",
+                StatusCode::NoContent,
+            );
+            let delete_session_token = deleted
+                .headers()
+                .session_token()
+                .map(|token| token.as_str().to_owned())
+                .ok_or("delete response must carry a session token")?;
+            assert_item_deleted(
+                &fixture.container,
+                &item_id,
+                delete_session_token,
+                &execution,
+            )
+            .await?;
+
+            Ok(())
+        })
+        .await
+}
+
+async fn run_selected_lifecycle_cases(setup: &SelectedLifecycleSetup<'_>) -> TestResult {
+    match setup.profile.id.as_str() {
+        "smokeTests" => default_smoke_read(setup).await,
+        "lifecycleConsistencyMatrix" => {
+            default_strategy_uses_account_consistency(setup).await?;
+            eventual_strategy_allows_replication_lag(setup).await?;
+            session_strategy_uses_create_token(setup).await?;
+            latest_committed_is_region_local(setup).await?;
+            global_strong_requires_strong_account(setup).await
+        }
+        "readConsistencyOverrideMatrix" => {
+            inherited_defaults_follow_precedence(setup).await?;
+            default_override_restores_account_consistency(setup).await?;
+            eventual_override_wins_over_defaults(setup).await
+        }
+        profile => Err(format!("item.lifecycle does not implement profile '{profile}'").into()),
+    }
+}
+
+async fn default_smoke_read(setup: &SelectedLifecycleSetup<'_>) -> TestResult {
+    run_lifecycle_case(
+        setup,
+        &PostCreateReadCase::new(
+            "default_strategy_reads_created_item",
+            Some(ReadConsistencyStrategy::Default),
+            SessionTokenBehavior::SdkManaged,
+            ReadExpectation::SucceedsImmediately,
+        ),
+    )
     .await
+}
+
+async fn default_strategy_uses_account_consistency(
+    setup: &SelectedLifecycleSetup<'_>,
+) -> TestResult {
+    let (session_token, expectation) = match setup.account.consistency.as_str() {
+        "strong" => (
+            SessionTokenBehavior::Omitted,
+            ReadExpectation::SucceedsImmediately,
+        ),
+        "session" => (
+            SessionTokenBehavior::SdkManaged,
+            eventually_succeeds_after(TransientReadStatus::SessionNotAvailable),
+        ),
+        _ => (
+            SessionTokenBehavior::Omitted,
+            eventually_succeeds_after(TransientReadStatus::PlainNotFound),
+        ),
+    };
+    run_lifecycle_case(
+        setup,
+        &PostCreateReadCase::new(
+            "default_strategy_uses_account_consistency",
+            Some(ReadConsistencyStrategy::Default),
+            session_token,
+            expectation,
+        ),
+    )
+    .await
+}
+
+async fn eventual_strategy_allows_replication_lag(
+    setup: &SelectedLifecycleSetup<'_>,
+) -> TestResult {
+    run_lifecycle_case(
+        setup,
+        &PostCreateReadCase::new(
+            "eventual_strategy_allows_replication_lag",
+            Some(ReadConsistencyStrategy::Eventual),
+            SessionTokenBehavior::Omitted,
+            regional_read_expectation(setup.account),
+        ),
+    )
+    .await
+}
+
+async fn session_strategy_uses_create_token(setup: &SelectedLifecycleSetup<'_>) -> TestResult {
+    run_lifecycle_case(
+        setup,
+        &PostCreateReadCase::new(
+            "session_strategy_uses_create_token",
+            Some(ReadConsistencyStrategy::Session),
+            SessionTokenBehavior::ExplicitCreateResponse,
+            session_read_expectation(setup.account),
+        ),
+    )
+    .await
+}
+
+async fn latest_committed_is_region_local(setup: &SelectedLifecycleSetup<'_>) -> TestResult {
+    run_lifecycle_case(
+        setup,
+        &PostCreateReadCase::new(
+            "latest_committed_is_region_local",
+            Some(ReadConsistencyStrategy::LatestCommitted),
+            SessionTokenBehavior::Omitted,
+            regional_read_expectation(setup.account),
+        ),
+    )
+    .await
+}
+
+async fn global_strong_requires_strong_account(setup: &SelectedLifecycleSetup<'_>) -> TestResult {
+    let expectation = if setup.account.consistency == "strong" {
+        ReadExpectation::SucceedsImmediately
+    } else {
+        ReadExpectation::RejectedBeforeTransport
+    };
+    run_lifecycle_case(
+        setup,
+        &PostCreateReadCase::new(
+            "global_strong_requires_strong_account",
+            Some(ReadConsistencyStrategy::GlobalStrong),
+            SessionTokenBehavior::Omitted,
+            expectation,
+        ),
+    )
+    .await
+}
+
+async fn inherited_defaults_follow_precedence(setup: &SelectedLifecycleSetup<'_>) -> TestResult {
+    require_session_account(setup.account)?;
+    let inherited_strategy = setup
+        .client
+        .default_read_consistency_strategy
+        .as_deref()
+        .or(setup.runtime.default_read_consistency_strategy.as_deref());
+    let inherited_uses_session = inherited_strategy
+        .map(parse_read_consistency)
+        .transpose()?
+        .is_none_or(|strategy| strategy == ReadConsistencyStrategy::Session);
+    let (session_token, expectation) = if inherited_uses_session {
+        (
+            SessionTokenBehavior::SdkManaged,
+            eventually_succeeds_after(TransientReadStatus::SessionNotAvailable),
+        )
+    } else {
+        (
+            SessionTokenBehavior::Omitted,
+            eventually_succeeds_after(TransientReadStatus::PlainNotFound),
+        )
+    };
+    run_lifecycle_case(
+        setup,
+        &PostCreateReadCase::new(
+            "inherits_client_then_runtime_then_account_default",
+            None,
+            session_token,
+            expectation,
+        ),
+    )
+    .await
+}
+
+async fn default_override_restores_account_consistency(
+    setup: &SelectedLifecycleSetup<'_>,
+) -> TestResult {
+    require_session_account(setup.account)?;
+    run_lifecycle_case(
+        setup,
+        &PostCreateReadCase::new(
+            "default_override_restores_account_consistency",
+            Some(ReadConsistencyStrategy::Default),
+            SessionTokenBehavior::ExplicitCreateResponse,
+            eventually_succeeds_after(TransientReadStatus::SessionNotAvailable),
+        ),
+    )
+    .await
+}
+
+async fn eventual_override_wins_over_defaults(setup: &SelectedLifecycleSetup<'_>) -> TestResult {
+    require_session_account(setup.account)?;
+    run_lifecycle_case(
+        setup,
+        &PostCreateReadCase::new(
+            "eventual_override_wins_over_all_defaults",
+            Some(ReadConsistencyStrategy::Eventual),
+            SessionTokenBehavior::Omitted,
+            eventually_succeeds_after(TransientReadStatus::PlainNotFound),
+        ),
+    )
+    .await
+}
+
+fn regional_read_expectation(account: &AccountDefinition) -> ReadExpectation {
+    if account.consistency == "strong" {
+        ReadExpectation::SucceedsImmediately
+    } else {
+        eventually_succeeds_after(TransientReadStatus::PlainNotFound)
+    }
+}
+
+fn session_read_expectation(account: &AccountDefinition) -> ReadExpectation {
+    if account.consistency == "strong" {
+        ReadExpectation::SucceedsImmediately
+    } else {
+        eventually_succeeds_after(TransientReadStatus::SessionNotAvailable)
+    }
+}
+
+fn require_session_account(account: &AccountDefinition) -> TestResult {
+    if account.consistency == "session" {
+        Ok(())
+    } else {
+        Err(format!(
+            "readConsistencyOverrideMatrix requires a Session account, got '{}'",
+            account.consistency
+        )
+        .into())
+    }
 }
 
 // Operation cases -------------------------------------------------------------
@@ -192,140 +405,6 @@ impl PostCreateReadCase {
             expectation,
         }
     }
-}
-
-fn read_cases_for_selected_profile(
-    setup: &SelectedLifecycleSetup<'_>,
-) -> TestResult<Vec<PostCreateReadCase>> {
-    match setup.profile.id.as_str() {
-        "smokeTests" => Ok(vec![PostCreateReadCase::new(
-            "default_strategy_reads_created_item",
-            Some(ReadConsistencyStrategy::Default),
-            SessionTokenBehavior::SdkManaged,
-            ReadExpectation::SucceedsImmediately,
-        )]),
-        "lifecycleConsistencyMatrix" => Ok(read_cases_for_account_consistency(setup.account)),
-        "readConsistencyOverrideMatrix" => Ok(read_cases_for_default_precedence(
-            setup.account,
-            setup.runtime.default_read_consistency_strategy.as_deref(),
-            setup.client.default_read_consistency_strategy.as_deref(),
-        )?),
-        profile => Err(format!("item.lifecycle does not implement profile '{profile}'").into()),
-    }
-}
-
-fn read_cases_for_account_consistency(account: &AccountDefinition) -> Vec<PostCreateReadCase> {
-    let is_strong_account = account.consistency == "strong";
-
-    let regional_read = if is_strong_account {
-        ReadExpectation::SucceedsImmediately
-    } else {
-        eventually_succeeds_after(TransientReadStatus::PlainNotFound)
-    };
-    let session_read = if is_strong_account {
-        ReadExpectation::SucceedsImmediately
-    } else {
-        eventually_succeeds_after(TransientReadStatus::SessionNotAvailable)
-    };
-    let account_default_read = match account.consistency.as_str() {
-        "strong" => ReadExpectation::SucceedsImmediately,
-        "session" => session_read,
-        _ => regional_read,
-    };
-    let account_default_token = if account.consistency == "session" {
-        SessionTokenBehavior::SdkManaged
-    } else {
-        SessionTokenBehavior::Omitted
-    };
-    let global_strong_read = if is_strong_account {
-        ReadExpectation::SucceedsImmediately
-    } else {
-        ReadExpectation::RejectedBeforeTransport
-    };
-
-    vec![
-        PostCreateReadCase::new(
-            "default_strategy_uses_account_consistency",
-            Some(ReadConsistencyStrategy::Default),
-            account_default_token,
-            account_default_read,
-        ),
-        PostCreateReadCase::new(
-            "eventual_strategy_allows_replication_lag",
-            Some(ReadConsistencyStrategy::Eventual),
-            SessionTokenBehavior::Omitted,
-            regional_read,
-        ),
-        PostCreateReadCase::new(
-            "session_strategy_uses_create_token",
-            Some(ReadConsistencyStrategy::Session),
-            SessionTokenBehavior::ExplicitCreateResponse,
-            session_read,
-        ),
-        PostCreateReadCase::new(
-            "latest_committed_is_region_local",
-            Some(ReadConsistencyStrategy::LatestCommitted),
-            SessionTokenBehavior::Omitted,
-            regional_read,
-        ),
-        PostCreateReadCase::new(
-            "global_strong_requires_strong_account",
-            Some(ReadConsistencyStrategy::GlobalStrong),
-            SessionTokenBehavior::Omitted,
-            global_strong_read,
-        ),
-    ]
-}
-
-fn read_cases_for_default_precedence(
-    account: &AccountDefinition,
-    runtime_default: Option<&str>,
-    client_default: Option<&str>,
-) -> TestResult<Vec<PostCreateReadCase>> {
-    if account.consistency != "session" {
-        return Err(format!(
-            "readConsistencyOverrideMatrix requires a Session account, got '{}'",
-            account.consistency
-        )
-        .into());
-    }
-    // Effective precedence is operation > client > runtime > account. These cases vary only the
-    // operation value; the JSON profile supplies the selected client and runtime defaults.
-    let inherited_uses_session = match client_default.or(runtime_default) {
-        Some(strategy) => parse_read_consistency(strategy)? == ReadConsistencyStrategy::Session,
-        None => account.consistency == "session",
-    };
-    let inherited_expectation = if inherited_uses_session {
-        eventually_succeeds_after(TransientReadStatus::SessionNotAvailable)
-    } else {
-        eventually_succeeds_after(TransientReadStatus::PlainNotFound)
-    };
-    let inherited_token = if inherited_uses_session {
-        SessionTokenBehavior::SdkManaged
-    } else {
-        SessionTokenBehavior::Omitted
-    };
-
-    Ok(vec![
-        PostCreateReadCase::new(
-            "inherits_client_then_runtime_then_account_default",
-            None,
-            inherited_token,
-            inherited_expectation,
-        ),
-        PostCreateReadCase::new(
-            "default_override_restores_account_consistency",
-            Some(ReadConsistencyStrategy::Default),
-            SessionTokenBehavior::ExplicitCreateResponse,
-            eventually_succeeds_after(TransientReadStatus::SessionNotAvailable),
-        ),
-        PostCreateReadCase::new(
-            "eventual_override_wins_over_all_defaults",
-            Some(ReadConsistencyStrategy::Eventual),
-            SessionTokenBehavior::Omitted,
-            eventually_succeeds_after(TransientReadStatus::PlainNotFound),
-        ),
-    ])
 }
 
 fn eventually_succeeds_after(status: TransientReadStatus) -> ReadExpectation {
@@ -784,178 +863,6 @@ fn parse_read_consistency(value: &str) -> TestResult<ReadConsistencyStrategy> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn account_consistency_cases_cover_every_account_and_strategy() {
-        let profile = serde_json::from_str::<Profile>(include_str!(
-            "../../../e2e_tests/profiles/lifecycleConsistencyMatrix.json"
-        ))
-        .expect("consistency profile must deserialize");
-        let immediate = ReadExpectation::SucceedsImmediately;
-        let plain_not_found = eventually_succeeds_after(TransientReadStatus::PlainNotFound);
-        let session_not_available =
-            eventually_succeeds_after(TransientReadStatus::SessionNotAvailable);
-        let rejected = ReadExpectation::RejectedBeforeTransport;
-        let expected_by_account = [
-            ("strong", [immediate; 5]),
-            (
-                "boundedStaleness",
-                [
-                    plain_not_found,
-                    plain_not_found,
-                    session_not_available,
-                    plain_not_found,
-                    rejected,
-                ],
-            ),
-            (
-                "session",
-                [
-                    session_not_available,
-                    plain_not_found,
-                    session_not_available,
-                    plain_not_found,
-                    rejected,
-                ],
-            ),
-            (
-                "consistentPrefix",
-                [
-                    plain_not_found,
-                    plain_not_found,
-                    session_not_available,
-                    plain_not_found,
-                    rejected,
-                ],
-            ),
-            (
-                "eventual",
-                [
-                    plain_not_found,
-                    plain_not_found,
-                    session_not_available,
-                    plain_not_found,
-                    rejected,
-                ],
-            ),
-        ];
-
-        for (account, expected) in expected_by_account {
-            let cases = read_cases_for_account_consistency(profile.account(account));
-            assert_eq!(
-                cases.iter().map(|case| case.name).collect::<Vec<_>>(),
-                [
-                    "default_strategy_uses_account_consistency",
-                    "eventual_strategy_allows_replication_lag",
-                    "session_strategy_uses_create_token",
-                    "latest_committed_is_region_local",
-                    "global_strong_requires_strong_account",
-                ],
-                "case names for {account}"
-            );
-            assert_eq!(
-                cases
-                    .iter()
-                    .map(|case| case.consistency_override)
-                    .collect::<Vec<_>>(),
-                [
-                    Some(ReadConsistencyStrategy::Default),
-                    Some(ReadConsistencyStrategy::Eventual),
-                    Some(ReadConsistencyStrategy::Session),
-                    Some(ReadConsistencyStrategy::LatestCommitted),
-                    Some(ReadConsistencyStrategy::GlobalStrong),
-                ],
-                "operation consistency overrides for {account}"
-            );
-            assert_eq!(
-                cases
-                    .iter()
-                    .map(|case| case.expectation)
-                    .collect::<Vec<_>>(),
-                expected,
-                "read expectations for {account}"
-            );
-            assert_eq!(
-                cases
-                    .iter()
-                    .map(|case| case.session_token)
-                    .collect::<Vec<_>>(),
-                [
-                    if account == "session" {
-                        SessionTokenBehavior::SdkManaged
-                    } else {
-                        SessionTokenBehavior::Omitted
-                    },
-                    SessionTokenBehavior::Omitted,
-                    SessionTokenBehavior::ExplicitCreateResponse,
-                    SessionTokenBehavior::Omitted,
-                    SessionTokenBehavior::Omitted,
-                ],
-                "session-token behavior for {account}"
-            );
-        }
-    }
-
-    #[test]
-    fn override_cases_show_client_runtime_account_precedence() {
-        let profile = serde_json::from_str::<Profile>(include_str!(
-            "../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"
-        ))
-        .expect("override profile must deserialize");
-        let account = profile.account("session");
-
-        for runtime in &profile.runtimes {
-            for client in &profile.clients {
-                let inherited_uses_session = client
-                    .default_read_consistency_strategy
-                    .as_deref()
-                    .or(runtime.default_read_consistency_strategy.as_deref())
-                    .is_none_or(|strategy| strategy == "Session");
-                let inherited_expectation = if inherited_uses_session {
-                    eventually_succeeds_after(TransientReadStatus::SessionNotAvailable)
-                } else {
-                    eventually_succeeds_after(TransientReadStatus::PlainNotFound)
-                };
-                let inherited_token = if inherited_uses_session {
-                    SessionTokenBehavior::SdkManaged
-                } else {
-                    SessionTokenBehavior::Omitted
-                };
-
-                let actual = read_cases_for_default_precedence(
-                    account,
-                    runtime.default_read_consistency_strategy.as_deref(),
-                    client.default_read_consistency_strategy.as_deref(),
-                )
-                .expect("profile defaults must be valid");
-                let expected = [
-                    PostCreateReadCase::new(
-                        "inherits_client_then_runtime_then_account_default",
-                        None,
-                        inherited_token,
-                        inherited_expectation,
-                    ),
-                    PostCreateReadCase::new(
-                        "default_override_restores_account_consistency",
-                        Some(ReadConsistencyStrategy::Default),
-                        SessionTokenBehavior::ExplicitCreateResponse,
-                        eventually_succeeds_after(TransientReadStatus::SessionNotAvailable),
-                    ),
-                    PostCreateReadCase::new(
-                        "eventual_override_wins_over_all_defaults",
-                        Some(ReadConsistencyStrategy::Eventual),
-                        SessionTokenBehavior::Omitted,
-                        eventually_succeeds_after(TransientReadStatus::PlainNotFound),
-                    ),
-                ];
-                assert_eq!(
-                    actual, expected,
-                    "runtime '{}' and client '{}'",
-                    runtime.id, client.id
-                );
-            }
-        }
-    }
 
     #[test]
     fn status_matching_distinguishes_wildcard_zero_and_exact_substatus() {
