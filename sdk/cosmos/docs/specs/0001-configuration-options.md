@@ -413,11 +413,14 @@ pub struct ItemWriteOptions {
 ### 5.3 `QueryOptions`
 
 Options for query operations (`query_items`, `query_items_single_partition`).
+The manual `Default` implementation sets `max_buffered_query_window` to 1000.
 
 ```rust
-#[derive(Clone, Default)]
+#[derive(Clone)]
 #[non_exhaustive]
 pub struct QueryOptions {
+    pub max_buffered_query_window: u64,
+    pub query_plan_mode: QueryPlanMode,
     // Layered option group
     pub operation: OperationOptions,
 
@@ -429,13 +432,43 @@ pub struct QueryOptions {
 }
 ```
 
-| Option                    | Type                   | Notes                                                                                                                                                                       |
-| ------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `operation`               | `OperationOptions`     | Layered group; `content_response_on_write` is ignored for queries.                                                                                                          |
-| `session_token`           | `Option<SessionToken>` | Session token for session-consistent queries. Operation-only.                                                                                                               |
-| `enable_scan_if_no_index` | `Option<bool>`         | If the query can't be served by indexes because the relevant paths are not indexed, setting this permits the query engine to perform a full container scan. Operation-only. |
-| `populate_index_metrics`  | `Option<bool>`         | If set to `true`, the response will contain metrics regarding indexes used. Operation-only.                                                                                 |
-| `populate_query_advice`   | `Option<bool>`         | If set to `true`, the response will include query optimization suggestions from the query advisor. Operation-only.                                                          |
+| Option | Type | Notes |
+| --- | --- | --- |
+| `operation` | `OperationOptions` | Layered group; `content_response_on_write` is ignored for queries. |
+| `max_buffered_query_window` | `u64` | Maximum global OFFSET plus effective take for client-buffered queries. Defaults to 1000; zero is valid. |
+| `query_plan_mode` | `QueryPlanMode` | Per-query provider selection. Defaults to `LocalPreferred`; `GatewayOnly` bypasses local planning. |
+| `session_token` | `Option<SessionToken>` | Session token for session-consistent queries. Operation-only. |
+| `enable_scan_if_no_index` | `Option<bool>` | If the query can't be served by indexes because the relevant paths are not indexed, setting this permits the query engine to perform a full container scan. Operation-only. |
+| `populate_index_metrics` | `Option<bool>` | If set to `true`, the response will contain metrics regarding indexes used. Operation-only. |
+| `populate_query_advice` | `Option<bool>` | If set to `true`, the response will include query optimization suggestions from the query advisor. Operation-only. |
+
+#### Buffered-query finite window
+
+`QueryOptions::max_buffered_query_window: u64` applies only to this query and
+defaults to 1000. The driver receives it through `PlanOptions`, alongside
+`query_plan_mode` (default `LocalPreferred`). Neither setting participates in
+operation/account/runtime layering or reads environment variables.
+
+The SDK convenience setter
+`QueryOptions::with_max_buffered_query_window(u64)` sets the per-query field.
+A global TOP or LIMIT is always required for affected buffered shapes:
+
+```rust
+use azure_data_cosmos::options::{QueryOptions, QueryPlanMode};
+
+// SQL: SELECT DISTINCT TOP 2000 VALUE c.category FROM c
+let query_options = QueryOptions::default()
+    .with_max_buffered_query_window(2000)
+    .with_query_plan_mode(QueryPlanMode::GatewayOnly);
+```
+
+Admission requires checked `OFFSET + min(TOP, LIMIT) <= max_buffered_query_window`,
+using whichever finite clause is present. Zero is valid; OFFSET still counts
+when take is zero. Missing bounds, arithmetic overflow, and excess windows fail
+with 400/20125, even at `u64::MAX`. The driver exports
+`DEFAULT_MAX_BUFFERED_QUERY_WINDOW = 1000`, reused internally by the SDK.
+There is no opt-out or C ABI option. This is a row-window admission policy,
+not a byte budget, and does not change service or continuation restrictions.
 
 ### 5.4 `TransactionalBatchOptions`
 
