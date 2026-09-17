@@ -44,11 +44,11 @@ pub struct CosmosArmClient {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ArmThroughput {
-    Manual(usize),
+    Manual(u64),
     Autoscale {
-        maximum: usize,
-        current: Option<usize>,
-        increment_percent: Option<usize>,
+        maximum: u64,
+        current: Option<u64>,
+        increment_percent: Option<u32>,
     },
 }
 
@@ -70,7 +70,7 @@ struct SqlResourceProperties<T> {
 #[serde(rename_all = "camelCase")]
 struct CreateUpdateOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
-    throughput: Option<usize>,
+    throughput: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     autoscale_settings: Option<CreateAutoscaleSettings>,
 }
@@ -78,7 +78,7 @@ struct CreateUpdateOptions {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct CreateAutoscaleSettings {
-    max_throughput: usize,
+    max_throughput: u64,
 }
 
 #[derive(Serialize)]
@@ -90,7 +90,7 @@ struct AutoscaleAutoUpgradePolicy {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct AutoscaleThroughputPolicy {
-    increment_percent: usize,
+    increment_percent: u32,
 }
 
 #[derive(Serialize)]
@@ -112,7 +112,7 @@ struct ThroughputSettingsProperties {
 #[serde(rename_all = "camelCase")]
 struct ThroughputSettingsResource {
     #[serde(skip_serializing_if = "Option::is_none")]
-    throughput: Option<usize>,
+    throughput: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     autoscale_settings: Option<ThroughputAutoscaleSettings>,
 }
@@ -120,7 +120,7 @@ struct ThroughputSettingsResource {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ThroughputAutoscaleSettings {
-    max_throughput: usize,
+    max_throughput: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
 }
@@ -138,14 +138,14 @@ struct ThroughputSettingsGetProperties {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct ThroughputSettingsGetResource {
-    throughput: Option<usize>,
+    throughput: Option<u64>,
     autoscale_settings: Option<AutoscaleSettingsResult>,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct AutoscaleSettingsResult {
-    max_throughput: usize,
+    max_throughput: u64,
     auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicyResult>,
 }
 
@@ -158,7 +158,7 @@ struct AutoscaleAutoUpgradePolicyResult {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct AutoscaleThroughputPolicyResult {
-    increment_percent: usize,
+    increment_percent: u32,
 }
 
 #[derive(Serialize)]

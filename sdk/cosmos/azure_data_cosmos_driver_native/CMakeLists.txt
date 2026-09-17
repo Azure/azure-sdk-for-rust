@@ -33,6 +33,7 @@ FetchContent_MakeAvailable(Corrosion)
 
 corrosion_import_crate(
     MANIFEST_PATH ./Cargo.toml
+    CRATES azure_data_cosmos_driver_native
     # Compiles the `__test_only_*` C-ABI helpers that back files under
     # `c_tests/` (e.g. `completion_headers_abi.c`). Off in every non-CMake
     # build so production `cdylib` / `staticlib` artifacts do not export

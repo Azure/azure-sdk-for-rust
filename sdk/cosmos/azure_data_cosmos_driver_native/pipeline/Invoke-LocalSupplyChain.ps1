@@ -15,14 +15,16 @@
 
     The script also generates the Azure/azure-cosmos-driver module layout. With
     PrepareGoPr enabled, it clones that repository, creates a local branch,
-    overlays the generated files, runs the target Go test, and creates a
+    overlays the generated files, runs the target Go validation, and creates a
     local-only commit and PR preview. It never pushes or opens a remote PR.
 
     Local SBOMs and signatures demonstrate mechanics only. They do
     not claim Microsoft 1ES, ESRP, Azure Trusted Signing, or Apple trust.
 
 .PARAMETER TargetId
-    Matrix target to rehearse. The default is windows-amd64.
+    Matrix target to rehearse. The default is linux-amd64-glibc. Windows AMD64
+    (GNU) is deferred and no longer part of the active matrix; see the pipeline
+    README "Deferred targets" section.
 
 .PARAMETER PrepareGoPr
     Prepare a local-only Azure/azure-cosmos-driver branch and commit.
@@ -30,14 +32,27 @@
 .PARAMETER SkipTestSigning
     Do not apply a disposable self-signed certificate to the Windows DLL.
 
+.PARAMETER InstallerPackageVersion
+    Exact Microsoft Rust package version reported by RustInstaller@1 during
+    toolchain installation.
+
+.PARAMETER InstallerBinPath
+    Microsoft Rust tools/bin path reported by RustInstaller@1 as RUST_BIN_PATH.
+
 .EXAMPLE
-    ./Invoke-LocalSupplyChain.ps1
+    ./Invoke-LocalSupplyChain.ps1 `
+        -InstallerPackageVersion '1.95.0-ms-20260618.5' `
+        -InstallerBinPath '/path/to/ms-prod-1.95/bin'
 #>
 [CmdletBinding()]
 param(
-    [string] $TargetId = 'windows-amd64',
+    [string] $TargetId = 'linux-amd64-glibc',
     [bool] $PrepareGoPr = $true,
-    [switch] $SkipTestSigning
+    [switch] $SkipTestSigning,
+    [Parameter(Mandatory = $true)]
+    [string] $InstallerPackageVersion,
+    [Parameter(Mandatory = $true)]
+    [string] $InstallerBinPath
 )
 
 Set-StrictMode -Version 3.0
@@ -131,7 +146,9 @@ Write-Host "Building $TargetId with cargo-auditable"
 & ([System.IO.Path]::Combine($PipelineDir, 'Build-NativeMatrix.ps1')) `
     -TargetId $TargetId `
     -OutputRoot $ArtifactRoot `
-    -CCompiler $cCompiler
+    -CCompiler $cCompiler `
+    -InstallerPackageVersion $InstallerPackageVersion `
+    -InstallerBinPath $InstallerBinPath
 if ($LASTEXITCODE -ne 0) {
     throw "Build-NativeMatrix.ps1 failed with exit code $LASTEXITCODE"
 }
@@ -312,17 +329,13 @@ Copy-Item $metadataPath, $sha256Path, $signingEvidencePath `
 Copy-Item $auditDir, ([System.IO.Path]::Combine($TargetArtifactDir, '_manifest')) `
     -Destination $releaseMetadataDir -Recurse -Force
 
-$moduleDir = ([System.IO.Path]::Combine(
-    $GoOutputRoot,
-    ($row.module_path -replace '/', [System.IO.Path]::DirectorySeparatorChar)
-))
-$goTestArgs = @('test', './...')
-Push-Location $moduleDir
-try {
-    $env:CGO_ENABLED = '1'
-    Invoke-Checked 'go' $goTestArgs
+& ([System.IO.Path]::Combine($PipelineDir, 'Test-GoModuleConsumer.ps1')) `
+    -GeneratedRoot $GoOutputRoot `
+    -TargetId $TargetId `
+    -CCompiler $cCompiler
+if ($LASTEXITCODE -ne 0) {
+    throw "Test-GoModuleConsumer.ps1 failed with exit code $LASTEXITCODE"
 }
-finally { Pop-Location }
 
 $prPreviewPath = ([System.IO.Path]::Combine($RunRoot, 'LOCAL_PR_PREVIEW.md'))
 if ($PrepareGoPr) {
@@ -345,7 +358,7 @@ if ($PrepareGoPr) {
         ($row.module_path -replace '/', [System.IO.Path]::DirectorySeparatorChar)
     ))
     try {
-        Invoke-Checked 'go' $goTestArgs
+        Invoke-Checked 'go' @('test', './...')
     }
     finally { Pop-Location }
 

@@ -53,7 +53,7 @@ static int test_options_default_is_all_unset(void)
               "e2e timeout unset (=%lld)", (long long)opts.end_to_end_timeout_ms);
        ASSERT(opts.endpoint_unavailability_ttl_ms < 0,
               "endpoint ttl unset (=%lld)", (long long)opts.endpoint_unavailability_ttl_ms);
-       ASSERT(opts.throughput_control_group == NULL, "throughput_control_group unset");
+       ASSERT(opts.throughput_control_group.data == NULL && opts.throughput_control_group.len == 0, "throughput_control_group unset");
        ASSERT(opts.excluded_regions == NULL, "excluded_regions unset");
        ASSERT(opts.excluded_regions_len == 0, "excluded_regions_len 0");
        ASSERT(opts.custom_headers == NULL, "custom_headers unset");
@@ -73,7 +73,7 @@ static int test_singleton_submit_rejects_null_driver(void)
 
        cosmos_operation_request_t req = {0};
        req.kind = COSMOS_OPERATION_KIND_READ_ITEM;
-       req.item_id = "id-1";
+       req.item_id = SV("id-1");
        req.precondition_kind = COSMOS_PRECONDITION_KIND_NONE;
        req.max_item_count = -1; // unset
        req.options = &opts;
@@ -124,14 +124,15 @@ static int test_patch_tracking_fields_can_be_populated(void)
        cosmos_operation_request_t req = {0};
        req.kind = COSMOS_OPERATION_KIND_PATCH_ITEM;
        req.max_item_count = -1;
-       req.patch_tracking_id = "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f";
+       req.patch_tracking_id = SV("7f5241c9-d7c2-4071-97a3-43bdebf6ef8f");
        req.patch_tracking_capacity = 64;
        req.patch_tracking_retention_seconds = 90;
 
        ASSERT(req.kind == COSMOS_OPERATION_KIND_PATCH_ITEM,
               "tracking fields share the canonical request");
-       ASSERT(strcmp(req.patch_tracking_id,
-                     "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f") == 0,
+       ASSERT(req.patch_tracking_id.len == 36 &&
+              memcmp(req.patch_tracking_id.data,
+                     "7f5241c9-d7c2-4071-97a3-43bdebf6ef8f", 36) == 0,
               "tracking id round-trips through request struct");
        ASSERT(req.patch_tracking_capacity == 64,
               "tracking capacity round-trips (=%u)",

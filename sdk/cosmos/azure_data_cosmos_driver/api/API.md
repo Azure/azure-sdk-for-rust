@@ -1255,10 +1255,10 @@ pub mod in_memory_emulator {
         pub fn new() -> Self;
         pub fn partition_count(&self) -> u32;
         pub fn partition_key_range_page_size(&self) -> Option<u32>;
-        pub fn provisioned_throughput_ru(&self) -> Option<u32>;
+        pub fn provisioned_throughput_ru(&self) -> Option<u64>;
         pub fn with_partition_count(self, count: u32) -> Self;
         pub fn with_partition_key_range_page_size(self, page_size: u32) -> Self;
-        pub fn with_throughput(self, ru_per_second: u32) -> Self;
+        pub fn with_throughput(self, ru_per_second: u64) -> Self;
     }
     impl Default for ContainerConfig {
         fn default() -> Self;
@@ -1550,7 +1550,7 @@ pub mod models {
     #[non_exhaustive]
     #[serde(rename_all = "camelCase")]
     pub struct AutoscaleThroughputPolicy {
-        pub increment_percent: usize,
+        pub increment_percent: u32,
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[non_exhaustive]
@@ -1681,7 +1681,7 @@ pub mod models {
         pub activity_id: Option<crate::models::ActivityId>,
         pub session_token: Option<crate::models::SessionToken>,
         pub precondition: Option<crate::models::Precondition>,
-        pub offer_throughput: Option<usize>,
+        pub offer_throughput: Option<u64>,
         pub offer_autopilot_settings: Option<OfferAutoscaleSettings>,
         pub max_item_count: Option<MaxItemCountHint>,
         pub incremental_feed: bool,
@@ -2075,13 +2075,13 @@ pub mod models {
     #[non_exhaustive]
     #[serde(rename_all = "camelCase")]
     pub struct OfferAutoscaleSettings {
-        pub max_throughput: usize,
+        pub max_throughput: u64,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
     }
     impl OfferAutoscaleSettings {
-        pub fn new(max_throughput: usize) -> Self;
-        pub fn with_increment_percent(self, increment_percent: usize) -> Self;
+        pub fn new(max_throughput: u64) -> Self;
+        pub fn with_increment_percent(self, increment_percent: u32) -> Self;
     }
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     #[non_exhaustive]
