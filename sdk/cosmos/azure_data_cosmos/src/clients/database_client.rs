@@ -78,8 +78,7 @@ impl DatabaseClient {
     /// unexpected full-cache latency spike. Eager topology loading is strongly
     /// recommended. See
     /// [`PartitionFailoverOptionsBuilder::with_partition_topology_cache_mode`](crate::options::PartitionFailoverOptionsBuilder::with_partition_topology_cache_mode)
-    /// to defer loading until first use. Lazy loading is not recommended and
-    /// should be used only when necessary to reduce up-front memory usage.
+    /// to configure when topology is loaded.
     ///
     /// The container's addressing mode must match this database's: a name-addressed
     /// database accepts only name-addressed containers, and a RID-addressed database

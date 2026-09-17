@@ -251,9 +251,11 @@ impl PartitionFailoverOptionsBuilder {
     /// Sets when partition topology is loaded into the partition key range cache.
     ///
     /// Defaults to [`PartitionTopologyCacheMode::Eager`], which is strongly
-    /// recommended. [`PartitionTopologyCacheMode::Lazy`] is intended as a
-    /// compatibility escape hatch for applications that cannot yet tolerate the
-    /// container-resolution I/O and memory cost of eager loading.
+    /// recommended. [`PartitionTopologyCacheMode::Lazy`] is not recommended and
+    /// should be used only when necessary to reduce up-front memory usage. Lazy
+    /// loading risks unexpected memory usage and request latency spikes when
+    /// partition failover or an unexpected cross-partition query first requires
+    /// the complete partition key range cache.
     pub fn with_partition_topology_cache_mode(mut self, value: PartitionTopologyCacheMode) -> Self {
         self.partition_topology_cache_mode = Some(value);
         self
