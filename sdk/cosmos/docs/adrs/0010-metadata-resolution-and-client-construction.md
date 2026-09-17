@@ -3,6 +3,12 @@
 **Status:** Accepted
 **Date:** 2026-08-31
 
+**Partial supersession:** ADR-0015 (`adrs/0015-eager-partition-topology-loading.md`)
+supersedes this ADR's decision to load partition-key-range data lazily. Partition
+topology now loads during container resolution by default, with lazy loading
+available as a non-recommended option. The remaining account and container
+metadata decisions in this ADR are unchanged.
+
 ## Context
 
 Account topology and container identity are required by most operations, while
