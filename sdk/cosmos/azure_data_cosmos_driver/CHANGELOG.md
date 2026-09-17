@@ -8,6 +8,7 @@
 - Extended Cosmos binary JSON query-page handling to cross-partition `DISTINCT`, including composition with streaming `ORDER BY` and `OFFSET`/`LIMIT`/`TOP`. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 - Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes, and `QueryPlanMode::{LocalPreferred, GatewayOnly}` to select providers per query. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
 - Added a fully buffered cross-partition merge for finite non-streaming `ORDER BY` plans, including `VectorDistance(...)`. Resumed, DISTINCT, and hybrid non-streaming plans are rejected with typed statuses. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
+- Added Cosmos binary JSON encoding support over the thin client (Gateway 2.0) path by forwarding the `x-ms-cosmos-supported-serialization-formats` header as the RNTBD `SupportedSerializationFormats` token. ([#5284](https://github.com/Azure/azure-sdk-for-rust/pull/5284))
 
 ### Breaking Changes
 

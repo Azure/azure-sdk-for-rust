@@ -8,6 +8,7 @@
 - Extended Cosmos binary JSON encoding to cross-partition `DISTINCT` query pages. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 - Added `QueryPlanMode::{LocalPreferred, GatewayOnly}`, allowing applications to force Gateway query planning for an individual query as a livesite mitigation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
 - Added finite cross-partition `ORDER BY VectorDistance(...)` queries with `TOP` or `OFFSET`/`LIMIT`. Results are fully buffered before the first page and cannot be resumed from continuation tokens. Hybrid/full-text vector ranking remains unsupported. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
+- Extended Cosmos binary JSON encoding to the thin client (Gateway 2.0) transport. ([#5284](https://github.com/Azure/azure-sdk-for-rust/pull/5284))
 
 ### Breaking Changes
 

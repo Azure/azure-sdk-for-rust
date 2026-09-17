@@ -2,6 +2,7 @@
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 -->
+<!-- cSpell:ignore syso -->
 
 # Go native driver build pipeline
 
@@ -80,9 +81,11 @@ libraries for .NET, Java, and Python remain outside the release matrix.
 | `Build-NativeMatrix.ps1` | Verifies Microsoft Rust, builds each static library, and writes schema 4 release metadata. |
 | `Test-NativeLink.ps1` | Cross-links a minimal Go/cgo program against each target archive before publication. |
 | `New-GoModules.ps1` | Creates the `Azure/azure-cosmos-driver` directory layout, Go module files, cgo linker files, headers, and static libraries. |
+| `Test-GoModuleConsumer.ps1` | Builds direct and vendored Go consumers that call `cosmos_version()` from a generated host module. |
 | `Prepare-GoDriverPullRequest.ps1` | Verifies the artifact, synchronizes the downstream generated roots, validates the Go modules, and stages the changes. |
 | `tests/New-GoModules.Tests.ps1` | Verifies that Go module generation rejects mixed, mislabeled, or modified target artifacts. |
 | `tests/Prepare-GoDriverPullRequest.Tests.ps1` | Verifies that downstream synchronization removes retired generated files without modifying hand-maintained files. |
+| `tests/Test-GoModuleConsumer.Tests.ps1` | Verifies direct and vendored consumer command flow and symbol-call source generation. |
 | `tests/Test-NativeLink.Tests.ps1` | Verifies target metadata checks and Go link-smoke command wiring. |
 | `Invoke-LocalSupplyChain.ps1` | Runs a local end-to-end integration test without publishing anything. |
 | `native-driver.yml` | Defines the official 1ES build, Go module artifact, and downstream draft pull request. |
@@ -105,6 +108,9 @@ Publish each target through the official 1ES template with its standard SBOM
     |
     v
 Generate and test the Go modules
+    |
+    v
+Build direct and vendored Linux AMD64 consumers
     |
     v
 Publish the azure-cosmos-driver-modules pipeline artifact
@@ -151,6 +157,23 @@ validation for each module definition and the Linux AMD64 module, and opens a
 draft pull request. The target repository's branch rules require review and
 code-owner approval before merge.
 
+Each generated module has a flat native layout:
+
+```text
+<goos>/<goarch>[-musl]/
+├── go.mod
+├── link_<goos>_<goarch>.go
+├── azurecosmosdriver.h
+└── libazurecosmosdriver.a
+```
+
+The cgo linker directive uses `-L${SRCDIR} -lazurecosmosdriver`. Keeping the
+archive at the module root ensures `go mod vendor` copies it into the vendored
+package. The pipeline builds both a normal local-replace consumer and a
+`-mod=vendor` consumer that calls `cosmos_version()`, proving the real archive
+is present and its symbol resolves in both layouts. The generator emits neither
+a `.syso` copy nor a duplicate `native/` directory.
+
 ## Local integration test
 
 Run the complete local test (defaults to the `linux-amd64-glibc` target):
@@ -175,7 +198,7 @@ The script:
    targets.
 3. Generates and validates a local SPDX inventory.
 4. Writes SHA256 checksums.
-5. Generates and tests the Go module.
+5. Generates the Go module and builds direct and vendored consumers.
 6. Clones `Azure/azure-cosmos-driver`.
 7. Creates a local branch, commit, and pull-request preview.
 
@@ -226,8 +249,9 @@ The glibc and musl builds use separate Go module paths:
 - glibc: `linux/amd64` and `linux/arm64`
 - musl: `linux/amd64-musl` and `linux/arm64-musl`
 
-Each module stores its library under `native/`. The consuming Go package selects
-the appropriate driver module, so users do not need a custom musl build tag.
+Each module stores its library and header at the module root. The consuming Go
+package selects the appropriate driver module, so users do not need a custom
+musl build tag.
 
 ## Work still required before release
 
