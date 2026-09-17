@@ -32,8 +32,7 @@ use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
 use azure_data_cosmos_driver::models::{
     ContainerReference, CosmosOperation, FeedRange, PartitionKeyDefinition,
 };
-use azure_data_cosmos_driver::options::DriverOptions;
-use azure_data_cosmos_driver::options::{OperationOptions, PlanOptions};
+use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions, PlanOptions};
 use azure_data_cosmos_driver::CosmosDriver;
 
 use framework::resolve_test_env;
@@ -496,7 +495,7 @@ fn query_spec_body(sql: &str, parameters: &[(&str, serde_json::Value)]) -> Vec<u
 async fn validate_production_local_plan(
     sql: &str,
     parameters: &[(&str, serde_json::Value)],
-    execute: bool,
+    plan_options: Option<PlanOptions>,
 ) {
     let (driver, container) = require_driver_and(get_driver().await, c_pk().await);
     let body = query_spec_body(sql, parameters);
@@ -547,24 +546,16 @@ async fn validate_production_local_plan(
         "query ranges differ for '{sql}'"
     );
 
-    if execute {
+    if let Some(plan_options) = plan_options {
+        let options = OperationOptions::default();
         let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
             .with_body(body);
         let mut plan = driver
-            .plan_operation(
-                operation,
-                &OperationOptions::default(),
-                None,
-                &PlanOptions::default(),
-            )
+            .plan_operation(operation, &options, None, &plan_options)
             .await
             .unwrap_or_else(|error| panic!("local plan failed for '{sql}': {error}"));
         while driver
-            .execute_plan(
-                &mut plan,
-                Some(container.clone()),
-                OperationOptions::default(),
-            )
+            .execute_plan(&mut plan, Some(container.clone()), options.clone())
             .await
             .unwrap_or_else(|error| panic!("local execution failed for '{sql}': {error}"))
             .is_some()
@@ -1053,7 +1044,6 @@ async fn gw_production_local_plan_supported_surface() {
         "SELECT * FROM c ORDER BY c.name",
         "SELECT VALUE c.name FROM c ORDER BY c.name",
         "SELECT c.name, c.age AS years FROM c ORDER BY c.name",
-        "SELECT DISTINCT c.name FROM c",
         "SELECT DISTINCT TOP 5 c.name FROM c",
         "SELECT DISTINCT c.name FROM c OFFSET 2 LIMIT 3",
         "SELECT DISTINCT VALUE c.name FROM c ORDER BY c.name",
@@ -1061,10 +1051,43 @@ async fn gw_production_local_plan_supported_surface() {
         "SELECT (SELECT VALUE 1) AS x FROM c",
         "SELECT * FROM c WHERE c.pk = 'production-local-plan'",
     ] {
-        validate_production_local_plan(sql, &[], true).await;
+        validate_production_local_plan(sql, &[], Some(PlanOptions::default())).await;
     }
 
-    validate_production_local_plan("SELECT VALUE udf.transform(c.data) FROM c", &[], false).await;
+    validate_production_local_plan("SELECT VALUE udf.transform(c.data) FROM c", &[], None).await;
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "emulator"),
+    ignore = "requires test_category 'emulator'"
+)]
+async fn gw_production_local_plan_unbounded_distinct_requires_opt_out() {
+    let sql = "SELECT DISTINCT c.name FROM c";
+    let (driver, container) = require_driver_and(get_driver().await, c_pk().await);
+    let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
+        .with_body(query_spec_body(sql, &[]));
+    let error = driver
+        .plan_operation(
+            operation,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        )
+        .await
+        .err()
+        .expect("unordered DISTINCT must require a finite global window");
+    assert_eq!(
+        error.status(),
+        azure_data_cosmos_driver::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+    );
+
+    validate_production_local_plan(
+        "SELECT DISTINCT TOP 1000 VALUE c.city FROM c",
+        &[],
+        Some(PlanOptions::default()),
+    )
+    .await;
 }
 
 #[tokio::test]

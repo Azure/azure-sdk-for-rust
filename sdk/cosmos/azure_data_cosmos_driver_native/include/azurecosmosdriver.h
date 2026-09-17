@@ -1491,8 +1491,8 @@ typedef struct cosmos_operation_options_t {
   int8_t binary_encoding_request_text_response;
   /**
    * Query-plan mode encoded as a [`CosmosQueryPlanMode`] discriminant.
-   * `0` (`Unset`) inherits. Stored as a raw `i32` so invalid host values can
-   * be rejected before materializing the enum.
+   * `0` (`Unset`) uses LocalPreferred. Raw `i32` storage allows invalid host
+   * values to be rejected before materializing the enum.
    */
   int32_t query_plan_mode;
 } cosmos_operation_options_t;

@@ -4,12 +4,17 @@
 
 ### Features Added
 
+- Added per-query `QueryOptions::max_buffered_query_window` and `with_max_buffered_query_window` to configure the maximum global OFFSET plus effective take for client-buffered queries (default 1000, no opt-out). ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Extended Cosmos binary JSON encoding to cross-partition `DISTINCT` query pages. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
-- Added `QueryPlanMode::{LocalPreferred, GatewayOnly}` to `OperationOptions`, allowing applications to force Gateway query planning globally or for an individual query as a livesite mitigation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
+- Added `QueryPlanMode::{LocalPreferred, GatewayOnly}`, allowing applications to force Gateway query planning for an individual query as a livesite mitigation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
 - Added finite cross-partition `ORDER BY VectorDistance(...)` queries with `TOP` or `OFFSET`/`LIMIT`. Results are fully buffered before the first page and cannot be resumed from continuation tokens. Hybrid/full-text vector ranking remains unsupported. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
+- Extended Cosmos binary JSON encoding to the thin client (Gateway 2.0) transport. ([#5284](https://github.com/Azure/azure-sdk-for-rust/pull/5284))
 
 ### Breaking Changes
 
+- Moved `query_plan_mode` from `OperationOptions` to per-query `QueryOptions`; removed client/runtime defaults and environment settings, including the query-plan-mode override. The default remains `LocalPreferred`. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
+- Unordered cross-partition DISTINCT and non-streaming ORDER BY require finite global TOP/LIMIT with OFFSET plus effective take within the configured maximum; missing bounds, excess windows, and overflow fail with 400/20125. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
+- Unified client-buffered continuation errors under 400/20124, retaining the shape-specific constants as aliases; finite-window admission moved from 20126 to 20125 and non-streaming window/storage errors from 20127 to 20126. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Reviewed public API type consistency for time durations and integer sizes. `ResponseHeaders::server_duration_ms()` and `retry_after_ms()` are replaced by `server_duration()` and `retry_after()`, both returning `Option<Duration>`; `TransactionalBatchOperationResult::retry_after_milliseconds()` and `DistributedTransactionResponse::retry_after_ms()` are similarly replaced by `retry_after() -> Option<Duration>`. `ThroughputProperties::manual`, `autoscale`, `throughput()`, and `autoscale_maximum()` now use `u64` instead of the platform-dependent `usize`, allowing RU/s values above 4 billion; `autoscale_increment()` now uses `u32` because it returns a percentage. ([#5204](https://github.com/Azure/azure-sdk-for-rust/pull/5204))
 
 ### Bugs Fixed
