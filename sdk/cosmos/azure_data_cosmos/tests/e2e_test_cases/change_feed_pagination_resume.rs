@@ -145,6 +145,10 @@ fn current_items(changes: Vec<ChangeFeedItem<Item>>) -> Vec<Item> {
     changes
         .into_iter()
         .map(|change| {
+            assert!(
+                change.operation_type().is_none(),
+                "LatestVersion metadata must not expose an operation type"
+            );
             change
                 .current()
                 .cloned()

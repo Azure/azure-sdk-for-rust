@@ -85,6 +85,17 @@ test assertions, but only behavior explicitly modeled by the emulator is
 enforced. Client-supplied conflict-resolution metadata never overrides the
 fixed LWW policy described above.
 
+Item identity follows the service's operation-specific addressing contracts.
+A name-addressed point Replace may change the body `id`; the item keeps its
+resource identity (`_rid`), the old name stops resolving, and the new name
+resolves. Transactional batch and distributed-transaction Replace operations
+carry a separate operation ID, so their body `id` must match that explicit ID.
+If the new name already exists, the emulator retains the shared service-style
+409 response stating that the specified ID, name, or unique index already
+exists. It deliberately does not expose a separate client-visible error shape
+for ID collision versus unique-key collision because no incompatible service
+contract has been established.
+
 ---
 
 ## 2. Feature Gating
@@ -904,8 +915,10 @@ body regardless of this header.
 1. Compute EPK hash, route to physical partition.
 2. Lookup existing → 404 if not found.
 3. `If-Match` precondition → 412 on ETag mismatch.
-4. Generate new ETag, advance LSN, replace document, trigger replication.
-5. Return body per content-response-on-write header.
+4. If the body `id` differs from the name-addressed URI ID, retain `_rid`, move
+  the logical item to the new name, and replicate a tombstone for the old name.
+5. Generate new ETag, advance LSN, replace document, trigger replication.
+6. Return body per content-response-on-write header.
 
 ### Upsert (POST+is-upsert → 201 or 200)
 
@@ -1192,6 +1205,12 @@ Partition key values are resolved by:
 1. `x-ms-documentdb-partitionkey` header (takes precedence if present).
 2. Extraction from document body using the container's PK definition paths.
 
+The empty-object header component `[{}]` represents an undefined partition-key
+component. Live service validation also confirms that an extracted document leaf
+whose value is `{}` is treated as undefined; non-empty objects and arrays remain
+invalid partition-key values. When both a header and a document body are present
+for a document write, their resolved components must match.
+
 ---
 
 ## 15. Throughput Throttling
@@ -1395,6 +1414,12 @@ hosted emulator (`0027-hosted-emulator.md`) supports the documented subset of
 Gateway 2.0 over HTTP/2.
 
 Query support is intentionally scoped to the local SQL evaluator and local query-plan analyzer used by the SDK tests. Transactional batch supports document operations within one logical partition and rolls back the whole batch on failure.
+
+Distributed-transaction PATCH post-mutation validation of `/id` and partition-key
+paths predates the PR2 E2E work and remains outside its scope. PR2 ensures that
+DTX routing and pre-image capture do not misinterpret the PatchInstructions
+envelope as an item document; broader DTX PATCH parity should be handled as a
+separate change with its own service contract and regression coverage.
 
 ---
 

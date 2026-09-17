@@ -1185,11 +1185,7 @@ pub(crate) async fn handle_operation(
                 &operation.collection_name,
                 |state| {
                     let parsed = dtx_operation_as_parsed_request(operation);
-                    let body = operation
-                        .resource_body
-                        .as_ref()
-                        .cloned()
-                        .unwrap_or(serde_json::Value::Null);
+                    let body = dtx_partition_key_body(operation);
                     let (_, epk) = resolve_partition_key(&parsed, &body, &state.metadata).ok()?;
                     let partition = state.find_partition(&epk)?;
                     let document = partition
@@ -1339,7 +1335,8 @@ pub(crate) async fn handle_operation(
             &operation.collection_name,
             |state| {
                 let parsed = dtx_operation_as_parsed_request(operation);
-                let body = operation.resource_body
+                let body = operation
+                    .resource_body
                     .as_ref()
                     .cloned()
                     .unwrap_or(serde_json::Value::Null);
@@ -1369,7 +1366,12 @@ pub(crate) async fn handle_operation(
                         }
                     }
                 }
-                let (_, epk) = resolve_partition_key(&parsed, &body, &state.metadata).map_err(
+                let partition_key_body = dtx_partition_key_body(operation);
+                let (_, epk) = resolve_partition_key(
+                    &parsed,
+                    &partition_key_body,
+                    &state.metadata,
+                ).map_err(
                     |error| {
                         preflight_failure(
                             StatusCode::BadRequest,
@@ -1538,6 +1540,25 @@ pub(crate) async fn handle_operation(
             a_im: None,
             change_feed_wire_format_version: None,
             request_host: None,
+        }
+    }
+
+    /// Returns an item document only for DTX operations whose resource body is
+    /// the document itself. PATCH carries a PatchInstructions envelope, while
+    /// Delete and Read have no document body to validate against the PK header.
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_partition_key_body(operation: &DtxOperation) -> serde_json::Value {
+        if matches!(
+            operation.operation_type.as_str(),
+            "Create" | "Replace" | "Upsert"
+        ) {
+            operation
+                .resource_body
+                .as_ref()
+                .cloned()
+                .unwrap_or(serde_json::Value::Null)
+        } else {
+            serde_json::Value::Null
         }
     }
 
@@ -2721,6 +2742,12 @@ fn success_change_feed_response(
         if let Some(lsn) = feed_headers.lsn {
             builder = builder.with_lsn(lsn);
         }
+        if let Some(id) = feed_headers.partition_key_range_id {
+            builder = builder.with_header_value(PARTITION_KEY_RANGE_ID.clone(), id);
+        }
+        if let Some(id) = feed_headers.internal_partition_id {
+            builder = builder.with_header_value(INTERNAL_PARTITION_ID.clone(), id);
+        }
         return builder.build();
     }
 
@@ -3596,10 +3623,13 @@ fn handle_read_feed_items(
             // continuation end-to-end while full version/delete history remains
             // an explicit emulator limitation. Plain read-feed requests omit
             // `A-IM` and continue to return flat documents.
-            let structured_change_feed = is_full_fidelity_feed(parsed.a_im.as_deref())
-                || parsed.change_feed_wire_format_version.is_some();
+            let full_fidelity = is_full_fidelity_feed(parsed.a_im.as_deref());
+            let structured_change_feed =
+                full_fidelity || parsed.change_feed_wire_format_version.is_some();
             let docs = if parsed.a_im.is_some() && structured_change_feed {
-                docs.into_iter().map(change_feed_envelope).collect()
+                docs.into_iter()
+                    .map(|doc| change_feed_envelope(doc, full_fidelity))
+                    .collect()
             } else {
                 docs
             };
@@ -3675,22 +3705,29 @@ fn reject_unsupported_full_fidelity_start(
 
 /// Wraps a current document body in the public change-feed envelope.
 ///
-/// The emulator has no change log, so every retained document is surfaced as a
-/// `create`. `crts` is taken from the document's `_ts` when available; `lsn` and
-/// `previous` are omitted because the store does not track them.
-fn change_feed_envelope(doc: DocumentFeedItem) -> DocumentFeedItem {
+/// `crts` is taken from the document's `_ts` when available; `lsn` and
+/// `previous` are omitted because the store does not track them. LatestVersion
+/// metadata omits `operationType`, matching the service contract. The limited
+/// full-fidelity simulation labels each retained document as a creation because
+/// the emulator does not retain historical operations.
+fn change_feed_envelope(doc: DocumentFeedItem, full_fidelity: bool) -> DocumentFeedItem {
     let crts = doc
         .body
         .get("_ts")
         .cloned()
         .unwrap_or(serde_json::Value::Null);
+    let metadata = if full_fidelity {
+        serde_json::json!({
+            "operationType": "create",
+            "crts": crts,
+        })
+    } else {
+        serde_json::json!({ "crts": crts })
+    };
     DocumentFeedItem {
         body: serde_json::json!({
             "current": doc.body,
-            "metadata": {
-                "operationType": "create",
-                "crts": crts,
-            },
+            "metadata": metadata,
         }),
         cursor: doc.cursor,
         lsn: doc.lsn,
@@ -4687,6 +4724,7 @@ fn decode_request_body(request_body: &[u8]) -> Result<serde_json::Value, ()> {
     }
 }
 
+const MAX_REQUEST_PAYLOAD_BYTES: usize = 2 * 1024 * 1024;
 const MAX_ITEM_PAYLOAD_BYTES: usize = 2 * 1024 * 1024;
 
 fn oversized_item_response(start: Instant) -> AsyncRawResponse {
@@ -4815,7 +4853,7 @@ async fn handle_create_locked(
     if let Some(resp) = replication_back_pressure_response(store, region_name, start) {
         return resp;
     }
-    if request_body.len() > MAX_ITEM_PAYLOAD_BYTES {
+    if request_body.len() > MAX_REQUEST_PAYLOAD_BYTES {
         return oversized_item_response(start);
     }
 
@@ -4834,6 +4872,9 @@ async fn handle_create_locked(
             .build();
         }
     };
+    if user_document_size(&body) > MAX_ITEM_PAYLOAD_BYTES {
+        return oversized_item_response(start);
+    }
 
     let doc_id = match body.get("id").and_then(|v| v.as_str()) {
         Some(id) => id.to_string(),
@@ -5339,7 +5380,7 @@ async fn handle_patch_locked(
     if let Some(response) = replication_back_pressure_response(store, region_name, start) {
         return response;
     }
-    if request_body.len() > MAX_ITEM_PAYLOAD_BYTES {
+    if request_body.len() > MAX_REQUEST_PAYLOAD_BYTES {
         return oversized_item_response(start);
     }
 
@@ -5465,9 +5506,11 @@ async fn handle_patch_locked(
                 )
                 .build());
             }
-            if parsed.if_none_match.as_ref().is_some_and(|if_none_match| {
-                (if_none_match == "*" || if_none_match == &current.etag)
-            }) {
+            if parsed
+                .if_none_match
+                .as_ref()
+                .is_some_and(|if_none_match| if_none_match == "*" || if_none_match == &current.etag)
+            {
                 return Err(error_response(
                     StatusCode::PreconditionFailed,
                     None,
@@ -5658,7 +5701,7 @@ async fn handle_replace_locked(
     if let Some(resp) = replication_back_pressure_response(store, region_name, start) {
         return resp;
     }
-    if request_body.len() > MAX_ITEM_PAYLOAD_BYTES {
+    if request_body.len() > MAX_REQUEST_PAYLOAD_BYTES {
         return oversized_item_response(start);
     }
 
@@ -5677,6 +5720,9 @@ async fn handle_replace_locked(
             .build();
         }
     };
+    if user_document_size(&body) > MAX_ITEM_PAYLOAD_BYTES {
+        return oversized_item_response(start);
+    }
 
     let body_id = match body.get("id").and_then(|value| value.as_str()) {
         Some(body_id) => body_id.to_owned(),
@@ -6022,7 +6068,7 @@ async fn handle_upsert_locked(
     if let Some(resp) = replication_back_pressure_response(store, region_name, start) {
         return resp;
     }
-    if request_body.len() > MAX_ITEM_PAYLOAD_BYTES {
+    if request_body.len() > MAX_REQUEST_PAYLOAD_BYTES {
         return oversized_item_response(start);
     }
 
@@ -6041,6 +6087,9 @@ async fn handle_upsert_locked(
             .build();
         }
     };
+    if user_document_size(&body) > MAX_ITEM_PAYLOAD_BYTES {
+        return oversized_item_response(start);
+    }
 
     let doc_id = match body.get("id").and_then(|v| v.as_str()) {
         Some(id) => id.to_string(),
@@ -6748,6 +6797,21 @@ mod tests {
             .collect()
     }
 
+    #[test]
+    fn item_size_uses_json_representation_independent_of_request_encoding() {
+        let document = serde_json::json!({
+            "id": "escape-heavy",
+            "pk": "A",
+            "value": "\"".repeat((MAX_ITEM_PAYLOAD_BYTES / 2) + 1),
+        });
+        let text = serde_json::to_vec(&document).unwrap();
+        let binary = crate::binary_json::encode(&document);
+
+        assert!(text.len() > MAX_ITEM_PAYLOAD_BYTES);
+        assert!(binary.len() <= MAX_REQUEST_PAYLOAD_BYTES);
+        assert!(user_document_size(&document) > MAX_ITEM_PAYLOAD_BYTES);
+    }
+
     #[tokio::test]
     async fn change_feed_resume_skips_consumed_prefix() {
         let items: Vec<_> = (1..=5)
@@ -6792,12 +6856,18 @@ mod tests {
     async fn change_feed_empty_resume_preserves_checkpoint() {
         let item = document_item_with_lsn("01", "item-1", 1);
         let checkpoint = change_feed_cursor_token(&item);
+        let headers = FeedResponseHeaders {
+            session_token: String::new(),
+            lsn: None,
+            partition_key_range_id: Some(7),
+            internal_partition_id: Some("partition-rid".to_owned()),
+        };
         let response = success_change_feed_response(
             "rid",
             vec![item],
             Some(2),
             Some(&checkpoint),
-            FeedResponseHeaders::none(),
+            headers,
             Instant::now(),
         )
         .try_into_raw_response()
@@ -6808,6 +6878,14 @@ mod tests {
         assert_eq!(
             response.headers().get_optional_str(&ETAG),
             Some(checkpoint.as_str())
+        );
+        assert_eq!(
+            response.headers().get_optional_str(&PARTITION_KEY_RANGE_ID),
+            Some("7")
+        );
+        assert_eq!(
+            response.headers().get_optional_str(&INTERNAL_PARTITION_ID),
+            Some("partition-rid")
         );
     }
 

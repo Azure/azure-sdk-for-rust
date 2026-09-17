@@ -5,7 +5,7 @@ use std::panic::AssertUnwindSafe;
 
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::{
-    models::{ContainerProperties, IndexingMode, IndexingPolicy},
+    models::{ContainerProperties, DatabaseProperties, IndexingMode, IndexingPolicy},
     Query,
 };
 use futures::{FutureExt, TryStreamExt};
@@ -37,6 +37,23 @@ async fn database_and_container_resource_lifecycle() -> TestResult {
             create_database.into_model()?.id.as_deref(),
             Some(database_id.as_str())
         );
+        let read_database = database.read(None).await?;
+        assert_eq!(read_database.status(), StatusCode::Ok);
+        assert_eq!(
+            read_database.into_model()?.id.as_deref(),
+            Some(database_id.as_str())
+        );
+
+        let query = Query::from("SELECT * FROM root r WHERE r.id = @id")
+            .with_parameter("@id", &database_id)?;
+        let matches: Vec<DatabaseProperties> = client
+            .query_databases(query, None)
+            .await?
+            .try_collect()
+            .await?;
+        assert_eq!(matches.len(), 1);
+        assert_eq!(matches[0].id.as_deref(), Some(database_id.as_str()));
+
         run_container_lifecycle(&database, &container_id).await
     })
     .catch_unwind()

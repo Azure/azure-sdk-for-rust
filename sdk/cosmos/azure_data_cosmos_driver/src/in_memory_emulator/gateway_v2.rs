@@ -766,7 +766,9 @@ mod tests {
         let structured_body: serde_json::Value = serde_json::from_slice(&structured.body).unwrap();
         let structured_document = &structured_body["Documents"].as_array().unwrap()[0];
         assert!(structured_document.get("current").is_some());
-        assert!(structured_document.get("metadata").is_some());
+        let structured_metadata = structured_document["metadata"].as_object().unwrap();
+        assert!(structured_metadata.get("crts").is_some());
+        assert!(structured_metadata.get("operationType").is_none());
 
         let first = execute_frame(&emulator, &thin_url, read_page(None)).await;
         let first_body: serde_json::Value = serde_json::from_slice(&first.body).unwrap();

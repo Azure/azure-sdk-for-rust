@@ -240,6 +240,20 @@ Continuation tokens are **opaque server-issued strings** in both directions; the
 
 `ContinuationToken` is *not* in `thinClientProxyExcludedSet`, so it traverses the same encode/decode path as standard direct-mode RNTBD. There is no Gateway-2.0-specific token format, base64 wrapper, or version prefix; pagination cursors round-trip byte-for-byte.
 
+##### Change-feed mode tokens
+
+Gateway 2.0 forwards the change-feed headers that select the public feed mode and
+response shape as RNTBD string tokens:
+
+| HTTP header                                  | RNTBD request token           | ID       | Type     | Forwarding                                                                                                                                                                     |
+| -------------------------------------------- | ----------------------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `A-IM`                                       | `AIm`                         | `0x003F` | `String` | The header value is copied verbatim. `Incremental Feed` remains Gateway 2.0 eligible; `Full-Fidelity Feed` is excluded because AllVersionsAndDeletes requires Compute Gateway. |
+| `x-ms-cosmos-changefeed-wire-format-version` | `ChangeFeedWireFormatVersion` | `0x00B2` | `String` | The negotiated wire-format version is copied verbatim.                                                                                                                         |
+
+Ordinary document ReadFeed requests omit both tokens. Their presence is driven by
+the change-feed operation rather than inferred from the shared ReadFeed operation
+type.
+
 A unit test pins this behavior: a hand-crafted response frame containing a synthetic unrecognized token ID must round-trip without error and surface every recognized token correctly.
 
 #### SDK-supported-capabilities advertisement
