@@ -159,6 +159,7 @@ fn generate_c_header() {
             "CosmosPartitionKeyComponentValue".into(),
             "partition_key_component_value_t".into(),
         ),
+        ("CosmosStringView".into(), "string_view_t".into()),
         ("CosmosResponseHeader".into(), "response_header_t".into()),
         ("CosmosValue".into(), "value_t".into()),
         ("CosmosValueKind".into(), "value_kind_t".into()),

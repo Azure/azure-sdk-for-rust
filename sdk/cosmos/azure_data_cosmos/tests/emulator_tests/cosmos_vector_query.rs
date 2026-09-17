@@ -29,7 +29,7 @@ use serde::{Deserialize, Serialize};
 
 const SEARCH_PARTITION: &str = "tenant-a";
 const OTHER_PARTITION: &str = "tenant-b";
-const CROSS_PARTITION_THROUGHPUT: usize = 11_000;
+const CROSS_PARTITION_THROUGHPUT: u64 = 11_000;
 const QUERY_VECTOR: [f32; 2] = [0.0, 0.0];
 const PRECOMPUTED_VECTOR_DIMENSIONS: usize = 300;
 const PRECOMPUTED_VECTOR_TOP: usize = 9;
@@ -254,7 +254,7 @@ fn vector_documents() -> [VectorDocument; 7] {
 async fn seed_vector_container(
     run_context: &framework::TestRunContext,
     db_client: &azure_data_cosmos::clients::DatabaseClient,
-    throughput: Option<usize>,
+    throughput: Option<u64>,
 ) -> azure_data_cosmos::Result<ContainerClient> {
     let mut indexing_policy = IndexingPolicy::default()
         .with_indexing_mode(IndexingMode::Consistent)

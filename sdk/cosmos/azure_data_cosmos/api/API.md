@@ -332,7 +332,7 @@ pub mod clients {
         pub fn len(&self) -> usize;
         pub fn operation_result(&self, index: usize) -> Option<DistributedTransactionOperationResult<'_>>;
         pub fn request_charge(&self) -> Option<f64>;
-        pub fn retry_after_ms(&self) -> Option<u64>;
+        pub fn retry_after(&self) -> Option<std::time::Duration>;
         pub fn status(&self) -> crate::CosmosStatus;
     }
     #[cfg(feature = "preview_dtx")]
@@ -1778,8 +1778,8 @@ pub mod models {
         pub fn request_charge(&self) -> Option<&RequestCharge>;
         pub fn resource_quota(&self) -> Option<&str>;
         pub fn resource_usage(&self) -> Option<&str>;
-        pub fn retry_after_ms(&self) -> Option<u64>;
-        pub fn server_duration_ms(&self) -> Option<f64>;
+        pub fn retry_after(&self) -> Option<std::time::Duration>;
+        pub fn server_duration(&self) -> Option<std::time::Duration>;
         pub fn session_token(&self) -> Option<&SessionToken>;
         pub fn substatus(&self) -> Option<&SubStatusCode>;
         pub fn transport_request_id(&self) -> Option<u32>;
@@ -1826,11 +1826,11 @@ pub mod models {
     }
     #[cfg(feature = "control_plane")]
     impl ThroughputProperties {
-        pub fn autoscale(starting_maximum_throughput: usize, increment_percent: Option<usize>) -> ThroughputProperties;
-        pub fn autoscale_increment(&self) -> Option<usize>;
-        pub fn autoscale_maximum(&self) -> Option<usize>;
-        pub fn manual(throughput: usize) -> ThroughputProperties;
-        pub fn throughput(&self) -> Option<usize>;
+        pub fn autoscale(starting_maximum_throughput: u64, increment_percent: Option<u32>) -> ThroughputProperties;
+        pub fn autoscale_increment(&self) -> Option<u32>;
+        pub fn autoscale_maximum(&self) -> Option<u64>;
+        pub fn manual(throughput: u64) -> ThroughputProperties;
+        pub fn throughput(&self) -> Option<u64>;
     }
     #[derive(Clone, Debug)]
     pub struct TransactionalBatch {
@@ -1855,7 +1855,7 @@ pub mod models {
         pub fn is_success(&self) -> bool;
         pub fn request_charge(&self) -> Option<f64>;
         pub fn resource_body(&self) -> Option<&serde_json::value::RawValue>;
-        pub fn retry_after_milliseconds(&self) -> Option<u64>;
+        pub fn retry_after(&self) -> Option<std::time::Duration>;
         pub fn status_code(&self) -> u16;
         pub fn substatus_code(&self) -> Option<u32>;
     }
@@ -2580,7 +2580,7 @@ pub mod options {
         pub max_attempts: Option<std::num::NonZeroU8>,
         pub tracking_id: Option<crate::models::PatchTrackingId>,
         pub tracking_capacity: Option<std::num::NonZeroU16>,
-        pub tracking_retention_seconds: Option<std::num::NonZeroU32>,
+        pub tracking_retention: Option<std::time::Duration>,
     }
     #[cfg(feature = "preview_patch")]
     impl PatchItemOptions {
@@ -2591,7 +2591,7 @@ pub mod options {
         pub fn with_strategy(self, strategy: PatchStrategy) -> Self;
         pub fn with_tracking_capacity(self, capacity: std::num::NonZeroU16) -> Self;
         pub fn with_tracking_id(self, tracking_id: PatchTrackingId) -> Self;
-        pub fn with_tracking_retention_seconds(self, retention_seconds: std::num::NonZeroU32) -> Self;
+        pub fn with_tracking_retention(self, retention: std::time::Duration) -> Self;
     }
     #[cfg(feature = "control_plane")]
     #[derive(Clone, Default)]
