@@ -332,7 +332,7 @@ pub mod clients {
         pub fn len(&self) -> usize;
         pub fn operation_result(&self, index: usize) -> Option<DistributedTransactionOperationResult<'_>>;
         pub fn request_charge(&self) -> Option<f64>;
-        pub fn retry_after_ms(&self) -> Option<u64>;
+        pub fn retry_after(&self) -> Option<std::time::Duration>;
         pub fn status(&self) -> crate::CosmosStatus;
     }
     #[cfg(feature = "preview_dtx")]
@@ -1208,6 +1208,8 @@ pub mod models {
     impl CosmosStatus {
         const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: CosmosStatus = _;
         const CLIENT_BAD_REQUEST: CosmosStatus = _;
+        const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
+        const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: CosmosStatus = _;
         const CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE: CosmosStatus = _;
         const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: CosmosStatus = _;
         const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: CosmosStatus = _;
@@ -1226,7 +1228,7 @@ pub mod models {
         const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: CosmosStatus = _;
         const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: CosmosStatus = _;
         const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = _;
-        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
+        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
         const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: CosmosStatus = _;
         const CLIENT_DRIVER_NOT_INITIALIZED: CosmosStatus = _;
         const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: CosmosStatus = _;
@@ -1240,8 +1242,8 @@ pub mod models {
         const CLIENT_INVALID_URL: CosmosStatus = _;
         const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = _;
         const CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH: CosmosStatus = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus = _;
+        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
+        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
         const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: CosmosStatus = _;
         const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: CosmosStatus = _;
         const CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE: CosmosStatus = _;
@@ -1778,8 +1780,8 @@ pub mod models {
         pub fn request_charge(&self) -> Option<&RequestCharge>;
         pub fn resource_quota(&self) -> Option<&str>;
         pub fn resource_usage(&self) -> Option<&str>;
-        pub fn retry_after_ms(&self) -> Option<u64>;
-        pub fn server_duration_ms(&self) -> Option<f64>;
+        pub fn retry_after(&self) -> Option<std::time::Duration>;
+        pub fn server_duration(&self) -> Option<std::time::Duration>;
         pub fn session_token(&self) -> Option<&SessionToken>;
         pub fn substatus(&self) -> Option<&SubStatusCode>;
         pub fn transport_request_id(&self) -> Option<u32>;
@@ -1826,11 +1828,11 @@ pub mod models {
     }
     #[cfg(feature = "control_plane")]
     impl ThroughputProperties {
-        pub fn autoscale(starting_maximum_throughput: usize, increment_percent: Option<usize>) -> ThroughputProperties;
-        pub fn autoscale_increment(&self) -> Option<usize>;
-        pub fn autoscale_maximum(&self) -> Option<usize>;
-        pub fn manual(throughput: usize) -> ThroughputProperties;
-        pub fn throughput(&self) -> Option<usize>;
+        pub fn autoscale(starting_maximum_throughput: u64, increment_percent: Option<u32>) -> ThroughputProperties;
+        pub fn autoscale_increment(&self) -> Option<u32>;
+        pub fn autoscale_maximum(&self) -> Option<u64>;
+        pub fn manual(throughput: u64) -> ThroughputProperties;
+        pub fn throughput(&self) -> Option<u64>;
     }
     #[derive(Clone, Debug)]
     pub struct TransactionalBatch {
@@ -1855,7 +1857,7 @@ pub mod models {
         pub fn is_success(&self) -> bool;
         pub fn request_charge(&self) -> Option<f64>;
         pub fn resource_body(&self) -> Option<&serde_json::value::RawValue>;
-        pub fn retry_after_milliseconds(&self) -> Option<u64>;
+        pub fn retry_after(&self) -> Option<std::time::Duration>;
         pub fn status_code(&self) -> u16;
         pub fn substatus_code(&self) -> Option<u32>;
     }
@@ -2456,7 +2458,6 @@ pub mod options {
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct OperationOptions {
-        pub query_plan_mode: Option<crate::options::QueryPlanMode>,
         pub patch_strategy: Option<crate::options::PatchStrategy>,
         pub read_consistency_strategy: Option<crate::options::ReadConsistencyStrategy>,
         pub excluded_regions: Option<crate::options::ExcludedRegions>,
@@ -2500,7 +2501,6 @@ pub mod options {
         pub fn with_max_failover_retry_count(self, value: u32) -> Self;
         pub fn with_max_session_retry_count(self, value: u32) -> Self;
         pub fn with_patch_strategy(self, value: PatchStrategy) -> Self;
-        pub fn with_query_plan_mode(self, value: QueryPlanMode) -> Self;
         pub fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
         pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
@@ -2526,7 +2526,6 @@ pub mod options {
         pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
-        pub fn query_plan_mode(&self) -> Option<&QueryPlanMode>;
         pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
         pub fn session_capturing_disabled(&self) -> Option<&bool>;
         pub fn throttling_retry_options(&self) -> ThrottlingRetryOptionsView<'_>;
@@ -2580,7 +2579,7 @@ pub mod options {
         pub max_attempts: Option<std::num::NonZeroU8>,
         pub tracking_id: Option<crate::models::PatchTrackingId>,
         pub tracking_capacity: Option<std::num::NonZeroU16>,
-        pub tracking_retention_seconds: Option<std::num::NonZeroU32>,
+        pub tracking_retention: Option<std::time::Duration>,
     }
     #[cfg(feature = "preview_patch")]
     impl PatchItemOptions {
@@ -2591,7 +2590,7 @@ pub mod options {
         pub fn with_strategy(self, strategy: PatchStrategy) -> Self;
         pub fn with_tracking_capacity(self, capacity: std::num::NonZeroU16) -> Self;
         pub fn with_tracking_id(self, tracking_id: PatchTrackingId) -> Self;
-        pub fn with_tracking_retention_seconds(self, retention_seconds: std::num::NonZeroU32) -> Self;
+        pub fn with_tracking_retention(self, retention: std::time::Duration) -> Self;
     }
     #[cfg(feature = "control_plane")]
     #[derive(Clone, Default)]
@@ -2613,9 +2612,11 @@ pub mod options {
     impl QueryDatabasesOptions {
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
     }
-    #[derive(Clone, Default)]
+    #[derive(Clone)]
     #[non_exhaustive]
     pub struct QueryOptions {
+        pub max_buffered_query_window: u64,
+        pub query_plan_mode: crate::options::QueryPlanMode,
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
         pub feed: FeedOptions,
         pub session_token: Option<azure_data_cosmos_driver::models::SessionToken>,
@@ -2625,11 +2626,16 @@ pub mod options {
     impl QueryOptions {
         pub fn with_continuation_token(self, continuation_token: ContinuationToken) -> Self;
         pub fn with_feed_options(self, feed: FeedOptions) -> Self;
+        pub fn with_max_buffered_query_window(self, max_buffered_query_window: u64) -> Self;
         pub fn with_max_item_count(self, max_item_count: MaxItemCountHint) -> Self;
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
         pub fn with_populate_index_metrics(self, enable: bool) -> Self;
         pub fn with_populate_query_metrics(self, enable: bool) -> Self;
+        pub fn with_query_plan_mode(self, mode: QueryPlanMode) -> Self;
         pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
+    }
+    impl Default for QueryOptions {
+        fn default() -> Self;
     }
     #[derive(Clone, Default)]
     #[non_exhaustive]

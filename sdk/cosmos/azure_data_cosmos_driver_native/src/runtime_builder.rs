@@ -14,7 +14,7 @@
 //! `register_throughput_control_group` / `with_fault_injection_rules`) is
 //! deliberately not surfaced yet — each requires its own flat options struct.
 //!
-use std::ffi::{c_char, CStr};
+use crate::string::{optional_text, CosmosStringView};
 use std::time::Duration;
 
 use azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder;
@@ -37,21 +37,6 @@ const CPU_REFRESH_INTERVAL_MAX_MS: u64 = 60_000;
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
-/// Converts a NUL-terminated UTF-8 string from C into a Rust `&str` view.
-///
-/// Returns `Err(INVALID_ARGUMENT)` for NULL, `Err(INVALID_UTF8)` for
-/// non-UTF-8 input. The borrow lives for the duration of the FFI call.
-fn try_cstr_to_str<'a>(p: *const c_char) -> Result<&'a str, CosmosErrorCode> {
-    if p.is_null() {
-        return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
-    }
-    // SAFETY: `p` is non-NULL and the caller guarantees it points at a
-    // NUL-terminated C string (FFI contract — documented on every setter).
-    let cstr = unsafe { CStr::from_ptr(p) };
-    cstr.to_str()
-        .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidUtf8)
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Runtime build result mapping
@@ -142,7 +127,7 @@ pub(crate) enum RuntimeBuildError {
 ///
 /// - `workload_id`: `0` = unset (valid range otherwise `1`–`50`).
 /// - `correlation_id` / `user_agent_suffix` / `wrapping_sdk_identifier`:
-///   NULL = unset (otherwise a NUL-terminated UTF-8 string).
+///   NULL/0 = unset; non-NULL/0 = explicit empty, per [`CosmosStringView`].
 /// - `cpu_refresh_interval_ms`: `0` = unset (valid range otherwise
 ///   `1000`–`60000`).
 ///
@@ -153,14 +138,13 @@ pub(crate) enum RuntimeBuildError {
 pub struct CosmosRuntimeOptions {
     /// Workload identifier (valid range `1`–`50`). `0` = unset.
     pub workload_id: u8,
-    /// Correlation id for client-side metrics (NUL-terminated UTF-8), or NULL
-    /// = unset.
-    pub correlation_id: *const c_char,
-    /// User-agent suffix (NUL-terminated UTF-8), or NULL = unset.
-    pub user_agent_suffix: *const c_char,
+    /// Correlation id for client-side metrics (counted UTF-8), or NULL/0 = unset.
+    pub correlation_id: CosmosStringView,
+    /// User-agent suffix (counted UTF-8), or NULL/0 = unset.
+    pub user_agent_suffix: CosmosStringView,
     /// Wrapping-SDK identifier prepended to the User-Agent header
-    /// (NUL-terminated UTF-8), or NULL = unset.
-    pub wrapping_sdk_identifier: *const c_char,
+    /// (counted UTF-8), or NULL/0 = unset.
+    pub wrapping_sdk_identifier: CosmosStringView,
     /// CPU/memory monitoring refresh interval in milliseconds (valid range
     /// `1000`–`60000`). `0` = unset.
     pub cpu_refresh_interval_ms: u64,
@@ -173,8 +157,8 @@ impl CosmosRuntimeOptions {
     ///
     /// # Safety
     ///
-    /// Each non-NULL string pointer must reference a valid NUL-terminated UTF-8
-    /// string for the duration of the call.
+    /// Each string view must satisfy [`CosmosStringView`]'s allocation contract.
+    /// Embedded NUL is rejected before field-specific parsing.
     unsafe fn apply_to(
         &self,
         mut builder: CosmosDriverRuntimeBuilder,
@@ -185,22 +169,37 @@ impl CosmosRuntimeOptions {
             };
             builder = builder.with_workload_id(value);
         }
-        if !self.correlation_id.is_null() {
-            let value = try_cstr_to_str(self.correlation_id)?;
-            let Some(parsed) = CorrelationId::try_new(value) else {
+        // SAFETY: all views are readable for this call per the caller contract.
+        if let Some(value) = unsafe {
+            optional_text(
+                self.correlation_id,
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+            )
+        }? {
+            let Some(parsed) = CorrelationId::try_new(&value) else {
                 return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
             };
             builder = builder.with_correlation_id(parsed);
         }
-        if !self.user_agent_suffix.is_null() {
-            let value = try_cstr_to_str(self.user_agent_suffix)?;
-            let Some(parsed) = UserAgentSuffix::try_new(value) else {
+        // SAFETY: all views are readable for this call per the caller contract.
+        if let Some(value) = unsafe {
+            optional_text(
+                self.user_agent_suffix,
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+            )
+        }? {
+            let Some(parsed) = UserAgentSuffix::try_new(&value) else {
                 return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
             };
             builder = builder.with_user_agent_suffix(parsed);
         }
-        if !self.wrapping_sdk_identifier.is_null() {
-            let value = try_cstr_to_str(self.wrapping_sdk_identifier)?;
+        // SAFETY: all views are readable for this call per the caller contract.
+        if let Some(value) = unsafe {
+            optional_text(
+                self.wrapping_sdk_identifier,
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+            )
+        }? {
             builder = builder.with_wrapping_sdk_identifier(value);
         }
         if self.cpu_refresh_interval_ms != 0 {
@@ -222,9 +221,9 @@ impl CosmosRuntimeOptions {
 pub extern "C" fn cosmos_runtime_options_default() -> CosmosRuntimeOptions {
     CosmosRuntimeOptions {
         workload_id: 0,
-        correlation_id: std::ptr::null(),
-        user_agent_suffix: std::ptr::null(),
-        wrapping_sdk_identifier: std::ptr::null(),
+        correlation_id: CosmosStringView::default(),
+        user_agent_suffix: CosmosStringView::default(),
+        wrapping_sdk_identifier: CosmosStringView::default(),
         cpu_refresh_interval_ms: 0,
     }
 }
@@ -271,8 +270,7 @@ pub extern "C" fn cosmos_runtime_build(
     let mut builder = CosmosDriverRuntimeBuilder::new();
     if !options.is_null() {
         // SAFETY: caller guarantees `options` points at a valid
-        // `CosmosRuntimeOptions` whose string fields are valid NUL-terminated
-        // UTF-8 for the duration of the call.
+        // `CosmosRuntimeOptions` whose counted views remain readable throughout the call.
         builder = match unsafe { (*options).apply_to(builder) } {
             Ok(b) => b,
             Err(code) => return code.as_status_code(),
@@ -288,6 +286,34 @@ pub extern "C" fn cosmos_runtime_build(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::string::view;
+
+    #[test]
+    fn runtime_text_rejects_nul_before_normalization() {
+        let setters: [fn(&mut CosmosRuntimeOptions, CosmosStringView); 3] = [
+            |o, s| o.correlation_id = s,
+            |o, s| o.user_agent_suffix = s,
+            |o, s| o.wrapping_sdk_identifier = s,
+        ];
+        for set in setters {
+            for (bytes, expected) in [
+                (
+                    &b"valid\0junk"[..],
+                    CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
+                ),
+                (
+                    &b"valid\0\xff"[..],
+                    CosmosErrorCode::CosmosErrorCodeInvalidUtf8,
+                ),
+            ] {
+                let mut options = cosmos_runtime_options_default();
+                set(&mut options, view(bytes));
+                // SAFETY: views reference live literals for the duration of the call.
+                let result = unsafe { options.apply_to(CosmosDriverRuntimeBuilder::new()) };
+                assert!(matches!(result, Err(error) if error == expected));
+            }
+        }
+    }
     use std::ffi::CString;
     use std::ptr;
 
@@ -301,9 +327,9 @@ mod tests {
     fn runtime_options_default_is_all_unset() {
         let o = cosmos_runtime_options_default();
         assert_eq!(o.workload_id, 0);
-        assert!(o.correlation_id.is_null());
-        assert!(o.user_agent_suffix.is_null());
-        assert!(o.wrapping_sdk_identifier.is_null());
+        assert!(o.correlation_id.is_unset());
+        assert!(o.user_agent_suffix.is_unset());
+        assert!(o.wrapping_sdk_identifier.is_unset());
         assert_eq!(o.cpu_refresh_interval_ms, 0);
     }
 
@@ -335,7 +361,7 @@ mod tests {
         // Invalid correlation id (contains a space).
         let bad = ok_cstr("has space");
         let mut opts = cosmos_runtime_options_default();
-        opts.correlation_id = bad.as_ptr();
+        opts.correlation_id = view(bad.as_bytes());
         assert_eq!(
             cosmos_runtime_build(&opts, &mut runtime, &mut err),
             CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
@@ -375,7 +401,7 @@ mod tests {
         let ua = ok_cstr("driver-native-flat-tests");
         let mut opts = cosmos_runtime_options_default();
         opts.workload_id = 7;
-        opts.user_agent_suffix = ua.as_ptr();
+        opts.user_agent_suffix = view(ua.as_bytes());
         opts.cpu_refresh_interval_ms = 5_000;
 
         let mut runtime: *mut RuntimeContext = ptr::null_mut();

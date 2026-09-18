@@ -636,6 +636,8 @@ pub mod error {
     impl CosmosStatus {
         const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: CosmosStatus = _;
         const CLIENT_BAD_REQUEST: CosmosStatus = _;
+        const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
+        const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: CosmosStatus = _;
         const CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE: CosmosStatus = _;
         const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: CosmosStatus = _;
         const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: CosmosStatus = _;
@@ -654,7 +656,7 @@ pub mod error {
         const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: CosmosStatus = _;
         const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: CosmosStatus = _;
         const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = _;
-        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
+        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
         const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: CosmosStatus = _;
         const CLIENT_DRIVER_NOT_INITIALIZED: CosmosStatus = _;
         const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: CosmosStatus = _;
@@ -668,8 +670,8 @@ pub mod error {
         const CLIENT_INVALID_URL: CosmosStatus = _;
         const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = _;
         const CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH: CosmosStatus = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus = _;
+        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
+        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
         const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: CosmosStatus = _;
         const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: CosmosStatus = _;
         const CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE: CosmosStatus = _;
@@ -792,6 +794,8 @@ pub mod error {
         const CANNOT_ACQUIRE_PKRANGE_LOCK: SubStatusCode = _;
         const CHANNEL_CLOSED: SubStatusCode = _;
         const CHECKPOINT_QUEUE_DEPTH_BACKPRESSURE: SubStatusCode = _;
+        const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: SubStatusCode = _;
+        const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: SubStatusCode = _;
         const CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE: SubStatusCode = _;
         const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: SubStatusCode = _;
         const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: SubStatusCode = _;
@@ -811,7 +815,7 @@ pub mod error {
         const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: SubStatusCode = _;
         const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: SubStatusCode = _;
         const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: SubStatusCode = _;
-        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode = _;
+        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
         const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: SubStatusCode = _;
         const CLIENT_DRIVER_NOT_INITIALIZED: SubStatusCode = _;
         const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: SubStatusCode = _;
@@ -838,8 +842,8 @@ pub mod error {
         const CLIENT_INVALID_URL: SubStatusCode = _;
         const CLIENT_MIXED_NAME_RID_ADDRESSING: SubStatusCode = _;
         const CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH: SubStatusCode = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: SubStatusCode = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: SubStatusCode = _;
+        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: SubStatusCode = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
+        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: SubStatusCode = Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
         const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: SubStatusCode = _;
         const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: SubStatusCode = _;
         const CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE: SubStatusCode = _;
@@ -1255,10 +1259,10 @@ pub mod in_memory_emulator {
         pub fn new() -> Self;
         pub fn partition_count(&self) -> u32;
         pub fn partition_key_range_page_size(&self) -> Option<u32>;
-        pub fn provisioned_throughput_ru(&self) -> Option<u32>;
+        pub fn provisioned_throughput_ru(&self) -> Option<u64>;
         pub fn with_partition_count(self, count: u32) -> Self;
         pub fn with_partition_key_range_page_size(self, page_size: u32) -> Self;
-        pub fn with_throughput(self, ru_per_second: u32) -> Self;
+        pub fn with_throughput(self, ru_per_second: u64) -> Self;
     }
     impl Default for ContainerConfig {
         fn default() -> Self;
@@ -1550,7 +1554,7 @@ pub mod models {
     #[non_exhaustive]
     #[serde(rename_all = "camelCase")]
     pub struct AutoscaleThroughputPolicy {
-        pub increment_percent: usize,
+        pub increment_percent: u32,
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[non_exhaustive]
@@ -1681,7 +1685,7 @@ pub mod models {
         pub activity_id: Option<crate::models::ActivityId>,
         pub session_token: Option<crate::models::SessionToken>,
         pub precondition: Option<crate::models::Precondition>,
-        pub offer_throughput: Option<usize>,
+        pub offer_throughput: Option<u64>,
         pub offer_autopilot_settings: Option<OfferAutoscaleSettings>,
         pub max_item_count: Option<MaxItemCountHint>,
         pub incremental_feed: bool,
@@ -1796,6 +1800,8 @@ pub mod models {
     impl CosmosStatus {
         const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: CosmosStatus = _;
         const CLIENT_BAD_REQUEST: CosmosStatus = _;
+        const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
+        const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: CosmosStatus = _;
         const CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE: CosmosStatus = _;
         const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: CosmosStatus = _;
         const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: CosmosStatus = _;
@@ -1814,7 +1820,7 @@ pub mod models {
         const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: CosmosStatus = _;
         const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: CosmosStatus = _;
         const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = _;
-        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
+        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
         const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: CosmosStatus = _;
         const CLIENT_DRIVER_NOT_INITIALIZED: CosmosStatus = _;
         const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: CosmosStatus = _;
@@ -1828,8 +1834,8 @@ pub mod models {
         const CLIENT_INVALID_URL: CosmosStatus = _;
         const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = _;
         const CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH: CosmosStatus = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus = _;
+        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
+        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
         const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: CosmosStatus = _;
         const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: CosmosStatus = _;
         const CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE: CosmosStatus = _;
@@ -2075,13 +2081,13 @@ pub mod models {
     #[non_exhaustive]
     #[serde(rename_all = "camelCase")]
     pub struct OfferAutoscaleSettings {
-        pub max_throughput: usize,
+        pub max_throughput: u64,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
     }
     impl OfferAutoscaleSettings {
-        pub fn new(max_throughput: usize) -> Self;
-        pub fn with_increment_percent(self, increment_percent: usize) -> Self;
+        pub fn new(max_throughput: u64) -> Self;
+        pub fn with_increment_percent(self, increment_percent: u32) -> Self;
     }
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     #[non_exhaustive]
@@ -2353,6 +2359,8 @@ pub mod models {
         const CANNOT_ACQUIRE_PKRANGE_LOCK: SubStatusCode = _;
         const CHANNEL_CLOSED: SubStatusCode = _;
         const CHECKPOINT_QUEUE_DEPTH_BACKPRESSURE: SubStatusCode = _;
+        const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: SubStatusCode = _;
+        const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: SubStatusCode = _;
         const CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE: SubStatusCode = _;
         const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: SubStatusCode = _;
         const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: SubStatusCode = _;
@@ -2372,7 +2380,7 @@ pub mod models {
         const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: SubStatusCode = _;
         const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: SubStatusCode = _;
         const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: SubStatusCode = _;
-        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode = _;
+        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
         const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: SubStatusCode = _;
         const CLIENT_DRIVER_NOT_INITIALIZED: SubStatusCode = _;
         const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: SubStatusCode = _;
@@ -2399,8 +2407,8 @@ pub mod models {
         const CLIENT_INVALID_URL: SubStatusCode = _;
         const CLIENT_MIXED_NAME_RID_ADDRESSING: SubStatusCode = _;
         const CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH: SubStatusCode = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: SubStatusCode = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: SubStatusCode = _;
+        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: SubStatusCode = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
+        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: SubStatusCode = Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
         const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: SubStatusCode = _;
         const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: SubStatusCode = _;
         const CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE: SubStatusCode = _;
@@ -3261,7 +3269,6 @@ pub mod options {
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct OperationOptions {
-        pub query_plan_mode: Option<crate::options::QueryPlanMode>,
         pub patch_strategy: Option<crate::options::PatchStrategy>,
         pub read_consistency_strategy: Option<crate::options::ReadConsistencyStrategy>,
         pub excluded_regions: Option<crate::options::ExcludedRegions>,
@@ -3302,7 +3309,6 @@ pub mod options {
         pub fn with_max_failover_retry_count(self, value: u32) -> Self;
         pub fn with_max_session_retry_count(self, value: u32) -> Self;
         pub fn with_patch_strategy(self, value: PatchStrategy) -> Self;
-        pub fn with_query_plan_mode(self, value: QueryPlanMode) -> Self;
         pub fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
         pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
@@ -3326,7 +3332,6 @@ pub mod options {
         pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
-        pub fn query_plan_mode(&self) -> Option<&QueryPlanMode>;
         pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
         pub fn session_capturing_disabled(&self) -> Option<&bool>;
         pub fn throttling_retry_options(&self) -> ThrottlingRetryOptionsView<'_>;
@@ -3367,10 +3372,14 @@ pub mod options {
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct PlanOptions {
+        pub max_buffered_query_window: u64,
+        pub query_plan_mode: crate::options::QueryPlanMode,
         pub max_fan_out: u32,
     }
     impl PlanOptions {
+        pub fn with_max_buffered_query_window(self, max_buffered_query_window: u64) -> Self;
         pub fn with_max_fan_out(self, max_fan_out: u32) -> Self;
+        pub fn with_query_plan_mode(self, mode: QueryPlanMode) -> Self;
     }
     impl Default for PlanOptions {
         fn default() -> Self;
@@ -3747,6 +3756,7 @@ pub mod options {
         #[default]
         Rustls,
     }
+    pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
     pub const DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS: usize = 32;
     pub const DEFAULT_MAX_FAN_OUT: u32 = 100;
 }

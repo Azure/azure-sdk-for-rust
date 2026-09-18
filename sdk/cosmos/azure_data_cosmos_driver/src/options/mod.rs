@@ -56,7 +56,7 @@ pub use operation_options::{
 };
 pub use partition_failover::{PartitionFailoverOptions, PartitionFailoverOptionsBuilder};
 pub use patch_strategy::PatchStrategy;
-pub use plan_options::{PlanOptions, DEFAULT_MAX_FAN_OUT};
+pub use plan_options::{PlanOptions, DEFAULT_MAX_BUFFERED_QUERY_WINDOW, DEFAULT_MAX_FAN_OUT};
 pub use policies::{
     ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
     ServerCertificateValidation, TlsBackend,

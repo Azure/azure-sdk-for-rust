@@ -6,7 +6,9 @@
 mod driver_backup_endpoints;
 mod driver_hedging_kill_switch;
 mod driver_item_operations;
+mod driver_partition_key_range_cache;
 mod driver_patch;
+mod driver_vnext_binary_encoding_canary;
 mod hosted_emulator_ci;
 
 mod driver_account_metadata_failover;
