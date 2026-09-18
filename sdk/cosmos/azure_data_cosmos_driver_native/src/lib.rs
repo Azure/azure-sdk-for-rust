@@ -24,6 +24,7 @@ pub mod completion;
 pub mod container_ref;
 pub mod credential;
 pub mod database_ref;
+pub mod diagnostics;
 pub mod driver;
 pub mod driver_options;
 pub mod error;
