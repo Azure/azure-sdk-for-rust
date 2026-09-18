@@ -1048,6 +1048,16 @@ impl TestRunContext {
             .await
     }
 
+    /// Creates a key-authenticated management client with an independent runtime.
+    ///
+    /// Use this when a test must mutate service state without advancing the
+    /// primary client's metadata caches.
+    pub async fn fresh_management_client(
+        &self,
+    ) -> Result<CosmosClient, azure_data_cosmos::CosmosError> {
+        Self::create_client_with_preferred_region(HUB_REGION).await
+    }
+
     /// Gets the fault injection [`CosmosClient`], if configured.
     ///
     /// Returns `Some(&CosmosClient)` if `TestOptions::with_fault_injection_rules()` or
@@ -1277,7 +1287,7 @@ impl TestRunContext {
     /// Cosmos can return `404/1013 CollectionCreateInProgress` after a create
     /// request succeeds. Only that explicitly transient status is retried;
     /// authorization, routing, and all other errors fail immediately.
-    async fn wait_for_container_ready(
+    pub(crate) async fn wait_for_container_ready(
         db_client: &DatabaseClient,
         container_id: &str,
     ) -> azure_data_cosmos::Result<ContainerClient> {

@@ -3,6 +3,11 @@
 
 //! Topology provider adapter backed by the partition key range cache.
 
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
 use futures::future::BoxFuture;
 
 use crate::{
@@ -29,19 +34,36 @@ pub(crate) struct CachedTopologyProvider<'a, F> {
     cache: &'a PartitionKeyRangeCache,
     container: ContainerReference,
     fetch_pk_ranges: F,
+    fetch_errors: Arc<Mutex<HashMap<(String, String), crate::error::CosmosError>>>,
 }
 
 impl<'a, F> CachedTopologyProvider<'a, F> {
     /// Creates a topology provider backed by the partition key range cache.
+    #[cfg(test)]
     pub(crate) fn new(
         cache: &'a PartitionKeyRangeCache,
         container: ContainerReference,
         fetch_pk_ranges: F,
     ) -> Self {
+        Self::with_fetch_errors(
+            cache,
+            container,
+            fetch_pk_ranges,
+            Arc::new(Mutex::new(HashMap::new())),
+        )
+    }
+
+    pub(crate) fn with_fetch_errors(
+        cache: &'a PartitionKeyRangeCache,
+        container: ContainerReference,
+        fetch_pk_ranges: F,
+        fetch_errors: Arc<Mutex<HashMap<(String, String), crate::error::CosmosError>>>,
+    ) -> Self {
         Self {
             cache,
             container,
             fetch_pk_ranges,
+            fetch_errors,
         }
     }
 }
@@ -49,7 +71,7 @@ impl<'a, F> CachedTopologyProvider<'a, F> {
 impl<F, Fut> TopologyProvider for CachedTopologyProvider<'_, F>
 where
     F: Fn(ContainerReference, Option<String>) -> Fut + Send + Sync,
-    Fut: std::future::Future<Output = Option<PkRangeFetchResult>> + Send,
+    Fut: std::future::Future<Output = crate::error::Result<Option<PkRangeFetchResult>>> + Send,
 {
     fn resolve_ranges<'a>(
         &'a mut self,
@@ -58,19 +80,51 @@ where
     ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
         let force_refresh = matches!(refresh, PartitionRoutingRefresh::ForceRefresh);
         Box::pin(async move {
+            let fetch_pk_ranges = |container: ContainerReference, continuation: Option<String>| {
+                let container_key = fetch_error_key(&container);
+                let result = (self.fetch_pk_ranges)(container, continuation);
+                let fetch_errors = Arc::clone(&self.fetch_errors);
+                async move {
+                    match result.await {
+                        Ok(result) => {
+                            fetch_errors
+                                .lock()
+                                .expect("topology fetch error mutex poisoned")
+                                .remove(&container_key);
+                            result
+                        }
+                        Err(error) => {
+                            fetch_errors
+                                .lock()
+                                .expect("topology fetch error mutex poisoned")
+                                .insert(container_key, error);
+                            None
+                        }
+                    }
+                }
+            };
             let pk_ranges = self
                 .cache
                 .resolve_overlapping_ranges(
                     &self.container,
                     range.min_inclusive()..range.max_exclusive(),
                     force_refresh,
-                    &self.fetch_pk_ranges,
+                    fetch_pk_ranges,
                 )
                 .await;
 
             let pk_ranges = match pk_ranges {
                 Some(ranges) if !ranges.is_empty() => ranges,
                 _ => {
+                    if let Some(error) = self
+                        .fetch_errors
+                        .lock()
+                        .expect("topology fetch error mutex poisoned")
+                        .get(&fetch_error_key(&self.container))
+                        .cloned()
+                    {
+                        return Err(error);
+                    }
                     return Err(crate::error::CosmosError::builder()
                         .with_status(crate::error::CosmosStatus::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
                         .with_message("failed to resolve partition key ranges from topology cache")
@@ -89,6 +143,13 @@ where
                 .collect::<crate::error::Result<Vec<_>>>()
         })
     }
+}
+
+fn fetch_error_key(container: &ContainerReference) -> (String, String) {
+    (
+        container.account().endpoint().as_str().to_owned(),
+        container.base_path().to_owned(),
+    )
 }
 
 #[cfg(test)]
@@ -115,8 +176,8 @@ mod tests {
     async fn single_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
-        if continuation.is_some() {
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        Ok(if continuation.is_some() {
             Some(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
@@ -128,14 +189,14 @@ mod tests {
                 continuation: Some("etag-1".to_string()),
                 not_modified: false,
             })
-        }
+        })
     }
 
     async fn two_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
-        if continuation.is_some() {
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        Ok(if continuation.is_some() {
             Some(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
@@ -150,14 +211,14 @@ mod tests {
                 continuation: Some("etag-2".to_string()),
                 not_modified: false,
             })
-        }
+        })
     }
 
     async fn three_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
-        if continuation.is_some() {
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        Ok(if continuation.is_some() {
             Some(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
@@ -173,14 +234,31 @@ mod tests {
                 continuation: Some("etag-3".to_string()),
                 not_modified: false,
             })
-        }
+        })
     }
 
     async fn failing_fetch(
         _container: ContainerReference,
         _continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
-        None
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        Ok(None)
+    }
+
+    async fn typed_error_fetch(
+        _container: ContainerReference,
+        _continuation: Option<String>,
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        Err(collection_rid_mismatch_error())
+    }
+
+    fn collection_rid_mismatch_error() -> crate::error::CosmosError {
+        crate::error::CosmosError::builder()
+            .with_status(
+                crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                    .with_sub_status(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH.value()),
+            )
+            .with_message("container RID mismatch")
+            .build()
     }
 
     #[tokio::test]
@@ -306,5 +384,70 @@ mod tests {
             rendered.ends_with("failed to resolve partition key ranges from topology cache"),
             "unexpected: {rendered}"
         );
+    }
+
+    #[tokio::test]
+    async fn preserves_typed_fetch_error() {
+        let cache = PartitionKeyRangeCache::new();
+        let mut provider = CachedTopologyProvider::new(&cache, make_container(), typed_error_fetch);
+
+        let error = provider
+            .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::ForceRefresh)
+            .await
+            .expect_err("typed topology fetch errors must be preserved");
+
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+        assert_eq!(
+            error.status().sub_status(),
+            Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH)
+        );
+    }
+
+    #[tokio::test]
+    async fn coalesced_callers_preserve_typed_fetch_error() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container();
+        let fetch_errors = Arc::new(Mutex::new(HashMap::new()));
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let make_fetch = || {
+            let calls = Arc::clone(&calls);
+            move |_container: ContainerReference, _continuation: Option<String>| {
+                let calls = Arc::clone(&calls);
+                async move {
+                    calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    tokio::time::sleep(std::time::Duration::from_millis(25)).await;
+                    Err(collection_rid_mismatch_error())
+                }
+            }
+        };
+        let mut left = CachedTopologyProvider::with_fetch_errors(
+            &cache,
+            container.clone(),
+            make_fetch(),
+            Arc::clone(&fetch_errors),
+        );
+        let mut right = CachedTopologyProvider::with_fetch_errors(
+            &cache,
+            container,
+            make_fetch(),
+            fetch_errors,
+        );
+
+        let range = FeedRange::full();
+        let (left_result, right_result) = tokio::join!(
+            left.resolve_ranges(&range, PartitionRoutingRefresh::ForceRefresh),
+            right.resolve_ranges(&range, PartitionRoutingRefresh::ForceRefresh),
+        );
+
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+        for error in [left_result.unwrap_err(), right_result.unwrap_err()] {
+            assert_eq!(
+                error.status().sub_status(),
+                Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH)
+            );
+        }
     }
 }

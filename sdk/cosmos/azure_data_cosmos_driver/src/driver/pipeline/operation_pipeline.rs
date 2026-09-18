@@ -2394,7 +2394,7 @@ fn effective_partition_key_for_request(
     let partition_key_definition = container.partition_key_definition();
     if partition_key.values().len() > partition_key_definition.paths().len() {
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+            .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
             .with_message(
                 "Partition key supplies more components than the container's \
                  partition-key definition declares",
@@ -4782,9 +4782,9 @@ mod tests {
     }
 
     /// Supplying more partition-key components than the container's single-path
-    /// definition declares must surface as a `BadRequest` from the EPK
-    /// precomputation, never silently hash the extras into a broken EPK. This
-    /// validation runs in the operation pipeline (before the transport
+    /// definition declares must surface as a typed client `BadRequest` from the
+    /// EPK precomputation, never silently hash the extras into a broken EPK.
+    /// This validation runs in the operation pipeline (before the transport
     /// pipeline) so wire layers receive a ready-to-encode EPK.
     #[test]
     fn effective_partition_key_rejects_too_many_components() {
@@ -4799,8 +4799,12 @@ mod tests {
             .expect_err("too many components must error");
 
         assert_eq!(
-            error.status(),
-            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+            error.status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+        assert_eq!(
+            error.status().sub_status(),
+            Some(crate::models::SubStatusCode::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
         );
     }
 
