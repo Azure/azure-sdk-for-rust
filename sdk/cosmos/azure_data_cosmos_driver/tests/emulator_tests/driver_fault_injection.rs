@@ -1136,8 +1136,13 @@ pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
             .build(),
         );
 
-        // Limit only the injected read; setup must retain normal metadata retries.
-        // A generous wait budget leaves retry count as the sole limiter.
+        // Pin the throttle-retry budget on the ReadItem operation under test.
+        // Setup and account-metadata operations retain their normal retry
+        // budgets so transient service-side metadata throttling cannot mask the
+        // fault-injection assertion. A generous cumulative-wait budget keeps
+        // the read's attempt count as the sole limiter for these small retry
+        // counts. No end-to-end latency policy is set, so the transport request
+        // carries no deadline and the forced-final retry is immediate.
         let operation_options = OperationOptionsBuilder::new()
             .with_throttling_retry_options(
                 ThrottlingRetryOptionsBuilder::new()
