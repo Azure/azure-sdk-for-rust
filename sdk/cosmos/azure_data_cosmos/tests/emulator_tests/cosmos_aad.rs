@@ -6,18 +6,15 @@
 //! Integration tests exercising Entra ID (AAD) authentication against Azure
 //! Cosmos DB.
 //!
-//! These tests use a **dual-client** pattern: a key-auth client (provided by the
-//! framework) performs database/container management, while a separate
-//! AAD-authenticated client performs all data-plane item operations. This
-//! mirrors the data-plane RBAC role provisioned in `test-resources.bicep`, which
-//! grants item/metadata data actions but **not** management-plane permissions.
+//! Live tests use ARM for database/container lifecycle and AAD for all Cosmos
+//! data-plane operations. A second AAD client validates the explicit credential
+//! path independently from the framework client.
 //!
 //! Because these tests need AAD data-plane access, they gate on the
 //! `cosmos_aad_supported` cfg (set by the local emulator setup when started
 //! with `/enableaadauthentication`, and by bicep-provisioned live accounts
-//! that include the Cosmos data-plane role assignment). Fixed self-owned live
-//! accounts without that role assignment do not set this cfg, so these tests
-//! are skipped on those legs.
+//! that include the Cosmos data-plane role assignment). Fixed live accounts
+//! without that assignment do not set this cfg, so these tests are skipped.
 
 use super::framework;
 
@@ -43,10 +40,9 @@ struct AadTestItem {
 
 /// Drives a full item CRUD round-trip through an AAD-authenticated client.
 ///
-/// Setup (database + container) and teardown run through the framework's
-/// key-auth client; only the item operations use the AAD client. On the
-/// emulator we additionally assert the bespoke fake-JWT credential was actually
-/// invoked for the Cosmos scope, guarding against silently exercising key auth.
+/// Live setup and teardown use the framework's ARM client; item operations use
+/// the AAD data-plane client. On the emulator we additionally assert the fake
+/// JWT credential was invoked for the Cosmos scope.
 #[tokio::test]
 #[cfg_attr(
     any(not(cosmos_aad_supported), test_category = "emulator_inmemory"),
@@ -55,7 +51,6 @@ struct AadTestItem {
 pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
     TestClient::run_with_unique_db(
         async |run_context: &TestRunContext, db_client| {
-            // Key client creates the container (management-plane operation).
             let container_id = format!("aad-container-{}", Uuid::new_v4());
             run_context
                 .create_container(
@@ -73,14 +68,12 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
                 .await?;
 
             // Metadata (5301) and name-based data (5302) authorize through
-            // separate RBAC paths. `run_context.create_container` above only
-            // warms the framework's key-auth client; this test's own
-            // freshly-built AAD client has never issued a data-plane
-            // request against this container, so its first item operation
-            // can still race and return
+            // separate RBAC paths. This freshly-built AAD client has not issued
+            // a data-plane request against the container, so its first item
+            // operation can still race and return
             // `403/5302 RbacUnauthorizedNameBasedDataRequest`. Probe this
             // client's data path before exercising real assertions.
-            probe_data_plane_ready("aad client", &aad_container).await?;
+            probe_data_plane_ready("aad client", &aad_container, 1).await?;
 
             let unique = Uuid::new_v4().to_string();
             let pk = format!("pk-{unique}");

@@ -18,9 +18,9 @@ use std::error::Error;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::clients::{ContainerClient, DatabaseClient};
 use azure_data_cosmos::feed::FeedScope;
-use azure_data_cosmos::models::{
-    ContainerProperties, PartitionKeyKind, PatchInstructions, PatchOperation,
-};
+use azure_data_cosmos::models::{ContainerProperties, PartitionKeyKind};
+#[cfg(feature = "preview_patch")]
+use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
 use azure_data_cosmos::{PartitionKey, Query, SubStatusCode, TransactionalBatch};
 use framework::{TestClient, TestOptions, TestRunContext};
 use futures::{StreamExt, TryStreamExt};

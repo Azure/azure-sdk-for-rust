@@ -18,6 +18,9 @@ param defaultConsistencyLevel string = 'Session'
 @description('Enable multiple regions, default value is false')
 param enableMultipleRegions bool = false
 
+@description('Disable account-key authentication so tests must use Microsoft Entra ID')
+param disableLocalAuth bool = false
+
 @description('Enable the partition merge preview on the Cosmos DB account')
 param enablePartitionMerge bool = false
 
@@ -83,6 +86,7 @@ resource cosmosAccount 'Microsoft.DocumentDB/databaseAccounts@2026-03-15' = {
     enableMultipleWriteLocations: enableMultipleWriteLocations
     isVirtualNetworkFilterEnabled: false
     disableKeyBasedMetadataWriteAccess: false
+    disableLocalAuth: disableLocalAuth
     enableFreeTier: false
     enableAnalyticalStorage: false
     enablePartitionMerge: enablePartitionMerge
@@ -143,7 +147,7 @@ resource accountName_roleAssignmentId 'Microsoft.DocumentDB/databaseAccounts/sql
 
 output COSMOS_RUSTFLAGS string = '--cfg=test_category="${testCategory}" --cfg=cosmos_aad_supported'
 output DATABASE_NAME string = databaseName
-output AZURE_COSMOS_CONNECTION_STRING string = 'AccountEndpoint=${reference(resourceId, apiVersion).documentEndpoint};AccountKey=${listKeys(resourceId, apiVersion).primaryMasterKey};'
+output AZURE_COSMOS_CONNECTION_STRING string = disableLocalAuth ? '' : 'AccountEndpoint=${reference(resourceId, apiVersion).documentEndpoint};AccountKey=${listKeys(resourceId, apiVersion).primaryMasterKey};'
 output ACCOUNT_HOST string = reference(resourceId, apiVersion).documentEndpoint
 output COSMOS_ACCOUNT_NAME string = cosmosAccount.name
 output AZURE_COSMOS_DEFAULT_CONSISTENCY string = defaultConsistencyLevel
