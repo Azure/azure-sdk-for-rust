@@ -282,6 +282,42 @@ impl Drop for EventReceiver {
     }
 }
 
+/// Builds an `EventReceiver` over a real `RecoverableConnection` whose
+/// next receiver attach fails with `attach_error`. No network activity
+/// happens: the injected error stops `ensure_receiver` before it opens
+/// a connection. It sits outside `mod tests` because the event processor
+/// tests need it too.
+#[cfg(test)]
+pub(crate) fn receiver_with_failing_attach(
+    partition_id: &str,
+    attach_error: AmqpError,
+) -> EventReceiver {
+    let source_url = Url::parse(&format!(
+        "amqps://example.servicebus.windows.net/eh/Partitions/{partition_id}"
+    ))
+    .unwrap();
+    let connection = RecoverableConnection::new(
+        Url::parse("amqps://example.servicebus.windows.net").unwrap(),
+        None,
+        None,
+        Default::default(),
+        Arc::new(azure_core_test::credentials::MockCredential),
+        Default::default(),
+        None,
+    );
+    connection.force_attach_error(attach_error).unwrap();
+    EventReceiver::new(
+        connection,
+        AmqpReceiverOptions::default(),
+        AmqpSource::builder()
+            .with_address(source_url.to_string())
+            .build(),
+        source_url,
+        partition_id.to_string(),
+        None,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -376,33 +412,6 @@ mod tests {
         );
     }
 
-    /// Builds an `EventReceiver` over a real `RecoverableConnection` whose
-    /// next receiver attach fails with `attach_error`. No network activity
-    /// happens: the injected error stops `ensure_receiver` before it opens
-    /// a connection.
-    fn receiver_with_failing_attach(attach_error: AmqpError) -> EventReceiver {
-        let connection = RecoverableConnection::new(
-            Url::parse("amqps://example.servicebus.windows.net").unwrap(),
-            None,
-            None,
-            Default::default(),
-            Arc::new(azure_core_test::credentials::MockCredential),
-            Default::default(),
-            None,
-        );
-        connection.force_attach_error(attach_error).unwrap();
-        EventReceiver::new(
-            connection,
-            AmqpReceiverOptions::default(),
-            AmqpSource::builder()
-                .with_address(source_url().to_string())
-                .build(),
-            source_url(),
-            "0".to_string(),
-            None,
-        )
-    }
-
     // Drives the real stream. The function-level tests above prove what
     // `translate_attach_error` does when it is called; only this test proves
     // that `stream_events` calls it on the `get_receiver` failure path. If
@@ -412,7 +421,7 @@ mod tests {
     async fn stream_events_maps_stolen_attach_to_consumer_disconnected() {
         use futures::StreamExt;
 
-        let receiver = receiver_with_failing_attach(stolen());
+        let receiver = receiver_with_failing_attach("0", stolen());
         let mut stream = std::pin::pin!(receiver.stream_events());
         let error = stream
             .next()
@@ -432,7 +441,7 @@ mod tests {
     async fn stream_events_passes_other_attach_errors_through() {
         use futures::StreamExt;
 
-        let receiver = receiver_with_failing_attach(AmqpError::with_message("attach failed"));
+        let receiver = receiver_with_failing_attach("0", AmqpError::with_message("attach failed"));
         let mut stream = std::pin::pin!(receiver.stream_events());
         let error = stream
             .next()
