@@ -15,7 +15,7 @@ use crate::{
         dataflow::{
             planner, CachedTopologyProvider, DrainedLeaf, OperationPlan, PartitionRoutingRefresh,
             Pipeline, PipelineContext, PipelineNodeState, RequestExecutor, RequestTarget,
-            TopologyProvider,
+            TopologyFetchErrors, TopologyProvider,
         },
         pipeline::{
             components::{
@@ -367,6 +367,9 @@ pub struct CosmosDriver {
     /// Region pins protecting the change-feed continuations held by
     /// `pk_range_cache`. See [`PkRangeRegionPins`].
     pk_range_region_pins: PkRangeRegionPins,
+    /// Typed topology-fetch failures shared by callers coalesced on one cache
+    /// initialization.
+    topology_fetch_errors: TopologyFetchErrors,
     /// Per-client ceiling on metadata operations making simultaneous cross-region attempts.
     /// Bounds the request amplification a hedging client can inflict on an
     /// alternate region during a brownout. See [`HedgeBudget`].
@@ -1830,6 +1833,7 @@ impl CosmosDriver {
             endpoint_probe_fn: TestEndpointProbeFn(endpoint_probe_fn_for_tests),
             pk_range_cache,
             pk_range_region_pins: Mutex::new(HashMap::new()),
+            topology_fetch_errors: TopologyFetchErrors::default(),
             hedge_budget,
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
@@ -2255,12 +2259,11 @@ impl CosmosDriver {
     /// loop is needed here.
     ///
     /// Permanent errors (401 Unauthorized, 403 Forbidden, 404 NotFound) are
-    /// terminal: `None` is returned immediately so the caller can surface a
-    /// clear misconfiguration signal.
+    /// terminal and returned to the caller.
     ///
-    /// Returns `None` if the pipeline exhausts its cross-region failover
-    /// budget or the response cannot be parsed. The caller (the PK range
-    /// cache) falls back gracefully on `None`.
+    /// Returns `Ok(None)` if the response cannot be parsed. Pipeline errors are
+    /// preserved so topology planning can surface typed failures; cache-only
+    /// callers use the lossy wrapper and retain their existing fallback.
     async fn fetch_pk_ranges_from_service(
         &self,
         container: ContainerReference,
@@ -2268,7 +2271,10 @@ impl CosmosDriver {
         region_pin: Option<RegionPin>,
         options: OperationOptions,
         absolute_deadline: Option<Instant>,
-    ) -> (Option<PkRangeFetchResult>, Option<CosmosEndpoint>) {
+    ) -> (
+        crate::error::Result<Option<PkRangeFetchResult>>,
+        Option<CosmosEndpoint>,
+    ) {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone())
@@ -2316,11 +2322,11 @@ impl CosmosDriver {
                 // changefeed reads: the cached routing map is still current.
                 if response.status().status_code() == azure_core::http::StatusCode::NotModified {
                     return (
-                        Some(PkRangeFetchResult {
+                        Ok(Some(PkRangeFetchResult {
                             ranges: vec![],
                             continuation,
                             not_modified: true,
-                        }),
+                        })),
                         serving_endpoint,
                     );
                 }
@@ -2332,16 +2338,16 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Partition key ranges response was a feed body, expected single payload"
                         );
-                        return (None, serving_endpoint);
+                        return (Ok(None), serving_endpoint);
                     }
                 };
                 match parse_pk_ranges_response(&body_bytes) {
                     Some(ranges) => (
-                        Some(PkRangeFetchResult {
+                        Ok(Some(PkRangeFetchResult {
                             ranges,
                             continuation: etag,
                             not_modified: false,
-                        }),
+                        })),
                         serving_endpoint,
                     ),
                     None => {
@@ -2349,7 +2355,7 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Failed to parse partition key ranges response body"
                         );
-                        (None, serving_endpoint)
+                        (Ok(None), serving_endpoint)
                     }
                 }
             }
@@ -2379,7 +2385,7 @@ impl CosmosDriver {
                             error = %e,
                             "Permanent error fetching partition key ranges — check account credentials and container existence"
                         );
-                        return (None, None);
+                        return (Err(e), None);
                     }
                 }
 
@@ -2388,7 +2394,7 @@ impl CosmosDriver {
                     error = %e,
                     "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
                 );
-                (None, None)
+                (Err(e), None)
             }
         }
     }
@@ -2446,7 +2452,10 @@ impl CosmosDriver {
         &'a self,
         options: OperationOptions,
         absolute_deadline: Option<Instant>,
-    ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
+    ) -> impl Fn(
+        ContainerReference,
+        Option<String>,
+    ) -> BoxFuture<'a, crate::error::Result<Option<PkRangeFetchResult>>>
            + Send
            + 'a {
         move |container, continuation| {
@@ -2490,6 +2499,20 @@ impl CosmosDriver {
                 }
                 result
             })
+        }
+    }
+
+    fn lossy_pk_range_page_fetcher<'a>(
+        &'a self,
+        options: OperationOptions,
+        absolute_deadline: Option<Instant>,
+    ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
+           + Send
+           + 'a {
+        let fetch = self.pk_range_page_fetcher(options, absolute_deadline);
+        move |container, continuation| {
+            let result = fetch(container, continuation);
+            Box::pin(async move { result.await.ok().flatten() })
         }
     }
 
@@ -2594,7 +2617,10 @@ impl CosmosDriver {
                     container,
                     partition_key,
                     false,
-                    self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
+                    self.lossy_pk_range_page_fetcher(
+                        options.clone(),
+                        operation.absolute_deadline(),
+                    ),
                 )
                 .await
                 .map(PartitionKeyRangeId::from);
@@ -2620,7 +2646,7 @@ impl CosmosDriver {
                 container,
                 target.min_inclusive()..target.max_exclusive(),
                 false,
-                self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
+                self.lossy_pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
             )
             .await
             .map(PartitionKeyRangeId::from)
@@ -3418,10 +3444,11 @@ impl CosmosDriver {
         };
         let mut topology = container.and_then(|container| {
             self.pk_range_cache.as_ref().map(|cache| {
-                CachedTopologyProvider::new(
+                CachedTopologyProvider::with_fetch_errors(
                     cache,
                     container,
                     self.pk_range_page_fetcher(options.clone(), absolute_deadline),
+                    self.topology_fetch_errors.clone(),
                 )
             })
         });
@@ -4222,10 +4249,11 @@ impl CosmosDriver {
             })?;
             let feed_range = operation.target().cloned().unwrap_or_else(FeedRange::full);
             let container_ref = container.clone();
-            let mut topology = CachedTopologyProvider::new(
+            let mut topology = CachedTopologyProvider::with_fetch_errors(
                 cache,
                 container_ref,
                 self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
+                self.topology_fetch_errors.clone(),
             );
             let pipeline = planner::build_unordered_merge(
                 &feed_range,
@@ -4295,10 +4323,11 @@ impl CosmosDriver {
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();
-        let mut topology = CachedTopologyProvider::new(
+        let mut topology = CachedTopologyProvider::with_fetch_errors(
             cache,
             container_ref,
             self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
+            self.topology_fetch_errors.clone(),
         );
 
         // Route streaming ORDER BY queries to the k-way merge instead of
@@ -4360,7 +4389,7 @@ impl CosmosDriver {
             .try_lookup(
                 container,
                 force_refresh,
-                self.pk_range_page_fetcher(OperationOptions::default(), None),
+                self.lossy_pk_range_page_fetcher(OperationOptions::default(), None),
             )
             .await;
 
@@ -4417,7 +4446,7 @@ impl CosmosDriver {
                 .try_lookup(
                     container,
                     force_refresh,
-                    self.pk_range_page_fetcher(OperationOptions::default(), None),
+                    self.lossy_pk_range_page_fetcher(OperationOptions::default(), None),
                 )
                 .await;
             let Some(routing_map) = routing_map else {
@@ -4439,7 +4468,7 @@ impl CosmosDriver {
                     container,
                     &epk_range.start..&epk_range.end,
                     force_refresh,
-                    self.pk_range_page_fetcher(OperationOptions::default(), None),
+                    self.lossy_pk_range_page_fetcher(OperationOptions::default(), None),
                 )
                 .await)
         }
