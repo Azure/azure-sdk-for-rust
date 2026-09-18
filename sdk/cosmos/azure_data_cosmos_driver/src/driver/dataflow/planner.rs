@@ -357,7 +357,41 @@ pub(crate) fn is_non_streaming_order_by(info: &QueryInfo) -> bool {
     info.has_non_streaming_order_by
 }
 
-/// Builds a bounded, fully buffered merge for a finite non-streaming ORDER BY query.
+/// Validates admission using global, normalized metadata, never partition rewrites.
+pub(crate) fn validate_buffered_query(
+    query_plan: &QueryPlan,
+    max_buffered_query_window: u64,
+) -> crate::error::Result<()> {
+    let Some(info) = query_plan.query_info.as_ref() else {
+        return Ok(());
+    };
+    let shape = if is_non_streaming_order_by(info) {
+        "non-streaming ORDER BY (including buffered vector search)"
+    } else if info.distinct_type == DistinctType::Unordered {
+        "unordered DISTINCT"
+    } else {
+        return Ok(());
+    };
+    buffered_query_window(info, max_buffered_query_window, shape).map(|_| ())
+}
+
+fn buffered_query_window(info: &QueryInfo, maximum: u64, shape: &str) -> crate::error::Result<u64> {
+    if let Some(window) =
+        combine_take(info).and_then(|take| info.offset.unwrap_or(0).checked_add(take))
+    {
+        if window <= maximum {
+            return Ok(window);
+        }
+    }
+    Err(crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW)
+        .with_message(format!(
+            "cross-partition {shape} requires a finite global TOP or LIMIT and OFFSET plus effective take at most max_buffered_query_window ({maximum})"
+        ))
+        .build())
+}
+
+/// Builds a fully buffered merge for an admitted non-streaming ORDER BY query.
 pub(crate) async fn build_non_streaming_ordered_merge(
     query_plan: &QueryPlan,
     topology_provider: &mut dyn TopologyProvider,
@@ -367,7 +401,7 @@ pub(crate) async fn build_non_streaming_ordered_merge(
     if resume.is_some() {
         return Err(crate::error::CosmosError::builder()
             .with_status(
-                crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED,
+                crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
             )
             .with_message(
                 "cross-partition non-streaming ORDER BY queries cannot be resumed from a continuation token",
@@ -430,23 +464,9 @@ pub(crate) async fn build_non_streaming_ordered_merge(
     }
 
     let skip = info.offset.unwrap_or(0);
-    let take = combine_take(info).ok_or_else(|| {
-        crate::error::CosmosError::builder()
-            .with_status(
-                crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW,
-            )
-            .with_message(
-                "cross-partition non-streaming ORDER BY requires a finite TOP or OFFSET/LIMIT window",
-            )
-            .build()
-    })?;
-    let retention_limit = skip.checked_add(take).ok_or_else(|| {
-        crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
-            .with_message("non-streaming ORDER BY OFFSET plus take overflows the supported window")
-            .build()
-    })?;
-    let retention_limit = usize::try_from(retention_limit).map_err(|_| {
+    // Admission has checked the per-query policy; enforce a finite representation here too.
+    let window = buffered_query_window(info, u64::MAX, "non-streaming ORDER BY")?;
+    let retention_limit = usize::try_from(window).map_err(|_| {
         crate::error::CosmosError::builder()
             .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
             .with_message("non-streaming ORDER BY candidate window does not fit in memory")
@@ -458,12 +478,7 @@ pub(crate) async fn build_non_streaming_ordered_merge(
             .with_message("non-streaming ORDER BY OFFSET does not fit in memory")
             .build()
     })?;
-    let take = usize::try_from(take).map_err(|_| {
-        crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
-            .with_message("non-streaming ORDER BY take does not fit in memory")
-            .build()
-    })?;
+    let take = retention_limit - skip;
 
     let effective_operation = rewritten_operation(operation, query_plan)?;
     let request_nodes = plan_fresh(query_plan, topology_provider, &effective_operation).await?;
@@ -772,18 +787,16 @@ fn validate_streaming_order_by_snapshot(
     let mut parsed = Vec::with_capacity(ranges.len());
     let mut prev_max: Option<EffectivePartitionKey> = None;
     for entry in ranges {
-        let min = EffectivePartitionKey::try_from_hex(&entry.min_epk).ok_or_else(|| {
-            order_by_state_invalid(format!(
-                "continuation token has a malformed min EPK `{}`",
-                entry.min_epk
-            ))
-        })?;
-        let max = EffectivePartitionKey::try_from_hex(&entry.max_epk).ok_or_else(|| {
-            order_by_state_invalid(format!(
-                "continuation token has a malformed max EPK `{}`",
-                entry.max_epk
-            ))
-        })?;
+        let min = parse_continuation_epk(
+            &entry.min_epk,
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+            "StreamingOrderedMerge min_epk",
+        )?;
+        let max = parse_continuation_epk(
+            &entry.max_epk,
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+            "StreamingOrderedMerge max_epk",
+        )?;
         if min >= max {
             return Err(order_by_state_invalid(format!(
                 "continuation token has an invalid range (min `{}` >= max `{}`)",
@@ -856,13 +869,20 @@ fn order_by_state_invalid(
         .build()
 }
 
-fn invalid_epk_range(
-    message: impl Into<std::borrow::Cow<'static, str>>,
-) -> crate::error::CosmosError {
-    crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE)
-        .with_message(message)
-        .build()
+fn parse_continuation_epk(
+    value: &str,
+    status: crate::error::CosmosStatus,
+    field: &str,
+) -> crate::error::Result<EffectivePartitionKey> {
+    EffectivePartitionKey::try_from_hex(value).ok_or_else(|| {
+        crate::error::CosmosError::builder()
+            .with_status(status)
+            .with_message(format!(
+                "continuation token {field} contains malformed EPK `{value}`; \
+                 EPK bounds must be even-length hexadecimal strings"
+            ))
+            .build()
+    })
 }
 
 /// Builds an [`UnorderedMerge`] pipeline for change feed operations.
@@ -1401,27 +1421,24 @@ fn validate_saved_snapshot(
     left_most_undrained_epk: String,
     active_tokens: Vec<RangedToken>,
 ) -> crate::error::Result<SavedSnapshot> {
-    let cursor =
-        EffectivePartitionKey::try_from_hex(&left_most_undrained_epk).ok_or_else(|| {
-            invalid_epk_range(format!(
-                "continuation token has a malformed cursor EPK `{left_most_undrained_epk}`"
-            ))
-        })?;
+    let cursor = parse_continuation_epk(
+        &left_most_undrained_epk,
+        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+        "SequentialDrain left_most_undrained_epk",
+    )?;
 
     let mut parsed: Vec<SavedActiveToken> = Vec::with_capacity(active_tokens.len());
     for entry in active_tokens {
-        let min = EffectivePartitionKey::try_from_hex(&entry.min_epk).ok_or_else(|| {
-            invalid_epk_range(format!(
-                "continuation token has a malformed active_tokens min EPK `{}`",
-                entry.min_epk
-            ))
-        })?;
-        let max = EffectivePartitionKey::try_from_hex(&entry.max_epk).ok_or_else(|| {
-            invalid_epk_range(format!(
-                "continuation token has a malformed active_tokens max EPK `{}`",
-                entry.max_epk
-            ))
-        })?;
+        let min = parse_continuation_epk(
+            &entry.min_epk,
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "SequentialDrain active_tokens min_epk",
+        )?;
+        let max = parse_continuation_epk(
+            &entry.max_epk,
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "SequentialDrain active_tokens max_epk",
+        )?;
         if min > max {
             return Err(crate::error::CosmosError::builder()
                 .with_status(
@@ -1518,18 +1535,16 @@ fn validate_unordered_merge_tokens(
 ) -> crate::error::Result<Vec<SavedActiveToken>> {
     let mut parsed: Vec<SavedActiveToken> = Vec::with_capacity(active_tokens.len());
     for entry in active_tokens {
-        let min = EffectivePartitionKey::try_from_hex(&entry.min_epk).ok_or_else(|| {
-            invalid_epk_range(format!(
-                "continuation token has a malformed active_tokens min EPK `{}`",
-                entry.min_epk
-            ))
-        })?;
-        let max = EffectivePartitionKey::try_from_hex(&entry.max_epk).ok_or_else(|| {
-            invalid_epk_range(format!(
-                "continuation token has a malformed active_tokens max EPK `{}`",
-                entry.max_epk
-            ))
-        })?;
+        let min = parse_continuation_epk(
+            &entry.min_epk,
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "UnorderedMerge active_tokens min_epk",
+        )?;
+        let max = parse_continuation_epk(
+            &entry.max_epk,
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "UnorderedMerge active_tokens max_epk",
+        )?;
         if min >= max {
             return Err(crate::error::CosmosError::builder()
                 .with_status(
@@ -1643,7 +1658,7 @@ fn peel_distinct_resume(
                 // checkpoint.
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED,
+                        crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
                     )
                     .with_message(
                         "continuation token carries unordered DISTINCT state, which cannot be \
@@ -1861,6 +1876,7 @@ fn render_feed_range_for_error(range: &FeedRange) -> String {
 mod tests {
     use std::borrow::Cow;
 
+    use super::super::mocks::{response_with_continuation, MockRequestExecutor};
     use super::*;
     use crate::{
         driver::dataflow::{
@@ -1869,8 +1885,9 @@ mod tests {
         },
         models::{
             effective_partition_key::EffectivePartitionKey, AccountReference, ContainerProperties,
-            ContainerReference, DatabaseReference, ItemReference, OperationType, PartitionKey,
-            PartitionKeyDefinition, ResourceType, SystemProperties,
+            ContainerReference, CosmosResponse, DatabaseReference, ItemReference, MaxItemCountHint,
+            OperationType, PartitionKey, PartitionKeyDefinition, RequestCharge, ResourceType,
+            ResponseBody, SystemProperties,
         },
     };
 
@@ -3878,19 +3895,265 @@ mod tests {
         assert_eq!(drain.into_children().len(), 2);
     }
 
-    #[tokio::test]
-    async fn build_non_streaming_ordered_merge_requires_finite_window() {
-        let operation = Arc::new(non_streaming_order_by_operation());
+    #[test]
+    fn non_streaming_ordered_merge_always_requires_finite_window() {
         let mut plan = non_streaming_order_by_plan();
         plan.query_info.as_mut().unwrap().top = None;
-        let mut topology = MockTopologyProvider::new(Vec::new());
-
-        let err = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
-            .await
-            .unwrap_err();
+        let err = validate_buffered_query(&plan, u64::MAX).unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW
+            crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+        );
+    }
+
+    #[test]
+    fn buffered_admission_uses_only_global_normalized_bounds() {
+        for non_streaming in [false, true] {
+            for distinct_type in [
+                DistinctType::None,
+                DistinctType::Ordered,
+                DistinctType::Unordered,
+            ] {
+                for order_by in [Vec::new(), vec![SortOrder::Ascending]] {
+                    for (top, limit, offset, maximum, accepted) in [
+                        (None, None, 0, u64::MAX, false),
+                        (Some(0), None, 0, 0, true),
+                        (None, Some(0), 1, 0, false),
+                        (Some(0), None, u64::MAX, u64::MAX, true),
+                        (Some(1), None, 0, 0, false),
+                        (Some(1000), None, 0, 1000, true),
+                        (None, Some(1001), 0, 1000, false),
+                        (Some(1001), None, 0, 1001, true),
+                        (Some(3), None, 997, 1000, true),
+                        (None, Some(3), 998, 1000, false),
+                        (Some(10), Some(3), 997, 1000, true),
+                        (Some(3), Some(10), 997, 1000, true),
+                        (Some(u64::MAX), Some(0), 0, 0, true),
+                        (Some(u64::MAX), None, 1, u64::MAX, false),
+                        (Some(1), None, u64::MAX, u64::MAX, false),
+                    ] {
+                        let plan = QueryPlan {
+                            query_info: Some(QueryInfo {
+                                top,
+                                limit,
+                                offset: Some(offset),
+                                has_non_streaming_order_by: non_streaming,
+                                distinct_type,
+                                order_by: order_by.clone(),
+                                rewritten_query: Some(
+                                    "SELECT TOP 1 VALUE 'private SQL' FROM c".into(),
+                                ),
+                                ..Default::default()
+                            }),
+                            ..Default::default()
+                        };
+                        let denied = !accepted
+                            && (non_streaming || distinct_type == DistinctType::Unordered);
+                        let result = validate_buffered_query(&plan, maximum);
+                        assert_eq!(result.is_err(), denied);
+                        if let Err(error) = result {
+                            let message = error.to_string();
+                            assert!(message.contains("TOP or LIMIT"));
+                            assert!(message.contains("max_buffered_query_window"));
+                            assert!(!message.contains("private SQL"));
+                            assert!(message.contains(if non_streaming {
+                                "non-streaming ORDER BY"
+                            } else {
+                                "unordered DISTINCT"
+                            }));
+                            assert_eq!(
+                                    error.status(),
+                                    crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+                                );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn global_take_preserves_zero_and_selects_minimum() {
+        for (top, limit, expected) in [
+            (None, None, None),
+            (Some(0), None, Some(0)),
+            (None, Some(0), Some(0)),
+            (Some(7), Some(3), Some(3)),
+            (Some(3), Some(7), Some(3)),
+        ] {
+            assert_eq!(
+                combine_take(&QueryInfo {
+                    top,
+                    limit,
+                    ..Default::default()
+                }),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn native_and_gateway_metadata_share_buffered_admission() {
+        for native in [false, true] {
+            for top in [None, Some(0), Some(1000), Some(1001)] {
+                let wire = serde_json::json!({
+                    "queryInfo": {
+                        "hasNonStreamingOrderBy": if native { serde_json::json!(1) } else { serde_json::json!(true) },
+                        "orderBy": ["Ascending"],
+                        "top": top,
+                        "rewrittenQuery": "SELECT TOP 1 c._rid, [{\"item\": 0}] AS orderByItems, c AS payload FROM c"
+                    },
+                    "queryRanges": [{
+                        "min": "", "max": "FF",
+                        "isMinInclusive": if native { serde_json::json!(1) } else { serde_json::json!(true) },
+                        "isMaxInclusive": if native { serde_json::json!(0) } else { serde_json::json!(false) }
+                    }]
+                });
+                let plan: QueryPlan = if native {
+                    serde_json::from_value(wire).unwrap()
+                } else {
+                    let raw: super::super::query_plan::RawQueryPlan =
+                        serde_json::from_value(wire).unwrap();
+                    raw.resolve(&test_partition_key_definition()).unwrap()
+                };
+                assert_eq!(
+                    validate_buffered_query(&plan, 1000).is_ok(),
+                    top.is_some_and(|take| take <= 1000)
+                );
+                assert_eq!(
+                    validate_buffered_query(&plan, u64::MAX).is_ok(),
+                    top.is_some()
+                );
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn admitted_finite_non_streaming_plan_preserves_partition_rewrite() {
+        for input_binary in [false, true] {
+            for output_binary in [false, true] {
+                for (offset, limit, expected) in [
+                    (0, Some(6), vec!["a", "b", "c", "d", "e", "f"]),
+                    (1, Some(6), vec!["b", "c", "d", "e", "f"]),
+                    (1, Some(3), vec!["b", "c", "d"]),
+                    (20, Some(6), vec![]),
+                ] {
+                    let mut plan = non_streaming_order_by_plan();
+                    let info = plan.query_info.as_mut().unwrap();
+                    info.top = None;
+                    info.offset = Some(offset);
+                    info.limit = limit;
+                    let rewrite = info.rewritten_query.clone().unwrap();
+                    let parameters = serde_json::json!([{"name":"@floor","value":-1}]);
+                    let operation = Arc::new(
+                        CosmosOperation::query_items(test_container(), Some(FeedRange::full()))
+                            .with_body(serde_json::to_vec(&serde_json::json!({
+                                "query":"SELECT c.id FROM c WHERE c.rank > @floor ORDER BY c.rank, c.tie DESC",
+                                "parameters":parameters
+                            })).unwrap())
+                            .with_max_item_count(MaxItemCountHint::Limit(2.try_into().unwrap()))
+                            .with_supported_serialization_formats(if output_binary { "CosmosBinary" } else { "JsonText" }),
+                    );
+                    validate_buffered_query(&plan, 1000).unwrap();
+                    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+                        rr("", "80", "a"),
+                        rr("80", "FF", "b"),
+                    ])]);
+                    let mut pipeline =
+                        build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
+                            .await
+                            .unwrap();
+                    assert_eq!(pipeline.fan_out_width(), 2);
+                    let responses = [
+                        (vec![("e", 3, 0), ("b", 1, 9)], Some("a-next"), "a:1#2"),
+                        (vec![("d", 2, 0)], None, "a:1#4"),
+                        (vec![("f", 4, 0), ("c", 1, 1)], Some("b-next"), "b:1#3"),
+                        (vec![("a", 0, 0)], None, "b:1#5"),
+                    ].into_iter().map(|(rows, continuation, session)| {
+                        let envelope = serde_json::json!({"Documents": rows.into_iter().map(|(id, rank, tie)| {
+                            serde_json::json!({"_rid":id,"orderByItems":[{"item":rank},{"item":tie}],"payload":id})
+                        }).collect::<Vec<_>>()});
+                        let body = if input_binary {
+                            crate::binary_json::to_vec(&envelope).unwrap()
+                        } else {
+                            serde_json::to_vec(&envelope).unwrap()
+                        };
+                        let response = response_with_continuation(&body, continuation);
+                        let mut headers = response.headers().clone();
+                        headers.request_charge = Some(RequestCharge::new(1.25));
+                        headers.session_token = Some(crate::models::SessionToken(session.into()));
+                        Ok(CosmosResponse::new(body, headers, response.status(), response.diagnostics()))
+                    }).collect();
+                    let mut executor = MockRequestExecutor::new(responses);
+                    let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+                    let mut actual = Vec::new();
+                    let mut charge = 0.0;
+                    while let Some(page) = pipeline.next_page(&mut context).await.unwrap() {
+                        charge += page.headers().request_charge.unwrap().value();
+                        let session = page.headers().session_token.as_ref().unwrap().to_string();
+                        assert!(session.contains("a:1#4"), "{session}");
+                        assert!(session.contains("b:1#5"), "{session}");
+                        let ResponseBody::Items(items) = page.body() else {
+                            panic!("expected items")
+                        };
+                        assert!(items.len() <= 2);
+                        for item in items {
+                            assert_eq!(crate::binary_json::is_binary(item), output_binary);
+                            let value: String = if output_binary {
+                                crate::binary_json::from_slice(item).unwrap()
+                            } else {
+                                serde_json::from_slice(item).unwrap()
+                            };
+                            actual.push(value);
+                        }
+                    }
+                    assert_eq!(actual, expected);
+                    assert_eq!(charge, 5.0);
+                    assert!(pipeline.next_page(&mut context).await.unwrap().is_none());
+                    assert_eq!(
+                        pipeline.snapshot_state().unwrap_err().status(),
+                        crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+                    );
+                    assert_eq!(
+                        executor.continuation_calls,
+                        vec![None, Some("a-next".into()), None, Some("b-next".into())]
+                    );
+                    assert_eq!(executor.target_calls.len(), 4);
+                    assert_eq!(executor.target_calls[0], executor.target_calls[1]);
+                    assert_eq!(executor.target_calls[2], executor.target_calls[3]);
+                    assert_ne!(executor.target_calls[0], executor.target_calls[2]);
+                    assert!(executor.responses.is_empty());
+                    for body in &executor.query_bodies {
+                        let body: serde_json::Value =
+                            serde_json::from_slice(body.as_ref().unwrap()).unwrap();
+                        assert_eq!(
+                            body,
+                            serde_json::json!({"query":rewrite,"parameters":parameters})
+                        );
+                        assert!(!body["query"].as_str().unwrap().contains("TOP"));
+                    }
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn non_streaming_window_overflow_is_reported_before_topology() {
+        let mut plan = non_streaming_order_by_plan();
+        let info = plan.query_info.as_mut().unwrap();
+        info.top = Some(u64::MAX);
+        info.offset = Some(1);
+        let error = build_non_streaming_ordered_merge(
+            &plan,
+            &mut NoopTopologyProvider,
+            &Arc::new(non_streaming_order_by_operation()),
+            None,
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
         );
     }
 
@@ -3902,11 +4165,12 @@ mod tests {
         info.top = None;
         info.offset = Some(50_000);
         info.limit = Some(3);
+        validate_buffered_query(&plan, 50_003).unwrap();
         let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "pk-range")])]);
 
         let pipeline = build_non_streaming_ordered_merge(&plan, &mut topology, &operation, None)
             .await
-            .expect("finite windows are not capped by the client");
+            .expect("explicitly admitted finite window builds");
         assert!(pipeline
             .into_root()
             .downcast::<crate::driver::dataflow::NonStreamingOrderedMerge>()
@@ -3928,7 +4192,7 @@ mod tests {
         .unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
+            crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
         );
 
         let mut streaming_plan = non_streaming_order_by_plan();
@@ -4087,7 +4351,7 @@ mod tests {
         .expect_err("an unordered DISTINCT token is never resumable");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED)
+            Some(crate::error::SubStatusCode::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
         );
         assert!(err.to_string().contains("ORDER BY"));
     }
@@ -4556,8 +4820,52 @@ mod tests {
                 crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
                 "cursor {cursor:?}: {err}"
             );
-            assert!(err.to_string().contains("malformed cursor"));
+            assert!(err.to_string().contains("malformed EPK"));
+            assert!(err.to_string().contains("left_most_undrained_epk"));
         }
+    }
+
+    #[test]
+    fn continuation_validators_reject_malformed_epk_bounds() {
+        let streaming_error = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "query",
+            Some("query"),
+            vec![OrderByRangeToken {
+                min_epk: "40G0".to_owned(),
+                max_epk: "80".to_owned(),
+                server_continuation: None,
+                boundary: None,
+            }],
+        )
+        .err()
+        .expect("streaming ORDER BY must reject non-hex EPK bounds");
+        assert_eq!(
+            streaming_error.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID
+        );
+        assert!(streaming_error.to_string().contains("malformed EPK"));
+
+        let sequential_error = validate_saved_snapshot("408".to_owned(), Vec::new())
+            .expect_err("SequentialDrain must reject odd-length cursor EPKs");
+        assert_eq!(
+            sequential_error.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+        );
+        assert!(sequential_error.to_string().contains("malformed EPK"));
+
+        let unordered_error = validate_unordered_merge_tokens(vec![RangedToken {
+            min_epk: String::new(),
+            max_epk: "F".to_owned(),
+            server_continuation: "token".to_owned(),
+        }])
+        .expect_err("UnorderedMerge must reject odd-length range EPKs");
+        assert_eq!(
+            unordered_error.status(),
+            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+        );
+        assert!(unordered_error.to_string().contains("malformed EPK"));
     }
 
     /// A token minted under one feed scope must not resume under another.
@@ -4788,13 +5096,44 @@ mod tests {
         );
     }
 
-    /// A realistic 16-byte document `_rid`, as the backend emits — the
-    /// boundary validator requires one it can decode.
+    /// A realistic 16-byte document `_rid`, as commonly emitted by the
+    /// backend — the boundary validator requires one it can decode.
     fn valid_rid(doc_id: u64) -> String {
         let mut bytes = [0u8; 16];
         bytes[0..8].copy_from_slice(&[0x0A, 0x0B, 0x0C, 0x0D, 0x80, 0x01, 0x02, 0x03]);
         bytes[8..16].copy_from_slice(&doc_id.to_le_bytes());
         crate::models::resource_id::encode_rid(&bytes)
+    }
+
+    /// vNext may emit the legal 20-byte resource-id form for an ORDER BY
+    /// boundary. It carries the same document ordinal in bytes `[8..16)` plus
+    /// the optional four-byte attachment segment.
+    #[test]
+    fn streaming_order_by_snapshot_accepts_20_byte_document_boundary_rid() {
+        // cspell:ignore EAAAAJAAAAAOAAAA OcAAAAAAAA
+        let ranges = vec![OrderByRangeToken {
+            min_epk: String::new(),
+            max_epk: "FF".to_owned(),
+            server_continuation: None,
+            boundary: Some(ValueBoundary {
+                resume_values: vec![
+                    crate::driver::dataflow::order_by::OrderByResumeValue::Number {
+                        value: 5.0.into(),
+                    },
+                ],
+                last_rid: "EAAAAJAAAAAOAAAA/OcAAAAAAAA=".to_owned(),
+                skip_count: 1,
+            }),
+        }];
+        let parsed = validate_streaming_order_by_snapshot(
+            &[SortOrder::Ascending],
+            &[SortOrder::Ascending],
+            "fingerprint",
+            Some("fingerprint"),
+            ranges,
+        )
+        .expect("a 20-byte document hierarchy RID is a valid boundary");
+        assert_eq!(parsed.len(), 1);
     }
 
     /// A boundary in a resumed `StreamingOrderedMerge` snapshot always counts

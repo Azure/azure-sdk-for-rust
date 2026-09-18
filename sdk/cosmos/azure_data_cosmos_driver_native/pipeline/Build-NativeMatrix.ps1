@@ -10,7 +10,7 @@
 
 .DESCRIPTION
     For each row in build-matrix.json this script:
-      1. Ensures the Rust target triple is installed (rustup).
+      1. Ensures the Rust target triple is installed with msrustup.
       2. Captures the exact rustc syslib link line PROGRAMMATICALLY via
          `cargo rustc ... -- --print native-static-libs`, then applies declared
          target-specific ABI-compatible compiler-library replacements.
@@ -60,7 +60,10 @@ param(
     [string]   $CCompiler,
     [switch]   $SkipBuild,
     [switch]   $NoAuditable,
-    [switch]   $StaticOnly
+    [switch]   $StaticOnly,
+    [string]   $ToolchainConfigPath,
+    [string]   $InstallerPackageVersion = $env:RUST_VERSION,
+    [string]   $InstallerBinPath = $env:RUST_BIN_PATH
 )
 
 Set-StrictMode -Version 3.0
@@ -68,9 +71,34 @@ $ErrorActionPreference = 'Stop'
 
 $PipelineDir = $PSScriptRoot
 $CrateDir    = Split-Path -Parent $PipelineDir
-$RepoRoot    = (Resolve-Path (Join-Path $CrateDir '..' '..' '..')).Path
 $MatrixPath  = Join-Path $PipelineDir 'build-matrix.json'
 $MetadataFilename = 'rust-driver-native-interface-metadata.json'
+
+. ([System.IO.Path]::Combine(
+    $PipelineDir,
+    '..',
+    '..',
+    '..',
+    '..',
+    'eng',
+    'common',
+    'scripts',
+    'common.ps1'
+))
+if (-not (Get-Variable -Name RepoRoot -ValueOnly -ErrorAction Ignore)) {
+    throw "eng/common/scripts/common.ps1 did not define RepoRoot."
+}
+. ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'shared', 'common.ps1'))
+
+if (-not $ToolchainConfigPath) {
+    $ToolchainConfigPath = [System.IO.Path]::Combine(
+        $RepoRoot,
+        'eng',
+        'templates',
+        'ms-rust-toolchain.toml'
+    )
+}
+$microsoftRustConfig = Get-MicrosoftRustToolchainConfiguration -Path $ToolchainConfigPath
 
 if (-not $OutputRoot) { $OutputRoot = Join-Path $PipelineDir 'artifacts' }
 New-Item -ItemType Directory -Force -Path $OutputRoot | Out-Null
@@ -84,20 +112,60 @@ if ($CCompiler -and $rows.Count -ne 1) {
 }
 
 $compilers = @{}
+$compilerCommands = @{}
 foreach ($row in $rows) {
     $compiler = if ($CCompiler) { $CCompiler } else { $row.c_compiler }
     if (-not $compiler) {
         throw "No C compiler is configured for target '$($row.id)'."
     }
-    if (-not (Get-Command $compiler -CommandType Application -ErrorAction SilentlyContinue)) {
+    $compilerCommand = Get-Command $compiler -CommandType Application -ErrorAction SilentlyContinue
+    if (-not $compilerCommand) {
         throw "C compiler '$compiler' is not available for target '$($row.id)'."
     }
     $compilers[$row.id] = $compiler
+    $compilerCommands[$row.id] = $compilerCommand
 }
 
-function Get-ToolVersion([string] $exe, [string[]] $verArgs) {
-    try { (& $exe @verArgs 2>&1 | Select-Object -First 1) -join ' ' }
-    catch { $null }
+function Invoke-RequiredToolOutput(
+    [string] $Executable,
+    [string[]] $Arguments,
+    [string] $Description
+) {
+    try {
+        $output = @(& $Executable @Arguments 2>&1)
+    }
+    catch {
+        throw "Unable to execute ${Description}: $($_.Exception.Message)"
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "$Description failed with exit code $LASTEXITCODE`n$($output -join "`n")"
+    }
+
+    $text = ($output | ForEach-Object { [string]$_ }) -join "`n"
+    if ([string]::IsNullOrWhiteSpace($text)) {
+        throw "$Description returned no identity information."
+    }
+
+    return $text.Trim()
+}
+
+function Resolve-InstallerToolPath(
+    [string] $Tool
+) {
+    $candidates = @(
+        (Join-Path $installerBinPath $Tool),
+        (Join-Path $installerBinPath "$Tool.exe"),
+        (Join-Path $installerBinPath "$Tool.ps1")
+    )
+    $toolPath = $candidates |
+        Where-Object { Test-Path $_ -PathType Leaf } |
+        Select-Object -First 1
+    if (-not $toolPath) {
+        throw "RustInstaller@1 bin path '$installerBinPath' does not contain '$Tool'."
+    }
+
+    return (Resolve-Path $toolPath).Path
 }
 
 # Programmatically parse the `native-static-libs:` note out of a
@@ -105,7 +173,7 @@ function Get-ToolVersion([string] $exe, [string[]] $verArgs) {
 function Get-NativeStaticLibs([string] $triple) {
     Push-Location $CrateDir
     try {
-        $out = & cargo rustc --release --quiet `
+        $out = & cargo $cargoToolchainArgument rustc --release --quiet `
             -p $matrix.native_interface_crate `
             --target $triple `
             -- --print native-static-libs 2>&1
@@ -174,13 +242,123 @@ function Resolve-ConsumerNativeStaticLibs(
 }
 
 function Test-TripleInstalled([string] $triple) {
-    (& rustup target list --installed 2>$null) -contains $triple
+    # msrustup (unlike rustup) does not expose a stable 'target list' subcommand,
+    # so confirm target availability the way the compiler itself resolves it:
+    # ask the pinned toolchain for the target's library directory and verify the
+    # standard library was actually installed (by RustInstaller@1 through msrustup).
+    $targetLibDir = Invoke-RequiredToolOutput `
+        -Executable 'rustc' `
+        -Arguments @($cargoToolchainArgument, '--target', $triple, '--print', 'target-libdir') `
+        -Description "rustc $cargoToolchainArgument --print target-libdir --target $triple"
+
+    return (Test-Path -LiteralPath $targetLibDir -PathType Container)
+}
+
+$msrustupCommand = Get-Command 'msrustup' -ErrorAction SilentlyContinue
+if (-not $msrustupCommand) {
+    throw 'Microsoft Rust is required: msrustup is not installed or is not available on PATH.'
+}
+$msrustupExecutable = if ($msrustupCommand.Source) {
+    $msrustupCommand.Source
+}
+else {
+    $msrustupCommand.Name
+}
+$cargoToolchainArgument = "+$($microsoftRustConfig.Channel)"
+
+$managerVersion = Invoke-RequiredToolOutput `
+    -Executable $msrustupExecutable `
+    -Arguments @('--version') `
+    -Description 'Microsoft Rust toolchain manager'
+
+if ([string]::IsNullOrWhiteSpace($InstallerPackageVersion)) {
+    throw 'Microsoft Rust installer package version is required. Use RustInstaller@1 or pass -InstallerPackageVersion.'
+}
+if (
+    [string]::IsNullOrWhiteSpace($InstallerBinPath) -or
+    -not (Test-Path $InstallerBinPath -PathType Container)
+) {
+    throw 'Microsoft Rust installer bin path is required. Use RustInstaller@1 or pass -InstallerBinPath.'
+}
+$installerBinPath = (Resolve-Path $InstallerBinPath).Path
+$installerRustcExecutable = Resolve-InstallerToolPath -Tool 'rustc'
+$installerCargoExecutable = Resolve-InstallerToolPath -Tool 'cargo'
+$rustcCommand = Get-Command 'rustc' -CommandType Application -ErrorAction SilentlyContinue
+$cargoCommand = Get-Command 'cargo' -CommandType Application -ErrorAction SilentlyContinue
+if (-not $rustcCommand -or -not $cargoCommand) {
+    throw 'RustInstaller@1 must place rustc and cargo on PATH.'
+}
+$rustcExecutable = $rustcCommand.Source
+$cargoExecutable = $cargoCommand.Source
+
+$installerRustSysroot = Invoke-RequiredToolOutput `
+    -Executable $installerRustcExecutable `
+    -Arguments @('--print', 'sysroot') `
+    -Description 'RustInstaller rustc --print sysroot'
+if (-not (Test-Path $installerRustSysroot -PathType Container)) {
+    throw "RustInstaller rustc reported a missing sysroot '$installerRustSysroot'."
+}
+$installerRustSysroot = (Resolve-Path $installerRustSysroot).Path
+$selectedRustSysroot = Invoke-RequiredToolOutput `
+    -Executable 'rustc' `
+    -Arguments @($cargoToolchainArgument, '--print', 'sysroot') `
+    -Description "rustc $cargoToolchainArgument --print sysroot"
+if (-not (Test-Path $selectedRustSysroot -PathType Container)) {
+    throw "rustc $cargoToolchainArgument reported a missing sysroot '$selectedRustSysroot'."
+}
+$selectedRustSysroot = (Resolve-Path $selectedRustSysroot).Path
+$pathComparison = if ($IsWindows) {
+    [System.StringComparison]::OrdinalIgnoreCase
+}
+else {
+    [System.StringComparison]::Ordinal
+}
+if (-not [string]::Equals($selectedRustSysroot, $installerRustSysroot, $pathComparison)) {
+    throw "rustc $cargoToolchainArgument resolved sysroot '$selectedRustSysroot', but the RustInstaller compiler uses '$installerRustSysroot'; refusing a possible upstream fallback."
+}
+
+$installerRustcVerboseVersion = Invoke-RequiredToolOutput `
+    -Executable $installerRustcExecutable `
+    -Arguments @('-Vv') `
+    -Description 'RustInstaller rustc -Vv'
+$rustcVerboseVersion = Invoke-RequiredToolOutput `
+    -Executable 'rustc' `
+    -Arguments @($cargoToolchainArgument, '-Vv') `
+    -Description "rustc $cargoToolchainArgument -Vv"
+if ($rustcVerboseVersion -cne $installerRustcVerboseVersion) {
+    throw "rustc $cargoToolchainArgument identity does not match the RustInstaller compiler; refusing a possible upstream fallback."
+}
+$rustcReleaseMatch = [regex]::Match(
+    $rustcVerboseVersion,
+    '(?m)^release:\s*(\S+)\s*$'
+)
+if (-not $rustcReleaseMatch.Success) {
+    throw "rustc -Vv did not report a release identity."
+}
+$rustcRelease = $rustcReleaseMatch.Groups[1].Value
+$channelRelease = $microsoftRustConfig.Channel.Substring('ms-prod-'.Length)
+if ($rustcRelease -notmatch "^$([regex]::Escape($channelRelease))(?:\.|$)") {
+    throw "Microsoft Rust release '$rustcRelease' does not match pinned channel '$($microsoftRustConfig.Channel)'."
+}
+if ($InstallerPackageVersion -notmatch "^$([regex]::Escape($rustcRelease))-ms-\S+$") {
+    throw "Installer package '$InstallerPackageVersion' does not identify Microsoft Rust release '$rustcRelease'."
+}
+$cargoVersion = Invoke-RequiredToolOutput `
+    -Executable 'cargo' `
+    -Arguments @($cargoToolchainArgument, '--version') `
+    -Description "cargo $cargoToolchainArgument --version"
+$installerCargoVersion = Invoke-RequiredToolOutput `
+    -Executable $installerCargoExecutable `
+    -Arguments @('--version') `
+    -Description 'RustInstaller cargo --version'
+if ($cargoVersion -cne $installerCargoVersion) {
+    throw "cargo $cargoToolchainArgument identity does not match the RustInstaller cargo; refusing a possible upstream fallback."
 }
 
 $sourceCommit = (& git -C $RepoRoot rev-parse HEAD 2>$null)
 if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve the source commit.' }
 
-$cargoMetadataJson = & cargo metadata --format-version 1 --no-deps `
+$cargoMetadataJson = & cargo $cargoToolchainArgument metadata --format-version 1 --no-deps `
     --manifest-path (Join-Path $CrateDir 'Cargo.toml') 2>&1
 if ($LASTEXITCODE -ne 0) {
     throw "cargo metadata failed with exit code $LASTEXITCODE`n$($cargoMetadataJson -join "`n")"
@@ -205,13 +383,14 @@ $summary = @()
 foreach ($row in $rows) {
     Write-Host "==> $($row.id) ($($row.triple))" -ForegroundColor Cyan
     $compiler = $compilers[$row.id]
+    $compilerCommand = $compilerCommands[$row.id]
+
+    if ($row.triple -notin $microsoftRustConfig.Targets) {
+        throw "[$($row.id)] target '$($row.triple)' is absent from the Microsoft Rust toolchain configuration."
+    }
 
     if (-not (Test-TripleInstalled $row.triple)) {
-        Write-Host "    target not installed; attempting 'rustup target add $($row.triple)'"
-        & rustup target add $row.triple *> $null
-        if ($LASTEXITCODE -ne 0) {
-            throw "rustup target add failed for $($row.triple) with exit code $LASTEXITCODE"
-        }
+        throw "[$($row.id)] Microsoft Rust target '$($row.triple)' is not installed for '$($microsoftRustConfig.Channel)'. RustInstaller@1 must install it through msrustup (additionalTargets); refusing a possible upstream fallback."
     }
     $targetOut = Join-Path $OutputRoot $row.id
     New-Item -ItemType Directory -Force -Path $targetOut | Out-Null
@@ -261,8 +440,8 @@ foreach ($row in $rows) {
                     '--config', 'profile.release.codegen-units=1',
                     '--config', 'profile.release.strip="symbols"'
                 )
-                if ($NoAuditable) { & cargo @buildArgs }
-                else              { & cargo auditable @buildArgs }
+                if ($NoAuditable) { & cargo $cargoToolchainArgument @buildArgs }
+                else              { & cargo $cargoToolchainArgument auditable @buildArgs }
                 if ($LASTEXITCODE -ne 0) {
                     throw "$builtWith build failed for $($row.triple) with exit code $LASTEXITCODE"
                 }
@@ -312,7 +491,7 @@ foreach ($row in $rows) {
     $headerSha = (Get-FileHash $headerSrc -Algorithm SHA256).Hash.ToLowerInvariant()
 
     $manifest = [ordered]@{
-        schema_version           = 3
+        schema_version           = 4
         artifact_id              = $row.id
         goos                     = $row.goos
         goarch                   = $row.goarch
@@ -341,11 +520,32 @@ foreach ($row in $rows) {
         }
         rustc_native_static_libs = $rustcSyslibs
         native_static_libs       = $syslibs
-        toolchains = [ordered]@{
-            rustc              = Get-ToolVersion 'rustc' @('--version')
-            cargo              = Get-ToolVersion 'cargo' @('--version')
-            c_compiler         = $compiler
-            c_compiler_version = Get-ToolVersion $compiler @('--version')
+        toolchain = [ordered]@{
+            provider = 'microsoft'
+            manager = [ordered]@{
+                executable = $msrustupExecutable
+                version    = $managerVersion
+            }
+            channel               = $microsoftRustConfig.Channel
+            selected_toolchain    = $microsoftRustConfig.Channel
+            installer_package_version = $InstallerPackageVersion
+            sysroot                = $selectedRustSysroot
+            rustc_executable       = $rustcExecutable
+            cargo_executable       = $cargoExecutable
+            installer_rustc_executable = $installerRustcExecutable
+            installer_cargo_executable = $installerCargoExecutable
+            rustc_verbose_version = $rustcVerboseVersion
+            rustc_release         = $rustcRelease
+            cargo_version         = $cargoVersion
+            target                = $row.triple
+            linker = [ordered]@{
+                command    = $compiler
+                executable = $compilerCommand.Source
+                version    = Invoke-RequiredToolOutput `
+                    -Executable $compiler `
+                    -Arguments @('--version') `
+                    -Description "$compiler --version"
+            }
         }
         generated_utc = (Get-Date).ToUniversalTime().ToString('o')
     }

@@ -9,7 +9,7 @@ use crate::{
         pipeline::operation_pipeline::OperationOverrides,
     },
     models::{ContainerReference, CosmosOperation},
-    options::{OperationOptions, QueryPlanMode},
+    options::{OperationOptions, PlanOptions, QueryPlanMode},
 };
 
 use super::CosmosDriver;
@@ -33,12 +33,11 @@ impl From<crate::query::local_plan_adapter::ProviderResolution> for ResolvedQuer
 
 /// Returns an empty resolution when local planning proves topology is unnecessary.
 pub(super) fn try_resolve_without_topology(
-    driver: &CosmosDriver,
     container: &ContainerReference,
     operation: &CosmosOperation,
-    options: &OperationOptions,
+    plan_options: &PlanOptions,
 ) -> Option<ResolvedQueryPlan> {
-    if driver.effective_query_plan_mode(options) == QueryPlanMode::GatewayOnly {
+    if plan_options.query_plan_mode == QueryPlanMode::GatewayOnly {
         return None;
     }
 
@@ -58,8 +57,9 @@ pub(super) async fn resolve_query_plan(
     container: &ContainerReference,
     operation: &CosmosOperation,
     options: &OperationOptions,
+    plan_options: &PlanOptions,
 ) -> crate::error::Result<ResolvedQueryPlan> {
-    let mode = driver.effective_query_plan_mode(options);
+    let mode = plan_options.query_plan_mode;
     if mode != QueryPlanMode::GatewayOnly {
         if let Some(plan) =
             try_plan_query_using_native_planner(driver, container, operation, mode).await

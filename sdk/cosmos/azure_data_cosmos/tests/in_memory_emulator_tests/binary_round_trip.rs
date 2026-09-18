@@ -16,7 +16,7 @@
 use azure_data_cosmos::{
     options::{
         BinaryEncodingOptions, ContentResponseOnWrite, ItemWriteOptions, OperationOptions,
-        OperationOptionsBuilder, QueryPlanMode, Region, RoutingStrategy,
+        QueryOptions, QueryPlanMode, Region, RoutingStrategy,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClientBuilder, CosmosRuntimeBuilder,
     FeedScope, Query,
@@ -144,18 +144,12 @@ async fn build_multi_partition_container_with_recorder(
         azure_core::credentials::Secret::new("dGVzdGtleQ=="),
     );
     // `None` leaves the binary option unset, exercising the resolved default.
-    let mut builder = CosmosClientBuilder::new()
-        .with_runtime(
-            CosmosRuntimeBuilder::from(emulator.runtime_builder())
-                .build()
-                .await
-                .unwrap(),
-        )
-        .with_default_operation_options(
-            OperationOptionsBuilder::new()
-                .with_query_plan_mode(QueryPlanMode::GatewayOnly)
-                .build(),
-        );
+    let mut builder = CosmosClientBuilder::new().with_runtime(
+        CosmosRuntimeBuilder::from(emulator.runtime_builder())
+            .build()
+            .await
+            .unwrap(),
+    );
     if let Some(binary) = binary {
         builder =
             builder.with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(binary));
@@ -624,7 +618,7 @@ async fn binary_cross_partition_query_round_trips() {
     let iter = Box::pin(container.query_items(
         Query::from("SELECT * FROM c"),
         FeedScope::full_container(),
-        None,
+        Some(QueryOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly)),
     ))
     .await
     .unwrap();
@@ -674,7 +668,7 @@ async fn binary_cross_partition_order_by_merges_and_round_trips() {
     let iter = Box::pin(container.query_items(
         Query::from("SELECT * FROM c ORDER BY c.value"),
         FeedScope::full_container(),
-        None,
+        Some(QueryOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly)),
     ))
     .await
     .unwrap();
@@ -729,7 +723,7 @@ async fn binary_cross_partition_skip_take_round_trips() {
     let offset_limit = Box::pin(container.query_items::<TestItem>(
         Query::from("SELECT * FROM c OFFSET 2 LIMIT 3"),
         FeedScope::full_container(),
-        None,
+        Some(QueryOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly)),
     ))
     .await
     .unwrap();
@@ -743,7 +737,7 @@ async fn binary_cross_partition_skip_take_round_trips() {
     let topped = Box::pin(container.query_items::<TestItem>(
         Query::from("SELECT TOP 4 * FROM c"),
         FeedScope::full_container(),
-        None,
+        Some(QueryOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly)),
     ))
     .await
     .unwrap();
@@ -835,7 +829,7 @@ async fn disabled_binary_query_advertises_no_format() {
     let iter = Box::pin(container.query_items::<TestItem>(
         Query::from("SELECT * FROM c"),
         FeedScope::full_container(),
-        None,
+        Some(QueryOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly)),
     ))
     .await
     .unwrap();
@@ -881,7 +875,7 @@ async fn default_client_negotiates_binary_without_any_option() {
     let iter = Box::pin(container.query_items::<TestItem>(
         Query::from("SELECT * FROM c"),
         FeedScope::full_container(),
-        None,
+        Some(QueryOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly)),
     ))
     .await
     .unwrap();

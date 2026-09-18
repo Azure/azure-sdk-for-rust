@@ -28,6 +28,7 @@ use azure_data_cosmos_driver::models::{
 };
 use azure_data_cosmos_driver::options::{
     BinaryEncodingOptions, DriverOptions, OperationOptions, OperationOptionsBuilder, PlanOptions,
+    QueryPlanMode,
 };
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
@@ -78,7 +79,21 @@ struct ExpectedError {
 }
 
 fn catalog() -> Catalog {
-    serde_json::from_str(CATALOG_JSON).expect("catalog must parse")
+    let mut catalog: Catalog = serde_json::from_str(CATALOG_JSON).expect("catalog must parse");
+    // Keep the shared stage fixtures, but bound their end-to-end execution.
+    for scenario in &mut catalog.scenarios {
+        if scenario.query.distinct_type == "Unordered"
+            && !scenario.query.text.contains(" TOP ")
+            && !scenario.query.text.contains(" LIMIT ")
+        {
+            scenario.query.text =
+                scenario
+                    .query
+                    .text
+                    .replacen("SELECT DISTINCT ", "SELECT DISTINCT TOP 1000 ", 1);
+        }
+    }
+    catalog
 }
 
 #[derive(Debug, Default)]
@@ -123,6 +138,14 @@ async fn setup() -> (Arc<InMemoryEmulatorHttpClient>, Arc<CosmosDriver>) {
 async fn setup_with_observer(
     observer: Option<Arc<dyn RequestObserver>>,
 ) -> (Arc<InMemoryEmulatorHttpClient>, Arc<CosmosDriver>) {
+    setup_with_policy(observer, OperationOptions::default(), 2).await
+}
+
+async fn setup_with_policy(
+    observer: Option<Arc<dyn RequestObserver>>,
+    client_options: OperationOptions,
+    partition_count: u32,
+) -> (Arc<InMemoryEmulatorHttpClient>, Arc<CosmosDriver>) {
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new(
         "East US",
         Url::parse(GATEWAY_URL).unwrap(),
@@ -139,7 +162,7 @@ async fn setup_with_observer(
     let store = emulator.store();
     store.create_database("testdb");
     let container_config = ContainerConfig::new()
-        .with_partition_count(2)
+        .with_partition_count(partition_count)
         .build()
         .unwrap();
     store.create_container_with_config(
@@ -159,7 +182,11 @@ async fn setup_with_observer(
         "ZW11bGF0b3Ita2V5",
     );
     let driver = runtime
-        .create_driver(DriverOptions::builder(account).build())
+        .create_driver(
+            DriverOptions::builder(account)
+                .with_operation_options(client_options)
+                .build(),
+        )
         .await
         .expect("driver initializes against the emulator");
     (emulator, driver)
@@ -174,6 +201,183 @@ async fn setup_with_query_recorder() -> (
     let observer: Arc<dyn RequestObserver> = recorder.clone();
     let (emulator, driver) = setup_with_observer(Some(observer)).await;
     (emulator, driver, recorder)
+}
+
+#[tokio::test]
+async fn buffered_admission_precedes_items_and_uses_per_plan_options() {
+    use azure_data_cosmos_driver::error::CosmosStatus;
+
+    for partition_count in [1, 2] {
+        for mode in [QueryPlanMode::LocalPreferred, QueryPlanMode::GatewayOnly] {
+            let recorder = Arc::new(QueryRequestRecorder::default());
+            let (_, driver) = setup_with_policy(
+                Some(recorder.clone()),
+                OperationOptions::default(),
+                partition_count,
+            )
+            .await;
+            let container = driver
+                .resolve_container("testdb", "testcoll", OperationOptions::default())
+                .await
+                .unwrap();
+            let documents: Vec<_> = (0..18)
+                .map(|n| {
+                    serde_json::json!({
+                        "id": format!("id-{n}"), "pk": format!("pk-{n}"), "value": n % 6,
+                    })
+                })
+                .collect();
+            seed(&driver, &container, &documents).await;
+
+            for request in [None, Some(0), Some(2), Some(3), Some(1001), Some(u64::MAX)] {
+                for (sql, parameters, window, expected) in [
+                    ("SELECT DISTINCT VALUE c.value FROM c", vec![], None, 6),
+                    (
+                        "SELECT DISTINCT TOP @take VALUE c.value FROM c",
+                        vec![serde_json::json!({"name":"@take","value":3})],
+                        Some(3),
+                        3,
+                    ),
+                    (
+                        "SELECT DISTINCT VALUE c.value FROM c OFFSET @skip LIMIT @take",
+                        vec![
+                            serde_json::json!({"name":"@skip","value":1}),
+                            serde_json::json!({"name":"@take","value":2}),
+                        ],
+                        Some(3),
+                        2,
+                    ),
+                    (
+                        "SELECT DISTINCT TOP 0 VALUE c.value FROM c",
+                        vec![],
+                        Some(0),
+                        0,
+                    ),
+                    (
+                        "SELECT DISTINCT VALUE c.value FROM c OFFSET 0 LIMIT 0",
+                        vec![],
+                        Some(0),
+                        0,
+                    ),
+                    (
+                        "SELECT DISTINCT TOP 1000 VALUE c.value FROM c",
+                        vec![],
+                        Some(1000),
+                        6,
+                    ),
+                    (
+                        "SELECT DISTINCT TOP 1001 VALUE c.value FROM c",
+                        vec![],
+                        Some(1001),
+                        6,
+                    ),
+                ] {
+                    let query = QuerySpec {
+                        text: sql.into(),
+                        parameters,
+                        distinct_type: "Unordered".into(),
+                    };
+                    let mut options = PlanOptions::default().with_query_plan_mode(mode);
+                    if let Some(maximum) = request {
+                        options = options.with_max_buffered_query_window(maximum);
+                    }
+                    let denied =
+                        window.is_none_or(|window| window > options.max_buffered_query_window);
+                    for page_size in [1, 1000, u32::MAX] {
+                        recorder.take();
+                        let result = Box::pin(driver.plan_operation(
+                            query_operation(&container, &query, page_size),
+                            &OperationOptions::default(),
+                            None,
+                            &options.clone().with_max_fan_out(if denied {
+                                1
+                            } else {
+                                partition_count
+                            }),
+                        ))
+                        .await;
+                        assert!(recorder.take().is_empty(), "planning must not query items");
+                        if denied {
+                            let error = result
+                                .err()
+                                .expect("query outside finite policy must be denied");
+                            assert_eq!(
+                                error.status(),
+                                CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+                            );
+                            let message = error.to_string();
+                            assert!(message.contains("unordered DISTINCT"));
+                            assert!(message.contains("TOP or LIMIT"));
+                            assert!(message.contains("max_buffered_query_window"));
+                            assert!(!message.contains(sql));
+                            continue;
+                        }
+                        let mut plan = result.unwrap();
+                        let mut values = Vec::new();
+                        while let Some(response) = driver
+                            .execute_plan(
+                                &mut plan,
+                                Some(container.clone()),
+                                OperationOptions::default(),
+                            )
+                            .await
+                            .unwrap()
+                        {
+                            values.extend(documents_of(response));
+                        }
+                        let unique = sorted(values.clone());
+                        assert_eq!(values.len(), expected);
+                        let mut deduped = unique.clone();
+                        deduped.dedup();
+                        assert_eq!(deduped, unique);
+                        if expected == 6 {
+                            assert_eq!(
+                                unique,
+                                (0..6).map(|value| value.to_string()).collect::<Vec<_>>()
+                            );
+                        }
+                    }
+                }
+            }
+
+            // A complete logical key bypasses client buffering even with a zero window.
+            let query = QuerySpec {
+                text: "SELECT DISTINCT VALUE c.value FROM c".into(),
+                parameters: vec![],
+                distinct_type: "Unordered".into(),
+            };
+            let operation = CosmosOperation::query_items(
+                container.clone(),
+                Some(FeedRange::for_partition(
+                    PartitionKey::from("pk-0"),
+                    &PartitionKeyDefinition::new(vec!["/pk".into()]),
+                )),
+            )
+            .with_body(query_body(&query));
+            let options = OperationOptions::default();
+            let mut plan = Box::pin(
+                driver.plan_operation(
+                    operation,
+                    &options,
+                    None,
+                    &PlanOptions::default()
+                        .with_query_plan_mode(mode)
+                        .with_max_buffered_query_window(0),
+                ),
+            )
+            .await
+            .unwrap();
+            let mut values = Vec::new();
+            while let Some(response) = driver
+                .execute_plan(&mut plan, Some(container.clone()), options.clone())
+                .await
+                .unwrap()
+            {
+                values.extend(documents_of(response));
+            }
+            assert_eq!(values, vec![serde_json::json!(0)]);
+        }
+    }
 }
 
 async fn seed(
@@ -834,7 +1038,7 @@ async fn text_and_binary_query_pages_have_pipeline_parity() {
             distinct_type: "None".to_owned(),
         },
         QuerySpec {
-            text: "SELECT DISTINCT VALUE c.value FROM c".to_owned(),
+            text: "SELECT DISTINCT TOP 1000 VALUE c.value FROM c".to_owned(),
             parameters: Vec::new(),
             distinct_type: "Unordered".to_owned(),
         },
