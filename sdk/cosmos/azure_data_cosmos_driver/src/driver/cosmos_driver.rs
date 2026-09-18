@@ -15,7 +15,7 @@ use crate::{
         dataflow::{
             planner, CachedTopologyProvider, DrainedLeaf, OperationPlan, PartitionRoutingRefresh,
             Pipeline, PipelineContext, PipelineNodeState, RequestExecutor, RequestTarget,
-            TopologyProvider,
+            TopologyFetchErrors, TopologyProvider,
         },
         pipeline::{
             components::{
@@ -369,7 +369,7 @@ pub struct CosmosDriver {
     pk_range_region_pins: PkRangeRegionPins,
     /// Typed topology-fetch failures shared by callers coalesced on one cache
     /// initialization.
-    topology_fetch_errors: Arc<Mutex<HashMap<(String, String), crate::error::CosmosError>>>,
+    topology_fetch_errors: TopologyFetchErrors,
     /// Per-client ceiling on metadata operations making simultaneous cross-region attempts.
     /// Bounds the request amplification a hedging client can inflict on an
     /// alternate region during a brownout. See [`HedgeBudget`].
@@ -1833,7 +1833,7 @@ impl CosmosDriver {
             endpoint_probe_fn: TestEndpointProbeFn(endpoint_probe_fn_for_tests),
             pk_range_cache,
             pk_range_region_pins: Mutex::new(HashMap::new()),
-            topology_fetch_errors: Arc::new(Mutex::new(HashMap::new())),
+            topology_fetch_errors: TopologyFetchErrors::default(),
             hedge_budget,
             session_manager: SessionManager::new(),
             initialized: AtomicBool::new(false),
@@ -3455,7 +3455,7 @@ impl CosmosDriver {
                     cache,
                     container,
                     self.pk_range_page_fetcher(options.clone(), absolute_deadline),
-                    Arc::clone(&self.topology_fetch_errors),
+                    self.topology_fetch_errors.clone(),
                 )
             })
         });
@@ -4260,7 +4260,7 @@ impl CosmosDriver {
                 cache,
                 container_ref,
                 self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
-                Arc::clone(&self.topology_fetch_errors),
+                self.topology_fetch_errors.clone(),
             );
             let pipeline = planner::build_unordered_merge(
                 &feed_range,
@@ -4326,7 +4326,7 @@ impl CosmosDriver {
             cache,
             container_ref,
             self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
-            Arc::clone(&self.topology_fetch_errors),
+            self.topology_fetch_errors.clone(),
         );
 
         // Route streaming ORDER BY queries to the k-way merge instead of

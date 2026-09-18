@@ -3,11 +3,12 @@
 
 use super::framework;
 
-use std::{error::Error, num::NonZeroU32, time::Duration};
+use std::{error::Error, num::NonZeroU32, sync::Arc, time::Duration};
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
+    diagnostics::{DiagnosticsContext, TransportKind},
     feed::{FeedRange, FeedScope},
     models::{
         ContainerProperties, EffectivePartitionKey, PartitionKeyDefinition, ThroughputProperties,
@@ -67,7 +68,16 @@ async fn recreate_container(
 }
 
 fn recreation_test_options() -> TestOptions {
-    TestOptions::for_emulator().with_timeout(Duration::from_secs(240))
+    TestOptions::for_emulator()
+        .with_gateway_v2_disabled(true)
+        .with_timeout(Duration::from_secs(240))
+}
+
+fn assert_classic_gateway(diagnostics: Arc<DiagnosticsContext>) {
+    assert!(!diagnostics.requests().is_empty());
+    for request in diagnostics.requests().iter() {
+        assert_eq!(request.transport_kind(), TransportKind::Gateway);
+    }
 }
 
 fn assert_recreation_signal(error: &CosmosError) {
@@ -127,6 +137,7 @@ pub async fn changed_definition_recovers_supported_operations() -> Result<(), Bo
                 2,
                 "classic Gateway recovery should issue one stale attempt and one retry"
             );
+            assert_classic_gateway(created.diagnostics());
             let read: serde_json::Value = stale
                 .read_item(PARTITION_KEY_VALUE, "point-new-definition", None)
                 .await?
@@ -156,9 +167,10 @@ pub async fn changed_definition_recovers_supported_operations() -> Result<(), Bo
                 recreate_container(run_context, db_client, "/queryPk".into(), 800).await?;
             for (id, value) in [("query-new-definition-1", 3), ("query-new-definition-2", 4)] {
                 let item = item_for_path(id, "queryPk", value);
-                query_generation
+                let created = query_generation
                     .create_item(PARTITION_KEY_VALUE, id, item, None)
                     .await?;
+                assert_classic_gateway(created.diagnostics());
             }
             let queried: Vec<serde_json::Value> = Box::pin(stale.query_items(
                 Query::from("SELECT * FROM c"),
@@ -323,7 +335,7 @@ pub async fn stale_range_and_partition_shape_do_not_cross_recreation() -> Result
 
             let (_, replacement) =
                 recreate_container(run_context, db_client, "/tenant".into(), 500).await?;
-            replacement
+            let replacement_item = replacement
                 .create_item(
                     "tenant-a",
                     "replacement",
@@ -331,6 +343,7 @@ pub async fn stale_range_and_partition_shape_do_not_cross_recreation() -> Result
                     None,
                 )
                 .await?;
+            assert_classic_gateway(replacement_item.diagnostics());
 
             let range_result = stale
                 .query_items::<serde_json::Value>(

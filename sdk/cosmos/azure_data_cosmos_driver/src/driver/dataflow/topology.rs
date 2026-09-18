@@ -17,6 +17,86 @@ use crate::{
 
 use super::{PartitionRoutingRefresh, ResolvedRange, TopologyProvider};
 
+/// Shares typed fetch failures among callers coalesced by the routing cache.
+///
+/// The key deliberately matches the cache's physical-container identity. The
+/// final active caller removes the entry, so stale generations do not retain
+/// errors after their in-flight operations finish.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct TopologyFetchErrors {
+    entries: Arc<Mutex<HashMap<ContainerReference, TopologyFetchState>>>,
+}
+
+#[derive(Clone, Debug, Default)]
+struct TopologyFetchState {
+    active_callers: usize,
+    error: Option<crate::error::CosmosError>,
+}
+
+struct TopologyFetchRegistration {
+    errors: TopologyFetchErrors,
+    container: ContainerReference,
+}
+
+impl TopologyFetchErrors {
+    fn register(&self, container: &ContainerReference) -> TopologyFetchRegistration {
+        let mut entries = self
+            .entries
+            .lock()
+            .expect("topology fetch error mutex poisoned");
+        entries.entry(container.clone()).or_default().active_callers += 1;
+        TopologyFetchRegistration {
+            errors: self.clone(),
+            container: container.clone(),
+        }
+    }
+
+    fn clear(&self, container: &ContainerReference) {
+        if let Some(state) = self
+            .entries
+            .lock()
+            .expect("topology fetch error mutex poisoned")
+            .get_mut(container)
+        {
+            state.error = None;
+        }
+    }
+
+    fn record(&self, container: &ContainerReference, error: crate::error::CosmosError) {
+        self.entries
+            .lock()
+            .expect("topology fetch error mutex poisoned")
+            .entry(container.clone())
+            .or_default()
+            .error = Some(error);
+    }
+
+    fn get(&self, container: &ContainerReference) -> Option<crate::error::CosmosError> {
+        self.entries
+            .lock()
+            .expect("topology fetch error mutex poisoned")
+            .get(container)
+            .and_then(|state| state.error.clone())
+    }
+}
+
+impl Drop for TopologyFetchRegistration {
+    fn drop(&mut self) {
+        let mut entries = self
+            .errors
+            .entries
+            .lock()
+            .expect("topology fetch error mutex poisoned");
+        let state = entries
+            .get_mut(&self.container)
+            .expect("topology fetch registration missing");
+        state.active_callers -= 1;
+        if state.active_callers == 0 {
+            entries.remove(&self.container);
+        }
+    }
+}
+
 /// Adapts [`PartitionKeyRangeCache`] to the [`TopologyProvider`] trait.
 ///
 /// Holds a reference to the cache, the container being queried, and a function
@@ -34,7 +114,7 @@ pub(crate) struct CachedTopologyProvider<'a, F> {
     cache: &'a PartitionKeyRangeCache,
     container: ContainerReference,
     fetch_pk_ranges: F,
-    fetch_errors: Arc<Mutex<HashMap<(String, String), crate::error::CosmosError>>>,
+    fetch_errors: TopologyFetchErrors,
 }
 
 impl<'a, F> CachedTopologyProvider<'a, F> {
@@ -49,7 +129,7 @@ impl<'a, F> CachedTopologyProvider<'a, F> {
             cache,
             container,
             fetch_pk_ranges,
-            Arc::new(Mutex::new(HashMap::new())),
+            TopologyFetchErrors::default(),
         )
     }
 
@@ -57,7 +137,7 @@ impl<'a, F> CachedTopologyProvider<'a, F> {
         cache: &'a PartitionKeyRangeCache,
         container: ContainerReference,
         fetch_pk_ranges: F,
-        fetch_errors: Arc<Mutex<HashMap<(String, String), crate::error::CosmosError>>>,
+        fetch_errors: TopologyFetchErrors,
     ) -> Self {
         Self {
             cache,
@@ -80,24 +160,18 @@ where
     ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
         let force_refresh = matches!(refresh, PartitionRoutingRefresh::ForceRefresh);
         Box::pin(async move {
+            let _registration = self.fetch_errors.register(&self.container);
             let fetch_pk_ranges = |container: ContainerReference, continuation: Option<String>| {
-                let container_key = fetch_error_key(&container);
-                let result = (self.fetch_pk_ranges)(container, continuation);
-                let fetch_errors = Arc::clone(&self.fetch_errors);
+                let result = (self.fetch_pk_ranges)(container.clone(), continuation);
+                let fetch_errors = self.fetch_errors.clone();
                 async move {
                     match result.await {
                         Ok(result) => {
-                            fetch_errors
-                                .lock()
-                                .expect("topology fetch error mutex poisoned")
-                                .remove(&container_key);
+                            fetch_errors.clear(&container);
                             result
                         }
                         Err(error) => {
-                            fetch_errors
-                                .lock()
-                                .expect("topology fetch error mutex poisoned")
-                                .insert(container_key, error);
+                            fetch_errors.record(&container, error);
                             None
                         }
                     }
@@ -116,13 +190,7 @@ where
             let pk_ranges = match pk_ranges {
                 Some(ranges) if !ranges.is_empty() => ranges,
                 _ => {
-                    if let Some(error) = self
-                        .fetch_errors
-                        .lock()
-                        .expect("topology fetch error mutex poisoned")
-                        .get(&fetch_error_key(&self.container))
-                        .cloned()
-                    {
+                    if let Some(error) = self.fetch_errors.get(&self.container) {
                         return Err(error);
                     }
                     return Err(crate::error::CosmosError::builder()
@@ -145,13 +213,6 @@ where
     }
 }
 
-fn fetch_error_key(container: &ContainerReference) -> (String, String) {
-    (
-        container.account().endpoint().as_str().to_owned(),
-        container.base_path().to_owned(),
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -161,6 +222,10 @@ mod tests {
     };
 
     fn make_container() -> ContainerReference {
+        make_container_with_rid("c_rid")
+    }
+
+    fn make_container_with_rid(rid: &'static str) -> ContainerReference {
         let account = crate::models::AccountReference::with_master_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
@@ -170,7 +235,7 @@ mod tests {
             partition_key: serde_json::from_str(r#"{"paths":["/pk"],"version":2}"#).unwrap(),
             system_properties: Default::default(),
         };
-        ContainerReference::new(account, "db", "db_rid", "c", "c_rid", &props)
+        ContainerReference::new(account, "db", "db_rid", "c", rid, &props)
     }
 
     async fn single_range_fetch(
@@ -410,7 +475,7 @@ mod tests {
     async fn coalesced_callers_preserve_typed_fetch_error() {
         let cache = PartitionKeyRangeCache::new();
         let container = make_container();
-        let fetch_errors = Arc::new(Mutex::new(HashMap::new()));
+        let fetch_errors = TopologyFetchErrors::default();
         let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let make_fetch = || {
             let calls = Arc::clone(&calls);
@@ -427,7 +492,7 @@ mod tests {
             &cache,
             container.clone(),
             make_fetch(),
-            Arc::clone(&fetch_errors),
+            fetch_errors.clone(),
         );
         let mut right = CachedTopologyProvider::with_fetch_errors(
             &cache,
@@ -449,5 +514,27 @@ mod tests {
                 Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH)
             );
         }
+    }
+
+    #[test]
+    fn fetch_errors_are_isolated_by_container_generation() {
+        let errors = TopologyFetchErrors::default();
+        let old = make_container_with_rid("old_rid");
+        let replacement = make_container_with_rid("replacement_rid");
+        let old_registration = errors.register(&old);
+        let replacement_registration = errors.register(&replacement);
+
+        errors.record(&old, collection_rid_mismatch_error());
+        errors.clear(&replacement);
+
+        assert_eq!(
+            errors.get(&old).unwrap().status().sub_status(),
+            Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH)
+        );
+        assert!(errors.get(&replacement).is_none());
+
+        drop(old_registration);
+        drop(replacement_registration);
+        assert!(errors.entries.lock().unwrap().is_empty());
     }
 }
