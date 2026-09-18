@@ -41,8 +41,8 @@ use crate::{
         UserAgentFeatureFlags,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView, PlanOptions,
-        PartitionTopologyCacheMode, ResolvedThroughputControl,
+        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
+        PartitionTopologyCacheMode, PlanOptions, ResolvedThroughputControl,
         ThroughputControlGroupSnapshot,
     },
     ActivityId, CosmosResponse, DiagnosticsContext,
