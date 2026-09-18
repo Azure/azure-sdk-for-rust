@@ -6,11 +6,12 @@ use crate::{
     source_map::GeneratedMapping,
 };
 
-/// A single rendered Markdown line and whether it is a documentation comment.
+/// A single rendered Markdown line and its role in comments-patch rendering.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub(crate) struct RenderedLine {
     pub(crate) text: String,
     pub(crate) is_doc_comment: bool,
+    pub(crate) is_attribute: bool,
     pub(crate) declaration_location: Option<SourceLocation>,
 }
 
@@ -109,7 +110,7 @@ fn render_module(output: &mut Vec<RenderedLine>, module: &ApiModule, is_root: bo
     let body_indent = if is_root { indent } else { indent + 1 };
     push_module_doc_comments(output, indent, &module.doc_comments, is_root);
     for attribute in &module.attributes {
-        push_code(output, indent, &attribute.text);
+        push_attribute(output, indent, &attribute.text);
     }
     if !is_root {
         push_declaration(
@@ -136,7 +137,7 @@ fn render_module(output: &mut Vec<RenderedLine>, module: &ApiModule, is_root: bo
 fn render_item(output: &mut Vec<RenderedLine>, item: &ApiItem, indent: usize) {
     push_doc_comments(output, indent, &item.doc_comments);
     for attribute in &item.attributes {
-        push_code(output, indent, &attribute.text);
+        push_attribute(output, indent, &attribute.text);
     }
 
     push_declaration_multiline(
@@ -165,7 +166,7 @@ fn render_item(output: &mut Vec<RenderedLine>, item: &ApiItem, indent: usize) {
 fn render_member(output: &mut Vec<RenderedLine>, function: &ApiMember, indent: usize) {
     push_doc_comments(output, indent, &function.doc_comments);
     for attribute in &function.attributes {
-        push_code(output, indent, &attribute.text);
+        push_attribute(output, indent, &attribute.text);
     }
     push_declaration_multiline(
         output,
@@ -201,6 +202,7 @@ fn push_declaration_multiline(
             indent,
             line,
             false,
+            false,
             (index == 0).then_some(location).flatten(),
         );
     }
@@ -208,7 +210,7 @@ fn push_declaration_multiline(
 
 fn push_doc_comments(output: &mut Vec<RenderedLine>, indent: usize, doc_comments: &[String]) {
     for comment in doc_comments {
-        push_line(output, indent, comment, true, None);
+        push_line(output, indent, comment, true, false, None);
     }
 }
 
@@ -227,12 +229,16 @@ fn push_module_doc_comments(
         } else {
             comment.clone()
         };
-        push_line(output, indent, &comment, true, None);
+        push_line(output, indent, &comment, true, false, None);
     }
 }
 
 fn push_code(output: &mut Vec<RenderedLine>, indent: usize, text: &str) {
-    push_line(output, indent, text, false, None);
+    push_line(output, indent, text, false, false, None);
+}
+
+fn push_attribute(output: &mut Vec<RenderedLine>, indent: usize, text: &str) {
+    push_line(output, indent, text, false, true, None);
 }
 
 fn push_declaration(
@@ -241,7 +247,7 @@ fn push_declaration(
     text: &str,
     location: Option<&SourceLocation>,
 ) {
-    push_line(output, indent, text, false, location);
+    push_line(output, indent, text, false, false, location);
 }
 
 fn push_line(
@@ -249,6 +255,7 @@ fn push_line(
     indent: usize,
     text: &str,
     is_doc_comment: bool,
+    is_attribute: bool,
     declaration_location: Option<&SourceLocation>,
 ) {
     let mut line = "    ".repeat(indent);
@@ -256,6 +263,7 @@ fn push_line(
     output.push(RenderedLine {
         text: line,
         is_doc_comment,
+        is_attribute,
         declaration_location: declaration_location.cloned(),
     });
 }

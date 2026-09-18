@@ -62,7 +62,8 @@ documentation comments.
 `API.metadata.yml` is written next to `API.md` and records the normalized SHA-256 of `API.md`, the
 crate version, the `generate_api` version, and the rustc version used for generation.
 `API.comments.patch` is a unified diff that adds them back, so it can be applied to toggle
-documentation comments on:
+documentation comments on. Each comment hunk uses all attributes and the first declaration line as
+context:
 
 ```sh
 patch -p1 < API.comments.patch

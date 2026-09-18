@@ -8,6 +8,16 @@ fn code(text: &str) -> RenderedLine {
         declaration_location: None,
         text: text.to_string(),
         is_doc_comment: false,
+        is_attribute: false,
+    }
+}
+
+fn attribute(text: &str) -> RenderedLine {
+    RenderedLine {
+        declaration_location: None,
+        text: text.to_string(),
+        is_doc_comment: false,
+        is_attribute: true,
     }
 }
 
@@ -16,6 +26,7 @@ fn doc(text: &str) -> RenderedLine {
         declaration_location: None,
         text: text.to_string(),
         is_doc_comment: true,
+        is_attribute: false,
     }
 }
 
@@ -78,11 +89,12 @@ fn keeps_following_context_to_one_line() {
 }
 
 #[test]
-fn anchors_doc_comments_before_attributes() {
+fn anchors_doc_comments_through_attributes_and_declaration() {
     let lines = vec![
         code("```rust"),
         doc("/// Foo."),
-        code("#[cfg(feature = \"preview\")]"),
+        attribute("#[cfg(feature = \"preview\")]"),
+        attribute("#[derive(Clone, Debug)]"),
         code("pub struct Foo;"),
         code("```"),
     ];
@@ -93,8 +105,42 @@ fn anchors_doc_comments_before_attributes() {
         patch,
         "--- a/API.md\n\
          +++ b/API.md\n\
-         @@ -2,1 +2,2 @@\n\
+         @@ -2,3 +2,4 @@\n\
          +/// Foo.\n\
-         \x20#[cfg(feature = \"preview\")]\n"
+         \x20#[cfg(feature = \"preview\")]\n\
+         \x20#[derive(Clone, Debug)]\n\
+         \x20pub struct Foo;\n"
     );
+}
+
+#[test]
+fn keeps_documented_members_in_separate_hunks_with_attributes() {
+    let lines = vec![
+        code("pub struct Foo {"),
+        doc("    /// The first field."),
+        attribute("    #[cfg(feature = \"preview\")]"),
+        code("    pub first: bool,"),
+        doc("    /// The second field."),
+        attribute("    #[cfg(feature = \"preview\")]"),
+        attribute("    #[deprecated]"),
+        code("    pub second: bool,"),
+        code("}"),
+    ];
+
+    let patch = render(&lines, "API.md");
+
+    assert_eq!(patch.matches("@@ -").count(), 2);
+    assert!(patch.contains(
+        "@@ -2,2 +2,3 @@\n\
+         +    /// The first field.\n\
+         \x20    #[cfg(feature = \"preview\")]\n\
+         \x20    pub first: bool,\n"
+    ));
+    assert!(patch.contains(
+        "@@ -4,3 +5,4 @@\n\
+         +    /// The second field.\n\
+         \x20    #[cfg(feature = \"preview\")]\n\
+         \x20    #[deprecated]\n\
+         \x20    pub second: bool,\n"
+    ));
 }

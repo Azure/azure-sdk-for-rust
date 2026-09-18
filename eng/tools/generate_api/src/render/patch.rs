@@ -58,7 +58,7 @@ pub(crate) fn render(lines: &[RenderedLine], file_name: &str) -> String {
     output
 }
 
-/// Collects one hunk per contiguous doc-comment block plus its next context line.
+/// Collects one hunk per contiguous doc-comment block plus its declaration context.
 fn collect_hunks(lines: &[RenderedLine]) -> Vec<(usize, usize)> {
     let mut hunks = Vec::new();
     let mut index = 0;
@@ -73,12 +73,13 @@ fn collect_hunks(lines: &[RenderedLine]) -> Vec<(usize, usize)> {
             index += 1;
         }
 
-        let end = lines
-            .iter()
-            .enumerate()
-            .skip(index + 1)
-            .find_map(|(line_index, line)| (!line.is_doc_comment).then_some(line_index))
-            .unwrap_or(index);
+        let mut end = index;
+        while end + 1 < lines.len() && lines[end + 1].is_attribute {
+            end += 1;
+        }
+        if end + 1 < lines.len() && !lines[end + 1].is_doc_comment {
+            end += 1;
+        }
         hunks.push((start, end));
         index = end + 1;
     }

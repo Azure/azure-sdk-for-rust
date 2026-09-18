@@ -217,7 +217,7 @@ For traits whose rustdoc-expanded methods carry synthetic async-trait lifetimes:
 - `render::patch` turns the marked lines into a unified diff against `API.md`
 - the diff only contains insertions
 - each contiguous doc-comment block becomes its own hunk
-- each hunk includes only the doc comments plus the next non-doc line as context
+- each hunk includes the doc comments, all following attributes, and the first declaration line as context
 - no doc comments means an empty patch file
 
 ## Source map output
