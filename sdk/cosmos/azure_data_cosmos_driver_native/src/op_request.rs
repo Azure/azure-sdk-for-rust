@@ -219,11 +219,11 @@ impl CosmosPatchStrategy {
 }
 
 /// Tri-state mirror of [`QueryPlanMode`] for the flat options struct.
-/// `0` (`Unset`) means "inherit from a lower-priority layer".
+/// `0` (`Unset`) means "use the LocalPreferred default".
 #[repr(i32)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CosmosQueryPlanMode {
-    /// Inherit from account / runtime / environment.
+    /// Use the LocalPreferred default.
     CosmosQueryPlanModeUnset = 0,
     /// Prefer local planning, falling back to the Gateway before execution.
     CosmosQueryPlanModeLocalPreferred = 1,
@@ -478,12 +478,19 @@ pub struct CosmosOperationOptions {
     /// [`binary_encoding_enabled`](Self::binary_encoding_enabled) to `1`.
     pub binary_encoding_request_text_response: i8,
     /// Query-plan mode encoded as a [`CosmosQueryPlanMode`] discriminant.
-    /// `0` (`Unset`) inherits. Stored as a raw `i32` so invalid host values can
-    /// be rejected before materializing the enum.
+    /// `0` (`Unset`) uses LocalPreferred. Raw `i32` storage allows invalid host
+    /// values to be rejected before materializing the enum.
     pub query_plan_mode: i32,
 }
 
 impl CosmosOperationOptions {
+    fn to_plan_options(&self, max_fan_out: u32) -> Result<PlanOptions, CosmosErrorCode> {
+        let mode = CosmosQueryPlanMode::from_i32(self.query_plan_mode)?
+            .to_driver()
+            .unwrap_or_default();
+        Ok(plan_options_from_max_fan_out(max_fan_out).with_query_plan_mode(mode))
+    }
+
     /// Builds the driver [`OperationOptions`] from this flat struct.
     ///
     /// # Safety
@@ -499,7 +506,7 @@ impl CosmosOperationOptions {
             CosmosContentResponseOnWriteOpt::from_i32(self.content_response_on_write)?
                 .to_driver()?;
         opts.patch_strategy = CosmosPatchStrategy::from_i32(self.patch_strategy)?.to_driver();
-        opts.query_plan_mode = CosmosQueryPlanMode::from_i32(self.query_plan_mode)?.to_driver();
+        CosmosQueryPlanMode::from_i32(self.query_plan_mode)?;
         opts.session_capturing_disabled = decode_tristate_bool(self.session_capturing_disabled)?;
 
         opts.max_failover_retry_count = decode_opt_u32(self.max_failover_retry_count);
@@ -932,7 +939,12 @@ pub(crate) unsafe fn build_request(
 
     // A `max_fan_out` of 0 means "unset": fall back to the driver default. A
     // non-zero value opts into a broader (or narrower) fan-out.
-    let plan_options = plan_options_from_max_fan_out(req.max_fan_out);
+    let plan_options = if req.options.is_null() {
+        plan_options_from_max_fan_out(req.max_fan_out)
+    } else {
+        // SAFETY: non-NULL checked; caller guarantees a valid struct.
+        unsafe { (*req.options).to_plan_options(req.max_fan_out)? }
+    };
 
     Ok(BuiltRequest {
         operation,
@@ -1614,21 +1626,22 @@ mod tests {
     fn query_plan_mode_maps_to_driver() {
         use CosmosQueryPlanMode as M;
         for (mode, expected) in [
-            (M::CosmosQueryPlanModeUnset, None),
+            (M::CosmosQueryPlanModeUnset, QueryPlanMode::LocalPreferred),
             (
                 M::CosmosQueryPlanModeLocalPreferred,
-                Some(QueryPlanMode::LocalPreferred),
+                QueryPlanMode::LocalPreferred,
             ),
             (
                 M::CosmosQueryPlanModeGatewayOnly,
-                Some(QueryPlanMode::GatewayOnly),
+                QueryPlanMode::GatewayOnly,
             ),
         ] {
             let mut options = cosmos_operation_options_default();
             options.query_plan_mode = mode as i32;
-            // SAFETY: all pointer fields are NULL / len 0.
-            let driver = unsafe { options.to_driver() }.expect("options convert");
+            let driver = options.to_plan_options(250).expect("options convert");
             assert_eq!(driver.query_plan_mode, expected);
+            assert_eq!(driver.max_fan_out, 250);
+            assert_eq!(driver.max_buffered_query_window, 1000);
         }
     }
 
@@ -1782,7 +1795,10 @@ mod tests {
         assert_eq!(driver.read_consistency_strategy, None);
         assert_eq!(driver.content_response_on_write, None);
         assert_eq!(driver.patch_strategy, None);
-        assert_eq!(driver.query_plan_mode, None);
+        assert_eq!(
+            o.to_plan_options(0).unwrap().query_plan_mode,
+            QueryPlanMode::LocalPreferred
+        );
         assert_eq!(driver.session_capturing_disabled, None);
         assert_eq!(driver.max_failover_retry_count, None);
         assert_eq!(driver.max_session_retry_count, None);

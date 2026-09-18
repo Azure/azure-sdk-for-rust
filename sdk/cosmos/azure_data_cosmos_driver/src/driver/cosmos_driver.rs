@@ -39,7 +39,7 @@ use crate::{
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView, PlanOptions,
-        QueryPlanMode, ResolvedThroughputControl, ThroughputControlGroupSnapshot,
+        ResolvedThroughputControl, ThroughputControlGroupSnapshot,
     },
     ActivityId, CosmosResponse, DiagnosticsContext,
 };
@@ -2173,13 +2173,6 @@ impl CosmosDriver {
         )
     }
 
-    fn effective_query_plan_mode(&self, options: &OperationOptions) -> QueryPlanMode {
-        self.operation_options_view(options)
-            .query_plan_mode()
-            .copied()
-            .unwrap_or_default()
-    }
-
     /// Computes the effective throughput-control header values for an operation.
     ///
     /// Resolves the per-request `x-ms-cosmos-throughput-bucket` and
@@ -4058,7 +4051,7 @@ impl CosmosDriver {
             operation_type = ?operation.operation_type(),
             resource_type = ?operation.resource_type(),
             resource_reference = ?operation.resource_reference(),
-            query_plan_mode = ?self.effective_query_plan_mode(options),
+            query_plan_mode = ?plan_options.query_plan_mode,
             "planning operation"
         );
 
@@ -4181,7 +4174,9 @@ impl CosmosDriver {
             Err(error) => {
                 if matches!(
                     query_planning::try_resolve_without_topology(
-                        self, container, &operation, options,
+                        container,
+                        &operation,
+                        plan_options,
                     ),
                     Some(ResolvedQueryPlan::Empty)
                 ) {
@@ -4195,7 +4190,11 @@ impl CosmosDriver {
         // `Box::pin` keeps `plan_operation`'s future small. Inlined, it grows to
         // 17,288 bytes and trips `clippy::large_futures` at five caller sites.
         let resolved = Box::pin(query_planning::resolve_query_plan(
-            self, container, &operation, options,
+            self,
+            container,
+            &operation,
+            options,
+            plan_options,
         ))
         .await?;
 
@@ -4208,6 +4207,8 @@ impl CosmosDriver {
             }
             ResolvedQueryPlan::Plan(plan) => *plan,
         };
+
+        planner::validate_buffered_query(&query_plan, plan_options.max_buffered_query_window)?;
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();
