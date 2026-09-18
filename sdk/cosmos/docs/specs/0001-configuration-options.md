@@ -125,6 +125,23 @@ These enums and newtypes are used by multiple option groups and operation types.
 
 ### Enums
 
+#### `PartitionTopologyCacheMode`
+
+Controls when the always-present partition topology cache is populated:
+
+- `Eager` loads the complete partition-key-range map during container
+  resolution. It is the default and strongly recommended mode because topology
+  is important to most operations and can become necessary unexpectedly.
+- `Lazy` defers the load until the first topology-dependent operation. It is a
+  compatibility escape hatch and can add a full-cache latency spike to that
+  operation.
+
+The mode is configured on `PartitionFailoverOptions`, is read once when the
+driver is constructed, and uses
+`AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE` as its environment fallback. An
+explicit builder value wins over the environment value; invalid environment
+values are logged and fall back to `Eager`.
+
 #### `ReadConsistencyStrategy`
 
 Replaces `ConsistencyLevel` for per-request use. Represents the consistency guarantee requested for a read operation.

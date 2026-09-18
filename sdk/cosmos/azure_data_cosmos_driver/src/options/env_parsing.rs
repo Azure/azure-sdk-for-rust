@@ -348,6 +348,7 @@ pub(crate) mod test_env {
     /// Tests clear all of these before applying their own subset so a value left
     /// in the ambient / CI environment cannot leak into an assertion.
     pub(crate) const PPCB_ENV_VARS: &[&str] = &[
+        "AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE",
         "AZURE_COSMOS_PPCB_ENABLED",
         "AZURE_COSMOS_PPCB_ENABLED_OVERRIDE",
         "AZURE_COSMOS_PPCB_READ_FAILURE_THRESHOLD",

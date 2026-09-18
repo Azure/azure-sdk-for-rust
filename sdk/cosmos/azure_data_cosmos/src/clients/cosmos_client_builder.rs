@@ -99,7 +99,6 @@ pub struct CosmosClientBuilder {
     backup_endpoints: Vec<azure_core::http::Url>,
     /// Options to use for per-partition failover (PPAF, PPCB)
     partition_failover_options: Option<PartitionFailoverOptions>,
-    partition_key_range_cache_enabled: Option<bool>,
 }
 
 impl CosmosClientBuilder {
@@ -153,18 +152,6 @@ impl CosmosClientBuilder {
     /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE=false`.
     pub fn with_partition_failover_options(mut self, options: PartitionFailoverOptions) -> Self {
         self.partition_failover_options = Some(options);
-        self
-    }
-
-    /// Enables or disables partition key range topology caching for this client.
-    ///
-    /// When disabled, the client never requests `/pkranges`. Cross-partition
-    /// queries, change-feed reads requiring physical topology, and physical
-    /// feed-range APIs are unavailable. Logical-partition change-feed reads remain
-    /// available. Automatic session token management is disabled, but user-provided
-    /// session tokens are still sent unchanged.
-    pub fn with_partition_key_range_cache_enabled(mut self, enabled: bool) -> Self {
-        self.partition_key_range_cache_enabled = Some(enabled);
         self
     }
 
@@ -334,9 +321,6 @@ impl CosmosClientBuilder {
             operation_options: self.options.operation,
             user_agent_suffix: self.options.user_agent_suffix,
             partition_failover_options: self.partition_failover_options,
-            partition_key_range_cache_enabled: self
-                .partition_key_range_cache_enabled
-                .unwrap_or(true),
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules,
             throughput_control_groups: self.throughput_control_groups,
@@ -371,7 +355,6 @@ struct DriverOptionsInput {
     operation_options: OperationOptions,
     user_agent_suffix: Option<UserAgentSuffix>,
     partition_failover_options: Option<PartitionFailoverOptions>,
-    partition_key_range_cache_enabled: bool,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
     throughput_control_groups: Vec<ThroughputControlGroupOptions>,
@@ -394,8 +377,7 @@ impl DriverOptionsInput {
         };
         let mut builder = azure_data_cosmos_driver::options::DriverOptions::builder(self.account)
             .with_preferred_regions(preferred_regions)
-            .with_operation_options(self.operation_options)
-            .with_partition_key_range_cache_enabled(self.partition_key_range_cache_enabled);
+            .with_operation_options(self.operation_options);
         if let Some(suffix) = self.user_agent_suffix {
             builder = builder.with_user_agent_suffix(suffix);
         }
@@ -511,7 +493,6 @@ mod tests {
             operation_options: OperationOptions::default(),
             user_agent_suffix: None,
             partition_failover_options: None,
-            partition_key_range_cache_enabled: true,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
             throughput_control_groups: Vec::new(),
@@ -633,17 +614,5 @@ mod tests {
             opts.partition_failover_options().circuit_breaker_enabled(),
             PartitionFailoverOptions::default().circuit_breaker_enabled(),
         );
-    }
-
-    #[test]
-    fn partition_key_range_cache_option_flows_to_driver_options() {
-        let opts = DriverOptionsInput {
-            partition_key_range_cache_enabled: false,
-            ..test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()))
-        }
-        .build()
-        .expect("driver options should build");
-
-        assert!(!opts.partition_key_range_cache_enabled());
     }
 }

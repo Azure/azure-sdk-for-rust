@@ -43,8 +43,9 @@ owns that key. The `PartitionKeyRangeCache` provides this resolution layer.
 1. **Efficient EPK→Range resolution** — Given a user-supplied partition key and a
    container reference, compute the effective partition key (EPK) and look up the
    owning range ID in O(log n) time.
-2. **Lazy fetching** — Fetch the `/pkranges` feed from the service only on first
-   access for a container, not eagerly for every container the client touches.
+2. **Predictable loading** — Load the `/pkranges` feed during container
+   resolution by default, with a `Lazy` compatibility mode that defers the same
+   load until first use.
 3. **Single-pending-I/O semantics** — When multiple concurrent requests target the
    same container before / during the initial fetch, only one `/pkranges` call
    happens; all others await the shared result.
@@ -64,7 +65,7 @@ flowchart TD
     Caller["<b>Caller (Operation Pipeline)</b><br/>resolve_partition_key_range_id(container, pk, fetch_fn)"]
     Cache["<b>PartitionKeyRangeCache</b><br/>1. Guard: pk.is_empty() → None (cross-partition)<br/>2. Compute EPK from pk values + container's PK definition<br/>3. Lookup routing map from AsyncCache&lt;ContainerReference, ContainerRoutingMap&gt;<br/>&nbsp;&nbsp;&nbsp;• Cache hit → use existing routing map<br/>&nbsp;&nbsp;&nbsp;• Cache miss → invoke fetch_pk_ranges(container)<br/>4. Binary search the routing map for the EPK<br/>&nbsp;&nbsp;&nbsp;• O(log n) where n = number of partition key ranges<br/>5. Return range ID (or None)"]
     EPK["EPK Engine<br/>(murmur hash V1 / V2)"]
-    AC["AsyncCache<br/>(per-key lazy I/O)"]
+    AC["AsyncCache<br/>(per-key single-pending I/O)"]
     RM["ContainerRoutingMap<br/>(sorted ranges + binary search)"]
     Caller --> Cache
     Cache --> EPK
@@ -338,12 +339,18 @@ The final bounds check uses direct `&str` comparisons (`min_inclusive <= epk` an
 
 ### 6.1 Initialization
 
-The cache is created empty — no partition key ranges are fetched until the first
-`resolve_partition_key_range_id` call for a given container.
+The cache is created empty for each driver. In the default
+`PartitionTopologyCacheMode::Eager` mode, name- and RID-based container
+resolution immediately populate the entry and fail if no valid routing map can
+be loaded. `PartitionTopologyCacheMode::Lazy` leaves the entry empty until an
+operation first needs topology.
 
-### 6.2 Population (Lazy Fetch via Change Feed Loop)
+Both modes use the same cache and fetch path; the mode changes only when the
+initial lookup occurs.
 
-On the first request for a container:
+### 6.2 Population via Change Feed Loop
+
+On the initial lookup for a container:
 
 1. `AsyncCache::get_or_insert_with` detects a cache miss.
 2. `fetch_and_build_routing_map` runs the **change feed loop**:

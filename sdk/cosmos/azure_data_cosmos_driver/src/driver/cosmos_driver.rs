@@ -41,8 +41,9 @@ use crate::{
         UserAgentFeatureFlags,
     },
     options::{
-        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView, PlanOptions,
-        ResolvedThroughputControl, ThroughputControlGroupSnapshot,
+        ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
+        PartitionTopologyCacheMode, PlanOptions, ResolvedThroughputControl,
+        ThroughputControlGroupSnapshot,
     },
     ActivityId, CosmosResponse, DiagnosticsContext,
 };
@@ -363,7 +364,7 @@ pub struct CosmosDriver {
     /// Cache for partition key range routing maps.
     /// Used to pre-resolve partition key range IDs for PPAF/PPCB
     /// before the first request attempt.
-    pk_range_cache: Option<PartitionKeyRangeCache>,
+    pk_range_cache: PartitionKeyRangeCache,
     /// Region pins protecting the change-feed continuations held by
     /// `pk_range_cache`. See [`PkRangeRegionPins`].
     pk_range_region_pins: PkRangeRegionPins,
@@ -1814,9 +1815,7 @@ impl CosmosDriver {
         // Read the hedge ceiling once, here: it is fixed for the driver's
         // lifetime, and `options` is moved into `Self` below.
         let hedge_budget = HedgeBudget::new(options.hedging_options());
-        let pk_range_cache = options
-            .partition_key_range_cache_enabled()
-            .then(PartitionKeyRangeCache::new);
+        let pk_range_cache = PartitionKeyRangeCache::new();
 
         Ok(Self {
             runtime,
@@ -1847,17 +1846,6 @@ impl CosmosDriver {
     /// Returns the account reference.
     pub fn account(&self) -> &AccountReference {
         self.options.account()
-    }
-
-    fn partition_key_range_cache(&self) -> crate::error::Result<&PartitionKeyRangeCache> {
-        self.pk_range_cache.as_ref().ok_or_else(|| {
-            crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED)
-                .with_message(
-                    "the partition key range cache is disabled, but this operation requires partition topology",
-                )
-                .build()
-        })
     }
 
     /// **Internal test hook -- not part of the public API.**
@@ -2131,13 +2119,15 @@ impl CosmosDriver {
         Ok(())
     }
 
-    /// Eagerly primes the container metadata cache.
+    /// Eagerly primes the container metadata and, by default, partition topology caches.
     ///
     /// Resolves container properties (partition key definition, resource ID)
-    /// and caches them so that subsequent operations targeting this container
-    /// can skip the metadata lookup round-trip.
+    /// and caches them. When partition topology mode is
+    /// [`Eager`](PartitionTopologyCacheMode::Eager), this also loads the complete
+    /// partition key range map.
     ///
-    /// Returns an error if the container does not exist or is unreachable.
+    /// Returns an error if the container or its eagerly loaded topology cannot
+    /// be resolved.
     pub async fn prime_container(
         &self,
         db_name: &str,
@@ -2529,7 +2519,7 @@ impl CosmosDriver {
         automatic_session_management_active: bool,
         options: &OperationOptions,
     ) -> Option<PartitionKeyRangeId> {
-        let cache = self.pk_range_cache.as_ref()?;
+        let cache = &self.pk_range_cache;
         // Only pre-resolve for partitioned data plane operations.
         if !operation
             .resource_type()
@@ -3075,8 +3065,7 @@ impl CosmosDriver {
                     self.fetch_account_properties(self.options.account())
                 })
                 .await?;
-            self.pk_range_cache.is_some()
-                && !session_capturing_disabled
+            !session_capturing_disabled
                 && read_consistency_strategy.is_session_effective(
                     account_properties
                         .user_consistency_policy
@@ -3280,10 +3269,6 @@ impl CosmosDriver {
             }
             tracing::debug!("plan execution started");
 
-            if plan.requires_partition_key_range_topology() {
-                self.partition_key_range_cache()?;
-            }
-
             let absolute_deadline = plan.operation.absolute_deadline().or_else(|| {
                 self.operation_options_view(&options)
                     .end_to_end_latency_policy()
@@ -3416,14 +3401,12 @@ impl CosmosDriver {
             container_recreation_recovery_disabled: plan.container_recreation_recovery_attempted,
             container_recreation_recovery_tracker: Arc::clone(&recovery_tracker),
         };
-        let mut topology = container.and_then(|container| {
-            self.pk_range_cache.as_ref().map(|cache| {
-                CachedTopologyProvider::new(
-                    cache,
-                    container,
-                    self.pk_range_page_fetcher(options.clone(), absolute_deadline),
-                )
-            })
+        let mut topology = container.map(|container| {
+            CachedTopologyProvider::new(
+                &self.pk_range_cache,
+                container,
+                self.pk_range_page_fetcher(options.clone(), absolute_deadline),
+            )
         });
         let mut context = PipelineContext::new(
             &mut executor,
@@ -3542,11 +3525,10 @@ impl CosmosDriver {
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(&account, write_region);
 
-        let automatic_session_management_active = self.pk_range_cache.is_some()
-            && !effective_options
-                .session_capturing_disabled()
-                .copied()
-                .unwrap_or(false)
+        let automatic_session_management_active = !effective_options
+            .session_capturing_disabled()
+            .copied()
+            .unwrap_or(false)
             && effective_options
                 .read_consistency_strategy()
                 .copied()
@@ -3637,7 +3619,6 @@ impl CosmosDriver {
                 .default_consistency_level,
             effective_throughput_control,
             pre_resolved_pk_range_id,
-            self.pk_range_cache.is_some(),
             &self.hedge_budget,
         )
         .await;
@@ -3711,7 +3692,6 @@ impl CosmosDriver {
                 .default_consistency_level,
             retry_throughput_control,
             retry_pk_range_id,
-            self.pk_range_cache.is_some(),
             &self.hedge_budget,
         )
         .await;
@@ -3776,9 +3756,7 @@ impl CosmosDriver {
         }
 
         self.session_manager.remap_container(previous, replacement);
-        if let Some(cache) = &self.pk_range_cache {
-            cache.invalidate(previous).await;
-        }
+        self.pk_range_cache.invalidate(previous).await;
         self.pk_range_region_pins
             .lock()
             .expect("partition-key-range region-pin mutex poisoned")
@@ -3881,8 +3859,10 @@ impl CosmosDriver {
     /// Resolves a container by database and container name.
     ///
     /// Reads the database and container from the service to obtain their
-    /// resource IDs (RIDs) and container properties (partition key, unique key
-    /// policy).
+    /// resource IDs (RIDs) and container properties. By default, it also loads
+    /// the complete partition topology before returning. Set
+    /// [`PartitionTopologyCacheMode::Lazy`] only as a compatibility escape
+    /// hatch when container-resolution I/O cannot yet be tolerated.
     ///
     /// # Parameters
     ///
@@ -3909,7 +3889,7 @@ impl CosmosDriver {
     ///     .create_driver(azure_data_cosmos_driver::options::DriverOptions::builder(account).build())
     ///     .await?;
     ///
-    /// // Resolve the container (fetched from service on each call)
+    /// // Resolve the container and eagerly load its partition topology.
     /// let container = driver.resolve_container("mydb", "mycontainer", OperationOptions::default()).await?;
     ///
     /// // Use the resolved container for item operations
@@ -3933,7 +3913,9 @@ impl CosmosDriver {
     /// Resolves a container by database name and container name.
     ///
     /// Attempts to resolve from `ContainerCache` first. On cache miss, fetches
-    /// metadata from the service and populates the cache.
+    /// metadata from the service and populates the cache. In eager topology
+    /// mode, resolution also primes this driver's partition topology cache and
+    /// fails if no valid routing map can be loaded.
     pub async fn resolve_container_by_name(
         &self,
         db_name: &str,
@@ -3943,6 +3925,7 @@ impl CosmosDriver {
         let endpoint = self.account().endpoint().as_str().to_owned();
         let db_name_owned = db_name.to_owned();
         let container_name_owned = container_name.to_owned();
+        let topology_options = operation_options.clone();
 
         let resolved = self
             .runtime
@@ -3965,15 +3948,20 @@ impl CosmosDriver {
             })
             .await?;
 
-        Ok(resolved.as_ref().clone())
+        let resolved = resolved.as_ref().clone();
+        self.prime_partition_topology(&resolved, topology_options)
+            .await?;
+        Ok(resolved)
     }
 
     /// Resolves a container by its RID.
     ///
     /// Attempts to resolve from `ContainerCache` (by-RID index) first. On a cache
     /// miss, fetches metadata from the service addressing the container by RID and
-    /// populates the cache. The returned [`ContainerReference`] is RID-addressed
-    /// (it carries no database name).
+    /// populates the cache. In eager topology mode, resolution also primes this
+    /// driver's partition topology cache and fails if no valid routing map can be
+    /// loaded. The returned [`ContainerReference`] is RID-addressed (it carries no
+    /// database name).
     pub async fn resolve_container_by_rid(
         &self,
         container_rid: &str,
@@ -3981,6 +3969,7 @@ impl CosmosDriver {
     ) -> crate::error::Result<ContainerReference> {
         let endpoint = self.account().endpoint().as_str().to_owned();
         let container_rid_owned = container_rid.to_owned();
+        let topology_options = operation_options.clone();
 
         let resolved = self
             .runtime
@@ -3998,7 +3987,47 @@ impl CosmosDriver {
             })
             .await?;
 
-        Ok(resolved.as_ref().clone())
+        let resolved = resolved.as_ref().clone();
+        self.prime_partition_topology(&resolved, topology_options)
+            .await?;
+        Ok(resolved)
+    }
+
+    async fn prime_partition_topology(
+        &self,
+        container: &ContainerReference,
+        operation_options: OperationOptions,
+    ) -> crate::error::Result<()> {
+        if self
+            .options
+            .partition_failover_options()
+            .partition_topology_cache_mode()
+            == PartitionTopologyCacheMode::Lazy
+        {
+            return Ok(());
+        }
+
+        let routing_map = self
+            .pk_range_cache
+            .try_lookup(
+                container,
+                false,
+                self.pk_range_page_fetcher(operation_options, None),
+            )
+            .await;
+
+        if routing_map.is_some() {
+            return Ok(());
+        }
+
+        Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+            .with_message(format!(
+                "failed to load partition topology while resolving container '{}' (RID '{}')",
+                container.name(),
+                container.rid()
+            ))
+            .build())
     }
 
     /// Plans the execution of a Cosmos DB operation.
@@ -4211,7 +4240,7 @@ impl CosmosDriver {
         //    needed). Children are polled round-robin and never evicted on
         //    304 so the stream is infinite.
         if operation.is_change_feed() {
-            let cache = self.partition_key_range_cache()?;
+            let cache = &self.pk_range_cache;
             let container = operation.container().ok_or_else(|| {
                 crate::error::CosmosError::builder()
                     .with_status(
@@ -4249,26 +4278,7 @@ impl CosmosDriver {
                 .build()
         })?;
 
-        // A locally proven contradictory PK predicate is the only cross-partition
-        // query that can complete without topology. All potentially non-empty
-        // queries preserve the cache-disabled error before Gateway I/O.
-        let cache = match self.partition_key_range_cache() {
-            Ok(cache) => cache,
-            Err(error) => {
-                if matches!(
-                    query_planning::try_resolve_without_topology(
-                        container,
-                        &operation,
-                        plan_options,
-                    ),
-                    Some(ResolvedQueryPlan::Empty)
-                ) {
-                    let pipeline = Pipeline::new(Box::new(DrainedLeaf));
-                    return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
-                }
-                return Err(error);
-            }
-        };
+        let cache = &self.pk_range_cache;
 
         // `Box::pin` keeps `plan_operation`'s future small. Inlined, it grows to
         // 17,288 bytes and trips `clippy::large_futures` at five caller sites.
@@ -4345,10 +4355,6 @@ impl CosmosDriver {
     /// is `true`, the cached routing map is refreshed from the service before
     /// returning results.
     ///
-    /// # Errors
-    ///
-    /// Returns [`crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED`]
-    /// when partition key range caching is disabled.
     pub async fn resolve_all_partition_key_ranges(
         &self,
         container: &ContainerReference,
@@ -4356,7 +4362,7 @@ impl CosmosDriver {
     ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
     {
         let routing_map = self
-            .partition_key_range_cache()?
+            .pk_range_cache
             .try_lookup(
                 container,
                 force_refresh,
@@ -4386,10 +4392,6 @@ impl CosmosDriver {
     /// cannot be resolved. When `force_refresh` is `true`, the cached routing
     /// map is refreshed from the service before lookup.
     ///
-    /// # Errors
-    ///
-    /// Returns [`crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED`]
-    /// when partition key range caching is disabled.
     pub async fn resolve_partition_key_ranges_for_key(
         &self,
         container: &ContainerReference,
@@ -4397,7 +4399,7 @@ impl CosmosDriver {
         force_refresh: bool,
     ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
     {
-        let cache = self.partition_key_range_cache()?;
+        let cache = &self.pk_range_cache;
         if partition_key.is_empty() {
             return Ok(None);
         }
@@ -4881,69 +4883,6 @@ mod tests {
             err.status(),
             crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
-    }
-
-    fn cache_disabled_test_driver(runtime: Arc<CosmosDriverRuntime>) -> CosmosDriver {
-        let driver = CosmosDriver::new(
-            runtime,
-            DriverOptions::builder(test_account())
-                .with_partition_key_range_cache_enabled(false)
-                .build(),
-        )
-        .expect("CosmosDriver::new should succeed in tests");
-        driver.initialized.store(true, Ordering::Release);
-        driver
-    }
-
-    #[tokio::test]
-    async fn cache_disabled_change_feed_planning_distinguishes_logical_from_full() {
-        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
-        let driver = cache_disabled_test_driver(runtime);
-        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
-        let logical_range = FeedRange::for_partition(
-            PartitionKey::from("pk1"),
-            container.partition_key_definition(),
-        );
-
-        driver
-            .plan_operation(
-                CosmosOperation::change_feed(container.clone(), Some(logical_range)),
-                &OperationOptions::default(),
-                None,
-                &PlanOptions::default(),
-            )
-            .await
-            .expect("logical-partition change feed should use the trivial plan");
-
-        let error = match driver
-            .plan_operation(
-                CosmosOperation::change_feed(container, Some(FeedRange::full())),
-                &OperationOptions::default(),
-                None,
-                &PlanOptions::default(),
-            )
-            .await
-        {
-            Ok(_) => panic!("full-container change feed should require physical topology"),
-            Err(error) => error,
-        };
-        assert_eq!(
-            error.status(),
-            crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED
-        );
-        assert_eq!(
-            error.status().status_code(),
-            azure_core::http::StatusCode::BadRequest
-        );
-        assert_eq!(error.status().sub_status().map(|s| s.value()), Some(20159));
-        assert_eq!(
-            error.status().name(),
-            Some("ClientPartitionKeyRangeCacheRequired")
-        );
-
-        // Both outcomes are decided without installing a topology provider or
-        // issuing a replacement lookup against a cache.
-        assert!(driver.pk_range_cache.is_none());
     }
 
     #[tokio::test]
@@ -7172,29 +7111,6 @@ mod tests {
                 not_modified: false,
             })
         }
-    }
-
-    #[tokio::test]
-    async fn disabled_partition_key_range_cache_rejects_topology_resolution() {
-        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
-        let driver = CosmosDriver::new(
-            runtime,
-            DriverOptions::builder(test_account())
-                .with_partition_key_range_cache_enabled(false)
-                .build(),
-        )
-        .unwrap();
-        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
-
-        let error = driver
-            .resolve_all_partition_key_ranges(&container, false)
-            .await
-            .expect_err("disabled cache must reject topology resolution");
-
-        assert_eq!(
-            error.status(),
-            crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED
-        );
     }
 
     #[tokio::test]

@@ -206,16 +206,14 @@ session_token_resolution_strategy =
   Default                                           otherwise
 
 automatic_session_token_resolution_effective =
-  partition_key_range_cache_enabled
-  && !session_capturing_disabled
+  !session_capturing_disabled
   && (operation is a read
       || operation is a batch
       || account has multiple write locations)
   && session_token_resolution_strategy.is_session_effective(account_default)
 
 automatic_session_token_capture_effective =
-  partition_key_range_cache_enabled
-  && !session_capturing_disabled
+  !session_capturing_disabled
 ```
 
 `is_session_effective` is true when the strategy is `Session`, or when the
@@ -232,6 +230,10 @@ per-operation tokens remain authoritative on every topology.
 halves — no cache-based attach and no capture. Explicit per-operation tokens
 remain operation headers and are written directly to the transport request;
 they do not depend on the guarded automatic resolver (see §4).
+
+The partition topology cache is always present. Its configured load mode changes
+whether topology is primed during container resolution or fetched when first
+needed; it does not disable automatic session management.
 
 ---
 
