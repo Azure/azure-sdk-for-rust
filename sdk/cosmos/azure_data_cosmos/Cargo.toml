@@ -142,6 +142,11 @@ path = "tests/emulator.rs"
 required-features = ["key_auth", "control_plane", "fault_injection"]
 
 [[test]]
+name = "live"
+path = "tests/live.rs"
+required-features = ["key_auth", "control_plane", "fault_injection"]
+
+[[test]]
 name = "multi_write"
 path = "tests/multi_write.rs"
 required-features = ["key_auth", "control_plane", "fault_injection"]

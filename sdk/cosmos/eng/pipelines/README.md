@@ -90,8 +90,8 @@ pwsh sdk/cosmos/eng/pipelines/resolve-cosmos-test-account.tests.ps1
 ```
 
 You can also invoke the resolver directly against the sample JSON. Dot-source
-it (a leading `.` followed by a space) so the resolved variables land directly
-in your current shell instead of just being printed:
+it (note the leading `.` followed by a space) so the resolved variables land
+directly in your current shell instead of just being printed:
 
 ```powershell
 $env:COSMOS_ACCOUNTS_LOCAL = 'true'
@@ -99,6 +99,35 @@ $env:COSMOS_ACCOUNT_SELECTOR = 'session-singlewrite'
 $env:COSMOS_TEST_ACCOUNTS_JSON = Get-Content -Raw sdk/cosmos/eng/pipelines/live-test-accounts.sample.json
 . ./sdk/cosmos/eng/pipelines/resolve-cosmos-test-account.ps1
 ```
+
+### Live-only query tests
+
+The SDK's `live` test target shares the integration-test framework but keeps
+live-only DISTINCT coverage separate from emulator-compatible query tests.
+It requires the `key_auth`, `control_plane`, and `fault_injection` features
+and is ignored by default.
+
+To run it locally, set `AZURE_COSMOS_CONNECTION_STRING` to a real account's
+connection string, then run from the repository root:
+
+```powershell
+$env:AZURE_COSMOS_TEST_MODE = 'required'
+$env:RUSTFLAGS = '--cfg=test_category="live"'
+cargo test -p azure_data_cosmos --all-features --test live live_distinct_admission_and_per_query_options
+```
+
+The test creates and cleans up a unique database, so the account key must
+permit database and container management. Explicit selection (including
+`--ignored`) fails on missing/invalid connection strings, local emulator
+endpoints, or `AZURE_COSMOS_TEST_MODE=skipped`; it never reports a skipped
+live scenario as a pass.
+
+The fixed-account resolver appends `test_category="live"` alongside each
+account's existing category. Test setup propagates these flags before its
+preconfigured-connection early return, so `Cosmos_live_test` runs this target
+without changing the existing suites. Ordinary emulator, vnext, in-memory,
+and codec-fuzz jobs do not use that resolver and do not enable the live gate.
+Legacy ARM/AAD jobs retain their existing categories.
 
 ## Adding or rotating an account
 

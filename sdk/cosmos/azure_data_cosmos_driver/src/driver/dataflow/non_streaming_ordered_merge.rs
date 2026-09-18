@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Buffered merge for finite, non-streaming ORDER BY queries.
+//! Buffered merge for admitted non-streaming ORDER BY queries.
 
 use super::{
     binary_heap,
@@ -25,7 +25,7 @@ struct RetainedRow {
     ordinal: u64,
 }
 
-/// Drains rewritten partition queries before emitting the finite globally ordered window.
+/// Drains rewritten partition queries before emitting the globally ordered window.
 pub(crate) struct NonStreamingOrderedMerge {
     child: Box<dyn PipelineNode>,
     directions: Arc<[SortOrder]>,
@@ -66,7 +66,7 @@ impl NonStreamingOrderedMerge {
             take,
             page_size,
             emit_binary,
-            retained: Vec::with_capacity(retention_limit),
+            retained: Vec::new(),
             next_ordinal: 0,
             results: VecDeque::new(),
             aggregator: Some(PageAggregator::new(emit_binary)),
@@ -86,6 +86,9 @@ impl NonStreamingOrderedMerge {
     }
 
     fn retain(&mut self, row: EnvelopeRow) -> crate::error::Result<()> {
+        if self.take == 0 {
+            return Ok(());
+        }
         let ordinal = self.next_ordinal;
         self.next_ordinal = self.next_ordinal.checked_add(1).ok_or_else(|| {
             CosmosError::builder()
@@ -94,12 +97,14 @@ impl NonStreamingOrderedMerge {
                 .build()
         })?;
 
-        if self.retention_limit == 0 {
-            return Ok(());
-        }
-
         let candidate = RetainedRow { row, ordinal };
         if self.retained.len() < self.retention_limit {
+            self.retained.try_reserve(1).map_err(|_| {
+                CosmosError::builder()
+                    .with_status(CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
+                    .with_message("non-streaming ORDER BY candidate storage could not be allocated")
+                    .build()
+            })?;
             let directions = &self.directions;
             binary_heap::push_by(&mut self.retained, candidate, |left, right| {
                 compare_key_tuples(left.row.keys.as_ref(), right.row.keys.as_ref(), directions)
@@ -120,17 +125,16 @@ impl NonStreamingOrderedMerge {
     fn finish_buffering(&mut self) {
         let mut retained = mem::take(&mut self.retained);
         let directions = &self.directions;
-        retained.sort_by(|left, right| {
+        retained.sort_unstable_by(|left, right| {
             compare_key_tuples(left.row.keys.as_ref(), right.row.keys.as_ref(), directions)
                 .then_with(|| left.ordinal.cmp(&right.ordinal))
         });
 
-        self.results = retained
+        let results = retained
             .into_iter()
             .skip(self.skip)
-            .take(self.take)
-            .map(|retained| retained.row.payload)
-            .collect();
+            .map(|retained| retained.row.payload);
+        self.results = results.take(self.take).collect();
         self.session_token = self
             .aggregator
             .as_ref()
@@ -220,7 +224,7 @@ impl PipelineNode for NonStreamingOrderedMerge {
 
     fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
         Err(CosmosError::builder()
-            .with_status(CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED)
+            .with_status(CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
             .with_message(
                 "cross-partition non-streaming ORDER BY queries do not support continuation tokens",
             )
@@ -403,6 +407,34 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn zero_take_retains_no_candidates_even_with_offset() {
+        for skip in [0, 1000] {
+            let mut node = merge(
+                vec![page(&[("a", 1.0, "a"), ("b", 2.0, "b")], 3.5, true)],
+                skip,
+                skip,
+                0,
+                None,
+            );
+            let mut executor = NoopRequestExecutor;
+            let mut topology = NoopTopologyProvider;
+            let mut context = context(&mut executor, &mut topology);
+            let PageResult::Page {
+                response,
+                is_terminal,
+            } = node.next_page(&mut context).await.unwrap()
+            else {
+                panic!("expected charged empty page");
+            };
+            assert!(is_terminal);
+            assert!(ids(&response).is_empty());
+            assert_eq!(response.headers().request_charge.unwrap().value(), 3.5);
+            assert_eq!(node.next_ordinal, 0);
+            assert_eq!(node.retained.capacity(), 0);
+        }
+    }
+
+    #[tokio::test]
     async fn emits_binary_items_when_negotiated() {
         let mut node = NonStreamingOrderedMerge::new(
             Box::new(MockLeaf::with_pages(vec![Ok(page(
@@ -476,8 +508,130 @@ mod tests {
         let node = merge(Vec::new(), 1, 0, 1, None);
         assert_eq!(
             node.snapshot_state().unwrap_err().status(),
-            CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
+            CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
         );
+    }
+
+    #[tokio::test]
+    async fn finite_merge_orders_all_rows_with_offset_and_encoding_parity() {
+        for emit_binary in [false, true] {
+            for skip in [0, 2, 20] {
+                let rows = [
+                    ("a", 2, "a"),
+                    ("b", 1, "b"),
+                    ("c", 1, "c"),
+                    ("d", 2, "z"),
+                    ("e", 1, "c"),
+                ];
+                let mut pages = Vec::new();
+                for chunk in rows.chunks(2) {
+                    let body = serde_json::to_vec(&json!({
+                        "Documents": chunk.iter().map(|(id, key, secondary)| json!({
+                            "_rid": id,
+                            "orderByItems": [{"item": key}, {"item": secondary}],
+                            "payload": {"id": id}
+                        })).collect::<Vec<_>>()
+                    }))
+                    .unwrap();
+                    pages.push(Ok(PageResult::Page {
+                        response: response_with_charge(&body, 1.0),
+                        is_terminal: false,
+                    }));
+                    pages.push(Ok(page(&[], 0.5, false)));
+                }
+                pages.push(Ok(PageResult::Drained));
+                let mut node = NonStreamingOrderedMerge::new(
+                    Box::new(MockLeaf::with_pages(pages)),
+                    vec![SortOrder::Ascending, SortOrder::Descending],
+                    skip + rows.len(),
+                    skip,
+                    rows.len(),
+                    Some(MaxItemCountHint::Limit(
+                        std::num::NonZeroU32::new(2).unwrap(),
+                    )),
+                    emit_binary,
+                );
+                assert_eq!(node.retained.capacity(), 0);
+                assert_eq!(
+                    node.snapshot_state().unwrap_err().status(),
+                    CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+                );
+                let mut executor = NoopRequestExecutor;
+                let mut topology = NoopTopologyProvider;
+                let mut context = context(&mut executor, &mut topology);
+                let mut actual = Vec::new();
+                let mut charge = 0.0;
+                let mut terminal = false;
+                while let PageResult::Page {
+                    response,
+                    is_terminal,
+                } = node.next_page(&mut context).await.unwrap()
+                {
+                    assert!(!terminal);
+                    terminal = is_terminal;
+                    charge += response.headers().request_charge.unwrap().value();
+                    let ResponseBody::Items(items) = response.body() else {
+                        panic!("expected items");
+                    };
+                    assert!(items.len() <= 2);
+                    for item in items {
+                        assert_eq!(crate::binary_json::is_binary(&item), emit_binary);
+                        let value: serde_json::Value = if emit_binary {
+                            crate::binary_json::from_slice(&item).unwrap()
+                        } else {
+                            serde_json::from_slice(&item).unwrap()
+                        };
+                        actual.push(value["id"].as_str().unwrap().to_owned());
+                    }
+                }
+                assert_eq!(
+                    actual,
+                    ["c", "e", "b", "d", "a"]
+                        .into_iter()
+                        .skip(skip)
+                        .map(str::to_owned)
+                        .collect::<Vec<_>>()
+                );
+                assert!(terminal);
+                assert_eq!(charge, 4.5);
+                assert!(matches!(
+                    node.next_page(&mut context).await.unwrap(),
+                    PageResult::Drained
+                ));
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn buffering_preserves_upstream_failure_without_partial_results() {
+        for limit in [0, 2, 1000] {
+            let error = CosmosError::builder()
+                .with_status(CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+                .with_message("upstream failure")
+                .build();
+            let mut node = NonStreamingOrderedMerge::new(
+                Box::new(MockLeaf::with_pages(vec![
+                    Ok(page(&[("a", 1.0, "a")], 1.0, false)),
+                    Err(error),
+                ])),
+                vec![SortOrder::Ascending],
+                limit,
+                0,
+                limit,
+                None,
+                false,
+            );
+            let mut executor = NoopRequestExecutor;
+            let mut topology = NoopTopologyProvider;
+            let mut context = context(&mut executor, &mut topology);
+            let error = node.next_page(&mut context).await.unwrap_err();
+            assert_eq!(
+                error.status(),
+                CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+            );
+            assert!(error.to_string().contains("upstream failure"));
+            assert!(node.results.is_empty());
+        }
     }
 
     #[test]

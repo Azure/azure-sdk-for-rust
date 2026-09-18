@@ -19,7 +19,7 @@ use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition, PartitionKeyVersion},
     options::{
         ConnectionPoolOptions, ExcludedRegions, MaxItemCountHint, OperationOptions, QueryOptions,
-        Region, ServerCertificateValidation,
+        QueryPlanMode, Region, ServerCertificateValidation,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
     CosmosRuntimeBuilder, FeedScope, PartitionKey, Query, RoutingStrategy,
@@ -313,6 +313,110 @@ enum FixtureKind {
     HashV1,
     HashV2,
     Hpk,
+}
+
+#[tokio::test]
+async fn buffered_query_policy_per_query_options_and_hierarchical_routing(
+) -> Result<(), Box<dyn Error>> {
+    let harness = QueryComparisonHarness::setup_in_memory_only().await?;
+    let handles = provision_fixture_with_topology(
+        &harness,
+        "buffered-policy",
+        FixtureKind::Hpk,
+        Some(ContainerConfig::new().with_partition_count(1).build()?),
+        &[],
+    )
+    .await?;
+    let query = "SELECT DISTINCT VALUE c.value FROM c";
+    let ranges = handles.emulator_container.read_feed_ranges(None).await?;
+    assert_eq!(ranges.len(), 1);
+    for mode in [QueryPlanMode::LocalPreferred, QueryPlanMode::GatewayOnly] {
+        let client = CosmosClientBuilder::new()
+            .with_runtime(
+                CosmosRuntimeBuilder::from(harness.emulator_http.runtime_builder())
+                    .build()
+                    .await?,
+            )
+            .build(
+                AccountReference::with_authentication_key(
+                    EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>()?,
+                    Secret::new("dGVzdGtleQ=="),
+                ),
+                RoutingStrategy::ProximityTo(Region::EAST_US),
+            )
+            .await?;
+        let container = client
+            .database_client("buffered-policy")
+            .container_client("hpk", None)
+            .await?;
+        for (scope, buffered, expected_count) in [
+            (FeedScope::full_container(), true, handles.documents.len()),
+            (
+                FeedScope::range(ranges[0].clone()),
+                true,
+                handles.documents.len(),
+            ),
+            (FeedScope::partition("tenant-a"), true, 7),
+            (
+                FeedScope::partition(("tenant-a", "user-1", "session-1")),
+                false,
+                1,
+            ),
+        ] {
+            for (sql, maximum, denied) in [
+                (query, None, true),
+                (query, Some(u64::MAX), true),
+                ("SELECT DISTINCT TOP 1000 VALUE c.value FROM c", None, false),
+                ("SELECT DISTINCT TOP 1001 VALUE c.value FROM c", None, true),
+                (
+                    "SELECT DISTINCT TOP 1001 VALUE c.value FROM c",
+                    Some(1001),
+                    false,
+                ),
+                (
+                    "SELECT DISTINCT TOP 1000 VALUE c.value FROM c",
+                    Some(999),
+                    true,
+                ),
+            ] {
+                let mut options = QueryOptions::default()
+                    .with_query_plan_mode(mode)
+                    .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
+                if let Some(maximum) = maximum {
+                    options = options.with_max_buffered_query_window(maximum);
+                }
+                let result = container
+                    .query_items::<Value>(sql, scope.clone(), Some(options))
+                    .await;
+                if buffered && denied {
+                    let error = match result {
+                        Err(error) => error,
+                        Ok(_) => {
+                            panic!("unbounded buffered query must fail before creating a pager")
+                        }
+                    };
+                    assert_eq!(
+                        error.status(),
+                        azure_data_cosmos::models::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+                    );
+                } else {
+                    let mut pages = result?.into_pages();
+                    if buffered {
+                        assert_eq!(
+                            pages.to_continuation_token().unwrap_err().status(),
+                            azure_data_cosmos::models::CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
+                        );
+                    }
+                    let mut values = Vec::new();
+                    while let Some(page) = pages.next().await {
+                        values.extend(page?.into_items());
+                    }
+                    assert_eq!(values.len(), expected_count);
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 impl FixtureKind {

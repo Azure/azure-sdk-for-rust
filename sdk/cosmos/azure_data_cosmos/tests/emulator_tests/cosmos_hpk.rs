@@ -834,15 +834,15 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
 
             // Servable: DISTINCT has a client-side stage, and it must
             // deduplicate correctly across the container's physical partitions.
-            let mut countries = collect_query::<serde_json::Value>(
-                &container,
-                "SELECT DISTINCT VALUE c.country FROM c",
-                FeedScope::full_container(),
-            )
-            .await?
-            .into_iter()
-            .map(|v| v.as_str().unwrap_or_default().to_owned())
-            .collect::<Vec<_>>();
+            let mut countries = container
+                .query_items::<String>(
+                    "SELECT DISTINCT TOP 1000 VALUE c.country FROM c",
+                    FeedScope::full_container(),
+                    None,
+                )
+                .await?
+                .try_collect::<Vec<_>>()
+                .await?;
             countries.sort();
             assert_eq!(
                 countries,
