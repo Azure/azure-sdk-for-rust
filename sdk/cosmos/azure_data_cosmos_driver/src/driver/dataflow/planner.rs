@@ -772,8 +772,18 @@ fn validate_streaming_order_by_snapshot(
     let mut parsed = Vec::with_capacity(ranges.len());
     let mut prev_max: Option<EffectivePartitionKey> = None;
     for entry in ranges {
-        let min = EffectivePartitionKey::from(entry.min_epk);
-        let max = EffectivePartitionKey::from(entry.max_epk);
+        let min = EffectivePartitionKey::try_from_hex(&entry.min_epk).ok_or_else(|| {
+            order_by_state_invalid(format!(
+                "continuation token has a malformed min EPK `{}`",
+                entry.min_epk
+            ))
+        })?;
+        let max = EffectivePartitionKey::try_from_hex(&entry.max_epk).ok_or_else(|| {
+            order_by_state_invalid(format!(
+                "continuation token has a malformed max EPK `{}`",
+                entry.max_epk
+            ))
+        })?;
         if min >= max {
             return Err(order_by_state_invalid(format!(
                 "continuation token has an invalid range (min `{}` >= max `{}`)",
@@ -842,6 +852,15 @@ fn order_by_state_invalid(
 ) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
         .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID)
+        .with_message(message)
+        .build()
+}
+
+fn invalid_epk_range(
+    message: impl Into<std::borrow::Cow<'static, str>>,
+) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE)
         .with_message(message)
         .build()
 }
@@ -1382,12 +1401,27 @@ fn validate_saved_snapshot(
     left_most_undrained_epk: String,
     active_tokens: Vec<RangedToken>,
 ) -> crate::error::Result<SavedSnapshot> {
-    let cursor = EffectivePartitionKey::from(left_most_undrained_epk);
+    let cursor =
+        EffectivePartitionKey::try_from_hex(&left_most_undrained_epk).ok_or_else(|| {
+            invalid_epk_range(format!(
+                "continuation token has a malformed cursor EPK `{left_most_undrained_epk}`"
+            ))
+        })?;
 
     let mut parsed: Vec<SavedActiveToken> = Vec::with_capacity(active_tokens.len());
     for entry in active_tokens {
-        let min = EffectivePartitionKey::from(entry.min_epk);
-        let max = EffectivePartitionKey::from(entry.max_epk);
+        let min = EffectivePartitionKey::try_from_hex(&entry.min_epk).ok_or_else(|| {
+            invalid_epk_range(format!(
+                "continuation token has a malformed active_tokens min EPK `{}`",
+                entry.min_epk
+            ))
+        })?;
+        let max = EffectivePartitionKey::try_from_hex(&entry.max_epk).ok_or_else(|| {
+            invalid_epk_range(format!(
+                "continuation token has a malformed active_tokens max EPK `{}`",
+                entry.max_epk
+            ))
+        })?;
         if min > max {
             return Err(crate::error::CosmosError::builder()
                 .with_status(
@@ -1484,8 +1518,18 @@ fn validate_unordered_merge_tokens(
 ) -> crate::error::Result<Vec<SavedActiveToken>> {
     let mut parsed: Vec<SavedActiveToken> = Vec::with_capacity(active_tokens.len());
     for entry in active_tokens {
-        let min = EffectivePartitionKey::from(entry.min_epk);
-        let max = EffectivePartitionKey::from(entry.max_epk);
+        let min = EffectivePartitionKey::try_from_hex(&entry.min_epk).ok_or_else(|| {
+            invalid_epk_range(format!(
+                "continuation token has a malformed active_tokens min EPK `{}`",
+                entry.min_epk
+            ))
+        })?;
+        let max = EffectivePartitionKey::try_from_hex(&entry.max_epk).ok_or_else(|| {
+            invalid_epk_range(format!(
+                "continuation token has a malformed active_tokens max EPK `{}`",
+                entry.max_epk
+            ))
+        })?;
         if min >= max {
             return Err(crate::error::CosmosError::builder()
                 .with_status(
@@ -4425,6 +4469,95 @@ mod tests {
             Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "got: {err}"
         );
+    }
+
+    #[test]
+    fn streaming_order_by_snapshot_rejects_malformed_epk_bound() {
+        for malformed in ["40G0", "408", "G040", "40 0", "40\u{00E9}", "40\0"] {
+            for (min, max) in [(malformed, "80"), ("", malformed)] {
+                let ranges = vec![OrderByRangeToken {
+                    min_epk: min.to_owned(),
+                    max_epk: max.to_owned(),
+                    server_continuation: None,
+                    boundary: None,
+                }];
+                let err = validate_streaming_order_by_snapshot(
+                    &[SortOrder::Ascending],
+                    &[SortOrder::Ascending],
+                    "q",
+                    Some("q"),
+                    ranges,
+                )
+                .err()
+                .expect("a malformed EPK bound must be rejected");
+                assert_eq!(
+                    err.status(),
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+                    "range [{min:?}, {max:?}): {err}"
+                );
+                assert!(err.to_string().contains("malformed"));
+            }
+        }
+    }
+
+    #[test]
+    fn saved_snapshot_rejects_malformed_epk_bound() {
+        for malformed in ["40G0", "408", "G040", "40 0", "40\u{00E9}", "40\0"] {
+            for (min, max) in [(malformed, "80"), ("", malformed)] {
+                let err = validate_saved_snapshot(
+                    String::new(),
+                    vec![RangedToken {
+                        min_epk: min.to_owned(),
+                        max_epk: max.to_owned(),
+                        server_continuation: "tok".to_owned(),
+                    }],
+                )
+                .err()
+                .expect("a malformed EPK bound must be rejected");
+                assert_eq!(
+                    err.status(),
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    "range [{min:?}, {max:?}): {err}"
+                );
+                assert!(err.to_string().contains("malformed"));
+            }
+        }
+    }
+
+    #[test]
+    fn unordered_merge_tokens_reject_malformed_epk_bound() {
+        for malformed in ["40G0", "408", "G040", "40 0", "40\u{00E9}", "40\0"] {
+            for (min, max) in [(malformed, "80"), ("", malformed)] {
+                let err = validate_unordered_merge_tokens(vec![RangedToken {
+                    min_epk: min.to_owned(),
+                    max_epk: max.to_owned(),
+                    server_continuation: "tok".to_owned(),
+                }])
+                .err()
+                .expect("a malformed EPK bound must be rejected");
+                assert_eq!(
+                    err.status(),
+                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    "range [{min:?}, {max:?}): {err}"
+                );
+                assert!(err.to_string().contains("malformed"));
+            }
+        }
+    }
+
+    #[test]
+    fn saved_snapshot_rejects_malformed_epk_cursor_without_active_tokens() {
+        for cursor in ["40G0", "408", "G040", "40 0", "40\u{00E9}", "40\0"] {
+            let err = validate_saved_snapshot(cursor.to_owned(), Vec::new())
+                .err()
+                .expect("a malformed cursor must be rejected even without active tokens");
+            assert_eq!(
+                err.status(),
+                crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                "cursor {cursor:?}: {err}"
+            );
+            assert!(err.to_string().contains("malformed cursor"));
+        }
     }
 
     /// A token minted under one feed scope must not resume under another.

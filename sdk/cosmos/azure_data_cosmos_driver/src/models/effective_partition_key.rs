@@ -87,6 +87,12 @@ impl EffectivePartitionKey {
         Self(bytes.into())
     }
 
+    /// Parses even-length ASCII hex, returning `None` for malformed input.
+    /// Accepts either case and the empty minimum bound; preserves padding.
+    pub(crate) fn try_from_hex(s: &str) -> Option<Self> {
+        try_hex_to_bytes(s).map(|bytes| Self(Cow::Owned(bytes)))
+    }
+
     /// Returns the next EPK after `self`: the smallest EPK strictly greater than
     /// `self`, used to turn a closed point `[A, A]` (the gateway equality / `IN`
     /// predicate shape, issue #4574) into a non-empty half-open range
@@ -560,6 +566,25 @@ fn hex_nibble(c: u8) -> Option<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn strict_hex_preserves_valid_bound_bytes() {
+        for (input, expected) in [
+            ("", ""),
+            ("00", "00"),
+            ("ff", "FF"),
+            ("4080", "4080"),
+            ("aBcD00", "ABCD00"),
+            ("1631FF", "1631FF"),
+        ] {
+            let parsed = EffectivePartitionKey::try_from_hex(input).unwrap();
+            assert_eq!(parsed.to_hex(), expected);
+            assert_eq!(
+                parsed.as_bytes(),
+                EffectivePartitionKey::from(input).as_bytes()
+            );
+        }
+    }
 
     /// `Ord`'s contract requires `a == b` exactly when `a.cmp(b)` is `Equal`.
     /// `Ord` ignores trailing zero padding, so equality and hashing must too —
