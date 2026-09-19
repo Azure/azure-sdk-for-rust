@@ -837,7 +837,7 @@ mod tests {
             insert_header(&mut req, SUPPORTED_SERIALIZATION_FORMATS.clone(), value);
             assert!(
                 parse_request(&req).binary_response,
-                "value {value:?} should negotiate a binary response"
+                "value {value:?} should negotiate a binary response",
             );
         }
     }

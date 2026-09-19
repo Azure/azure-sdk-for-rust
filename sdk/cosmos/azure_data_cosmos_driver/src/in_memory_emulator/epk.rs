@@ -120,31 +120,20 @@ fn extract_pk_at_path(
     let last_idx = segments.len() - 1;
     let mut current = body;
     for (i, segment) in segments.iter().enumerate() {
-        let obj = current
-            .as_object()
-            .ok_or_else(|| {
-                crate::error::CosmosError
-                    ::builder()
-                    .with_status(
-                        crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
-                    )
-                    .with_message(
-                        format!(
-                            "partition key path component '{segment}' encountered a non-object intermediate"
-                        )
-                    )
-                    .build()
-            })?;
+        let obj = current.as_object().ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!(
+                    "partition key path component '{segment}' encountered a non-object intermediate"
+                ))
+                .build()
+        })?;
         match obj.get(segment) {
-            Some(next) if i == last_idx => {
-                return json_to_pk_component(next);
-            }
-            Some(next) => {
-                current = next;
-            }
-            None => {
-                return Ok(PartitionKeyValue::UNDEFINED);
-            }
+            Some(next) if i == last_idx => return json_to_pk_component(next),
+            Some(next) => current = next,
+            None => return Ok(PartitionKeyValue::UNDEFINED),
         }
     }
     // Unreachable: loop returns or assigns on every iteration.
@@ -294,7 +283,7 @@ mod tests {
             components,
             vec![
                 PartitionKeyValue::from("tenant1".to_string()),
-                PartitionKeyValue::from("user1".to_string())
+                PartitionKeyValue::from("user1".to_string()),
             ]
         );
     }
@@ -484,7 +473,7 @@ mod tests {
                 "EPK diverges for {}: body={} header={}",
                 label,
                 epk_body.to_hex(),
-                epk_header.to_hex()
+                epk_header.to_hex(),
             );
 
             // V1 too — hierarchical-PK V1 containers exist and the same
@@ -502,7 +491,7 @@ mod tests {
                 "V1 EPK diverges for {}: body={} header={}",
                 label,
                 epk_body_v1.to_hex(),
-                epk_header_v1.to_hex()
+                epk_header_v1.to_hex(),
             );
         }
     }

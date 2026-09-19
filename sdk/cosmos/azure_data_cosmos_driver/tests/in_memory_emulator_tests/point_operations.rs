@@ -201,11 +201,11 @@ async fn default_operation_negotiates_binary_on_the_wire() {
     assert!(!formats.is_empty(), "expected at least one docs request");
     assert!(
         formats.iter().all(|f| f.as_deref() == Some("CosmosBinary")),
-        "default point op must advertise CosmosBinary; saw {formats:?}"
+        "default point op must advertise CosmosBinary; saw {formats:?}",
     );
     assert!(
         bodies.iter().all(|b| *b),
-        "default point op request body must carry the 0x80 preamble"
+        "default point op request body must carry the 0x80 preamble",
     );
 }
 
@@ -413,12 +413,12 @@ async fn replace_rejects_partition_key_mutation() {
     assert_eq!(
         status,
         StatusCode::BadRequest,
-        "PK mutation must be rejected; got body={body}"
+        "PK mutation must be rejected; got body={body}",
     );
     let msg = body["message"].as_str().unwrap_or("");
     assert!(
         msg.contains("Partition key") || msg.contains("partition key"),
-        "error message should mention partition key, got: {msg}"
+        "error message should mention partition key, got: {msg}",
     );
 
     // Original document must still be readable on its original PK.

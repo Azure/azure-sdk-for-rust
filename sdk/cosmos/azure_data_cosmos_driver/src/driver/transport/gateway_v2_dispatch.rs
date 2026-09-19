@@ -304,9 +304,9 @@ pub(crate) fn wrap_request_for_gateway_v2(
     {
         if let Ok(parsed) = value.parse::<i64>() {
             let page_size = if parsed < 0 {
-                0xffff_ffff
+                0xFFFF_FFFF
             } else {
-                parsed.min(0xffff_ffff) as u32
+                parsed.min(0xFFFF_FFFF) as u32
             };
             metadata.push(Token::page_size(page_size));
         }
@@ -744,15 +744,9 @@ fn parse_resource_names(resource_link: &str) -> azure_core::Result<ResourceNames
             break;
         };
         match kind {
-            "dbs" => {
-                database = Some(name.to_owned());
-            }
-            "colls" => {
-                collection = Some(name.to_owned());
-            }
-            "docs" => {
-                document = Some(name.to_owned());
-            }
+            "dbs" => database = Some(name.to_owned()),
+            "colls" => collection = Some(name.to_owned()),
+            "docs" => document = Some(name.to_owned()),
             _ => {}
         }
     }
@@ -974,11 +968,11 @@ mod tests {
                 let len = take_u16(src) as usize;
                 ParsedTokenValue::String(take_string(src, len))
             }
-            0x0b => {
+            0x0B => {
                 let len = take_u16(src) as usize;
                 ParsedTokenValue::Bytes(take_bytes(src, len).to_vec())
             }
-            0x0e => ParsedTokenValue::Double(f64::from_le_bytes(take_array(src))),
+            0x0E => ParsedTokenValue::Double(f64::from_le_bytes(take_array(src))),
             other => panic!("unexpected token type 0x{other:02X}"),
         }
     }
@@ -1045,8 +1039,8 @@ mod tests {
                 .position(|&x| x == id)
                 .unwrap_or_else(|| panic!("token 0x{id:04X} not emitted; got {emitted_ids:?}"))
         };
-        let epk = pos(0x005a); // EffectivePartitionKey
-        let global_account = pos(0x00ce); // GlobalDatabaseAccountName
+        let epk = pos(0x005A); // EffectivePartitionKey
+        let global_account = pos(0x00CE); // GlobalDatabaseAccountName
         let payload_present = pos(0x0002); // PayloadPresent
 
         assert!(
@@ -1083,7 +1077,8 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            wrapped.headers
+            wrapped
+                .headers
                 .get_optional_str(&HeaderName::from_static(FAULT_INJECTION_OPERATION))
                 .map(|s| s.to_owned()),
             Some("ReadItem".to_owned()),
@@ -1136,13 +1131,13 @@ mod tests {
         // TransportRequestId (0x004D) is intentionally NOT emitted on the G2
         // path — it is in the thin-client exclusion list and the proxy assigns
         // its own request id.
-        assert!(!parsed.tokens.contains_key(&0x004d));
+        assert!(!parsed.tokens.contains_key(&0x004D));
         assert_eq!(
-            parsed.tokens[&0x00a2],
+            parsed.tokens[&0x00A2],
             ParsedTokenValue::ULong(SUPPORTED_CAPABILITIES_BITS)
         );
         assert_eq!(
-            parsed.tokens[&0x00ce],
+            parsed.tokens[&0x00CE],
             ParsedTokenValue::String("account".into())
         );
     }
@@ -1390,7 +1385,7 @@ mod tests {
         let parsed = parse_wrapped_request(&wrapped, 0);
 
         assert_eq!(
-            parsed.tokens[&0x002c],
+            parsed.tokens[&0x002C],
             ParsedTokenValue::String("0".into()),
             "PartitionKeyRangeId (0x002C) must be emitted from the HTTP header"
         );
@@ -1415,7 +1410,7 @@ mod tests {
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 0);
 
-        assert!(!parsed.tokens.contains_key(&0x002c));
+        assert!(!parsed.tokens.contains_key(&0x002C));
     }
 
     #[test]
@@ -1613,7 +1608,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             parse_wrapped_request(&wrapped_unbounded, 0).tokens[&0x0004],
-            ParsedTokenValue::ULong(0xffff_ffff),
+            ParsedTokenValue::ULong(0xFFFF_FFFF),
             "a negative max item count must encode as 0xFFFFFFFF"
         );
     }
@@ -1660,11 +1655,11 @@ mod tests {
         .unwrap();
 
         assert_eq!(
-            parse_wrapped_request(&wrapped, 0).tokens[&0x003f],
+            parse_wrapped_request(&wrapped, 0).tokens[&0x003F],
             ParsedTokenValue::String(request_header_names::INCREMENTAL_FEED.into())
         );
         assert_eq!(
-            parse_wrapped_request(&wrapped, 0).tokens[&0x00b2],
+            parse_wrapped_request(&wrapped, 0).tokens[&0x00B2],
             ParsedTokenValue::String(
                 request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15.into()
             )
@@ -1688,10 +1683,10 @@ mod tests {
 
         assert!(!parse_wrapped_request(&wrapped, 0)
             .tokens
-            .contains_key(&0x003f));
+            .contains_key(&0x003F));
         assert!(!parse_wrapped_request(&wrapped, 0)
             .tokens
-            .contains_key(&0x00b2));
+            .contains_key(&0x00B2));
     }
 
     #[test]
@@ -1864,7 +1859,7 @@ mod tests {
             let parsed = parse_wrapped_request(&wrapped, 10);
 
             assert_eq!(
-                parsed.tokens[&0x00fe],
+                parsed.tokens[&0x00FE],
                 ParsedTokenValue::Byte(expected_byte),
                 "ReadConsistencyStrategy {strategy:?} should serialize to byte {expected_byte:#x}"
             );
@@ -1895,7 +1890,7 @@ mod tests {
         let parsed = parse_wrapped_request(&wrapped, 10);
 
         assert_eq!(parsed.tokens[&0x0010], ParsedTokenValue::Byte(0x02));
-        assert!(!parsed.tokens.contains_key(&0x00fe));
+        assert!(!parsed.tokens.contains_key(&0x00FE));
     }
 
     #[test]
@@ -1932,7 +1927,7 @@ mod tests {
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 11);
 
-        assert_eq!(parsed.tokens[&0x005a], ParsedTokenValue::Bytes(expected));
+        assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(expected));
     }
 
     #[test]
@@ -1962,7 +1957,7 @@ mod tests {
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 11);
 
-        assert_eq!(parsed.tokens[&0x005a], ParsedTokenValue::Bytes(expected));
+        assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(expected));
     }
 
     #[test]
@@ -2005,7 +2000,7 @@ mod tests {
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 11);
 
-        assert_eq!(parsed.tokens[&0x005a], ParsedTokenValue::Bytes(expected));
+        assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(expected));
     }
 
     /// HPK partial-PK (prefix on a MultiHash container) emits an
@@ -2041,7 +2036,7 @@ mod tests {
 
         // Token layout for a partial-HPK Query: 9 base tokens + EPK = 10.
         let parsed = parse_wrapped_request(&wrapped, 10);
-        assert_eq!(parsed.tokens[&0x005a], ParsedTokenValue::Bytes(expected));
+        assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(expected));
         // Range headers must NOT be emitted in the EPK-token path — the
         // emission is mutually exclusive: partition key present → EPK token,
         // otherwise → StartEpkHash/EndEpkHash range tokens.
@@ -2107,7 +2102,7 @@ mod tests {
         let expected = effective_partition_key_multi_hash_v2_binary(partition_key.values());
         assert_eq!(expected.len(), 16 * 3, "sanity check: 3 PK paths * 16B");
         assert_eq!(
-            parsed.tokens[&0x005a],
+            parsed.tokens[&0x005A],
             ParsedTokenValue::Bytes(expected),
             "EffectivePartitionKey token must be per-component MultiHash V2 bytes"
         );
@@ -2122,7 +2117,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             request,
-            &(WrapInputs {
+            &WrapInputs {
                 auth_context: &auth_context,
                 operation_type: OperationType::Query,
                 resource_type: ResourceType::Document,
@@ -2131,7 +2126,7 @@ mod tests {
                 read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
                 account_name: Some("account"),
                 collection_rid: None,
-            }),
+            },
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 10);
@@ -2139,14 +2134,14 @@ mod tests {
         assert_eq!(
             parsed.tokens[&0x0006],
             ParsedTokenValue::String("page-token-1".into()),
-            "continuation token should be encoded as string token 0x0006"
+            "continuation token should be encoded as string token 0x0006",
         );
         assert!(
             wrapped
                 .headers
                 .get_optional_str(&X_MS_CONTINUATION)
                 .is_none(),
-            "x-ms-continuation header should not be forwarded on the outer HTTP request"
+            "x-ms-continuation header should not be forwarded on the outer HTTP request",
         );
     }
 
@@ -2158,7 +2153,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             request,
-            &(WrapInputs {
+            &WrapInputs {
                 auth_context: &auth_context,
                 operation_type: OperationType::Query,
                 resource_type: ResourceType::Document,
@@ -2167,14 +2162,14 @@ mod tests {
                 read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
                 account_name: Some("account"),
                 collection_rid: None,
-            }),
+            },
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 9);
 
         assert!(
             !parsed.tokens.contains_key(&0x0006),
-            "continuation token should be absent when no x-ms-continuation header is present"
+            "continuation token should be absent when no x-ms-continuation header is present",
         );
     }
 
@@ -2190,7 +2185,7 @@ mod tests {
 
         let wrapped = wrap_request_for_gateway_v2(
             request,
-            &(WrapInputs {
+            &WrapInputs {
                 auth_context: &auth_context,
                 operation_type: OperationType::Query,
                 resource_type: ResourceType::Document,
@@ -2199,7 +2194,7 @@ mod tests {
                 read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
                 account_name: Some("account"),
                 collection_rid: None,
-            }),
+            },
         )
         .unwrap();
         let parsed = parse_wrapped_request(&wrapped, 10);
@@ -2207,7 +2202,7 @@ mod tests {
         assert_eq!(
             parsed.tokens[&0x0006],
             ParsedTokenValue::String(String::new()),
-            "empty continuation header should be emitted as a zero-length string token"
+            "empty continuation header should be emitted as a zero-length string token",
         );
     }
 
@@ -2316,21 +2311,21 @@ mod tests {
                 activity_id,
                 |tokens| {
                     write_small_string_token(tokens, 0x0002, "2026-07-21T00:00:00Z");
-                    write_string_token(tokens, 0x000e, "documentSize=10240;");
-                    write_string_token(tokens, 0x000f, "documentSize=1;");
+                    write_string_token(tokens, 0x000E, "documentSize=10240;");
+                    write_string_token(tokens, 0x000F, "documentSize=1;");
                     write_small_string_token(tokens, 0x0010, "1.0");
-                    write_u32_token(tokens, 0x001c, 1002);
+                    write_u32_token(tokens, 0x001C, 1002);
                     write_u32_token(tokens, 0x0014, 1);
                     write_double_token(tokens, 0x0015, 3.5);
                     write_string_token(tokens, 0x0018, "owner-rid");
-                    write_i64_token(tokens, 0x001a, 40);
-                    write_u32_token(tokens, 0x001e, 3);
-                    write_u32_token(tokens, 0x001f, 4);
+                    write_i64_token(tokens, 0x001A, 40);
+                    write_u32_token(tokens, 0x001E, 3);
+                    write_u32_token(tokens, 0x001F, 4);
                     write_u32_token(tokens, 0x0026, 1);
                     write_u32_token(tokens, 0x0030, 2);
-                    write_i64_token(tokens, 0x003a, 41);
-                    write_i64_token(tokens, 0x003b, 40);
-                    write_i64_token(tokens, 0x003c, 39);
+                    write_i64_token(tokens, 0x003A, 41);
+                    write_i64_token(tokens, 0x003B, 40);
+                    write_i64_token(tokens, 0x003C, 39);
                     write_string_token(tokens, 0x0045, "{\"reverseRidEnabled\":false}");
                     write_double_token(tokens, 0x0051, 12.75);
                     write_byte_token(tokens, 0x0055, 0);
@@ -2338,7 +2333,7 @@ mod tests {
                     write_u64_token(tokens, 0x0087, 1_234_567);
                     write_u32_token(tokens, 0x0035, 45);
                     write_string_token(tokens, 0x0021, "1");
-                    write_string_token(tokens, 0x003e, "1:2#3");
+                    write_string_token(tokens, 0x003E, "1:2#3");
                     write_string_token(tokens, 0x0004, "\"etag\"");
                     write_string_token(tokens, 0x0003, "continuation");
                     write_i64_token(tokens, 0x0013, 42);
@@ -2483,7 +2478,7 @@ mod tests {
                 |tokens| {
                     // GW2 surfaces the bare vector token and the pk range id separately.
                     write_string_token(tokens, 0x0021, "0");
-                    write_string_token(tokens, 0x003e, "0#2#2=-1");
+                    write_string_token(tokens, 0x003E, "0#2#2=-1");
                 },
                 b"",
             ),
@@ -2509,7 +2504,7 @@ mod tests {
                 Uuid::parse_str(ACTIVITY_ID).unwrap(),
                 |tokens| {
                     write_string_token(tokens, 0x0021, "0");
-                    write_string_token(tokens, 0x003e, "0:0#2#2=-1");
+                    write_string_token(tokens, 0x003E, "0:0#2#2=-1");
                 },
                 b"",
             ),
@@ -2533,7 +2528,7 @@ mod tests {
             body: response_frame(
                 429,
                 Uuid::parse_str(ACTIVITY_ID).unwrap(),
-                |tokens| write_u32_token(tokens, 0x000c, 125),
+                |tokens| write_u32_token(tokens, 0x000C, 125),
                 b"",
             ),
         };
@@ -2582,13 +2577,13 @@ mod tests {
         body: &[u8],
     ) -> Vec<u8> {
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(&(0_u32).to_le_bytes());
+        bytes.extend_from_slice(&0_u32.to_le_bytes());
         bytes.extend_from_slice(&status.to_le_bytes());
         write_uuid(&mut bytes, activity_id);
         write_tokens(&mut bytes);
         if !body.is_empty() {
             // PayloadPresent = true (id 0x0000, type Byte).
-            bytes.extend_from_slice(&(0x0000_u16).to_le_bytes());
+            bytes.extend_from_slice(&0x0000_u16.to_le_bytes());
             bytes.push(0x00);
             bytes.push(1);
         }
@@ -2641,7 +2636,7 @@ mod tests {
 
     fn write_double_token(bytes: &mut Vec<u8>, id: u16, value: f64) {
         bytes.extend_from_slice(&id.to_le_bytes());
-        bytes.push(0x0e);
+        bytes.push(0x0E);
         bytes.extend_from_slice(&value.to_le_bytes());
     }
 

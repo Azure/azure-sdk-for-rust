@@ -62,8 +62,8 @@ pub(super) async fn should_run(scenario_id: &str) -> TestResult<bool> {
     {
         return Err(
             format!(
-                "scenario '{scenario_id}' does not implement the runtime/client settings in profile '{}'",
-                profile.id
+            "scenario '{scenario_id}' does not implement the runtime/client settings in profile '{}'",
+            profile.id
             ).into()
         );
     }

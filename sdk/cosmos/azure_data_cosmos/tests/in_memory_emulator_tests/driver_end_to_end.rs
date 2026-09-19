@@ -142,13 +142,13 @@ async fn create_and_read_item_through_driver() {
     assert_eq!(
         u16::from(emu_create.status()),
         201,
-        "Emulator create should return 201 Created"
+        "Emulator create should return 201 Created",
     );
     if let Some(ref real) = real_create {
         assert_eq!(
             u16::from(real.status()),
             201,
-            "Real create should return 201 Created"
+            "Real create should return 201 Created",
         );
     }
 
@@ -174,7 +174,7 @@ async fn create_and_read_item_through_driver() {
     assert_eq!(
         u16::from(emu_read.status()),
         200,
-        "Emulator read should return 200 OK"
+        "Emulator read should return 200 OK",
     );
 
     // Verify emulator body structure
@@ -187,7 +187,7 @@ async fn create_and_read_item_through_driver() {
     );
     assert!(
         doc.get("_etag").is_some(),
-        "Should have _etag system property"
+        "Should have _etag system property",
     );
 
     if let Some(ref real) = real_read {
@@ -229,13 +229,13 @@ async fn create_database_and_container_through_driver() {
     assert_eq!(
         u16::from(emu_create_db.status()),
         201,
-        "Emulator create DB should return 201"
+        "Emulator create DB should return 201",
     );
     if let Some(ref real) = real_create_db {
         assert_eq!(
             u16::from(real.status()),
             201,
-            "Real create DB should return 201"
+            "Real create DB should return 201",
         );
     }
 
@@ -275,7 +275,7 @@ async fn create_database_and_container_through_driver() {
     assert_eq!(
         u16::from(emu_create_coll.status()),
         201,
-        "Emulator create container should return 201"
+        "Emulator create container should return 201",
     );
 
     // Compare create-container responses
@@ -283,7 +283,7 @@ async fn create_database_and_container_through_driver() {
         assert_eq!(
             u16::from(real_resp.status()),
             201,
-            "Real create container should return 201"
+            "Real create container should return 201",
         );
         let real_snap = ResponseSnapshot::capture(real_resp, "real");
         let emu_snap = ResponseSnapshot::capture(&emu_create_coll, "emulator");
@@ -360,13 +360,13 @@ async fn delete_item_through_driver() {
     assert_eq!(
         u16::from(emu_delete.status()),
         204,
-        "Emulator delete should return 204 No Content"
+        "Emulator delete should return 204 No Content",
     );
     if let Some(ref real) = real_delete {
         assert_eq!(
             u16::from(real.status()),
             204,
-            "Real delete should return 204 No Content"
+            "Real delete should return 204 No Content",
         );
     }
 
@@ -384,7 +384,7 @@ async fn delete_item_through_driver() {
         .await;
     assert!(
         emu_read_deleted.is_err(),
-        "Emulator: reading deleted item should fail"
+        "Emulator: reading deleted item should fail",
     );
 
     // ── Verify item is gone (real) ───────────────────────────────
@@ -401,7 +401,7 @@ async fn delete_item_through_driver() {
             .await;
         assert!(
             real_read_deleted.is_err(),
-            "Real: reading deleted item should fail"
+            "Real: reading deleted item should fail",
         );
     }
 
@@ -468,7 +468,7 @@ async fn replace_item_through_driver() {
     assert_eq!(
         u16::from(emu_replace.status()),
         200,
-        "Emulator replace should return 200"
+        "Emulator replace should return 200",
     );
 
     // Verify updated value via read
@@ -598,13 +598,13 @@ async fn read_with_stale_session_token_returns_404_1002() {
     assert_eq!(
         Some(emu_err.status().status_code()),
         Some(azure_core::http::StatusCode::NotFound),
-        "Emulator error should be HTTP 404"
+        "Emulator error should be HTTP 404",
     );
     let error_code = emu_err.status().sub_status().map(|s| s.value().to_string());
     assert_eq!(
         error_code.as_deref(),
         Some("1002"),
-        "Emulator error should have substatus 1002"
+        "Emulator error should have substatus 1002",
     );
 
     // ── Real account (if available) ──────────────────────────────
@@ -648,7 +648,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
         assert_eq!(
             real_err.status().status_code(),
             azure_core::http::StatusCode::NotFound,
-            "Real stale session read should return HTTP 404"
+            "Real stale session read should return HTTP 404",
         );
         // Substatus 1002 is only produced under Session consistency; on
         // Eventual/Strong accounts the stale token is ignored and the missing
@@ -657,7 +657,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
             assert_eq!(
                 real_err.status().sub_status().map(|s| s.value()),
                 Some(1002),
-                "Real 404 stale session read should surface substatus 1002"
+                "Real 404 stale session read should surface substatus 1002",
             );
         }
     }
@@ -723,7 +723,7 @@ async fn read_after_split_refreshes_driver_routing_map() {
     assert_eq!(
         u16::from(read.status()),
         200,
-        "driver should refresh the routing map after a split"
+        "driver should refresh the routing map after a split",
     );
 
     let doc: serde_json::Value = body_json(&read);
@@ -767,7 +767,7 @@ async fn upsert_item_through_driver() {
     assert_eq!(
         u16::from(emu_upsert1.status()),
         201,
-        "Emulator upsert-as-insert should return 201"
+        "Emulator upsert-as-insert should return 201",
     );
     if let Some(ref real) = real_upsert1 {
         assert_eq!(u16::from(real.status()), 201);
@@ -800,7 +800,7 @@ async fn upsert_item_through_driver() {
     assert_eq!(
         u16::from(emu_upsert2.status()),
         200,
-        "Emulator upsert-as-update should return 200"
+        "Emulator upsert-as-update should return 200",
     );
     if let Some(ref real) = real_upsert2 {
         assert_eq!(u16::from(real.status()), 200);
@@ -955,7 +955,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
     assert_eq!(
         Some(west_read_before_resume.status().status_code()),
         Some(azure_core::http::StatusCode::NotFound),
-        "read should fail while West US replication is paused"
+        "read should fail while West US replication is paused",
     );
 
     let session_retry = OperationOptionsBuilder::new()
@@ -1010,7 +1010,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
     assert_eq!(
         u16::from(west_read_after_resume.status()),
         200,
-        "satellite read should succeed once hub writes replicate"
+        "satellite read should succeed once hub writes replicate",
     );
 
     let doc: serde_json::Value = body_json(&west_read_after_resume);
@@ -1116,7 +1116,7 @@ async fn create_retries_after_429_throttling() {
     assert!(
         elapsed >= std::time::Duration::from_millis(200),
         "create should have retried after a 429 throttling response (elapsed: {:?})",
-        elapsed
+        elapsed,
     );
     assert_eq!(u16::from(create.status()), 201);
 
@@ -1273,7 +1273,7 @@ async fn read_failover_on_503_via_fault_injection() {
     assert_eq!(
         u16::from(emu_create.status()),
         201,
-        "Emulator create should return 201"
+        "Emulator create should return 201",
     );
 
     // ── Read item — should failover from East US → West US ───────
@@ -1292,14 +1292,14 @@ async fn read_failover_on_503_via_fault_injection() {
     assert_eq!(
         u16::from(emu_read.status()),
         200,
-        "Emulator read should succeed via failover to West US"
+        "Emulator read should succeed via failover to West US",
     );
 
     // Verify fault rule was hit (confirms failover actually occurred).
     assert!(
         emu_rule.hit_count() > 0,
         "Fault rule should have been hit at least once (was hit {} times)",
-        emu_rule.hit_count()
+        emu_rule.hit_count(),
     );
 
     // Verify response body.
@@ -1311,27 +1311,27 @@ async fn read_failover_on_503_via_fault_injection() {
     let emu_headers = emu_read.headers();
     assert!(
         emu_headers.activity_id.is_some(),
-        "activity_id should be present"
+        "activity_id should be present",
     );
     assert!(
         emu_headers.request_charge.is_some(),
-        "request_charge should be present"
+        "request_charge should be present",
     );
     assert!(
         emu_headers.session_token.is_some(),
-        "session_token should be present"
+        "session_token should be present",
     );
     assert!(
         emu_headers.etag.is_some(),
-        "etag should be present on successful read"
+        "etag should be present on successful read",
     );
     assert!(
         emu_headers.server_duration_ms.is_some(),
-        "server_duration_ms should be present"
+        "server_duration_ms should be present",
     );
     assert!(
         emu_read.status().sub_status().is_none(),
-        "successful read should have no substatus"
+        "successful read should have no substatus",
     );
 
     // Verify system properties in body.
@@ -1712,7 +1712,7 @@ async fn v1_writes_distribute_across_partitions() {
     assert!(
         distinct_pkranges.len() > 1,
         "V1 writes routed to only {:?} distinct pkrange(s) — distribution is broken",
-        distinct_pkranges
+        distinct_pkranges,
     );
 
     backend.cleanup_real_database(&db_name).await;
@@ -1741,7 +1741,7 @@ async fn error_carries_extractable_diagnostics() {
     assert_eq!(
         u16::from(err.status().status_code()),
         404,
-        "missing-item read should surface as 404"
+        "missing-item read should surface as 404",
     );
 
     let diagnostics = err
@@ -1751,7 +1751,7 @@ async fn error_carries_extractable_diagnostics() {
     let json = diagnostics.to_json_string(None);
     assert!(
         json.contains("\"activity_id\""),
-        "diagnostics JSON should include activity_id, got: {json}"
+        "diagnostics JSON should include activity_id, got: {json}",
     );
 
     let final_status = diagnostics
@@ -1761,7 +1761,7 @@ async fn error_carries_extractable_diagnostics() {
         u16::from(final_status.status_code()),
         404,
         "diagnostics status_code should be 404 for missing item, got: {:?}",
-        final_status.status_code()
+        final_status.status_code(),
     );
 
     backend.cleanup_real_database(&db_name).await;

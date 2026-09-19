@@ -172,13 +172,13 @@ mod tests {
             ResourceType::Document,
             OperationType::ReadFeed,
             false,
-            false
+            false,
         ));
         assert!(!is_operation_supported_by_gateway_v2(
             ResourceType::Document,
             OperationType::ReadFeed,
             true,
-            false
+            false,
         ));
     }
 

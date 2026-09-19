@@ -1242,7 +1242,7 @@ mod tests {
                 Token::partition_key(r#"["pk1"]"#.to_owned()),
                 Token::new(
                     RntbdRequestToken::ReadConsistencyStrategy,
-                    TokenValue::Byte(0xff),
+                    TokenValue::Byte(0xFF),
                 ),
                 Token::payload_present(false),
             ],

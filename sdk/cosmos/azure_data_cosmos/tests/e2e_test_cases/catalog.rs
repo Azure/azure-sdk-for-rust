@@ -605,7 +605,7 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
             .collect();
         return Err(
             format!(
-                "scenario inventory differs from e2e_tests/scenarios; unregistered: {unregistered:?}, missing: {missing:?}"
+            "scenario inventory differs from e2e_tests/scenarios; unregistered: {unregistered:?}, missing: {missing:?}"
             )
         );
     }
@@ -724,8 +724,8 @@ fn validate_pipeline_matrix(json: &str, profile: &Profile) -> Result<(), String>
         if actual != expected {
             return Err(
                 format!(
-                    "pipeline matrix for '{}' does not cover its {axis} axis: expected {expected:?}, got {actual:?}",
-                    profile.id
+                "pipeline matrix for '{}' does not cover its {axis} axis: expected {expected:?}, got {actual:?}",
+                profile.id
                 )
             );
         }
