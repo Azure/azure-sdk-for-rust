@@ -630,10 +630,8 @@ mod tests {
     use super::*;
     use crate::{
         driver::transport::{
-            cosmos_transport_client::HttpRequest,
-            gateway_v2_dispatch::{wrap_request_for_gateway_v2, WrapInputs},
-            rntbd::Token,
-            AuthorizationContext,
+            cosmos_transport_client::HttpRequest, rntbd::Token, wrap_request_for_gateway_v2,
+            AuthorizationContext, WrapInputs,
         },
         in_memory_emulator::{ContainerConfig, VirtualAccountConfig, VirtualRegion},
         models::{DefaultConsistencyLevel, PartitionKeyDefinition},
