@@ -629,9 +629,14 @@ fn gateway_v2_internal_error(error: impl std::fmt::Display) -> crate::error::Cos
 mod tests {
     use super::*;
     use crate::{
-        driver::transport::rntbd::Token,
+        driver::transport::{
+            cosmos_transport_client::HttpRequest,
+            gateway_v2_dispatch::{wrap_request_for_gateway_v2, WrapInputs},
+            rntbd::Token,
+            AuthorizationContext,
+        },
         in_memory_emulator::{ContainerConfig, VirtualAccountConfig, VirtualRegion},
-        models::PartitionKeyDefinition,
+        models::{DefaultConsistencyLevel, PartitionKeyDefinition},
     };
     use url::Url;
 
@@ -811,6 +816,96 @@ mod tests {
         let second_body: serde_json::Value = serde_json::from_slice(&second.body).unwrap();
         assert_eq!(second_body["Documents"].as_array().unwrap().len(), 1);
         assert!(second.continuation_token.is_none());
+    }
+
+    #[tokio::test]
+    async fn ordinary_read_feed_stays_flat_through_gateway_v2_encoder_and_bridge() {
+        let thin_url = Url::parse("http://127.0.0.1:18444/").unwrap();
+        let gateway_url = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let region = VirtualRegion::new("East US", gateway_url.clone())
+            .with_gateway_v2_url(thin_url.clone());
+        let emulator =
+            InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![region]).unwrap());
+        let store = emulator.store();
+        store.create_database("db");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        store.create_container("db", "coll", partition_key);
+
+        let mut seed = Request::new(
+            gateway_url.join("dbs/db/colls/coll/docs").unwrap(),
+            Method::Post,
+        );
+        seed.headers_mut().insert(
+            "x-ms-documentdb-partitionkey",
+            HeaderValue::from_static(r#"["A"]"#),
+        );
+        seed.set_body(
+            serde_json::to_vec(&serde_json::json!({ "id": "item-1", "pk": "A" })).unwrap(),
+        );
+        assert_eq!(
+            emulator.execute_request(&seed).await.unwrap().status(),
+            StatusCode::Created
+        );
+
+        let activity_id = Uuid::new_v4();
+        let mut headers = Headers::new();
+        headers.insert("authorization", "auth-token");
+        headers.insert("x-ms-date", "Wed, 21 Oct 2015 07:28:00 GMT");
+        headers.insert("x-ms-activity-id", activity_id.to_string());
+        let request = HttpRequest {
+            url: thin_url.join("dbs/db/colls/coll/docs").unwrap(),
+            method: Method::Get,
+            headers,
+            body: None,
+            timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
+        };
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db/colls/coll/docs",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            request,
+            &WrapInputs {
+                auth_context: &auth_context,
+                operation_type: OperationType::ReadFeed,
+                resource_type: ResourceType::Document,
+                effective_partition_key: None,
+                effective_consistency: DefaultConsistencyLevel::Session,
+                read_consistency_strategy: ReadConsistencyStrategy::Default,
+                account_name: Some("account"),
+                collection_rid: None,
+            },
+        )
+        .unwrap();
+
+        let mut request = Request::new(
+            thin_url.join("dbs/db/colls/coll/docs").unwrap(),
+            Method::Post,
+        );
+        request.set_body(
+            wrapped
+                .body
+                .expect("Gateway V2 request must carry an RNTBD frame"),
+        );
+        let response = emulator
+            .execute_gateway_v2_request(&request)
+            .await
+            .unwrap()
+            .try_into_raw_response()
+            .await
+            .unwrap();
+        let response = RntbdResponse::read(response.body().as_ref()).unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&response.body).unwrap();
+        let item = &body["Documents"].as_array().unwrap()[0];
+        assert_eq!(item["id"], "item-1");
+        assert!(item.get("current").is_none());
+        assert!(item.get("metadata").is_none());
     }
 
     async fn execute_frame(
