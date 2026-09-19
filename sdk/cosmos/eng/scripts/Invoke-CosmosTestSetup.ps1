@@ -108,9 +108,18 @@ function New-CosmosE2eEmulatorConfig {
     $mode = if ($GatewayV2Enabled) { 'v2' } else { 'v1' }
     $path = ([System.IO.Path]::Combine($OutputDirectory, "azure-cosmos-e2e-$ProfileId-$($accountDefinition.id)-$mode.json"))
     $configuration | ConvertTo-Json -Depth 10 | Set-Content $path
+    $defaultConsistency = switch ([string]$accountDefinition.consistency) {
+        'strong' { 'Strong' }
+        'boundedStaleness' { 'BoundedStaleness' }
+        'session' { 'Session' }
+        'consistentPrefix' { 'ConsistentPrefix' }
+        'eventual' { 'Eventual' }
+        default { throw "Unsupported account consistency '$($accountDefinition.consistency)'." }
+    }
     return [pscustomobject]@{
-        Path      = $path
-        AccountId = $configuration.account.id
+        Path               = $path
+        AccountId          = $configuration.account.id
+        DefaultConsistency = $defaultConsistency
     }
 }
 
@@ -175,8 +184,8 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
     $runId = [System.Guid]::NewGuid().ToString('N')
     $runDirectory = ([System.IO.Path]::Combine(
-            $runDirectoryRoot,
-            "azure-data-cosmos-emulator-$runId"))
+        $runDirectoryRoot,
+        "azure-data-cosmos-emulator-$runId"))
     New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
     Set-Content `
         -LiteralPath ([System.IO.Path]::Combine($runDirectory, '.azure-data-cosmos-emulator-run')) `
@@ -200,6 +209,7 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
             -OutputDirectory $runDirectory
         $configuration = $e2eConfiguration.Path
         $expectedAccountId = $e2eConfiguration.AccountId
+        $env:AZURE_COSMOS_DEFAULT_CONSISTENCY = $e2eConfiguration.DefaultConsistency
     }
     $managementEndpoint = $env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT
     $accountEndpoint = $env:AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT

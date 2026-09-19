@@ -42,7 +42,7 @@ use crate::{
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView, PlanOptions,
-        QueryPlanMode, ResolvedThroughputControl, ThroughputControlGroupSnapshot,
+        ResolvedThroughputControl, ThroughputControlGroupSnapshot,
     },
     ActivityId, CosmosResponse, DiagnosticsContext,
 };
@@ -149,7 +149,6 @@ struct DriverRequestExecutor<'a> {
     options: &'a OperationOptions,
     absolute_deadline: Option<Instant>,
     successful_requests: usize,
-    diagnostics_sources: Vec<Arc<DiagnosticsContext>>,
     container_recreation_recovery_disabled: bool,
     container_recreation_recovery_tracker: Arc<ContainerRecreationRecoveryTracker>,
 }
@@ -299,9 +298,8 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
             let result = driver
                 .execute_operation_direct(&operation, overrides, self.options)
                 .await;
-            if let Ok(response) = &result {
+            if result.is_ok() {
                 self.successful_requests += 1;
-                self.diagnostics_sources.push(response.diagnostics());
             }
             result
         })
@@ -1522,21 +1520,14 @@ impl CosmosDriver {
                 .build()
         })?;
         if decoded.len() != 8 {
-            return Err(
-                crate::error::CosmosError
-                    ::builder()
-                    .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
-                    .with_message(
-                        format!(
-                            "'{container_rid}' is not a container RID (decodes to {} bytes; a container RID must be exactly 8)",
-                            decoded.len()
-                        )
-                    )
-                    .with_source(
-                        std::io::Error::other("container RID has non-container byte length")
-                    )
-                    .build()
-            );
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                .with_message(format!(
+                    "'{container_rid}' is not a container RID (decodes to {} bytes; a container RID must be exactly 8)",
+                    decoded.len()
+                ))
+                .with_source(std::io::Error::other("container RID has non-container byte length"))
+                .build());
         }
         let db_rid = crate::models::resource_id::ResourceId::new(
             crate::models::resource_id::encode_rid(&decoded[0..4]),
@@ -1859,19 +1850,14 @@ impl CosmosDriver {
     }
 
     fn partition_key_range_cache(&self) -> crate::error::Result<&PartitionKeyRangeCache> {
-        self.pk_range_cache
-            .as_ref()
-            .ok_or_else(|| {
-                crate::error::CosmosError
-                    ::builder()
-                    .with_status(
-                        crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED
-                    )
-                    .with_message(
-                        "the partition key range cache is disabled, but this operation requires partition topology"
-                    )
-                    .build()
-            })
+        self.pk_range_cache.as_ref().ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED)
+                .with_message(
+                    "the partition key range cache is disabled, but this operation requires partition topology",
+                )
+                .build()
+        })
     }
 
     /// **Internal test hook -- not part of the public API.**
@@ -2183,13 +2169,6 @@ impl CosmosDriver {
         )
     }
 
-    fn effective_query_plan_mode(&self, options: &OperationOptions) -> QueryPlanMode {
-        self.operation_options_view(options)
-            .query_plan_mode()
-            .copied()
-            .unwrap_or_default()
-    }
-
     /// Computes the effective throughput-control header values for an operation.
     ///
     /// Resolves the per-request `x-ms-cosmos-throughput-bucket` and
@@ -2231,21 +2210,16 @@ impl CosmosDriver {
         }
 
         if let Some(name) = throughput_view.group_name() {
-            let group = self.throughput_control_groups
+            let group = self
+                .throughput_control_groups
                 .get_by_container_and_name(container, name)
                 .ok_or_else(|| {
-                    crate::error::CosmosError
-                        ::builder()
-                        .with_status(
-                            crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED
-                        )
-                        .with_message(
-                            format!(
-                                "throughput control group '{}' not found in registry for container '{}'",
-                                name,
-                                container.name()
-                            )
-                        )
+                    crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED)
+                        .with_message(format!(
+                            "throughput control group '{}' not found in registry for container '{}'",
+                            name,
+                            container.name()
+                        ))
                         .build()
                 })?;
             let snapshot = ThroughputControlGroupSnapshot::from(group.as_ref());
@@ -2472,7 +2446,7 @@ impl CosmosDriver {
         &'a self,
         options: OperationOptions,
         absolute_deadline: Option<Instant>,
-    ) -> impl (Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>)
+    ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
            + Send
            + 'a {
         move |container, continuation| {
@@ -2598,9 +2572,9 @@ impl CosmosDriver {
         let partition_state = snapshot.partitions.as_ref();
         if !(partition_state.per_partition_automatic_failover_enabled
             || partition_state.per_partition_circuit_breaker_enabled
-            || (automatic_session_management_active
+            || automatic_session_management_active
                 && operation.request_headers().session_token.is_none()
-                && self.location_state_store.gateway_v2_enabled()))
+                && self.location_state_store.gateway_v2_enabled())
         {
             return None;
         }
@@ -3053,7 +3027,7 @@ impl CosmosDriver {
             Ok(Some(r)) => Ok(r),
             Ok(None) => {
                 if cfg!(debug_assertions) {
-                    panic!("singleton operation returned an empty page");
+                    panic!("singleton operation returned an empty page")
                 }
                 Err(crate::error::CosmosError::builder()
                     .with_status(
@@ -3289,18 +3263,13 @@ impl CosmosDriver {
         Box::pin(async move {
             if !self.initialized.load(Ordering::Acquire) {
                 let endpoint = AccountEndpoint::from(self.options.account());
-                return Err(
-                    crate::error::CosmosError
-                        ::builder()
-                        .with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
-                        .with_message(
-                            format!(
-                                "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::CLIENT_DRIVER_NOT_INITIALIZED)
+                    .with_message(format!(
+                        "CosmosDriver for {endpoint} has not been initialized; call initialize() or \
                          use CosmosDriverRuntime::create_driver() which initializes automatically"
-                            )
-                        )
-                        .build()
-                );
+                    ))
+                    .build());
             }
             // A page that advanced the plan but never reached the caller makes
             // the plan unusable, not merely unable to mint a token: the next
@@ -3320,16 +3289,12 @@ impl CosmosDriver {
                     .end_to_end_latency_policy()
                     .map(|policy| Instant::now() + policy.timeout())
             });
-            let recovery_allowed =
-                !plan.is_resumed &&
-                !plan.has_progressed &&
-                !plan.container_recreation_recovery_attempted;
-            let (result, successful_requests, recovery_outcome) = self.execute_plan_once(
-                plan,
-                container,
-                &options,
-                absolute_deadline
-            ).await;
+            let recovery_allowed = !plan.is_resumed
+                && !plan.has_progressed
+                && !plan.container_recreation_recovery_attempted;
+            let (result, successful_requests, recovery_outcome) = self
+                .execute_plan_once(plan, container, &options, absolute_deadline)
+                .await;
             if recovery_outcome != ContainerRecreationRecoveryOutcome::NotAttempted {
                 plan.container_recreation_recovery_attempted = true;
             }
@@ -3340,10 +3305,9 @@ impl CosmosDriver {
             let Err(error) = result else {
                 return Self::finalize_plan_response(plan, result);
             };
-            if
-                !recovery_allowed ||
-                successful_requests > 0 ||
-                !is_container_recreation_status(&error.status())
+            if !recovery_allowed
+                || successful_requests > 0
+                || !is_container_recreation_status(&error.status())
             {
                 return Err(error);
             }
@@ -3352,8 +3316,10 @@ impl CosmosDriver {
             let mut operation = plan.operation.as_ref().clone();
             let recovered = match recovery_outcome {
                 ContainerRecreationRecoveryOutcome::NotAttempted => {
-                    container_recreation_recovery_eligible(&operation, &options) &&
-                        self.try_recover_recreated_container(&mut operation, &options).await?
+                    container_recreation_recovery_eligible(&operation, &options)
+                        && self
+                            .try_recover_recreated_container(&mut operation, &options)
+                            .await?
                 }
                 ContainerRecreationRecoveryOutcome::PlanRebuildRequired => {
                     self.canonicalize_operation_container(&mut operation).await?
@@ -3367,29 +3333,24 @@ impl CosmosDriver {
             let prior_diagnostics = error.diagnostics();
             let replacement_container = operation.container().cloned();
             let plan_options = plan.plan_options.clone();
-            *plan = self.plan_operation(operation, &options, None, &plan_options).await?;
+            *plan = self
+                .plan_operation(operation, &options, None, &plan_options)
+                .await?;
             plan.container_recreation_recovery_attempted = true;
-            let (retry_result, retry_successes, _) = self.execute_plan_once(
-                plan,
-                replacement_container,
-                &options,
-                absolute_deadline
-            ).await;
+            let (retry_result, retry_successes, _) = self
+                .execute_plan_once(plan, replacement_container, &options, absolute_deadline)
+                .await;
             let retry_result = match retry_result {
-                Ok(Some(response)) =>
-                    Ok(
-                        Some(match prior_diagnostics {
-                            Some(prior) => response.with_aggregated_prior_diagnostics(&[prior]),
-                            None => response,
-                        })
-                    ),
+                Ok(Some(response)) => Ok(Some(match prior_diagnostics {
+                    Some(prior) => response.with_aggregated_prior_diagnostics(&[prior]),
+                    None => response,
+                })),
                 Ok(None) => Ok(None),
                 Err(retry_error) => {
                     let combined = match (prior_diagnostics, retry_error.diagnostics()) {
                         (Some(prior), Some(current)) => {
-                            DiagnosticsContext::aggregate_sub_operations(&[prior, current]).map(
-                                Arc::new
-                            )
+                            DiagnosticsContext::aggregate_sub_operations(&[prior, current])
+                                .map(Arc::new)
                         }
                         (Some(prior), None) => Some(prior),
                         (None, Some(current)) => Some(current),
@@ -3406,7 +3367,8 @@ impl CosmosDriver {
                 plan.has_progressed = true;
             }
             Self::finalize_plan_response(plan, retry_result)
-        }).await
+        })
+        .await
     }
 
     fn finalize_plan_response(
@@ -3451,7 +3413,6 @@ impl CosmosDriver {
             options,
             absolute_deadline,
             successful_requests: 0,
-            diagnostics_sources: Vec::new(),
             container_recreation_recovery_disabled: plan.container_recreation_recovery_attempted,
             container_recreation_recovery_tracker: Arc::clone(&recovery_tracker),
         };
@@ -3471,17 +3432,6 @@ impl CosmosDriver {
                 .map(|topology| topology as &mut dyn TopologyProvider),
         );
         let result = plan.pipeline.next_page(&mut context).await;
-        let result = match result {
-            Ok(Some(response))
-                if response.diagnostics().request_count() == 0
-                    && !executor.diagnostics_sources.is_empty() =>
-            {
-                Ok(Some(response.with_aggregated_prior_diagnostics(
-                    &executor.diagnostics_sources,
-                )))
-            }
-            result => result,
-        };
         (
             result,
             executor.successful_requests,
@@ -3994,25 +3944,26 @@ impl CosmosDriver {
         let db_name_owned = db_name.to_owned();
         let container_name_owned = container_name.to_owned();
 
-        let resolved = self.runtime
+        let resolved = self
+            .runtime
             .container_cache()
             .get_or_fetch_by_name(&endpoint, db_name, container_name, || async move {
                 self.fetch_container_by_name(
                     &db_name_owned,
                     &container_name_owned,
                     operation_options,
-                    None
-                ).await.map_err(|err| {
-                    crate::error::CosmosErrorBuilder
-                        ::from_error(err)
-                        .with_context(
-                            format!(
+                    None,
+                )
+                    .await
+                    .map_err(|err| {
+                        crate::error::CosmosErrorBuilder::from_error(err)
+                            .with_context(format!(
                                 "resolve container by name (db='{db_name_owned}', container='{container_name_owned}')"
-                            )
-                        )
-                        .build()
-                })
-            }).await?;
+                            ))
+                            .build()
+                    })
+            })
+            .await?;
 
         Ok(resolved.as_ref().clone())
     }
@@ -4199,7 +4150,7 @@ impl CosmosDriver {
             operation_type = ?operation.operation_type(),
             resource_type = ?operation.resource_type(),
             resource_reference = ?operation.resource_reference(),
-            query_plan_mode = ?self.effective_query_plan_mode(options),
+            query_plan_mode = ?plan_options.query_plan_mode,
             "planning operation"
         );
 
@@ -4231,19 +4182,13 @@ impl CosmosDriver {
             }
             Some(ResolvedToken::ServerOpaque(server_token)) => {
                 if !operation.is_trivial() {
-                    return Err(
-                        crate::error::CosmosError
-                            ::builder()
-                            .with_status(
-                                crate::error::CosmosStatus::CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY
-                            )
-                            .with_message(
-                                "an opaque server continuation token cannot be used to resume a \
+                    return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY)
+                        .with_message(
+                            "an opaque server continuation token cannot be used to resume a \
                              cross-partition query; use the SDK-issued continuation token from \
-                             QueryPageIterator::to_continuation_token()"
-                            )
-                            .build()
-                    );
+                             QueryPageIterator::to_continuation_token()",
+                        )
+                        .build());
                 }
                 Some(PipelineNodeState::Request {
                     server_continuation: Some(server_token),
@@ -4267,17 +4212,14 @@ impl CosmosDriver {
         //    304 so the stream is infinite.
         if operation.is_change_feed() {
             let cache = self.partition_key_range_cache()?;
-            let container = operation
-                .container()
-                .ok_or_else(|| {
-                    crate::error::CosmosError
-                        ::builder()
-                        .with_status(
-                            crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF
-                        )
-                        .with_message("cross-partition change feed requires a container reference")
-                        .build()
-                })?;
+            let container = operation.container().ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF,
+                    )
+                    .with_message("cross-partition change feed requires a container reference")
+                    .build()
+            })?;
             let feed_range = operation.target().cloned().unwrap_or_else(FeedRange::full);
             let container_ref = container.clone();
             let mut topology = CachedTopologyProvider::new(
@@ -4315,7 +4257,9 @@ impl CosmosDriver {
             Err(error) => {
                 if matches!(
                     query_planning::try_resolve_without_topology(
-                        self, container, &operation, options
+                        container,
+                        &operation,
+                        plan_options,
                     ),
                     Some(ResolvedQueryPlan::Empty)
                 ) {
@@ -4329,7 +4273,11 @@ impl CosmosDriver {
         // `Box::pin` keeps `plan_operation`'s future small. Inlined, it grows to
         // 17,288 bytes and trips `clippy::large_futures` at five caller sites.
         let resolved = Box::pin(query_planning::resolve_query_plan(
-            self, container, &operation, options,
+            self,
+            container,
+            &operation,
+            options,
+            plan_options,
         ))
         .await?;
 
@@ -4342,6 +4290,8 @@ impl CosmosDriver {
             }
             ResolvedQueryPlan::Plan(plan) => *plan,
         };
+
+        planner::validate_buffered_query(&query_plan, plan_options.max_buffered_query_window)?;
 
         // Build the fan-out pipeline using the query plan.
         let container_ref = container.clone();
@@ -4537,7 +4487,7 @@ fn distributed_transaction_outer_retry_delay(
 #[cfg(feature = "preview_dtx")]
 fn distributed_transaction_outer_computed_delay(retry_count: u32) -> Duration {
     let exponent = retry_count.min(DTX_OUTER_MAX_EXPONENT);
-    let delay_seconds = DTX_OUTER_BASE_DELAY.as_secs_f64() * (2_f64).powi(exponent as i32);
+    let delay_seconds = DTX_OUTER_BASE_DELAY.as_secs_f64() * 2_f64.powi(exponent as i32);
     Duration::from_secs_f64(crate::driver::jitter::with_jitter(
         delay_seconds,
         DTX_OUTER_JITTER_RATIO,
@@ -4658,45 +4608,31 @@ mod tests {
     impl TransportClient for ScriptedClient {
         async fn send(&self, _request: &HttpRequest) -> Result<HttpResponse, TransportError> {
             match self.plan {
-                ResponsePlan::Success =>
-                    Ok(HttpResponse {
-                        status: 200,
-                        headers: Headers::new(),
-                        body: ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec(),
-                    }),
-                ResponsePlan::Http2Incompatible =>
-                    Err(
-                        TransportError::new(
-                            crate::error::CosmosError
-                                ::builder()
-                                .with_status(
-                                    crate::models::CosmosStatus::TRANSPORT_HTTP2_INCOMPATIBLE
-                                )
-                                .with_message("http2 not supported")
-                                .with_source(h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED))
-                                .build(),
-                            crate::diagnostics::RequestSentStatus::NotSent
-                        )
-                    ),
-                ResponsePlan::ConnectionError =>
-                    Err(
-                        TransportError::new(
-                            crate::error::CosmosError
-                                ::builder()
-                                .with_status(
-                                    crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED
-                                )
-                                .with_message("simulated connection refused")
-                                .build(),
-                            crate::diagnostics::RequestSentStatus::NotSent
-                        )
-                    ),
-                ResponsePlan::ServiceUnavailable503 =>
-                    Ok(HttpResponse {
-                        status: 503,
-                        headers: Headers::new(),
-                        body: br#"{"code":"ServiceUnavailable","message":"pgcosmos extension is still starting; retry request shortly"}"#.to_vec(),
-                    }),
+                ResponsePlan::Success => Ok(HttpResponse {
+                    status: 200,
+                    headers: Headers::new(),
+                    body: ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec(),
+                }),
+                ResponsePlan::Http2Incompatible => Err(TransportError::new(
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::models::CosmosStatus::TRANSPORT_HTTP2_INCOMPATIBLE)
+                        .with_message("http2 not supported")
+                        .with_source(h2::Error::from(h2::Reason::HTTP_1_1_REQUIRED))
+                        .build(),
+                    crate::diagnostics::RequestSentStatus::NotSent,
+                )),
+                ResponsePlan::ConnectionError => Err(TransportError::new(
+                    crate::error::CosmosError::builder()
+                        .with_status(crate::models::CosmosStatus::TRANSPORT_CONNECTION_FAILED)
+                        .with_message("simulated connection refused")
+                        .build(),
+                    crate::diagnostics::RequestSentStatus::NotSent,
+                )),
+                ResponsePlan::ServiceUnavailable503 => Ok(HttpResponse {
+                    status: 503,
+                    headers: Headers::new(),
+                    body: br#"{"code":"ServiceUnavailable","message":"pgcosmos extension is still starting; retry request shortly"}"#.to_vec(),
+                }),
             }
         }
     }
@@ -4783,7 +4719,7 @@ mod tests {
             None,
             0,
             Duration::ZERO,
-            None
+            None,
         )
         .is_none());
         assert!(distributed_transaction_outer_retry_delay(
@@ -4791,7 +4727,7 @@ mod tests {
             None,
             0,
             Duration::ZERO,
-            None
+            None,
         )
         .is_none());
     }
@@ -4820,7 +4756,7 @@ mod tests {
             None,
             DTX_OUTER_MAX_RETRIES,
             Duration::ZERO,
-            None
+            None,
         )
         .is_none());
         assert!(distributed_transaction_outer_retry_delay(
@@ -4828,7 +4764,7 @@ mod tests {
             Some(1_000),
             0,
             DTX_OUTER_MAX_CUMULATIVE_DELAY,
-            None
+            None,
         )
         .is_none());
     }
@@ -4845,7 +4781,7 @@ mod tests {
             None,
             0,
             Duration::ZERO,
-            Some(Instant::now() - Duration::from_secs(1))
+            Some(Instant::now() - Duration::from_secs(1)),
         )
         .is_none());
 
@@ -4855,7 +4791,7 @@ mod tests {
             None,
             0,
             Duration::ZERO,
-            Some(Instant::now() + Duration::from_secs(3600))
+            Some(Instant::now() + Duration::from_secs(3600)),
         )
         .is_some());
     }
@@ -4881,7 +4817,7 @@ mod tests {
             None,
             0,
             Duration::ZERO,
-            None
+            None,
         )
         .is_none());
     }
@@ -4905,7 +4841,7 @@ mod tests {
             None,
             0,
             Duration::ZERO,
-            None
+            None,
         )
         .is_some());
     }
@@ -5365,11 +5301,10 @@ mod tests {
         let request =
             CosmosDriver::build_account_properties_request(&endpoint, &user_agent, &TEST_CLIENT_ID);
 
-        let opt_in = request.headers
+        let opt_in = request
+            .headers
             .get_optional_str(&GATEWAY_V2_DISCOVERY_OPT_IN)
-            .expect(
-                "getDatabaseAccount must send x-ms-cosmos-use-thinclient so the server emits thinClient*Locations"
-            );
+            .expect("getDatabaseAccount must send x-ms-cosmos-use-thinclient so the server emits thinClient*Locations");
         assert_eq!(
             opt_in, "true",
             "x-ms-cosmos-use-thinclient must be `true` to enable thin-client discovery"
@@ -5380,8 +5315,7 @@ mod tests {
 
     #[test]
     fn parse_account_properties_uses_first_writable_and_readable_regions() {
-        let payload =
-            br#"{
+        let payload = br#"{
             "_self": "",
             "id": "test",
             "_rid": "test.documents.azure.com",
@@ -5449,7 +5383,7 @@ mod tests {
         assert!(CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http2,
             &error,
-            true
+            true,
         ));
     }
 
@@ -5463,7 +5397,7 @@ mod tests {
         assert!(!CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http2,
             &error,
-            true
+            true,
         ));
     }
 
@@ -5477,7 +5411,7 @@ mod tests {
         assert!(!CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http2,
             &error,
-            true
+            true,
         ));
     }
 
@@ -5491,7 +5425,7 @@ mod tests {
         assert!(!CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http11,
             &error,
-            true
+            true,
         ));
     }
 
@@ -5505,7 +5439,7 @@ mod tests {
         assert!(!CosmosDriver::should_downgrade_http2(
             TransportHttpVersion::Http2,
             &error,
-            false
+            false,
         ));
     }
 
@@ -6027,9 +5961,11 @@ mod tests {
             None,
             &user_agent,
             &client_id,
-            false
-        ).await.expect_err(
-            "503 ServiceUnavailable response with a non-empty JSON envelope must surface as an error"
+            false,
+        )
+        .await
+        .expect_err(
+            "503 ServiceUnavailable response with a non-empty JSON envelope must surface as an error",
         );
 
         let status = err.status();
@@ -6269,7 +6205,7 @@ mod tests {
                 .pop_front()
                 .unwrap_or(ResponsePlan::Success);
 
-            (ScriptedClient { plan }).send(request).await
+            ScriptedClient { plan }.send(request).await
         }
     }
 
@@ -6472,7 +6408,8 @@ mod tests {
     #[tokio::test]
     async fn fetch_account_properties_surfaces_aad_401_envelope() {
         let body =
-            br#"{"code":"Unauthorized","message":"The input authorization token can't serve the request."}"#.to_vec();
+            br#"{"code":"Unauthorized","message":"The input authorization token can't serve the request."}"#
+                .to_vec();
         let err = drive_fetch_with(401, body)
             .await
             .expect_err("401 must surface as an error");
@@ -6663,9 +6600,9 @@ mod tests {
     #[tokio::test]
     async fn fetch_account_properties_surfaces_3xx_as_non_success_with_wire_payload() {
         let body = br#"<html><body>Moved</body></html>"#.to_vec();
-        let err = drive_fetch_with(307, body.clone()).await.expect_err(
-            "3xx must surface as an error — the bootstrap fetch must not parse a redirect body as AccountProperties"
-        );
+        let err = drive_fetch_with(307, body.clone())
+            .await
+            .expect_err("3xx must surface as an error — the bootstrap fetch must not parse a redirect body as AccountProperties");
 
         assert_ne!(
             err.status(),
@@ -6873,9 +6810,7 @@ mod tests {
                 // don't need Content-Length parsing here.
                 loop {
                     let n = match socket.read(&mut buf[read..]).await {
-                        Ok(0) | Err(_) => {
-                            break;
-                        }
+                        Ok(0) | Err(_) => break,
                         Ok(n) => n,
                     };
                     read += n;
@@ -6916,7 +6851,7 @@ mod tests {
                          \r\n\
                          {}",
                         ACCOUNT_PROPERTIES_PAYLOAD.len(),
-                        ACCOUNT_PROPERTIES_PAYLOAD
+                        ACCOUNT_PROPERTIES_PAYLOAD,
                     )
                 };
                 let _ = socket.write_all(response.as_bytes()).await;
@@ -6962,20 +6897,16 @@ mod tests {
         let _ = server.await;
 
         let final_count = request_count.load(AtomicOrdering::SeqCst);
-        let props = result.unwrap_or_else(|err|
-            panic!(
-                "bootstrap fetch must succeed against a redirecting proxy that returns 307 -> 200 JSON; \
+        let props = result.unwrap_or_else(|err| panic!(
+            "bootstrap fetch must succeed against a redirecting proxy that returns 307 -> 200 JSON; \
              this proves the reqwest transport follows redirects. saw {final_count} request(s). err: {err:?}"
-            )
-        );
+        ));
         assert_eq!(
-            props.id,
-            "test",
+            props.id, "test",
             "fetched AccountProperties must come from the /follow hop, proving the transport followed the 307"
         );
         assert_eq!(
-            final_count,
-            2,
+            final_count, 2,
             "transport must have made exactly 2 wire requests (initial + one redirect follow). Got: {final_count}"
         );
     }
@@ -7130,7 +7061,7 @@ mod tests {
         // The runtime's base header advertises HTTP/2 + PPCB by default (|F12).
         assert_eq!(
             runtime.user_agent_feature_flags(),
-            UserAgentFeatureFlags::HTTP2 | UserAgentFeatureFlags::PER_PARTITION_CIRCUIT_BREAKER
+            UserAgentFeatureFlags::HTTP2 | UserAgentFeatureFlags::PER_PARTITION_CIRCUIT_BREAKER,
         );
         assert!(
             runtime.user_agent().as_str().ends_with("|F12"),
@@ -7290,7 +7221,7 @@ mod tests {
         assert_eq!(
             error.status(),
             crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
-                .with_sub_status(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH.value())
+                .with_sub_status(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH.value(),),
         );
     }
 
@@ -7362,7 +7293,7 @@ mod tests {
         let id = resolved.expect("logical PK resolves to its owning range");
         assert!(
             id.as_str() == "0" || id.as_str() == "1",
-            "logical PK must resolve to a single owning range, got {id}"
+            "logical PK must resolve to a single owning range, got {id}",
         );
     }
 
@@ -7382,7 +7313,7 @@ mod tests {
         ] {
             assert!(
                 CosmosDriver::binary_encodes_request_body(ResourceType::Document, op),
-                "Document + {op:?} should be binary-encodable"
+                "Document + {op:?} should be binary-encodable",
             );
         }
 
@@ -7396,7 +7327,7 @@ mod tests {
         ] {
             assert!(
                 !CosmosDriver::binary_encodes_request_body(ResourceType::Document, op),
-                "Document + {op:?} must not have its body binary-encoded"
+                "Document + {op:?} must not have its body binary-encoded",
             );
         }
 
@@ -7418,7 +7349,7 @@ mod tests {
             ] {
                 assert!(
                     !CosmosDriver::binary_encodes_request_body(rt, op),
-                    "{rt:?} + {op:?} must not be binary-encoded (control plane)"
+                    "{rt:?} + {op:?} must not be binary-encoded (control plane)",
                 );
             }
         }
@@ -7440,7 +7371,7 @@ mod tests {
         ] {
             assert!(
                 CosmosDriver::binary_negotiates_response(ResourceType::Document, op),
-                "Document + {op:?} should negotiate a binary response"
+                "Document + {op:?} should negotiate a binary response",
             );
         }
 
@@ -7453,7 +7384,7 @@ mod tests {
         ] {
             assert!(
                 !CosmosDriver::binary_negotiates_response(ResourceType::Document, op),
-                "Document + {op:?} must not negotiate a binary response"
+                "Document + {op:?} must not negotiate a binary response",
             );
         }
 
@@ -7461,7 +7392,7 @@ mod tests {
         for op in [OperationType::Query, OperationType::Read] {
             assert!(
                 !CosmosDriver::binary_negotiates_response(ResourceType::Database, op),
-                "Database + {op:?} must not negotiate a binary response (control plane)"
+                "Database + {op:?} must not negotiate a binary response (control plane)",
             );
         }
     }
@@ -7479,11 +7410,11 @@ mod tests {
                 ResourceType::Document,
                 OperationType::QueryPlan
             ),
-            "a query plan must be fetched as text; its parser has no binary path"
+            "a query plan must be fetched as text; its parser has no binary path",
         );
         assert!(
             !OperationType::QueryPlan.supports_binary_response(),
-            "the operation-level gate must exclude QueryPlan too, not just the driver gate"
+            "the operation-level gate must exclude QueryPlan too, not just the driver gate",
         );
     }
 
@@ -7511,7 +7442,7 @@ mod tests {
                 .supported_serialization_formats
                 .as_deref(),
             Some("JsonText"),
-            "a caller-set negotiation header must survive untouched"
+            "a caller-set negotiation header must survive untouched",
         );
 
         // Control: without a caller-set header the driver does advertise binary,
@@ -7523,7 +7454,7 @@ mod tests {
                 .request_headers()
                 .supported_serialization_formats
                 .as_deref(),
-            Some(BINARY_NEGOTIATION_FORMATS_POINT)
+            Some(BINARY_NEGOTIATION_FORMATS_POINT),
         );
     }
 
@@ -7553,7 +7484,7 @@ mod tests {
                 .supported_serialization_formats
                 .as_deref(),
             Some("JsonText,CosmosBinary"),
-            "queries must advertise both so the service can fall back to text"
+            "queries must advertise both so the service can fall back to text",
         );
         // The accept-list still counts as negotiating binary, so pipeline nodes
         // keep emitting binary regardless of which format the service picks.
@@ -7567,7 +7498,7 @@ mod tests {
                 .supported_serialization_formats
                 .as_deref(),
             Some("CosmosBinary"),
-            "point ops force binary — there is no page pipeline to protect"
+            "point ops force binary — there is no page pipeline to protect",
         );
     }
 
@@ -7608,11 +7539,11 @@ mod tests {
                 .supported_serialization_formats
                 .as_deref(),
             Some("CosmosBinary"),
-            "the caller-set header must still survive untouched"
+            "the caller-set header must still survive untouched",
         );
         assert!(
             !negotiated.emits_binary_payload(),
-            "request_text_response must be recorded even when the caller set the header"
+            "request_text_response must be recorded even when the caller set the header",
         );
 
         // Control: the same operation without `request_text_response` does emit
@@ -7645,7 +7576,7 @@ mod tests {
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-            "got: {err}"
+            "got: {err}",
         );
 
         let err = plan
@@ -7654,7 +7585,7 @@ mod tests {
         assert_eq!(
             err.status().sub_status(),
             Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
-            "got: {err}"
+            "got: {err}",
         );
     }
 
@@ -7683,11 +7614,11 @@ mod tests {
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-            "got: {err}"
+            "got: {err}",
         );
         assert!(
             err.to_string().contains("this plan is unusable"),
-            "the refusal must come from the plan's poison, not a second transcode failure; got: {err}"
+            "the refusal must come from the plan's poison, not a second transcode failure; got: {err}",
         );
     }
 
@@ -7756,7 +7687,7 @@ mod tests {
         assert_eq!(
             err.status(),
             crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
-            "got: {err}"
+            "got: {err}",
         );
 
         plan.to_continuation_token()
@@ -7767,7 +7698,7 @@ mod tests {
             .expect_err("poisoned DISTINCT must refuse further execution");
         assert!(
             err.to_string().contains("DISTINCT node is unusable"),
-            "the refusal must come from DISTINCT poison; got: {err}"
+            "the refusal must come from DISTINCT poison; got: {err}",
         );
     }
 
@@ -7789,7 +7720,7 @@ mod tests {
         assert_ne!(
             err.status().sub_status(),
             Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
-            "a plan whose page was delivered must not report transcode poisoning; got: {err}"
+            "a plan whose page was delivered must not report transcode poisoning; got: {err}",
         );
     }
 
@@ -7824,7 +7755,7 @@ mod tests {
         );
         assert!(
             operation.transcodes_response_to_text(),
-            "the fixture must select the transcoding path"
+            "the fixture must select the transcoding path",
         );
 
         let last = bodies.len() - 1;
@@ -7880,7 +7811,7 @@ mod tests {
                 .supported_serialization_formats
                 .as_deref(),
             Some(BINARY_NEGOTIATION_FORMATS_QUERY),
-            "SqlQuery is a query: it must advertise the accept-list, not the demand"
+            "SqlQuery is a query: it must advertise the accept-list, not the demand",
         );
     }
 
@@ -7898,12 +7829,12 @@ mod tests {
         let body = op.body().expect("body present");
         assert!(
             crate::binary_json::is_binary(body),
-            "text body must be transcoded to binary on the wire"
+            "text body must be transcoded to binary on the wire",
         );
         // Decodes back to the same value.
         assert_eq!(
             crate::binary_json::decode(body).unwrap(),
-            serde_json::json!({ "id": "doc1", "n": 7 })
+            serde_json::json!({ "id": "doc1", "n": 7 }),
         );
     }
 
@@ -7927,7 +7858,7 @@ mod tests {
         let err = CosmosDriver::apply_request_binary_encoding(op).unwrap_err();
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID)
+            Some(crate::error::SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
         );
     }
 
@@ -7961,7 +7892,7 @@ mod tests {
         assert_eq!(op.body().unwrap(), query_body.as_slice());
         assert!(
             !crate::binary_json::is_binary(op.body().unwrap()),
-            "query body must remain text on the wire"
+            "query body must remain text on the wire",
         );
         // Still advertises a binary response — as an accept-list, so the
         // service may answer text and the per-page decode handles it.
@@ -7969,7 +7900,7 @@ mod tests {
             op.request_headers()
                 .supported_serialization_formats
                 .as_deref(),
-            Some("JsonText,CosmosBinary")
+            Some("JsonText,CosmosBinary"),
         );
     }
 
@@ -8009,7 +7940,7 @@ mod tests {
                 .as_deref(),
             Some("JsonText,CosmosBinary"),
             "a query keeps the wire binary and lets `execute_plan` transcode the \
-             page back to text, so it must still negotiate binary"
+             page back to text, so it must still negotiate binary",
         );
 
         let read = CosmosOperation::read_item(crate::models::ItemReference::from_name(
@@ -8024,17 +7955,17 @@ mod tests {
                 .as_deref(),
             Some("CosmosBinary"),
             "a point op keeps the wire binary and transcodes back to text, so \
-             it still negotiates binary"
+             it still negotiates binary",
         );
 
         // The wire and the emitted payload must disagree here: that divergence
         // is what stops pipeline nodes re-encoding items to binary only for
         // `execute_plan` to decode them straight back.
         for op in [&query, &read] {
-            assert!(op.negotiates_binary_response(), "the wire must stay binary");
+            assert!(op.negotiates_binary_response(), "the wire must stay binary",);
             assert!(
                 !op.emits_binary_payload(),
-                "synthesized pages must emit text when the driver transcodes"
+                "synthesized pages must emit text when the driver transcodes",
             );
         }
     }
@@ -8063,7 +7994,7 @@ mod tests {
         assert!(query.negotiates_binary_response());
         assert!(
             query.emits_binary_payload(),
-            "with no text request the emitted format follows the wire"
+            "with no text request the emitted format follows the wire",
         );
     }
 }

@@ -20,8 +20,8 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
     if ($env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY) {
         $ownershipMarker = ([System.IO.Path]::Combine(
-                $env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY,
-                '.azure-data-cosmos-emulator-run'))
+            $env:AZURE_COSMOS_INMEMORY_RUN_DIRECTORY,
+            '.azure-data-cosmos-emulator-run'))
         $ownedRunId = if (Test-Path -LiteralPath $ownershipMarker) {
             Get-Content -LiteralPath $ownershipMarker -Raw
         }
@@ -111,6 +111,10 @@ Write-Host "Clearing emulator environment variables."
 if ($env:AZURE_COSMOS_CONNECTION_STRING -eq "emulator" -or
     $env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     $env:AZURE_COSMOS_CONNECTION_STRING = $null
+}
+if ($env:AZURE_COSMOS_E2E_PROFILE -and
+    $env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
+    $env:AZURE_COSMOS_DEFAULT_CONSISTENCY = $null
 }
 $env:AZURE_COSMOS_TEST_MODE = $null
 $env:AZURE_COSMOS_EMULATOR_HOST = $null

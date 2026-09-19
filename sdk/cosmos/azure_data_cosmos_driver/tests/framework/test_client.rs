@@ -1043,7 +1043,7 @@ impl DriverTestRunContext {
         .await
     }
 
-    /// Reads an item using the driver with operation-specific options.
+    /// Reads an item with options scoped to the read, not driver initialization.
     pub async fn read_item_with_options(
         &self,
         container: &ContainerReference,

@@ -100,6 +100,7 @@ struct RequestMetadata {
     allow_tentative_writes: bool,
     consistency_level: Option<u8>,
     read_consistency_strategy: Option<u8>,
+    supported_serialization_formats: Option<u8>,
 }
 
 fn decode_request(
@@ -312,6 +313,27 @@ fn decode_request(
             .headers_mut()
             .insert("x-ms-cosmos-query-version", value);
     }
+    if let Some(flags) = metadata.supported_serialization_formats {
+        // Re-emit the negotiation header so the shared dispatch models a binary
+        // response. Flag bits mirror the driver: 0x01 JsonText, 0x02 CosmosBinary,
+        // 0x04 HybridRow.
+        let mut formats = Vec::new();
+        if flags & 0x01 != 0 {
+            formats.push("JsonText");
+        }
+        if flags & 0x02 != 0 {
+            formats.push("CosmosBinary");
+        }
+        if flags & 0x04 != 0 {
+            formats.push("HybridRow");
+        }
+        if !formats.is_empty() {
+            request.headers_mut().insert(
+                "x-ms-cosmos-supported-serialization-formats",
+                formats.join(","),
+            );
+        }
+    }
 
     match frame.operation_type {
         OperationType::Upsert => request
@@ -404,6 +426,11 @@ fn decode_metadata(
             }
             RntbdRequestToken::QueryVersion => {
                 metadata.query_version = Some(expect_small_string(kind, token.value)?);
+            }
+            RntbdRequestToken::SupportedSerializationFormats => {
+                // Captured here and re-emitted as the HTTP negotiation header in
+                // `decode_request`, so the shared dispatch models a binary response.
+                metadata.supported_serialization_formats = Some(expect_byte(kind, token.value)?);
             }
             RntbdRequestToken::AllowTentativeWrites => {
                 metadata.allow_tentative_writes = expect_byte(kind, token.value)? != 0;
@@ -1104,6 +1131,39 @@ mod tests {
                 "x-ms-cosmos-read-consistency-strategy"
             )),
             Some("LatestCommitted")
+        );
+    }
+
+    #[test]
+    fn binary_negotiation_re_emits_serialization_formats_header() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::Read,
+            activity_id: Uuid::new_v4(),
+            metadata: vec![
+                Token::database_name("db".to_owned()),
+                Token::collection_name("coll".to_owned()),
+                Token::document_name("item1".to_owned()),
+                Token::partition_key(r#"["pk1"]"#.to_owned()),
+                Token::new(
+                    RntbdRequestToken::SupportedSerializationFormats,
+                    TokenValue::Byte(0x03),
+                ),
+                Token::payload_present(false),
+            ],
+            body: None,
+        };
+        let outer = Request::new(
+            Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs/item1").unwrap(),
+            Method::Post,
+        );
+
+        let request = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
+        assert_eq!(
+            request.headers().get_optional_str(&HeaderName::from_static(
+                "x-ms-cosmos-supported-serialization-formats"
+            )),
+            Some("JsonText,CosmosBinary")
         );
     }
 

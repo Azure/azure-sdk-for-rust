@@ -491,12 +491,6 @@ mod tests {
         assert_eq!(options.preferred_regions(), &regions);
     }
 
-    #[test]
-    fn query_plan_mode_is_unset_by_default() {
-        let options = DriverOptionsBuilder::new(test_account()).build_from_env(&|_| None);
-        assert_eq!(options.operation_options().query_plan_mode, None);
-    }
-
     // ── Partition-failover / PPCB end-to-end env resolution ─────────────────
     //
     // These guard the customer-reported bug: when the caller omits

@@ -404,7 +404,7 @@ pub async fn cross_partition_query_with_unordered_distinct() -> Result<(), Box<d
 
             let mut pages = container_client
                 .query_items::<String>(
-                    "select distinct value c.partitionKey from c",
+                    "select distinct top 1000 value c.partitionKey from c",
                     FeedScope::full_container(),
                     Some(
                         QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
@@ -515,7 +515,7 @@ pub async fn unordered_distinct_refuses_a_continuation_token() -> Result<(), Box
 
             let mut pages = container_client
                 .query_items::<String>(
-                    "select distinct value c.partitionKey from c",
+                    "select distinct top 1000 value c.partitionKey from c",
                     FeedScope::full_container(),
                     Some(
                         QueryOptions::default().with_max_item_count(MaxItemCountHint::Limit(
@@ -1116,7 +1116,11 @@ pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
                 scope: FeedScope,
             ) -> Result<usize, Box<dyn Error>> {
                 let mut pages = container
-                    .query_items::<serde_json::Value>(query, scope, None)
+                    .query_items::<serde_json::Value>(
+                        query,
+                        scope,
+                        None,
+                    )
                     .await?
                     .into_pages();
                 let mut n = 0;
@@ -1131,7 +1135,7 @@ pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
             assert_eq!(
                 count(
                     &container,
-                    "select distinct * from c",
+                    "select distinct top 1000 * from c",
                     FeedScope::full_container()
                 )
                 .await?,
@@ -1146,7 +1150,7 @@ pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
             assert_eq!(
                 count(
                     &container,
-                    "select distinct value 1 from c",
+                    "select distinct top 1000 value 1 from c",
                     FeedScope::full_container()
                 )
                 .await?,
@@ -1159,7 +1163,7 @@ pub async fn distinct_projection_shapes() -> Result<(), Box<dyn Error>> {
                 count(
                     &container,
                     Query::from(
-                        "select distinct value c.partitionKey from c where c.mergeOrder >= @m"
+                        "select distinct top 1000 value c.partitionKey from c where c.mergeOrder >= @m"
                     )
                     .with_parameter("@m", 0)?,
                     FeedScope::full_container()
@@ -1222,13 +1226,17 @@ pub async fn distinct_combined_with_unsupported_stages_is_rejected() -> Result<(
             // longer here — `SkipTake` composes above `DISTINCT`, so those
             // shapes are servable and are asserted positively below.
             let unsupported = [
-                "select distinct c.partitionKey, count(1) as n from c group by c.partitionKey",
-                "select distinct value max(c.mergeOrder) from c",
+                "select distinct top 1000 c.partitionKey, count(1) as n from c group by c.partitionKey",
+                "select distinct top 1000 value max(c.mergeOrder) from c",
             ];
 
             for query in unsupported {
                 let outcome = container
-                    .query_items::<serde_json::Value>(query, FeedScope::full_container(), None)
+                    .query_items::<serde_json::Value>(
+                        query,
+                        FeedScope::full_container(),
+                        None,
+                    )
                     .await;
                 let error = match outcome {
                     Err(error) => error,

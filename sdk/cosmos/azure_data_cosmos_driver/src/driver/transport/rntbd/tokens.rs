@@ -444,6 +444,17 @@ impl Token {
         )
     }
 
+    /// `SupportedSerializationFormats` (ID 0x00C4, Byte). Flags byte of the
+    /// response formats the client accepts (`JsonText = 0x01`,
+    /// `CosmosBinary = 0x02`, `HybridRow = 0x04`; OR-combinable), forwarded from
+    /// the `x-ms-cosmos-supported-serialization-formats` header.
+    pub(crate) fn supported_serialization_formats(value: u8) -> Self {
+        Self::new(
+            RntbdRequestToken::SupportedSerializationFormats,
+            TokenValue::Byte(value),
+        )
+    }
+
     /// `StartEpkHash` (ID 0x00D2, Bytes). Per-partition routing key for
     /// thin-client cross-partition queries. The partition's `minInclusive` hex
     /// string is converted to bytes and emitted alongside `EndEpkHash`.
@@ -603,6 +614,7 @@ pub(crate) enum RntbdRequestToken {
     ChangeFeedWireFormatVersion,
     GlobalDatabaseAccountName,
     ReadConsistencyStrategy,
+    SupportedSerializationFormats,
     SupportedQueryFeatures,
     QueryVersion,
     StartEpkHash,
@@ -635,11 +647,12 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x005a => Ok(Self::EffectivePartitionKey),
             0x0066 => Ok(Self::AllowTentativeWrites),
             0x0082 => Ok(Self::ReturnPreference),
-            0x00a2 => Ok(Self::SDKSupportedCapabilities),
-            0x00b2 => Ok(Self::ChangeFeedWireFormatVersion),
-            0x00ce => Ok(Self::GlobalDatabaseAccountName),
-            0x00fe => Ok(Self::ReadConsistencyStrategy),
-            0x00ff => Ok(Self::SupportedQueryFeatures),
+            0x00A2 => Ok(Self::SDKSupportedCapabilities),
+            0x00B2 => Ok(Self::ChangeFeedWireFormatVersion),
+            0x00C4 => Ok(Self::SupportedSerializationFormats),
+            0x00CE => Ok(Self::GlobalDatabaseAccountName),
+            0x00FE => Ok(Self::ReadConsistencyStrategy),
+            0x00FF => Ok(Self::SupportedQueryFeatures),
             0x0100 => Ok(Self::QueryVersion),
             0x00d2 => Ok(Self::StartEpkHash),
             0x00d3 => Ok(Self::EndEpkHash),
@@ -672,11 +685,12 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::EffectivePartitionKey => 0x005a,
             RntbdRequestToken::AllowTentativeWrites => 0x0066,
             RntbdRequestToken::ReturnPreference => 0x0082,
-            RntbdRequestToken::SDKSupportedCapabilities => 0x00a2,
-            RntbdRequestToken::ChangeFeedWireFormatVersion => 0x00b2,
-            RntbdRequestToken::GlobalDatabaseAccountName => 0x00ce,
-            RntbdRequestToken::ReadConsistencyStrategy => 0x00fe,
-            RntbdRequestToken::SupportedQueryFeatures => 0x00ff,
+            RntbdRequestToken::SDKSupportedCapabilities => 0x00A2,
+            RntbdRequestToken::ChangeFeedWireFormatVersion => 0x00B2,
+            RntbdRequestToken::SupportedSerializationFormats => 0x00C4,
+            RntbdRequestToken::GlobalDatabaseAccountName => 0x00CE,
+            RntbdRequestToken::ReadConsistencyStrategy => 0x00FE,
+            RntbdRequestToken::SupportedQueryFeatures => 0x00FF,
             RntbdRequestToken::QueryVersion => 0x0100,
             RntbdRequestToken::StartEpkHash => 0x00d2,
             RntbdRequestToken::EndEpkHash => 0x00d3,

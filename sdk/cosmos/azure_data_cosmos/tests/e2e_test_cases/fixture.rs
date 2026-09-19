@@ -24,6 +24,13 @@ pub struct E2eTestFixture {
     pub container: ContainerClient,
 }
 
+pub struct E2eTest;
+
+pub struct E2eTestBuilder {
+    client: Option<CosmosClient>,
+    partition_key: PartitionKeyDefinition,
+}
+
 pub struct ClientSetup {
     pub routing_strategy: RoutingStrategy,
     pub runtime_read_consistency: Option<ReadConsistencyStrategy>,
@@ -74,6 +81,38 @@ fn parse_setup_switch(value: &str, default: &str) -> TestResult<Option<bool>> {
 struct DatabaseCleanup {
     client: CosmosClient,
     database_id: String,
+}
+
+impl E2eTest {
+    pub fn builder() -> E2eTestBuilder {
+        E2eTestBuilder {
+            client: None,
+            partition_key: "/pk".into(),
+        }
+    }
+}
+
+impl E2eTestBuilder {
+    pub fn with_client(mut self, client: CosmosClient) -> Self {
+        self.client = Some(client);
+        self
+    }
+
+    pub fn with_partition_key_definition(mut self, partition_key: PartitionKeyDefinition) -> Self {
+        self.partition_key = partition_key;
+        self
+    }
+
+    pub async fn run<F>(self, test: F) -> TestResult
+    where
+        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+    {
+        let client = match self.client {
+            Some(client) => client,
+            None => build_client().await?,
+        };
+        E2eTestFixture::run_with_client(client, self.partition_key, test).await
+    }
 }
 
 impl E2eTestFixture {
@@ -155,23 +194,20 @@ impl E2eTestFixture {
         client.create_database(&database_id, None).await?;
         let database = client.database_client(&database_id);
         let cleanup = DatabaseCleanup::new(client.clone(), database_id);
-        let setup = (async {
+        let setup = async {
             database.create_container(properties, None).await?;
             database.container_client(&container_id, None).await
-        })
+        }
         .await;
         match setup {
             Ok(container) => Ok(Self { cleanup, container }),
-            Err(setup_error) =>
-                match cleanup.cleanup().await {
-                    Ok(()) => Err(setup_error.into()),
-                    Err(cleanup_error) =>
-                        Err(
-                            format!(
-                                "E2E fixture setup failed: {setup_error}; database cleanup also failed: {cleanup_error}"
-                            ).into()
-                        ),
-                }
+            Err(setup_error) => match cleanup.cleanup().await {
+                Ok(()) => Err(setup_error.into()),
+                Err(cleanup_error) => Err(format!(
+                    "E2E fixture setup failed: {setup_error}; database cleanup also failed: {cleanup_error}"
+                )
+                .into()),
+            },
         }
     }
 

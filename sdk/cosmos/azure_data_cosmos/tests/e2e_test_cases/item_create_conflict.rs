@@ -9,7 +9,7 @@ use azure_data_cosmos::{
 use serde_json::{json, Value};
 
 use crate::e2e_test_cases::{
-    fixture::{E2eTestFixture, TestResult},
+    fixture::{E2eTest, TestResult},
     support::{assert_critical_diagnostics, should_run},
 };
 
@@ -34,67 +34,69 @@ async fn duplicate_create_preserves_original() -> TestResult {
             Some(document_id)
         );
 
-        E2eTestFixture::run_with_partition_key(case.partition_key_definition, async |fixture| {
-            // Arrange the original value 1 document.
-            fixture
-                .container
-                .create_item(
-                    case.partition_key.clone(),
-                    document_id,
-                    &case.original,
-                    None,
-                )
-                .await?;
+        E2eTest::builder()
+            .with_partition_key_definition(case.partition_key_definition)
+            .run(async |fixture| {
+                // Arrange the original value 1 document.
+                fixture
+                    .container
+                    .create_item(
+                        case.partition_key.clone(),
+                        document_id,
+                        &case.original,
+                        None,
+                    )
+                    .await?;
 
-            // Creating value 2 with the same ID and partition key returns conflict.
-            let error = fixture
-                .container
-                .create_item(
-                    case.partition_key.clone(),
-                    document_id,
-                    &case.duplicate,
-                    None,
-                )
-                .await
-                .expect_err("duplicate create must fail");
-            assert_eq!(error.status().status_code(), StatusCode::Conflict);
-            assert_eq!(
-                error
-                    .status()
-                    .sub_status()
-                    .map(|value| value.value())
-                    .unwrap_or(0),
-                0
-            );
-            assert_critical_diagnostics(
-                &error
-                    .diagnostics()
-                    .expect("service error must carry diagnostics"),
-                "create_item",
-                StatusCode::Conflict,
-            );
-
-            // The failed duplicate create leaves every original field unchanged.
-            let stored: Value = fixture
-                .container
-                .read_item(case.partition_key.clone(), document_id, None)
-                .await?
-                .into_model()?;
-            for (name, expected) in case
-                .original
-                .as_object()
-                .expect("original document must be an object")
-            {
+                // Creating value 2 with the same ID and partition key returns conflict.
+                let error = fixture
+                    .container
+                    .create_item(
+                        case.partition_key.clone(),
+                        document_id,
+                        &case.duplicate,
+                        None,
+                    )
+                    .await
+                    .expect_err("duplicate create must fail");
+                assert_eq!(error.status().status_code(), StatusCode::Conflict);
                 assert_eq!(
-                    stored.get(name),
-                    Some(expected),
-                    "fixture '{}' field '{name}' changed after duplicate create",
-                    case.id
+                    error
+                        .status()
+                        .sub_status()
+                        .map(|value| value.value())
+                        .unwrap_or(0),
+                    0
                 );
-            }
-            Ok(())
-        })
-        .await?;
+                assert_critical_diagnostics(
+                    &error
+                        .diagnostics()
+                        .expect("service error must carry diagnostics"),
+                    "create_item",
+                    StatusCode::Conflict,
+                );
+
+                // The failed duplicate create leaves every original field unchanged.
+                let stored: Value = fixture
+                    .container
+                    .read_item(case.partition_key.clone(), document_id, None)
+                    .await?
+                    .into_model()?;
+                for (name, expected) in case
+                    .original
+                    .as_object()
+                    .expect("original document must be an object")
+                {
+                    assert_eq!(
+                        stored.get(name),
+                        Some(expected),
+                        "fixture '{}' field '{name}' changed after duplicate create",
+                        case.id
+                    );
+                }
+                Ok(())
+            })
+            .await?;
     }
     Ok(())
 }

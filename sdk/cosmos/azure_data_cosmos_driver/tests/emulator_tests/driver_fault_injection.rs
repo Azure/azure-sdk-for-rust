@@ -1119,6 +1119,23 @@ pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
             .build(),
         );
 
+        let metadata_rule = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "setup-429",
+                FaultInjectionResultBuilder::new()
+                    .with_error(FaultInjectionErrorType::TooManyRequests)
+                    .with_probability(1.0)
+                    .build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::MetadataReadContainer)
+                    .build(),
+            )
+            .with_hit_limit(1)
+            .build(),
+        );
+
         // Pin the throttle-retry budget on the ReadItem operation under test.
         // Setup and account-metadata operations retain their normal retry
         // budgets so transient service-side metadata throttling cannot mask the
@@ -1137,12 +1154,17 @@ pub async fn fault_injection_429_honors_configurable_throttle_retry_count(
 
         let rule_for_assert = Arc::clone(&rule);
         Box::pin(DriverTestClient::run_with_unique_db_and_fault_injection(
-            vec![rule],
+            vec![rule, Arc::clone(&metadata_rule)],
             async move |context, database| {
                 let container_name = context.unique_container_name();
                 let container = context
                     .create_container(&database, &container_name, "/pk")
                     .await?;
+                assert_eq!(
+                    metadata_rule.hit_count(),
+                    1,
+                    "setup must recover from metadata 429"
+                );
 
                 // Seed the item with a write. The fault rule targets only
                 // ReadItem, so the seeding write is unaffected.
