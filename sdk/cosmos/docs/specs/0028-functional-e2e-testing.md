@@ -65,14 +65,14 @@ updated `main` and reviewed independently after its predecessor merges.
 The suite deliberately separates reusable configuration data from executable
 behavior.
 
-| Owner | Contents |
+| Owner                          | Contents                                                                                                                                                  |
 | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Scenario JSON | Stable ID, title, requirement, maturity, tags, precedents, applicable setup profiles, backend applicability, fidelity, and required backend capabilities. |
-| Profile JSON | Account topology and consistency, replication behavior, runtime configuration, and client configuration. |
-| SDK implementation map | Scenario ID to source-native test implementation and implementation status. |
-| Rust source | Fixtures, operation-level options, generated cases, sequencing, retries, concurrency, state validation, diagnostics, and assertions. |
-| Pipeline matrices | Backend and setup-profile selection, scheduling, and sharding. |
-| Hosted emulator management API | Deterministic external controls for emulator-only orchestration. |
+| Scenario JSON                  | Stable ID, title, requirement, maturity, tags, precedents, applicable setup profiles, backend applicability, fidelity, and required backend capabilities. |
+| Profile JSON                   | Account topology and consistency, replication behavior, runtime configuration, and client configuration.                                                  |
+| SDK implementation map         | Scenario ID to source-native test implementation and implementation status.                                                                               |
+| Rust source                    | Fixtures, operation-level options, generated cases, sequencing, retries, concurrency, state validation, diagnostics, and assertions.                      |
+| Pipeline matrices              | Backend and setup-profile selection, scheduling, and sharding.                                                                                            |
+| Hosted emulator management API | Deterministic external controls for emulator-only orchestration.                                                                                          |
 
 This boundary prevents the catalog from becoming a second programming language.
 Operation-specific dimensions such as `ReadConsistencyStrategy`, patch

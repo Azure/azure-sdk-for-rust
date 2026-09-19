@@ -184,8 +184,8 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
     $runId = [System.Guid]::NewGuid().ToString('N')
     $runDirectory = ([System.IO.Path]::Combine(
-        $runDirectoryRoot,
-        "azure-data-cosmos-emulator-$runId"))
+            $runDirectoryRoot,
+            "azure-data-cosmos-emulator-$runId"))
     New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
     Set-Content `
         -LiteralPath ([System.IO.Path]::Combine($runDirectory, '.azure-data-cosmos-emulator-run')) `
