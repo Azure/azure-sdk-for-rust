@@ -958,6 +958,41 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         "read should fail while West US replication is paused",
     );
 
+    let session_retry = OperationOptionsBuilder::new()
+        .with_availability_strategy(
+            azure_data_cosmos_driver::options::AvailabilityStrategy::Disabled,
+        )
+        .build();
+    let recovered_read = driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("pk1"),
+                "hub-item",
+            )),
+            session_retry,
+        )
+        .await
+        .expect("session retry must route the stale read to a caught-up endpoint");
+    assert_eq!(
+        recovered_read.status().status_code(),
+        azure_core::http::StatusCode::Ok
+    );
+    assert!(
+        recovered_read
+            .diagnostics()
+            .requests()
+            .iter()
+            .any(|request| {
+                request.status().status_code() == azure_core::http::StatusCode::NotFound
+                    && request
+                        .status()
+                        .sub_status()
+                        .is_some_and(|sub_status| sub_status.value() == 1002)
+            }),
+        "session recovery must observe 404/1002 from the paused preferred region"
+    );
+
     emulator_store.resume_replication("West US");
 
     let west_read_after_resume = driver

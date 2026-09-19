@@ -173,6 +173,7 @@ pub(crate) async fn handle_operation(
                 parsed.db_id.as_deref().unwrap_or(""),
                 start,
             )
+            .await
         }
         OperationType::CreateContainer => {
             if !store.config().is_write_region(region_name) {
@@ -195,6 +196,21 @@ pub(crate) async fn handle_operation(
             parsed.coll_id.as_deref().unwrap_or(""),
             start,
         ),
+        OperationType::ReplaceContainer => {
+            if !store.config().is_write_region(region_name) {
+                return write_forbidden_response(start);
+            }
+            handle_replace_container(
+                store,
+                region_name,
+                parsed.db_id.as_deref().unwrap_or(""),
+                parsed.coll_id.as_deref().unwrap_or(""),
+                parsed.if_match.as_deref(),
+                request_body,
+                start,
+            )
+            .await
+        }
         OperationType::DeleteContainer => {
             if !store.config().is_write_region(region_name) {
                 return write_forbidden_response(start);
@@ -206,6 +222,7 @@ pub(crate) async fn handle_operation(
                 parsed.coll_id.as_deref().unwrap_or(""),
                 start,
             )
+            .await
         }
         OperationType::ReadPKRanges => handle_read_pkranges(
             store,
@@ -673,6 +690,7 @@ pub(crate) async fn handle_operation(
             binary_response: false,
             is_upsert: matches!(operation_type, OperationType::Upsert),
             a_im: None,
+            change_feed_wire_format_version: None,
             request_host: None,
         };
 
@@ -1150,11 +1168,7 @@ pub(crate) async fn handle_operation(
                 &operation.collection_name,
                 |state| {
                     let parsed = dtx_operation_as_parsed_request(operation);
-                    let body = operation
-                        .resource_body
-                        .as_ref()
-                        .cloned()
-                        .unwrap_or(serde_json::Value::Null);
+                    let body = dtx_partition_key_body(operation);
                     let (_, epk) = resolve_partition_key(&parsed, &body, &state.metadata).ok()?;
                     let partition = state.find_partition(&epk)?;
                     let document = partition
@@ -1334,7 +1348,8 @@ pub(crate) async fn handle_operation(
                         }
                     }
                 }
-                let (_, epk) = resolve_partition_key(&parsed, &body, &state.metadata).map_err(
+                let partition_key_body = dtx_partition_key_body(operation);
+                let (_, epk) = resolve_partition_key(&parsed, &partition_key_body, &state.metadata).map_err(
                     |error| {
                         preflight_failure(
                             StatusCode::BadRequest,
@@ -1493,7 +1508,27 @@ pub(crate) async fn handle_operation(
             binary_response: false,
             is_upsert: false,
             a_im: None,
+            change_feed_wire_format_version: None,
             request_host: None,
+        }
+    }
+
+    /// Returns an item document only for DTX operations whose resource body is
+    /// the document itself. PATCH carries a PatchInstructions envelope, while
+    /// Delete and Read have no document body to validate against the PK header.
+    #[cfg(feature = "preview_dtx")]
+    fn dtx_partition_key_body(operation: &DtxOperation) -> serde_json::Value {
+        if matches!(
+            operation.operation_type.as_str(),
+            "Create" | "Replace" | "Upsert"
+        ) {
+            operation
+                .resource_body
+                .as_ref()
+                .cloned()
+                .unwrap_or(serde_json::Value::Null)
+        } else {
+            serde_json::Value::Null
         }
     }
 
@@ -1711,6 +1746,7 @@ fn intended_collection_rid_mismatch(
         | OperationType::Batch
         | OperationType::DeleteContainer
         | OperationType::ReadContainer
+        | OperationType::ReplaceContainer
         | OperationType::Unsupported(_) => true,
         #[cfg(feature = "preview_dtx")]
         OperationType::DistributedTransaction => true,
@@ -1873,12 +1909,14 @@ fn handle_read_database(
     }
 }
 
-fn handle_delete_database(
+async fn handle_delete_database(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     db_id: &str,
     start: Instant,
 ) -> AsyncRawResponse {
+    let control_plane_lock = store.control_plane_lock_db(db_id);
+    let _guard = control_plane_lock.lock().await;
     // Delete from all regions (cascade)
     let exists = store
         .region(region_name)
@@ -1920,6 +1958,8 @@ async fn handle_create_container(
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
+    let database_lock = store.control_plane_lock_db(db_id);
+    let _database_guard = database_lock.lock().await;
     // Verify database exists
     let region_ref = match store.region(region_name) {
         Some(r) => r,
@@ -2045,8 +2085,14 @@ async fn handle_create_container(
         }
     }
 
-    let meta =
-        store.create_container_with_config_internal(db_id, &coll_id, pk_def, container_config);
+    let properties = body.as_object().cloned().unwrap_or_default();
+    let meta = store.create_container_with_properties_internal(
+        db_id,
+        &coll_id,
+        pk_def,
+        container_config,
+        properties,
+    );
     let response_body = container_to_json(&meta);
     let token = store.advance_master_partition_lsn(region_name);
     if parsed.content_response_on_write {
@@ -2107,13 +2153,104 @@ fn handle_read_container(
     }
 }
 
-fn handle_delete_container(
+async fn handle_replace_container(
+    store: &Arc<EmulatorStore>,
+    region_name: &str,
+    db_id: &str,
+    coll_id: &str,
+    if_match: Option<&str>,
+    request_body: &[u8],
+    start: Instant,
+) -> AsyncRawResponse {
+    let body: serde_json::Value = match serde_json::from_slice(request_body) {
+        Ok(body) => body,
+        Err(_) => {
+            return invalid_input_response("Invalid JSON body", start);
+        }
+    };
+    if body.get("id").and_then(serde_json::Value::as_str) != Some(coll_id) {
+        return invalid_input_response(
+            "Container id in request body must match the resource id in the request URI",
+            start,
+        );
+    }
+    let partition_key: PartitionKeyDefinition = match body
+        .get("partitionKey")
+        .cloned()
+        .map(serde_json::from_value)
+        .transpose()
+    {
+        Ok(Some(partition_key)) => partition_key,
+        _ => {
+            return invalid_input_response("Invalid partitionKey definition", start);
+        }
+    };
+
+    let database_lock = store.control_plane_lock_db(db_id);
+    let _database_guard = database_lock.lock().await;
+    let control_plane_lock = store.control_plane_lock_coll(db_id, coll_id);
+    let _container_guard = control_plane_lock.lock().await;
+    let Some(existing) = store
+        .region(region_name)
+        .and_then(|region| region.get_container(db_id, coll_id))
+    else {
+        return container_not_found(db_id, coll_id, start);
+    };
+    if if_match.is_some_and(|etag| etag != existing.metadata.etag.as_str()) {
+        return error_response(
+            StatusCode::PreconditionFailed,
+            None,
+            "PreconditionFailed",
+            "One of the specified pre-condition is not met.",
+            1.0,
+            "",
+            start,
+        )
+        .build();
+    }
+    if existing.metadata.partition_key != partition_key {
+        return invalid_input_response("Container partition key cannot be changed", start);
+    }
+
+    let properties = body.as_object().cloned().unwrap_or_default();
+    if existing.metadata.properties.get("uniqueKeyPolicy") != properties.get("uniqueKeyPolicy") {
+        return error_response(
+            StatusCode::Forbidden,
+            None,
+            "Forbidden",
+            "Container unique key policy cannot be changed",
+            1.0,
+            "",
+            start,
+        )
+        .build();
+    }
+    let Some(updated) = store.replace_container_properties(db_id, coll_id, properties) else {
+        return container_not_found(db_id, coll_id, start);
+    };
+    let token = store.advance_master_partition_lsn(region_name);
+    success_response(
+        StatusCode::Ok,
+        &container_to_json(&updated),
+        1.0,
+        &token,
+        start,
+    )
+    .with_etag(&updated.etag)
+    .build()
+}
+
+async fn handle_delete_container(
     store: &Arc<EmulatorStore>,
     region_name: &str,
     db_id: &str,
     coll_id: &str,
     start: Instant,
 ) -> AsyncRawResponse {
+    let database_lock = store.control_plane_lock_db(db_id);
+    let _database_guard = database_lock.lock().await;
+    let control_plane_lock = store.control_plane_lock_coll(db_id, coll_id);
+    let _container_guard = control_plane_lock.lock().await;
     let exists = store
         .region(region_name)
         .map(|r| r.container_exists(db_id, coll_id))
@@ -2269,6 +2406,7 @@ fn paginate_values(
 struct DocumentFeedItem {
     body: serde_json::Value,
     cursor: DocumentFeedCursor,
+    lsn: u64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -2285,6 +2423,15 @@ struct DocumentFeedCursorToken {
 }
 
 const DOCUMENT_FEED_CURSOR_TOKEN_KIND: &str = "document_feed_cursor_v1";
+const CHANGE_FEED_CURSOR_TOKEN_KIND: &str = "change_feed_cursor_v1";
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+struct ChangeFeedCursorToken {
+    kind: String,
+    lsn: u64,
+    epk: String,
+    id: String,
+}
 
 impl DocumentFeedCursor {
     fn to_token(&self) -> String {
@@ -2488,6 +2635,148 @@ fn success_document_feed_response(
     builder.build()
 }
 
+fn success_change_feed_response(
+    rid: impl Into<String>,
+    items: Vec<DocumentFeedItem>,
+    max_item_count: Option<i32>,
+    continuation: Option<&str>,
+    feed_headers: FeedResponseHeaders,
+    start: Instant,
+) -> AsyncRawResponse {
+    let mut items = items;
+    items.sort_by(|left, right| (left.lsn, &left.cursor).cmp(&(right.lsn, &right.cursor)));
+    let offset = match continuation {
+        Some("*") => items.len(),
+        Some(token) => match parse_change_feed_cursor(token, start) {
+            Ok(cursor) => items
+                .partition_point(|item| (item.lsn, &item.cursor) <= (cursor.lsn, &cursor.cursor)),
+            Err(response) => {
+                return response;
+            }
+        },
+        None => 0,
+    };
+    let limit = match max_item_count {
+        Some(value) if value > 0 => value as usize,
+        _ => items.len().saturating_sub(offset),
+    };
+    let end = offset.saturating_add(limit).min(items.len());
+    let page = if offset >= items.len() {
+        Vec::new()
+    } else {
+        items[offset..end].to_vec()
+    };
+    let checkpoint = page
+        .is_empty()
+        .then(|| {
+            continuation
+                .filter(|token| *token != "*")
+                .map(str::to_owned)
+        })
+        .flatten()
+        .or_else(|| {
+            page.last()
+                .or_else(|| items.get(offset.saturating_sub(1)))
+                .or_else(|| items.last())
+                .map(change_feed_cursor_token)
+        })
+        .unwrap_or_else(|| {
+            change_feed_cursor_token_for(
+                0,
+                &(DocumentFeedCursor {
+                    epk: Epk::from(""),
+                    id: String::new(),
+                }),
+            )
+        });
+
+    if page.is_empty() {
+        let mut builder = ResponseBuilder::new(StatusCode::NotModified, start)
+            .with_request_charge(1.0)
+            .with_session_token(&feed_headers.session_token)
+            .with_etag(&checkpoint);
+        if let Some(lsn) = feed_headers.lsn {
+            builder = builder.with_lsn(lsn);
+        }
+        if let Some(id) = feed_headers.partition_key_range_id {
+            builder = builder.with_header_value(PARTITION_KEY_RANGE_ID.clone(), id);
+        }
+        if let Some(id) = feed_headers.internal_partition_id {
+            builder = builder.with_header_value(INTERNAL_PARTITION_ID.clone(), id);
+        }
+        return builder.build();
+    }
+
+    let item_count = page.len() as u32;
+    let body = feed_to_json(
+        "Documents",
+        page.into_iter().map(|item| item.body).collect(),
+        rid,
+    );
+    let mut builder = success_response_with_format(
+        StatusCode::Ok,
+        &body,
+        false,
+        1.0,
+        &feed_headers.session_token,
+        start,
+    )
+    .with_item_count(item_count)
+    .with_etag(&checkpoint);
+    if let Some(lsn) = feed_headers.lsn {
+        builder = builder.with_lsn(lsn);
+    }
+    if let Some(id) = feed_headers.partition_key_range_id {
+        builder = builder.with_header_value(PARTITION_KEY_RANGE_ID.clone(), id);
+    }
+    if let Some(id) = feed_headers.internal_partition_id {
+        builder = builder.with_header_value(INTERNAL_PARTITION_ID.clone(), id);
+    }
+    builder.build()
+}
+
+struct ChangeFeedCursor {
+    lsn: u64,
+    cursor: DocumentFeedCursor,
+}
+
+fn change_feed_cursor_token(item: &DocumentFeedItem) -> String {
+    change_feed_cursor_token_for(item.lsn, &item.cursor)
+}
+
+fn change_feed_cursor_token_for(lsn: u64, cursor: &DocumentFeedCursor) -> String {
+    serde_json::to_string(
+        &(ChangeFeedCursorToken {
+            kind: CHANGE_FEED_CURSOR_TOKEN_KIND.to_owned(),
+            lsn,
+            epk: cursor.epk.to_hex(),
+            id: cursor.id.clone(),
+        }),
+    )
+    .expect("change feed cursor token serialization cannot fail")
+}
+
+fn parse_change_feed_cursor(
+    token: &str,
+    start: Instant,
+) -> Result<ChangeFeedCursor, AsyncRawResponse> {
+    let token: ChangeFeedCursorToken = serde_json::from_str(token)
+        .map_err(|_| invalid_continuation_response("Invalid change feed continuation", start))?;
+    if token.kind != CHANGE_FEED_CURSOR_TOKEN_KIND || !is_even_length_hex(&token.epk) {
+        return Err(invalid_continuation_response(
+            "Invalid change feed continuation",
+            start,
+        ));
+    }
+    Ok(ChangeFeedCursor {
+        lsn: token.lsn,
+        cursor: DocumentFeedCursor {
+            epk: Epk::from(token.epk.as_str()),
+            id: token.id,
+        },
+    })
+}
+
 #[derive(Deserialize)]
 struct QuerySpec {
     query: String,
@@ -2674,6 +2963,7 @@ fn query_document_feed_items(
             results.push(DocumentFeedItem {
                 body,
                 cursor: document.cursor.clone(),
+                lsn: document.lsn,
             });
         }
     }
@@ -3197,6 +3487,7 @@ fn collect_item_documents(
                         epk: epk.clone(),
                         id: id.clone(),
                     },
+                    lsn: doc.lsn,
                 }));
             }
         }
@@ -3247,32 +3538,47 @@ fn handle_read_feed_items(
     }
     match collect_item_documents(store, region_name, parsed, start) {
         Ok((rid, docs, token, mut headers)) => {
-            // Full-fidelity (AllVersionsAndDeletes) change feed reads carry
-            // `A-IM: Full-Fidelity Feed`. The in-memory store only retains the
-            // latest state of each document (no change log), so it cannot replay
-            // historical versions, deletes, or pre-images. It therefore
-            // synthesizes a minimal `create` envelope per current document so the
-            // SDK's full-fidelity code path (header emission, mode dispatch, and
-            // the iterator's raw `ChangeFeedItem<T>` deserialization) can be
-            // exercised end-to-end. Deletes / `previous` images remain covered by
-            // unit tests and are a documented follow-up. Incremental
-            // (`A-IM: Incremental Feed`) and plain read-feed requests are
-            // unchanged and return flat documents.
-            let docs = if is_full_fidelity_feed(parsed.a_im.as_deref()) {
-                docs.into_iter().map(full_fidelity_envelope).collect()
+            // Both public change-feed modes deserialize `ChangeFeedItem<T>`
+            // envelopes. The in-memory store currently retains only the latest
+            // document state, so it synthesizes one minimal `create` envelope
+            // per current document. This exercises LatestVersion pagination and
+            // continuation end-to-end while full version/delete history remains
+            // an explicit emulator limitation. Plain read-feed requests omit
+            // `A-IM` and continue to return flat documents.
+            let full_fidelity = is_full_fidelity_feed(parsed.a_im.as_deref());
+            let structured_change_feed =
+                full_fidelity || parsed.change_feed_wire_format_version.is_some();
+            let docs = if parsed.a_im.is_some() && structured_change_feed {
+                docs.into_iter()
+                    .map(|doc| change_feed_envelope(doc, full_fidelity))
+                    .collect()
             } else {
                 docs
             };
             headers.session_token = token;
-            success_document_feed_response(
-                "Documents",
-                rid,
-                docs,
-                FeedPageOptions::from_request(parsed),
-                headers,
-                ResponseFormat::Text,
-                start,
-            )
+            if parsed.a_im.is_some() {
+                success_change_feed_response(
+                    rid,
+                    docs,
+                    parsed.max_item_count,
+                    parsed
+                        .if_none_match
+                        .as_deref()
+                        .or(parsed.continuation.as_deref()),
+                    headers,
+                    start,
+                )
+            } else {
+                success_document_feed_response(
+                    "Documents",
+                    rid,
+                    docs,
+                    FeedPageOptions::from_request(parsed),
+                    headers,
+                    ResponseFormat::Text,
+                    start,
+                )
+            }
         }
         Err(response) => response,
     }
@@ -3319,26 +3625,34 @@ fn reject_unsupported_full_fidelity_start(
     )
 }
 
-/// Wraps a current document body in a minimal full-fidelity change envelope.
+/// Wraps a current document body in the public change-feed envelope.
 ///
-/// The emulator has no change log, so every retained document is surfaced as a
-/// `create`. `crts` is taken from the document's `_ts` when available; `lsn` and
-/// `previous` are omitted because the store does not track them.
-fn full_fidelity_envelope(doc: DocumentFeedItem) -> DocumentFeedItem {
+/// `crts` is taken from the document's `_ts` when available; `lsn` and
+/// `previous` are omitted because the store does not track them. LatestVersion
+/// metadata omits `operationType`, matching the service contract. The limited
+/// full-fidelity simulation labels each retained document as a creation because
+/// the emulator does not retain historical operations.
+fn change_feed_envelope(doc: DocumentFeedItem, full_fidelity: bool) -> DocumentFeedItem {
     let crts = doc
         .body
         .get("_ts")
         .cloned()
         .unwrap_or(serde_json::Value::Null);
+    let metadata = if full_fidelity {
+        serde_json::json!({
+            "operationType": "create",
+            "crts": crts,
+        })
+    } else {
+        serde_json::json!({ "crts": crts })
+    };
     DocumentFeedItem {
         body: serde_json::json!({
             "current": doc.body,
-            "metadata": {
-                "operationType": "create",
-                "crts": crts,
-            },
+            "metadata": metadata,
         }),
         cursor: doc.cursor,
+        lsn: doc.lsn,
     }
 }
 
@@ -3782,6 +4096,10 @@ async fn handle_batch(
                         results = failed_batch_results(operations.len(), index, 409, None);
                         return Ok((results, Vec::new(), String::new(), 1.0, None, None));
                     }
+                    if unique_key_conflicts(&state.metadata, logical, &doc_id, resource_body) {
+                        results = failed_batch_results(operations.len(), index, 409, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    }
                     let mut body = resource_body.clone();
                     let (_, doc_rid) = store.rid_generator().next_document_rid(
                         state.metadata.numeric_db_id,
@@ -3832,6 +4150,10 @@ async fn handle_batch(
                             results = failed_batch_results(operations.len(), index, 412, None);
                             return Ok((results, Vec::new(), String::new(), 1.0, None, None));
                         }
+                    }
+                    if unique_key_conflicts(&state.metadata, logical, &doc_id, resource_body) {
+                        results = failed_batch_results(operations.len(), index, 409, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
                     }
                     let status = if logical.contains_key(&doc_id) {
                         200
@@ -3892,6 +4214,10 @@ async fn handle_batch(
                     };
                     if if_match.as_ref().is_some_and(|etag| etag != &existing.etag) {
                         results = failed_batch_results(operations.len(), index, 412, None);
+                        return Ok((results, Vec::new(), String::new(), 1.0, None, None));
+                    }
+                    if unique_key_conflicts(&state.metadata, logical, &doc_id, resource_body) {
+                        results = failed_batch_results(operations.len(), index, 409, None);
                         return Ok((results, Vec::new(), String::new(), 1.0, None, None));
                     }
                     let mut body = resource_body.clone();
@@ -4056,7 +4382,26 @@ fn resolve_partition_key(
     meta: &ContainerMetadata,
 ) -> crate::error::Result<(Vec<super::epk::PartitionKeyComponent>, Epk)> {
     let pk_components = if let Some(pk_header) = &parsed.partition_key_header {
-        parse_partition_key_header(pk_header)?
+        let header_components = parse_partition_key_header(pk_header)?;
+        if !body.is_null() {
+            let body_components = extract_pk_from_body(body, meta.partition_key.paths())?;
+            if body_components != header_components {
+                return Err(
+                    crate::error::CosmosError
+                        ::builder()
+                        .with_status(
+                            crate::error::CosmosStatus::new(
+                                azure_core::http::StatusCode::BadRequest
+                            )
+                        )
+                        .with_message(
+                            "partition key extracted from the document does not match the request header"
+                        )
+                        .build()
+                );
+            }
+        }
+        header_components
     } else if body.is_null() {
         // Read / Delete callers pass a `Null` body — there is nothing to
         // extract a partition key from. Real Cosmos rejects point operations
@@ -4291,6 +4636,105 @@ fn decode_request_body(request_body: &[u8]) -> Result<serde_json::Value, ()> {
     }
 }
 
+const MAX_REQUEST_PAYLOAD_BYTES: usize = 2 * 1024 * 1024;
+const MAX_ITEM_PAYLOAD_BYTES: usize = 2 * 1024 * 1024;
+
+fn oversized_item_response(start: Instant) -> AsyncRawResponse {
+    error_response(
+        StatusCode::PayloadTooLarge,
+        None,
+        "RequestEntityTooLarge",
+        "Request size is too large",
+        0.0,
+        "",
+        start,
+    )
+    .build()
+}
+
+fn unique_key_conflicts(
+    metadata: &ContainerMetadata,
+    documents: &std::collections::BTreeMap<String, StoredDocument>,
+    candidate_id: &str,
+    candidate: &serde_json::Value,
+) -> bool {
+    let Some(unique_keys) = metadata
+        .properties
+        .get("uniqueKeyPolicy")
+        .and_then(|policy| policy.get("uniqueKeys"))
+        .and_then(serde_json::Value::as_array)
+    else {
+        return false;
+    };
+
+    unique_keys.iter().any(|unique_key| {
+        let Some(paths) = unique_key
+            .get("paths")
+            .and_then(serde_json::Value::as_array)
+        else {
+            return false;
+        };
+        let candidate_values: Vec<_> = paths
+            .iter()
+            .filter_map(serde_json::Value::as_str)
+            .map(|path| {
+                candidate
+                    .pointer(path)
+                    .cloned()
+                    .unwrap_or(serde_json::Value::Null)
+            })
+            .collect();
+        !candidate_values.is_empty()
+            && documents.iter().any(|(existing_id, existing)| {
+                existing_id != candidate_id
+                    && paths
+                        .iter()
+                        .filter_map(serde_json::Value::as_str)
+                        .map(|path| {
+                            existing
+                                .body
+                                .pointer(path)
+                                .cloned()
+                                .unwrap_or(serde_json::Value::Null)
+                        })
+                        .zip(&candidate_values)
+                        .all(|(existing, candidate)| unique_key_values_equal(&existing, candidate))
+            })
+    })
+}
+
+fn unique_key_values_equal(left: &serde_json::Value, right: &serde_json::Value) -> bool {
+    match (left, right) {
+        (serde_json::Value::Number(left), serde_json::Value::Number(right)) => {
+            left.as_f64() == right.as_f64()
+        }
+        _ => left == right,
+    }
+}
+
+fn user_document_size(document: &serde_json::Value) -> usize {
+    let mut document = document.clone();
+    if let Some(object) = document.as_object_mut() {
+        for property in ["_rid", "_self", "_etag", "_ts", "_attachments"] {
+            object.remove(property);
+        }
+    }
+    serde_json::to_vec(&document).map_or(usize::MAX, |body| body.len())
+}
+
+fn unique_key_conflict_response(start: Instant) -> AsyncRawResponse {
+    error_response(
+        StatusCode::Conflict,
+        None,
+        "Conflict",
+        "Resource with specified ID, name, or unique index already exists",
+        1.0,
+        "",
+        start,
+    )
+    .build()
+}
+
 async fn handle_create(
     store: &Arc<EmulatorStore>,
     region_name: &str,
@@ -4321,6 +4765,9 @@ async fn handle_create_locked(
     if let Some(resp) = replication_back_pressure_response(store, region_name, start) {
         return resp;
     }
+    if request_body.len() > MAX_REQUEST_PAYLOAD_BYTES {
+        return oversized_item_response(start);
+    }
 
     let mut body: serde_json::Value = match decode_request_body(request_body) {
         Ok(v) => v,
@@ -4337,6 +4784,9 @@ async fn handle_create_locked(
             .build();
         }
     };
+    if user_document_size(&body) > MAX_ITEM_PAYLOAD_BYTES {
+        return oversized_item_response(start);
+    }
 
     let doc_id = match body.get("id").and_then(|v| v.as_str()) {
         Some(id) => id.to_string(),
@@ -4440,6 +4890,9 @@ async fn handle_create_locked(
                     start,
                 )
                 .build());
+            }
+            if unique_key_conflicts(&state.metadata, logical, &doc_id, &body) {
+                return Err(unique_key_conflict_response(start));
             }
 
             // Debit the throttle bucket only now that the conflict check has
@@ -4824,6 +5277,9 @@ async fn handle_patch_locked(
     if let Some(response) = replication_back_pressure_response(store, region_name, start) {
         return response;
     }
+    if request_body.len() > MAX_REQUEST_PAYLOAD_BYTES {
+        return oversized_item_response(start);
+    }
 
     let instructions: PatchInstructions = match serde_json::from_slice(request_body) {
         Ok(instructions) => instructions,
@@ -5021,6 +5477,13 @@ async fn handle_patch_locked(
                 .build());
             }
 
+            if user_document_size(&patched_body) > MAX_ITEM_PAYLOAD_BYTES {
+                return Err(oversized_item_response(start));
+            }
+            if unique_key_conflicts(&state.metadata, logical_partition, doc_id, &patched_body) {
+                return Err(unique_key_conflict_response(start));
+            }
+
             if let Some(response) = check_throttle(
                 partition,
                 charge,
@@ -5125,6 +5588,9 @@ async fn handle_replace_locked(
     if let Some(resp) = replication_back_pressure_response(store, region_name, start) {
         return resp;
     }
+    if request_body.len() > MAX_REQUEST_PAYLOAD_BYTES {
+        return oversized_item_response(start);
+    }
 
     let mut body: serde_json::Value = match decode_request_body(request_body) {
         Ok(v) => v,
@@ -5141,21 +5607,12 @@ async fn handle_replace_locked(
             .build();
         }
     };
+    if user_document_size(&body) > MAX_ITEM_PAYLOAD_BYTES {
+        return oversized_item_response(start);
+    }
 
-    match body.get("id").and_then(|value| value.as_str()) {
-        Some(body_id) if body_id == doc_id => {}
-        Some(_) => {
-            return error_response(
-                StatusCode::BadRequest,
-                None,
-                "BadRequest",
-                "Document id in request body must match the resource id in the request URI",
-                0.0,
-                "",
-                start,
-            )
-            .build();
-        }
+    let body_id = match body.get("id").and_then(|value| value.as_str()) {
+        Some(body_id) => body_id.to_owned(),
         None => {
             return error_response(
                 StatusCode::BadRequest,
@@ -5168,7 +5625,7 @@ async fn handle_replace_locked(
             )
             .build();
         }
-    }
+    };
 
     let region_ref = match store.region(region_name) {
         Some(r) => r,
@@ -5305,7 +5762,7 @@ async fn handle_replace_locked(
             .compute_replace_or_delete_ru(request_body.len(), num_props);
 
         // Replace
-        let new_doc = {
+        let (new_doc, renamed_from) = {
             let mut docs = partition.documents.write().unwrap();
             let logical = match docs.get_mut(&epk) {
                 Some(logical) => logical,
@@ -5357,6 +5814,12 @@ async fn handle_replace_locked(
                     .build());
                 }
             }
+            if body_id != doc_id && logical.contains_key(&body_id) {
+                return Err(unique_key_conflict_response(start));
+            }
+            if unique_key_conflicts(&state.metadata, logical, doc_id, &body) {
+                return Err(unique_key_conflict_response(start));
+            }
 
             // Debit the throttle bucket only after preconditions pass under
             // the write lock.
@@ -5377,9 +5840,18 @@ async fn handle_replace_locked(
             inject_system_properties(&current.rid, &current.self_link, &etag, ts, &mut body);
             // See create handler for rationale — cache wire size.
             let body_size_bytes = request_body.len();
+            let mut renamed_from = None;
+            if body_id != doc_id {
+                let mut tombstone = current.clone();
+                tombstone.lsn = lsn;
+                tombstone.ts = ts;
+                tombstone.source_region = region_name.to_owned();
+                renamed_from = Some(tombstone);
+                logical.remove(doc_id);
+            }
             let new_doc = StoredDocument {
                 body: body.clone(),
-                id: doc_id.to_string(),
+                id: body_id.clone(),
                 rid: current.rid,
                 etag: etag.clone(),
                 ts,
@@ -5389,8 +5861,8 @@ async fn handle_replace_locked(
                 body_size_bytes,
                 source_region: region_name.to_string(),
             };
-            logical.insert(doc_id.to_string(), new_doc.clone());
-            new_doc
+            logical.insert(body_id.clone(), new_doc.clone());
+            (new_doc, renamed_from)
         };
 
         // Recompute the session token after the write committed so the success
@@ -5408,11 +5880,14 @@ async fn handle_replace_locked(
             store.next_transport_request_id(),
         ));
 
-        Ok((new_doc, token, charge, body, headers))
+        Ok((new_doc, renamed_from, token, charge, body, headers))
     });
 
     match result {
-        Some(Ok((doc, token, charge, response_body, headers))) => {
+        Some(Ok((doc, renamed_from, token, charge, response_body, headers))) => {
+            if let Some(renamed_from) = renamed_from {
+                store.replicate(region_name, db_id, coll_id, &renamed_from, true);
+            }
             store.replicate(region_name, db_id, coll_id, &doc, false);
 
             let builder = if parsed.content_response_on_write {
@@ -5471,6 +5946,9 @@ async fn handle_upsert_locked(
     if let Some(resp) = replication_back_pressure_response(store, region_name, start) {
         return resp;
     }
+    if request_body.len() > MAX_REQUEST_PAYLOAD_BYTES {
+        return oversized_item_response(start);
+    }
 
     let mut body: serde_json::Value = match decode_request_body(request_body) {
         Ok(v) => v,
@@ -5487,6 +5965,9 @@ async fn handle_upsert_locked(
             .build();
         }
     };
+    if user_document_size(&body) > MAX_ITEM_PAYLOAD_BYTES {
+        return oversized_item_response(start);
+    }
 
     let doc_id = match body.get("id").and_then(|v| v.as_str()) {
         Some(id) => id.to_string(),
@@ -5568,6 +6049,9 @@ async fn handle_upsert_locked(
                     )
                     .build());
                 }
+            }
+            if unique_key_conflicts(&state.metadata, logical, &doc_id, &body) {
+                return Err(unique_key_conflict_response(start));
             }
             let (status, rid, self_link) = match logical.get(&doc_id) {
                 Some(existing) => (
@@ -6158,12 +6642,17 @@ mod tests {
     }
 
     fn document_item(epk: &str, id: &str) -> DocumentFeedItem {
+        document_item_with_lsn(epk, id, 0)
+    }
+
+    fn document_item_with_lsn(epk: &str, id: &str, lsn: u64) -> DocumentFeedItem {
         DocumentFeedItem {
             body: serde_json::json!({ "id": id }),
             cursor: DocumentFeedCursor {
                 epk: Epk::from(epk),
                 id: id.to_owned(),
             },
+            lsn,
         }
     }
 
@@ -6172,6 +6661,151 @@ mod tests {
             .iter()
             .map(|value| value["id"].as_str().expect("test document has id"))
             .collect()
+    }
+
+    #[test]
+    fn item_size_uses_json_representation_independent_of_request_encoding() {
+        let document = serde_json::json!({
+            "id": "escape-heavy",
+            "pk": "A",
+            "value": "\"".repeat((MAX_ITEM_PAYLOAD_BYTES / 2) + 1),
+        });
+        let text = serde_json::to_vec(&document).unwrap();
+        let binary = crate::binary_json::encode(&document);
+
+        assert!(text.len() > MAX_ITEM_PAYLOAD_BYTES);
+        assert!(binary.len() <= MAX_REQUEST_PAYLOAD_BYTES);
+        assert!(user_document_size(&document) > MAX_ITEM_PAYLOAD_BYTES);
+    }
+
+    #[tokio::test]
+    async fn change_feed_resume_skips_consumed_prefix() {
+        let items: Vec<_> = (1..=5)
+            .map(|lsn| document_item_with_lsn("01", &format!("item-{lsn}"), lsn))
+            .collect();
+        let first = success_change_feed_response(
+            "rid",
+            items.clone(),
+            Some(2),
+            None,
+            FeedResponseHeaders::none(),
+            Instant::now(),
+        )
+        .try_into_raw_response()
+        .await
+        .unwrap();
+        let checkpoint = first
+            .headers()
+            .get_optional_str(&ETAG)
+            .expect("change feed page must return an ETag")
+            .to_owned();
+
+        let second = success_change_feed_response(
+            "rid",
+            items,
+            Some(2),
+            Some(&checkpoint),
+            FeedResponseHeaders::none(),
+            Instant::now(),
+        )
+        .try_into_raw_response()
+        .await
+        .unwrap();
+        let body: serde_json::Value = serde_json::from_slice(second.body().as_ref()).unwrap();
+        assert_eq!(
+            ids(body["Documents"].as_array().unwrap()),
+            ["item-3", "item-4"]
+        );
+    }
+
+    #[tokio::test]
+    async fn change_feed_empty_resume_preserves_checkpoint() {
+        let item = document_item_with_lsn("01", "item-1", 1);
+        let checkpoint = change_feed_cursor_token(&item);
+        let headers = FeedResponseHeaders {
+            session_token: String::new(),
+            lsn: None,
+            partition_key_range_id: Some(7),
+            internal_partition_id: Some("partition-rid".to_owned()),
+        };
+        let response = success_change_feed_response(
+            "rid",
+            vec![item],
+            Some(2),
+            Some(&checkpoint),
+            headers,
+            Instant::now(),
+        )
+        .try_into_raw_response()
+        .await
+        .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NotModified);
+        assert_eq!(
+            response.headers().get_optional_str(&ETAG),
+            Some(checkpoint.as_str())
+        );
+        assert_eq!(
+            response.headers().get_optional_str(&PARTITION_KEY_RANGE_ID),
+            Some("7")
+        );
+        assert_eq!(
+            response.headers().get_optional_str(&INTERNAL_PARTITION_ID),
+            Some("partition-rid")
+        );
+    }
+
+    #[tokio::test]
+    async fn change_feed_now_checkpoints_at_highest_lsn() {
+        let items = vec![
+            document_item_with_lsn("01", "item-1", 1),
+            document_item_with_lsn("01", "item-2", 2),
+        ];
+        let response = success_change_feed_response(
+            "rid",
+            items,
+            Some(2),
+            Some("*"),
+            FeedResponseHeaders::none(),
+            Instant::now(),
+        )
+        .try_into_raw_response()
+        .await
+        .unwrap();
+        let checkpoint = response
+            .headers()
+            .get_optional_str(&ETAG)
+            .expect("Now must produce a resumable checkpoint");
+        let cursor = parse_change_feed_cursor(checkpoint, Instant::now()).unwrap();
+
+        assert_eq!(response.status(), StatusCode::NotModified);
+        assert_eq!(cursor.lsn, 2);
+        assert_eq!(cursor.cursor.id, "item-2");
+    }
+
+    #[test]
+    fn change_feed_cursor_rejects_foreign_token_kind() {
+        let token = serde_json::json!({
+            "kind": "query_cursor_v1",
+            "lsn": 1,
+            "epk": "01",
+            "id": "item-1"
+        })
+        .to_string();
+
+        assert!(parse_change_feed_cursor(&token, Instant::now()).is_err());
+    }
+
+    #[test]
+    fn unique_key_numbers_follow_service_double_equivalence() {
+        assert!(unique_key_values_equal(
+            &serde_json::json!(1),
+            &serde_json::json!(1.0)
+        ));
+        assert!(unique_key_values_equal(
+            &serde_json::json!(9_007_199_254_740_992_u64),
+            &serde_json::json!(9_007_199_254_740_993_u64)
+        ));
     }
 
     #[test]

@@ -12,9 +12,9 @@ use azure_data_cosmos::models::{
     ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    BinaryEncodingOptions, ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions,
-    ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder, PartitionFailoverOptions,
-    Precondition, QueryOptions, ReadConsistencyStrategy, Region,
+    BinaryEncodingOptions, ChangeFeedStartFrom, ConnectionPoolOptions, CreateContainerOptions,
+    ItemReadOptions, ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder,
+    PartitionFailoverOptions, Precondition, QueryOptions, ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
@@ -702,6 +702,67 @@ pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error
 
     drop_database(&client, &db_name).await;
     Ok(())
+}
+
+/// Verifies incremental change feed carries `A-IM` through RNTBD and executes
+/// on Gateway V2. AllVersionsAndDeletes remains covered by its Gateway V1
+/// eligibility test because that mode is not supported by Gateway V2.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_incremental_change_feed() -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key).await?;
+    let (db_name, container) = provision_database_and_container(&client).await?;
+    let result = AssertUnwindSafe(async {
+        let pk = format!("pk-{}", azure_core::Uuid::new_v4());
+        let item = GwV2TestItem {
+            id: format!("item-{}", azure_core::Uuid::new_v4()),
+            pk: pk.clone(),
+            value: 1,
+            label: "change-feed".into(),
+        };
+        create_seed_item(&container, &pk, &item.id, &item).await?;
+
+        let page = retry_query_owner_not_found(|| async {
+            let mut pages = container
+                .query_change_feed::<GwV2TestItem>(
+                    FeedScope::partition(pk.clone()),
+                    ChangeFeedStartFrom::Beginning,
+                    None,
+                )
+                .await?;
+            Ok(pages
+                .next()
+                .await
+                .expect("incremental change feed must return a page")?)
+        })
+        .await?;
+        assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
+        assert!(
+            page.items()
+                .iter()
+                .any(|change| change.current() == Some(&item)),
+            "incremental change feed must contain the created item"
+        );
+        Ok::<_, Box<dyn std::error::Error>>(())
+    })
+    .catch_unwind()
+    .await;
+
+    drop_database(&client, &db_name).await;
+    match result {
+        Ok(result) => result,
+        Err(panic) => std::panic::resume_unwind(panic),
+    }
 }
 
 /// Point CRUD round-trip (create → read → replace → read → delete) over Gateway

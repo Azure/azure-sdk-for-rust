@@ -17,7 +17,7 @@ use serde_json::json;
 use tokio::net::TcpListener;
 use url::Url;
 
-use crate::config::GatewayBinding;
+use crate::{config::GatewayBinding, metrics::HostMetrics};
 
 const MAX_REQUEST_BODY_SIZE: usize = 16 * 1024 * 1024;
 
@@ -25,29 +25,45 @@ const MAX_REQUEST_BODY_SIZE: usize = 16 * 1024 * 1024;
 struct GatewayState {
     emulator: Arc<InMemoryEmulatorHttpClient>,
     base_url: Url,
+    metrics: Arc<HostMetrics>,
 }
 
 pub(crate) async fn serve(
     listener: TcpListener,
     binding: GatewayBinding,
     emulator: Arc<InMemoryEmulatorHttpClient>,
+    metrics: Arc<HostMetrics>,
 ) -> io::Result<()> {
     tracing::info!(
         region = binding.region_name,
         endpoint = %binding.gateway_url,
         "Cosmos gateway listener ready"
     );
-    let router = router(emulator, binding.gateway_url);
+    let router = router_with_metrics(emulator, binding.gateway_url, metrics);
     axum::serve(listener, router).await
 }
 
+#[cfg(test)]
 pub(crate) fn router(emulator: Arc<InMemoryEmulatorHttpClient>, base_url: Url) -> Router {
+    router_with_metrics(emulator, base_url, Arc::new(HostMetrics::default()))
+}
+
+fn router_with_metrics(
+    emulator: Arc<InMemoryEmulatorHttpClient>,
+    base_url: Url,
+    metrics: Arc<HostMetrics>,
+) -> Router {
     Router::new()
         .fallback(any(dispatch))
-        .with_state(GatewayState { emulator, base_url })
+        .with_state(GatewayState {
+            emulator,
+            base_url,
+            metrics,
+        })
 }
 
 async fn dispatch(State(state): State<GatewayState>, request: Request) -> Response<Body> {
+    state.metrics.record_gateway_request();
     match execute(state, request).await {
         Ok(response) => response,
         Err((status, message)) => (status, Json(json!({ "error": message }))).into_response(),
@@ -152,9 +168,16 @@ mod tests {
         let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
         let request = Request::builder().uri("/").body(Body::empty()).unwrap();
 
-        let response = execute(GatewayState { emulator, base_url }, request)
-            .await
-            .unwrap();
+        let response = execute(
+            GatewayState {
+                emulator,
+                base_url,
+                metrics: Arc::new(HostMetrics::default()),
+            },
+            request,
+        )
+        .await
+        .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
     }
