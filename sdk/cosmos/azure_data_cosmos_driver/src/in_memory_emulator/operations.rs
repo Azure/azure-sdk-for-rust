@@ -3379,7 +3379,64 @@ fn collect_item_documents(
         .build());
     }
 
+    let session_consistency_active = match parsed.read_consistency_strategy {
+        Some(crate::options::ReadConsistencyStrategy::Session) => true,
+        Some(crate::options::ReadConsistencyStrategy::Default) | None => {
+            store.config().consistency().is_session()
+        }
+        Some(
+            crate::options::ReadConsistencyStrategy::Eventual
+            | crate::options::ReadConsistencyStrategy::LatestCommitted
+            | crate::options::ReadConsistencyStrategy::GlobalStrong,
+        ) => false,
+    };
+    let incoming_sessions = if session_consistency_active {
+        match parsed.session_token.as_deref() {
+            Some(raw) => match super::session::parse_composite_session_token(raw) {
+                Ok(tokens) => tokens,
+                Err(parse_err) => {
+                    return Err(error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        &format!("Invalid session token: {}", parse_err),
+                        0.0,
+                        "",
+                        start,
+                    )
+                    .build());
+                }
+            },
+            None => Vec::new(),
+        }
+    } else {
+        Vec::new()
+    };
+
     let result = region_ref.with_container(db_id, coll_id, |state| {
+        for incoming in &incoming_sessions {
+            if incoming.pkrange_id == super::store::MASTER_PARTITION_ID
+                || state
+                    .physical_partitions
+                    .iter()
+                    .any(|partition| {
+                        partition.id == incoming.pkrange_id
+                            || partition.parents.contains(&incoming.pkrange_id)
+                    })
+            {
+                continue;
+            }
+            return Err(error_response(
+                StatusCode::Gone,
+                Some(1002),
+                "Gone",
+                "The partition key range referenced by the session token is no longer present (split/merge).",
+                0.0,
+                "",
+                start,
+            )
+            .build());
+        }
         let requested_epk = match parsed.partition_key_header.as_deref() {
             Some(header) => match parse_partition_key_header(header) {
                 Ok(components) if components.is_empty() => None,
@@ -3462,10 +3519,41 @@ fn collect_item_documents(
             }
             max_lsn = max_lsn.max(partition.current_lsn());
             let region_id = store.config().region_id_for(region_name);
+            let incoming_session = incoming_sessions
+                .iter()
+                .find(|token| token.pkrange_id == partition.id)
+                .cloned();
+            if session_consistency_active {
+                if let Some(incoming) = incoming_session.as_ref() {
+                    if incoming.version > partition.current_version()
+                        || (incoming.version == partition.current_version()
+                            && incoming.global_lsn > partition.current_lsn())
+                    {
+                        let requested = SessionToken::format_v2(
+                            partition.id,
+                            incoming.version,
+                            incoming.global_lsn,
+                            super::session::RegionId(region_id),
+                            super::session::LocalLsn(incoming.global_lsn),
+                            &incoming.region_progress,
+                        );
+                        return Err(error_response(
+                            StatusCode::NotFound,
+                            Some(1002),
+                            "ReadSessionNotAvailable",
+                            "The read session is not available for the input session token.",
+                            0.0,
+                            &requested,
+                            start,
+                        )
+                        .build());
+                    }
+                }
+            }
             token_parts.push(session_token_for(
                 partition,
                 region_id,
-                incoming_session_for(parsed, partition.id).as_ref(),
+                incoming_session.as_ref(),
             ));
             let stored = partition.documents.read().unwrap();
             for (epk, logical) in stored.iter() {
@@ -4465,14 +4553,14 @@ fn session_token_for(
 }
 
 /// Pulls the incoming session-token entry for a specific partition out of the
-/// request, if any. Used so the response token can preserve per-region
-/// progress the client has already accumulated for partitions other than the
-/// local one. Malformed composite tokens are silently treated as missing
-/// (handlers that need to surface a 400 do so independently).
+/// request, if any. Operations that enforce session-token validity parse and
+/// reject malformed tokens before calling this response-token helper.
 fn incoming_session_for(parsed: &ParsedRequest, pkrange_id: u32) -> Option<SessionToken> {
     let raw = parsed.session_token.as_deref()?;
     let tokens = super::session::parse_composite_session_token(raw).ok()?;
-    tokens.into_iter().find(|t| t.pkrange_id == pkrange_id)
+    tokens
+        .into_iter()
+        .find(|token| token.pkrange_id == pkrange_id)
 }
 
 pub(crate) struct PointResponseHeaders {

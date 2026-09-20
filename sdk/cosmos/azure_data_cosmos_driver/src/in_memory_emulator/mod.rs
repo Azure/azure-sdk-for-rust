@@ -33,6 +33,8 @@ mod dispatch;
 mod epk;
 #[cfg(feature = "__internal_in_memory_emulator")]
 mod gateway_v2;
+#[doc(hidden)]
+pub use gateway_v2::GatewayV2PayloadAudit;
 mod observer;
 mod operations;
 mod response;

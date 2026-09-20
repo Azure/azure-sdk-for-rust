@@ -2328,6 +2328,12 @@ fn build_transport_request(
                 fault_op,
             );
         }
+        if let Some(region) = ctx.routing.endpoint.region() {
+            headers.insert(
+                crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_REGION,
+                HeaderValue::from(region.as_str().to_owned()),
+            );
+        }
     }
 
     // Apply overrides — these take precedence over operation-level headers

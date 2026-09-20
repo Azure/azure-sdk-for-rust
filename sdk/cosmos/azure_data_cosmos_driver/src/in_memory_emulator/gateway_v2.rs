@@ -24,6 +24,16 @@ use crate::{
 
 use super::{ConsistencyLevel, InMemoryEmulatorHttpClient};
 
+/// Binary-wire observations for one hosted Gateway V2 request.
+#[doc(hidden)]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct GatewayV2PayloadAudit {
+    pub binary_negotiated: bool,
+    pub binary_request_payload: bool,
+    pub binary_response_payload: bool,
+    pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
+}
+
 impl InMemoryEmulatorHttpClient {
     /// Executes a hosted Gateway V2 request and returns an RNTBD-framed response.
     #[doc(hidden)]
@@ -31,6 +41,15 @@ impl InMemoryEmulatorHttpClient {
         &self,
         request: &Request,
     ) -> crate::error::Result<AsyncRawResponse> {
+        Ok(self.execute_gateway_v2_request_audited(request).await?.0)
+    }
+
+    /// Executes a hosted Gateway V2 request and reports binary wire evidence.
+    #[doc(hidden)]
+    pub async fn execute_gateway_v2_request_audited(
+        &self,
+        request: &Request,
+    ) -> crate::error::Result<(AsyncRawResponse, GatewayV2PayloadAudit)> {
         let request_body: Bytes = request.body().into();
         // A frame that fails to parse has no usable `activityId` field, so
         // there is nothing to echo back — but the response must still be a
@@ -40,18 +59,47 @@ impl InMemoryEmulatorHttpClient {
         let frame = match RntbdRequestFrame::read(request_body.as_ref()) {
             Ok(frame) => frame,
             Err(error) => {
-                return encode_error_response(gateway_v2_bad_request(error), Uuid::new_v4()).await;
+                return Ok((
+                    encode_error_response(gateway_v2_bad_request(error), Uuid::new_v4()).await?,
+                    GatewayV2PayloadAudit::default(),
+                ));
             }
         };
+        let mut audit = GatewayV2PayloadAudit {
+            binary_request_payload: frame
+                .body
+                .as_deref()
+                .is_some_and(crate::binary_json::is_binary),
+            ..Default::default()
+        };
+        audit.binary_negotiated = frame.metadata.iter().any(|token| {
+            RntbdRequestToken::try_from(token.id.0)
+                == Ok(RntbdRequestToken::SupportedSerializationFormats)
+                && matches!(token.value, TokenValue::Byte(flags) if flags & 0x02 != 0)
+        });
+        audit.read_consistency_strategy = frame.metadata.iter().find_map(|token| {
+            if RntbdRequestToken::try_from(token.id.0)
+                != Ok(RntbdRequestToken::ReadConsistencyStrategy)
+            {
+                return None;
+            }
+            match token.value {
+                TokenValue::Byte(value) => ReadConsistencyStrategy::from_rntbd_wire_byte(value),
+                _ => None,
+            }
+        });
         let activity_id = frame.activity_id;
         let request = match decode_request(request, frame, self.store().config().consistency()) {
             Ok(request) => request,
             Err(error) => {
-                return encode_error_response(error, activity_id).await;
+                return Ok((encode_error_response(error, activity_id).await?, audit));
             }
         };
         let response = self.execute_request(&request).await?;
-        encode_response(response, activity_id).await
+        let (response, binary_response_payload) =
+            encode_response_audited(response, activity_id).await?;
+        audit.binary_response_payload = binary_response_payload;
+        Ok((response, audit))
     }
 }
 
@@ -534,10 +582,20 @@ async fn encode_response(
     response: AsyncRawResponse,
     request_activity_id: Uuid,
 ) -> crate::error::Result<AsyncRawResponse> {
+    Ok(encode_response_audited(response, request_activity_id)
+        .await?
+        .0)
+}
+
+async fn encode_response_audited(
+    response: AsyncRawResponse,
+    request_activity_id: Uuid,
+) -> crate::error::Result<(AsyncRawResponse, bool)> {
     let response = response
         .try_into_raw_response()
         .await
         .map_err(gateway_v2_internal_error)?;
+    let binary_response_payload = crate::binary_json::is_binary(response.body().as_ref());
     let headers = response.headers();
     let status = header_u32(headers, "x-ms-substatus")
         .map(|sub_status| CosmosStatus::new(response.status()).with_sub_status(sub_status as u16))
@@ -586,10 +644,9 @@ async fn encode_response(
     rntbd.write(&mut body).map_err(gateway_v2_internal_error)?;
     let mut outer_headers = Headers::new();
     outer_headers.insert("content-type", "application/octet-stream");
-    Ok(AsyncRawResponse::from_bytes(
-        status.status_code(),
-        outer_headers,
-        body,
+    Ok((
+        AsyncRawResponse::from_bytes(status.status_code(), outer_headers, body),
+        binary_response_payload,
     ))
 }
 

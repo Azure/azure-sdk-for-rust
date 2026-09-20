@@ -274,6 +274,10 @@ treated as evidence of live-service fidelity.
 
 ### PR3 — Configuration, consistency, and resilience
 
+**Status:** Implemented for hosted-emulator validation. Entra ID remains on the
+existing dedicated live AAD pipeline until PR5 promotes catalog-driven Azure
+Live execution.
+
 Scope:
 
 - primary and backup bootstrap paths;
@@ -295,6 +299,17 @@ Scope:
 
 PR3 keeps fault predicates and operation-specific configuration in source code.
 Only reusable environment setup belongs in profile JSON.
+
+The `configurationResilience` profile provides a fixed two-region Session
+account with deterministic replication delay. Source-native Rust scenarios own
+ordered backup fallback, preferred-region and account-order routing, binary
+encoding/text-response overrides, session-token management, bounded throttle
+retry, operation deadlines, hedging, per-attempt diagnostics, diagnostics
+handlers, metrics, sampled logging, and OpenTelemetry spans. The existing
+scheduled consistency profile additionally runs feed-read contracts across all
+five account consistency levels. Key authentication is exercised by these
+hosted runs; Entra ID cannot be faithfully validated by the unauthenticated
+hosted emulator and remains covered by the live AAD pipeline.
 
 ### PR4 — Dynamic topology and availability
 

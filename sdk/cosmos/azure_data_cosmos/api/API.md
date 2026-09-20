@@ -422,18 +422,30 @@ pub mod diagnostics {
     }
     #[cfg(feature = "distributed_tracing")]
     impl CosmosTracingHandler {
-        pub fn new() -> Self;
+        pub fn builder() -> CosmosTracingHandlerBuilder;
         pub fn should_emit(&self, diagnostics: &DiagnosticsContext) -> bool;
         pub fn thresholds(&self) -> &DiagnosticsThresholds;
-        pub fn with_thresholds(thresholds: DiagnosticsThresholds) -> Self;
-        pub fn with_thresholds_and_rate_limit(thresholds: DiagnosticsThresholds, rate_limit: RateLimiterConfig) -> Self;
-    }
-    #[cfg(feature = "distributed_tracing")]
-    impl Default for CosmosTracingHandler {
-        fn default() -> Self;
     }
     #[cfg(feature = "distributed_tracing")]
     impl DiagnosticsHandler for CosmosTracingHandler {
+        fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
+    }
+    #[cfg(feature = "distributed_tracing")]
+    #[derive(Default)]
+    pub struct CosmosTracingHandlerBuilder {
+    }
+    #[cfg(feature = "distributed_tracing")]
+    impl CosmosTracingHandlerBuilder {
+        pub fn build(self) -> CosmosTracingHandler;
+        pub fn build_with_tracer<T>(self, tracer: T) -> CosmosTracingHandlerWithTracer<T> where T: opentelemetry::trace::Tracer + Send + Sync + 'static;
+        pub fn with_rate_limit(self, rate_limit: RateLimiterConfig) -> Self;
+        pub fn with_thresholds(self, thresholds: DiagnosticsThresholds) -> Self;
+    }
+    #[cfg(feature = "distributed_tracing")]
+    pub struct CosmosTracingHandlerWithTracer<T> {
+    }
+    #[cfg(feature = "distributed_tracing")]
+    impl<T> DiagnosticsHandler for CosmosTracingHandlerWithTracer<T> where T: opentelemetry::trace::Tracer + Send + Sync + 'static {
         fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
     }
     #[doc(inline)]
