@@ -11,7 +11,6 @@
 //! [`SessionOptions`](crate::SessionOptions) and a
 //! [`ContainerSessionProvider`](crate::ContainerSessionProvider).
 
-pub(crate) mod cache;
 pub(crate) mod options;
 pub(crate) mod policy;
 pub(crate) mod provider;

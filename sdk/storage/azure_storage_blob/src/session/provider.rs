@@ -10,8 +10,8 @@
 //! sentinel that is cached for a cooldown period so the service is not stormed.
 
 use crate::{
+    cache::{AcquireFn, AutoRefreshingCache, ExpiringValue},
     models::{AuthenticationType, CreateSessionConfiguration, CreateSessionResponse},
-    session::cache::{AcquireFn, AutoRefreshingCache, ExpiringValue},
     BlobServiceClient, BlobServiceClientOptions,
 };
 use async_trait::async_trait;
