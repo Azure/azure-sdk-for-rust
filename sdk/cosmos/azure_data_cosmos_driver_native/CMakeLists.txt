@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 # cSpell:ignore endforeach pkgconfig libdir includedir TOUPPER MSVC COPYONLY CFLAGS DTEST DCMAKE DLIBRARY azurecosmosdriver corrosion
 
 cmake_minimum_required(VERSION 3.20)
@@ -81,8 +84,12 @@ foreach(test_file ${TEST_FILES})
     list(APPEND TEST_TARGETS ${test_name})
 endforeach()
 
-set(TEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>)
-set(LIBRARY_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/$<CONFIG>)
+set(TEST_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+set(LIBRARY_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+if(CMAKE_CONFIGURATION_TYPES)
+    string(APPEND TEST_DIR "/$<CONFIG>")
+    string(APPEND LIBRARY_DIR "/$<CONFIG>")
+endif()
 
 # Run test discovery after build and trigger reconfiguration.
 add_custom_target(discover_tests ALL
