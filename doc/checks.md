@@ -87,7 +87,7 @@ Verifies that generated `API.md` and `API.metadata.yml` files are up to date for
 crates.
 
 ```bash
-pwsh ./eng/tools/Export-API.ps1 -Check -PackageName <crate-name>
+pwsh ./eng/scripts/Export-API.ps1 -Check -PackageName <crate-name>
 ```
 
 #### Docs-rs
