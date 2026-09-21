@@ -35,6 +35,7 @@ async fn service_unavailable_is_retried_with_attempt_history() -> TestResult {
         "resilience.service-retry",
         "e2e-service-retry",
         FaultInjectionErrorType::ServiceUnavailable,
+        true,
         Some(StatusCode::ServiceUnavailable),
         3,
     )
@@ -51,6 +52,7 @@ async fn response_timeout_is_retried_with_attempt_history() -> TestResult {
         "resilience.transport-retry",
         "e2e-transport-retry",
         FaultInjectionErrorType::ResponseTimeout,
+        false,
         None,
         2,
     )
@@ -252,6 +254,7 @@ async fn run_retry_case(
     scenario_id: &str,
     rule_id: &str,
     fault: FaultInjectionErrorType,
+    needs_stale_replica: bool,
     expected_status: Option<StatusCode>,
     expected_attempts: usize,
 ) -> TestResult {
@@ -281,7 +284,7 @@ async fn run_retry_case(
     E2eTest::builder()
         .with_client(client)
         .run(async |fixture| {
-            with_replication_paused_if(expected_status.is_some(), "West US", async {
+            with_replication_paused_if(needs_stale_replica, "West US", async {
                 let expected = item(rule_id, "A", 41);
                 fixture
                     .container
