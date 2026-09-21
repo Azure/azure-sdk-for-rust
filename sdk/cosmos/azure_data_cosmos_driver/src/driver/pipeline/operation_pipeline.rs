@@ -14,6 +14,7 @@ use std::time::{Duration, Instant};
 
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use futures::future::{pending, select, Either, Future};
+use futures::FutureExt;
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineKind, TransportSecurity},
@@ -3596,13 +3597,31 @@ where
         > + Unpin
         + Send,
 {
-    let deadline_fut = deadline_signal(deadline);
-    match select(attempt, deadline_fut).await {
-        Either::Left((result, _deadline)) => Some(result),
-        Either::Right(((), remaining)) => {
-            harvest_remaining_attempt(remaining, parent, harvest_window).await;
+    if deadline_elapsed(deadline) {
+        harvest_remaining_attempt(attempt, parent, harvest_window).await;
+        return None;
+    }
+    let deadline_fut = deadline_signal(deadline).fuse();
+    let attempt = attempt.fuse();
+    futures::pin_mut!(deadline_fut, attempt);
+    // Bias toward the operation deadline so application cancellation wins when
+    // the partner attempt's own per-attempt deadline becomes ready at the same
+    // instant. Otherwise the race is classified as both-transient instead of
+    // cancelled-awaiting-partner based on scheduler polling order.
+    futures::select_biased! {
+        () = deadline_fut => {
+            harvest_remaining_attempt(attempt, parent, harvest_window).await;
             None
         }
+        result = attempt => {
+            if deadline_elapsed(deadline) {
+                let (_result, diagnostics) = result;
+                parent.merge_hedge_attempt(diagnostics);
+                None
+            } else {
+                Some(result)
+            }
+        },
     }
 }
 
@@ -11035,6 +11054,34 @@ mod tests {
                 panic!("deadline_signal(past) must resolve before a 50ms sleep");
             }
         }
+    }
+
+    #[tokio::test]
+    async fn awaiting_hedge_partner_prioritizes_elapsed_operation_deadline() {
+        let mut parent = test_diagnostics();
+        let attempt = Box::pin(async {
+            (
+                Err::<super::TransportResult, _>(
+                    crate::error::CosmosError::builder()
+                        .with_message("simultaneous attempt timeout")
+                        .build(),
+                ),
+                test_diagnostics(),
+            )
+        });
+
+        let result = super::await_attempt_or_deadline_harvest(
+            attempt,
+            Some(std::time::Instant::now() - Duration::from_millis(1)),
+            &mut parent,
+            super::HARVEST_WINDOW,
+        )
+        .await;
+
+        assert!(
+            result.is_none(),
+            "an elapsed operation deadline must win over a simultaneously ready attempt"
+        );
     }
 
     #[tokio::test]

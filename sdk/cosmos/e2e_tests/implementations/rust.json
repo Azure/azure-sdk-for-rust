@@ -159,6 +159,11 @@
       "status": "active"
     },
     {
+      "id": "resilience.hedge-deadline",
+      "test": "resilience_hedging::deadline_cancels_active_hedge_awaiting_partner",
+      "status": "active"
+    },
+    {
       "id": "resilience.hedging",
       "test": "resilience_hedging::alternate_region_wins_delayed_primary_hedge",
       "status": "active"

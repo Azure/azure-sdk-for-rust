@@ -68,6 +68,7 @@ const IMPLEMENTED_TESTS: &[&str] = &[
     "diagnostics_handlers_telemetry::handlers_emit_metrics_spans_and_sampled_failures",
     "resilience_throttling_retry::bounded_throttling_retries_succeed_with_attempt_history",
     "resilience_deadline::operation_deadline_preempts_delayed_response",
+    "resilience_hedging::deadline_cancels_active_hedge_awaiting_partner",
     "resilience_hedging::alternate_region_wins_delayed_primary_hedge",
     "resilience_transient_retries::partition_topology_change_refreshes_and_retries_query",
     "resilience_transient_retries::request_timeout_retries_respect_failover_budget",
