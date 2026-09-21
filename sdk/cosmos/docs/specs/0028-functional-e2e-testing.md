@@ -259,13 +259,14 @@ PR2 should add emulator behavior only when required by a concrete SDK scenario.
 Differences discovered against live accounts must be fixed, explicitly modeled
 as simulated, or documented as not applicable.
 
-The query executor's synthetic-response diagnostics fallback intentionally
-retains each successful backend response context for the lifetime of one plan
-execution. Do not impose an additional fixed source-count cap or fold those
-contexts at the executor level: fan-out is already constrained by the physical
-partition topology, and inefficient queries that consume many empty backend
-pages are precisely the cases where preserving detailed per-request diagnostics
-is most valuable.
+The query executor's synthetic-response diagnostics fallback includes every
+successful backend response in its aggregate accounting while bounding detailed
+retention. `PageAggregator` folds retained source contexts at 32 entries, and
+`DiagnosticsContext::aggregate_sub_operations` re-bounds retained request
+records to `max_request_diagnostics`. Folding preserves exact request counts and
+request charge while retaining bounded representative detail, so inefficient
+queries that consume many empty backend pages remain observable without
+unbounded diagnostics memory growth.
 
 The PR2 pipeline does not run a live-account job. Its `azureLive: supported`
 metadata remains declarative until targeted differential scenarios are wired

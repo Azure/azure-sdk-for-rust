@@ -21,6 +21,7 @@
 
 ### Bugs Fixed
 
+- Change feed reads now work over Gateway 2.0 by forwarding incremental-mode and wire-format-version request metadata. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Cosmos root spans now use the last retained request endpoint for their fallback `server.address`, matching the operation-duration metric when no SDK operation context supplies an address. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Added partition-merge support and preserved point-in-time change feed filtering across merged partitions by retaining `If-Modified-Since` alongside continuations on Gateway V1 and Gateway V2. ([#4122](https://github.com/Azure/azure-sdk-for-rust/issues/4122))
 - Name-based container clients now automatically recover when a container is deleted and recreated. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
