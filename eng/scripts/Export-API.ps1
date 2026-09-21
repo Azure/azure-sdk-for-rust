@@ -128,6 +128,11 @@ if ($PackageInfoDirectory -and !(Test-Path -Path $PackageInfoDirectory -PathType
 $packages = Get-PackagesToExport -SelectedPackageInfoDirectory $packageInfoPath
 
 foreach ($package in $packages) {
+  if (!(Test-CargoPackagePublishable $package)) {
+    LogWarning "Skipping API files for non-publishable package '$($package.name)'."
+    continue
+  }
+
   Write-Host "$($Check ? 'Checking' : 'Exporting') API files for '$($package.name)'"
   if ($Check) {
     $outputDirectory = Get-OutputDirectory -Package $package
