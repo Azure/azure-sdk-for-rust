@@ -3390,11 +3390,13 @@ fn collect_item_documents(
             | crate::options::ReadConsistencyStrategy::GlobalStrong,
         ) => false,
     };
-    let incoming_sessions = if session_consistency_active {
-        match parsed.session_token.as_deref() {
-            Some(raw) => match super::session::parse_composite_session_token(raw) {
-                Ok(tokens) => tokens,
-                Err(parse_err) => {
+    // Parse valid tokens for response-token preservation on every consistency;
+    // only malformed-token rejection and progress enforcement are Session-gated.
+    let incoming_sessions = match parsed.session_token.as_deref() {
+        Some(raw) => match super::session::parse_composite_session_token(raw) {
+            Ok(tokens) => tokens,
+            Err(parse_err) => {
+                if session_consistency_active {
                     return Err(error_response(
                         StatusCode::BadRequest,
                         None,
@@ -3406,11 +3408,10 @@ fn collect_item_documents(
                     )
                     .build());
                 }
-            },
-            None => Vec::new(),
-        }
-    } else {
-        Vec::new()
+                Vec::new()
+            }
+        },
+        None => Vec::new(),
     };
 
     let result = region_ref.with_container(db_id, coll_id, |state| {

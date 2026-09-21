@@ -27,6 +27,7 @@ const SCENARIOS: &[&str] = &[
     include_str!("../../../e2e_tests/scenarios/bootstrap/backup-fallback.json"),
     include_str!("../../../e2e_tests/scenarios/configuration/binary-routing.json"),
     include_str!("../../../e2e_tests/scenarios/consistency/feed-read-strategies.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/response-token-capture.json"),
     include_str!("../../../e2e_tests/scenarios/consistency/session-management.json"),
     include_str!("../../../e2e_tests/scenarios/consistency/session-staleness.json"),
     include_str!("../../../e2e_tests/scenarios/items/lifecycle.json"),

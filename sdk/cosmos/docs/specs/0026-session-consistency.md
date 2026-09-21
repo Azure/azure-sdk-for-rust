@@ -281,7 +281,11 @@ carry headers, so capturing later would silently drop those tokens.
 
 Capture rules:
 
-- **Gated on session-effectiveness** for the attempt.
+- **Independent of the attempt's effective consistency.** Any eligible response token is cached
+  while automatic session management is enabled, including responses to `Eventual`,
+  `LatestCommitted`, and `GlobalStrong` reads. A subsequent operation can switch to `Session` and
+  must then resolve the token captured from the earlier response. Effective consistency gates
+  request-token resolution and enforcement, not response capture.
 - **Skipped for master/metadata reads.** `is_reading_from_master` mirrors Java's
   `ReplicatedResourceClientUtils`: `DatabaseAccount`, `Database`, `Offer`, and
   `PartitionKeyRange` always target master; `DocumentCollection` targets master

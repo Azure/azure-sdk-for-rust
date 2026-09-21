@@ -7,8 +7,8 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     feed::{ContinuationToken, FeedScope},
     options::{
-        AvailabilityStrategy, ItemReadOptions, MaxItemCountHint, OperationOptions, QueryOptions,
-        ReadConsistencyStrategy, Region,
+        AvailabilityStrategy, ExcludedRegions, ItemReadOptions, ItemWriteOptions, MaxItemCountHint,
+        OperationOptions, QueryOptions, ReadConsistencyStrategy, Region,
     },
     Query, RoutingStrategy,
 };
@@ -21,6 +21,97 @@ use crate::e2e_test_cases::{
         Item,
     },
 };
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator_inmemory", test_category = "e2e")),
+    ignore = "requires the externally hosted in-memory emulator"
+)]
+async fn response_tokens_are_captured_before_switching_to_session() -> TestResult {
+    let Some(profile) = selected_scenario_profile("consistency.response-token-capture").await?
+    else {
+        return Ok(());
+    };
+    let setup = ClientSetup::from_profile(
+        profile.selected_runtime()?,
+        profile.selected_client()?,
+        RoutingStrategy::PreferredRegions(vec![Region::WEST_US, Region::EAST_US]),
+    )?;
+    let client = build_client_with_customizer(setup, Ok).await?;
+
+    E2eTest::builder()
+        .with_client(client)
+        .run(async |fixture| {
+            let expected = item("response-token-capture", "A", 23);
+            let unavailable = with_replication_paused_if(true, "West US", async {
+                let mut write = OperationOptions::default();
+                write.session_capturing_disabled = Some(true);
+                fixture
+                    .container
+                    .create_item(
+                        "A",
+                        &expected.id,
+                        &expected,
+                        Some(ItemWriteOptions::default().with_operation_options(write)),
+                    )
+                    .await?;
+
+                let mut eventual = OperationOptions::default();
+                eventual.read_consistency_strategy = Some(ReadConsistencyStrategy::Eventual);
+                eventual.availability_strategy = Some(AvailabilityStrategy::Disabled);
+                eventual.max_failover_retry_count = Some(0);
+                eventual.excluded_regions =
+                    Some(ExcludedRegions::new().with_region(Region::WEST_US));
+                let mut pages = fixture
+                    .container
+                    .query_items::<Item>(
+                        Query::from("SELECT * FROM c"),
+                        FeedScope::partition("A"),
+                        Some(QueryOptions::default().with_operation_options(eventual)),
+                    )
+                    .await?
+                    .into_pages();
+                let page = pages
+                    .next()
+                    .await
+                    .expect("Eventual query must yield a page")?;
+                assert_eq!(page.items(), std::slice::from_ref(&expected));
+                assert!(
+                    page.headers().session_token().is_some(),
+                    "Eventual query response must expose a session token"
+                );
+
+                let mut session = OperationOptions::default();
+                session.read_consistency_strategy = Some(ReadConsistencyStrategy::Session);
+                session.availability_strategy = Some(AvailabilityStrategy::Disabled);
+                session.max_session_retry_count = Some(0);
+                session.max_failover_retry_count = Some(0);
+                session.excluded_regions =
+                    Some(ExcludedRegions::new().with_region(Region::EAST_US));
+                let result = fixture
+                    .container
+                    .read_item(
+                        "A",
+                        &expected.id,
+                        Some(ItemReadOptions::default().with_operation_options(session)),
+                    )
+                    .await;
+                Ok(result)
+            })
+            .await?;
+
+            let error = unavailable.expect_err(
+                "the Session read must enforce the token captured from the Eventual response",
+            );
+            assert_eq!(error.status().status_code(), StatusCode::NotFound);
+            assert_eq!(
+                error.status().sub_status(),
+                Some(azure_data_cosmos::SubStatusCode::READ_SESSION_NOT_AVAILABLE)
+            );
+            Ok(())
+        })
+        .await
+}
 
 #[tokio::test]
 #[cfg_attr(

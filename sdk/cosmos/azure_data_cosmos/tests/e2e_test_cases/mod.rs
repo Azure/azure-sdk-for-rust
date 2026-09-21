@@ -43,6 +43,7 @@ const IMPLEMENTED_TESTS: &[&str] = &[
     "bootstrap_backup_fallback::unreachable_primary_uses_ordered_backup",
     "configuration_binary_routing::binary_text_and_routing_options_preserve_behavior",
     "consistency_feed_read_strategies::feeds_honor_account_and_operation_consistency",
+    "consistency_session_management::response_tokens_are_captured_before_switching_to_session",
     "consistency_session_management::explicit_tokens_work_when_automatic_capture_is_disabled",
     "consistency_session_management::disabled_capture_exposes_delayed_replica",
     "item_lifecycle::crud_lifecycle",

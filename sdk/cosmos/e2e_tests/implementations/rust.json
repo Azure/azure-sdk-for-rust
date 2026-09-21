@@ -34,6 +34,11 @@
       "status": "active"
     },
     {
+      "id": "consistency.response-token-capture",
+      "test": "consistency_session_management::response_tokens_are_captured_before_switching_to_session",
+      "status": "active"
+    },
+    {
       "id": "consistency.session-management",
       "test": "consistency_session_management::explicit_tokens_work_when_automatic_capture_is_disabled",
       "status": "active"
