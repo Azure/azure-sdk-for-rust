@@ -1,30 +1,29 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Azure Resource Manager helpers for Cosmos live tests.
+//! Typed Azure Resource Manager client helpers for Cosmos live tests.
 //!
-//! Resource operations use the published Cosmos management SDK. Its 2024-09
-//! container model does not represent newer properties such as
-//! `vectorEmbeddingPolicy`, so only those lossless-forwarding cases use raw ARM.
+//! This test-only client uses the current Azure Core stack instead of the legacy
+//! generated Cosmos management SDK dependency graph. The private wire types are
+//! an intentional test-only exception until Cosmos ARM generation uses current
+//! Azure Core; transport-level tests pin the required ARM contract.
 
-use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     http::{
-        headers::HeaderName,
+        headers::{HeaderName, ERROR_CODE},
         policies::{auth::BearerTokenAuthorizationPolicy, Policy},
         ClientOptions, Method, Pipeline, PipelineSendOptions, RawResponse, Request, StatusCode,
         Url,
     },
     Result,
 };
-use azure_core_0_21 as management_core;
-use azure_mgmt_cosmosdb::package_preview_2024_09::{models, Client as ManagementClient};
-use serde::Serialize;
-use std::{future::Future, sync::Arc, time::Duration};
+use serde::{Deserialize, Serialize};
+use std::{sync::Arc, time::Duration};
 
 const DEFAULT_RESOURCE_MANAGER_ENDPOINT: &str = "https://management.azure.com/";
 const RESOURCE_API_VERSION: &str = "2026-03-15";
+const PARTITION_MERGE_API_VERSION: &str = "2026-04-01-preview";
 const LRO_POLL_INTERVAL: Duration = Duration::from_secs(2);
 const LRO_TIMEOUT: Duration = Duration::from_secs(60 * 60);
 const LOCK_RETRY_INTERVAL: Duration = Duration::from_secs(15);
@@ -43,7 +42,6 @@ pub struct CosmosArmClient {
     resource_group: String,
     account_name: String,
     location: Option<String>,
-    management_client: ManagementClient,
     pipeline: Pipeline,
 }
 
@@ -57,11 +55,119 @@ pub enum ArmThroughput {
     },
 }
 
-struct OperationResponse {
-    status: StatusCode,
-    retry_after: Option<Duration>,
-    operation_url: Option<Url>,
-    body: Vec<u8>,
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SqlResourceCreateUpdateParameters<T> {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    location: Option<String>,
+    properties: SqlResourceProperties<T>,
+}
+
+#[derive(Serialize)]
+struct SqlResourceProperties<T> {
+    resource: T,
+    options: CreateUpdateOptions,
+}
+
+#[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateUpdateOptions {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    throughput: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    autoscale_settings: Option<CreateAutoscaleSettings>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CreateAutoscaleSettings {
+    max_throughput: u64,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AutoscaleAutoUpgradePolicy {
+    throughput_policy: AutoscaleThroughputPolicy,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AutoscaleThroughputPolicy {
+    increment_percent: u32,
+}
+
+#[derive(Serialize)]
+struct SqlDatabaseResource<'a> {
+    id: &'a str,
+}
+
+#[derive(Serialize)]
+struct ThroughputSettingsUpdateParameters {
+    properties: ThroughputSettingsProperties,
+}
+
+#[derive(Serialize)]
+struct ThroughputSettingsProperties {
+    resource: ThroughputSettingsResource,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ThroughputSettingsResource {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    throughput: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    autoscale_settings: Option<ThroughputAutoscaleSettings>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ThroughputAutoscaleSettings {
+    max_throughput: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicy>,
+}
+
+#[derive(Deserialize)]
+struct ThroughputSettingsGetResults {
+    properties: ThroughputSettingsGetProperties,
+}
+
+#[derive(Deserialize)]
+struct ThroughputSettingsGetProperties {
+    resource: ThroughputSettingsGetResource,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ThroughputSettingsGetResource {
+    throughput: Option<u64>,
+    autoscale_settings: Option<AutoscaleSettingsResult>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AutoscaleSettingsResult {
+    max_throughput: u64,
+    auto_upgrade_policy: Option<AutoscaleAutoUpgradePolicyResult>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AutoscaleAutoUpgradePolicyResult {
+    throughput_policy: Option<AutoscaleThroughputPolicyResult>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AutoscaleThroughputPolicyResult {
+    increment_percent: Option<u32>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PartitionMergeParameters {
+    is_dry_run: bool,
 }
 
 enum OperationCompletion {
@@ -69,88 +175,47 @@ enum OperationCompletion {
     Failed(serde_json::Value),
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct RawContainerCreateUpdateParameters {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    location: Option<String>,
-    properties: RawContainerCreateUpdateProperties,
-}
-
-#[derive(Serialize)]
-struct RawContainerCreateUpdateProperties {
-    resource: serde_json::Value,
-    options: models::CreateUpdateOptions,
-}
-
-#[derive(Debug)]
-struct ManagementCredentialAdapter {
-    credential: Arc<dyn TokenCredential>,
-}
-
-#[async_trait]
-impl management_core::auth::TokenCredential for ManagementCredentialAdapter {
-    async fn get_token(
-        &self,
-        scopes: &[&str],
-    ) -> management_core::Result<management_core::auth::AccessToken> {
-        let token = self
-            .credential
-            .get_token(scopes, None)
-            .await
-            .map_err(|error| {
-                management_core::Error::message(
-                    management_core::error::ErrorKind::Credential,
-                    error.to_string(),
-                )
-            })?;
-        Ok(management_core::auth::AccessToken::new(
-            token.token.secret().to_owned(),
-            token.expires_on,
-        ))
-    }
-
-    async fn clear_cache(&self) -> management_core::Result<()> {
-        Ok(())
-    }
-}
-
 impl CosmosArmClient {
     pub fn from_env(credential: Arc<dyn TokenCredential>) -> Result<Self> {
         let endpoint = std::env::var(RESOURCE_MANAGER_URL_ENV_VAR)
             .unwrap_or_else(|_| DEFAULT_RESOURCE_MANAGER_ENDPOINT.to_string());
         let endpoint = normalize_endpoint(&endpoint)?;
-        let scope = format!("{}.default", endpoint.as_str());
-        let management_endpoint =
-            management_core::Url::parse(endpoint.as_str()).map_err(|error| {
-                azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, error)
-            })?;
-        let management_credential: Arc<dyn management_core::auth::TokenCredential> =
-            Arc::new(ManagementCredentialAdapter {
-                credential: credential.clone(),
-            });
-        let management_client = ManagementClient::builder(management_credential)
-            .endpoint(management_endpoint)
-            .scopes(&[scope.as_str()])
-            .build()
-            .map_err(management_error)?;
+        Self::new(
+            endpoint,
+            required_env(SUBSCRIPTION_ID_ENV_VAR)?,
+            required_env(RESOURCE_GROUP_ENV_VAR)?,
+            required_env(ACCOUNT_NAME_ENV_VAR)?,
+            std::env::var(LOCATION_ENV_VAR)
+                .ok()
+                .filter(|value| !value.trim().is_empty()),
+            credential,
+            ClientOptions::default(),
+        )
+    }
 
+    fn new(
+        endpoint: Url,
+        subscription_id: String,
+        resource_group: String,
+        account_name: String,
+        location: Option<String>,
+        credential: Arc<dyn TokenCredential>,
+        client_options: ClientOptions,
+    ) -> Result<Self> {
+        let scope = format!("{}.default", endpoint.as_str());
         let auth_policy: Arc<dyn Policy> =
             Arc::new(BearerTokenAuthorizationPolicy::new(credential, [scope]));
 
         Ok(Self {
             endpoint,
-            subscription_id: required_env(SUBSCRIPTION_ID_ENV_VAR)?,
-            resource_group: required_env(RESOURCE_GROUP_ENV_VAR)?,
-            account_name: required_env(ACCOUNT_NAME_ENV_VAR)?,
-            location: std::env::var(LOCATION_ENV_VAR)
-                .ok()
-                .filter(|value| !value.trim().is_empty()),
-            management_client,
+            subscription_id,
+            resource_group,
+            account_name,
+            location,
             pipeline: Pipeline::new(
                 option_env!("CARGO_PKG_NAME"),
                 option_env!("CARGO_PKG_VERSION"),
-                ClientOptions::default(),
+                client_options,
                 Vec::new(),
                 vec![auth_policy],
                 None,
@@ -159,39 +224,22 @@ impl CosmosArmClient {
     }
 
     pub async fn create_database(&self, database_name: &str) -> Result<()> {
-        let resource = models::SqlDatabaseResource::new(database_name.to_owned());
-        let properties = models::SqlDatabaseCreateUpdateProperties::new(resource);
-        let mut parameters = models::SqlDatabaseCreateUpdateParameters::new(properties);
-        parameters.arm_resource_properties.location = self.location.clone();
-
-        self.send_management_operation(false, || {
-            self.management_client
-                .sql_resources_client()
-                .create_update_sql_database(
-                    self.subscription_id.clone(),
-                    self.resource_group.clone(),
-                    self.account_name.clone(),
-                    database_name.to_owned(),
-                    parameters.clone(),
-                )
-                .send()
-        })
-        .await
+        let body = SqlResourceCreateUpdateParameters {
+            location: self.location.clone(),
+            properties: SqlResourceProperties {
+                resource: SqlDatabaseResource { id: database_name },
+                options: CreateUpdateOptions::default(),
+            },
+        };
+        let path = format!("{}/sqlDatabases/{database_name}", self.account_path());
+        self.send_resource_operation(Method::Put, &path, Some(&body))
+            .await
     }
 
     pub async fn delete_database(&self, database_name: &str) -> Result<()> {
-        self.send_management_operation(true, || {
-            self.management_client
-                .sql_resources_client()
-                .delete_sql_database(
-                    self.subscription_id.clone(),
-                    self.resource_group.clone(),
-                    self.account_name.clone(),
-                    database_name.to_owned(),
-                )
-                .send()
-        })
-        .await
+        let path = format!("{}/sqlDatabases/{database_name}", self.account_path());
+        self.send_resource_operation::<()>(Method::Delete, &path, None)
+            .await
     }
 
     pub async fn create_or_update_container<T>(
@@ -204,42 +252,16 @@ impl CosmosArmClient {
     where
         T: Serialize + ?Sized,
     {
-        let resource_value = serde_json::to_value(resource).map_err(data_conversion_error)?;
-        let options = throughput.map(create_update_options).transpose()?;
-
-        if let Some(resource) = management_container_resource(&resource_value)? {
-            let mut properties = models::SqlContainerCreateUpdateProperties::new(resource);
-            properties.options = options;
-            let mut parameters = models::SqlContainerCreateUpdateParameters::new(properties);
-            parameters.arm_resource_properties.location = self.location.clone();
-
-            self.send_management_operation(false, || {
-                self.management_client
-                    .sql_resources_client()
-                    .create_update_sql_container(
-                        self.subscription_id.clone(),
-                        self.resource_group.clone(),
-                        self.account_name.clone(),
-                        database_name.to_owned(),
-                        container_name.to_owned(),
-                        parameters.clone(),
-                    )
-                    .send()
-            })
+        let body = SqlResourceCreateUpdateParameters {
+            location: self.location.clone(),
+            properties: SqlResourceProperties {
+                resource,
+                options: throughput.map(create_update_options).unwrap_or_default(),
+            },
+        };
+        let path = self.container_path(database_name, container_name);
+        self.send_resource_operation(Method::Put, &path, Some(&body))
             .await?;
-        } else {
-            let body = RawContainerCreateUpdateParameters {
-                location: self.location.clone(),
-                properties: RawContainerCreateUpdateProperties {
-                    resource: resource_value,
-                    options: options.unwrap_or_default(),
-                },
-            };
-            let path = self.container_path(database_name, container_name);
-            self.send_raw_operation(false, || self.send_raw(Method::Put, &path, Some(&body)))
-                .await?;
-        }
-
         if let Some(
             throughput @ ArmThroughput::Autoscale {
                 increment_percent: Some(_),
@@ -254,19 +276,9 @@ impl CosmosArmClient {
     }
 
     pub async fn delete_container(&self, database_name: &str, container_name: &str) -> Result<()> {
-        self.send_management_operation(true, || {
-            self.management_client
-                .sql_resources_client()
-                .delete_sql_container(
-                    self.subscription_id.clone(),
-                    self.resource_group.clone(),
-                    self.account_name.clone(),
-                    database_name.to_owned(),
-                    container_name.to_owned(),
-                )
-                .send()
-        })
-        .await
+        let path = self.container_path(database_name, container_name);
+        self.send_resource_operation::<()>(Method::Delete, &path, None)
+            .await
     }
 
     pub async fn read_container_throughput(
@@ -274,22 +286,11 @@ impl CosmosArmClient {
         database_name: &str,
         container_name: &str,
     ) -> Result<ArmThroughput> {
-        ensure_legacy_request_logging_disabled()?;
-        let response = management_response(
-            self.management_client
-                .sql_resources_client()
-                .get_sql_container_throughput(
-                    self.subscription_id.clone(),
-                    self.resource_group.clone(),
-                    self.account_name.clone(),
-                    database_name.to_owned(),
-                    container_name.to_owned(),
-                )
-                .send()
-                .await,
-        )
-        .await?;
-        self.read_throughput(response).await?.ok_or_else(|| {
+        let path = format!(
+            "{}/throughputSettings/default",
+            self.container_path(database_name, container_name)
+        );
+        self.read_throughput(&path).await?.ok_or_else(|| {
             azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 "Cosmos container does not have dedicated throughput",
@@ -301,59 +302,34 @@ impl CosmosArmClient {
         &self,
         database_name: &str,
     ) -> Result<Option<ArmThroughput>> {
-        ensure_legacy_request_logging_disabled()?;
-        let response = management_response(
-            self.management_client
-                .sql_resources_client()
-                .get_sql_database_throughput(
-                    self.subscription_id.clone(),
-                    self.resource_group.clone(),
-                    self.account_name.clone(),
-                    database_name.to_owned(),
-                )
-                .send()
-                .await,
-        )
-        .await?;
-        self.read_throughput(response).await
+        let path = format!(
+            "{}/sqlDatabases/{database_name}/throughputSettings/default",
+            self.account_path()
+        );
+        self.read_throughput(&path).await
     }
 
-    async fn read_throughput(&self, response: OperationResponse) -> Result<Option<ArmThroughput>> {
-        if response.status == StatusCode::NotFound {
+    async fn read_throughput(&self, path: &str) -> Result<Option<ArmThroughput>> {
+        let response = self
+            .send(Method::Get, path, RESOURCE_API_VERSION, None::<&()>)
+            .await?;
+        if response.status() == StatusCode::NotFound {
             return Ok(None);
         }
         ensure_success(&response, "read Cosmos throughput")?;
-        let result: models::ThroughputSettingsGetResults =
-            serde_json::from_slice(&response.body).map_err(data_conversion_error)?;
-        let resource = result
-            .properties
-            .and_then(|properties| properties.resource)
-            .ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    "ARM throughput response did not contain a resource",
-                )
-            })?;
-        let resource: models::ThroughputSettingsResource =
-            serde_json::from_value(resource).map_err(data_conversion_error)?;
-
+        let result: ThroughputSettingsGetResults = response.body().json()?;
+        let resource = result.properties.resource;
         Ok(Some(
             match (resource.throughput, resource.autoscale_settings) {
                 (current, Some(settings)) => ArmThroughput::Autoscale {
-                    maximum: to_u64(settings.max_throughput, "maximum throughput")?,
-                    current: current
-                        .map(|value| to_u64(value, "current throughput"))
-                        .transpose()?,
+                    maximum: settings.max_throughput,
+                    current,
                     increment_percent: settings
                         .auto_upgrade_policy
                         .and_then(|policy| policy.throughput_policy)
-                        .and_then(|policy| policy.increment_percent)
-                        .map(|value| to_u32(value, "autoscale increment percentage"))
-                        .transpose()?,
+                        .and_then(|policy| policy.increment_percent),
                 },
-                (Some(throughput), None) => {
-                    ArmThroughput::Manual(to_u64(throughput, "throughput")?)
-                }
+                (Some(throughput), None) => ArmThroughput::Manual(throughput),
                 (None, None) => {
                     return Err(azure_core::Error::with_message(
                         azure_core::error::ErrorKind::DataConversion,
@@ -364,51 +340,52 @@ impl CosmosArmClient {
         ))
     }
 
+    fn operation_failed_error(body: serde_json::Value) -> azure_core::Error {
+        azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            format!("ARM operation failed: {body}"),
+        )
+    }
+
+    fn operation_timeout_error() -> azure_core::Error {
+        azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            format!("ARM operation did not complete within {LRO_TIMEOUT:?}"),
+        )
+    }
+
     pub async fn replace_container_throughput(
         &self,
         database_name: &str,
         container_name: &str,
         throughput: ArmThroughput,
     ) -> Result<ArmThroughput> {
-        let resource = throughput_settings_resource(throughput)?;
-        let properties = models::ThroughputSettingsUpdateProperties::new(resource);
-        let parameters = models::ThroughputSettingsUpdateParameters::new(properties);
-
-        self.send_management_operation(false, || {
-            self.management_client
-                .sql_resources_client()
-                .update_sql_container_throughput(
-                    self.subscription_id.clone(),
-                    self.resource_group.clone(),
-                    self.account_name.clone(),
-                    database_name.to_owned(),
-                    container_name.to_owned(),
-                    parameters.clone(),
-                )
-                .send()
-        })
-        .await?;
+        let body = ThroughputSettingsUpdateParameters {
+            properties: ThroughputSettingsProperties {
+                resource: throughput_settings_resource(throughput),
+            },
+        };
+        let path = format!(
+            "{}/throughputSettings/default",
+            self.container_path(database_name, container_name)
+        );
+        self.send_resource_operation(Method::Put, &path, Some(&body))
+            .await?;
         self.read_container_throughput(database_name, container_name)
             .await
     }
 
     pub async fn merge_partitions(&self, database_name: &str, container_name: &str) -> Result<()> {
-        let mut parameters = models::MergeParameters::new();
-        parameters.is_dry_run = Some(false);
-
-        self.send_management_operation(false, || {
-            self.management_client
-                .sql_resources_client()
-                .list_sql_container_partition_merge(
-                    self.subscription_id.clone(),
-                    self.resource_group.clone(),
-                    self.account_name.clone(),
-                    database_name.to_owned(),
-                    container_name.to_owned(),
-                    parameters.clone(),
-                )
-                .send()
-        })
+        let path = format!(
+            "{}/partitionMerge",
+            self.container_path(database_name, container_name)
+        );
+        self.send_operation(
+            Method::Post,
+            &path,
+            PARTITION_MERGE_API_VERSION,
+            Some(&PartitionMergeParameters { is_dry_run: false }),
+        )
         .await
     }
 
@@ -426,92 +403,101 @@ impl CosmosArmClient {
         )
     }
 
-    async fn send_management_operation<F, Fut, R>(&self, delete: bool, send: F) -> Result<()>
+    async fn send_resource_operation<T>(
+        &self,
+        method: Method,
+        path: &str,
+        body: Option<&T>,
+    ) -> Result<()>
     where
-        F: Fn() -> Fut,
-        Fut: Future<Output = management_core::Result<R>>,
-        R: Into<management_core::Response>,
+        T: Serialize + ?Sized,
     {
-        self.run_operation(delete, || async {
-            ensure_legacy_request_logging_disabled()?;
-            management_response(send().await).await
-        })
-        .await
+        self.send_operation(method, path, RESOURCE_API_VERSION, body)
+            .await
     }
 
-    async fn send_raw_operation<F, Fut>(&self, delete: bool, send: F) -> Result<()>
+    async fn send_operation<T>(
+        &self,
+        method: Method,
+        path: &str,
+        api_version: &str,
+        body: Option<&T>,
+    ) -> Result<()>
     where
-        F: Fn() -> Fut,
-        Fut: Future<Output = Result<OperationResponse>>,
-    {
-        self.run_operation(delete, send).await
-    }
-
-    async fn run_operation<F, Fut>(&self, delete: bool, send: F) -> Result<()>
-    where
-        F: Fn() -> Fut,
-        Fut: Future<Output = Result<OperationResponse>>,
+        T: Serialize + ?Sized,
     {
         let retry_deadline = tokio::time::Instant::now() + LOCK_RETRY_TIMEOUT;
+        let operation_deadline = tokio::time::Instant::now() + LRO_TIMEOUT;
         loop {
-            let response = send().await?;
-            if delete && response.status == StatusCode::NotFound {
+            let response = self
+                .send_before_deadline(method, path, api_version, body, operation_deadline)
+                .await?;
+            if method == Method::Delete && response.status() == StatusCode::NotFound {
                 return Ok(());
             }
             if is_retryable_lock_response(&response) && tokio::time::Instant::now() < retry_deadline
             {
-                tokio::time::sleep(response.retry_after.unwrap_or(LOCK_RETRY_INTERVAL)).await;
-                continue;
+                let deadline = retry_deadline.min(operation_deadline);
+                if sleep_with_deadline(
+                    retry_after(&response).unwrap_or(LOCK_RETRY_INTERVAL),
+                    deadline,
+                )
+                .await
+                {
+                    continue;
+                }
             }
             ensure_success(&response, "manage Cosmos ARM resource")?;
-            if response.status != StatusCode::Accepted {
+            if response.status() != StatusCode::Accepted {
                 return Ok(());
             }
 
-            let operation_url = response.operation_url.ok_or_else(|| {
-                azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::DataConversion,
-                    "ARM 202 response did not include azure-asyncoperation or location",
-                )
-            })?;
-            match self.wait_for_operation(operation_url).await? {
+            let operation_url = operation_url(&response)?;
+            match self
+                .wait_for_operation(operation_url, operation_deadline)
+                .await?
+            {
                 OperationCompletion::Succeeded => return Ok(()),
                 OperationCompletion::Failed(body)
                     if is_retryable_operation_failure(&body)
                         && tokio::time::Instant::now() < retry_deadline =>
                 {
-                    tokio::time::sleep(LOCK_RETRY_INTERVAL).await;
+                    if !sleep_with_deadline(
+                        LOCK_RETRY_INTERVAL,
+                        retry_deadline.min(operation_deadline),
+                    )
+                    .await
+                    {
+                        return Err(Self::operation_failed_error(body));
+                    }
                 }
                 OperationCompletion::Failed(body) => {
-                    return Err(azure_core::Error::with_message(
-                        azure_core::error::ErrorKind::Other,
-                        format!("ARM operation failed: {body}"),
-                    ));
+                    return Err(Self::operation_failed_error(body));
                 }
             }
         }
     }
 
-    async fn send_raw<T>(
+    async fn send<T>(
         &self,
         method: Method,
         path: &str,
+        api_version: &str,
         body: Option<&T>,
-    ) -> Result<OperationResponse>
+    ) -> Result<RawResponse>
     where
         T: Serialize + ?Sized,
     {
         let mut url = self.endpoint.join(path)?;
         url.query_pairs_mut()
-            .append_pair("api-version", RESOURCE_API_VERSION);
+            .append_pair("api-version", api_version);
         let mut request = Request::new(url, method);
         request.insert_header("accept", "application/json");
         if let Some(body) = body {
             request.insert_header("content-type", "application/json");
             request.set_json(body)?;
         }
-        let response = self
-            .pipeline
+        self.pipeline
             .send(
                 &azure_core::http::Context::new(),
                 &mut request,
@@ -520,45 +506,67 @@ impl CosmosArmClient {
                     ..Default::default()
                 }),
             )
-            .await?;
-        OperationResponse::from_current(response)
+            .await
     }
 
-    async fn wait_for_operation(&self, operation_url: Url) -> Result<OperationCompletion> {
-        let deadline = tokio::time::Instant::now() + LRO_TIMEOUT;
+    async fn send_before_deadline<T>(
+        &self,
+        method: Method,
+        path: &str,
+        api_version: &str,
+        body: Option<&T>,
+        deadline: tokio::time::Instant,
+    ) -> Result<RawResponse>
+    where
+        T: Serialize + ?Sized,
+    {
+        tokio::time::timeout_at(deadline, self.send(method, path, api_version, body))
+            .await
+            .map_err(|_| Self::operation_timeout_error())?
+    }
+
+    async fn wait_for_operation(
+        &self,
+        operation_url: Url,
+        deadline: tokio::time::Instant,
+    ) -> Result<OperationCompletion> {
         loop {
             if tokio::time::Instant::now() >= deadline {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!("ARM operation did not complete within {LRO_TIMEOUT:?}"),
-                ));
+                return Err(Self::operation_timeout_error());
             }
 
             let mut request = Request::new(operation_url.clone(), Method::Get);
             request.insert_header("accept", "application/json");
-            let response = self
-                .pipeline
-                .send(
+            let response = tokio::time::timeout_at(
+                deadline,
+                self.pipeline.send(
                     &azure_core::http::Context::new(),
                     &mut request,
                     Some(PipelineSendOptions {
                         skip_checks: true,
                         ..Default::default()
                     }),
-                )
-                .await?;
-            let response = OperationResponse::from_current(response)?;
+                ),
+            )
+            .await
+            .map_err(|_| Self::operation_timeout_error())??;
             ensure_success(&response, "poll Cosmos ARM operation")?;
-            if response.status == StatusCode::Accepted {
-                tokio::time::sleep(response.retry_after.unwrap_or(LRO_POLL_INTERVAL)).await;
+            if response.status() == StatusCode::Accepted {
+                if !sleep_with_deadline(
+                    retry_after(&response).unwrap_or(LRO_POLL_INTERVAL),
+                    deadline,
+                )
+                .await
+                {
+                    return Err(Self::operation_timeout_error());
+                }
                 continue;
             }
-            if response.body.is_empty() {
+            if response.body().is_empty() {
                 return Ok(OperationCompletion::Succeeded);
             }
 
-            let body: serde_json::Value =
-                serde_json::from_slice(&response.body).map_err(data_conversion_error)?;
+            let body: serde_json::Value = response.body().json()?;
             let status = operation_status(&body);
             match status.as_deref() {
                 Some("succeeded" | "completed") => return Ok(OperationCompletion::Succeeded),
@@ -566,83 +574,18 @@ impl CosmosArmClient {
                     return Ok(OperationCompletion::Failed(body));
                 }
                 Some(_) => {
-                    tokio::time::sleep(response.retry_after.unwrap_or(LRO_POLL_INTERVAL)).await;
+                    if !sleep_with_deadline(
+                        retry_after(&response).unwrap_or(LRO_POLL_INTERVAL),
+                        deadline,
+                    )
+                    .await
+                    {
+                        return Err(Self::operation_timeout_error());
+                    }
                 }
                 None => return Ok(OperationCompletion::Succeeded),
             }
         }
-    }
-}
-
-impl OperationResponse {
-    async fn from_management(response: management_core::Response) -> Result<Self> {
-        let (status, headers, body) = response.deconstruct();
-        let retry_after = headers
-            .get_optional_str(&management_core::headers::HeaderName::from_static(
-                "retry-after",
-            ))
-            .and_then(|value| value.parse::<u64>().ok())
-            .map(Duration::from_secs);
-        let operation_url = operation_url_from_headers(|name| {
-            headers
-                .get_optional_str(&management_core::headers::HeaderName::from_static(name))
-                .map(str::to_owned)
-        })?;
-        let body = body.collect().await.map_err(management_error)?.to_vec();
-        Ok(Self {
-            status: StatusCode::from(u16::from(status)),
-            retry_after,
-            operation_url,
-            body,
-        })
-    }
-
-    fn from_current(response: RawResponse) -> Result<Self> {
-        let retry_after = response
-            .headers()
-            .get_optional_str(&HeaderName::from_static("retry-after"))
-            .and_then(|value| value.parse::<u64>().ok())
-            .map(Duration::from_secs);
-        let operation_url = operation_url_from_headers(|name| {
-            response
-                .headers()
-                .get_optional_str(&HeaderName::from_static(name))
-                .map(str::to_owned)
-        })?;
-        Ok(Self {
-            status: response.status(),
-            retry_after,
-            operation_url,
-            body: response.body().to_vec(),
-        })
-    }
-
-    fn from_management_error(error: management_core::Error) -> Result<Self> {
-        let management_core::error::ErrorKind::HttpResponse { status, error_code } = error.kind()
-        else {
-            return Err(management_error(error));
-        };
-        let body = error_code
-            .as_deref()
-            .map(|code| serde_json::json!({"error": {"code": code}}).to_string())
-            .unwrap_or_default()
-            .into_bytes();
-        Ok(Self {
-            status: StatusCode::from(u16::from(*status)),
-            retry_after: None,
-            operation_url: None,
-            body,
-        })
-    }
-}
-
-async fn management_response<R>(response: management_core::Result<R>) -> Result<OperationResponse>
-where
-    R: Into<management_core::Response>,
-{
-    match response {
-        Ok(response) => OperationResponse::from_management(response.into()).await,
-        Err(error) => OperationResponse::from_management_error(error),
     }
 }
 
@@ -668,24 +611,26 @@ fn normalize_endpoint(endpoint: &str) -> Result<Url> {
     Ok(endpoint)
 }
 
-fn management_container_resource(
-    resource: &serde_json::Value,
-) -> Result<Option<models::SqlContainerResource>> {
-    let Ok(model) = serde_json::from_value::<models::SqlContainerResource>(resource.clone()) else {
-        return Ok(None);
-    };
-    let serialized = serde_json::to_value(&model).map_err(data_conversion_error)?;
-    Ok((serialized == *resource).then_some(model))
-}
-
-fn is_retryable_lock_response(response: &OperationResponse) -> bool {
-    if response.status == StatusCode::Locked {
+fn is_retryable_lock_response(response: &RawResponse) -> bool {
+    if response.status() == StatusCode::Locked {
         return true;
     }
-    if response.status != StatusCode::Conflict {
+    if response.status() != StatusCode::Conflict {
         return false;
     }
-    serde_json::from_slice(&response.body).is_ok_and(|body| is_retryable_operation_failure(&body))
+    if response
+        .headers()
+        .get_optional_str(&ERROR_CODE)
+        .is_some_and(is_retryable_lock_code)
+    {
+        return true;
+    }
+    serde_json::from_slice(response.body().as_ref())
+        .is_ok_and(|body| is_retryable_operation_failure(&body))
+}
+
+fn is_retryable_lock_code(code: &str) -> bool {
+    code == "423" || code.eq_ignore_ascii_case("locked")
 }
 
 fn is_retryable_operation_failure(body: &serde_json::Value) -> bool {
@@ -696,103 +641,96 @@ fn is_retryable_operation_failure(body: &serde_json::Value) -> bool {
     ]
     .into_iter()
     .flatten()
-    .any(|code| {
-        code.as_u64() == Some(423)
-            || code
-                .as_str()
-                .is_some_and(|code| code == "423" || code.eq_ignore_ascii_case("locked"))
-    })
+    .any(|code| code.as_u64() == Some(423) || code.as_str().is_some_and(is_retryable_lock_code))
 }
 
-fn create_update_options(throughput: ArmThroughput) -> Result<models::CreateUpdateOptions> {
-    let mut options = models::CreateUpdateOptions::new();
+async fn sleep_with_deadline(delay: Duration, deadline: tokio::time::Instant) -> bool {
+    let Some(remaining) = deadline.checked_duration_since(tokio::time::Instant::now()) else {
+        return false;
+    };
+    let sleep = delay.min(remaining);
+    tokio::time::sleep(sleep).await;
+    sleep < remaining
+}
+
+fn create_update_options(throughput: ArmThroughput) -> CreateUpdateOptions {
     match throughput {
-        ArmThroughput::Autoscale { maximum, .. } => {
-            let mut settings = models::AutoscaleSettings::new();
-            settings.max_throughput = Some(to_i64(maximum, "maximum throughput")?);
-            options.autoscale_settings = Some(settings);
-        }
-        ArmThroughput::Manual(throughput) => {
-            options.throughput = Some(to_i64(throughput, "throughput")?);
-        }
+        ArmThroughput::Autoscale { maximum, .. } => CreateUpdateOptions {
+            throughput: None,
+            autoscale_settings: Some(CreateAutoscaleSettings {
+                max_throughput: maximum,
+            }),
+        },
+        ArmThroughput::Manual(throughput) => CreateUpdateOptions {
+            throughput: Some(throughput),
+            autoscale_settings: None,
+        },
     }
-    Ok(options)
 }
 
-fn throughput_settings_resource(
-    throughput: ArmThroughput,
-) -> Result<models::ThroughputSettingsResource> {
-    let mut resource = models::ThroughputSettingsResource::new();
+fn throughput_settings_resource(throughput: ArmThroughput) -> ThroughputSettingsResource {
     match throughput {
         ArmThroughput::Autoscale {
             maximum,
             increment_percent,
             ..
-        } => {
-            let mut settings =
-                models::AutoscaleSettingsResource::new(to_i64(maximum, "maximum throughput")?);
-            if let Some(increment_percent) = increment_percent {
-                let mut throughput_policy = models::ThroughputPolicyResource::new();
-                throughput_policy.increment_percent = Some(i64::from(increment_percent));
-                let mut policy = models::AutoUpgradePolicyResource::new();
-                policy.throughput_policy = Some(throughput_policy);
-                settings.auto_upgrade_policy = Some(policy);
-            }
-            resource.autoscale_settings = Some(settings);
-        }
-        ArmThroughput::Manual(throughput) => {
-            resource.throughput = Some(to_i64(throughput, "throughput")?);
-        }
+        } => ThroughputSettingsResource {
+            throughput: None,
+            autoscale_settings: Some(ThroughputAutoscaleSettings {
+                max_throughput: maximum,
+                auto_upgrade_policy: increment_percent.map(|increment_percent| {
+                    AutoscaleAutoUpgradePolicy {
+                        throughput_policy: AutoscaleThroughputPolicy { increment_percent },
+                    }
+                }),
+            }),
+        },
+        ArmThroughput::Manual(throughput) => ThroughputSettingsResource {
+            throughput: Some(throughput),
+            autoscale_settings: None,
+        },
     }
-    Ok(resource)
 }
 
-fn operation_url_from_headers(
-    get_header: impl Fn(&'static str) -> Option<String>,
-) -> Result<Option<Url>> {
+fn retry_after(response: &RawResponse) -> Option<Duration> {
+    response
+        .headers()
+        .get_optional_str(&HeaderName::from_static("retry-after"))
+        .and_then(|value| value.parse::<u64>().ok())
+        .map(Duration::from_secs)
+}
+
+fn operation_url(response: &RawResponse) -> Result<Url> {
     for name in ["azure-asyncoperation", "location"] {
-        if let Some(value) = get_header(name) {
-            return Url::parse(&value).map(Some).map_err(Into::into);
+        if let Ok(value) = response.headers().get_str(&HeaderName::from_static(name)) {
+            return Ok(Url::parse(value)?);
         }
     }
-    Ok(None)
+    Err(azure_core::Error::with_message(
+        azure_core::error::ErrorKind::DataConversion,
+        "ARM 202 response did not include azure-asyncoperation or location",
+    ))
 }
 
-fn ensure_success(response: &OperationResponse, operation: &str) -> Result<()> {
-    if response.status.is_success() {
+fn ensure_success(response: &RawResponse, operation: &str) -> Result<()> {
+    if response.status().is_success() {
         return Ok(());
     }
     Err(azure_core::Error::with_message(
         azure_core::error::ErrorKind::HttpResponse {
-            status: response.status,
-            error_code: None,
+            status: response.status(),
+            error_code: response
+                .headers()
+                .get_optional_str(&ERROR_CODE)
+                .map(str::to_owned),
             raw_response: None,
         },
         format!(
             "{operation} failed with HTTP {}: {}",
-            response.status,
-            String::from_utf8_lossy(&response.body)
+            response.status(),
+            String::from_utf8_lossy(response.body().as_ref())
         ),
     ))
-}
-
-fn ensure_legacy_request_logging_disabled() -> Result<()> {
-    // RUSTSEC-2026-0275: refuse legacy requests while either full request dump is enabled.
-    let transport_debug_enabled = tracing::enabled!(
-        target: "azure_core::policies::transport",
-        tracing::Level::DEBUG
-    );
-    let retry_trace_enabled = tracing::enabled!(
-        target: "azure_core::policies::retry_policies::retry_policy",
-        tracing::Level::TRACE
-    );
-    if transport_debug_enabled || retry_trace_enabled {
-        return Err(azure_core::Error::with_message(
-            azure_core::error::ErrorKind::Other,
-            "legacy Azure Core request logging must be disabled before using the Cosmos management client",
-        ));
-    }
-    Ok(())
 }
 
 fn operation_status(body: &serde_json::Value) -> Option<String> {
@@ -813,55 +751,125 @@ fn operation_status(body: &serde_json::Value) -> Option<String> {
         .map(str::to_ascii_lowercase)
 }
 
-fn to_i64(value: u64, description: &str) -> Result<i64> {
-    i64::try_from(value).map_err(|_| {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::DataConversion,
-            format!("{description} exceeds the ARM integer range"),
-        )
-    })
-}
-
-fn to_u64(value: i64, description: &str) -> Result<u64> {
-    u64::try_from(value).map_err(|_| {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::DataConversion,
-            format!("{description} was negative"),
-        )
-    })
-}
-
-fn to_u32(value: i64, description: &str) -> Result<u32> {
-    u32::try_from(value).map_err(|_| {
-        azure_core::Error::with_message(
-            azure_core::error::ErrorKind::DataConversion,
-            format!("{description} was negative or exceeded the u32 range"),
-        )
-    })
-}
-
-fn management_error(error: management_core::Error) -> azure_core::Error {
-    azure_core::Error::with_message(
-        azure_core::error::ErrorKind::Other,
-        format!("Cosmos management SDK failed: {error}"),
-    )
-}
-
-fn data_conversion_error(error: serde_json::Error) -> azure_core::Error {
-    azure_core::Error::new(azure_core::error::ErrorKind::DataConversion, error)
-}
-
 #[cfg(test)]
 mod tests {
     use super::{
-        create_update_options, is_retryable_operation_failure, management_container_resource,
-        management_core, models, operation_status, throughput_settings_resource, ArmThroughput,
-        OperationResponse, RawContainerCreateUpdateParameters, RawContainerCreateUpdateProperties,
+        create_update_options, is_retryable_operation_failure, normalize_endpoint,
+        operation_status, sleep_with_deadline, throughput_settings_resource, ArmThroughput,
+        AutoscaleThroughputPolicyResult, CosmosArmClient, CreateUpdateOptions,
+        SqlResourceCreateUpdateParameters, SqlResourceProperties,
     };
+    use azure_core::{
+        http::{
+            headers::{HeaderName, Headers, AUTHORIZATION, ERROR_CODE},
+            AsyncRawResponse, Body, ClientOptions, Method, StatusCode, Transport,
+        },
+        Bytes,
+    };
+    use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
+    use futures::FutureExt as _;
+    use std::{
+        collections::VecDeque,
+        sync::{Arc, Mutex},
+        time::Duration,
+    };
+
+    const ASYNC_OPERATION: HeaderName = HeaderName::from_static("azure-asyncoperation");
+    const RETRY_AFTER: HeaderName = HeaderName::from_static("retry-after");
+
+    #[derive(Debug, PartialEq)]
+    struct RecordedRequest {
+        method: Method,
+        path_and_query: String,
+        body: Option<serde_json::Value>,
+        authorization: Option<String>,
+    }
+
+    struct MockResponse {
+        status: StatusCode,
+        headers: Vec<(HeaderName, &'static str)>,
+        body: Bytes,
+        delay: Duration,
+    }
+
+    fn response(
+        status: StatusCode,
+        headers: impl IntoIterator<Item = (HeaderName, &'static str)>,
+        body: impl Into<Bytes>,
+    ) -> MockResponse {
+        MockResponse {
+            status,
+            headers: headers.into_iter().collect(),
+            body: body.into(),
+            delay: Duration::ZERO,
+        }
+    }
+
+    fn delayed_response(status: StatusCode, delay: Duration) -> MockResponse {
+        MockResponse {
+            status,
+            headers: Vec::new(),
+            body: Bytes::new(),
+            delay,
+        }
+    }
+
+    fn test_client(
+        responses: impl IntoIterator<Item = MockResponse>,
+    ) -> (CosmosArmClient, Arc<Mutex<Vec<RecordedRequest>>>) {
+        let mut responses: VecDeque<_> = responses.into_iter().collect();
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let captured_requests = requests.clone();
+        let transport = Transport::new(Arc::new(MockHttpClient::new(move |request| {
+            let body = match request.body() {
+                Body::Bytes(body) if !body.is_empty() => {
+                    Some(serde_json::from_slice(body).expect("request body should be JSON"))
+                }
+                _ => None,
+            };
+            captured_requests.lock().unwrap().push(RecordedRequest {
+                method: request.method(),
+                path_and_query: request.path_and_query(),
+                body,
+                authorization: request
+                    .headers()
+                    .get_optional_str(&AUTHORIZATION)
+                    .map(str::to_owned),
+            });
+            let response = responses.pop_front().expect("unexpected ARM request");
+            let mut headers = Headers::new();
+            for (name, value) in response.headers {
+                headers.insert(name, value);
+            }
+            async move {
+                tokio::time::sleep(response.delay).await;
+                Ok(AsyncRawResponse::from_bytes(
+                    response.status,
+                    headers,
+                    response.body,
+                ))
+            }
+            .boxed()
+        })));
+        let client = CosmosArmClient::new(
+            normalize_endpoint("https://management.example").unwrap(),
+            "subscription".into(),
+            "resource-group".into(),
+            "account".into(),
+            None,
+            MockCredential::new().unwrap(),
+            ClientOptions {
+                transport: Some(transport),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        (client, requests)
+    }
 
     #[test]
     fn maps_manual_throughput() {
-        let options = create_update_options(ArmThroughput::Manual(400)).unwrap();
+        let options = create_update_options(ArmThroughput::Manual(400));
         assert_eq!(options.throughput, Some(400));
         assert!(options.autoscale_settings.is_none());
     }
@@ -872,14 +880,13 @@ mod tests {
             maximum: 4000,
             current: Some(400),
             increment_percent: Some(25),
-        })
-        .unwrap();
+        });
         assert!(options.throughput.is_none());
         assert_eq!(
             options
                 .autoscale_settings
                 .as_ref()
-                .and_then(|settings| settings.max_throughput),
+                .map(|settings| settings.max_throughput),
             Some(4000)
         );
         let create_options = serde_json::to_value(&options).unwrap();
@@ -890,58 +897,39 @@ mod tests {
             maximum: 4000,
             current: Some(400),
             increment_percent: Some(25),
-        })
-        .unwrap();
+        });
         assert_eq!(
             resource
                 .autoscale_settings
                 .and_then(|settings| settings.auto_upgrade_policy)
-                .and_then(|policy| policy.throughput_policy)
-                .and_then(|policy| policy.increment_percent),
+                .map(|policy| policy.throughput_policy.increment_percent),
             Some(25)
         );
     }
 
     #[test]
-    fn uses_generated_container_model_when_lossless() {
-        let resource = serde_json::json!({
-            "id": "items",
-            "partitionKey": {
-                "paths": ["/partition_key"],
-                "kind": "Hash",
-                "version": 2
-            }
-        });
-        assert!(management_container_resource(&resource).unwrap().is_some());
+    fn reads_missing_or_null_increment_percent() {
+        for value in [
+            serde_json::json!({}),
+            serde_json::json!({"incrementPercent": null}),
+        ] {
+            let policy: AutoscaleThroughputPolicyResult = serde_json::from_value(value)
+                .expect("optional incrementPercent should deserialize");
+            assert_eq!(policy.increment_percent, None);
+        }
     }
 
     #[test]
-    fn preserves_newer_container_fields_with_fallback() {
-        let resource = serde_json::json!({
-            "id": "items",
-            "partitionKey": {
-                "paths": ["/partition_key"],
-                "kind": "Hash",
-                "version": 2
-            },
-            "vectorEmbeddingPolicy": {
-                "vectorEmbeddings": []
-            }
-        });
-        assert!(management_container_resource(&resource).unwrap().is_none());
-    }
-
-    #[test]
-    fn raw_container_parameters_omit_missing_location() {
-        let body = serde_json::to_value(RawContainerCreateUpdateParameters {
+    fn resource_parameters_include_empty_options() {
+        let parameters = SqlResourceCreateUpdateParameters {
             location: None,
-            properties: RawContainerCreateUpdateProperties {
-                resource: serde_json::json!({"id": "items"}),
-                options: models::CreateUpdateOptions::default(),
+            properties: SqlResourceProperties {
+                resource: serde_json::json!({"id": "container"}),
+                options: CreateUpdateOptions::default(),
             },
-        })
-        .unwrap();
-        assert!(body.get("location").is_none());
+        };
+
+        let body = serde_json::to_value(parameters).unwrap();
         assert_eq!(
             body.pointer("/properties/options"),
             Some(&serde_json::json!({}))
@@ -966,26 +954,135 @@ mod tests {
         assert!(is_retryable_operation_failure(&body));
     }
 
-    #[test]
-    fn preserves_management_http_error_status() {
-        let error = management_core::error::ErrorKind::http_response(
-            management_core::StatusCode::NotFound,
-            None,
-        )
-        .into_error();
-        let response = OperationResponse::from_management_error(error).unwrap();
-        assert_eq!(response.status, azure_core::http::StatusCode::NotFound);
+    #[tokio::test]
+    async fn retries_header_only_conflict_and_preserves_request_shape() {
+        let (client, requests) = test_client([
+            response(
+                StatusCode::Conflict,
+                [(ERROR_CODE, "423"), (RETRY_AFTER, "0")],
+                Bytes::new(),
+            ),
+            response(StatusCode::Ok, [], Bytes::new()),
+        ]);
+
+        client.create_database("database").await.unwrap();
+
+        let requests = requests.lock().unwrap();
+        assert_eq!(requests.len(), 2);
+        assert_eq!(requests[0], requests[1]);
+        assert_eq!(
+            requests[0],
+            RecordedRequest {
+                method: Method::Put,
+                path_and_query: "/subscriptions/subscription/resourceGroups/resource-group/providers/Microsoft.DocumentDB/databaseAccounts/account/sqlDatabases/database?api-version=2026-03-15".into(),
+                body: Some(serde_json::json!({
+                    "properties": {
+                        "resource": {"id": "database"},
+                        "options": {}
+                    }
+                })),
+                authorization: Some(
+                    "Bearer TEST TOKEN https://management.example/.default".into()
+                ),
+            }
+        );
     }
 
-    #[test]
-    fn preserves_management_http_error_code() {
-        let error = management_core::error::ErrorKind::http_response(
-            management_core::StatusCode::Conflict,
-            Some("423".to_owned()),
-        )
-        .into_error();
-        let response = OperationResponse::from_management_error(error).unwrap();
-        let body: serde_json::Value = serde_json::from_slice(&response.body).unwrap();
-        assert!(is_retryable_operation_failure(&body));
+    #[tokio::test]
+    async fn delete_not_found_is_idempotent() {
+        let (client, requests) = test_client([response(StatusCode::NotFound, [], Bytes::new())]);
+
+        client.delete_database("database").await.unwrap();
+
+        let requests = requests.lock().unwrap();
+        assert_eq!(
+            requests.as_slice(),
+            [RecordedRequest {
+                method: Method::Delete,
+                path_and_query: "/subscriptions/subscription/resourceGroups/resource-group/providers/Microsoft.DocumentDB/databaseAccounts/account/sqlDatabases/database?api-version=2026-03-15".into(),
+                body: None,
+                authorization: Some(
+                    "Bearer TEST TOKEN https://management.example/.default".into()
+                ),
+            }]
+        );
+    }
+
+    #[tokio::test]
+    async fn polls_async_operation_without_resetting_request_contract() {
+        let (client, requests) = test_client([
+            response(
+                StatusCode::Accepted,
+                [(ASYNC_OPERATION, "https://management.example/operations/1")],
+                Bytes::new(),
+            ),
+            response(
+                StatusCode::Ok,
+                [],
+                Bytes::from_static(br#"{"status":"Succeeded"}"#),
+            ),
+        ]);
+
+        client.create_database("database").await.unwrap();
+
+        let requests = requests.lock().unwrap();
+        assert_eq!(requests.len(), 2);
+        assert_eq!(requests[0].method, Method::Put);
+        assert_eq!(
+            requests[1],
+            RecordedRequest {
+                method: Method::Get,
+                path_and_query: "/operations/1".into(),
+                body: None,
+                authorization: Some("Bearer TEST TOKEN https://management.example/.default".into()),
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn partition_merge_uses_preview_contract() {
+        let (client, requests) = test_client([response(StatusCode::Ok, [], Bytes::new())]);
+
+        client
+            .merge_partitions("database", "container")
+            .await
+            .unwrap();
+
+        let requests = requests.lock().unwrap();
+        assert_eq!(
+            requests.as_slice(),
+            [RecordedRequest {
+                method: Method::Post,
+                path_and_query: "/subscriptions/subscription/resourceGroups/resource-group/providers/Microsoft.DocumentDB/databaseAccounts/account/sqlDatabases/database/containers/container/partitionMerge?api-version=2026-04-01-preview".into(),
+                body: Some(serde_json::json!({"isDryRun": false})),
+                authorization: Some(
+                    "Bearer TEST TOKEN https://management.example/.default".into()
+                ),
+            }]
+        );
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn clamps_sleep_to_deadline() {
+        let start = tokio::time::Instant::now();
+        let deadline = start + Duration::from_secs(5);
+
+        assert!(!sleep_with_deadline(Duration::from_secs(60), deadline).await);
+        assert_eq!(tokio::time::Instant::now(), deadline);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn bounds_transport_request_by_operation_deadline() {
+        let (client, requests) = test_client([delayed_response(
+            StatusCode::Ok,
+            Duration::from_secs(2 * 60 * 60),
+        )]);
+
+        let error = client.create_database("database").await.unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("ARM operation did not complete within 3600s"));
+        assert_eq!(requests.lock().unwrap().len(), 1);
     }
 }

@@ -59,27 +59,14 @@ fn runtime_operation_options(options: OperationOptions) -> OperationOptions {
 }
 
 fn test_env_filter() -> EnvFilter {
-    let filter = match std::env::var("RUST_LOG") {
+    match std::env::var("RUST_LOG") {
         Ok(value) if value.trim().eq_ignore_ascii_case("trace") => EnvFilter::new("debug"),
         _ => EnvFilter::builder()
             // Tests with intentional failures cause noise, so silence them
             // unless the user explicitly configures logging.
             .with_default_directive("off".parse().unwrap())
             .from_env_lossy(),
-    };
-    // The legacy ARM transport logs bearer tokens at debug level (RUSTSEC-2026-0275).
-    [
-        "azure_core::policies::transport=off",
-        "azure_core::policies::retry_policies::retry_policy=off",
-    ]
-    .into_iter()
-    .fold(filter, |filter, directive| {
-        filter.add_directive(
-            directive
-                .parse()
-                .expect("valid legacy Azure Core logging directive"),
-        )
-    })
+    }
 }
 
 /// A test client that provides access to a Cosmos DB driver for testing.
@@ -1519,24 +1506,8 @@ impl DriverTestRunContext {
 
 #[cfg(test)]
 mod tests {
-    use super::{runtime_operation_options, test_env_filter};
+    use super::runtime_operation_options;
     use azure_data_cosmos_driver::options::{BinaryEncodingOptions, OperationOptions};
-    use tracing_subscriber::prelude::*;
-
-    #[test]
-    fn test_logging_filter_disables_legacy_transport_requests() {
-        let subscriber = tracing_subscriber::registry().with(test_env_filter());
-        tracing::subscriber::with_default(subscriber, || {
-            assert!(!tracing::enabled!(
-                target: "azure_core::policies::transport",
-                tracing::Level::DEBUG
-            ));
-            assert!(!tracing::enabled!(
-                target: "azure_core::policies::retry_policies::retry_policy",
-                tracing::Level::TRACE
-            ));
-        });
-    }
 
     #[test]
     #[cfg(test_category = "emulator_vnext")]

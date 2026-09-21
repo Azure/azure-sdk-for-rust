@@ -27,27 +27,14 @@ use std::{str::FromStr, sync::OnceLock};
 use tracing_subscriber::EnvFilter;
 
 fn test_env_filter() -> EnvFilter {
-    let filter = match std::env::var("RUST_LOG") {
+    match std::env::var("RUST_LOG") {
         Ok(value) if value.trim().eq_ignore_ascii_case("trace") => EnvFilter::new("debug"),
         _ => EnvFilter::builder()
             // Tests with intentional failures cause noise, so silence them
             // unless the user explicitly configures logging.
             .with_default_directive("off".parse().unwrap())
             .from_env_lossy(),
-    };
-    // The legacy ARM transport logs bearer tokens at debug level (RUSTSEC-2026-0275).
-    [
-        "azure_core::policies::transport=off",
-        "azure_core::policies::retry_policies::retry_policy=off",
-    ]
-    .into_iter()
-    .fold(filter, |filter, directive| {
-        filter.add_directive(
-            directive
-                .parse()
-                .expect("valid legacy Azure Core logging directive"),
-        )
-    })
+    }
 }
 
 /// Represents a Cosmos DB client connected to a test account.
@@ -2248,8 +2235,8 @@ mod tests {
     use super::{
         aad_token_invalid_issuer, effective_binary_encoding, from_arm_throughput, item_not_found,
         rbac_name_based_data_not_ready, retry_container_readiness, satellite_probe_should_retry,
-        test_env_filter, to_arm_container_resource, transient_satellite_readiness_error,
-        ArmThroughput, AuthMode, BinaryEncodingOptions,
+        to_arm_container_resource, transient_satellite_readiness_error, ArmThroughput, AuthMode,
+        BinaryEncodingOptions,
     };
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{
@@ -2263,22 +2250,6 @@ mod tests {
         },
         time::Duration,
     };
-    use tracing_subscriber::prelude::*;
-
-    #[test]
-    fn test_logging_filter_disables_legacy_transport_requests() {
-        let subscriber = tracing_subscriber::registry().with(test_env_filter());
-        tracing::subscriber::with_default(subscriber, || {
-            assert!(!tracing::enabled!(
-                target: "azure_core::policies::transport",
-                tracing::Level::DEBUG
-            ));
-            assert!(!tracing::enabled!(
-                target: "azure_core::policies::retry_policies::retry_policy",
-                tracing::Level::TRACE
-            ));
-        });
-    }
 
     #[test]
     fn arm_autoscale_throughput_preserves_service_values() {

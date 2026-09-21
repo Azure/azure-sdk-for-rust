@@ -352,9 +352,14 @@ In CI, the harness runs automatically on the **`binary_encoding` live leg**
 `testCategory = 'binary_encoding'`). That federated leg's bicep emits
 `--cfg=test_category="binary_encoding"` into `RUSTFLAGS`, disables local
 authentication on the account, and provides `ACCOUNT_HOST`. The fuzzer uses
-Entra ID for all data-plane operations and the shared test support wrapper over
-`azure_mgmt_cosmosdb` for database and container lifecycle. The per-run
-iteration budget is set by
+Entra ID for all data-plane operations and the shared typed test-only ARM
+client built on the current `azure_core` for database and container lifecycle.
+This private client is an intentional exception to the generated-client rule:
+the published generated Cosmos management crate uses the legacy Azure Core
+stack, while no generated Cosmos ARM crate currently targets the repository's
+current stack. Its wire contract is therefore kept private and covered by
+request/response tests.
+The per-run iteration budget is set by
 `AZURE_COSMOS_FUZZ_ITERATIONS` in `sdk/cosmos/ci.yml`
 (default 180 there). Live tests only run on the weekly schedule or when a build
 is queued with **Run live tests** enabled.
@@ -372,6 +377,7 @@ ACCOUNT_HOST='https://<account>.documents.azure.com:443/' \
 COSMOS_SUBSCRIPTION_ID='<subscription>' \
 COSMOS_RESOURCE_GROUP='<resource-group>' \
 COSMOS_ACCOUNT_NAME='<account>' \
+COSMOS_LOCATION='<azure-region>' \
 AZURE_COSMOS_FUZZ_ITERATIONS=5000000 \
 AZURE_COSMOS_FUZZ_MAX_DEPTH=6 \
 RUSTFLAGS='--cfg test_category="binary_encoding"' \
@@ -396,6 +402,8 @@ RUSTFLAGS='--cfg test_category="binary_encoding"' \
 | `AZURE_COSMOS_AUTH_MODE` | key | set to `aad` for federated live runs |
 | `ACCOUNT_HOST` | — (required for AAD) | live account endpoint |
 | `COSMOS_SUBSCRIPTION_ID` / `COSMOS_RESOURCE_GROUP` / `COSMOS_ACCOUNT_NAME` | — (required for AAD) | ARM resource identity used for test lifecycle |
+| `COSMOS_LOCATION` | — | optional ARM resource location included in create/update requests |
+| `COSMOS_RESOURCE_MANAGER_URL` | `https://management.azure.com/` | ARM endpoint; the bearer scope is derived as `<normalized-endpoint>.default` |
 | `AZURE_COSMOS_CONNECTION_STRING` | — (emulator/key mode only) | endpoint and key for local emulator runs |
 | `AZURE_COSMOS_ALLOW_INVALID_CERT` | false | accept emulator cert |
 | `AZURE_COSMOS_FUZZ_ITERATIONS` | 180 | number of generated docs |
