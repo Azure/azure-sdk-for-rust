@@ -5,8 +5,8 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     feed::FeedScope,
     options::{
-        AvailabilityStrategy, ChangeFeedOptions, ChangeFeedStartFrom, OperationOptions,
-        QueryOptions, ReadConsistencyStrategy, Region,
+        AvailabilityStrategy, ChangeFeedOptions, ChangeFeedStartFrom, ItemReadOptions,
+        OperationOptions, QueryOptions, ReadConsistencyStrategy, Region,
     },
     Query, RoutingStrategy, SubStatusCode,
 };
@@ -116,7 +116,8 @@ async fn feeds_honor_account_and_operation_consistency() -> TestResult {
                 )
                 .await?;
             }
-            assert_invalid_session_tokens_rejected(&fixture.container, &token).await?;
+            assert_invalid_session_tokens_rejected(&fixture.container, &expected.id, &token)
+                .await?;
 
             let mut operation = OperationOptions::default();
             operation.read_consistency_strategy = Some(ReadConsistencyStrategy::GlobalStrong);
@@ -333,6 +334,7 @@ fn assert_strategy_reached_transport(
 
 async fn assert_invalid_session_tokens_rejected(
     container: &azure_data_cosmos::clients::ContainerClient,
+    item_id: &str,
     valid_token: &str,
 ) -> TestResult {
     let mut operation = OperationOptions::default();
@@ -392,8 +394,9 @@ async fn assert_invalid_session_tokens_rejected(
     for accepted_token in [
         format!("{partition_id}:{global_lsn}"),
         format!("{partition_id}:{version}#{global_lsn}#999=-1"),
+        format!("{valid_token},999999:{token_value}"),
     ] {
-        assert_valid_session_token_accepted(container, &accepted_token).await?;
+        assert_valid_session_token_accepted(container, item_id, &accepted_token).await?;
     }
     let future_token = format!("{partition_id}:-1#999999");
     let mut no_retry_operation = OperationOptions::default();
@@ -449,11 +452,24 @@ async fn assert_invalid_session_tokens_rejected(
 
 async fn assert_valid_session_token_accepted(
     container: &azure_data_cosmos::clients::ContainerClient,
+    item_id: &str,
     token: &str,
 ) -> TestResult {
     let mut operation = OperationOptions::default();
     operation.read_consistency_strategy = Some(ReadConsistencyStrategy::Session);
     operation.availability_strategy = Some(AvailabilityStrategy::Disabled);
+
+    container
+        .read_item(
+            "A",
+            item_id,
+            Some(
+                ItemReadOptions::default()
+                    .with_session_token(token.to_owned())
+                    .with_operation_options(operation.clone()),
+            ),
+        )
+        .await?;
 
     let query_options = QueryOptions::default()
         .with_session_token(token.to_owned())

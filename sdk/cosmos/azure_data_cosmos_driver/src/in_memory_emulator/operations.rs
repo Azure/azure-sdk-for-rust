@@ -3414,29 +3414,6 @@ fn collect_item_documents(
     };
 
     let result = region_ref.with_container(db_id, coll_id, |state| {
-        for incoming in &incoming_sessions {
-            if incoming.pkrange_id == super::store::MASTER_PARTITION_ID
-                || state
-                    .physical_partitions
-                    .iter()
-                    .any(|partition| {
-                        partition.id == incoming.pkrange_id
-                            || partition.parents.contains(&incoming.pkrange_id)
-                    })
-            {
-                continue;
-            }
-            return Err(error_response(
-                StatusCode::Gone,
-                Some(1002),
-                "Gone",
-                "The partition key range referenced by the session token is no longer present (split/merge).",
-                0.0,
-                "",
-                start,
-            )
-            .build());
-        }
         let requested_epk = match parsed.partition_key_header.as_deref() {
             Some(header) => match parse_partition_key_header(header) {
                 Ok(components) if components.is_empty() => None,
@@ -5169,44 +5146,6 @@ fn handle_read(
                         .build());
                     }
                 };
-                // Reject stale pkrange ids (e.g. parent of a completed split that
-                // is *not* an ancestor of this request's partition) with 410/1002
-                // — real Cosmos surfaces PartitionKeyRangeGone here so the client
-                // refreshes its pkrange cache and retries. Without this, a stale
-                // token referencing some other (now-defunct) partition silently
-                // skipped the consistency check.
-                //
-                // Tokens referencing a *direct ancestor* of this partition are
-                // considered valid: the EPK-routed successor partition's LSN is
-                // at least as advanced as any pre-split LSN the client could
-                // legitimately have observed, so the consistency check below is
-                // satisfied trivially. This matches the real gateway, which
-                // routes by EPK and treats stale-but-related tokens as best-
-                // effort rather than fatal.
-                for st in &tokens {
-                    if st.pkrange_id == super::store::MASTER_PARTITION_ID
-                        || st.pkrange_id == partition.id
-                        || partition.parents.contains(&st.pkrange_id)
-                    {
-                        continue;
-                    }
-                    let exists = state
-                        .physical_partitions
-                        .iter()
-                        .any(|p| p.id == st.pkrange_id);
-                    if !exists {
-                        return Err(error_response(
-                            StatusCode::Gone,
-                            Some(1002),
-                            "Gone",
-                            "The partition key range referenced by the session token is no longer present (split/merge).",
-                            0.0,
-                            &token,
-                            start,
-                        )
-                        .build());
-                    }
-                }
                 for st in &tokens {
                     if st.pkrange_id == partition.id {
                         let partition_version = partition.current_version();

@@ -159,6 +159,11 @@
       "status": "active"
     },
     {
+      "id": "resilience.partition-topology-retry",
+      "test": "resilience_transient_retries::partition_topology_change_refreshes_and_retries_query",
+      "status": "active"
+    },
+    {
       "id": "resilience.request-timeout-retry",
       "test": "resilience_transient_retries::request_timeout_retries_respect_failover_budget",
       "status": "active"

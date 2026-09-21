@@ -9,9 +9,13 @@ use azure_data_cosmos::{
         FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
         FaultInjectionRuleBuilder, FaultOperationType,
     },
-    options::{AvailabilityStrategy, ItemReadOptions, OperationOptionsBuilder, Region},
-    RoutingStrategy, SubStatusCode,
+    feed::FeedScope,
+    options::{
+        AvailabilityStrategy, ItemReadOptions, OperationOptionsBuilder, QueryOptions, Region,
+    },
+    Query, RoutingStrategy, SubStatusCode,
 };
+use futures::StreamExt;
 
 use crate::e2e_test_cases::{
     fixture::{build_client_with_customizer, ClientSetup, E2eTest, TestResult},
@@ -61,6 +65,90 @@ async fn response_timeout_is_retried_with_attempt_history() -> TestResult {
 async fn request_timeout_retries_respect_failover_budget() -> TestResult {
     run_request_timeout_case("e2e-request-timeout-retry", 1, true).await?;
     run_request_timeout_case("e2e-request-timeout-terminal", 0, false).await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(test_category = "emulator_inmemory", test_category = "e2e")),
+    ignore = "requires the externally hosted in-memory emulator"
+)]
+async fn partition_topology_change_refreshes_and_retries_query() -> TestResult {
+    let Some(profile) = selected_scenario_profile("resilience.partition-topology-retry").await?
+    else {
+        return Ok(());
+    };
+    let rule_id = "e2e-partition-topology-retry";
+    let result = FaultInjectionResultBuilder::new()
+        .with_error(FaultInjectionErrorType::PartitionIsGone)
+        .build();
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::QueryItem)
+        .build();
+    let rule = Arc::new(
+        FaultInjectionRuleBuilder::new(rule_id, result)
+            .with_condition(condition)
+            .with_hit_limit(1)
+            .build(),
+    );
+    let setup = ClientSetup::from_profile(
+        profile.selected_runtime()?,
+        profile.selected_client()?,
+        RoutingStrategy::PreferredRegions(vec![Region::EAST_US, Region::WEST_US]),
+    )?;
+    let client = build_client_with_customizer(setup, |builder| {
+        Ok(builder.with_fault_injection_rules(vec![Arc::clone(&rule)])?)
+    })
+    .await?;
+
+    E2eTest::builder()
+        .with_client(client)
+        .run(async |fixture| {
+            let expected = item(rule_id, "A", 43);
+            fixture
+                .container
+                .create_item("A", &expected.id, &expected, None)
+                .await?;
+
+            let operation = OperationOptionsBuilder::new()
+                .with_availability_strategy(AvailabilityStrategy::Disabled)
+                .build();
+            let mut pages = fixture
+                .container
+                .query_items::<Item>(
+                    Query::from("SELECT * FROM c"),
+                    FeedScope::partition("A"),
+                    Some(QueryOptions::default().with_operation_options(operation)),
+                )
+                .await?
+                .into_pages();
+            let page = pages
+                .next()
+                .await
+                .expect("topology-retried query must yield a page")?;
+
+            assert_eq!(page.items(), std::slice::from_ref(&expected));
+            assert_eq!(rule.hit_count(), 1);
+            let diagnostics = page.diagnostics();
+            assert_eq!(diagnostics.request_count(), 2);
+            assert_eq!(
+                diagnostics.requests()[0].status().status_code(),
+                StatusCode::Gone
+            );
+            assert_eq!(
+                diagnostics.requests()[0].status().sub_status(),
+                Some(SubStatusCode::PARTITION_KEY_RANGE_GONE)
+            );
+            assert_eq!(
+                diagnostics.requests()[1].status().status_code(),
+                StatusCode::Ok
+            );
+            assert!(diagnostics.requests()[0]
+                .fault_injection_evaluations()
+                .iter()
+                .any(|evaluation| evaluation.rule_id() == rule_id && evaluation.was_applied()));
+            Ok(())
+        })
+        .await
 }
 
 async fn run_request_timeout_case(

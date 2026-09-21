@@ -1,15 +1,15 @@
 {
     "$schema": "../../schema/scenario.v1.json",
     "specVersion": "1.0",
-    "id": "resilience.request-timeout-retry",
-    "title": "Request timeout retries honor the failover budget",
-    "requirement": "An injected HTTP 408 response fails over to a converged replica when budget remains and is returned without retry when the failover budget is zero.",
+    "id": "resilience.partition-topology-retry",
+    "title": "Partition topology changes refresh routing",
+    "requirement": "A partition-scoped query that receives 410/1002 refreshes partition routing, retries, and retains the failed topology attempt in diagnostics.",
     "maturity": "candidate",
     "precedents": [
         {
             "sdk": "rust",
-            "path": "sdk/cosmos/azure_data_cosmos/tests/multi_write_tests/cosmos_multi_write_retry_policies.rs",
-            "test": "timeout"
+            "path": "sdk/cosmos/azure_data_cosmos_driver/src/driver/dataflow/request.rs",
+            "test": "request_retries_logical_partition_key_topology_change_once"
         }
     ],
     "profiles": [
@@ -17,7 +17,7 @@
     ],
     "tags": [
         "resilience",
-        "requestTimeout",
+        "partitionTopology",
         "faultInjection"
     ],
     "backends": {
@@ -39,7 +39,7 @@
         "azureLive": {
             "applicability": "notApplicable",
             "fidelity": "none",
-            "reason": "The scenario intentionally injects a request-timeout response."
+            "reason": "The scenario intentionally injects a partition-topology response."
         }
     }
 }

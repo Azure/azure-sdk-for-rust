@@ -52,6 +52,7 @@ const SCENARIOS: &[&str] = &[
     include_str!("../../../e2e_tests/scenarios/resilience/throttling-retry.json"),
     include_str!("../../../e2e_tests/scenarios/resilience/deadline.json"),
     include_str!("../../../e2e_tests/scenarios/resilience/hedging.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/partition-topology-retry.json"),
     include_str!("../../../e2e_tests/scenarios/resilience/request-timeout-retry.json"),
     include_str!("../../../e2e_tests/scenarios/resilience/service-retry.json"),
     include_str!("../../../e2e_tests/scenarios/resilience/transport-retry.json"),
