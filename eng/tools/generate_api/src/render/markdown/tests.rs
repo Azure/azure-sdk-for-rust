@@ -156,12 +156,12 @@ fn maps_only_declaration_lines_after_removing_docs() {
         mappings,
         vec![
             GeneratedMapping {
-                generated_line: 7,
+                generated_line: 9,
                 generated_column: 0,
                 original: location("src/lib.rs", 10, 0),
             },
             GeneratedMapping {
-                generated_line: 8,
+                generated_line: 10,
                 generated_column: 4,
                 original: location("src/lib.rs", 12, 4),
             },
@@ -199,6 +199,8 @@ fn renders_root_inner_attrs_and_child_module_outer_attrs() {
 
     let rendered = render(&model);
 
+    assert!(rendered.contains("#![crate_name = \"demo\"]"));
+    assert!(rendered.contains("#![crate_type = \"lib\"]"));
     assert!(rendered.contains("#![warn(missing_docs)]"));
     assert!(rendered.contains("#[deny(unsafe_code)]\npub mod inner {"));
     assert!(!rendered.contains("#![deny(unsafe_code)]\npub mod inner {"));
@@ -245,7 +247,7 @@ fn marks_doc_comments_and_omits_them_from_markdown() {
     );
     assert_eq!(
         render_from_lines(&lines),
-        "# demo\n\n## Features\n\n- `default`\n\n```rust\npub struct Foo;\n```\n"
+        "# demo\n\n## Features\n\n- `default`\n\n```rust\n#![crate_name = \"demo\"]\n#![crate_type = \"lib\"]\npub struct Foo;\n```\n"
     );
 }
 
@@ -259,6 +261,7 @@ fn renders_package_metadata_and_features_before_api() {
             description: Some("Manage secrets.\n".to_string()),
             edition: Some("2021".to_string()),
             rust_version: Some("1.88".to_string()),
+            crate_type: "lib".to_string(),
             features: BTreeMap::from([
                 ("alpha".to_string(), vec!["dep:alpha".to_string()]),
                 (
@@ -299,6 +302,8 @@ fn renders_package_metadata_and_features_before_api() {
          - `test`\n\
          \n\
          ```rust\n\
+         #![crate_name = \"azure_security_keyvault_secrets\"]\n\
+         #![crate_type = \"lib\"]\n\
          pub struct SecretClient;\n\
          ```\n"
     );
@@ -342,6 +347,8 @@ fn preserves_multiline_description_paragraphs() {
          - `default`\n\
          \n\
          ```rust\n\
+         #![crate_name = \"demo\"]\n\
+         #![crate_type = \"lib\"]\n\
          ```\n"
     );
 }
@@ -365,7 +372,7 @@ fn omits_missing_package_metadata() {
 
     assert_eq!(
         render(&model),
-        "# demo\n\n## Features\n\n- `default`\n\n```rust\n```\n"
+        "# demo\n\n## Features\n\n- `default`\n\n```rust\n#![crate_name = \"demo\"]\n#![crate_type = \"lib\"]\n```\n"
     );
 }
 
@@ -381,6 +388,7 @@ fn comments_patch_accounts_for_package_metadata_lines() {
             description: Some("Multi-line\ncomment\n".to_string()),
             edition: Some("2021".to_string()),
             rust_version: Some("1.88".to_string()),
+            crate_type: "lib".to_string(),
             features: BTreeMap::from([("default".to_string(), vec!["dep:foo".to_string()])]),
         },
         root_module: ApiModule {
@@ -409,10 +417,10 @@ fn comments_patch_accounts_for_package_metadata_lines() {
         "  comment\n",
     )));
     assert!(patch.contains(concat!(
-        "@@ -16,1 +16,3 @@\n",
+        "@@ -16,2 +16,3 @@\n",
         "+//! Demo docs.\n",
-        "+/// Does foo.\n",
-        " pub struct Foo;\n",
+        " #![crate_name = \"demo\"]\n",
+        " #![crate_type = \"lib\"]\n",
     )));
     assert_eq!(
         diffy::apply(&api_without_docs, &parsed_patch).expect("patch should apply"),

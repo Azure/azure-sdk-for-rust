@@ -9,6 +9,8 @@
 - `default`
 
 ```rust
+#![crate_name = "azure_data_cosmos_macros"]
+#![crate_type = "proc-macro"]
 #![warn(missing_docs)]
 #[proc_macro_derive(CosmosOptions, attributes(options, option))]
 #[derive(CosmosOptions)] {

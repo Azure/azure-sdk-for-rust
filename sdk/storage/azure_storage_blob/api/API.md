@@ -12,6 +12,8 @@
 - `tokio`
 
 ```rust
+#![crate_name = "azure_storage_blob"]
+#![crate_type = "lib"]
 #![allow(dead_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 pub use azure_storage_blob::clients::*;
