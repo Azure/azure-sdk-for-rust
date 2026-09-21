@@ -316,6 +316,11 @@ hosted emulator and remains covered by the live AAD pipeline.
 
 Scope:
 
+- TODO: before adding PR4 topology profiles, validate each profile's
+  `client.routing` value against the routing strategy implemented by its test fixture so a profile
+  change cannot silently exercise a different routing mode. Scenarios that intentionally cover
+  multiple source-owned strategies, such as preferred-region plus account-order routing, must
+  declare that override explicitly instead of weakening validation globally;
 - runtime region add, remove, offline, online, and recovery;
 - write-region failover and failback;
 - deterministic partition migration simulation;
