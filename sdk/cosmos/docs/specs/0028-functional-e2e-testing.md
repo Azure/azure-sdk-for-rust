@@ -333,6 +333,12 @@ Scope:
   change cannot silently exercise a different routing mode. Scenarios that intentionally cover
   multiple source-owned strategies, such as preferred-region plus account-order routing, must
   declare that override explicitly instead of weakening validation globally;
+- TODO: generalize replication helpers before PR4 adds alternate region layouts or partition-key
+  values. `wait_for_item_replication` currently reads partition key `"A"` while excluding East US,
+  and current pause callers target West US. These are accepted PR3 constraints because every
+  applicable profile and caller has that shape. PR4 fixtures must instead derive the write region,
+  alternate read region, and partition key from the selected profile/scenario, or fail setup with
+  an explicit unsupported-topology error;
 - runtime region add, remove, offline, online, and recovery;
 - write-region failover and failback;
 - deterministic partition migration simulation;
@@ -362,6 +368,17 @@ Scope:
 - promotion of validated `azureLive` applicability from `supported` to
   `required`;
 - complete diagnostics and OpenTelemetry audit;
+- TODO: define the semantic boundary of every hosted-emulator `/health` counter before treating
+  the counters as a reporting contract: decoded request, completed emulator operation, or
+  successfully emitted host response. Then place related Gateway V1/Gateway V2 increments on the
+  chosen side of fallible conversion boundaries and add failure-path tests that pin the result.
+  PR3 intentionally keeps the current placement because generated Gateway V2 responses are
+  buffered and use validated headers, no reachable conversion failure or cross-counter equality
+  contract has been demonstrated, and moving counters now would choose semantics implicitly. The
+  current `defaultConsistencyRequests` name is also retained in PR3: it is used as the wire bucket
+  for requests carrying no non-default read-consistency-strategy signal, not as a semantic count of
+  Default reads. PR5 must decide whether to rename it to reflect that wire meaning or add separate
+  semantic read counters before exposing these values in reports;
 - generated pull-request and scheduled shard manifests;
 - JUnit and scenario/profile/backend coverage reports;
 - runtime measurement and shard calibration;
