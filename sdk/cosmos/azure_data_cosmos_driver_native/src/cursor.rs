@@ -560,13 +560,12 @@ fn submit_cursor(
             let unsupported = checkpoint
                 && result.as_ref().err().is_some_and(|err| {
                     matches!(
-                    err.status().sub_status(),
-                    Some(
-                        SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
-                            | SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
-                            | SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION
+                        err.status().sub_status(),
+                        Some(
+                            SubStatusCode::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+                                | SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION
+                        )
                     )
-                )
                 });
             if result.is_ok() || unsupported {
                 state.exhausted |= matches!(result, Ok(ResultData::End));

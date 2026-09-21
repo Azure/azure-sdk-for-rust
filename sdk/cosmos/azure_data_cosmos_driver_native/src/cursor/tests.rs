@@ -103,7 +103,7 @@ fn non_streaming_order_by_retains_all_rows_after_unsupported_checkpoint() {
             // SAFETY: checkpoint is a live completion.
             let status = unsafe { (*checkpoint).common.status };
             if status != COSMOS_STATUS_SUCCESS {
-                assert_eq!(status.0 & 0xffff, 20125);
+                assert_eq!(status.0 & 0xffff, 20124);
                 unsupported = true;
             }
             cosmos_cursor_completion_free(checkpoint);
@@ -291,7 +291,7 @@ fn populated_queries_page_checkpoint_and_wrapper_prefetch() {
         for query in [
             "SELECT * FROM c",
             "SELECT * FROM c ORDER BY c.rank",
-            "SELECT DISTINCT VALUE c.group FROM c",
+            "SELECT DISTINCT TOP 6 VALUE c.group FROM c",
         ] {
             let fixture = Fixture::new(2);
             let mut request = fixture.request();
@@ -627,7 +627,7 @@ fn binary_items_survive_cursor_release() {
 fn legacy_feeds_report_checkpoint_or_representation_errors() {
     for singleton in [false, true] {
         for (query, expected) in [
-            ("SELECT DISTINCT VALUE c.group FROM c", 20124),
+            ("SELECT DISTINCT TOP 6 VALUE c.group FROM c", 20124),
             (
                 "SELECT * FROM c ORDER BY c.rank",
                 CosmosErrorCode::CosmosErrorCodeRepresentationUnsupported

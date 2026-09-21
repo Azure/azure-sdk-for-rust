@@ -9,6 +9,8 @@
 - `default`
 
 ```rust
+#![crate_name = "azure_security_keyvault_test"]
+#![crate_type = "lib"]
 #[derive(Debug)]
 pub struct Retry(/* private fields */);
 impl Retry {

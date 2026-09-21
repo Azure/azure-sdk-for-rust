@@ -84,7 +84,7 @@ at the build output (`LD_LIBRARY_PATH=…`, `[DllImport]` resolver, etc.).
 Use `cosmos_cursor_*` for queries, read feeds, and change feed. The cursor retains
 the driver's plan between pages, including buffered queries that cannot produce
 a serialized continuation. See
-[the cursor specification](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0028-native-feed-cursor.md)
+[the cursor specification](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0029-native-feed-cursor.md)
 for the complete contract.
 
 Read feeds preserve the driver's existing scope limits: database/container and
@@ -292,10 +292,10 @@ below for the production-shape guidance.
 >
 > Query-plan selection is per operation through
 > `cosmos_operation_options_t.query_plan_mode`. Leave it
-> `COSMOS_QUERY_PLAN_MODE_UNSET` to inherit, or set
+> `COSMOS_QUERY_PLAN_MODE_UNSET` for the `LocalPreferred` default, or set
 > `COSMOS_QUERY_PLAN_MODE_LOCAL_PREFERRED` or
 > `COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY` for an individual query. The
-> environment override remains authoritative over this field.
+> setting is per-query only; no client/runtime or environment defaults apply.
 >
 > The v1 functions take `(driver, const cosmos_operation_request_t *request, queue,
 > user_data, out_pre_error)` and return a `cosmos_operation_handle_t *`.

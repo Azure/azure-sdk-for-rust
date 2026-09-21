@@ -13,9 +13,7 @@ use azure_data_cosmos_driver::{
         VirtualRegion,
     },
     models::{AccountReference, CosmosOperation, FeedRange, PartitionKeyDefinition},
-    options::{
-        DriverOptions, OperationOptions, OperationOptionsBuilder, PlanOptions, QueryPlanMode,
-    },
+    options::{DriverOptions, OperationOptions, PlanOptions, QueryPlanMode},
 };
 
 use super::{host_recorder::HostRecorder, GATEWAY_URL};
@@ -25,21 +23,10 @@ async fn setup() -> (
     Arc<HostRecorder>,
     Arc<CosmosDriver>,
 ) {
-    setup_with_query_plan_mode(QueryPlanMode::LocalPreferred).await
-}
-
-async fn setup_with_query_plan_mode(
-    mode: QueryPlanMode,
-) -> (
-    Arc<InMemoryEmulatorHttpClient>,
-    Arc<HostRecorder>,
-    Arc<CosmosDriver>,
-) {
-    setup_with_driver_options(mode, true).await
+    setup_with_driver_options(true).await
 }
 
 async fn setup_with_driver_options(
-    mode: QueryPlanMode,
     partition_key_range_cache_enabled: bool,
 ) -> (
     Arc<InMemoryEmulatorHttpClient>,
@@ -72,11 +59,6 @@ async fn setup_with_driver_options(
     let driver = runtime
         .create_driver(
             DriverOptions::builder(account)
-                .with_operation_options(
-                    OperationOptionsBuilder::new()
-                        .with_query_plan_mode(mode)
-                        .build(),
-                )
                 .with_partition_key_range_cache_enabled(partition_key_range_cache_enabled)
                 .build(),
         )
@@ -93,16 +75,14 @@ async fn per_request_gateway_only_mode_bypasses_local_query_planning() {
         .await
         .unwrap();
     recorder.clear();
-    let options = OperationOptionsBuilder::new()
-        .with_query_plan_mode(QueryPlanMode::GatewayOnly)
-        .build();
+    let options = PlanOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly);
 
     driver
         .plan_operation(
             query(&container, "SELECT * FROM c WHERE c.pk = 'a'"),
-            &options,
+            &OperationOptions::default(),
             None,
-            &PlanOptions::default(),
+            &options,
         )
         .await
         .unwrap();
@@ -111,22 +91,28 @@ async fn per_request_gateway_only_mode_bypasses_local_query_planning() {
 
 #[cfg(not(feature = "__internal_native_query_plan"))]
 #[tokio::test]
-async fn per_request_local_preferred_overrides_gateway_only_client_default() {
-    let (_emulator, recorder, driver) =
-        setup_with_query_plan_mode(QueryPlanMode::GatewayOnly).await;
+async fn per_plan_mode_does_not_leak_to_subsequent_queries() {
+    let (_emulator, recorder, driver) = setup().await;
     let container = driver
         .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
         .unwrap();
     recorder.clear();
-    let options = OperationOptionsBuilder::new()
-        .with_query_plan_mode(QueryPlanMode::LocalPreferred)
-        .build();
-
     driver
         .plan_operation(
             query(&container, "SELECT * FROM c WHERE c.pk = 'a'"),
-            &options,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly),
+        )
+        .await
+        .unwrap();
+    assert_eq!(recorder.query_plan_count(), 1);
+    recorder.clear();
+    driver
+        .plan_operation(
+            query(&container, "SELECT * FROM c WHERE c.pk = 'a'"),
+            &OperationOptions::default(),
             None,
             &PlanOptions::default(),
         )
@@ -228,9 +214,40 @@ async fn contradictory_query_short_circuits_all_query_io() {
 }
 
 #[tokio::test]
+async fn contradictory_buffered_query_is_exempt_from_zero_window() {
+    for topology_enabled in [false, true] {
+        let (_emulator, recorder, driver) = setup_with_driver_options(topology_enabled).await;
+        let container = driver
+            .resolve_container("testdb", "testcoll", OperationOptions::default())
+            .await
+            .unwrap();
+        recorder.clear();
+        let mut plan = driver
+            .plan_operation(
+                query(
+                    &container,
+                    "SELECT DISTINCT VALUE c.value FROM c WHERE c.pk = 'a' AND c.pk = 'b'",
+                ),
+                &OperationOptions::default(),
+                None,
+                &PlanOptions::default().with_max_buffered_query_window(0),
+            )
+            .await
+            .unwrap();
+        assert!(driver
+            .execute_plan(&mut plan, Some(container), OperationOptions::default())
+            .await
+            .unwrap()
+            .is_none());
+        assert_eq!(recorder.query_plan_count(), 0);
+        assert_eq!(recorder.routing_metadata_count(), 0);
+        assert_eq!(recorder.document_query_count(), 0);
+    }
+}
+
+#[tokio::test]
 async fn gateway_only_contradiction_without_partition_topology_still_fails() {
-    let (_emulator, recorder, driver) =
-        setup_with_driver_options(QueryPlanMode::GatewayOnly, false).await;
+    let (_emulator, recorder, driver) = setup_with_driver_options(false).await;
     let container = driver
         .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
@@ -245,7 +262,7 @@ async fn gateway_only_contradiction_without_partition_topology_still_fails() {
             ),
             &OperationOptions::default(),
             None,
-            &PlanOptions::default(),
+            &PlanOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly),
         )
         .await
         .err()
@@ -262,8 +279,7 @@ async fn gateway_only_contradiction_without_partition_topology_still_fails() {
 
 #[tokio::test]
 async fn contradictory_query_does_not_require_partition_topology() {
-    let (_emulator, recorder, driver) =
-        setup_with_driver_options(QueryPlanMode::LocalPreferred, false).await;
+    let (_emulator, recorder, driver) = setup_with_driver_options(false).await;
     let container = driver
         .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await
@@ -295,8 +311,7 @@ async fn contradictory_query_does_not_require_partition_topology() {
 
 #[tokio::test]
 async fn nonempty_query_without_partition_topology_fails_before_gateway() {
-    let (_emulator, recorder, driver) =
-        setup_with_driver_options(QueryPlanMode::LocalPreferred, false).await;
+    let (_emulator, recorder, driver) = setup_with_driver_options(false).await;
     let container = driver
         .resolve_container("testdb", "testcoll", OperationOptions::default())
         .await

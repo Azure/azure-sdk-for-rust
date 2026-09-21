@@ -13,7 +13,7 @@ completion lifecycle](#2-the-submission-and-completion-lifecycle).
 ## 0. What "C wrapper" means (there is no C code)
 
 > **Cursor extension:**
-> `sdk/cosmos/docs/specs/0028-native-feed-cursor.md` reuses this completion-queue
+> `sdk/cosmos/docs/specs/0029-native-feed-cursor.md` reuses this completion-queue
 > model and defines additive versioned cursor results, delivery reservations,
 > and retained-plan ownership. It does not rename the legacy APIs shown
 > here. Its overlap matrix distinguishes the proposed cursor contract from the

@@ -9,6 +9,8 @@
 - `default`
 
 ```rust
+#![crate_name = "azure_storage_common"]
+#![crate_type = "lib"]
 pub mod models {
     #[derive(Clone, Debug, Default, serde::Deserialize, serde::Serialize)]
     #[serde(rename_all = "PascalCase")]

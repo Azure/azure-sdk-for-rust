@@ -10,6 +10,8 @@
   - `azure_core/default`
 
 ```rust
+#![crate_name = "azure_security_keyvault_certificates"]
+#![crate_type = "lib"]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 pub use azure_security_keyvault_certificates::generated::clients::certificate_client::CertificateClient;
 pub use azure_security_keyvault_certificates::clients::CertificateClientOptions;

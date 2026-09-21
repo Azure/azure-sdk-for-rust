@@ -9,6 +9,8 @@
 - `test-abi`
 
 ```rust
+#![crate_name = "azurecosmosdriver"]
+#![crate_type = "cdylib"]
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 #[macro_export]
 macro_rules! c_str {

@@ -29,6 +29,9 @@ covers the host security boundary.
 - A **management REST API** for emulator-only control-plane actions with no
   Cosmos gateway equivalent: partition split/merge (as long-running
   operations), per-partition-failover toggling, and replication pause/resume.
+- A versioned **capability document** at `GET /capabilities` so external SDK
+  runners can fail closed when a required protocol or management action is not
+  available.
 
 ## Quick start
 

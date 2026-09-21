@@ -140,7 +140,7 @@ static int query_scenario(const char *query, int page_size, int distinct, int sc
         REQUIRE(checkpoint, "checkpoint delivered");
         if (checkpoint->common.status) {
             unsigned sub = COSMOS_STATUS_SUB(checkpoint->common.status);
-            ASSERT(sub == (scripted ? 20125u : 20124u), "original unsupported checkpoint status");
+            ASSERT(sub == 20124u, "buffered query checkpoint unsupported");
             unsupported = 1;
         }
         cosmos_cursor_completion_free(checkpoint); checkpoint = NULL;
@@ -180,7 +180,7 @@ static int test_populated_queries(void) {
     for (int size = 1; size <= 2; ++size) {
         if (query_scenario("SELECT * FROM c", size, 0, 0)) return TEST_FAIL;
         if (query_scenario("SELECT * FROM c ORDER BY c.rank", size, 0, 0)) return TEST_FAIL;
-        if (query_scenario("SELECT DISTINCT VALUE c.group FROM c", size, 1, 0)) return TEST_FAIL;
+        if (query_scenario("SELECT DISTINCT TOP 6 VALUE c.group FROM c", size, 1, 0)) return TEST_FAIL;
         if (query_scenario("SELECT TOP 6 * FROM c ORDER BY c.rank", size, 0, 1)) return TEST_FAIL;
     }
     return TEST_PASS;

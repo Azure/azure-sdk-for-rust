@@ -501,10 +501,9 @@ impl SubStatusCode {
             20121 => Some("ClientMixedNameRidAddressing"),
             20122 => Some("ClientQueryRewriteBodyInvalid"),
             20123 => Some("ClientDistinctValueTooDeeplyNested"),
-            20124 => Some("ClientDistinctContinuationUnsupported"),
-            20125 => Some("ClientNonStreamingOrderByContinuationUnsupported"),
-            20126 => Some("ClientNonStreamingOrderByRequiresFiniteWindow"),
-            20127 => Some("ClientNonStreamingOrderByWindowTooLarge"),
+            20124 => Some("ClientBufferedQueryContinuationUnsupported"),
+            20125 => Some("ClientBufferedQueryRequiresFiniteWindow"),
+            20126 => Some("ClientNonStreamingOrderByWindowTooLarge"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1399,26 +1398,29 @@ impl SubStatusCode {
     /// this indicates a hand-crafted or corrupt payload.
     pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: SubStatusCode = SubStatusCode(20123);
 
-    /// A continuation token was requested for an unordered `DISTINCT` query
-    /// (20124). Resuming would require carrying the entire set of seen values,
-    /// so the token is refused rather than silently re-emitting duplicates.
-    /// Adding a matching `ORDER BY` makes the query resumable.
-    pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode = SubStatusCode(20124);
+    /// A cross-partition client-buffered query cannot use continuation tokens
+    /// (20124); its buffered state must be drained in-process.
+    pub const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: SubStatusCode = SubStatusCode(20124);
 
-    /// A continuation token was supplied or requested for a non-streaming
-    /// `ORDER BY` query (20125). Resuming would require serializing the buffered
-    /// result set, so the operation must be drained in-process.
+    /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`].
+    pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode =
+        Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
+
+    /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`].
     pub const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: SubStatusCode =
-        SubStatusCode(20125);
+        Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
 
-    /// A non-streaming `ORDER BY` query did not contain a finite `TOP` or
-    /// `OFFSET`/`LIMIT` window (20126).
+    /// A buffered query requires finite global TOP/LIMIT and OFFSET plus take
+    /// within its configured maximum (20125).
+    pub const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: SubStatusCode = SubStatusCode(20125);
+
+    /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW`].
     pub const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: SubStatusCode =
-        SubStatusCode(20126);
+        Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
 
-    /// A non-streaming `ORDER BY` query's candidate window cannot be represented
-    /// by the current process (20127).
-    pub const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: SubStatusCode = SubStatusCode(20127);
+    /// A non-streaming `ORDER BY` query's candidate storage cannot be represented
+    /// or allocated by the current process (20126).
+    pub const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: SubStatusCode = SubStatusCode(20126);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
 
@@ -2395,28 +2397,34 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED),
     };
 
-    /// 400 / 20124 — a continuation token was requested for an unordered
-    /// `DISTINCT` query, which cannot be resumed safely.
-    pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = CosmosStatus {
+    /// 400 / 20124 — continuation tokens are unsupported by the cross-partition
+    /// client-buffering stage.
+    pub const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED),
+        sub_status: Some(SubStatusCode::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED),
     };
 
-    /// 400 / 20125 — continuation tokens are not supported by non-streaming
-    /// `ORDER BY`.
-    pub const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus = CosmosStatus {
+    /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`].
+    pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus =
+        Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
+
+    /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`].
+    pub const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus =
+        Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
+
+    /// 400 / 20125 — a buffered query requires finite global TOP/LIMIT and
+    /// OFFSET plus take within its configured maximum.
+    pub const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED),
+        sub_status: Some(SubStatusCode::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW),
     };
 
-    /// 400 / 20126 — non-streaming `ORDER BY` requires a finite result window.
-    pub const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW),
-    };
+    /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW`].
+    pub const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus =
+        Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
 
-    /// 400 / 20127 — the non-streaming `ORDER BY` candidate window cannot be
-    /// represented by the current process.
+    /// 400 / 20126 — the non-streaming `ORDER BY` candidate window cannot be
+    /// represented or allocated by the current process.
     pub const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE),
@@ -2779,6 +2787,79 @@ mod tests {
         assert_eq!(
             CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING.name(),
             Some("ClientMixedNameRidAddressing")
+        );
+    }
+
+    #[test]
+    fn buffered_query_status_codes_and_names() {
+        for (code, expected, name) in [
+            (
+                20124,
+                CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
+                "ClientBufferedQueryContinuationUnsupported",
+            ),
+            (
+                20125,
+                CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW,
+                "ClientBufferedQueryRequiresFiniteWindow",
+            ),
+            (
+                20126,
+                CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE,
+                "ClientNonStreamingOrderByWindowTooLarge",
+            ),
+        ] {
+            let status = CosmosStatus::new(StatusCode::BadRequest).with_sub_status(code);
+            assert_eq!(status, expected);
+            assert_eq!(status.name(), Some(name));
+        }
+        assert_eq!(
+            CosmosStatus::new(StatusCode::BadRequest)
+                .with_sub_status(20127)
+                .name(),
+            None
+        );
+    }
+
+    #[test]
+    fn buffered_query_continuation_aliases() {
+        let status = CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
+        assert_eq!(
+            status,
+            CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
+        );
+        assert_eq!(
+            status,
+            CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
+        );
+        assert_eq!(
+            status.sub_status(),
+            Some(SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED)
+        );
+        assert_eq!(
+            status.sub_status(),
+            Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED)
+        );
+    }
+
+    #[test]
+    fn buffered_query_admission_aliases() {
+        let status = CosmosStatus::new(StatusCode::BadRequest).with_sub_status(20125);
+        assert_eq!(
+            status,
+            CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+        );
+        assert_eq!(
+            status,
+            CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW
+        );
+        assert_eq!(
+            status.sub_status(),
+            Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW)
+        );
+        assert_eq!(
+            status.name(),
+            Some("ClientBufferedQueryRequiresFiniteWindow")
         );
     }
 
