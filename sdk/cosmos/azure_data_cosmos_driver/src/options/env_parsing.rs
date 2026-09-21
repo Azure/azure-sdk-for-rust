@@ -333,8 +333,8 @@ pub(super) fn resolve_optional_duration_ms(
 /// tests racing in parallel corrupt each other's view of the environment. This
 /// module provides that single lock plus a scoping helper, so the partition-
 /// failover and driver-options test modules can validate that the production
-/// `build()` path (which reads `std::env::var`) honors the `AZURE_COSMOS_PPCB_*`
-/// variables.
+/// `build()` path (which reads `std::env::var`) honors partition topology
+/// and PPCB environment variables.
 #[cfg(test)]
 pub(crate) mod test_env {
     use std::sync::Mutex;
@@ -343,11 +343,11 @@ pub(crate) mod test_env {
     /// variables through [`with_scoped_env`].
     static ENV_TEST_LOCK: Mutex<()> = Mutex::new(());
 
-    /// Every `AZURE_COSMOS_PPCB_*` environment variable read by
+    /// Every partition topology or `AZURE_COSMOS_PPCB_*` environment variable read by
     /// [`PartitionFailoverOptionsBuilder::build`](crate::options::PartitionFailoverOptionsBuilder::build).
     /// Tests clear all of these before applying their own subset so a value left
     /// in the ambient / CI environment cannot leak into an assertion.
-    pub(crate) const PPCB_ENV_VARS: &[&str] = &[
+    pub(crate) const PARTITION_FAILOVER_ENV_VARS: &[&str] = &[
         "AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE",
         "AZURE_COSMOS_PPCB_ENABLED",
         "AZURE_COSMOS_PPCB_ENABLED_OVERRIDE",

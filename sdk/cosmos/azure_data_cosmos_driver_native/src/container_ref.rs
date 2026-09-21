@@ -94,8 +94,11 @@ pub extern "C" fn cosmos_container_ref_free(container: *mut ContainerRefHandle) 
 /// [`azure_data_cosmos_driver::driver::CosmosDriver::resolve_container_by_name`]
 /// through the wrapper's Tokio runtime via `block_on`.
 ///
-/// Touches the network on cache miss (reads container metadata from
-/// the gateway). On cache hit returns immediately without I/O.
+/// May read container metadata and partition topology from the gateway. In the
+/// default eager topology mode, a container-metadata cache hit can still issue
+/// `/pkranges` requests because topology is cached per driver. Resolution
+/// returns without I/O only when every required cache entry is warm; lazy
+/// topology mode skips the topology load during resolution.
 ///
 /// # Parameters
 ///

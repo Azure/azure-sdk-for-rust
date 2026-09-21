@@ -16,8 +16,11 @@
   respect across features.
 - Keep feature-specific choices, detailed mechanics, and evolving design
   rationale in the relevant spec, even when the choice is important.
-- Treat accepted ADRs as immutable. Add a new ADR that explicitly supersedes an
-  old decision instead of rewriting the old ADR.
+- Treat the decision text of accepted ADRs as immutable. Add a new ADR that
+  explicitly supersedes an old decision instead of rewriting the old ADR.
+  Update the old ADR's `Status` field with the superseding ADR number and update
+  the README index so readers can discover the current decision without reading
+  every later ADR.
 - The 2026 core-ADR rewrite was a one-time, human-approved cleanup of the
   pre-existing feature ADRs. It does not create a general exception to ADR
   immutability.

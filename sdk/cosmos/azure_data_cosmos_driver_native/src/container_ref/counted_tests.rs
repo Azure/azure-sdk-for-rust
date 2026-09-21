@@ -49,6 +49,7 @@ use url::Url;
 const DATABASE: &str = "données";
 const CONTAINER: &str = "容器";
 const CONTAINER_PATH: &str = "/dbs/donn%C3%A9es/colls/%E5%AE%B9%E5%99%A8";
+const PARTITION_RANGES_PATH: &str = "/dbs/donn%C3%A9es/colls/%E5%AE%B9%E5%99%A8/pkranges";
 
 #[derive(Debug, Default)]
 struct MetadataTransport {
@@ -59,33 +60,62 @@ struct MetadataTransport {
 impl TransportClient for MetadataTransport {
     async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
         let path = request.url.path();
-        self.paths.lock().unwrap().push(path.to_owned());
-        let body = match path {
-            "/" => serde_json::json!({
-                "_self": "",
-                "id": "counted-strings",
-                "_rid": "counted-strings",
-                "writableLocations": [{
-                    "name": "West US 2",
-                    "databaseAccountEndpoint": "https://counted-strings.invalid/"
-                }],
-                "readableLocations": [{
-                    "name": "West US 2",
-                    "databaseAccountEndpoint": "https://counted-strings.invalid/"
-                }],
-                "enableMultipleWriteLocations": false,
-                "userConsistencyPolicy": {"defaultConsistencyLevel": "Session"}
-            }),
-            CONTAINER_PATH => serde_json::json!({
-                "id": CONTAINER,
-                "_rid": "AQIDBAUGBwg=",
-                "partitionKey": {"paths": ["/pk"], "kind": "Hash", "version": 1}
-            }),
+        let request_number = {
+            let mut paths = self.paths.lock().unwrap();
+            paths.push(path.to_owned());
+            paths
+                .iter()
+                .filter(|recorded| recorded.as_str() == path)
+                .count()
+        };
+        let mut headers = Headers::new();
+        let (status, body) = match path {
+            "/" => (
+                200,
+                serde_json::json!({
+                    "_self": "",
+                    "id": "counted-strings",
+                    "_rid": "counted-strings",
+                    "writableLocations": [{
+                        "name": "West US 2",
+                        "databaseAccountEndpoint": "https://counted-strings.invalid/"
+                    }],
+                    "readableLocations": [{
+                        "name": "West US 2",
+                        "databaseAccountEndpoint": "https://counted-strings.invalid/"
+                    }],
+                    "enableMultipleWriteLocations": false,
+                    "userConsistencyPolicy": {"defaultConsistencyLevel": "Session"}
+                }),
+            ),
+            CONTAINER_PATH => (
+                200,
+                serde_json::json!({
+                    "id": CONTAINER,
+                    "_rid": "AQIDBAUGBwg=",
+                    "partitionKey": {"paths": ["/pk"], "kind": "Hash", "version": 1}
+                }),
+            ),
+            PARTITION_RANGES_PATH if request_number == 1 => {
+                headers.insert("etag", "counted-strings-topology");
+                (
+                    200,
+                    serde_json::json!({
+                        "PartitionKeyRanges": [{
+                            "id": "0",
+                            "_rid": "range-0",
+                            "minInclusive": "",
+                            "maxExclusive": "FF"
+                        }]
+                    }),
+                )
+            }
+            PARTITION_RANGES_PATH => (304, serde_json::Value::Null),
             _ => panic!("unexpected downstream request: {path}"),
         };
         Ok(HttpResponse {
-            status: 200,
-            headers: Headers::new(),
+            status,
+            headers,
             body: serde_json::to_vec(&body).unwrap(),
         })
     }
@@ -281,7 +311,11 @@ fn public_async_resolution_owns_identifiers_before_scheduling() {
     assert_eq!(completion.user_data, 42);
     assert_eq!(
         *fixture.transport.paths.lock().unwrap(),
-        vec![CONTAINER_PATH.to_owned()]
+        vec![
+            CONTAINER_PATH.to_owned(),
+            PARTITION_RANGES_PATH.to_owned(),
+            PARTITION_RANGES_PATH.to_owned(),
+        ]
     );
     assert_eq!(
         cosmos_operation_handle_state(operation),

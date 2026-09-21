@@ -1010,13 +1010,13 @@ mod env_matrix_tests {
 #[cfg(test)]
 mod real_env_tests {
     use super::*;
-    use crate::options::env_parsing::test_env::{with_scoped_env, PPCB_ENV_VARS};
+    use crate::options::env_parsing::test_env::{with_scoped_env, PARTITION_FAILOVER_ENV_VARS};
 
     #[test]
     fn real_env_enable_false_disables_ppcb() {
         // A real `AZURE_COSMOS_PPCB_ENABLED=false` flows through `build()`.
         with_scoped_env(
-            PPCB_ENV_VARS,
+            PARTITION_FAILOVER_ENV_VARS,
             &[("AZURE_COSMOS_PPCB_ENABLED", "false")],
             || {
                 let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
@@ -1028,7 +1028,7 @@ mod real_env_tests {
     #[test]
     fn real_env_empty_uses_default_enabled() {
         // With no PPCB variables set, `build()` yields the documented defaults.
-        with_scoped_env(PPCB_ENV_VARS, &[], || {
+        with_scoped_env(PARTITION_FAILOVER_ENV_VARS, &[], || {
             let o = PartitionFailoverOptionsBuilder::new().build().unwrap();
             assert!(o.circuit_breaker_enabled());
             assert_eq!(o.circuit_breaker_enabled_override(), None);

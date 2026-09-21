@@ -132,20 +132,22 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Configures the driver-level partition-failover / PPCB tuning for this
-    /// client.
+    /// Configures driver-level partition topology loading, partition failover,
+    /// and PPCB tuning for this client.
     ///
     /// These knobs are read once when the client's underlying driver is
     /// constructed (in [`build`](Self::build)) and govern the per-partition
-    /// circuit breaker and partition-level failover for the lifetime of the
-    /// client. They are independent of per-request [`OperationOptions`].
+    /// partition topology cache, circuit breaker, and partition-level failover
+    /// behavior for the lifetime of the client. They are independent of
+    /// per-request [`OperationOptions`].
     ///
     /// When this setter is **not** called, the driver resolves these options
-    /// from the `AZURE_COSMOS_PPCB_*` environment variables — including the
-    /// `AZURE_COSMOS_PPCB_ENABLED` master switch and the
+    /// from `AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE` and the
+    /// `AZURE_COSMOS_PPCB_*` environment variables — including the
+    /// `AZURE_COSMOS_PPCB_ENABLED` master switch and
     /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch — falling back to
-    /// compile-time defaults for anything unset. Passing an explicit value
-    /// here takes precedence over those variables (except the
+    /// compile-time defaults for anything unset. Passing an explicit value here
+    /// takes precedence over those variables (except the
     /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch, which is read from the
     /// environment when you build the [`PartitionFailoverOptions`] and remains
     /// authoritative). To disable PPCB regardless of the account property, set

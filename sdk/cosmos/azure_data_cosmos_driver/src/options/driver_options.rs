@@ -321,9 +321,10 @@ impl DriverOptionsBuilder {
     /// Builds the [`DriverOptions`].
     ///
     /// When [`with_partition_failover_options`](Self::with_partition_failover_options)
-    /// was not called, the partition-failover / PPCB options are resolved from
-    /// the `AZURE_COSMOS_PPCB_*` environment variables. Resolution is fail-soft:
-    /// an out-of-bounds value is logged and the group falls back to
+    /// was not called, partition topology loading and partition-failover
+    /// options are resolved from `AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE`
+    /// and the `AZURE_COSMOS_PPCB_*` environment variables. Resolution is
+    /// fail-soft: an invalid value is logged and the group falls back to
     /// [`PartitionFailoverOptions::default`], so `build` stays infallible.
     pub fn build(self) -> DriverOptions {
         self.build_from_env(&|k| std::env::var(k).ok())
@@ -348,7 +349,8 @@ impl DriverOptionsBuilder {
                     tracing::warn!(
                         error = %e,
                         "failed to resolve PartitionFailoverOptions from the environment \
-                         (AZURE_COSMOS_PPCB_*); falling back to defaults",
+                         (AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE / \
+                         AZURE_COSMOS_PPCB_*); falling back to defaults",
                     );
                     PartitionFailoverOptions::default()
                 }),
@@ -618,7 +620,7 @@ mod tests {
 #[cfg(test)]
 mod real_env_tests {
     use super::*;
-    use crate::options::env_parsing::test_env::{with_scoped_env, PPCB_ENV_VARS};
+    use crate::options::env_parsing::test_env::{with_scoped_env, PARTITION_FAILOVER_ENV_VARS};
     use url::Url;
 
     fn test_account() -> AccountReference {
@@ -633,7 +635,7 @@ mod real_env_tests {
         // The exact customer scenario, end to end: env disables PPCB and the
         // caller never supplies options, so the driver must observe `false`.
         with_scoped_env(
-            PPCB_ENV_VARS,
+            PARTITION_FAILOVER_ENV_VARS,
             &[("AZURE_COSMOS_PPCB_ENABLED", "false")],
             || {
                 let options = DriverOptionsBuilder::new(test_account()).build();
@@ -646,7 +648,7 @@ mod real_env_tests {
 
     #[test]
     fn real_env_omitted_options_default_enabled_when_unset() {
-        with_scoped_env(PPCB_ENV_VARS, &[], || {
+        with_scoped_env(PARTITION_FAILOVER_ENV_VARS, &[], || {
             let options = DriverOptionsBuilder::new(test_account()).build();
             assert!(options
                 .partition_failover_options()
