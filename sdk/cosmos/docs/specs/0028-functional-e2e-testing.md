@@ -300,6 +300,13 @@ Scope:
 PR3 keeps fault predicates and operation-specific configuration in source code.
 Only reusable environment setup belongs in profile JSON.
 
+The hosted deadline scenario intentionally retains its one-second deadline,
+1.5-second injected delay, and two-second completion ceiling. The typed
+`CLIENT_OPERATION_TIMEOUT`, applied-fault count, and retained diagnostics are the primary
+contract; the wall-clock bounds are a practical smoke-test check rather than a precise scheduler
+guarantee. Wider delay/ceiling separation may be added as optional hardening, but is not required
+for PR3.
+
 The `configurationResilience` profile provides a fixed two-region Session
 account with deterministic replication delay. Source-native Rust scenarios own
 ordered backup fallback, preferred-region and account-order routing, binary

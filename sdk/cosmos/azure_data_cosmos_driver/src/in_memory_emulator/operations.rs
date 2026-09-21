@@ -39,6 +39,7 @@ use super::system_properties::{
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
 use crate::models::PatchInstructions;
 use crate::models::{PartitionKeyDefinition, MAX_SERVER_SIDE_PATCH_OPERATIONS};
+use crate::options::ReadConsistencyStrategy;
 use crate::query::ast::{
     SqlCollection, SqlCollectionExpression, SqlQuery, SqlScalarExpression, SqlSelectSpec,
 };
@@ -60,6 +61,19 @@ static DTX_RESOURCE_TYPE: HeaderName =
 /// Sub-status paired with `410 Gone` when a physical partition is locked because
 /// a split or merge is in progress.
 const PARTITION_SPLIT_OR_MERGE_SUBSTATUS: u16 = 1007;
+
+fn session_consistency_active(
+    strategy: Option<ReadConsistencyStrategy>,
+    account_default_is_session: bool,
+) -> bool {
+    match strategy.unwrap_or(ReadConsistencyStrategy::Default) {
+        ReadConsistencyStrategy::Session => true,
+        ReadConsistencyStrategy::Default => account_default_is_session,
+        ReadConsistencyStrategy::Eventual
+        | ReadConsistencyStrategy::LatestCommitted
+        | ReadConsistencyStrategy::GlobalStrong => false,
+    }
+}
 
 /// HTTP status a prepared-then-rolled-back write operation reports in an aborted
 /// distributed transaction, paired with sub-status 5415 (DtcOperationRolledBack).
@@ -3379,17 +3393,10 @@ fn collect_item_documents(
         .build());
     }
 
-    let session_consistency_active = match parsed.read_consistency_strategy {
-        Some(crate::options::ReadConsistencyStrategy::Session) => true,
-        Some(crate::options::ReadConsistencyStrategy::Default) | None => {
-            store.config().consistency().is_session()
-        }
-        Some(
-            crate::options::ReadConsistencyStrategy::Eventual
-            | crate::options::ReadConsistencyStrategy::LatestCommitted
-            | crate::options::ReadConsistencyStrategy::GlobalStrong,
-        ) => false,
-    };
+    let session_consistency_active = session_consistency_active(
+        parsed.read_consistency_strategy,
+        store.config().consistency().is_session(),
+    );
     // Parse valid tokens for response-token preservation on every consistency;
     // only malformed-token rejection and progress enforcement are Session-gated.
     let incoming_sessions = match parsed.session_token.as_deref() {
@@ -5119,17 +5126,10 @@ fn handle_read(
         // a token that the partition trivially satisfies and treat the
         // failure as transient. Echoing back what they asked for makes the
         // mismatch visible.
-        let session_consistency_active = match parsed.read_consistency_strategy {
-            Some(crate::options::ReadConsistencyStrategy::Session) => true,
-            Some(crate::options::ReadConsistencyStrategy::Default) | None => {
-                store.config().consistency().is_session()
-            }
-            Some(
-                crate::options::ReadConsistencyStrategy::Eventual
-                | crate::options::ReadConsistencyStrategy::LatestCommitted
-                | crate::options::ReadConsistencyStrategy::GlobalStrong,
-            ) => false,
-        };
+        let session_consistency_active = session_consistency_active(
+            parsed.read_consistency_strategy,
+            store.config().consistency().is_session(),
+        );
         if session_consistency_active {
             if let Some(session_header) = &parsed.session_token {
                 let tokens = match super::session::parse_composite_session_token(session_header) {
@@ -6533,6 +6533,26 @@ fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawRe
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn session_consistency_activation_matches_strategy_and_account_default() {
+        for strategy in [None, Some(ReadConsistencyStrategy::Default)] {
+            assert!(session_consistency_active(strategy, true));
+            assert!(!session_consistency_active(strategy, false));
+        }
+        assert!(session_consistency_active(
+            Some(ReadConsistencyStrategy::Session),
+            false
+        ));
+        for strategy in [
+            ReadConsistencyStrategy::Eventual,
+            ReadConsistencyStrategy::LatestCommitted,
+            ReadConsistencyStrategy::GlobalStrong,
+        ] {
+            assert!(!session_consistency_active(Some(strategy), true));
+            assert!(!session_consistency_active(Some(strategy), false));
+        }
+    }
 
     #[test]
     fn synthesize_rewrite_replaces_trailing_offset_limit() {
