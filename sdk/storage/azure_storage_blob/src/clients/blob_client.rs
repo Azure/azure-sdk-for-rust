@@ -4,7 +4,8 @@
 pub use crate::generated::clients::{BlobClient, BlobClientOptions};
 
 use crate::{
-    blob_layout::{fetch_layout, LayoutCache, LayoutEndpoint},
+    blob_layout::{layout_cache, CachedLayout, LayoutEndpoint},
+    cache::AutoRefreshingCache,
     generated::{
         clients::BlobClient as GeneratedBlobClient,
         models::{BlobClientDownloadInternalOptions, BlobClientGetLayoutOptions},
@@ -331,7 +332,7 @@ struct BlobClientDownloadBehavior<'a> {
     layout_endpoint: Option<String>,
     /// The caller-requested range, which `options.range` does not retain because it is rewritten for each partition.
     requested_range: Option<HttpRange>,
-    layout_cache: OnceLock<Option<LayoutCache>>,
+    layout_cache: OnceLock<AutoRefreshingCache<CachedLayout>>,
 }
 
 impl<'a> BlobClientDownloadBehavior<'a> {
@@ -357,16 +358,18 @@ impl<'a> BlobClientDownloadBehavior<'a> {
     ///
     /// A caller-supplied endpoint applies to every request, including the initial one,
     /// because it pins the whole call rather than following the blob's layout.
-    async fn resolve_endpoint(&self, range: Option<&Range<usize>>) -> Option<String> {
+    async fn resolve_endpoint(&self, range: Option<&Range<usize>>) -> Result<Option<String>> {
         if let Some(endpoint) = self.layout_endpoint.as_ref() {
-            return Some(endpoint.clone());
+            return Ok(Some(endpoint.clone()));
         }
-        if let (Some(Some(cache)), Some(range)) = (self.layout_cache.get(), range) {
-            if let Some(layout) = cache.current().await {
-                return layout.ideal_endpoint(range.start as i64).map(str::to_owned);
-            }
-        }
-        None
+        let (Some(cache), Some(range)) = (self.layout_cache.get(), range) else {
+            return Ok(None);
+        };
+        let cached = cache.get().await?;
+        Ok(cached
+            .layout()
+            .and_then(|layout| layout.ideal_endpoint(range.start as i64))
+            .map(str::to_owned))
     }
 
     fn layout_options(&self) -> BlobClientGetLayoutOptions<'static> {
@@ -397,7 +400,7 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
         etag_lock: Option<Etag>,
     ) -> Result<AsyncRawResponse> {
         let mut opt = self.options.clone();
-        if let Some(endpoint) = self.resolve_endpoint(range.as_ref()).await {
+        if let Some(endpoint) = self.resolve_endpoint(range.as_ref()).await? {
             opt.method_options.context = opt
                 .method_options
                 .context
@@ -425,24 +428,18 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
             return Ok(());
         }
         if initial_headers.get_optional_str(&"x-ms-download-hint".into()) != Some("layout") {
-            let _ = self.layout_cache.set(None);
             return Ok(());
         }
         let mut layout_options = self.layout_options();
         if layout_options.if_match.is_none() {
             layout_options.if_match = etag_lock.cloned();
         }
-        let context = self.options.method_options.context.clone();
-        let cache = fetch_layout(&self.client, &context, &layout_options)
-            .await?
-            .map(|prefetch| {
-                LayoutCache::new(
-                    Arc::clone(&self.client),
-                    layout_options,
-                    Arc::new(prefetch.layout),
-                )
-            });
-        let _ = self.layout_cache.set(cache);
+        let context = self.options.method_options.context.clone().into_owned();
+        let _ = self.layout_cache.set(layout_cache(
+            Arc::clone(&self.client),
+            context,
+            layout_options,
+        ));
         Ok(())
     }
 }

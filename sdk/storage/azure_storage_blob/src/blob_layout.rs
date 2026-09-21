@@ -8,31 +8,26 @@
 //! flat, ascending list of [`LayoutSegment`]s and resolves the serving endpoint
 //! for a given byte offset via binary search.
 
-use std::{
-    collections::HashMap,
-    sync::Arc,
-    time::{Duration, Instant},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
 use azure_core::{
-    async_runtime::get_async_runtime,
     error::ErrorKind,
     http::{
         policies::{Policy, PolicyResult},
-        Context, Etag, Request, StatusCode, Url,
+        Context, Request, StatusCode, Url,
     },
+    time::{Duration, OffsetDateTime},
     Error, Result,
 };
-use futures::{
-    future::{select, Either},
-    lock::Mutex,
-    StreamExt as _,
-};
+use futures::StreamExt as _;
 
-use crate::generated::{
-    clients::BlobClient,
-    models::{BlobClientGetLayoutOptions, BlobLayout},
+use crate::{
+    cache::{AcquireFn, AutoRefreshingCache, ExpiringValue},
+    generated::{
+        clients::BlobClient,
+        models::{BlobClientGetLayoutOptions, BlobLayout},
+    },
 };
 
 /// A contiguous byte range of a blob and the endpoint that serves it.
@@ -220,15 +215,6 @@ fn parse_endpoint_authority(endpoint: &str) -> Option<(String, Option<u16>)> {
     }
 }
 
-/// The outcome of prefetching a blob's layout for a locality-aware download.
-pub(crate) struct LayoutPrefetch {
-    /// The resolved, non-empty layout used to route range requests.
-    pub layout: Layout,
-    /// The ETag pinning the download to a single blob version: the caller-supplied
-    /// condition when present, otherwise the ETag from the first layout page.
-    pub etag: Option<Etag>,
-}
-
 /// Fetches a blob's layout for locality-aware routing, following pagination.
 ///
 /// Returns `Ok(Some(_))` when a non-empty layout is available; `Ok(None)` when the
@@ -237,15 +223,13 @@ pub(crate) struct LayoutPrefetch {
 /// error, or a response deserialization error).
 ///
 /// The generated pager owns request construction, response handling, and
-/// continuation. The first page's ETag pins the subsequent blob download when the
-/// caller did not already supply an `If-Match` condition.
+/// continuation. Conditions supplied in `options` pin every page to one blob version.
 pub(crate) async fn fetch_layout(
     client: &BlobClient,
     context: &Context<'_>,
     options: &BlobClientGetLayoutOptions<'_>,
-) -> Result<Option<LayoutPrefetch>> {
+) -> Result<Option<Layout>> {
     let mut layout = Layout::default();
-    let mut locked_etag = options.if_match.clone();
     let mut options = options.clone();
     options.method_options.context = context.clone().into_owned();
     let mut pages = client.get_layout(Some(options))?;
@@ -255,12 +239,6 @@ pub(crate) async fn fetch_layout(
             Ok(response) => response,
             Err(err) => return classify_layout_error(err),
         };
-        if locked_etag.is_none() {
-            locked_etag = response
-                .headers()
-                .get_optional_str(&"etag".into())
-                .map(Etag::from);
-        }
         let page = response.into_model()?;
         layout.extend_from_page(&page);
     }
@@ -268,10 +246,7 @@ pub(crate) async fn fetch_layout(
     if layout.is_empty() {
         return Ok(None);
     }
-    Ok(Some(LayoutPrefetch {
-        layout,
-        etag: locked_etag,
-    }))
+    Ok(Some(layout))
 }
 
 /// Maps a Get Blob Layout failure to a graceful fall-back (`Ok(None)`) or a hard
@@ -279,99 +254,84 @@ pub(crate) async fn fetch_layout(
 ///
 /// HTTP 400 (layout unsupported) and 5xx (transient) fall back to a normal
 /// download; every other failure (403/404/409/412 and transport errors) fails.
-fn classify_layout_error(err: Error) -> Result<Option<LayoutPrefetch>> {
+fn classify_layout_error(err: Error) -> Result<Option<Layout>> {
     match err.http_status() {
         Some(status) if status == StatusCode::BadRequest || status.is_server_error() => Ok(None),
         _ => Err(err),
     }
 }
 
-const LAYOUT_TTL: Duration = Duration::from_secs(300);
-const LAYOUT_REFRESH_BUFFER: Duration = Duration::from_secs(30);
-const LAYOUT_REFRESH_BACKOFF: Duration = Duration::from_secs(30);
-const LAYOUT_REFRESH_TIMEOUT: azure_core::time::Duration = azure_core::time::Duration::seconds(30);
+/// How long a fetched layout is treated as current. The service returns no expiry,
+/// so a long-running download re-asks on this interval.
+const LAYOUT_TTL: Duration = Duration::seconds(300);
+const LAYOUT_REFRESH_BUFFER: Duration = Duration::seconds(30);
+const LAYOUT_BACKGROUND_TIMEOUT: Duration = Duration::seconds(30);
 
-/// A blob's layout held for the lifetime of a download, refreshed in the background
-/// before it expires so range requests keep routing without blocking on a fetch.
-pub(crate) struct LayoutCache {
-    client: Arc<BlobClient>,
-    layout_options: BlobClientGetLayoutOptions<'static>,
-    state: Arc<Mutex<CachedLayout>>,
-}
-
-struct CachedLayout {
-    layout: Arc<Layout>,
-    refresh_at: Instant,
-    expires_at: Instant,
-    refreshing: bool,
-    retry_at: Option<Instant>,
+/// A blob's layout, or the established absence of one.
+///
+/// `layout` is `None` when the service reported no layout or the fetch failed
+/// softly; range requests then go to the client's configured endpoint. Both
+/// outcomes are cached for the same interval, so one download never re-asks a
+/// service that has already declined.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct CachedLayout {
+    layout: Option<Arc<Layout>>,
+    refresh_on: OffsetDateTime,
+    expires_on: OffsetDateTime,
 }
 
 impl CachedLayout {
-    fn new(layout: Arc<Layout>) -> Self {
-        let now = Instant::now();
+    fn new(layout: Option<Layout>, now: OffsetDateTime) -> Self {
+        let expires_on = now + LAYOUT_TTL;
         Self {
-            layout,
-            refresh_at: now + (LAYOUT_TTL - LAYOUT_REFRESH_BUFFER),
-            expires_at: now + LAYOUT_TTL,
-            refreshing: false,
-            retry_at: None,
+            layout: layout.map(Arc::new),
+            refresh_on: expires_on - LAYOUT_REFRESH_BUFFER,
+            expires_on,
+        }
+    }
+
+    /// The layout to route by, or `None` when routing does not apply.
+    pub fn layout(&self) -> Option<&Layout> {
+        self.layout.as_deref()
+    }
+}
+
+impl ExpiringValue for CachedLayout {
+    fn refresh_on(&self) -> OffsetDateTime {
+        self.refresh_on
+    }
+
+    fn expires_on(&self) -> OffsetDateTime {
+        self.expires_on
+    }
+
+    fn with_refresh_on(&self, refresh_on: OffsetDateTime) -> Self {
+        Self {
+            refresh_on,
+            ..self.clone()
         }
     }
 }
 
-impl LayoutCache {
-    pub fn new(
-        client: Arc<BlobClient>,
-        layout_options: BlobClientGetLayoutOptions<'static>,
-        layout: Arc<Layout>,
-    ) -> Self {
-        Self {
-            client,
-            layout_options,
-            state: Arc::new(Mutex::new(CachedLayout::new(layout))),
-        }
-    }
-
-    pub async fn current(&self) -> Option<Arc<Layout>> {
-        let mut state = self.state.lock().await;
-        let now = Instant::now();
-        let backing_off = matches!(state.retry_at, Some(at) if now < at);
-        if now >= state.refresh_at && !state.refreshing && !backing_off {
-            state.refreshing = true;
-            let _refresh = get_async_runtime().spawn(Box::pin(Self::refresh(
-                Arc::clone(&self.client),
-                self.layout_options.clone(),
-                self.state.clone(),
-            )));
-        }
-        // Routing is per-call, so a stale endpoint survives retries: drop an expired layout rather than risk an unrecoverable range request.
-        (now < state.expires_at).then(|| state.layout.clone())
-    }
-
-    async fn refresh(
-        client: Arc<BlobClient>,
-        layout_options: BlobClientGetLayoutOptions<'static>,
-        state: Arc<Mutex<CachedLayout>>,
-    ) {
-        let context = Context::new();
-        let fetch = Box::pin(fetch_layout(&client, &context, &layout_options));
-        // Bounded so a hung fetch cannot strand `refreshing` and leak this task for the lifetime of the process; a timeout is treated as any other failed refresh.
-        let result = match select(fetch, get_async_runtime().sleep(LAYOUT_REFRESH_TIMEOUT)).await {
-            Either::Left((result, _)) => result,
-            Either::Right(_) => Ok(None),
-        };
-        let mut state = state.lock().await;
-        match result {
-            Ok(Some(prefetch)) => {
-                *state = CachedLayout::new(Arc::new(prefetch.layout));
-            }
-            Ok(None) | Err(_) => {
-                state.refreshing = false;
-                state.retry_at = Some(Instant::now() + LAYOUT_REFRESH_BACKOFF);
-            }
-        }
-    }
+/// Builds the layout cache backing one download's range requests.
+///
+/// The layout is fetched on first use rather than up front, and refreshed in the
+/// background before it goes stale so range requests keep routing without blocking.
+pub(crate) fn layout_cache(
+    client: Arc<BlobClient>,
+    context: Context<'static>,
+    layout_options: BlobClientGetLayoutOptions<'static>,
+) -> AutoRefreshingCache<CachedLayout> {
+    let acquire: AcquireFn<CachedLayout> = Arc::new(move || {
+        let client = Arc::clone(&client);
+        let context = context.clone();
+        let layout_options = layout_options.clone();
+        Box::pin(async move {
+            let layout = fetch_layout(&client, &context, &layout_options).await?;
+            Ok(CachedLayout::new(layout, OffsetDateTime::now_utc()))
+        })
+    });
+    AutoRefreshingCache::new(acquire, LAYOUT_BACKGROUND_TIMEOUT)
 }
 
 #[cfg(test)]
@@ -383,7 +343,7 @@ mod tests {
     };
     use azure_core::{
         http::{
-            headers::Headers, AsyncRawResponse, ClientOptions, FixedRetryOptions, HttpClient,
+            headers::Headers, AsyncRawResponse, ClientOptions, Etag, FixedRetryOptions, HttpClient,
             Method, RetryOptions, Transport,
         },
         Bytes,
@@ -775,7 +735,7 @@ mod tests {
         }));
 
         let client = layout_client(mock);
-        let prefetch = fetch_layout(
+        let layout = fetch_layout(
             &client,
             &Context::new(),
             &BlobClientGetLayoutOptions::default(),
@@ -784,13 +744,12 @@ mod tests {
         .unwrap()
         .expect("routing should be available");
 
-        assert_eq!(prefetch.etag, Some(Etag::from("etag-1")));
         assert_eq!(
-            prefetch.layout.ideal_endpoint(0),
+            layout.ideal_endpoint(0),
             Some("ep0.blob.storage.azure.net:443")
         );
         assert_eq!(
-            prefetch.layout.ideal_endpoint(4_194_304),
+            layout.ideal_endpoint(4_194_304),
             Some("ep1.blob.storage.azure.net:443")
         );
     }
@@ -821,7 +780,7 @@ mod tests {
         }));
 
         let client = layout_client(mock);
-        let prefetch = fetch_layout(
+        let layout = fetch_layout(
             &client,
             &Context::new(),
             &BlobClientGetLayoutOptions {
@@ -833,13 +792,12 @@ mod tests {
         .unwrap()
         .expect("routing should be available");
 
-        assert_eq!(prefetch.etag, Some(Etag::from("etag-1")));
         assert_eq!(
-            prefetch.layout.ideal_endpoint(0),
+            layout.ideal_endpoint(0),
             Some("ep0.blob.storage.azure.net:443")
         );
         assert_eq!(
-            prefetch.layout.ideal_endpoint(4_194_304),
+            layout.ideal_endpoint(4_194_304),
             Some("ep1.blob.storage.azure.net:443")
         );
     }
@@ -971,77 +929,64 @@ mod tests {
         assert!(result.is_err());
     }
 
-    const LAYOUT_V1: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
-<BlobLayout>
-  <Endpoints>
-    <Endpoint Index="0" Value="epv1.blob.storage.azure.net:443" />
-  </Endpoints>
-  <Ranges>
-    <Range Start="0" End="8388607" EndpointIndex="0" />
-  </Ranges>
-</BlobLayout>"#;
+    #[test]
+    fn cached_layout_deadlines_derive_from_ttl() {
+        let now = OffsetDateTime::from_unix_timestamp(1_700_000_000).unwrap();
+        let cached = CachedLayout::new(Some(layout(vec![segment(0, 9, Some("a"))])), now);
 
-    const LAYOUT_V2: &[u8] = br#"<?xml version="1.0" encoding="utf-8"?>
-<BlobLayout>
-  <Endpoints>
-    <Endpoint Index="0" Value="epv2.blob.storage.azure.net:443" />
-  </Endpoints>
-  <Ranges>
-    <Range Start="0" End="8388607" EndpointIndex="0" />
-  </Ranges>
-</BlobLayout>"#;
+        assert_eq!(cached.expires_on(), now + LAYOUT_TTL);
+        assert_eq!(
+            cached.refresh_on(),
+            now + LAYOUT_TTL - LAYOUT_REFRESH_BUFFER
+        );
+        assert_eq!(cached.layout().unwrap().ideal_endpoint(0), Some("a"));
+    }
 
-    async fn seed_layout(
-        client: &BlobClient,
-        layout_options: &BlobClientGetLayoutOptions<'static>,
-    ) -> Layout {
-        fetch_layout(client, &Context::new(), layout_options)
-            .await
-            .unwrap()
-            .unwrap()
-            .layout
+    #[test]
+    fn cached_layout_without_routing_holds_no_layout() {
+        let now = OffsetDateTime::from_unix_timestamp(1_700_000_000).unwrap();
+        let cached = CachedLayout::new(None, now);
+
+        assert!(cached.layout().is_none());
+        // An absent layout is held for the same interval as a present one.
+        assert_eq!(cached.expires_on(), now + LAYOUT_TTL);
+    }
+
+    fn cached_layout_client(transport: Arc<dyn HttpClient>) -> AutoRefreshingCache<CachedLayout> {
+        layout_cache(
+            Arc::new(layout_client(transport)),
+            Context::new(),
+            BlobClientGetLayoutOptions::default(),
+        )
     }
 
     #[tokio::test]
-    async fn refresh_success_updates_layout_and_resets_deadlines() {
-        let calls = Arc::new(AtomicUsize::new(0));
-        let counter = calls.clone();
-        let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(move |_req| {
-            let count = counter.fetch_add(1, Ordering::SeqCst);
+    async fn layout_cache_serves_the_fetched_layout() {
+        let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(|_req| {
             async move {
-                let body = if count == 0 { LAYOUT_V1 } else { LAYOUT_V2 };
                 Ok(AsyncRawResponse::from_bytes(
                     StatusCode::Ok,
                     headers_with_etag("etag-1"),
-                    Bytes::from_static(body),
+                    Bytes::from_static(LAYOUT_SINGLE_PAGE),
                 ))
             }
             .boxed()
         }));
-        let client = Arc::new(layout_client(mock));
-        let layout_options = BlobClientGetLayoutOptions::default();
-        let state = Arc::new(Mutex::new(CachedLayout {
-            layout: Arc::new(seed_layout(&client, &layout_options).await),
-            refresh_at: Instant::now(),
-            expires_at: Instant::now(),
-            refreshing: true,
-            retry_at: None,
-        }));
 
-        LayoutCache::refresh(client, layout_options, state.clone()).await;
-        let state = state.lock().await;
+        let cached = cached_layout_client(mock).get().await.unwrap();
+        let layout = cached.layout().expect("routing should be available");
         assert_eq!(
-            state.layout.ideal_endpoint(0),
-            Some("epv2.blob.storage.azure.net:443")
+            layout.ideal_endpoint(0),
+            Some("ep0.blob.storage.azure.net:443")
         );
-        assert!(!state.refreshing);
-        assert!(state.retry_at.is_none());
-        assert!(state.expires_at > Instant::now());
-        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        assert_eq!(
+            layout.ideal_endpoint(4_194_304),
+            Some("ep1.blob.storage.azure.net:443")
+        );
     }
 
     #[tokio::test]
-    async fn current_routes_while_valid_and_suspends_once_expired() {
+    async fn layout_cache_reuses_a_fetched_layout() {
         let calls = Arc::new(AtomicUsize::new(0));
         let counter = calls.clone();
         let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(move |_req| {
@@ -1050,220 +995,54 @@ mod tests {
                 Ok(AsyncRawResponse::from_bytes(
                     StatusCode::Ok,
                     headers_with_etag("etag-1"),
-                    Bytes::from_static(LAYOUT_V1),
+                    Bytes::from_static(LAYOUT_SINGLE_PAGE),
                 ))
             }
             .boxed()
         }));
-        let client = Arc::new(layout_client(mock));
-        let layout_options = BlobClientGetLayoutOptions::default();
-        let cache = LayoutCache::new(
-            Arc::clone(&client),
-            layout_options.clone(),
-            Arc::new(seed_layout(&client, &layout_options).await),
-        );
 
-        assert_eq!(
-            cache.current().await.unwrap().ideal_endpoint(0),
-            Some("epv1.blob.storage.azure.net:443")
-        );
-        assert_eq!(calls.load(Ordering::SeqCst), 1);
-
-        {
-            let mut state = cache.state.lock().await;
-            let now = Instant::now();
-            state.refresh_at = now - Duration::from_secs(1);
-            state.expires_at = now - Duration::from_secs(1);
-            state.retry_at = Some(now + Duration::from_secs(300));
-        }
-        assert!(cache.current().await.is_none());
+        let cache = cached_layout_client(mock);
+        assert!(cache.get().await.unwrap().layout().is_some());
+        assert!(cache.get().await.unwrap().layout().is_some());
         assert_eq!(calls.load(Ordering::SeqCst), 1);
     }
 
     #[tokio::test]
-    async fn current_refreshes_in_background_without_blocking() {
+    async fn layout_cache_holds_the_absence_of_a_layout_after_a_soft_failure() {
         let calls = Arc::new(AtomicUsize::new(0));
         let counter = calls.clone();
         let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(move |_req| {
-            let count = counter.fetch_add(1, Ordering::SeqCst);
+            counter.fetch_add(1, Ordering::SeqCst);
             async move {
-                let body = if count == 0 { LAYOUT_V1 } else { LAYOUT_V2 };
                 Ok(AsyncRawResponse::from_bytes(
-                    StatusCode::Ok,
-                    headers_with_etag("etag-1"),
-                    Bytes::from_static(body),
+                    StatusCode::InternalServerError,
+                    Headers::new(),
+                    Bytes::new(),
                 ))
             }
             .boxed()
         }));
-        let client = Arc::new(layout_client(mock));
-        let layout_options = BlobClientGetLayoutOptions::default();
-        let cache = LayoutCache::new(
-            Arc::clone(&client),
-            layout_options.clone(),
-            Arc::new(seed_layout(&client, &layout_options).await),
-        );
 
-        {
-            let mut state = cache.state.lock().await;
-            let now = Instant::now();
-            state.refresh_at = now - Duration::from_secs(1);
-            state.expires_at = now + Duration::from_secs(100);
-        }
-
-        assert_eq!(
-            cache.current().await.unwrap().ideal_endpoint(0),
-            Some("epv1.blob.storage.azure.net:443")
-        );
-
-        let mut spins = 0;
-        loop {
-            {
-                let state = cache.state.lock().await;
-                if !state.refreshing
-                    && state.layout.ideal_endpoint(0) == Some("epv2.blob.storage.azure.net:443")
-                {
-                    assert!(state.expires_at > Instant::now() + Duration::from_secs(200));
-                    assert!(state.retry_at.is_none());
-                    break;
-                }
-            }
-            assert!(spins < 10_000, "background refresh did not complete");
-            spins += 1;
-            tokio::task::yield_now().await;
-        }
-        assert_eq!(calls.load(Ordering::SeqCst), 2);
+        let cache = cached_layout_client(mock);
+        assert!(cache.get().await.unwrap().layout().is_none());
+        // The declined layout is cached, so the download stops re-asking.
+        assert!(cache.get().await.unwrap().layout().is_none());
+        assert_eq!(calls.load(Ordering::SeqCst), 1);
     }
 
     #[tokio::test]
-    async fn refresh_failure_keeps_layout_and_backs_off() {
-        let calls = Arc::new(AtomicUsize::new(0));
-        let counter = calls.clone();
-        let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(move |_req| {
-            let count = counter.fetch_add(1, Ordering::SeqCst);
+    async fn layout_cache_propagates_a_hard_failure() {
+        let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(|_req| {
             async move {
-                if count == 0 {
-                    Ok(AsyncRawResponse::from_bytes(
-                        StatusCode::Ok,
-                        headers_with_etag("etag-1"),
-                        Bytes::from_static(LAYOUT_V1),
-                    ))
-                } else {
-                    Ok(AsyncRawResponse::from_bytes(
-                        StatusCode::InternalServerError,
-                        Headers::new(),
-                        Bytes::from_static(b""),
-                    ))
-                }
-            }
-            .boxed()
-        }));
-        let client = Arc::new(layout_client(mock));
-        let layout_options = BlobClientGetLayoutOptions::default();
-        let expires_at = Instant::now() + Duration::from_secs(100);
-        let state = Arc::new(Mutex::new(CachedLayout {
-            layout: Arc::new(seed_layout(&client, &layout_options).await),
-            refresh_at: Instant::now(),
-            expires_at,
-            refreshing: true,
-            retry_at: None,
-        }));
-
-        LayoutCache::refresh(client, layout_options, state.clone()).await;
-        let state = state.lock().await;
-        assert_eq!(
-            state.layout.ideal_endpoint(0),
-            Some("epv1.blob.storage.azure.net:443")
-        );
-        assert!(!state.refreshing);
-        assert_eq!(state.expires_at, expires_at);
-        match state.retry_at {
-            Some(retry_at) => assert!(retry_at > Instant::now()),
-            None => panic!("expected a backoff to be set"),
-        }
-        assert_eq!(calls.load(Ordering::SeqCst), 2);
-    }
-
-    #[tokio::test]
-    async fn current_resumes_routing_when_a_refresh_recovers_after_expiry() {
-        let calls = Arc::new(AtomicUsize::new(0));
-        let counter = calls.clone();
-        let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(move |_req| {
-            let count = counter.fetch_add(1, Ordering::SeqCst);
-            async move {
-                // Seed, then fail one refresh, then recover.
-                if count == 1 {
-                    return Ok(AsyncRawResponse::from_bytes(
-                        StatusCode::InternalServerError,
-                        Headers::new(),
-                        Bytes::new(),
-                    ));
-                }
-                let body = if count == 0 { LAYOUT_V1 } else { LAYOUT_V2 };
                 Ok(AsyncRawResponse::from_bytes(
-                    StatusCode::Ok,
-                    headers_with_etag("etag-1"),
-                    Bytes::from_static(body),
+                    StatusCode::Forbidden,
+                    Headers::new(),
+                    Bytes::new(),
                 ))
             }
             .boxed()
         }));
-        let client = Arc::new(layout_client(mock));
-        let layout_options = BlobClientGetLayoutOptions::default();
-        let cache = LayoutCache::new(
-            Arc::clone(&client),
-            layout_options.clone(),
-            Arc::new(seed_layout(&client, &layout_options).await),
-        );
 
-        {
-            let mut state = cache.state.lock().await;
-            let now = Instant::now();
-            state.refresh_at = now - Duration::from_secs(1);
-            state.expires_at = now - Duration::from_secs(1);
-        }
-
-        // Expired, and the refresh it triggers fails: routing stays suspended.
-        assert!(cache.current().await.is_none());
-        let mut spins = 0;
-        loop {
-            {
-                let state = cache.state.lock().await;
-                if !state.refreshing && state.retry_at.is_some() {
-                    break;
-                }
-            }
-            assert!(spins < 10_000, "failed refresh did not settle");
-            spins += 1;
-            tokio::task::yield_now().await;
-        }
-        assert!(cache.current().await.is_none());
-
-        // Once the backoff elapses the next refresh succeeds and routing resumes.
-        {
-            let mut state = cache.state.lock().await;
-            state.retry_at = Some(Instant::now() - Duration::from_secs(1));
-        }
-        assert!(cache.current().await.is_none());
-        spins = 0;
-        loop {
-            {
-                let state = cache.state.lock().await;
-                if !state.refreshing
-                    && state.layout.ideal_endpoint(0) == Some("epv2.blob.storage.azure.net:443")
-                {
-                    break;
-                }
-            }
-            assert!(spins < 10_000, "recovering refresh did not complete");
-            spins += 1;
-            tokio::task::yield_now().await;
-        }
-
-        assert_eq!(
-            cache.current().await.unwrap().ideal_endpoint(0),
-            Some("epv2.blob.storage.azure.net:443")
-        );
-        assert_eq!(calls.load(Ordering::SeqCst), 3);
+        assert!(cached_layout_client(mock).get().await.is_err());
     }
 }
