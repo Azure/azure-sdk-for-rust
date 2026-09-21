@@ -7,12 +7,14 @@ use framework::TestOptions;
 use std::borrow::Cow;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use azure_data_cosmos::options::Region;
 use azure_data_cosmos::{
     clients::DatabaseClient,
     models::{ContainerProperties, ThroughputProperties},
 };
+use framework::test_client::aad_token_invalid_issuer;
 use framework::{TestClient, TestRunContext, HUB_REGION, SATELLITE_REGION};
 use tracing_subscriber::layer::SubscriberExt;
 /// A simple layer that captures log messages into a shared buffer
@@ -74,7 +76,7 @@ fn create_container_and_write_item<'a>(
     db_client: &'a DatabaseClient,
     run_context: &'a TestRunContext,
     container_id: &'a str,
-    _expected_region: &'a str,
+    expected_region: &'a str,
 ) -> futures::future::BoxFuture<'a, Result<(), Box<dyn Error>>> {
     Box::pin(async move {
         let properties =
@@ -86,17 +88,30 @@ fn create_container_and_write_item<'a>(
             .create_container_with_throughput(db_client, properties, throughput)
             .await?;
 
-        // This upsert operation triggers a routing decision log in the driver
-        container_client
-            .upsert_item(
-                "item1",
-                "item1",
-                &serde_json::json!({"id": "item1", "value": "test"}),
-                None,
-            )
-            .await?;
+        // Fresh multi-region accounts can briefly return 401/5007 from one
+        // regional replica after another replica has already accepted AAD.
+        let mut backoff = Duration::from_millis(500);
+        for attempt in 1..=8 {
+            match container_client
+                .upsert_item(
+                    "item1",
+                    "item1",
+                    &serde_json::json!({"id": "item1", "value": "test"}),
+                    None,
+                )
+                .await
+            {
+                Ok(_) => return Ok(()),
+                Err(error) if aad_token_invalid_issuer(&error) && attempt < 8 => {
+                    println!("waiting for AAD issuer trust in {expected_region}: {error}");
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(Duration::from_secs(5));
+                }
+                Err(error) => return Err(error.into()),
+            }
+        }
 
-        Ok(())
+        unreachable!("the final upsert attempt returns above")
     })
 }
 

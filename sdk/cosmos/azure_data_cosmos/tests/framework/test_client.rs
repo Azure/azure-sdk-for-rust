@@ -131,6 +131,7 @@ pub fn assert_region_not_contacted(
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
 const CONTAINER_READINESS_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(5);
 const CONTAINER_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
+const CHANGE_FEED_READINESS_RESPONSE_TIMEOUT: Duration = Duration::from_secs(2);
 const FAULT_INJECTION_READINESS_MAX_ATTEMPTS: usize = 20;
 #[cfg(test_category = "multi_write")]
 const SATELLITE_READINESS_MAX_ATTEMPTS: usize = 8;
@@ -199,7 +200,7 @@ fn owner_resource_not_found(error: &CosmosError) -> bool {
         && error.status().sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND)
 }
 
-fn aad_token_invalid_issuer(error: &CosmosError) -> bool {
+pub(crate) fn aad_token_invalid_issuer(error: &CosmosError) -> bool {
     error.status().status_code() == StatusCode::Unauthorized
         && error.status().sub_status() == Some(SubStatusCode::new(5007))
 }
@@ -222,6 +223,13 @@ fn transient_satellite_readiness_error(error: &CosmosError, auth_mode: AuthMode)
         || owner_resource_not_found(error)
         || (auth_mode == AuthMode::Aad
             && (aad_token_invalid_issuer(error) || rbac_name_based_data_not_ready(error)))
+}
+
+fn transient_data_plane_readiness_error(error: &CosmosError) -> bool {
+    collection_create_in_progress(error)
+        || owner_resource_not_found(error)
+        || aad_token_invalid_issuer(error)
+        || rbac_name_based_data_not_ready(error)
 }
 
 /// A plain "that item does not exist" 404 — the success signal for the
@@ -273,8 +281,8 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
 /// RBAC entirely.
 ///
 /// The probe verifies item, query, and change-feed authorization because Cosmos
-/// can propagate those RBAC actions independently. It tolerates `5302` and
-/// collection metadata propagation errors while the name registers.
+/// can propagate those RBAC actions independently. It tolerates expected AAD
+/// and collection metadata propagation errors while the resource registers.
 pub async fn probe_data_plane_ready(
     label: &str,
     container: &ContainerClient,
@@ -311,9 +319,7 @@ pub async fn probe_data_plane_ready(
             break;
         }
 
-        let retryable = rbac_name_based_data_not_ready(&error)
-            || collection_create_in_progress(&error)
-            || owner_resource_not_found(&error);
+        let retryable = transient_data_plane_readiness_error(&error);
         if !retryable || attempt == MAX_ATTEMPTS {
             return Err(error);
         }
@@ -337,11 +343,7 @@ pub async fn probe_data_plane_ready(
         .await;
         match outcome {
             Ok(_) => break,
-            Err(error)
-                if rbac_name_based_data_not_ready(&error)
-                    || collection_create_in_progress(&error)
-                    || owner_resource_not_found(&error) =>
-            {
+            Err(error) if transient_data_plane_readiness_error(&error) => {
                 if attempt == MAX_ATTEMPTS {
                     return Err(error);
                 }
@@ -361,23 +363,22 @@ pub async fn probe_data_plane_ready(
                     None,
                 )
                 .await?;
-            match pages.next().await {
-                Some(result) => result.map(|_| ()),
-                None => Err(azure_data_cosmos_driver::error::CosmosError::builder()
+            match tokio::time::timeout(CHANGE_FEED_READINESS_RESPONSE_TIMEOUT, pages.next()).await {
+                Ok(Some(result)) => result.map(|_| ()),
+                Ok(None) => Err(azure_data_cosmos_driver::error::CosmosError::builder()
                     .with_status(CosmosStatus::new(StatusCode::InternalServerError))
                     .with_message("change-feed readiness probe returned no page")
                     .build()
                     .into()),
+                // Empty feeds are long-polled; after item and query probes pass,
+                // reaching this bound means RBAC accepted the request.
+                Err(_) => Ok(()),
             }
         }
         .await;
         match outcome {
             Ok(()) => return Ok(()),
-            Err(error)
-                if rbac_name_based_data_not_ready(&error)
-                    || collection_create_in_progress(&error)
-                    || owner_resource_not_found(&error) =>
-            {
+            Err(error) if transient_data_plane_readiness_error(&error) => {
                 if attempt == MAX_ATTEMPTS {
                     return Err(error);
                 }
@@ -2235,8 +2236,8 @@ mod tests {
     use super::{
         aad_token_invalid_issuer, effective_binary_encoding, from_arm_throughput, item_not_found,
         rbac_name_based_data_not_ready, retry_container_readiness, satellite_probe_should_retry,
-        to_arm_container_resource, transient_satellite_readiness_error, ArmThroughput, AuthMode,
-        BinaryEncodingOptions,
+        to_arm_container_resource, transient_data_plane_readiness_error,
+        transient_satellite_readiness_error, ArmThroughput, AuthMode, BinaryEncodingOptions,
     };
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{
@@ -2338,6 +2339,22 @@ mod tests {
         assert!(!rbac_name_based_data_not_ready(&error_with_status(
             StatusCode::Unauthorized,
             SubStatusCode::new(5302),
+        )));
+    }
+
+    #[test]
+    fn data_plane_readiness_retries_aad_propagation_without_global_auth_mode() {
+        assert!(transient_data_plane_readiness_error(&error_with_status(
+            StatusCode::Unauthorized,
+            SubStatusCode::new(5007),
+        )));
+        assert!(transient_data_plane_readiness_error(&error_with_status(
+            StatusCode::Forbidden,
+            SubStatusCode::new(5302),
+        )));
+        assert!(!transient_data_plane_readiness_error(&error_with_status(
+            StatusCode::Forbidden,
+            SubStatusCode::new(5301),
         )));
     }
 
