@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{future::Future, panic::AssertUnwindSafe};
+use std::{future::Future, panic::AssertUnwindSafe, sync::OnceLock, time::Duration};
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
@@ -304,13 +304,23 @@ pub(super) async fn hosted_wire_counts() -> TestResult<Option<HostedWireCounts>>
         return Ok(None);
     }
     let endpoint = std::env::var("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT")?;
-    let response = reqwest::Client::new()
+    let response = management_client()
         .get(url::Url::parse(&endpoint)?.join("health")?)
         .send()
         .await?
         .error_for_status()?;
     let counts: HostedWireCounts = serde_json::from_slice(&response.bytes().await?)?;
     Ok(Some(counts))
+}
+
+fn management_client() -> &'static reqwest::Client {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+    CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .timeout(Duration::from_secs(5))
+            .build()
+            .expect("management HTTP client configuration is valid")
+    })
 }
 
 #[derive(Clone, Copy, Deserialize)]
@@ -352,7 +362,7 @@ pub(super) async fn set_replication_paused(region: &str, paused: bool) -> TestRe
             "replication",
             if paused { "pause" } else { "resume" },
         ]);
-    reqwest::Client::new()
+    management_client()
         .post(url)
         .send()
         .await?
@@ -368,8 +378,21 @@ pub(super) async fn with_replication_paused_if<T, F>(
 where
     F: Future<Output = TestResult<T>>,
 {
-    if !should_pause || !set_replication_paused(region, true).await? {
+    if !should_pause {
         return operation.await;
+    }
+    match set_replication_paused(region, true).await {
+        Ok(false) => return operation.await,
+        Ok(true) => {}
+        Err(pause_error) => {
+            return match set_replication_paused(region, false).await {
+                Ok(_) => Err(pause_error),
+                Err(resume_error) => Err(format!(
+                    "replication pause failed: {pause_error}; best-effort resume also failed: {resume_error}"
+                )
+                .into()),
+            };
+        }
     }
 
     let outcome = AssertUnwindSafe(operation).catch_unwind().await;

@@ -172,6 +172,13 @@ Properties:
   as an **additive, swappable** surface — deliberately *not* over-fitted to the Java
   `CosmosDiagnosticsHandler` shape. If other Azure SDKs want the same extension point, the
   abstraction can be **promoted into `azure_core` later** without breaking Cosmos callers.
+- **Tracing-handler construction is builder-only.** `CosmosTracingHandler::builder()` is the
+  sole construction entry point; callers finish with `build()` for lazy process-global tracer
+  resolution or `build_with_tracer()` for an explicit tracer. The former `new`, `Default`,
+  `with_thresholds`, and `with_thresholds_and_rate_limit` entry points were intentionally
+  removed in 0.39.0 so default and customized handlers share one extensible configuration path.
+  Do not restore convenience constructors for backward compatibility; this is an accepted,
+  documented breaking change.
 - **SDK maps to its own semconv view.** Each handler translates the driver's
   `DiagnosticsContext` into its **own** OTel/semantic-convention representation (§10); the
   driver's internal model never leaks into the emitted telemetry.

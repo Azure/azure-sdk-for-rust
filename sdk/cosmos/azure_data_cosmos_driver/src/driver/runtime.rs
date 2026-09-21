@@ -109,6 +109,9 @@ pub struct CosmosDriverRuntime {
     /// Factory for creating HTTP clients, shared across per-account transports.
     http_client_factory: Arc<dyn HttpClientFactory>,
 
+    #[cfg(feature = "fault_injection")]
+    fault_injection_enabled: bool,
+
     /// Environment-level operation options, populated once from env vars at build time.
     env_operation_options: Arc<OperationOptions>,
 
@@ -226,6 +229,11 @@ impl CosmosDriverRuntime {
     /// Returns the shared HTTP client factory for creating per-account transports.
     pub(crate) fn http_client_factory(&self) -> &Arc<dyn HttpClientFactory> {
         &self.http_client_factory
+    }
+
+    #[cfg(feature = "fault_injection")]
+    pub(crate) fn fault_injection_enabled(&self) -> bool {
+        self.fault_injection_enabled
     }
 
     /// Returns the shared container cache.
@@ -449,6 +457,8 @@ pub struct CosmosDriverRuntimeBuilder {
         feature = "__internal_mocking"
     ))]
     http_client_factory: Option<Arc<dyn HttpClientFactory>>,
+    #[cfg(feature = "fault_injection")]
+    fault_injection_enabled: bool,
 }
 
 impl CosmosDriverRuntimeBuilder {
@@ -566,6 +576,12 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
+    #[cfg(feature = "fault_injection")]
+    pub(crate) fn with_fault_injection_enabled(mut self, enabled: bool) -> Self {
+        self.fault_injection_enabled = enabled;
+        self
+    }
+
     /// Sets a custom HTTP client factory, replacing the default reqwest-based transport.
     ///
     /// **Unsupported internal API** — only available under the `__internal_mocking` feature
@@ -675,6 +691,8 @@ impl CosmosDriverRuntimeBuilder {
             diagnostics_options,
             bootstrap_transport,
             http_client_factory,
+            #[cfg(feature = "fault_injection")]
+            fault_injection_enabled: self.fault_injection_enabled,
             env_operation_options: Arc::new(OperationOptions {
                 // INVARIANT — when adding a new `#[option(nested)]` field to
                 // `OperationOptions`, you MUST add an explicit

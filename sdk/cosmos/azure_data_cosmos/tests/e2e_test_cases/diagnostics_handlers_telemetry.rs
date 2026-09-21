@@ -26,6 +26,8 @@ use opentelemetry_sdk::{
     },
     trace::{in_memory_exporter::InMemorySpanExporter, SdkTracerProvider},
 };
+use tracing::{field::Visit, instrument::WithSubscriber, Event, Level, Subscriber};
+use tracing_subscriber::{layer::Context as LayerContext, prelude::*, Layer};
 
 use crate::e2e_test_cases::{
     fixture::{build_client_with_customizer, ClientSetup, E2eTest, TestResult},
@@ -36,6 +38,66 @@ use crate::e2e_test_cases::{
 struct RecordingHandler {
     operations: Mutex<Vec<Option<String>>>,
     failures: Mutex<usize>,
+}
+
+#[derive(Clone, Debug)]
+struct CapturedLog {
+    target: String,
+    level: Level,
+    fields: BTreeMap<String, String>,
+}
+
+#[derive(Clone, Default)]
+struct LogCapture {
+    events: Arc<Mutex<Vec<CapturedLog>>>,
+}
+
+impl LogCapture {
+    fn sampled_failure(&self) -> Option<CapturedLog> {
+        self.events
+            .lock()
+            .unwrap()
+            .iter()
+            .find(|event| {
+                event.target == "azure_data_cosmos::diagnostics::sampled"
+                    && event.level == Level::WARN
+                    && event.fields.get("reason").map(String::as_str) == Some("failure")
+                    && event.fields.get("operation_name").map(String::as_str) == Some("read_item")
+            })
+            .cloned()
+    }
+}
+
+impl<S> Layer<S> for LogCapture
+where
+    S: Subscriber,
+{
+    fn on_event(&self, event: &Event<'_>, _context: LayerContext<'_, S>) {
+        let mut visitor = FieldVisitor::default();
+        event.record(&mut visitor);
+        self.events.lock().unwrap().push(CapturedLog {
+            target: event.metadata().target().to_owned(),
+            level: *event.metadata().level(),
+            fields: visitor.fields,
+        });
+    }
+}
+
+#[derive(Default)]
+struct FieldVisitor {
+    fields: BTreeMap<String, String>,
+}
+
+impl Visit for FieldVisitor {
+    fn record_str(&mut self, field: &tracing::field::Field, value: &str) {
+        self.fields
+            .insert(field.name().to_owned(), value.to_owned());
+    }
+
+    fn record_debug(&mut self, field: &tracing::field::Field, value: &dyn std::fmt::Debug) {
+        self.fields
+            .insert(field.name().to_owned(), format!("{value:?}"));
+    }
 }
 
 impl RecordingHandler {
@@ -93,6 +155,9 @@ async fn handlers_emit_metrics_spans_and_sampled_failures() -> TestResult {
     let all_operations = Arc::new(RecordingHandler::default());
     let sampled_operations = Arc::new(RecordingHandler::default());
     let sampled_handler = Arc::new(SamplingLogHandler::with_handler(sampled_operations.clone()));
+    let sampled_log_handler = Arc::new(SamplingLogHandler::new());
+    let log_capture = LogCapture::default();
+    let subscriber = tracing_subscriber::registry().with(log_capture.clone());
     let tracing_handler = Arc::new(
         CosmosTracingHandler::builder().build_with_tracer(tracer_provider.tracer("cosmos-e2e")),
     );
@@ -107,6 +172,7 @@ async fn handlers_emit_metrics_spans_and_sampled_failures() -> TestResult {
             .with_diagnostics_handler(all_operations.clone())
             .with_diagnostics_handler(metrics_handler)
             .with_diagnostics_handler(sampled_handler)
+            .with_diagnostics_handler(sampled_log_handler)
             .with_diagnostics_handler(tracing_handler))
     })
     .await?;
@@ -137,7 +203,31 @@ async fn handlers_emit_metrics_spans_and_sampled_failures() -> TestResult {
             assert_eq!(sampled_operations.failures(), before_sampled_failures + 1);
             Ok(())
         })
+        .with_subscriber(subscriber)
         .await?;
+
+    let sampled_log = log_capture
+        .sampled_failure()
+        .ok_or("built-in sampled logger must emit the failed read")?;
+    let diagnostics: serde_json::Value = serde_json::from_str(
+        sampled_log
+            .fields
+            .get("diagnostics")
+            .ok_or("sampled log must include structured diagnostics")?,
+    )?;
+    assert!(diagnostics["request_count"]
+        .as_u64()
+        .is_some_and(|count| count >= 1));
+    assert!(
+        diagnostics["regions"]
+            .as_array()
+            .is_some_and(|regions| regions.iter().any(|region| {
+                ["first", "last"]
+                    .iter()
+                    .any(|position| region[*position]["status"].as_str() == Some("404"))
+            })),
+        "sampled diagnostics must retain the failed 404 attempt"
+    );
 
     meter_provider.force_flush()?;
     let metrics = metric_exporter.get_finished_metrics()?;

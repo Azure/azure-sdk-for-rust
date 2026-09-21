@@ -397,6 +397,10 @@ pub(crate) async fn execute_operation_pipeline(
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let mut throughput_control = throughput_control;
+    #[cfg(feature = "fault_injection")]
+    let fault_injection_enabled = driver.fault_injection_enabled();
+    #[cfg(not(feature = "fault_injection"))]
+    let fault_injection_enabled = false;
     let mut container_recreation_retry_attempted = false;
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
@@ -683,6 +687,7 @@ pub(crate) async fn execute_operation_pipeline(
                     session_token_capture_active,
                     options,
                     throughput_control,
+                    fault_injection_enabled,
                     deadline,
                     configured_request_timeout,
                     can_use_multiple_write_locations: retry_state.can_use_multiple_write_locations,
@@ -817,8 +822,13 @@ pub(crate) async fn execute_operation_pipeline(
                 .flatten(),
             throughput_control,
         };
-        let mut transport_request =
-            build_transport_request(operation, &overrides, custom_headers, &ctx)?;
+        let mut transport_request = build_transport_request_with_fault_injection(
+            operation,
+            &overrides,
+            custom_headers,
+            &ctx,
+            fault_injection_enabled,
+        )?;
 
         // Spec 0010, Hub-region processing header, §3 / public spec §3.4:
         // Emit the `x-ms-cosmos-hub-region-processing-only: True` header
@@ -1293,6 +1303,7 @@ pub(crate) async fn execute_operation_pipeline(
                     session_token_capture_active,
                     options,
                     throughput_control,
+                    fault_injection_enabled,
                     deadline,
                     configured_request_timeout,
                     can_use_multiple_write_locations: retry_state.can_use_multiple_write_locations,
@@ -2158,11 +2169,22 @@ struct TransportRequestContext<'a> {
 /// If `resolved_session_token` is provided, it is added to the request headers.
 /// Override headers from `overrides` are applied after operation headers, so they
 /// take precedence.
+#[cfg(test)]
 fn build_transport_request(
     operation: &CosmosOperation,
     overrides: &OperationOverrides,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     ctx: &TransportRequestContext<'_>,
+) -> crate::error::Result<TransportRequest> {
+    build_transport_request_with_fault_injection(operation, overrides, custom_headers, ctx, false)
+}
+
+fn build_transport_request_with_fault_injection(
+    operation: &CosmosOperation,
+    overrides: &OperationOverrides,
+    custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
+    ctx: &TransportRequestContext<'_>,
+    fault_injection_enabled: bool,
 ) -> crate::error::Result<TransportRequest> {
     let paths = operation.compute_resource_paths();
     let url = {
@@ -2316,7 +2338,7 @@ fn build_transport_request(
 
     // Add operation type header for fault injection rule matching
     #[cfg(feature = "fault_injection")]
-    {
+    if fault_injection_enabled {
         if let Some(fault_op) =
             crate::fault_injection::FaultOperationType::from_operation_and_resource(
                 &operation.operation_type(),
@@ -2335,6 +2357,8 @@ fn build_transport_request(
             );
         }
     }
+    #[cfg(not(feature = "fault_injection"))]
+    let _ = fault_injection_enabled;
 
     // Apply overrides — these take precedence over operation-level headers
     // (e.g., an override partition key replaces the operation's partition key).
@@ -2932,6 +2956,7 @@ struct AttemptContext<'a> {
     session_token_capture_active: bool,
     options: &'a OperationOptionsView<'a>,
     throughput_control: Option<ResolvedThroughputControl>,
+    fault_injection_enabled: bool,
     /// End-to-end deadline (operation timeout) — passed through to each
     /// per-attempt transport invocation.
     deadline: Option<Instant>,
@@ -3331,11 +3356,12 @@ async fn perform_single_attempt(
         read_consistency_strategy: ctx.read_consistency_strategy,
     };
 
-    let mut transport_request = build_transport_request(
+    let mut transport_request = build_transport_request_with_fault_injection(
         ctx.operation,
         ctx.overrides,
         ctx.custom_headers,
         &request_ctx,
+        ctx.fault_injection_enabled,
     )?;
     // Hedging attempts have no per-state latch to consult — the only
     // signal is the cross-hedge shared latch.
@@ -4700,9 +4726,9 @@ mod tests {
     use azure_core::http::headers::HeaderName;
     use url::Url;
 
-    use super::build_transport_request;
     use super::OperationOverrides;
     use super::TransportRequestContext;
+    use super::{build_transport_request, build_transport_request_with_fault_injection};
     use crate::{
         diagnostics::ExecutionContext,
         driver::{
@@ -4719,7 +4745,7 @@ mod tests {
             EffectivePartitionKey, FeedRange, ItemReference, PartitionKey, PartitionKeyDefinition,
             PartitionKeyValue, SystemProperties,
         },
-        options::{PriorityLevel, ResolvedThroughputControl},
+        options::{PriorityLevel, Region, ResolvedThroughputControl},
     };
 
     fn test_account() -> AccountReference {
@@ -5037,6 +5063,69 @@ mod tests {
                 .expect("request should build");
 
         assert_eq!(request.url.path(), "/dbs/mydb");
+    }
+
+    #[cfg(feature = "fault_injection")]
+    #[test]
+    fn fault_injection_headers_require_an_active_fault_client() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item);
+        let endpoint = CosmosEndpoint::regional(
+            Region::EAST_US,
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let routing = RoutingDecision {
+            selected_url: endpoint.url().clone(),
+            endpoint_key: endpoint.endpoint_key(),
+            endpoint,
+            transport_mode: TransportMode::Gateway,
+            routing_fallback: None,
+        };
+        let activity_id = ActivityId::from_string("activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let operation_header = HeaderName::from_static(
+            crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION,
+        );
+        let region_header = HeaderName::from_static(
+            crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_REGION,
+        );
+
+        let disabled = build_transport_request_with_fault_injection(
+            &operation,
+            &OperationOverrides::default(),
+            None,
+            &ctx,
+            false,
+        )
+        .expect("request should build");
+        assert!(disabled
+            .headers
+            .get_optional_str(&operation_header)
+            .is_none());
+        assert!(disabled.headers.get_optional_str(&region_header).is_none());
+
+        let enabled = build_transport_request_with_fault_injection(
+            &operation,
+            &OperationOverrides::default(),
+            None,
+            &ctx,
+            true,
+        )
+        .expect("request should build");
+        assert!(enabled
+            .headers
+            .get_optional_str(&operation_header)
+            .is_some());
+        assert!(enabled.headers.get_optional_str(&region_header).is_some());
     }
 
     #[test]

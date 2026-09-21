@@ -68,6 +68,7 @@ const IMPLEMENTED_TESTS: &[&str] = &[
     "resilience_throttling_retry::bounded_throttling_retries_succeed_with_attempt_history",
     "resilience_deadline::operation_deadline_preempts_delayed_response",
     "resilience_hedging::alternate_region_wins_delayed_primary_hedge",
+    "resilience_transient_retries::request_timeout_retries_respect_failover_budget",
     "resilience_transient_retries::service_unavailable_is_retried_with_attempt_history",
     "resilience_transient_retries::response_timeout_is_retried_with_attempt_history",
 ];

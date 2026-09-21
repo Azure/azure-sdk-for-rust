@@ -159,6 +159,11 @@
       "status": "active"
     },
     {
+      "id": "resilience.request-timeout-retry",
+      "test": "resilience_transient_retries::request_timeout_retries_respect_failover_budget",
+      "status": "active"
+    },
+    {
       "id": "resilience.service-retry",
       "test": "resilience_transient_retries::service_unavailable_is_retried_with_attempt_history",
       "status": "active"

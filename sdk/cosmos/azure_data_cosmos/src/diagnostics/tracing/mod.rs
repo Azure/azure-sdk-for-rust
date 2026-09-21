@@ -483,6 +483,58 @@ mod tests {
     }
 
     #[test]
+    fn root_span_falls_back_to_last_retained_request_endpoint() {
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("endpoint-fallback-test");
+        let now_instant = Instant::now();
+        let requests = vec![
+            RequestDiagnostics::for_testing(
+                "https://first.documents.azure.com:443/",
+                Some(Region::EAST_US),
+                CosmosStatus::new(StatusCode::ServiceUnavailable),
+                RequestCharge::new(0.0),
+                now_instant - Duration::from_millis(20),
+                now_instant - Duration::from_millis(15),
+            ),
+            RequestDiagnostics::for_testing(
+                "https://last.documents.azure.com:443/",
+                Some(Region::WEST_US),
+                CosmosStatus::new(StatusCode::Ok),
+                RequestCharge::new(1.0),
+                now_instant - Duration::from_millis(10),
+                now_instant - Duration::from_millis(5),
+            ),
+        ];
+        let diagnostics = DiagnosticsContext::for_testing_with_requests(
+            ActivityId::new_uuid(),
+            Duration::from_millis(20),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("read_item"),
+            requests,
+        );
+
+        emit_backdated_span_tree(
+            &tracer,
+            &diagnostics,
+            None,
+            None,
+            now_instant,
+            SystemTime::now(),
+        );
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        let root = spans
+            .iter()
+            .find(|span| span.name == "read_item")
+            .expect("root span present");
+        assert!(root.attributes.iter().any(|attribute| {
+            attribute.key.as_str() == attributes::SERVER_ADDRESS
+                && attribute.value.as_str() == "last.documents.azure.com"
+        }));
+    }
+
+    #[test]
     fn root_span_contains_children_when_duration_underestimates_window() {
         // An aggregate operation's duration() is the SUM of its sub-op durations
         // and omits the gaps between them, so `op_end - duration()` can fall

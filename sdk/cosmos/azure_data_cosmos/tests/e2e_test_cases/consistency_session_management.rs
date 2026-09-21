@@ -171,27 +171,46 @@ async fn disabled_capture_exposes_delayed_replica() -> TestResult {
         .with_client(client)
         .run(async |fixture| {
             let expected = item("session-staleness", "A", 22);
-            let stale = with_replication_paused_if(true, "West US", async {
-                fixture
+            let (without_token, with_token) = with_replication_paused_if(true, "West US", async {
+                let created = fixture
                     .container
                     .create_item("A", &expected.id, &expected, None)
                     .await?;
-                let mut eventual = OperationOptions::default();
-                eventual.read_consistency_strategy = Some(ReadConsistencyStrategy::Eventual);
-                eventual.max_session_retry_count = Some(0);
-                eventual.max_failover_retry_count = Some(0);
-                eventual.availability_strategy = Some(AvailabilityStrategy::Disabled);
-                Ok(fixture
+                let token = created
+                    .headers()
+                    .session_token()
+                    .map(|value| value.as_str().to_owned())
+                    .ok_or("write response must expose an explicit token")?;
+                let mut session = OperationOptions::default();
+                session.read_consistency_strategy = Some(ReadConsistencyStrategy::Session);
+                session.max_session_retry_count = Some(0);
+                session.max_failover_retry_count = Some(0);
+                session.availability_strategy = Some(AvailabilityStrategy::Disabled);
+                let without_token = fixture
                     .container
                     .read_item(
                         "A",
                         &expected.id,
-                        Some(ItemReadOptions::default().with_operation_options(eventual)),
+                        Some(ItemReadOptions::default().with_operation_options(session.clone())),
                     )
-                    .await)
+                    .await;
+                let with_token = fixture
+                    .container
+                    .read_item(
+                        "A",
+                        &expected.id,
+                        Some(
+                            ItemReadOptions::default()
+                                .with_session_token(token)
+                                .with_operation_options(session),
+                        ),
+                    )
+                    .await;
+                Ok((without_token, with_token))
             })
-            .await?
-            .expect_err("disabled capture must expose the delayed West US replica");
+            .await?;
+            let stale = without_token
+                .expect_err("disabled capture must expose the delayed West US replica");
             assert_eq!(stale.status().status_code(), StatusCode::NotFound);
             assert_eq!(
                 stale
@@ -200,6 +219,13 @@ async fn disabled_capture_exposes_delayed_replica() -> TestResult {
                     .map(|value| value.value())
                     .unwrap_or(0),
                 0
+            );
+            let unavailable = with_token
+                .expect_err("an explicit token must identify the delayed session replica");
+            assert_eq!(unavailable.status().status_code(), StatusCode::NotFound);
+            assert_eq!(
+                unavailable.status().sub_status(),
+                Some(azure_data_cosmos::SubStatusCode::READ_SESSION_NOT_AVAILABLE)
             );
             Ok(())
         })

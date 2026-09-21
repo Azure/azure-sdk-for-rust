@@ -315,6 +315,20 @@ fn assert_strategy_reached_transport(
         after.consistency_requests(strategy) > before.consistency_requests(strategy),
         "{strategy:?} must be observed on the hosted emulator wire"
     );
+    if strategy == ReadConsistencyStrategy::Default {
+        for non_default in [
+            ReadConsistencyStrategy::Eventual,
+            ReadConsistencyStrategy::Session,
+            ReadConsistencyStrategy::LatestCommitted,
+            ReadConsistencyStrategy::GlobalStrong,
+        ] {
+            assert_eq!(
+                after.consistency_requests(non_default),
+                before.consistency_requests(non_default),
+                "Default must not emit a {non_default:?} read-consistency signal"
+            );
+        }
+    }
 }
 
 async fn assert_invalid_session_tokens_rejected(
@@ -364,6 +378,23 @@ async fn assert_invalid_session_tokens_rejected(
         .split(':')
         .next()
         .ok_or("session token must contain a partition-range ID")?;
+    let token_value = valid_token
+        .split_once(':')
+        .map(|(_, value)| value)
+        .ok_or("session token must contain a value")?;
+    let mut token_parts = token_value.split('#');
+    let version = token_parts
+        .next()
+        .ok_or("session token must contain a version")?;
+    let global_lsn = token_parts
+        .next()
+        .ok_or("session token must contain a global LSN")?;
+    for accepted_token in [
+        format!("{partition_id}:{global_lsn}"),
+        format!("{partition_id}:{version}#{global_lsn}#999=-1"),
+    ] {
+        assert_valid_session_token_accepted(container, &accepted_token).await?;
+    }
     let future_token = format!("{partition_id}:-1#999999");
     let mut no_retry_operation = OperationOptions::default();
     no_retry_operation.read_consistency_strategy = Some(ReadConsistencyStrategy::Session);
@@ -413,5 +444,46 @@ async fn assert_invalid_session_tokens_rejected(
         change_error.status().sub_status(),
         Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
     );
+    Ok(())
+}
+
+async fn assert_valid_session_token_accepted(
+    container: &azure_data_cosmos::clients::ContainerClient,
+    token: &str,
+) -> TestResult {
+    let mut operation = OperationOptions::default();
+    operation.read_consistency_strategy = Some(ReadConsistencyStrategy::Session);
+    operation.availability_strategy = Some(AvailabilityStrategy::Disabled);
+
+    let query_options = QueryOptions::default()
+        .with_session_token(token.to_owned())
+        .with_operation_options(operation.clone());
+    let mut query = container
+        .query_items::<Item>(
+            Query::from("SELECT * FROM c"),
+            FeedScope::partition("A"),
+            Some(query_options),
+        )
+        .await?
+        .into_pages();
+    query
+        .next()
+        .await
+        .expect("valid-token query must yield a page")?;
+
+    let change_options = ChangeFeedOptions::default()
+        .with_session_token(token.to_owned())
+        .with_operation_options(operation);
+    let mut changes = container
+        .query_change_feed::<Item>(
+            FeedScope::partition("A"),
+            ChangeFeedStartFrom::Beginning,
+            Some(change_options),
+        )
+        .await?;
+    changes
+        .next()
+        .await
+        .expect("valid-token change feed must yield a page")?;
     Ok(())
 }

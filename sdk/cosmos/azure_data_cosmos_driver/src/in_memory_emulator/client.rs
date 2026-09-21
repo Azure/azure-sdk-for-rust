@@ -129,7 +129,9 @@ impl InMemoryEmulatorHttpClient {
         let fault_factory = Arc::new(
             crate::fault_injection::FaultInjectingHttpClientFactory::new(emulator_factory, rules),
         );
-        crate::driver::CosmosDriverRuntimeBuilder::new().with_http_client_factory(fault_factory)
+        crate::driver::CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(fault_factory)
+            .with_fault_injection_enabled(true)
     }
 }
 
