@@ -307,6 +307,11 @@ contract; the wall-clock bounds are a practical smoke-test check rather than a p
 guarantee. Wider delay/ceiling separation may be added as optional hardening, but is not required
 for PR3.
 
+The hosted Gateway V2 binary audit deliberately checks the protocol-defined `CosmosBinary` flag
+bit (`0x02`) independently of the production encoder's named constant. Sharing that constant would
+couple the implementation and its wire oracle, allowing both to agree on an incorrect value. Keep
+the independent literal and its explicit wire-value tests rather than centralizing it for style.
+
 The `configurationResilience` profile provides a fixed two-region Session
 account with deterministic replication delay. Source-native Rust scenarios own
 ordered backup fallback, preferred-region and account-order routing, binary
