@@ -12,7 +12,7 @@ use azure_data_cosmos::{
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use crate::e2e_test_cases::{
-    fixture::{connection_string_value, TestResult},
+    fixture::{connection_string_value, fixture_test_lock, TestResult},
     support::selected_scenario_profile,
 };
 
@@ -34,6 +34,7 @@ async fn unreachable_primary_uses_ordered_backup() -> TestResult {
     {
         return Ok(());
     }
+    let _guard = fixture_test_lock().lock().await;
 
     let connection_string = std::env::var("AZURE_COSMOS_CONNECTION_STRING")?;
     let reachable: AccountEndpoint =
