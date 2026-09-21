@@ -74,10 +74,17 @@ fn collect_hunks(lines: &[RenderedLine]) -> Vec<(usize, usize)> {
         }
 
         let mut end = index;
-        while end + 1 < lines.len() && lines[end + 1].is_attribute {
-            end += 1;
+        let has_crate_root_anchor = end + 1 < lines.len() && lines[end + 1].is_crate_root_anchor;
+        if has_crate_root_anchor {
+            while end + 1 < lines.len() && lines[end + 1].is_crate_root_anchor {
+                end += 1;
+            }
+        } else {
+            while end + 1 < lines.len() && lines[end + 1].is_attribute {
+                end += 1;
+            }
         }
-        if end + 1 < lines.len() && !lines[end + 1].is_doc_comment {
+        if !has_crate_root_anchor && end + 1 < lines.len() && !lines[end + 1].is_doc_comment {
             end += 1;
         }
         hunks.push((start, end));

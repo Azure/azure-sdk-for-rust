@@ -9,6 +9,7 @@ fn code(text: &str) -> RenderedLine {
         text: text.to_string(),
         is_doc_comment: false,
         is_attribute: false,
+        is_crate_root_anchor: false,
     }
 }
 
@@ -18,6 +19,17 @@ fn attribute(text: &str) -> RenderedLine {
         text: text.to_string(),
         is_doc_comment: false,
         is_attribute: true,
+        is_crate_root_anchor: false,
+    }
+}
+
+fn crate_root_anchor(text: &str) -> RenderedLine {
+    RenderedLine {
+        declaration_location: None,
+        text: text.to_string(),
+        is_doc_comment: false,
+        is_attribute: true,
+        is_crate_root_anchor: true,
     }
 }
 
@@ -27,6 +39,7 @@ fn doc(text: &str) -> RenderedLine {
         text: text.to_string(),
         is_doc_comment: true,
         is_attribute: false,
+        is_crate_root_anchor: false,
     }
 }
 
@@ -143,4 +156,29 @@ fn keeps_documented_members_in_separate_hunks_with_attributes() {
          \x20    #[deprecated]\n\
          \x20    pub second: bool,\n"
     ));
+}
+
+#[test]
+fn anchors_root_doc_comments_only_to_synthetic_root_attributes() {
+    let lines = vec![
+        code("```rust"),
+        doc("//! Demo crate."),
+        crate_root_anchor("#![crate_name = \"demo\"]"),
+        crate_root_anchor("#![crate_type = \"lib\"]"),
+        attribute("#![cfg_attr(docsrs, feature(doc_cfg))]"),
+        code("pub struct Foo;"),
+        code("```"),
+    ];
+
+    let patch = render(&lines, "API.md");
+
+    assert_eq!(
+        patch,
+        "--- a/API.md\n\
+         +++ b/API.md\n\
+         @@ -2,2 +2,3 @@\n\
+         +//! Demo crate.\n\
+         \x20#![crate_name = \"demo\"]\n\
+         \x20#![crate_type = \"lib\"]\n"
+    );
 }

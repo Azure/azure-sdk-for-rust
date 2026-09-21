@@ -9,6 +9,8 @@
 - `default`
 
 ```rust
+#![crate_name = "azure_storage_sas"]
+#![crate_type = "lib"]
 pub struct SasBuilder<'a, S = Untyped> {
 }
 #[allow(private_bounds)]

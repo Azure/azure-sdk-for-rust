@@ -9,6 +9,8 @@
 - `default`
 
 ```rust
+#![crate_name = "azure_data_cosmos_benchmarks"]
+#![crate_type = "lib"]
 pub fn load_bench_config() -> BenchConfig;
 pub async fn setup() -> (std::sync::Arc<azure_data_cosmos_driver::CosmosDriver>, azure_data_cosmos_driver::models::ItemReference);
 pub async fn setup_live() -> (std::sync::Arc<azure_data_cosmos_driver::CosmosDriver>, azure_data_cosmos_driver::models::ItemReference);

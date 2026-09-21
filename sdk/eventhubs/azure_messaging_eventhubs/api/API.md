@@ -12,6 +12,8 @@
 - `in_memory_checkpoint_store`
 
 ```rust
+#![crate_name = "azure_messaging_eventhubs"]
+#![crate_type = "lib"]
 #![cfg(feature = "in_memory_checkpoint_store")]
 #![recursion_limit = "128"]
 #![warn(missing_docs)]

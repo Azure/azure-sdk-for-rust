@@ -49,6 +49,7 @@ pub(crate) struct PackageMetadata {
     pub(crate) description: Option<String>,
     pub(crate) edition: Option<String>,
     pub(crate) rust_version: Option<String>,
+    pub(crate) crate_type: String,
     pub(crate) features: BTreeMap<String, Vec<String>>,
 }
 
@@ -58,6 +59,7 @@ impl Default for PackageMetadata {
             description: None,
             edition: None,
             rust_version: None,
+            crate_type: "lib".to_string(),
             features: BTreeMap::from([("default".to_string(), Vec::new())]),
         }
     }

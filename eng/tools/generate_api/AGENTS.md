@@ -119,6 +119,7 @@ Ordering is deterministic and shared by both output formats.
 - Markdown output renders child modules as nested `pub mod name { ... }`
 - APIView uses the same logical module tree with root unwrapped
 - Module doc comments and attributes render above the module declaration
+- Markdown renders crate-root docs above synthetic `#![crate_name = "..."]` and `#![crate_type = "..."]`; real crate attrs follow those anchors
 - Trait members are extracted into `ApiItem.members` instead of being embedded in the declaration string. Renderers handle the opening `{` and implied closing `}` separately so each member gets its own APIView `LineId`
 - Inherent impl blocks on structs enums and unions are first-class items with `ApiItem.members`. Do not flatten their members into the owning type. This preserves typestate surfaces such as multiple `read()` methods on different `SasBuilder` impls
 - Keep separate source impl blocks separate even when their rendered headers match. Preserve each block's own attrs docs and members
@@ -218,6 +219,7 @@ For traits whose rustdoc-expanded methods carry synthetic async-trait lifetimes:
 - the diff only contains insertions
 - each contiguous doc-comment block becomes its own hunk
 - each hunk includes the doc comments, all following attributes, and the first declaration line as context
+- crate-root doc hunks anchor only to the synthetic `crate_name` and `crate_type` lines, not to later real crate attrs
 - no doc comments means an empty patch file
 
 ## Source map output

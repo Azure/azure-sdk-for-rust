@@ -19,4 +19,6 @@
 - `otlp_rustls`
 
 ```rust
+#![crate_name = "azure_data_cosmos_observability_harness"]
+#![crate_type = "bin"]
 ```

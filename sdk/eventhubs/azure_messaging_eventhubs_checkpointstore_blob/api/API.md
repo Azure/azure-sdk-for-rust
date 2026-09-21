@@ -10,6 +10,8 @@
   - `azure_core/default`
 
 ```rust
+#![crate_name = "azure_messaging_eventhubs_checkpointstore_blob"]
+#![crate_type = "lib"]
 #![recursion_limit = "128"]
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]

@@ -12,6 +12,8 @@
 - `fe2o3_amqp_rustls`
 
 ```rust
+#![crate_name = "azure_core_amqp"]
+#![crate_type = "lib"]
 #![cfg(feature = "fe2o3_amqp")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]

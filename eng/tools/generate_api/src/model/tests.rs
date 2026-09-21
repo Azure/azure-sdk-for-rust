@@ -28,6 +28,7 @@ fn orders_feature_names_and_default_children() {
         description: None,
         edition: None,
         rust_version: None,
+        crate_type: "lib".to_string(),
         features: BTreeMap::from([
             ("alpha".to_string(), vec!["ignored".to_string()]),
             (

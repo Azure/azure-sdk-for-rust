@@ -10,6 +10,8 @@
   - `azure_core/default`
 
 ```rust
+#![crate_name = "azure_storage_queue"]
+#![crate_type = "lib"]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![allow(unused_imports)]
 pub use azure_storage_queue::generated::clients::queue_client::QueueClient;

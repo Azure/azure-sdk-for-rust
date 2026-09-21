@@ -9,6 +9,8 @@
 - `default`
 
 ```rust
+#![crate_name = "azure_core_test_macros"]
+#![crate_type = "proc-macro"]
 #[proc_macro_attribute]
 #[test]
 ```
