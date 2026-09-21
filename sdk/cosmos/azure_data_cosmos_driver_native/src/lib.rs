@@ -23,6 +23,8 @@ pub mod bytes;
 pub mod completion;
 pub mod container_ref;
 pub mod credential;
+pub mod cursor;
+pub mod cursor_request;
 pub mod database_ref;
 pub mod driver;
 pub mod driver_options;

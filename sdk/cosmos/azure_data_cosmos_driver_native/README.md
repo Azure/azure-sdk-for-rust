@@ -33,29 +33,29 @@ for the full design.
 
 ### Capability matrix (current)
 
-| Capability                                                                      | Status                                                                                  |
-| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Master-key authentication                                                       | ✅                                                                                       |
-| AAD token-credential authentication                                             | ✅ via host credential bridge                                                            |
-| Resource-token authentication                                                   | ⏳ follow-up                                                                              |
-| Sync driver creation (`_blocking`)                                              | ✅                                                                                       |
-| Async driver creation (`_submit`)                                               | ✅                                                                                       |
-| Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`)                        | ⏳ needs driver-side `was_cached` signal                                                 |
-| Sync + async `resolve_container`                                                | ✅                                                                                       |
-| Single + hierarchical partition keys                                            | ✅                                                                                       |
-| Item-CRUD operations (read / create / upsert / replace / delete)                | ✅                                                                                       |
-| Item PATCH                                                                      | ✅ (preview exposure is controlled by the consuming SDK)                                 |
-| Container-CRUD operations (read / replace / delete)                             | ✅                                                                                       |
-| Database + account-scope operations                                             | ✅                                                                                       |
-| `cosmos_submit_singleton_operation` (point ops)                                 | ✅                                                                                       |
-| `cosmos_submit_operation` (feeds + pagination)                                  | ✅                                                                                       |
-| Response status / RU / body / activity-id / session-token / etag / continuation | ✅                                                                                       |
-| Pagination (read-feeds + query result sets)                                     | ⏳ planned                                                                               |
-| Multi-part response body iteration                                              | ⏳ planned                                                                               |
-| Diagnostics accessors                                                           | ⏳ planned                                                                               |
-| Patch instruction builder                                                       | ⏳ planned                                                                               |
-| Transactional batch sub-operation builder                                       | ⏳ planned                                                                               |
-| Custom per-operation request headers                                            | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
+| Capability | Status |
+| --- | --- |
+| Master-key authentication | ✅ |
+| AAD token-credential authentication | ✅ via host credential bridge |
+| Resource-token authentication | ⏳ follow-up |
+| Sync driver creation (`_blocking`) | ✅ |
+| Async driver creation (`_submit`) | ✅ |
+| Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`) | ⏳ needs driver-side `was_cached` signal |
+| Sync + async `resolve_container` | ✅ |
+| Single + hierarchical partition keys | ✅ |
+| Item-CRUD operations (read / create / upsert / replace / delete) | ✅ |
+| Item PATCH | ✅ (preview exposure is controlled by the consuming SDK) |
+| Container-CRUD operations (read / replace / delete) | ✅ |
+| Database + account-scope operations | ✅ |
+| `cosmos_submit_singleton_operation` (point ops) | ✅ |
+| `cosmos_submit_operation` (legacy feeds) | ✅ with explicit errors for unrepresentable results |
+| Response status / RU / body / activity-id / session-token / etag / continuation | ✅ |
+| Retained query/read-feed/change-feed cursors | Supported through `cosmos_cursor_*` |
+| Multi-part response body iteration | All buffers in cursor completions |
+| Diagnostics accessors | ⏳ planned |
+| Patch instruction builder | ⏳ planned |
+| Transactional batch sub-operation builder | ⏳ planned |
+| Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 
 ## Building
 
@@ -78,6 +78,124 @@ The resulting shared library lands at:
 Language bindings should either bundle the library next to their executable,
 publish it to the system loader path, or use a per-language helper to point
 at the build output (`LD_LIBRARY_PATH=…`, `[DllImport]` resolver, etc.).
+
+## Retained feed cursors
+
+Use `cosmos_cursor_*` for queries, read feeds, and change feed. The cursor retains
+the driver's plan between pages, including buffered queries that cannot produce
+a serialized continuation. See
+[the cursor specification](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0028-native-feed-cursor.md)
+for the complete contract.
+
+Read feeds preserve the driver's existing scope limits: database/container and
+single-partition item reads are supported; full-container item read-all returns
+`400/20112` (fan-out required). The cursor does not add read-feed range traversal.
+
+Initialize `cosmos_cursor_request_t` with `cosmos_cursor_request_init`. Its
+`abi_version` is 1; the size/version header belongs to the new cursor record and
+does not change any legacy record. Ordinary queries/read feeds use
+`request.operation.kind`; change feeds set that kind to 0 and select
+`change_feed_mode` (1: LatestVersion, 2: AllVersionsAndDeletes).
+The fresh change-feed `start_from` values are 1: Beginning, 2: Now, 3: PointInTime
+(with counted RFC 3339 `start_time`). Use 0 when resuming with a token.
+AllVersionsAndDeletes supports Now/resume; other well-formed starts and account
+opt-in/retention restrictions surface service errors.
+
+Create a dedicated queue with `cosmos_cursor_queue_create(runtime, capacity)`.
+Capacity counts admitted work as well as queued results; 0 is unbounded.
+The cursor stays bound to that queue. Open/Next/Checkpoint return operation
+handles, just like legacy submissions. Drain with `cosmos_cursor_queue_wait`,
+which returns allocated completion pointers. Never mix the legacy and cursor
+wait APIs: the new API returns a format error; legacy wait cannot return a
+packed error, so it logs an error and returns zero without consuming results.
+
+| Successful `result_kind` | Meaning |
+| --- | --- |
+| 1 | Opened; detach with `cosmos_cursor_completion_take_cursor`. |
+| 2 | Page, including empty pages and change-feed 304 idle responses. |
+| 3 | Checkpoint; copy the counted token before freeing its completion. |
+| 4 | End of a finite feed; repeated Next returns End without I/O. |
+
+Check `common.status`/`common.outcome` before interpreting the result kind.
+For a Page, `body_kind` is 0: NoPayload, 1: RawBytes (`common.body`/`body_len`),
+or 2: Items (`items`/`items_len`, every buffer in order). RawBytes may be a whole
+feed envelope. Never infer payload shape from JSON field names, and never assume
+binary-negotiated bytes are UTF-8. Set operation
+`binary_encoding_request_text_response = 2` when the host needs text output.
+Free each result with `cosmos_cursor_completion_free`, not the legacy array-free
+function; do not separately free its embedded common record.
+
+The following bounded helper reads at most `page_budget` pages from an already
+opened cursor on an otherwise idle queue. `consume` must copy bytes it retains after returning; the complete
+page remains valid until its completion is freed.
+
+```c
+#include "azurecosmosdriver.h"
+
+static cosmos_status_code_t read_pages(
+    cosmos_cursor_t *cursor, cosmos_completion_queue_t *queue,
+    unsigned page_budget, void (*consume)(const cosmos_cursor_completion_t *))
+{
+    for (unsigned page = 0; page < page_budget; ++page) {
+        cosmos_status_code_t status = COSMOS_STATUS_SUCCESS;
+        cosmos_operation_handle_t *op =
+            cosmos_cursor_next_submit(cursor, 0, &status);
+        if (!op) return status;
+        cosmos_cursor_completion_t *result = NULL;
+        size_t count = 0;
+        status = cosmos_cursor_queue_wait(queue, &result, 1, UINT32_MAX, &count);
+        if (!status && count == 0) {
+            status = cosmos_operation_handle_status(op);
+            if (!status) status = cosmos_cursor_status(cursor);
+            if (!status) status = (503 << 16) | COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_SHUTDOWN;
+        }
+        cosmos_operation_handle_free(op);
+        if (status || count == 0) return status;
+        status = result->common.status;
+        bool stop = result->result_kind == 4 ||
+                    result->common.http_status_code == 304;
+        if (!status && result->result_kind == 2) consume(result);
+        cosmos_cursor_completion_free(result);
+        if (status || stop) return status;
+    }
+    return COSMOS_STATUS_SUCCESS;
+}
+```
+
+For a query, set `operation.kind = COSMOS_OPERATION_KIND_QUERY_ITEMS`, supply the
+resolved container and a JSON query body, then submit Open and take the cursor
+from its completion. For a change feed, set `change_feed_mode = 1`,
+`start_from = 2`, and the container instead of a query body. The helper stops
+at 304 to let the caller choose a polling delay; 304 does not close the cursor.
+Always free the cursor and its queue when finished.
+
+`cosmos_cursor_checkpoint_submit` is separate from Next. DISTINCT and buffered
+non-streaming ORDER BY can reject a checkpoint while still allowing subsequent
+pages; ordinary read-feed checkpoints also retain the driver's existing
+unsupported status. A token is never required to advance a live cursor.
+Checkpoint errors indicating corrupted progress and execution failures terminate
+the cursor; inspect `cosmos_cursor_status` for its failure.
+
+Only one operation per cursor may be outstanding, until its result is transferred
+by the wait call. Overlap returns Busy. **Wrapper-managed prefetch is supported**:
+request another page after transfer while keeping earlier page completions alive.
+Bound that buffering in the host SDK. Capture and associate supported checkpoints
+with page boundaries before advancing, and persist only the token matching
+application-consumed progress. Native automatic prefetch/polling is not performed.
+
+Cancellation that wins before publication terminates execution conservatively;
+late cancellation preserves the result and sets `was_cancel_requested`.
+Free is non-blocking and does not cancel admitted work. Synchronize raw handle
+Free against new calls. Queue shutdown permits admitted work to drain, whereas
+queue Free abandons undelivered results and makes affected cursors unusable.
+Use `cosmos_operation_handle_status` to observe delivery loss even without a
+completion. Partial cancellation diagnostics remain a separate unsupported feature.
+
+**Legacy migration:** existing ABI layouts are unchanged, but one-shot feed
+submission now returns an explicit error for unsupported checkpoints or Items
+payloads instead of silently returning incomplete output. Feed kinds passed to
+the singleton entry point use the feed path and its guards. Normal point
+operations and representable raw feed responses keep their existing behavior.
 
 ---
 
@@ -1412,11 +1530,11 @@ The earlier `azure_data_cosmos_native` crate (removed in
 commit `ccf43caae`) shipped a handful of files that have **not** been
 reintroduced in this crate; their content now lives elsewhere:
 
-| Old file                                                     | New location                                                                                                                                                           |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `azurecosmos.pc.in` (pkg-config template)                    | This crate ships a sibling `azurecosmosdriver.pc.in` with the same shape but a new package name.                                                                       |
-| `docs/next_generation_sdks_design_principles.md`             | Folded into [sdk/cosmos/docs/specs/0019-native-wrapper.md section 2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md). |
-| `c_tests/test_common.h` runtime / client / database fixtures | Re-added incrementally as the corresponding C entry points land.                                                                                                       |
+| Old file | New location |
+| --- | --- |
+| `azurecosmos.pc.in` (pkg-config template) | This crate ships a sibling `azurecosmosdriver.pc.in` with the same shape but a new package name. |
+| `docs/next_generation_sdks_design_principles.md` | Folded into [sdk/cosmos/docs/specs/0019-native-wrapper.md section 2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md). |
+| `c_tests/test_common.h` runtime / client / database fixtures | Re-added incrementally as the corresponding C entry points land. |
 
 If you are spelunking the git history of the old crate looking for a behavior
 or test that "should be here", that table is the first place to check.

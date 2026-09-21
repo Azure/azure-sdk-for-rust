@@ -60,6 +60,7 @@ directly by Rust source remain with their crates.
 | 0025 | Throughput control (`specs/0025-throughput-control.md`) |
 | 0026 | Session consistency (`specs/0026-session-consistency.md`) |
 | 0027 | Hosted emulator (`specs/0027-hosted-emulator.md`) |
+| 0028 | Generic native feed cursor (`specs/0028-native-feed-cursor.md`) |
 
 ## Architecture decision records
 

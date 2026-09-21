@@ -12,6 +12,13 @@ completion lifecycle](#2-the-submission-and-completion-lifecycle).
 
 ## 0. What "C wrapper" means (there is no C code)
 
+> **Cursor extension:**
+> `sdk/cosmos/docs/specs/0028-native-feed-cursor.md` reuses this completion-queue
+> model and defines additive versioned cursor results, delivery reservations,
+> and retained-plan ownership. It does not rename the legacy APIs shown
+> here. Its overlap matrix distinguishes the proposed cursor contract from the
+> older declaration sketches in this document and specification 0019.
+
 A common first question is: *if this is a "C wrapper", where is the C
 code?* The short answer is that the **"C" refers to the ABI
 (Application Binary Interface) — the binary calling convention —

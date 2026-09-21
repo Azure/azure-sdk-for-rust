@@ -895,6 +895,14 @@ pub(crate) struct BuiltRequest {
 pub(crate) unsafe fn build_request(
     request: *const CosmosOperationRequest,
 ) -> Result<BuiltRequest, CosmosErrorCode> {
+    // SAFETY: forwarded request allocation contract.
+    unsafe { build_request_with_operation(request, None) }
+}
+
+pub(crate) unsafe fn build_request_with_operation(
+    request: *const CosmosOperationRequest,
+    operation: Option<CosmosOperation>,
+) -> Result<BuiltRequest, CosmosErrorCode> {
     if request.is_null() {
         return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
     }
@@ -902,7 +910,12 @@ pub(crate) unsafe fn build_request(
     let req = unsafe { &*request };
 
     // SAFETY: request fields satisfy the caller's allocation contract.
-    let operation = unsafe { build_operation(req)? };
+    let operation = match operation {
+        // SAFETY: forwarded request allocation contract.
+        Some(operation) => unsafe { apply_inline_mutators(operation, req)? },
+        // SAFETY: forwarded request allocation contract.
+        None => unsafe { build_operation(req)? },
+    };
     // SAFETY: tracking view satisfies the caller's allocation contract.
     let operation = unsafe {
         apply_patch_tracking_fields(
@@ -1058,9 +1071,9 @@ unsafe fn build_operation(
         }
         K::CosmosOperationKindQueryItems => {
             let container = require_container(req)?;
-            // feed_range is optional; NULL → None (whole-container query).
+            // The driver requires an explicit target for partitioned operations.
             let feed_range = if req.feed_range.is_null() {
-                None
+                Some(azure_data_cosmos_driver::models::FeedRange::full())
             } else {
                 Some(
                     FeedRangeHandle::from_ptr(req.feed_range)

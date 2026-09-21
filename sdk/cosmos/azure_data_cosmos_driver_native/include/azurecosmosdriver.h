@@ -813,6 +813,26 @@ enum cosmos_sub_status_t
    */
   COSMOS_SUB_STATUS_CLIENT_FFI_PANIC = 20362,
   /**
+   * A cursor has an outstanding operation.
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_CURSOR_BUSY = 20363,
+  /**
+   * Wrong completion queue format.
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_FORMAT = 20364,
+  /**
+   * Cursor progress is terminal.
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_CURSOR_CLOSED = 20365,
+  /**
+   * Legacy completion cannot represent the page.
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_REPRESENTATION_UNSUPPORTED = 20366,
+  /**
+   * An admitted result was not delivered.
+   */
+  COSMOS_SUB_STATUS_CLIENT_FFI_DELIVERY_LOST = 20367,
+  /**
    * `CLIENT_GENERATED_401` (20401).
    */
   COSMOS_SUB_STATUS_CLIENT_GENERATED_401 = 20401,
@@ -872,6 +892,16 @@ typedef struct cosmos_container_ref_t cosmos_container_ref_t;
  * pointer.
  */
 typedef struct cosmos_completion_backing_t cosmos_completion_backing_t;
+
+/**
+ * Opaque owner of the item view array.
+ */
+typedef struct cosmos_cursor_completion_backing_t cosmos_cursor_completion_backing_t;
+
+/**
+ * Opaque retained plan. Synchronize handle free against all calls using that handle.
+ */
+typedef struct cosmos_cursor_t cosmos_cursor_t;
 
 /**
  * The C ABI handle for a database reference (`cosmos_database_ref_t`).
@@ -1318,6 +1348,61 @@ typedef struct cosmos_completion_queue_options_t {
 } cosmos_completion_queue_options_t;
 
 /**
+ * Payload half of a [`CosmosPartitionKeyComponent`] — a C `union` whose
+ * active field is selected by the sibling `kind` discriminant. Only the
+ * field selected by `kind` may be read; the others are ignored (the
+ * `Null` / `Undefined` kinds do not read any payload field at all).
+ *
+ * The boolean payload is exposed as a plain `u8` (rather than a Rust
+ * `bool`) so any host-written byte is a defined value: zero encodes
+ * `false`, any non-zero byte encodes `true`. This avoids the undefined
+ * behavior that would arise if a caller wrote a byte other than `0x00`
+ * or `0x01` into a `bool`-typed field.
+ */
+typedef union cosmos_partition_key_component_value_t {
+  /**
+   * Borrowed counted UTF-8 payload. Read iff `kind` is `String`.
+   */
+  struct cosmos_string_view_t string_value;
+  /**
+   * Numeric payload. Read iff `kind` is `Number`. Must be finite.
+   */
+  double number_value;
+  /**
+   * Boolean payload as `u8`: `0` encodes `false`, any non-zero byte
+   * encodes `true`. Read iff `kind` is `Bool`. Typed as `u8` rather
+   * than a Rust `bool` so an arbitrary host-written byte is always a
+   * defined value.
+   */
+  uint8_t bool_value;
+} cosmos_partition_key_component_value_t;
+
+/**
+ * One component of a hierarchical partition key, assembled inline by the host
+ * (a C-style tagged union: a `kind` tag plus a value `union` sharing storage
+ * across every possible payload).
+ *
+ * This lets a calling SDK assemble a whole partition key in a single array
+ * and drop it straight into [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest)
+ * or [`cosmos_partition_key_create`]. Only the union field selected by `kind`
+ * is read; the others are ignored.
+ */
+typedef struct cosmos_partition_key_component_t {
+  /**
+   * Which value field to read, as a [`CosmosPartitionKeyComponentKind`]
+   * discriminant. Stored as `u8` so every host-written byte is a
+   * defined value — an out-of-range kind falls through to the wildcard
+   * branch of the reader's match and is rejected with
+   * `INVALID_OPTION_VALUE`.
+   */
+  uint8_t kind;
+  /**
+   * The union payload; read the field selected by `kind`.
+   */
+  union cosmos_partition_key_component_value_t value;
+} cosmos_partition_key_component_t;
+
+/**
  * A single custom request/operation header. Both views are
  * counted UTF-8 and borrowed for the duration of the submit call;
  * the wrapper copies them before returning.
@@ -1458,138 +1543,6 @@ typedef struct cosmos_operation_options_t {
    */
   int32_t query_plan_mode;
 } cosmos_operation_options_t;
-
-/**
- * Flat C ABI config for building a `cosmos_driver_options_t` in a single call.
- *
- * All fields are sentinel-encoded so a zeroed struct (or a NULL pointer passed
- * to [`cosmos_driver_options_build`]) means "no preferred regions and the
- * driver's default operation options":
- *
- * - `preferred_regions` / `preferred_regions_len`: NULL / `0` = no preferred
- *   regions. A non-NULL pointer with `0` length is treated as empty.
- * - `operation_options`: pointer to a flat
- *   [`cosmos_operation_options_t`](crate::op_request::CosmosOperationOptions),
- *   or NULL to inherit the driver defaults.
- * The account reference stays a separate handle parameter on
- * [`cosmos_driver_options_build`] — it owns `Arc`-shared state and cannot be
- * flattened into bytes.
- *
- * Construct with [`cosmos_driver_options_config_default`] to obtain an
- * all-unset value, then set the fields you care about.
- */
-typedef struct cosmos_driver_options_config_t {
-  /**
-   * Preferred regions for routing — array of counted UTF-8 region
-   * names. NULL / `0` length = none.
-   */
-  const struct cosmos_string_view_t *preferred_regions;
-  /**
-   * Number of entries in `preferred_regions`.
-   */
-  uintptr_t preferred_regions_len;
-  /**
-   * Per-driver default operation options, or NULL to inherit the driver
-   * defaults.
-   */
-  const struct cosmos_operation_options_t *operation_options;
-} cosmos_driver_options_config_t;
-
-/**
- * Payload half of a [`CosmosPartitionKeyComponent`] — a C `union` whose
- * active field is selected by the sibling `kind` discriminant. Only the
- * field selected by `kind` may be read; the others are ignored (the
- * `Null` / `Undefined` kinds do not read any payload field at all).
- *
- * The boolean payload is exposed as a plain `u8` (rather than a Rust
- * `bool`) so any host-written byte is a defined value: zero encodes
- * `false`, any non-zero byte encodes `true`. This avoids the undefined
- * behavior that would arise if a caller wrote a byte other than `0x00`
- * or `0x01` into a `bool`-typed field.
- */
-typedef union cosmos_partition_key_component_value_t {
-  /**
-   * Borrowed counted UTF-8 payload. Read iff `kind` is `String`.
-   */
-  struct cosmos_string_view_t string_value;
-  /**
-   * Numeric payload. Read iff `kind` is `Number`. Must be finite.
-   */
-  double number_value;
-  /**
-   * Boolean payload as `u8`: `0` encodes `false`, any non-zero byte
-   * encodes `true`. Read iff `kind` is `Bool`. Typed as `u8` rather
-   * than a Rust `bool` so an arbitrary host-written byte is always a
-   * defined value.
-   */
-  uint8_t bool_value;
-} cosmos_partition_key_component_value_t;
-
-/**
- * One component of a hierarchical partition key, assembled inline by the host
- * (a C-style tagged union: a `kind` tag plus a value `union` sharing storage
- * across every possible payload).
- *
- * This lets a calling SDK assemble a whole partition key in a single array
- * and drop it straight into [`CosmosOperationRequest`](crate::op_request::CosmosOperationRequest)
- * or [`cosmos_partition_key_create`]. Only the union field selected by `kind`
- * is read; the others are ignored.
- */
-typedef struct cosmos_partition_key_component_t {
-  /**
-   * Which value field to read, as a [`CosmosPartitionKeyComponentKind`]
-   * discriminant. Stored as `u8` so every host-written byte is a
-   * defined value — an out-of-range kind falls through to the wildcard
-   * branch of the reader's match and is rejected with
-   * `INVALID_OPTION_VALUE`.
-   */
-  uint8_t kind;
-  /**
-   * The union payload; read the field selected by `kind`.
-   */
-  union cosmos_partition_key_component_value_t value;
-} cosmos_partition_key_component_t;
-
-/**
- * Flat C ABI options for building a `cosmos_runtime_t` in a single call.
- *
- * Every field is sentinel-encoded so a zeroed struct (or a NULL pointer
- * passed to [`cosmos_runtime_build`]) means "use the driver defaults for
- * everything":
- *
- * - `workload_id`: `0` = unset (valid range otherwise `1`–`50`).
- * - `correlation_id` / `user_agent_suffix` / `wrapping_sdk_identifier`:
- *   NULL/0 = unset; non-NULL/0 = explicit empty, per [`CosmosStringView`].
- * - `cpu_refresh_interval_ms`: `0` = unset (valid range otherwise
- *   `1000`–`60000`).
- *
- * Construct with [`cosmos_runtime_options_default`] to obtain an all-unset
- * value, then set the fields you care about.
- */
-typedef struct cosmos_runtime_options_t {
-  /**
-   * Workload identifier (valid range `1`–`50`). `0` = unset.
-   */
-  uint8_t workload_id;
-  /**
-   * Correlation id for client-side metrics (counted UTF-8), or NULL/0 = unset.
-   */
-  struct cosmos_string_view_t correlation_id;
-  /**
-   * User-agent suffix (counted UTF-8), or NULL/0 = unset.
-   */
-  struct cosmos_string_view_t user_agent_suffix;
-  /**
-   * Wrapping-SDK identifier prepended to the User-Agent header
-   * (counted UTF-8), or NULL/0 = unset.
-   */
-  struct cosmos_string_view_t wrapping_sdk_identifier;
-  /**
-   * CPU/memory monitoring refresh interval in milliseconds (valid range
-   * `1000`–`60000`). `0` = unset.
-   */
-  uint64_t cpu_refresh_interval_ms;
-} cosmos_runtime_options_t;
 
 /**
  * Self-describing request passed to the two submit entry points. The host
@@ -1734,6 +1687,177 @@ typedef struct cosmos_operation_request_t {
    */
   uint32_t patch_tracking_retention_seconds;
 } cosmos_operation_request_t;
+
+/**
+ * Retained feed input. Initialize with `cosmos_cursor_request_init`.
+ */
+typedef struct cosmos_cursor_request_t {
+  /**
+   * Readable input size, including any zero-filled extension bytes.
+   */
+  uint32_t struct_size_bytes;
+  /**
+   * Must be 1.
+   */
+  uint32_t abi_version;
+  /**
+   * Frozen legacy common fields; `kind` must be zero for change feeds.
+   */
+  struct cosmos_operation_request_t operation;
+  /**
+   * 0: common query/read kind; 1: LatestVersion; 2: AllVersionsAndDeletes.
+   */
+  uint32_t change_feed_mode;
+  /**
+   * 0: unset (resume only); 1: beginning; 2: now; 3: point in time.
+   */
+  uint32_t start_from;
+  /**
+   * Counted RFC 3339 timestamp, only with `start_from == 3`.
+   */
+  struct cosmos_string_view_t start_time;
+  /**
+   * Must be zero.
+   */
+  uint32_t reserved[4];
+} cosmos_cursor_request_t;
+
+/**
+ * Borrowed item bytes; zero-length members retain their position.
+ */
+typedef struct cosmos_cursor_bytes_t {
+  /**
+   * Readable bytes, valid until the owning completion is freed.
+   */
+  const uint8_t *data;
+  /**
+   * Byte count.
+   */
+  uintptr_t len;
+} cosmos_cursor_bytes_t;
+
+/**
+ * Allocated V2 completion. All views survive cursor advancement and cursor free.
+ */
+typedef struct cosmos_cursor_completion_t {
+  /**
+   * Full allocated record size.
+   */
+  uint32_t struct_size_bytes;
+  /**
+   * Currently 1.
+   */
+  uint32_t abi_version;
+  /**
+   * Frozen common outcome, status, correlation, headers and error fields.
+   */
+  struct cosmos_completion_t common;
+  /**
+   * 0: no successful result; 1: opened; 2: page; 3: checkpoint; 4: end.
+   */
+  uint32_t result_kind;
+  /**
+   * 0: no payload; 1: raw bytes in `common.body`; 2: ordered items.
+   */
+  uint32_t body_kind;
+  /**
+   * All driver item buffers, not just the first; NULL when empty.
+   */
+  const struct cosmos_cursor_bytes_t *items;
+  /**
+   * Number of item buffers.
+   */
+  uintptr_t items_len;
+  /**
+   * Counted checkpoint, valid until completion free.
+   */
+  struct cosmos_string_view_t checkpoint;
+  /**
+   * Owned opened cursor; detach exactly once with `cosmos_cursor_completion_take_cursor`.
+   */
+  struct cosmos_cursor_t *cursor;
+  /**
+   * Private allocation owner.
+   */
+  struct cosmos_cursor_completion_backing_t *backing;
+} cosmos_cursor_completion_t;
+
+/**
+ * Flat C ABI config for building a `cosmos_driver_options_t` in a single call.
+ *
+ * All fields are sentinel-encoded so a zeroed struct (or a NULL pointer passed
+ * to [`cosmos_driver_options_build`]) means "no preferred regions and the
+ * driver's default operation options":
+ *
+ * - `preferred_regions` / `preferred_regions_len`: NULL / `0` = no preferred
+ *   regions. A non-NULL pointer with `0` length is treated as empty.
+ * - `operation_options`: pointer to a flat
+ *   [`cosmos_operation_options_t`](crate::op_request::CosmosOperationOptions),
+ *   or NULL to inherit the driver defaults.
+ * The account reference stays a separate handle parameter on
+ * [`cosmos_driver_options_build`] — it owns `Arc`-shared state and cannot be
+ * flattened into bytes.
+ *
+ * Construct with [`cosmos_driver_options_config_default`] to obtain an
+ * all-unset value, then set the fields you care about.
+ */
+typedef struct cosmos_driver_options_config_t {
+  /**
+   * Preferred regions for routing — array of counted UTF-8 region
+   * names. NULL / `0` length = none.
+   */
+  const struct cosmos_string_view_t *preferred_regions;
+  /**
+   * Number of entries in `preferred_regions`.
+   */
+  uintptr_t preferred_regions_len;
+  /**
+   * Per-driver default operation options, or NULL to inherit the driver
+   * defaults.
+   */
+  const struct cosmos_operation_options_t *operation_options;
+} cosmos_driver_options_config_t;
+
+/**
+ * Flat C ABI options for building a `cosmos_runtime_t` in a single call.
+ *
+ * Every field is sentinel-encoded so a zeroed struct (or a NULL pointer
+ * passed to [`cosmos_runtime_build`]) means "use the driver defaults for
+ * everything":
+ *
+ * - `workload_id`: `0` = unset (valid range otherwise `1`–`50`).
+ * - `correlation_id` / `user_agent_suffix` / `wrapping_sdk_identifier`:
+ *   NULL/0 = unset; non-NULL/0 = explicit empty, per [`CosmosStringView`].
+ * - `cpu_refresh_interval_ms`: `0` = unset (valid range otherwise
+ *   `1000`–`60000`).
+ *
+ * Construct with [`cosmos_runtime_options_default`] to obtain an all-unset
+ * value, then set the fields you care about.
+ */
+typedef struct cosmos_runtime_options_t {
+  /**
+   * Workload identifier (valid range `1`–`50`). `0` = unset.
+   */
+  uint8_t workload_id;
+  /**
+   * Correlation id for client-side metrics (counted UTF-8), or NULL/0 = unset.
+   */
+  struct cosmos_string_view_t correlation_id;
+  /**
+   * User-agent suffix (counted UTF-8), or NULL/0 = unset.
+   */
+  struct cosmos_string_view_t user_agent_suffix;
+  /**
+   * Wrapping-SDK identifier prepended to the User-Agent header
+   * (counted UTF-8), or NULL/0 = unset.
+   */
+  struct cosmos_string_view_t wrapping_sdk_identifier;
+  /**
+   * CPU/memory monitoring refresh interval in milliseconds (valid range
+   * `1000`–`60000`). `0` = unset.
+   */
+  uint64_t cpu_refresh_interval_ms;
+} cosmos_runtime_options_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -1949,6 +2073,12 @@ cosmos_completion_queue_state_t cosmos_completion_queue_state(const struct cosmo
 void cosmos_operation_handle_cancel(struct cosmos_operation_handle_t *op);
 
 /**
+ * Terminal packed status, including delivery loss after queue abandonment.
+ * Zero means no error observed; inspect the lifecycle separately for completion.
+ */
+cosmos_status_code_t cosmos_operation_handle_status(const struct cosmos_operation_handle_t *op);
+
+/**
  * Poll the operation's lifecycle state. Returns `InFlight` if `op` is NULL.
  */
 cosmos_operation_handle_state_t cosmos_operation_handle_state(const struct cosmos_operation_handle_t *op);
@@ -2025,6 +2155,77 @@ cosmos_status_code_t cosmos_token_request_complete(uint64_t request_id,
                                                    int64_t expires_on_unix_seconds,
                                                    const uint8_t *error_message,
                                                    uintptr_t error_message_len);
+
+/**
+ * Create an isolated cursor queue. Capacity 0 is unbounded; every admitted result reserves a slot.
+ */
+struct cosmos_completion_queue_t *cosmos_cursor_queue_create(const struct cosmos_runtime_t *runtime,
+                                                             uint32_t max_capacity);
+
+/**
+ * Plan without consuming a data page. Input pointers need only survive this call.
+ */
+struct cosmos_operation_handle_t *cosmos_cursor_open_submit(const struct cosmos_driver_t *driver,
+                                                            const struct cosmos_cursor_request_t *request,
+                                                            struct cosmos_completion_queue_t *queue,
+                                                            intptr_t user_data,
+                                                            cosmos_status_code_t *out_pre_error);
+
+/**
+ * Request one page. Busy lasts until transfer, not until the prior page is freed.
+ */
+struct cosmos_operation_handle_t *cosmos_cursor_next_submit(const struct cosmos_cursor_t *cursor,
+                                                            intptr_t user_data,
+                                                            cosmos_status_code_t *out_pre_error);
+
+/**
+ * Snapshot delivered-to-wrapper progress without advancing. Unsupported snapshots remain pageable.
+ */
+struct cosmos_operation_handle_t *cosmos_cursor_checkpoint_submit(const struct cosmos_cursor_t *cursor,
+                                                                  intptr_t user_data,
+                                                                  cosmos_status_code_t *out_pre_error);
+
+/**
+ * Non-blocking handle release; admitted work retains ownership and still completes.
+ */
+void cosmos_cursor_free(struct cosmos_cursor_t *cursor);
+
+/**
+ * Inspect terminal cursor failure, including queue destruction without result delivery.
+ */
+cosmos_status_code_t cosmos_cursor_status(const struct cosmos_cursor_t *cursor);
+
+/**
+ * Transfer allocated completion pointers. Timeout/empty is success with count zero.
+ * Wrong format and invalid arguments return an error without consuming any result.
+ */
+cosmos_status_code_t cosmos_cursor_queue_wait(struct cosmos_completion_queue_t *queue,
+                                              struct cosmos_cursor_completion_t **out,
+                                              uintptr_t max,
+                                              uint32_t timeout_ms,
+                                              uintptr_t *out_count);
+
+/**
+ * Detach an opened cursor exactly once; NULL if absent or previously taken.
+ */
+struct cosmos_cursor_t *cosmos_cursor_completion_take_cursor(struct cosmos_cursor_completion_t *completion);
+
+/**
+ * Free one V2 completion and all its borrowed views, plus any undetached cursor.
+ */
+void cosmos_cursor_completion_free(struct cosmos_cursor_completion_t *completion);
+
+/**
+ * Test-only populated two-range emulator; absent from production builds.
+ */
+cosmos_status_code_t cosmos_test_cursor_fixture(uint32_t scripted_transport,
+                                                struct cosmos_runtime_t **out_runtime,
+                                                struct cosmos_driver_t **out_driver);
+
+/**
+ * Initialize a caller-owned full-size cursor request.
+ */
+void cosmos_cursor_request_init(struct cosmos_cursor_request_t *out);
 
 /**
  * Creates a name-based database reference parented to `account`.

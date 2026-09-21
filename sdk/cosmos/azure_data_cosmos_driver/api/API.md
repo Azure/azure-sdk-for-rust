@@ -816,6 +816,9 @@ pub mod error {
         const CLIENT_DRIVER_NOT_INITIALIZED: SubStatusCode = _;
         const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: SubStatusCode = _;
         const CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE: SubStatusCode = _;
+        const CLIENT_FFI_CURSOR_BUSY: SubStatusCode = _;
+        const CLIENT_FFI_CURSOR_CLOSED: SubStatusCode = _;
+        const CLIENT_FFI_DELIVERY_LOST: SubStatusCode = _;
         const CLIENT_FFI_FEED_EXHAUSTED: SubStatusCode = _;
         const CLIENT_FFI_INVALID_HEADER: SubStatusCode = _;
         const CLIENT_FFI_INVALID_OPTION_VALUE: SubStatusCode = _;
@@ -825,8 +828,10 @@ pub mod error {
         const CLIENT_FFI_OPERATION_CONSUMED: SubStatusCode = _;
         const CLIENT_FFI_PANIC: SubStatusCode = _;
         const CLIENT_FFI_PRECONDITION_ALREADY_SET: SubStatusCode = _;
+        const CLIENT_FFI_QUEUE_FORMAT: SubStatusCode = _;
         const CLIENT_FFI_QUEUE_FULL: SubStatusCode = _;
         const CLIENT_FFI_QUEUE_SHUTDOWN: SubStatusCode = _;
+        const CLIENT_FFI_REPRESENTATION_UNSUPPORTED: SubStatusCode = _;
         const CLIENT_FFI_RUNTIME_BUILD_FAILED: SubStatusCode = _;
         const CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR: SubStatusCode = _;
         const CLIENT_GENERATED_401: SubStatusCode = _;
@@ -2377,6 +2382,9 @@ pub mod models {
         const CLIENT_DRIVER_NOT_INITIALIZED: SubStatusCode = _;
         const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: SubStatusCode = _;
         const CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE: SubStatusCode = _;
+        const CLIENT_FFI_CURSOR_BUSY: SubStatusCode = _;
+        const CLIENT_FFI_CURSOR_CLOSED: SubStatusCode = _;
+        const CLIENT_FFI_DELIVERY_LOST: SubStatusCode = _;
         const CLIENT_FFI_FEED_EXHAUSTED: SubStatusCode = _;
         const CLIENT_FFI_INVALID_HEADER: SubStatusCode = _;
         const CLIENT_FFI_INVALID_OPTION_VALUE: SubStatusCode = _;
@@ -2386,8 +2394,10 @@ pub mod models {
         const CLIENT_FFI_OPERATION_CONSUMED: SubStatusCode = _;
         const CLIENT_FFI_PANIC: SubStatusCode = _;
         const CLIENT_FFI_PRECONDITION_ALREADY_SET: SubStatusCode = _;
+        const CLIENT_FFI_QUEUE_FORMAT: SubStatusCode = _;
         const CLIENT_FFI_QUEUE_FULL: SubStatusCode = _;
         const CLIENT_FFI_QUEUE_SHUTDOWN: SubStatusCode = _;
+        const CLIENT_FFI_REPRESENTATION_UNSUPPORTED: SubStatusCode = _;
         const CLIENT_FFI_RUNTIME_BUILD_FAILED: SubStatusCode = _;
         const CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR: SubStatusCode = _;
         const CLIENT_GENERATED_401: SubStatusCode = _;

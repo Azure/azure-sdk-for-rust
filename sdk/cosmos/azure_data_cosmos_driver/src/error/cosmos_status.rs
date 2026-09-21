@@ -558,6 +558,11 @@ impl SubStatusCode {
             20360 => Some("ClientFfiOperationCancelled"),
             20361 => Some("ClientFfiRuntimeBuildFailed"),
             20362 => Some("ClientFfiPanic"),
+            20363 => Some("ClientFfiCursorBusy"),
+            20364 => Some("ClientFfiQueueFormat"),
+            20365 => Some("ClientFfiCursorClosed"),
+            20366 => Some("ClientFfiRepresentationUnsupported"),
+            20367 => Some("ClientFfiDeliveryLost"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),
@@ -1687,6 +1692,16 @@ impl SubStatusCode {
     /// firewall synthesized a failure so the host continuation is released
     /// rather than leaked (20362). Paired with HTTP 500.
     pub const CLIENT_FFI_PANIC: SubStatusCode = SubStatusCode(20362);
+    /// A retained cursor already has an undelivered operation.
+    pub const CLIENT_FFI_CURSOR_BUSY: SubStatusCode = SubStatusCode(20363);
+    /// The queue's immutable completion format does not match the API.
+    pub const CLIENT_FFI_QUEUE_FORMAT: SubStatusCode = SubStatusCode(20364);
+    /// A cursor can no longer advance safely.
+    pub const CLIENT_FFI_CURSOR_CLOSED: SubStatusCode = SubStatusCode(20365);
+    /// The legacy response cannot represent all driver item buffers.
+    pub const CLIENT_FFI_REPRESENTATION_UNSUPPORTED: SubStatusCode = SubStatusCode(20366);
+    /// An admitted result was abandoned before transfer to the caller.
+    pub const CLIENT_FFI_DELIVERY_LOST: SubStatusCode = SubStatusCode(20367);
 }
 
 impl Default for SubStatusCode {

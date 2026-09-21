@@ -134,7 +134,7 @@ impl Fixture {
             .block_on(runtime.create_driver(DriverOptions::builder(account).build()))
             .unwrap();
         let runtime = Arc::into_raw(Arc::new(RuntimeContext {
-            tokio,
+            tokio: std::mem::ManuallyDrop::new(tokio),
             driver: runtime,
         })) as *mut RuntimeContext;
         let driver = DriverHandle::from_arc_into_raw(Arc::new(DriverHandle { inner: driver }));

@@ -22,7 +22,7 @@
 
 use std::collections::VecDeque;
 use std::ffi::{c_char, c_void, CString};
-use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU8, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
@@ -137,13 +137,15 @@ impl CosmosCompletionQueueState {
 /// completion record's borrowed handle.
 pub(crate) struct OperationInner {
     /// Lifecycle state — encoded as one of [`CosmosOperationHandleState`].
-    state: AtomicU8,
+    pub(crate) state: AtomicU8,
     /// True once `cosmos_operation_handle_cancel` has been called on any
     /// handle pointing at this inner. The submit pipeline's
     /// `enqueue_into_inner` reads it to set `was_cancel_requested` on the
     /// published completion (so the receive loop can tell "cancel won" from
     /// "cancel lost the race").
-    cancel_requested: AtomicBool,
+    pub(crate) cancel_requested: AtomicBool,
+    pub(crate) publication: Mutex<()>,
+    pub(crate) terminal_status: AtomicI32,
     /// Wakes the submit task's `tokio::select!` cancel branch. A cancel
     /// stores a permit via `notify_one`, so a cancel that races ahead of the
     /// task starting to wait is still observed (the permit is consumed on the
@@ -159,6 +161,8 @@ impl OperationInner {
                 CosmosOperationHandleState::CosmosOperationHandleStateInFlight as u8,
             ),
             cancel_requested: AtomicBool::new(false),
+            publication: Mutex::new(()),
+            terminal_status: AtomicI32::new(0),
             cancel_notify: tokio::sync::Notify::new(),
             patch_tracking_id: OnceLock::new(),
         }
@@ -398,11 +402,7 @@ fn body_view(response: &CosmosResponse) -> (*const u8, usize) {
         // documented "NULL pointer + 0 length when empty" contract.
         ResponseBody::Bytes(b) if b.is_empty() => (std::ptr::null(), 0),
         ResponseBody::Bytes(b) => (b.as_ptr(), b.len()),
-        ResponseBody::Items(items) => items
-            .first()
-            .filter(|b| !b.is_empty())
-            .map(|b| (b.as_ptr(), b.len()))
-            .unwrap_or((std::ptr::null(), 0)),
+        ResponseBody::Items(_) => (std::ptr::null(), 0),
         ResponseBody::NoPayload => (std::ptr::null(), 0),
     }
 }
@@ -578,7 +578,7 @@ impl PendingCompletion {
     /// the `#[repr(C)]` completion with borrowed pointers into it plus any
     /// owned side-payload handles. `op_inner` is dropped here (its terminal
     /// state was set at enqueue time).
-    fn into_ffi(self) -> CosmosCompletion {
+    pub(crate) fn into_ffi(self) -> CosmosCompletion {
         let outcome = self.outcome;
         let status = self.status;
         let user_data = self.user_data;
@@ -638,7 +638,7 @@ impl CosmosCompletion {
     /// Frees the backing box and any un-detached owned side-payload handles,
     /// NULLing each reclaimed field so a double free within the same
     /// `free_completions` call is a no-op.
-    fn free_inner(&mut self) {
+    pub(crate) fn free_inner(&mut self) {
         if !self.driver.is_null() {
             crate::driver::cosmos_driver_free(self.driver);
             self.driver = std::ptr::null_mut();
@@ -771,6 +771,7 @@ unsafe fn cqoptions_from_ptr(options: *const CosmosCompletionQueueOptions) -> Cq
 
 /// Internal `Arc`-shared queue state.
 pub(crate) struct CompletionQueueInner {
+    pub(crate) cursor: Option<crate::cursor::CursorQueue>,
     inner: Mutex<QueueInner>,
     /// Signalled whenever a new completion is enqueued.
     data_available: Condvar,
@@ -804,6 +805,9 @@ impl CompletionQueueInner {
     /// admitted-but-undrained ops so the `SHUTDOWN` → `DRAINED` transition
     /// cannot race ahead of an op that is still running.
     pub(crate) fn reserve_in_flight(&self) -> Result<(), CosmosErrorCode> {
+        if self.cursor.is_some() {
+            return Err(CosmosErrorCode::CosmosErrorCodeQueueFormat);
+        }
         let mut guard = self.inner.lock_recover();
         if guard.state != CosmosCompletionQueueState::CosmosCompletionQueueStateRunning {
             return Err(CosmosErrorCode::CosmosErrorCodeQueueShutdown);
@@ -842,8 +846,17 @@ pub struct CompletionQueue {
 
 impl CompletionQueue {
     fn new_raw(runtime: Arc<RuntimeContext>, options: CqOptions) -> *mut Self {
+        Self::new_with_mode(runtime, options, false)
+    }
+
+    pub(crate) fn new_with_mode(
+        runtime: Arc<RuntimeContext>,
+        options: CqOptions,
+        cursor: bool,
+    ) -> *mut Self {
         Box::into_raw(Box::new(CompletionQueue {
             inner: Arc::new(CompletionQueueInner {
+                cursor: cursor.then(|| crate::cursor::CursorQueue::new(options)),
                 inner: Mutex::new(QueueInner {
                     deque: VecDeque::new(),
                     state: CosmosCompletionQueueState::CosmosCompletionQueueStateRunning,
@@ -939,6 +952,12 @@ impl CompletionQueue {
         // from already-admitted in-flight ops: shutdown only blocks *new*
         // submissions, it must never strand work that was already running.
         if guard.state == CosmosCompletionQueueState::CosmosCompletionQueueStateDrained {
+            c.op_inner.terminal_status.store(
+                CosmosErrorCode::CosmosErrorCodeDeliveryLost
+                    .as_status_code()
+                    .0,
+                Ordering::Release,
+            );
             c.op_inner.state.store(next_state as u8, Ordering::Release);
             guard.in_flight = guard.in_flight.saturating_sub(1);
             maybe_mark_drained(&mut guard);
@@ -952,12 +971,21 @@ impl CompletionQueue {
         // advanced to its terminal state so nothing is stranded.
         if inner.options.max_capacity > 0 && guard.deque.len() as u32 >= inner.options.max_capacity
         {
+            c.op_inner.terminal_status.store(
+                CosmosErrorCode::CosmosErrorCodeDeliveryLost
+                    .as_status_code()
+                    .0,
+                Ordering::Release,
+            );
             c.op_inner.state.store(next_state as u8, Ordering::Release);
             guard.in_flight = guard.in_flight.saturating_sub(1);
             maybe_mark_drained(&mut guard);
             return CosmosErrorCode::CosmosErrorCodeQueueFull;
         }
 
+        c.op_inner
+            .terminal_status
+            .store(c.status.0, Ordering::Release);
         c.op_inner.state.store(next_state as u8, Ordering::Release);
         guard.deque.push_back(c);
         inner.data_available.notify_one();
@@ -1004,6 +1032,11 @@ pub extern "C" fn cosmos_completion_queue_free(queue: *mut CompletionQueue) {
         return;
     }
     tracing::trace!(?queue, "freeing cosmos_completion_queue_t");
+    if let Some(inner) = CompletionQueue::inner_arc(queue) {
+        if let Some(cursor) = &inner.cursor {
+            cursor.abandon();
+        }
+    }
     CompletionQueue::drop_raw(queue);
 }
 
@@ -1119,6 +1152,10 @@ pub extern "C" fn cosmos_completion_queue_wait(
         let Some(inner_arc) = CompletionQueue::inner_arc(queue) else {
             return 0;
         };
+        if inner_arc.cursor.is_some() {
+            tracing::error!("legacy completion wait cannot consume a cursor queue; use cosmos_cursor_queue_wait");
+            return 0;
+        }
         let Some(first) = wait_one(&inner_arc, timeout_ms) else {
             return 0;
         };
@@ -1213,6 +1250,10 @@ pub extern "C" fn cosmos_completion_queue_wait_writable(
         return false;
     };
     let inner = &*inner_arc;
+    if inner.cursor.is_some() {
+        tracing::error!("legacy writable wait cannot inspect a cursor queue");
+        return false;
+    }
     if inner.options.max_capacity == 0 {
         // Unbounded — always writable.
         return true;
@@ -1281,6 +1322,10 @@ pub extern "C" fn cosmos_completion_queue_shutdown(queue: *mut CompletionQueue) 
         return;
     };
     let inner = &*inner_arc;
+    if let Some(cursor) = &inner.cursor {
+        cursor.shutdown();
+        return;
+    }
     let mut guard = inner.inner.lock_recover();
     if guard.state == CosmosCompletionQueueState::CosmosCompletionQueueStateRunning {
         guard.state = CosmosCompletionQueueState::CosmosCompletionQueueStateShutdown;
@@ -1300,6 +1345,9 @@ pub extern "C" fn cosmos_completion_queue_state(
     let Some(q) = CompletionQueue::from_ptr(queue) else {
         return CosmosCompletionQueueState::CosmosCompletionQueueStateRunning;
     };
+    if let Some(cursor) = &q.inner.cursor {
+        return cursor.state();
+    }
     let guard = q.inner.inner.lock_recover();
     CosmosCompletionQueueState::from_u8(guard.state as u8)
 }
@@ -1326,10 +1374,21 @@ pub extern "C" fn cosmos_operation_handle_cancel(op: *mut OperationHandle) {
     let Some(inner) = OperationHandle::inner_arc(op) else {
         return;
     };
+    let _publication = inner.publication.lock_recover();
     inner.cancel_requested.store(true, Ordering::Release);
     // Store a permit so the submit task observes the cancel even if it has
     // not yet reached its `notified()` await point.
     inner.cancel_notify.notify_one();
+}
+
+/// Terminal packed status, including delivery loss after queue abandonment.
+/// Zero means no error observed; inspect the lifecycle separately for completion.
+#[no_mangle]
+pub extern "C" fn cosmos_operation_handle_status(op: *const OperationHandle) -> CosmosStatusCode {
+    OperationHandle::inner_arc(op).map_or(
+        CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code(),
+        |inner| CosmosStatusCode(inner.terminal_status.load(Ordering::Acquire)),
+    )
 }
 
 /// Poll the operation's lifecycle state. Returns `InFlight` if `op` is NULL.
@@ -1793,6 +1852,7 @@ mod tests {
         assert_eq!(c.was_cancel_requested, 1);
         let bits = c.status.0 as u32;
         assert_eq!((bits >> 16, bits & 0xFFFF), (408, 20360));
+        assert_eq!(cosmos_operation_handle_status(op), c.status);
         // The operation handle's state should reflect Cancelled.
         assert_eq!(
             cosmos_operation_handle_state(op),
@@ -1801,6 +1861,53 @@ mod tests {
 
         free_one(c);
         cosmos_operation_handle_free(op);
+        cosmos_completion_queue_free(q);
+    }
+
+    #[test]
+    fn legacy_handle_status_reports_errors_and_delivery_loss() {
+        let q = fresh_queue(1, true);
+        let op = __test_only_create_operation_handle();
+        let failed = CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code();
+        assert_eq!(
+            __test_only_enqueue_completion(
+                q,
+                op,
+                CosmosCompletionOutcome::CosmosCompletionOutcomeError,
+                failed,
+                std::ptr::null_mut(),
+                Some(
+                    DriverCosmosError::builder()
+                        .with_status(
+                            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
+                                .to_status()
+                                .unwrap(),
+                        )
+                        .build(),
+                ),
+            ),
+            CosmosErrorCode::CosmosErrorCodeSuccess
+        );
+        assert_eq!(cosmos_operation_handle_status(op), failed);
+        let rejected = __test_only_create_operation_handle();
+        assert_eq!(
+            __test_only_enqueue_completion(
+                q,
+                rejected,
+                CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
+                COSMOS_STATUS_SUCCESS,
+                std::ptr::null_mut(),
+                None,
+            ),
+            CosmosErrorCode::CosmosErrorCodeQueueFull
+        );
+        assert_eq!(
+            cosmos_operation_handle_status(rejected),
+            CosmosErrorCode::CosmosErrorCodeDeliveryLost.as_status_code()
+        );
+        free_one(wait_one_ffi(q, 0).unwrap());
+        cosmos_operation_handle_free(op);
+        cosmos_operation_handle_free(rejected);
         cosmos_completion_queue_free(q);
     }
 

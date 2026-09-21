@@ -42,10 +42,11 @@ tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macr
 futures.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
+time.workspace = true
 
 [dev-dependencies]
 # Path-only — the driver crate is not (yet) a workspace dependency.
-azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.8.0", default-features = false, features = ["__internal_mocking"] }
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.8.0", default-features = false, features = ["__internal_mocking", "__internal_in_memory_emulator"] }
 azure_core = { workspace = true, default-features = false }
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macros", "test-util"] }
 
@@ -58,7 +59,7 @@ cbindgen = "0.29.2"
 # builds do not expose these symbols. Enabled by the CMake C-test build
 # (`corrosion_import_crate(FEATURES test-abi)`); Rust integration tests
 # and normal consumer builds must not enable it.
-test-abi = []
+test-abi = ["azure_data_cosmos_driver/__internal_in_memory_emulator", "azure_data_cosmos_driver/__internal_mocking"]
 
 [lints]
 workspace = true

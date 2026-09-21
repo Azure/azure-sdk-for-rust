@@ -29,17 +29,17 @@ static int test_string_free_handles_null(void) {
 
 static int test_bytes_free_handles_null(void) {
     int result = TEST_PASS;
-    cosmos_bytes_free(NULL);
-    ASSERT(1, "cosmos_bytes_free(NULL) returned without crashing");
+    cosmos_bytes_t bytes = {0};
+    cosmos_bytes_free(bytes);
+    ASSERT(1, "cosmos_bytes_free(empty) returned without crashing");
     return result;
 }
 
 static int test_bytes_accessors_handle_null(void) {
     int result = TEST_PASS;
-    const uint8_t *data = cosmos_bytes_data(NULL);
-    size_t len = cosmos_bytes_len(NULL);
-    ASSERT(data == NULL, "cosmos_bytes_data(NULL) returns NULL");
-    ASSERT(len == 0, "cosmos_bytes_len(NULL) returns 0");
+    cosmos_bytes_t bytes = {0};
+    ASSERT(bytes.ptr == NULL, "empty bytes pointer is NULL");
+    ASSERT(bytes.len == 0, "empty bytes length is zero");
     return result;
 }
 
