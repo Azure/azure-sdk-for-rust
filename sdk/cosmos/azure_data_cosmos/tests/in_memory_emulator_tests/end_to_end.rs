@@ -28,7 +28,8 @@ use azure_data_cosmos::{
         ThrottlingRetryOptionsBuilder,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
-    CosmosRuntimeBuilder, FeedScope, Query, RoutingStrategy, TransactionalBatch,
+    CosmosRuntimeBuilder, CosmosStatus, FeedScope, Query, RoutingStrategy, SubStatusCode,
+    TransactionalBatch,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
@@ -220,20 +221,28 @@ async fn create_container_if_needed(
     }
 }
 
-/// Reads an item, retrying transient `503 ServiceUnavailable` errors a bounded
-/// number of times. Used by failover tests where the SDK's failover budget can
-/// occasionally be exhausted on the failing region under CI contention before
-/// the routing layer marks the endpoint unavailable. Logs every attempt so we
-/// can see in CI which retry succeeded (or whether 503s are still occurring).
+/// Reads an item, retrying transient regional failover errors a bounded number
+/// of times. A forced failover can first exhaust the SDK's `503` budget on the
+/// unavailable region, then reach a satellite that returns `404/1002` until it
+/// catches up to the write's session token. Logs every attempt so CI shows
+/// whether routing or replication convergence delayed the successful read.
 #[cfg(feature = "fault_injection")]
-async fn read_item_with_503_retry(
+fn is_transient_failover_status(status: CosmosStatus) -> bool {
+    status.status_code() == StatusCode::ServiceUnavailable
+        || (status.status_code() == StatusCode::NotFound
+            && status.sub_status() == Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE))
+}
+
+#[cfg(feature = "fault_injection")]
+async fn read_item_with_failover_retry(
     container: &ContainerClient,
     pk: &'static str,
     id: &'static str,
     label: &str,
 ) -> ItemResponse {
-    const MAX_ATTEMPTS: usize = 5;
+    const MAX_ATTEMPTS: usize = 8;
     let mut last_err: Option<azure_data_cosmos::CosmosError> = None;
+    let mut backoff = Duration::from_millis(250);
     for attempt in 1..=MAX_ATTEMPTS {
         match container.read_item(pk, id, None).await {
             Ok(resp) => {
@@ -242,13 +251,20 @@ async fn read_item_with_503_retry(
             }
             Err(e) => {
                 let is_503 = e.status().status_code() == StatusCode::ServiceUnavailable;
+                let is_session_unavailable = e.status().status_code() == StatusCode::NotFound
+                    && e.status().sub_status() == Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE);
                 eprintln!(
-                    "[{label}] read_item attempt {attempt}/{MAX_ATTEMPTS} failed (is_503={is_503}): {e}",
+                    "[{label}] read_item attempt {attempt}/{MAX_ATTEMPTS} failed \
+                     (is_503={is_503}, is_session_unavailable={is_session_unavailable}): {e}",
                 );
-                if !is_503 {
-                    panic!("[{label}] read_item failed with non-503 error: {e}");
+                if !is_transient_failover_status(e.status()) {
+                    panic!("[{label}] read_item failed with non-transient error: {e}");
                 }
                 last_err = Some(e);
+                if attempt < MAX_ATTEMPTS {
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(Duration::from_secs(1));
+                }
             }
         }
     }
@@ -256,6 +272,25 @@ async fn read_item_with_503_retry(
         "[{label}] read_item exhausted {MAX_ATTEMPTS} attempts; last error: {}",
         last_err.expect("at least one attempt failed"),
     );
+}
+
+#[cfg(feature = "fault_injection")]
+#[test]
+fn transient_failover_status_is_scoped_to_503_and_404_1002() {
+    assert!(is_transient_failover_status(CosmosStatus::new(
+        StatusCode::ServiceUnavailable
+    )));
+    assert!(is_transient_failover_status(
+        CosmosStatus::new(StatusCode::NotFound)
+            .with_sub_status(SubStatusCode::READ_SESSION_NOT_AVAILABLE.value())
+    ));
+    assert!(!is_transient_failover_status(CosmosStatus::new(
+        StatusCode::NotFound
+    )));
+    assert!(!is_transient_failover_status(
+        CosmosStatus::new(StatusCode::Gone)
+            .with_sub_status(SubStatusCode::PARTITION_KEY_RANGE_GONE.value())
+    ));
 }
 
 // ─── Dual Backend ────────────────────────────────────────────────────────────
@@ -1746,10 +1781,12 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     // verify (real failover, not just rule expiry). Under CI contention the
     // SDK's failover budget (default `max_failover_retry_count = 3`) can
     // occasionally be exhausted on East before `MarkEndpointUnavailable`
-    // propagates, surfacing the injected 503 to the caller. The retry helper
-    // gives the routing layer additional attempts to converge on the
-    // failed-over endpoint, and logs which attempt succeeded.
-    let emu_read = read_item_with_503_retry(&emu_container, "pk1", "fi-item", "emulator").await;
+    // propagates, surfacing the injected 503 to the caller. On a real account,
+    // West may then briefly return 404/1002 until it catches up to the write's
+    // session token. The retry helper gives routing and replication bounded
+    // time to converge and logs which attempt succeeded.
+    let emu_read =
+        read_item_with_failover_retry(&emu_container, "pk1", "fi-item", "emulator").await;
     assert_emulator_item_response(&emu_read, StatusCode::Ok);
 
     // Verify the fault rule was hit (confirms 503 was injected).
@@ -1824,7 +1861,8 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
         assert_eq!(real_create.status(), StatusCode::Created);
 
         // Read item — should also failover. Same retry policy as the emulator side.
-        let real_read = read_item_with_503_retry(&real_container, "pk1", "fi-item", "real").await;
+        let real_read =
+            read_item_with_failover_retry(&real_container, "pk1", "fi-item", "real").await;
         assert_eq!(real_read.status(), StatusCode::Ok);
 
         // Compare real vs. emulator read headers.
