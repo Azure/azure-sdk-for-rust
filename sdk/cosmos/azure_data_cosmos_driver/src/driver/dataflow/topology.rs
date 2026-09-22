@@ -3,11 +3,6 @@
 
 //! Topology provider adapter backed by the partition key range cache.
 
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
-
 use futures::future::BoxFuture;
 
 use crate::{
@@ -16,86 +11,6 @@ use crate::{
 };
 
 use super::{PartitionRoutingRefresh, ResolvedRange, TopologyProvider};
-
-/// Shares typed fetch failures among callers coalesced by the routing cache.
-///
-/// The key deliberately matches the cache's physical-container identity. The
-/// final active caller removes the entry, so stale generations do not retain
-/// errors after their in-flight operations finish.
-#[derive(Clone, Debug, Default)]
-pub(crate) struct TopologyFetchErrors {
-    entries: Arc<Mutex<HashMap<ContainerReference, TopologyFetchState>>>,
-}
-
-#[derive(Clone, Debug, Default)]
-struct TopologyFetchState {
-    active_callers: usize,
-    error: Option<crate::error::CosmosError>,
-}
-
-struct TopologyFetchRegistration {
-    errors: TopologyFetchErrors,
-    container: ContainerReference,
-}
-
-impl TopologyFetchErrors {
-    fn register(&self, container: &ContainerReference) -> TopologyFetchRegistration {
-        let mut entries = self
-            .entries
-            .lock()
-            .expect("topology fetch error mutex poisoned");
-        entries.entry(container.clone()).or_default().active_callers += 1;
-        TopologyFetchRegistration {
-            errors: self.clone(),
-            container: container.clone(),
-        }
-    }
-
-    fn clear(&self, container: &ContainerReference) {
-        if let Some(state) = self
-            .entries
-            .lock()
-            .expect("topology fetch error mutex poisoned")
-            .get_mut(container)
-        {
-            state.error = None;
-        }
-    }
-
-    fn record(&self, container: &ContainerReference, error: crate::error::CosmosError) {
-        self.entries
-            .lock()
-            .expect("topology fetch error mutex poisoned")
-            .entry(container.clone())
-            .or_default()
-            .error = Some(error);
-    }
-
-    fn get(&self, container: &ContainerReference) -> Option<crate::error::CosmosError> {
-        self.entries
-            .lock()
-            .expect("topology fetch error mutex poisoned")
-            .get(container)
-            .and_then(|state| state.error.clone())
-    }
-}
-
-impl Drop for TopologyFetchRegistration {
-    fn drop(&mut self) {
-        let mut entries = self
-            .errors
-            .entries
-            .lock()
-            .expect("topology fetch error mutex poisoned");
-        let state = entries
-            .get_mut(&self.container)
-            .expect("topology fetch registration missing");
-        state.active_callers -= 1;
-        if state.active_callers == 0 {
-            entries.remove(&self.container);
-        }
-    }
-}
 
 /// Adapts [`PartitionKeyRangeCache`] to the [`TopologyProvider`] trait.
 ///
@@ -114,36 +29,19 @@ pub(crate) struct CachedTopologyProvider<'a, F> {
     cache: &'a PartitionKeyRangeCache,
     container: ContainerReference,
     fetch_pk_ranges: F,
-    fetch_errors: TopologyFetchErrors,
 }
 
 impl<'a, F> CachedTopologyProvider<'a, F> {
     /// Creates a topology provider backed by the partition key range cache.
-    #[cfg(test)]
     pub(crate) fn new(
         cache: &'a PartitionKeyRangeCache,
         container: ContainerReference,
         fetch_pk_ranges: F,
     ) -> Self {
-        Self::with_fetch_errors(
-            cache,
-            container,
-            fetch_pk_ranges,
-            TopologyFetchErrors::default(),
-        )
-    }
-
-    pub(crate) fn with_fetch_errors(
-        cache: &'a PartitionKeyRangeCache,
-        container: ContainerReference,
-        fetch_pk_ranges: F,
-        fetch_errors: TopologyFetchErrors,
-    ) -> Self {
         Self {
             cache,
             container,
             fetch_pk_ranges,
-            fetch_errors,
         }
     }
 }
@@ -160,39 +58,19 @@ where
     ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
         let force_refresh = matches!(refresh, PartitionRoutingRefresh::ForceRefresh);
         Box::pin(async move {
-            let _registration = self.fetch_errors.register(&self.container);
-            let fetch_pk_ranges = |container: ContainerReference, continuation: Option<String>| {
-                let result = (self.fetch_pk_ranges)(container.clone(), continuation);
-                let fetch_errors = self.fetch_errors.clone();
-                async move {
-                    match result.await {
-                        Ok(result) => {
-                            fetch_errors.clear(&container);
-                            result
-                        }
-                        Err(error) => {
-                            fetch_errors.record(&container, error);
-                            None
-                        }
-                    }
-                }
-            };
             let pk_ranges = self
                 .cache
-                .resolve_overlapping_ranges(
+                .resolve_overlapping_ranges_result(
                     &self.container,
                     range.min_inclusive()..range.max_exclusive(),
                     force_refresh,
-                    fetch_pk_ranges,
+                    &self.fetch_pk_ranges,
                 )
-                .await;
+                .await?;
 
             let pk_ranges = match pk_ranges {
                 Some(ranges) if !ranges.is_empty() => ranges,
                 _ => {
-                    if let Some(error) = self.fetch_errors.get(&self.container) {
-                        return Err(error);
-                    }
                     return Err(crate::error::CosmosError::builder()
                         .with_status(crate::error::CosmosStatus::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
                         .with_message("failed to resolve partition key ranges from topology cache")
@@ -220,6 +98,7 @@ mod tests {
         effective_partition_key::EffectivePartitionKey,
         partition_key_range::PartitionKeyRange as PkRange, ContainerProperties,
     };
+    use std::sync::Arc;
 
     fn make_container() -> ContainerReference {
         make_container_with_rid("c_rid")
@@ -475,7 +354,6 @@ mod tests {
     async fn coalesced_callers_preserve_typed_fetch_error() {
         let cache = PartitionKeyRangeCache::new();
         let container = make_container();
-        let fetch_errors = TopologyFetchErrors::default();
         let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let make_fetch = || {
             let calls = Arc::clone(&calls);
@@ -488,18 +366,8 @@ mod tests {
                 }
             }
         };
-        let mut left = CachedTopologyProvider::with_fetch_errors(
-            &cache,
-            container.clone(),
-            make_fetch(),
-            fetch_errors.clone(),
-        );
-        let mut right = CachedTopologyProvider::with_fetch_errors(
-            &cache,
-            container,
-            make_fetch(),
-            fetch_errors,
-        );
+        let mut left = CachedTopologyProvider::new(&cache, container.clone(), make_fetch());
+        let mut right = CachedTopologyProvider::new(&cache, container, make_fetch());
 
         let range = FeedRange::full();
         let (left_result, right_result) = tokio::join!(
@@ -516,25 +384,65 @@ mod tests {
         }
     }
 
-    #[test]
-    fn fetch_errors_are_isolated_by_container_generation() {
-        let errors = TopologyFetchErrors::default();
-        let old = make_container_with_rid("old_rid");
-        let replacement = make_container_with_rid("replacement_rid");
-        let old_registration = errors.register(&old);
-        let replacement_registration = errors.register(&replacement);
+    #[tokio::test]
+    async fn lossy_initializer_cannot_hide_error_from_typed_waiter() {
+        let cache = Arc::new(PartitionKeyRangeCache::new());
+        let container = make_container();
+        let started = Arc::new(tokio::sync::Notify::new());
+        let release = Arc::new(tokio::sync::Notify::new());
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
 
-        errors.record(&old, collection_rid_mismatch_error());
-        errors.clear(&replacement);
+        let lossy = {
+            let cache = Arc::clone(&cache);
+            let container = container.clone();
+            let started = Arc::clone(&started);
+            let release = Arc::clone(&release);
+            let calls = Arc::clone(&calls);
+            tokio::spawn(async move {
+                cache
+                    .try_lookup(&container, false, move |_, _| {
+                        let started = Arc::clone(&started);
+                        let release = Arc::clone(&release);
+                        let calls = Arc::clone(&calls);
+                        async move {
+                            calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                            started.notify_one();
+                            release.notified().await;
+                            Err(collection_rid_mismatch_error())
+                        }
+                    })
+                    .await
+            })
+        };
 
+        started.notified().await;
+        let typed = {
+            let cache = Arc::clone(&cache);
+            let container = container.clone();
+            tokio::spawn(async move {
+                let mut provider = CachedTopologyProvider::new(&cache, container, |_, _| async {
+                    panic!("typed waiter must share the lossy caller's cache initialization");
+                    #[allow(unreachable_code)]
+                    Ok::<Option<PkRangeFetchResult>, crate::error::CosmosError>(None)
+                });
+                provider
+                    .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::UseCached)
+                    .await
+            })
+        };
+
+        tokio::task::yield_now().await;
+        release.notify_one();
+
+        assert!(lossy.await.unwrap().is_none());
+        let error = typed
+            .await
+            .unwrap()
+            .expect_err("typed waiter must receive the coalesced fetch error");
         assert_eq!(
-            errors.get(&old).unwrap().status().sub_status(),
+            error.status().sub_status(),
             Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH)
         );
-        assert!(errors.get(&replacement).is_none());
-
-        drop(old_registration);
-        drop(replacement_registration);
-        assert!(errors.entries.lock().unwrap().is_empty());
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
     }
 }

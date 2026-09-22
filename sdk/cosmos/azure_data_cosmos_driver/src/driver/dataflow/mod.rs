@@ -74,7 +74,7 @@ pub(crate) use request::{intersect_feed_ranges, Request, RequestTarget};
 pub(crate) use skip_take::SkipTake;
 pub(crate) use snapshot::{PipelineNodeState, RangedToken};
 pub(crate) use streaming_ordered_merge::StreamingOrderedMerge;
-pub(crate) use topology::{CachedTopologyProvider, TopologyFetchErrors};
+pub(crate) use topology::CachedTopologyProvider;
 pub(crate) use unordered_merge::UnorderedMerge;
 
 #[cfg(test)]
