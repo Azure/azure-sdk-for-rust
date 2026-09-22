@@ -4745,11 +4745,13 @@ mod tests {
     use azure_core::http::headers::HeaderName;
     use url::Url;
 
+    use super::build_transport_request;
     #[cfg(feature = "fault_injection")]
     use super::build_transport_request_with_fault_injection;
     use super::OperationOverrides;
     use super::TransportRequestContext;
-    use super::build_transport_request;
+    #[cfg(feature = "fault_injection")]
+    use crate::options::Region;
     use crate::{
         diagnostics::ExecutionContext,
         driver::{
@@ -4768,8 +4770,6 @@ mod tests {
         },
         options::{PriorityLevel, ResolvedThroughputControl},
     };
-    #[cfg(feature = "fault_injection")]
-    use crate::options::Region;
 
     fn test_account() -> AccountReference {
         AccountReference::with_master_key(
