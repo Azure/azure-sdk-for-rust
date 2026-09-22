@@ -10,7 +10,35 @@ steps:
     displayName: vcpkg --version
 
   - pwsh: |
-      vcpkg install
+      $ErrorActionPreference = 'Stop'
+      $toolsPath = [System.IO.Path]::Combine($env:VCPKG_INSTALLATION_ROOT, 'scripts', 'vcpkg-tools.json')
+      $tools = Get-Content -LiteralPath $toolsPath -Raw | ConvertFrom-Json -AsHashtable
+      if ($tools['schema-version'] -ne 2) {
+        throw "Unsupported vcpkg tool metadata schema in $toolsPath"
+      }
+      $azcopy = @($tools.tools | Where-Object {
+        $_.name -eq 'azcopy' -and $_.os -eq 'windows' -and $_.arch -eq 'amd64'
+      })
+      if ($azcopy.Count -ne 1) {
+        throw "Expected exactly one Windows amd64 AzCopy entry in $toolsPath; found $($azcopy.Count)"
+      }
+
+      # Temporarily pin AzCopy acquisition to the mirrored 10.32.6 archive until 10.32.8 is mirrored.
+      # Use job-local metadata; retain binary caching and the shared mirror-only asset policy.
+      $azcopy[0].version = '10.32.6'
+      $azcopy[0].executable = 'azcopy_windows_amd64_10.32.6/azcopy.exe'
+      $azcopy[0].url = 'https://github.com/Azure/azure-storage-azcopy/releases/download/v10.32.6/azcopy_windows_amd64_10.32.6.zip'
+      $azcopy[0].sha512 = '80c06945808de90c7c0b42f2554c8ff7c2193a9f0693516ff572e2a61b80227b0ac1d782a58db82190baf7fe613da56f08f6c799f62c58f46e099edfa7f35af6'
+      $azcopy[0].archive = 'azcopy_windows_amd64_10.32.6.zip'
+      if ($azcopy[0].Contains('minVersion')) {
+        $azcopy[0].minVersion = '10.32.6'
+      }
+      $pinnedToolsPath = [System.IO.Path]::Combine($env:AGENT_TEMPDIRECTORY, 'vcpkg-tools-azcopy.json')
+      $tools | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $pinnedToolsPath -Encoding utf8
+      vcpkg install "--z-tool-data-file=$pinnedToolsPath"
+      if ($LASTEXITCODE -ne 0) {
+        exit $LASTEXITCODE
+      }
       Write-Host "##vso[task.setvariable variable=VCPKG_ROOT;]${env:VCPKG_INSTALLATION_ROOT}"
       Write-Host "##vso[task.setvariable variable=VCPKG_INSTALLED_ROOT;]$PWD\vcpkg_installed"
       Write-Host "##vso[task.setvariable variable=OPENSSL_DIR;]$PWD\vcpkg_installed\x64-windows"
