@@ -456,16 +456,15 @@ async fn shared_provider_reuses_session_across_clients(
 /// just the initial range.
 ///
 /// The outcome of those requests is deliberately not asserted. Ranged GETs run
-/// concurrently and HTTP/1.1 carries one request per connection, so the pool
-/// opens more connections than the one holding the session. In environments
-/// where the service only honors a session on its minting connection, every
-/// partition on another connection comes back `401 InvalidAuthenticationInfo`
-/// and falls back to bearer.
+/// concurrently and each in-flight request needs its own connection, so the
+/// download spans more connections than Create Session used. Some network
+/// environments do not present those connections to the service identically, in
+/// which case the affected partitions are rejected and fall back to bearer; the
+/// download still returns the correct bytes.
 ///
-/// How many fall back varies per run: depending on whether the pooled connection is released in
-/// time for another partition to claim it. Sharing one transport does not help,
-/// since the contention is between concurrent requests rather than between
-/// clients.
+/// How many fall back is therefore a property of the environment, not the SDK,
+/// and varies per run. [`session_download_partitioned_serially_reuses_one_session`]
+/// covers the same workload without concurrency and does assert the outcome.
 #[recorded::test(live)]
 #[serial(blob_session)]
 async fn session_download_partitioned_signs_every_chunk(
@@ -508,6 +507,61 @@ async fn session_download_partitioned_signs_every_chunk(
     assert_eq!(
         snapshot.non_get_session, 0,
         "no non-GET request should use session authorization"
+    );
+
+    container.delete(None).await?;
+    Ok(())
+}
+
+/// The controlled counterpart to [`session_download_partitioned_signs_every_chunk`]:
+/// identical workload, but `parallel: 1` runs the ranged GETs one at a time
+/// so they reuse the pooled connection the session was minted on.
+/// Concurrency is therefore the only difference between the two, and this one can strongly assert.
+#[recorded::test(live)]
+#[serial(blob_session)]
+async fn session_download_partitioned_serially_reuses_one_session(
+    ctx: TestContext,
+) -> Result<(), Box<dyn Error>> {
+    const PARTITION_SIZE: usize = 1024 * 1024;
+    const PARTITIONS: usize = 8;
+
+    let recording = ctx.recording();
+    let counts = Arc::new(SessionAuthCounts::default());
+    let policy = Arc::new(SessionAuthCountingPolicy {
+        counts: counts.clone(),
+    });
+
+    let service = session_service_client(recording, SessionMode::Enabled, policy).await?;
+    let container = service.blob_container_client(&common::get_container_name(recording));
+    container.create(None).await?;
+
+    let blob = container.blob_client(&common::get_blob_name(recording));
+    let data = vec![0x5au8; PARTITION_SIZE * PARTITIONS];
+    common::create_test_blob(&blob, Some(RequestContent::from(data.clone())), None).await?;
+
+    let mut buffer = vec![0u8; data.len()];
+    blob.download_into(
+        &mut buffer,
+        Some(BlobClientDownloadOptions {
+            parallel: NonZero::new(1),
+            partition_size: NonZero::new(PARTITION_SIZE),
+            ..Default::default()
+        }),
+    )
+    .await?;
+    assert_eq!(buffer, data);
+
+    assert_eq!(
+        counts.snapshot(),
+        SessionAuthCountsSnapshot {
+            create_session: 1,
+            session_get: PARTITIONS,
+            session_unauthorized: 0,
+            session_error_codes: Vec::new(),
+            bearer_get: 0,
+            non_get_session: 0,
+        },
+        "sequential partitions should all reuse the one session without bearer fallback"
     );
 
     container.delete(None).await?;
