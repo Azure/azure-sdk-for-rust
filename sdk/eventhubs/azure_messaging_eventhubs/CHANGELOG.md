@@ -1,5 +1,11 @@
 # Release History
 
+## 0.18.0 (Unreleased)
+
+### Features Added
+
+- Added `EventProcessorBuilder::with_receive_timeout`, which sets the `receive_timeout` of every partition receiver the processor opens. A partition client's `stream_events` then yields a `std::io::ErrorKind::TimedOut` error after that long with no event, and a new `stream_events` call continues on the same receiver. The default stays infinite.
+
 ## 0.17.0 (2026-09-14)
 
 ### Breaking Changes

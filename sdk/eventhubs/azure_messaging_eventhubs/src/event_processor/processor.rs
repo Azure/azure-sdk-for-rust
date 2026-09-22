@@ -63,6 +63,7 @@ pub struct EventProcessor {
     next_partition_client_sender: Sender<Arc<PartitionClient>>,
     client_details: ConsumerClientDetails,
     prefetch: u32,
+    receive_timeout: Option<Duration>,
     update_interval: Duration,
     start_positions: StartPositions,
     is_running: std::sync::Mutex<bool>,
@@ -75,6 +76,7 @@ struct EventProcessorOptions {
     update_interval: Duration,
     start_positions: StartPositions,
     prefetch: u32,
+    receive_timeout: Option<Duration>,
     partition_ids: Vec<String>,
 }
 
@@ -207,6 +209,7 @@ impl EventProcessor {
             ))),
             client_details,
             prefetch: options.prefetch,
+            receive_timeout: options.receive_timeout,
             update_interval: options.update_interval,
             start_positions: options.start_positions,
             next_partition_client_sender: sender,
@@ -445,7 +448,7 @@ impl EventProcessor {
                     start_position: Some(start_position),
                     prefetch: Some(self.prefetch),
                     owner_level: Some(PROCESSOR_OWNER_LEVEL),
-                    ..Default::default()
+                    receive_timeout: self.receive_timeout,
                 }),
             )
             .await;
@@ -680,6 +683,7 @@ pub mod builders {
         start_positions: Option<StartPositions>,
         max_partition_count: Option<usize>,
         prefetch: Option<u32>,
+        receive_timeout: Option<Duration>,
         load_balancing_strategy: Option<super::ProcessorStrategy>,
         partition_expiration_duration: Option<Duration>,
     }
@@ -703,6 +707,20 @@ pub mod builders {
             )));
         }
         Ok(())
+    }
+
+    /// Returns an error if `receive_timeout` is not strictly positive. The
+    /// timeout reaches `azure_core::sleep`, which cannot represent a negative
+    /// duration, and a zero timeout would make every partition stream yield a
+    /// timeout on each poll. Extracted from `build()` for the same reason as
+    /// [`validate_expiration_vs_update_interval`].
+    pub(crate) fn validate_receive_timeout(receive_timeout: Option<Duration>) -> Result<()> {
+        match receive_timeout {
+            Some(timeout) if timeout <= Duration::ZERO => Err(crate::EventHubsError::with_message(
+                format!("receive_timeout ({timeout:?}) must be greater than zero"),
+            )),
+            _ => Ok(()),
+        }
     }
 
     impl EventProcessorBuilder {
@@ -746,6 +764,62 @@ pub mod builders {
         /// Sets the prefetch count for the event processor.
         pub fn with_prefetch(mut self, prefetch: u32) -> Self {
             self.prefetch = Some(prefetch);
+            self
+        }
+
+        /// Sets the receive timeout for the partition clients of the event processor.
+        ///
+        /// The processor opens every partition receiver with this timeout, so a
+        /// partition client's `stream_events` stream yields an error after that
+        /// long with no event on its attached link. The error's source is a
+        /// [`std::io::Error`] with [`std::io::ErrorKind::TimedOut`]. The receiver
+        /// stays open, and a new call to `stream_events` continues on the same
+        /// link, so the timeout works as a periodic "still connected, nothing to
+        /// receive" signal in the same way as `MaximumWaitTime` in the .NET
+        /// processor and `max_wait_time` in the Python one. It does not apply while
+        /// the receiver re-attaches a broken link, so a stream that stops yielding
+        /// timeouts is a stream whose receive is stuck.
+        ///
+        /// The default is no timeout: a stream waits for an event indefinitely.
+        /// `build` rejects a timeout that is not greater than zero.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use azure_core::time::Duration;
+        /// use azure_messaging_eventhubs::{CheckpointStore, ConsumerClient, EventProcessor};
+        /// use futures::StreamExt;
+        /// use std::sync::Arc;
+        ///
+        /// async fn receive_with_liveness(consumer_client: ConsumerClient, checkpoint_store: impl CheckpointStore + Send + Sync + 'static) -> Result<(), Box<dyn std::error::Error>> {
+        ///     let processor = EventProcessor::builder()
+        ///         .with_receive_timeout(Duration::seconds(30))
+        ///         .build(consumer_client, Arc::new(checkpoint_store))
+        ///         .await?;
+        ///     let partition_client = processor.next_partition_client().await?;
+        ///     loop {
+        ///         let mut events = partition_client.stream_events();
+        ///         while let Some(event) = events.next().await {
+        ///             match event {
+        ///                 Ok(event) => println!("received {:?}", event.sequence_number()),
+        ///                 Err(e) if is_receive_timeout(&e) => {
+        ///                     println!("no event for 30 seconds, still connected");
+        ///                     break; // a new stream continues on the same receiver
+        ///                 }
+        ///                 Err(e) => return Err(e.into()),
+        ///             }
+        ///         }
+        ///     }
+        /// }
+        ///
+        /// fn is_receive_timeout(error: &azure_messaging_eventhubs::EventHubsError) -> bool {
+        ///     std::iter::successors(std::error::Error::source(error), |e| e.source())
+        ///         .filter_map(|e| e.downcast_ref::<std::io::Error>())
+        ///         .any(|e| e.kind() == std::io::ErrorKind::TimedOut)
+        /// }
+        /// ```
+        pub fn with_receive_timeout(mut self, receive_timeout: Duration) -> Self {
+            self.receive_timeout = Some(receive_timeout);
             self
         }
 
@@ -807,6 +881,7 @@ pub mod builders {
                 .unwrap_or(DEFAULT_PARTITION_EXPIRATION_DURATION);
 
             validate_expiration_vs_update_interval(partition_expiration_duration, update_interval)?;
+            validate_receive_timeout(self.receive_timeout)?;
 
             // Retrieve the set of partitions from the consumer client
             // and limit the number of partitions to the specified max_partition_count.
@@ -826,6 +901,7 @@ pub mod builders {
                     update_interval,
                     start_positions: self.start_positions.unwrap_or_default(),
                     prefetch: self.prefetch.unwrap_or(DEFAULT_PREFETCH),
+                    receive_timeout: self.receive_timeout,
                     partition_ids: eh_properties.partition_ids,
                 },
             )
@@ -835,7 +911,7 @@ pub mod builders {
 
 #[cfg(test)]
 mod tests {
-    use super::builders::validate_expiration_vs_update_interval;
+    use super::builders::{validate_expiration_vs_update_interval, validate_receive_timeout};
     use super::{
         EventProcessor, EventProcessorOptions, PartitionClient, ProcessorConsumersMap,
         ProcessorStrategy, StartPositions,
@@ -871,6 +947,7 @@ mod tests {
                 update_interval: Duration::seconds(30),
                 start_positions: StartPositions::default(),
                 prefetch: 300,
+                receive_timeout: None,
                 partition_ids: partition_ids.iter().map(|id| id.to_string()).collect(),
             },
         )
@@ -980,5 +1057,20 @@ mod tests {
     fn larger_expiration_is_accepted() {
         validate_expiration_vs_update_interval(Duration::seconds(120), Duration::seconds(60))
             .expect("2x ratio should be accepted");
+    }
+
+    /// No timeout is the default and must pass; a positive one must pass.
+    #[test]
+    fn receive_timeout_absent_or_positive_is_accepted() {
+        validate_receive_timeout(None).expect("no timeout is the default");
+        validate_receive_timeout(Some(Duration::seconds(30))).expect("30s must be accepted");
+    }
+
+    /// Zero would make every poll time out at once; a negative value cannot
+    /// reach the sleep at all. Both are rejected before a consumer is touched.
+    #[test]
+    fn receive_timeout_zero_or_negative_is_rejected() {
+        assert!(validate_receive_timeout(Some(Duration::ZERO)).is_err());
+        assert!(validate_receive_timeout(Some(Duration::seconds(-1))).is_err());
     }
 }
