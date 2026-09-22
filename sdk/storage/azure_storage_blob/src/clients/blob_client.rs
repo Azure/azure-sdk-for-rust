@@ -13,16 +13,13 @@ use crate::{
         StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
-    AppendBlobClient, BlockBlobClient, PageBlobClient,
+    AppendBlobClient, BlockBlobClient, PageBlobClient, SessionOptions,
 };
 use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
-    http::{
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncRawResponse, Etag, NoFormat, Pipeline, RequestContent, StatusCode, Url, UrlExt,
-    },
+    http::{AsyncRawResponse, Etag, NoFormat, RequestContent, StatusCode, Url, UrlExt},
     tracing, Bytes, Result,
 };
 use std::{ops::Range, sync::Arc};
@@ -46,40 +43,56 @@ impl BlobClient {
         if blob_url.cannot_be_a_base() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                format!("{blob_url} is not a valid base URL"),
+                format!("{blob_url} is not a valid base URL."),
             ));
         }
 
-        let mut options = options.unwrap_or_default();
-        super::apply_client_defaults(&mut options.client_options);
-
-        let mut per_retry_policies: Vec<Arc<dyn Policy>> = Vec::default();
-        if let Some(token_credential) = credential {
-            if !blob_url.scheme().starts_with("https") {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!("{blob_url} must use https"),
-                ));
-            }
-            per_retry_policies.push(Arc::new(BearerTokenAuthorizationPolicy::new(
-                token_credential,
-                vec!["https://storage.azure.com/.default"],
-            )));
-        }
-
-        let pipeline = Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            options.client_options.clone(),
-            Vec::default(),
-            per_retry_policies,
-            None,
-        );
+        let options = options.unwrap_or_default();
+        let pipeline = super::build_pipeline(&blob_url, credential, None, &options)?;
 
         Ok(Self {
             endpoint: blob_url,
-            version: options.version,
             pipeline,
+            version: options.version,
+        })
+    }
+
+    /// Creates a new BlobClient that authenticates eligible downloads with session tokens.
+    ///
+    /// # Arguments
+    ///
+    /// * `blob_url` - The full URL of the blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
+    ///   The caller is responsible for percent-encoding the URL correctly; it will be used as-is.
+    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
+    /// * `session_options` - Configuration for session token authentication.
+    /// * `options` - Optional configuration for the client.
+    #[tracing::new("Storage.Blob.Blob")]
+    pub fn new_with_session(
+        blob_url: Url,
+        credential: Arc<dyn TokenCredential>,
+        session_options: SessionOptions,
+        options: Option<BlobClientOptions>,
+    ) -> Result<Self> {
+        // Storage endpoints must be base URLs.
+        if blob_url.cannot_be_a_base() {
+            return Err(azure_core::Error::with_message(
+                azure_core::error::ErrorKind::Other,
+                format!("{blob_url} is not a valid base URL."),
+            ));
+        }
+
+        let options = options.unwrap_or_default();
+        let pipeline = super::build_pipeline(
+            &blob_url,
+            Some(credential),
+            Some(&session_options),
+            &options,
+        )?;
+
+        Ok(Self {
+            endpoint: blob_url,
+            pipeline,
+            version: options.version,
         })
     }
 
