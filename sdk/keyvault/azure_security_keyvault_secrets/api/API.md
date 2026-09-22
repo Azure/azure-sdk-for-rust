@@ -10,6 +10,8 @@
   - `azure_core/default`
 
 ```rust
+#![crate_name = "azure_security_keyvault_secrets"]
+#![crate_type = "lib"]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 pub use azure_security_keyvault_secrets::generated::clients::secret_client::SecretClient;
 pub use azure_security_keyvault_secrets::clients::SecretClientOptions;

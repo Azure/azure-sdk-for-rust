@@ -14,6 +14,8 @@
 - `xml`
 
 ```rust
+#![crate_name = "typespec"]
+#![crate_type = "lib"]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]
 pub use bytes::Bytes;

@@ -9,6 +9,8 @@
 - `default`
 
 ```rust
+#![crate_name = "azure_canary"]
+#![crate_type = "lib"]
 pub use azure_canary::constant_example::MAX_CONNECTIONS;
 pub use azure_canary::enum_example::Message;
 pub use azure_canary::static_example::PROGRAM_NAME;

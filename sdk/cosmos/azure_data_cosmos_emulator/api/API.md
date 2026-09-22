@@ -9,4 +9,6 @@
 - `default`
 
 ```rust
+#![crate_name = "azure_data_cosmos_emulator"]
+#![crate_type = "bin"]
 ```

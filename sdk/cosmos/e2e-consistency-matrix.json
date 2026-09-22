@@ -1,0 +1,44 @@
+{
+  "displayNames": {
+    "inmemory-v1": "gateway_v1",
+    "inmemory-v2": "gateway_v2",
+    "lifecycleConsistencyMatrix": "consistency",
+    "unset": "default",
+    "strong": "strong_2_regions",
+    "boundedStaleness": "bounded_staleness_2_regions_delayed",
+    "session": "session_2_regions_delayed",
+    "consistentPrefix": "consistent_prefix_2_regions_delayed",
+    "eventual": "eventual_2_regions_delayed"
+  },
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": [
+      "stable"
+    ],
+    "AZURE_COSMOS_EMULATOR_FLAVOR": [
+      "inmemory-v1",
+      "inmemory-v2"
+    ],
+    "AZURE_COSMOS_E2E_PROFILE": [
+      "lifecycleConsistencyMatrix"
+    ],
+    "AZURE_COSMOS_E2E_ACCOUNT": [
+      "strong",
+      "boundedStaleness",
+      "session",
+      "consistentPrefix",
+      "eventual"
+    ],
+    "AZURE_COSMOS_E2E_RUNTIME": [
+      "unset"
+    ],
+    "AZURE_COSMOS_E2E_CLIENT": [
+      "unset"
+    ]
+  }
+}
