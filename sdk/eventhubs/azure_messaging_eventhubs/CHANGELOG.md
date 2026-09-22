@@ -1,5 +1,17 @@
 # Release History
 
+## 0.18.0 (Unreleased)
+
+### Features Added
+
+- Added `EventProcessorBuilder::with_receive_timeout`. The processor opens every partition receiver with that timeout, so a partition client's `stream_events` stream yields an error whose source is a `std::io::Error` with `ErrorKind::TimedOut` after that long with no event. The receiver stays open, and a new call to `stream_events` continues on the same link, so an application can use the timeout as a periodic "connected, nothing to receive" signal, the way the .NET processor's `MaximumWaitTime` and the Python processor's `max_wait_time` are used. The timeout does not run while the receiver re-attaches a broken link. The default stays unchanged: a stream waits for an event indefinitely.
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.17.0 (2026-09-14)
 
 ### Breaking Changes

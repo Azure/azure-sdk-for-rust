@@ -307,6 +307,29 @@ mod tests {
         crate::common::recoverable::receiver::RecoverableReceiver::ensure_receiver_error(inner)
     }
 
+    // `EventProcessorBuilder::with_receive_timeout` documents the timeout as
+    // an error whose source chain holds a `std::io::Error` with
+    // `ErrorKind::TimedOut`, so a caller can tell "nothing to receive" from a
+    // failed receive. This walks the chain the way that caller does, from the
+    // error the stream yields.
+    #[test]
+    fn translate_receive_error_keeps_the_timeout_cause_reachable() {
+        let translated = translate_receive_error(
+            crate::common::recoverable::receiver::RecoverableReceiver::receive_timeout_error(),
+            "0",
+            &source_url(),
+        );
+        assert!(matches!(translated.kind, ErrorKind::AmqpError(_)));
+        let timed_out =
+            std::iter::successors(std::error::Error::source(&translated), |e| e.source())
+                .filter_map(|e| e.downcast_ref::<std::io::Error>())
+                .any(|e| e.kind() == std::io::ErrorKind::TimedOut);
+        assert!(
+            timed_out,
+            "the receive timeout must stay reachable as std::io::ErrorKind::TimedOut, got {translated:?}"
+        );
+    }
+
     // A stolen link reported directly on the receive path is the case the
     // 0.15.0 CHANGELOG documents.
     #[test]

@@ -43,6 +43,7 @@ The processor has several configuration options available:
 - Partition Expiration Duration - The time after which a partition is considered unowned. The default partition expiration duration is 2 minutes.
 - Start Positions - the starting position for each partition (or a default starting position for all partitions).
 - Prefetch - the number of items to prefetch for each partition client.
+- Receive Timeout - how long a partition client's event stream waits for an event before it yields a timeout error. The receiver stays open, and a new stream continues on it, so the timeout doubles as a periodic "connected, nothing to receive" signal. The default is no timeout.
 - Maximum number of partitions - The maximum number of partitions which the processor should manage.
 
 ### Processor operation
