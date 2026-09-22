@@ -576,7 +576,7 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
-    #[cfg(feature = "fault_injection")]
+    #[cfg(all(feature = "fault_injection", feature = "__internal_in_memory_emulator"))]
     pub(crate) fn with_fault_injection_enabled(mut self, enabled: bool) -> Self {
         self.fault_injection_enabled = enabled;
         self
