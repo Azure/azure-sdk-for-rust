@@ -324,6 +324,12 @@ async fn wait_for_item_replication_to_region(
                 }
             }
             Ok(Err(error)) if error.status().status_code() == StatusCode::NotFound => {}
+            Ok(Err(error)) if transient_deployment_unauthorized(&error) => {
+                eprintln!(
+                    "wait_for_item_replication_to_region: retrying transient 401 for region '{}'",
+                    target_region.as_str()
+                );
+            }
             Ok(Err(error)) => return Err(error.into()),
             Err(_) => {
                 return Err(format!(
