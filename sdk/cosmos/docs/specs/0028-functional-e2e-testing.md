@@ -65,14 +65,14 @@ updated `main` and reviewed independently after its predecessor merges.
 The suite deliberately separates reusable configuration data from executable
 behavior.
 
-| Owner | Contents |
-| --- | --- |
-| Scenario JSON | Stable ID, title, requirement, maturity, tags, precedents, applicable setup profiles, backend applicability, fidelity, and required backend capabilities. |
-| Profile JSON | Account topology and consistency, replication behavior, runtime configuration, and client configuration. |
-| SDK implementation map | Scenario ID to source-native test implementation and implementation status. |
-| Rust source | Fixtures, operation-level options, generated cases, sequencing, retries, concurrency, state validation, diagnostics, and assertions. |
-| Pipeline matrices | Backend and setup-profile selection, scheduling, and sharding. |
-| Hosted emulator management API | Deterministic external controls for emulator-only orchestration. |
+| Owner                          | Contents                                                                                                                                                  |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scenario JSON                  | Stable ID, title, requirement, maturity, tags, precedents, applicable setup profiles, backend applicability, fidelity, and required backend capabilities. |
+| Profile JSON                   | Account topology and consistency, replication behavior, runtime configuration, and client configuration.                                                  |
+| SDK implementation map         | Scenario ID to source-native test implementation and implementation status.                                                                               |
+| Rust source                    | Fixtures, operation-level options, generated cases, sequencing, retries, concurrency, state validation, diagnostics, and assertions.                      |
+| Pipeline matrices              | Backend and setup-profile selection, scheduling, and sharding.                                                                                            |
+| Hosted emulator management API | Deterministic external controls for emulator-only orchestration.                                                                                          |
 
 This boundary prevents the catalog from becoming a second programming language.
 Operation-specific dimensions such as `ReadConsistencyStrategy`, patch
@@ -235,6 +235,9 @@ CI.
 
 ### PR2 — Core operations and emulator fidelity
 
+**Status:** Implemented for hosted-emulator validation; live differential
+execution is deferred to the live-promotion phase.
+
 Scope:
 
 - database and container control-plane lifecycle;
@@ -250,12 +253,24 @@ Scope:
 - patch operation and strategy behavior;
 - exact post-operation state assertions;
 - expanded negative status/substatus coverage;
-- emulator support needed for those scenarios; and
-- selected live differential baselines used to confirm emulator fidelity.
+- emulator support needed for those scenarios.
 
 PR2 should add emulator behavior only when required by a concrete SDK scenario.
 Differences discovered against live accounts must be fixed, explicitly modeled
 as simulated, or documented as not applicable.
+
+The query executor's synthetic-response diagnostics fallback intentionally
+retains each successful backend response context for the lifetime of one plan
+execution. Do not impose an additional fixed source-count cap or fold those
+contexts at the executor level: fan-out is already constrained by the physical
+partition topology, and inefficient queries that consume many empty backend
+pages are precisely the cases where preserving detailed per-request diagnostics
+is most valuable.
+
+The PR2 pipeline does not run a live-account job. Its `azureLive: supported`
+metadata remains declarative until targeted differential scenarios are wired
+and validated during live promotion; hosted-emulator results must not be
+treated as evidence of live-service fidelity.
 
 ### PR3 — Configuration, consistency, and resilience
 
@@ -309,6 +324,7 @@ Scope:
 
 - complete live-account setup profiles;
 - fixed-account and provisioned-account E2E matrices;
+- targeted live differential baselines that confirm emulator fidelity;
 - Azure Live execution for every eligible scenario;
 - promotion of validated `azureLive` applicability from `supported` to
   `required`;

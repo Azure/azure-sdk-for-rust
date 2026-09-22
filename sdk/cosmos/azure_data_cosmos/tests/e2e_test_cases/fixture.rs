@@ -111,12 +111,41 @@ impl E2eTestBuilder {
             Some(client) => client,
             None => build_client().await?,
         };
-        E2eTestFixture::run(client, self.partition_key, test).await
+        E2eTestFixture::run_with_client(client, self.partition_key, test).await
     }
 }
 
 impl E2eTestFixture {
-    async fn run<F>(
+    pub async fn run<F>(test: F) -> TestResult
+    where
+        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+    {
+        Self::run_with_partition_key("/pk".into(), test).await
+    }
+
+    pub async fn run_with_partition_key<F>(
+        partition_key: PartitionKeyDefinition,
+        test: F,
+    ) -> TestResult
+    where
+        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+    {
+        let client = build_client().await?;
+        Self::run_with_client(client, partition_key, test).await
+    }
+
+    pub async fn run_with_container_properties<F>(
+        properties: ContainerProperties,
+        test: F,
+    ) -> TestResult
+    where
+        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+    {
+        let client = build_client().await?;
+        Self::run_with_client_and_properties(client, properties, test).await
+    }
+
+    pub async fn run_with_client<F>(
         client: CosmosClient,
         partition_key: PartitionKeyDefinition,
         test: F,
@@ -124,7 +153,20 @@ impl E2eTestFixture {
     where
         F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
     {
-        let fixture = Self::new(client, partition_key).await?;
+        let container_id = format!("items-{}", Uuid::now_v7());
+        let properties = ContainerProperties::new(container_id, partition_key);
+        Self::run_with_client_and_properties(client, properties, test).await
+    }
+
+    async fn run_with_client_and_properties<F>(
+        client: CosmosClient,
+        properties: ContainerProperties,
+        test: F,
+    ) -> TestResult
+    where
+        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+    {
+        let fixture = Self::new(client, properties).await?;
         let outcome = AssertUnwindSafe(test(&fixture)).catch_unwind().await;
         let cleanup = fixture.cleanup().await;
         match outcome {
@@ -145,20 +187,15 @@ impl E2eTestFixture {
         }
     }
 
-    async fn new(client: CosmosClient, partition_key: PartitionKeyDefinition) -> TestResult<Self> {
+    async fn new(client: CosmosClient, properties: ContainerProperties) -> TestResult<Self> {
         // Preserve creation time in leaked resource IDs so cleanup tooling can age them out.
         let database_id = format!("e2e-{}", Uuid::now_v7());
-        let container_id = format!("items-{}", Uuid::now_v7());
+        let container_id = properties.id.to_string();
         client.create_database(&database_id, None).await?;
         let database = client.database_client(&database_id);
         let cleanup = DatabaseCleanup::new(client.clone(), database_id);
         let setup = async {
-            database
-                .create_container(
-                    ContainerProperties::new(container_id.clone(), partition_key),
-                    None,
-                )
-                .await?;
+            database.create_container(properties, None).await?;
             database.container_client(&container_id, None).await
         }
         .await;

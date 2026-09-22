@@ -50,6 +50,12 @@ The item lifecycle implementation uses three profiles:
 - `lifecycleConsistencyMatrix` for five account consistency configurations;
 - `readConsistencyOverrideMatrix` for runtime and client default precedence.
 
+The `coreOperations` profile selects the broader PR2 contracts for resource
+lifecycle, partition-key variants, pagination and continuations, feed ranges,
+transactional batch, patch, and item validation. It runs independently through
+Gateway V1 and Gateway V2 so this coverage does not expand every PR1 smoke or
+consistency shard.
+
 Operation-level `ReadConsistencyStrategy` cases, session-token choices,
 acceptable transient statuses, retry deadlines, and assertions are defined in
 the Rust test source. Future operation-specific dimensions follow the same
@@ -59,6 +65,9 @@ The scheduled matrices in `e2e-consistency-matrix.json` and
 `e2e-read-consistency-override-matrix.json` select every setup cell through
 Gateway V1 and Gateway V2. Profile-driven jobs use the isolated `e2e` test
 category.
+
+The blocking `e2e-core-operations-matrix.json` selects the single
+`coreOperations` setup cell through both hosted gateways.
 
 ## Precedents and implementations
 
