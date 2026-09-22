@@ -30,8 +30,8 @@ steps:
       $azcopy[0].url = 'https://github.com/Azure/azure-storage-azcopy/releases/download/v10.32.6/azcopy_windows_amd64_10.32.6.zip'
       $azcopy[0].sha512 = '80c06945808de90c7c0b42f2554c8ff7c2193a9f0693516ff572e2a61b80227b0ac1d782a58db82190baf7fe613da56f08f6c799f62c58f46e099edfa7f35af6'
       $azcopy[0].archive = 'azcopy_windows_amd64_10.32.6.zip'
-      if ($azcopy[0].Contains('minVersion')) {
-        $azcopy[0].minVersion = '10.32.6'
+      if ($azcopy[0].Contains('min-version')) {
+        $azcopy[0]['min-version'] = '10.32.6'
       }
       $pinnedToolsPath = [System.IO.Path]::Combine($env:AGENT_TEMPDIRECTORY, 'vcpkg-tools-azcopy.json')
       $tools | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $pinnedToolsPath -Encoding utf8
