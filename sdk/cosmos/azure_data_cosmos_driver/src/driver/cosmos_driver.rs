@@ -24,8 +24,8 @@ use crate::{
             },
             hedge_budget::HedgeBudget,
             operation_pipeline::{
-                ContainerRecreationRecoveryOutcome, ContainerRecreationRecoveryTracker,
-                OperationOverrides, RegionPin,
+                deadline_signal, ContainerRecreationRecoveryOutcome,
+                ContainerRecreationRecoveryTracker, OperationOverrides, RegionPin,
             },
         },
         routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
@@ -44,7 +44,7 @@ use crate::{
     ActivityId, CosmosResponse, DiagnosticsContext,
 };
 use arc_swap::ArcSwap;
-use futures::future::BoxFuture;
+use futures::future::{select, BoxFuture, Either};
 use query_planning::ResolvedQueryPlan;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -60,6 +60,50 @@ const GATEWAY_V2_DISCOVERY_OPT_IN: azure_core::http::headers::HeaderName =
     azure_core::http::headers::HeaderName::from_static(
         crate::models::cosmos_headers::request_header_names::USE_THINCLIENT,
     );
+
+fn await_planning_or_deadline<F, T>(
+    planning: F,
+    deadline: Option<Instant>,
+) -> impl std::future::Future<Output = Option<T>> + Send
+where
+    F: std::future::Future<Output = T> + Send,
+    T: Send,
+{
+    // This must be a regular function, not an `async fn`: function arguments
+    // are stored in an async state machine before its body first runs, so
+    // boxing inside an async body would still retain the full size of `F`.
+    let planning = Box::pin(planning);
+    async move {
+        let Some(deadline) = deadline else {
+            return Some(planning.await);
+        };
+        if Instant::now() >= deadline {
+            return None;
+        }
+        match select(planning, deadline_signal(Some(deadline))).await {
+            Either::Left((result, _deadline)) => Some(result),
+            Either::Right(((), _planning)) => None,
+        }
+    }
+}
+
+fn planning_timeout_error(
+    timeout: Duration,
+    mut diagnostics: DiagnosticsContextBuilder,
+) -> crate::error::CosmosError {
+    let status = crate::models::CosmosStatus::from_parts(
+        azure_core::http::StatusCode::RequestTimeout,
+        Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+    );
+    diagnostics.set_operation_status(status.status_code(), status.sub_status());
+    crate::error::CosmosError::builder()
+        .with_status(status)
+        .with_message(format!(
+            "end-to-end operation timeout exceeded during planning ({timeout:?})"
+        ))
+        .with_diagnostics(Arc::new(diagnostics.complete()))
+        .build()
+}
 
 #[cfg(feature = "preview_dtx")]
 const DTX_OUTER_MAX_RETRIES: u32 = 10;
@@ -759,6 +803,36 @@ impl CosmosDriver {
             TransportSecurity::Secure
         };
         (diagnostics, transport_security)
+    }
+
+    /// Builds the diagnostics envelope surfaced when the outer planning
+    /// deadline cancels nested query-plan or topology work.
+    fn new_planning_diagnostics(
+        &self,
+        account: &AccountReference,
+        operation_name: Option<&'static str>,
+    ) -> DiagnosticsContextBuilder {
+        let endpoint = AccountEndpoint::from(account);
+        let fault_injection_enabled = {
+            #[cfg(feature = "fault_injection")]
+            {
+                self.fault_injection_enabled
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                false
+            }
+        };
+        let (mut diagnostics, _) = Self::new_diagnostics_envelope(
+            &self.runtime,
+            ActivityId::new_uuid(),
+            &endpoint,
+            fault_injection_enabled,
+        );
+        if let Some(operation_name) = operation_name {
+            diagnostics.set_operation_name(operation_name);
+        }
+        diagnostics
     }
 
     /// Fetches account properties using a specific adaptive transport. Off-pipeline by
@@ -3944,16 +4018,22 @@ impl CosmosDriver {
         // one-shot execute path and direct plan_operation callers. Query-plan
         // and partition-topology requests are part of the caller-visible
         // operation rather than a separate unbounded phase.
+        let configured_timeout = self
+            .operation_options_view(options)
+            .end_to_end_latency_policy()
+            .map(|policy| policy.timeout());
         let derived_deadline = if operation.absolute_deadline().is_none() {
-            let deadline = self
-                .operation_options_view(options)
-                .end_to_end_latency_policy()
-                .map(|policy| Instant::now() + policy.timeout());
-            deadline
+            configured_timeout.map(|timeout| Instant::now() + timeout)
         } else {
             None
         };
         let effective_deadline = operation.absolute_deadline().or(derived_deadline);
+        let planning_timeout = effective_deadline
+            .map(|deadline| deadline.saturating_duration_since(Instant::now()))
+            .unwrap_or_default();
+        let planning_account =
+            effective_deadline.map(|_| operation.resource_reference().account().clone());
+        let planning_operation_name = operation.db_operation_name();
         let operation = operation.with_absolute_deadline(effective_deadline);
 
         // Reject mixed name/RID addressing before any IO work is done. The
@@ -3978,17 +4058,27 @@ impl CosmosDriver {
         // here so every caller awaits a pointer-sized future instead of having
         // to pin at its own call site and rediscover this each time the state
         // grows.
-        let mut plan = Box::pin(async move {
-            self.plan_operation_inner(
-                operation,
-                options,
-                continuation,
-                plan_options,
-                resolved_binary,
-            )
-            .await
-        })
-        .await?;
+        let planning = self.plan_operation_inner(
+            operation,
+            options,
+            continuation,
+            plan_options,
+            resolved_binary,
+        );
+        let mut plan = match await_planning_or_deadline(planning, effective_deadline).await {
+            Some(result) => result?,
+            None => {
+                return Err(planning_timeout_error(
+                    planning_timeout,
+                    self.new_planning_diagnostics(
+                        planning_account
+                            .as_ref()
+                            .expect("a planning deadline always captures an account"),
+                        planning_operation_name,
+                    ),
+                ));
+            }
+        };
         if let Some(deadline) = derived_deadline {
             plan.set_initial_execution_deadline(deadline);
         }
@@ -4900,6 +4990,70 @@ mod tests {
             plan.take_initial_execution_deadline().is_none(),
             "the planning deadline must be consumed only once"
         );
+    }
+
+    #[tokio::test]
+    async fn planning_future_is_cancelled_when_deadline_elapses() {
+        let deadline = Instant::now() + Duration::from_millis(20);
+
+        let result =
+            super::await_planning_or_deadline(futures::future::pending::<()>(), Some(deadline))
+                .await;
+
+        assert!(result.is_none());
+        assert!(Instant::now() >= deadline);
+    }
+
+    #[test]
+    fn planning_deadline_wrapper_stays_pointer_sized() {
+        let state = [0_u8; 16 * 1024];
+        let planning = async move {
+            futures::future::pending::<()>().await;
+            std::hint::black_box(state);
+        };
+
+        let wrapped = super::await_planning_or_deadline(planning, None);
+
+        assert!(
+            std::mem::size_of_val(&wrapped) <= 128,
+            "deadline wrapper unexpectedly retained the unboxed planning future: {} bytes",
+            std::mem::size_of_val(&wrapped)
+        );
+    }
+
+    #[tokio::test]
+    async fn expired_planning_deadline_wins_over_ready_future() {
+        let deadline = Instant::now() - Duration::from_millis(1);
+
+        let result =
+            super::await_planning_or_deadline(futures::future::ready("completed"), Some(deadline))
+                .await;
+
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn planning_timeout_uses_typed_operation_timeout_status() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver =
+            CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build()).unwrap();
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "testdb"));
+        let diagnostics = driver.new_planning_diagnostics(
+            operation.resource_reference().account(),
+            operation.db_operation_name(),
+        );
+        let error = super::planning_timeout_error(Duration::from_secs(1), diagnostics);
+
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::RequestTimeout
+        );
+        assert_eq!(
+            error.status().sub_status(),
+            Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+        );
+        assert!(error.diagnostics().is_some());
     }
 
     #[tokio::test]

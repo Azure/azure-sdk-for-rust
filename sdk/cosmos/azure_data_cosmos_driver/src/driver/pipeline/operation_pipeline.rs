@@ -3532,10 +3532,12 @@ enum TimerEvent {
 }
 
 /// Builds a future that resolves when the supplied `deadline` elapses,
-/// or never resolves when `deadline` is `None`. Used by [`execute_hedged`]
-/// to layer end-to-end-deadline observation onto its `select`-based
-/// races without changing those races' shapes when no deadline is set.
-fn deadline_signal(deadline: Option<Instant>) -> Pin<Box<dyn Future<Output = ()> + Send>> {
+/// or never resolves when `deadline` is `None`. Used by operation planning and
+/// [`execute_hedged`] to layer end-to-end-deadline observation onto
+/// `select`-based races without changing their shapes when no deadline is set.
+pub(crate) fn deadline_signal(
+    deadline: Option<Instant>,
+) -> Pin<Box<dyn Future<Output = ()> + Send>> {
     let Some(d) = deadline else {
         return Box::pin(pending::<()>());
     };
