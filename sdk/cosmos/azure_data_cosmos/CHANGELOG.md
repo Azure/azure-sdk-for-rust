@@ -19,6 +19,7 @@
 
 ### Bugs Fixed
 
+- Fixed `serde_json::value::RawValue` deserialization for binary-encoded responses: `ResponseBody::into_single` (and the `into_model` helpers built on it) now yield the document's JSON text for a `RawValue` target instead of failing, restoring raw passthrough now that binary encoding is on by default. ([#5328](https://github.com/Azure/azure-sdk-for-rust/issues/5328))
 - Added partition-merge support and preserved point-in-time change feed filtering across merged partitions by retaining `If-Modified-Since` alongside continuations on Gateway V1 and Gateway V2. ([#4122](https://github.com/Azure/azure-sdk-for-rust/issues/4122))
 - Name-based container clients now automatically recover when a container is deleted and recreated. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
 

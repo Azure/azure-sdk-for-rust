@@ -124,6 +124,11 @@ impl ResponseBody {
     /// either Cosmos binary JSON or UTF-8 text JSON (auto-detected by the
     /// `0x80` preamble).
     ///
+    /// `serde_json::value::RawValue` is supported under both encodings. On the
+    /// binary path the raw text is the codec's normalized rendering (key order
+    /// and number spelling may differ from the service's original bytes); on the
+    /// text path it is the response bytes verbatim.
+    ///
     /// Returns an error if the body is a feed [`Items`](Self::Items) response
     /// or if the body is [`NoPayload`](Self::NoPayload) (nothing to parse).
     pub fn into_single<T: DeserializeOwned>(self) -> crate::error::Result<T> {
@@ -542,6 +547,37 @@ mod tests {
         let body = ResponseBody::Bytes(binary(&id_object(7)));
         let item: Item = body.into_single().unwrap();
         assert_eq!(item, Item { id: 7 });
+    }
+
+    #[test]
+    fn into_single_reads_raw_value_from_binary_body() {
+        use serde_json::value::RawValue;
+
+        // Regression for issue #5328: a `RawValue` caller (raw passthrough) hit
+        // the binary body straight through `into_single`, which failed with a
+        // misclassified serialization error once binary encoding became the
+        // default. It must now succeed, matching the text path.
+        let text = ResponseBody::Bytes(Bytes::from_static(br#"{"id":7}"#));
+        let text_raw: Box<RawValue> = text.into_single().unwrap();
+
+        let binary_body = ResponseBody::Bytes(binary(&id_object(7)));
+        let binary_raw: Box<RawValue> = binary_body
+            .into_single()
+            .expect("RawValue must deserialize from a binary body");
+
+        assert_eq!(binary_raw.get(), text_raw.get());
+    }
+
+    #[test]
+    fn into_items_reads_raw_value_from_binary_items() {
+        use serde_json::value::RawValue;
+
+        let body = ResponseBody::from_items(vec![binary(&id_object(1)), binary(&id_object(2))]);
+        let items: Vec<Box<RawValue>> = body
+            .into_items()
+            .expect("RawValue items must deserialize from binary slices");
+        let rendered: Vec<&str> = items.iter().map(|r| r.get()).collect();
+        assert_eq!(rendered, vec![r#"{"id":1}"#, r#"{"id":2}"#]);
     }
 
     #[test]
