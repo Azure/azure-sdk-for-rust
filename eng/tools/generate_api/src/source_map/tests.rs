@@ -33,7 +33,7 @@ fn encodes_base64_vlq_values() {
 #[test]
 fn renders_v3_source_map() {
     let rendered = render(
-        "API.md",
+        "api.md",
         &[
             mapping(7, 0, "src/lib.rs", 4, 0),
             mapping(9, 4, "src/client.rs", 11, 8),
@@ -45,7 +45,7 @@ fn renders_v3_source_map() {
     let json: Value = serde_json::from_str(&rendered).unwrap();
 
     assert_eq!(json["version"], 3);
-    assert_eq!(json["file"], "API.md");
+    assert_eq!(json["file"], "api.md");
     assert_eq!(
         json["sources"],
         serde_json::json!(["src/lib.rs", "src/client.rs"])
@@ -58,7 +58,7 @@ fn renders_v3_source_map() {
 #[test]
 fn sources_follow_first_mapping_occurrence() {
     let rendered = render(
-        "API.md",
+        "api.md",
         &[
             mapping(2, 0, "src/z.rs", 0, 0),
             mapping(1, 0, "src/a.rs", 0, 0),
@@ -85,7 +85,7 @@ fn resolved_source_from_rendered(rendered: &str) -> PathBuf {
 #[test]
 fn source_root_points_to_repository_from_nested_output() {
     let rendered = render(
-        "API.md",
+        "api.md",
         &[mapping(0, 0, "sdk/core/azure_core/src/lib.rs", 0, 0)],
         Path::new("/repo/target/generate_api/azure_core"),
         Path::new("/repo"),
@@ -100,7 +100,7 @@ fn source_root_points_to_repository_from_nested_output() {
 #[test]
 fn source_root_accounts_for_deeper_output_directories() {
     let rendered = render(
-        "API.md",
+        "api.md",
         &[mapping(0, 0, "sdk/core/azure_core/src/lib.rs", 0, 0)],
         Path::new("/repo/sdk/core/azure_core/api"),
         Path::new("/repo"),
@@ -115,7 +115,7 @@ fn source_root_accounts_for_deeper_output_directories() {
 #[test]
 fn source_root_is_omitted_for_output_outside_the_repository() {
     let rendered = render(
-        "API.md",
+        "api.md",
         &[mapping(0, 0, "sdk/core/azure_core/src/lib.rs", 0, 0)],
         Path::new("/artifacts/azure_core"),
         Path::new("/repo"),
@@ -141,7 +141,7 @@ fn rendered_source_resolves_from_the_output_directory() {
     std::fs::write(&source, "").unwrap();
 
     let rendered = render(
-        "API.md",
+        "api.md",
         &[mapping(0, 0, "sdk/core/azure_core/src/lib.rs", 0, 0)],
         &output,
         &repository_root,

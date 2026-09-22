@@ -121,7 +121,7 @@ function New-ApiFile(
   Invoke-LoggedCommand $command -GroupOutput | Out-Host
 
   $fileName = switch ($Format) {
-    'markdown' { 'API.md' }
+    'markdown' { 'api.md' }
     'apiview' { 'apiview.json' }
     default {
       LogError "Unsupported API output format '$Format'"
