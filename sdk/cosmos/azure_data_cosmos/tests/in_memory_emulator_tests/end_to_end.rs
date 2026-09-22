@@ -1904,46 +1904,69 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
 
     // ── Real account comparison (if available) ───────────────────
     //
-    // Runs the same 503-on-East scenario against the ARM-provisioned account
-    // (when one is configured) and asserts the real service's response
-    // matches the emulator's. Returns `Ok(None)` when no real account is
-    // available (local dev, emulator-only CI legs) so the emulator portion
-    // remains the single source of truth in those modes.
-    if let Ok(Some((real_client, real_rule))) =
-        resolve_real_client_with_fault_injection(fault_condition, fault_result).await
-    {
+    // Runs the same source-region 503 scenario against a configured
+    // multi-region account and compares it with the emulator. Single-region
+    // and emulator-only jobs skip this optional differential leg.
+    if let Some(real_setup_client) = resolve_real_client().await.unwrap() {
+        let Some((writable_regions, readable_regions)) =
+            real_setup_client.cached_account_regions_for_testing().await
+        else {
+            panic!("initialized real client must cache account topology");
+        };
+        let Some((source_region, target_region, excluded_regions)) =
+            select_failover_topology(&writable_regions, &readable_regions)
+        else {
+            eprintln!(
+                "[real] skipping regional failover comparison: account exposes fewer than two readable regions"
+            );
+            return;
+        };
+        let Some((real_client, real_rule)) =
+            resolve_real_client_with_fault_injection(source_region.clone(), fault_result)
+                .await
+                .unwrap()
+        else {
+            return;
+        };
         let real_db_name = format!("sdk-fi-real-{run_id}");
         // Create DB + container on real account.
-        create_database_if_needed(&real_client, &real_db_name)
+        create_database_if_needed(&real_setup_client, &real_db_name)
             .await
             .unwrap();
-        let real_db = real_client.database_client(&real_db_name);
+        let real_db = real_setup_client.database_client(&real_db_name);
         let props = ContainerProperties::new("testcoll".to_string(), "/pk".into());
-        create_container_if_needed(&real_client, &real_db_name, props, None)
+        create_container_if_needed(&real_setup_client, &real_db_name, props, None)
             .await
             .unwrap();
         // Real accounts provision containers asynchronously; tolerate the
         // transient 404/1013 CollectionCreateInProgress before the first read.
-        let real_container = resolve_container_when_ready(&real_client, &real_db_name, "testcoll")
-            .await
-            .unwrap();
+        let real_setup_container =
+            resolve_container_when_ready(&real_setup_client, &real_db_name, "testcoll")
+                .await
+                .unwrap();
 
         // Create item.
-        let real_create = real_container
+        let real_create = real_setup_container
             .create_item("pk1", "fi-item", &item, Some(write_options_with_content()))
             .await
             .unwrap();
         assert_eq!(real_create.status(), StatusCode::Created);
         wait_for_item_replication_to_region(
-            &real_container,
+            &real_setup_container,
             "pk1",
             "fi-item",
             &item,
-            vec![Region::EAST_US],
-            Region::WEST_US,
+            excluded_regions,
+            target_region,
         )
         .await
         .unwrap();
+
+        let real_container = real_client
+            .database_client(&real_db_name)
+            .container_client("testcoll", None)
+            .await
+            .unwrap();
 
         // Enable the fault only after setup and replication readiness have
         // completed, so the rule cannot interfere with container probes.
@@ -1973,6 +1996,51 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     }
 }
 
+#[cfg(feature = "fault_injection")]
+fn select_failover_topology(
+    writable_regions: &[Region],
+    readable_regions: &[Region],
+) -> Option<(Region, Region, Vec<Region>)> {
+    let source_region = writable_regions
+        .first()
+        .or_else(|| readable_regions.first())?
+        .clone();
+    let target_region = readable_regions
+        .iter()
+        .find(|region| *region != &source_region)?
+        .clone();
+    let mut all_regions = writable_regions.to_vec();
+    for region in readable_regions {
+        if !all_regions.contains(region) {
+            all_regions.push(region.clone());
+        }
+    }
+    let excluded_regions = all_regions
+        .into_iter()
+        .filter(|region| region != &target_region)
+        .collect();
+    Some((source_region, target_region, excluded_regions))
+}
+
+#[cfg(feature = "fault_injection")]
+#[test]
+fn failover_topology_excludes_every_non_target_region() {
+    let topology = select_failover_topology(
+        &[Region::EAST_US_2],
+        &[Region::EAST_US_2, Region::WEST_US_3, Region::CENTRAL_US],
+    )
+    .expect("multi-region topology must produce a failover pair");
+    assert_eq!(
+        topology,
+        (
+            Region::EAST_US_2,
+            Region::WEST_US_3,
+            vec![Region::EAST_US_2, Region::CENTRAL_US]
+        )
+    );
+    assert!(select_failover_topology(&[Region::EAST_US_2], &[Region::EAST_US_2]).is_none());
+}
+
 /// Builds a real-account `CosmosClient` with a disabled fault injection rule
 /// matching the emulator test. The caller enables the returned rule only after
 /// resource setup and satellite replication are complete. Returns `Ok(None)`
@@ -1983,7 +2051,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
 /// build time.
 #[cfg(feature = "fault_injection")]
 async fn resolve_real_client_with_fault_injection(
-    condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
+    source_region: Region,
     result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
 ) -> Result<
     Option<(
@@ -1992,7 +2060,9 @@ async fn resolve_real_client_with_fault_injection(
     )>,
     Box<dyn Error>,
 > {
-    use azure_data_cosmos_driver::fault_injection::FaultInjectionRuleBuilder;
+    use azure_data_cosmos_driver::fault_injection::{
+        FaultInjectionConditionBuilder, FaultInjectionRuleBuilder, FaultOperationType,
+    };
     use std::sync::Arc;
 
     let mode = std::env::var(TEST_MODE_ENV_VAR)
@@ -2022,11 +2092,12 @@ async fn resolve_real_client_with_fault_injection(
         azure_core::credentials::Secret::new(key),
     );
 
-    // Mirror the emulator-side rule against the real account, using the same
-    // condition/result the caller built so both legs of the test share a
-    // single source of truth.
+    let condition = FaultInjectionConditionBuilder::new()
+        .with_operation_type(FaultOperationType::ReadItem)
+        .with_region(source_region.clone())
+        .build();
     let rule = Arc::new(
-        FaultInjectionRuleBuilder::new("sdk-read-503-east-real", result)
+        FaultInjectionRuleBuilder::new("sdk-read-503-source-real", result)
             .with_condition(condition)
             .build(),
     );
@@ -2035,7 +2106,7 @@ async fn resolve_real_client_with_fault_injection(
     // Apply fault injection at the SDK builder layer.
     let client = CosmosClientBuilder::new()
         .with_fault_injection_rules(vec![Arc::clone(&rule)])?
-        .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
+        .build(account, RoutingStrategy::ProximityTo(source_region))
         .await?;
 
     Ok(Some((client, rule)))
