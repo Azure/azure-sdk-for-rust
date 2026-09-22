@@ -23,9 +23,9 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     models::{ContainerProperties, DatabaseProperties, ItemResponse, ThroughputProperties},
     options::{
-        AvailabilityStrategy, ContentResponseOnWrite, CreateContainerOptions, ItemReadOptions,
-        ItemWriteOptions, OperationOptions, OperationOptionsBuilder, Region,
-        ThrottlingRetryOptionsBuilder,
+        AvailabilityStrategy, ContentResponseOnWrite, CreateContainerOptions, ExcludedRegions,
+        ItemReadOptions, ItemWriteOptions, OperationOptions, OperationOptionsBuilder,
+        ReadConsistencyStrategy, Region, ThrottlingRetryOptionsBuilder,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
     CosmosRuntimeBuilder, CosmosStatus, FeedScope, Query, RoutingStrategy, SubStatusCode,
@@ -272,6 +272,71 @@ async fn read_item_with_failover_retry(
         "[{label}] read_item exhausted {MAX_ATTEMPTS} attempts; last error: {}",
         last_err.expect("at least one attempt failed"),
     );
+}
+
+#[cfg(feature = "fault_injection")]
+async fn wait_for_item_replication_to_region(
+    container: &ContainerClient,
+    pk: &'static str,
+    id: &'static str,
+    expected: &TestItem,
+    excluded_regions: Vec<Region>,
+    target_region: Region,
+) -> Result<(), Box<dyn Error>> {
+    if excluded_regions.contains(&target_region) {
+        return Err(format!(
+            "replication probe target region '{}' must not be excluded",
+            target_region.as_str()
+        )
+        .into());
+    }
+
+    let mut operation = OperationOptions::default();
+    operation.read_consistency_strategy = Some(ReadConsistencyStrategy::Eventual);
+    operation.availability_strategy = Some(AvailabilityStrategy::Disabled);
+    operation.max_failover_retry_count = Some(0);
+    operation.max_session_retry_count = Some(0);
+    operation.excluded_regions = Some(
+        excluded_regions
+            .into_iter()
+            .fold(ExcludedRegions::new(), ExcludedRegions::with_region),
+    );
+    let options = ItemReadOptions::default().with_operation_options(operation);
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(45);
+    let mut backoff = Duration::from_millis(250);
+
+    loop {
+        match tokio::time::timeout_at(deadline, container.read_item(pk, id, Some(options.clone())))
+            .await
+        {
+            Ok(Ok(response)) => {
+                let contacted_regions = response.diagnostics().regions_contacted();
+                if !contacted_regions.contains(&target_region) {
+                    return Err(format!(
+                        "item '{id}' replication probe expected region '{}', contacted {contacted_regions:?}",
+                        target_region.as_str()
+                    )
+                    .into());
+                }
+                let actual: TestItem = response.into_body().into_single()?;
+                if &actual == expected {
+                    return Ok(());
+                }
+            }
+            Ok(Err(error)) if error.status().status_code() == StatusCode::NotFound => {}
+            Ok(Err(error)) => return Err(error.into()),
+            Err(_) => {
+                return Err(format!(
+                    "item '{id}' did not replicate to region '{}' before the deadline",
+                    target_region.as_str()
+                )
+                .into())
+            }
+        }
+
+        tokio::time::sleep_until(deadline.min(tokio::time::Instant::now() + backoff)).await;
+        backoff = (backoff * 2).min(Duration::from_secs(2));
+    }
 }
 
 #[cfg(feature = "fault_injection")]
@@ -1774,6 +1839,16 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
         .await
         .unwrap();
     assert_emulator_item_response(&emu_create, StatusCode::Created);
+    wait_for_item_replication_to_region(
+        &emu_container,
+        "pk1",
+        "fi-item",
+        &item,
+        vec![Region::EAST_US],
+        Region::WEST_US,
+    )
+    .await
+    .unwrap();
 
     // ── Read item — should failover from East US → West US ───────
     // The fault rule has no hit limit, so East ALWAYS returns 503. A successful
@@ -1834,7 +1909,7 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     // matches the emulator's. Returns `Ok(None)` when no real account is
     // available (local dev, emulator-only CI legs) so the emulator portion
     // remains the single source of truth in those modes.
-    if let Ok(Some(real_client)) =
+    if let Ok(Some((real_client, real_rule))) =
         resolve_real_client_with_fault_injection(fault_condition, fault_result).await
     {
         let real_db_name = format!("sdk-fi-real-{run_id}");
@@ -1859,10 +1934,25 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
             .await
             .unwrap();
         assert_eq!(real_create.status(), StatusCode::Created);
+        wait_for_item_replication_to_region(
+            &real_container,
+            "pk1",
+            "fi-item",
+            &item,
+            vec![Region::EAST_US],
+            Region::WEST_US,
+        )
+        .await
+        .unwrap();
 
-        // Read item — should also failover. Same retry policy as the emulator side.
+        // Enable the fault only after setup and replication readiness have
+        // completed, so the rule cannot interfere with container probes.
+        real_rule.enable();
+
+        // Read item — should also fail over. Same retry policy as the emulator side.
         let real_read =
             read_item_with_failover_retry(&real_container, "pk1", "fi-item", "real").await;
+        real_rule.disable();
         assert_eq!(real_read.status(), StatusCode::Ok);
 
         // Compare real vs. emulator read headers.
@@ -1883,9 +1973,10 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
     }
 }
 
-/// Builds a real-account `CosmosClient` with fault injection rules matching the
-/// emulator test. Returns `Ok(None)` when no real account is configured (so
-/// the test reduces to its emulator-only leg).
+/// Builds a real-account `CosmosClient` with a disabled fault injection rule
+/// matching the emulator test. The caller enables the returned rule only after
+/// resource setup and satellite replication are complete. Returns `Ok(None)`
+/// when no real account is configured, reducing the test to its emulator leg.
 ///
 /// Fault injection is applied at the SDK builder level via
 /// `with_fault_injection`; it is forwarded onto the per-driver options at
@@ -1894,7 +1985,13 @@ async fn sdk_read_failover_on_503_via_fault_injection() {
 async fn resolve_real_client_with_fault_injection(
     condition: azure_data_cosmos_driver::fault_injection::FaultInjectionCondition,
     result: azure_data_cosmos_driver::fault_injection::FaultInjectionResult,
-) -> Result<Option<CosmosClient>, Box<dyn Error>> {
+) -> Result<
+    Option<(
+        CosmosClient,
+        std::sync::Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
+    )>,
+    Box<dyn Error>,
+> {
     use azure_data_cosmos_driver::fault_injection::FaultInjectionRuleBuilder;
     use std::sync::Arc;
 
@@ -1933,14 +2030,15 @@ async fn resolve_real_client_with_fault_injection(
             .with_condition(condition)
             .build(),
     );
+    rule.disable();
 
     // Apply fault injection at the SDK builder layer.
     let client = CosmosClientBuilder::new()
-        .with_fault_injection_rules(vec![rule])?
+        .with_fault_injection_rules(vec![Arc::clone(&rule)])?
         .build(account, RoutingStrategy::ProximityTo(Region::EAST_US))
         .await?;
 
-    Ok(Some(client))
+    Ok(Some((client, rule)))
 }
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
