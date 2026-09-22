@@ -67,6 +67,12 @@ function Get-CargoPackages() {
   return $metadata.packages
 }
 
+function Test-CargoPackagePublishable(
+  $Package
+) {
+  return $null -eq $Package.publish
+}
+
 function Get-PackagesFromPackageInfo($packageInfoDirectory) {
   $packages = @()
   $packageInfoFiles = Get-ChildItem -Path $packageInfoDirectory -Filter '*.json' -File -Recurse
