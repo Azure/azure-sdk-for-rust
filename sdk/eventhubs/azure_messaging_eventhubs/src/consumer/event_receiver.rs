@@ -341,7 +341,7 @@ mod tests {
         );
     }
 
-    // The detector must recognise exactly the error the timeout constructor
+    // The detector must recognize exactly the error the timeout constructor
     // builds, and nothing else that carries an I/O kind.
     #[test]
     fn is_receive_timeout_matches_only_the_timeout_error() {
