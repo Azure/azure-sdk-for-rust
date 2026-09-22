@@ -40,10 +40,6 @@ Packing crates with
   -ManifestDir $ManifestDir `
   -PackageInfoDirectory $PackageInfoDirectory
 
-function Test-IsPublishable($package) {
-  return $null -eq $package.publish
-}
-
 function Get-PackagesToBuild() {
   $packages = Get-CargoPackages
   [string[]] $outputPackageNames = Get-OutputPackageNames $packages
@@ -61,7 +57,7 @@ function Get-PackagesToBuild() {
 
     foreach ($dependency in $package.UnreleasedDependencies) {
       if (
-        (Test-IsPublishable $dependency) -and
+        (Test-CargoPackagePublishable $dependency) -and
         !$packagesToBuild.Contains($dependency) -and
         !$toProcess.Contains($dependency)
       ) {
@@ -92,7 +88,7 @@ function Get-OutputPackageNames($packages) {
 
     default {
       LogDebug "Packing all packages in workspace"
-      return $packages.Where({ Test-IsPublishable $_ }).name
+      return $packages.Where({ Test-CargoPackagePublishable $_ }).name
     }
   }
 
@@ -105,7 +101,7 @@ function Get-OutputPackageNames($packages) {
       exit 1
     }
 
-    if (-not (Test-IsPublishable $package)) {
+    if (-not (Test-CargoPackagePublishable $package)) {
       LogError "Package '$name' has publish = false and cannot be packed for publishing"
       exit 1
     }

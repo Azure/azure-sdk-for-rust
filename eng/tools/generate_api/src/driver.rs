@@ -147,6 +147,24 @@ fn crate_target_name(package_name: &str, targets: &[CargoTarget]) -> String {
         .unwrap_or_else(|| package_name.replace('-', "_"))
 }
 
+fn crate_type(targets: &[CargoTarget]) -> String {
+    targets
+        .iter()
+        .find_map(|target| {
+            target
+                .kind
+                .iter()
+                .find(|kind| is_library_target_kind(kind))
+                .cloned()
+        })
+        .or_else(|| {
+            targets
+                .iter()
+                .find_map(|target| target.kind.first().cloned())
+        })
+        .unwrap_or_else(|| "lib".to_string())
+}
+
 fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, String> {
     let mut command = Command::new("cargo");
     command
@@ -211,6 +229,7 @@ fn load_workspace_metadata(request: &Request) -> Result<WorkspaceMetadata, Strin
                     description: package.description,
                     edition: package.edition,
                     rust_version: package.rust_version,
+                    crate_type: crate_type(&package.targets),
                     features,
                 },
             },
@@ -388,7 +407,8 @@ impl PackageMetadata {
 #[cfg(test)]
 mod tests {
     use super::{
-        crate_target_name, parse_rust_version, select_features, CargoPackage, CargoTarget,
+        crate_target_name, crate_type, parse_rust_version, select_features, CargoPackage,
+        CargoTarget,
     };
     use std::{collections::BTreeMap, path::PathBuf};
 
@@ -428,6 +448,36 @@ mod tests {
             ),
             "azure_data_cosmos_benchmarks"
         );
+    }
+
+    #[test]
+    fn prefers_primary_library_target_kind_for_crate_type() {
+        assert_eq!(
+            crate_type(&[CargoTarget {
+                name: "azurecosmosdriver".to_string(),
+                kind: vec!["cdylib".to_string(), "staticlib".to_string()],
+            }]),
+            "cdylib"
+        );
+        assert_eq!(
+            crate_type(&[CargoTarget {
+                name: "typespec_macros".to_string(),
+                kind: vec!["proc-macro".to_string()],
+            }]),
+            "proc-macro"
+        );
+    }
+
+    #[test]
+    fn falls_back_to_first_target_kind_for_crate_type() {
+        assert_eq!(
+            crate_type(&[CargoTarget {
+                name: "smoke".to_string(),
+                kind: vec!["bin".to_string(), "example".to_string()],
+            }]),
+            "bin"
+        );
+        assert_eq!(crate_type(&[]), "lib");
     }
 
     #[test]

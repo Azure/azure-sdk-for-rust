@@ -79,7 +79,7 @@ $packagesToAnalyze = Get-CargoPackagesFromManifestPaths `
   -ManifestPath $selectedManifestPaths `
   -WorkspacePackages $workspacePackages
 $workspaceManifestPath = [System.IO.Path]::Combine($RepoRoot, 'Cargo.toml')
-$exportApiScript = [System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'Export-API.ps1')
+$exportApiScript = [System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'Export-API.ps1')
 $hasPackageSelection = $resolvedPackageName -or $ManifestDir -or $resolvedPackageInfoPath
 $azureCoreManifestPath = (
   Get-CargoPackageByName `
@@ -137,25 +137,15 @@ $checkApiSupersetManifest = ([System.IO.Path]::Combine($RepoRoot, 'eng', 'tools'
 
 if (!$SkipPackageAnalysis) {
   $checkApiSupersetCrates = @('typespec', 'typespec_client_core', 'azure_core')
-  $exportApiParams = @{
-    Check = $true
-  }
-  if ($resolvedPackageName) {
-    $exportApiParams['PackageName'] = $resolvedPackageName
-  }
-  elseif ($ManifestDir) {
-    $exportApiParams['ManifestDir'] = $ManifestDir
-  }
-  elseif ($resolvedPackageInfoPath) {
-    $exportApiParams['PackageInfoDirectory'] = $resolvedPackageInfoPath
-  }
+  $publishablePackagesToAnalyze = @(
+    $packagesToAnalyze | Where-Object { Test-CargoPackagePublishable $_ }
+  )
 
-  $exportApiArgs = @('-Check')
-  foreach ($entry in $exportApiParams.GetEnumerator() | Where-Object Key -NE 'Check') {
-    $values = @($entry.Value) | ForEach-Object { "'$_'" }
-    $exportApiArgs += "-$($entry.Key)", ($values -join ',')
+  if ($publishablePackagesToAnalyze) {
+    $packageNames = $publishablePackagesToAnalyze | ForEach-Object { "'$($_.name)'" }
+    $exportApiArgs = @('-Check', '-PackageName', ($packageNames -join ','))
+    Invoke-LoggedCommand "& '$exportApiScript' $($exportApiArgs -join ' ')" -GroupOutput
   }
-  Invoke-LoggedCommand "& '$exportApiScript' $($exportApiArgs -join ' ')" -GroupOutput
 
   if (!$resolvedPackageName -and !$ManifestDir -and !$resolvedPackageInfoPath) {
     Write-Host "Analyzing workspace`n"

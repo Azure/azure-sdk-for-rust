@@ -10,6 +10,8 @@
   - `azure_core/default`
 
 ```rust
+#![crate_name = "azure_core_opentelemetry"]
+#![crate_type = "lib"]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]
 pub struct OpenTelemetryTracerProvider {

@@ -9,6 +9,8 @@
 - `default`
 
 ```rust
+#![crate_name = "azure_core_examples"]
+#![crate_type = "lib"]
 pub struct Error {
 }
 impl Error {

@@ -12,4 +12,6 @@
 - `tokio-metrics`
 
 ```rust
+#![crate_name = "azure_data_cosmos_perf"]
+#![crate_type = "bin"]
 ```
