@@ -10,7 +10,9 @@ steps:
     displayName: vcpkg --version
 
   - pwsh: |
-      vcpkg install
+      # Temporarily disable binary caching until AzCopy is available in the approved asset mirror.
+      # Source downloads still use X_VCPKG_ASSET_SOURCES with x-block-origin.
+      vcpkg install --binarysource=clear
       Write-Host "##vso[task.setvariable variable=VCPKG_ROOT;]${env:VCPKG_INSTALLATION_ROOT}"
       Write-Host "##vso[task.setvariable variable=VCPKG_INSTALLED_ROOT;]$PWD\vcpkg_installed"
       Write-Host "##vso[task.setvariable variable=OPENSSL_DIR;]$PWD\vcpkg_installed\x64-windows"
