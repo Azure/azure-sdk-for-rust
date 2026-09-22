@@ -288,6 +288,7 @@ fn generate_c_header() {
             // double-prefixing it into `cosmos_COSMOS_STATUS_SUCCESS`.
             exclude: vec![
                 "__test_only_enqueue_ok_completion_with_all_value_kinds".into(),
+                "cosmos_test_cursor_fixture".into(),
                 "COSMOS_STATUS_SUCCESS".into(),
             ],
             rename,

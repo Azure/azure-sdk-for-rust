@@ -27,6 +27,31 @@ use crate::{
 use azure_data_cosmos_driver::options::OperationOptions;
 use std::{mem::MaybeUninit, ptr, time::Duration};
 
+#[test]
+fn only_legacy_representation_errors_recommend_cursor_migration() {
+    for code in [
+        CosmosErrorCode::CosmosErrorCodeRepresentationUnsupported,
+        CosmosErrorCode::CosmosErrorCodeOperationCancelled,
+        CosmosErrorCode::CosmosErrorCodeCursorClosed,
+        CosmosErrorCode::CosmosErrorCodeDeliveryLost,
+        CosmosErrorCode::CosmosErrorCodeInternalError,
+        CosmosErrorCode::CosmosErrorCodeInvalidArgument,
+    ] {
+        let error = super::error(code);
+        assert_eq!(
+            error
+                .to_string()
+                .contains("use the retained cursor interface"),
+            matches!(
+                code,
+                CosmosErrorCode::CosmosErrorCodeRepresentationUnsupported
+            ),
+            "{code:?}: {error}"
+        );
+        assert_eq!(error.status(), code.to_status().unwrap());
+    }
+}
+
 struct Fixture {
     runtime: *mut RuntimeContext,
     driver: *mut DriverHandle,

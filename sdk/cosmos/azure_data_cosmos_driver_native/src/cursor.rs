@@ -23,6 +23,7 @@ use azure_data_cosmos_driver::{
 };
 use futures::FutureExt;
 use std::{
+    borrow::Cow,
     collections::VecDeque,
     sync::{atomic::Ordering, Arc, Condvar, Mutex, Weak},
     time::{Duration, Instant},
@@ -363,14 +364,26 @@ impl CursorQueue {
 }
 
 fn error(code: CosmosErrorCode) -> CosmosError {
+    let message: Cow<'static, str> = match code {
+        CosmosErrorCode::CosmosErrorCodeRepresentationUnsupported => {
+            "The legacy response cannot represent all item buffers; use the retained cursor interface for feed results".into()
+        }
+        CosmosErrorCode::CosmosErrorCodeOperationCancelled => "The cursor operation was cancelled".into(),
+        CosmosErrorCode::CosmosErrorCodeCursorClosed => "The cursor is no longer usable".into(),
+        CosmosErrorCode::CosmosErrorCodeDeliveryLost => {
+            "The completion was not delivered; cursor progress can no longer be used safely".into()
+        }
+        CosmosErrorCode::CosmosErrorCodeInternalError => {
+            "The cursor operation failed internally".into()
+        }
+        _ => format!("{code:?}").into(),
+    };
     CosmosError::builder()
         .with_status(
             code.to_status()
                 .unwrap_or_else(CosmosErrorCode::panic_status),
         )
-        .with_message(format!(
-            "{code:?}; use the retained cursor interface for feed results"
-        ))
+        .with_message(message)
         .build()
 }
 

@@ -89,7 +89,7 @@ static size_t ranks_from_bytes(const uint8_t *bytes, size_t len, int *ranks, siz
     return count;
 }
 
-static int query_scenario(const char *query, int page_size, int distinct, int scripted) {
+static int query_scenario(const char *query, int page_size, int distinct, int scripted, int binary) {
     int result = TEST_PASS;
     fixture f = {0};
     cosmos_cursor_t *cursor = NULL;
@@ -105,7 +105,7 @@ static int query_scenario(const char *query, int page_size, int distinct, int sc
     request.operation.container = f.container;
     request.operation.max_item_count = page_size;
     cosmos_operation_options_t options = cosmos_operation_options_default();
-    options.binary_encoding_enabled = 1;
+    options.binary_encoding_enabled = binary ? 2 : 1;
     options.query_plan_mode = 2;
     request.operation.options = &options;
     char body[256];
@@ -122,9 +122,16 @@ static int query_scenario(const char *query, int page_size, int distinct, int sc
         ASSERT(page->common.user_data == 456, "correlation preserved");
         if (page->result_kind == 4) { ended = 1; break; }
         REQUIRE(page->result_kind == 2, "explicit Page");
+        if (binary) REQUIRE(page->body_kind == 2, "binary DISTINCT exposes item buffers");
         if (page->body_kind == 2) {
             for (size_t j = 0; j < page->items_len; ++j) {
-                if (distinct) {
+                if (binary) {
+                    REQUIRE(count < 32, "bounded binary test output");
+                    REQUIRE(page->items[j].len == 2, "standalone binary small integer");
+                    REQUIRE(page->items[j].data[0] == 0x80, "binary JSON preamble");
+                    REQUIRE(page->items[j].data[1] <= 2, "literal integer is an expected group");
+                    ranks[count++] = page->items[j].data[1];
+                } else if (distinct) {
                     char *value = text_copy(page->items[j].data, page->items[j].len);
                     REQUIRE(count < 32, "bounded test output");
                     ranks[count++] = atoi(value);
@@ -178,10 +185,11 @@ cleanup:
 
 static int test_populated_queries(void) {
     for (int size = 1; size <= 2; ++size) {
-        if (query_scenario("SELECT * FROM c", size, 0, 0)) return TEST_FAIL;
-        if (query_scenario("SELECT * FROM c ORDER BY c.rank", size, 0, 0)) return TEST_FAIL;
-        if (query_scenario("SELECT DISTINCT TOP 6 VALUE c.group FROM c", size, 1, 0)) return TEST_FAIL;
-        if (query_scenario("SELECT TOP 6 * FROM c ORDER BY c.rank", size, 0, 1)) return TEST_FAIL;
+        if (query_scenario("SELECT * FROM c", size, 0, 0, 0)) return TEST_FAIL;
+        if (query_scenario("SELECT * FROM c ORDER BY c.rank", size, 0, 0, 0)) return TEST_FAIL;
+        if (query_scenario("SELECT DISTINCT TOP 6 VALUE c.group FROM c", size, 1, 0, 0)) return TEST_FAIL;
+        if (query_scenario("SELECT DISTINCT TOP 6 VALUE c.group FROM c", size, 1, 0, 1)) return TEST_FAIL;
+        if (query_scenario("SELECT TOP 6 * FROM c ORDER BY c.rank", size, 0, 1, 0)) return TEST_FAIL;
     }
     return TEST_PASS;
 }

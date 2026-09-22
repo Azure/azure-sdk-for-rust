@@ -2216,13 +2216,6 @@ struct cosmos_cursor_t *cosmos_cursor_completion_take_cursor(struct cosmos_curso
 void cosmos_cursor_completion_free(struct cosmos_cursor_completion_t *completion);
 
 /**
- * Test-only populated two-range emulator; absent from production builds.
- */
-cosmos_status_code_t cosmos_test_cursor_fixture(uint32_t scripted_transport,
-                                                struct cosmos_runtime_t **out_runtime,
-                                                struct cosmos_driver_t **out_driver);
-
-/**
  * Initialize a caller-owned full-size cursor request.
  */
 void cosmos_cursor_request_init(struct cosmos_cursor_request_t *out);
