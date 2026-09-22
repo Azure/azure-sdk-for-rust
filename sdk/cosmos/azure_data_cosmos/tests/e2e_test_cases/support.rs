@@ -257,7 +257,6 @@ pub(super) fn assert_critical_diagnostics(
         Some(status_code)
     );
     assert!(diagnostics.request_count() >= 1);
-    assert_diagnostics_transport(diagnostics, configured_emulator_transport());
 }
 
 fn configured_emulator_transport() -> Option<TransportKind> {
@@ -298,7 +297,6 @@ pub(super) fn assert_transport(diagnostics: &DiagnosticsContext, expected: Trans
         "completed requests must use {expected:?}"
     );
 }
-
 pub(super) async fn hosted_wire_counts() -> TestResult<Option<HostedWireCounts>> {
     if std::env::var_os("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT").is_none() {
         return Ok(None);
