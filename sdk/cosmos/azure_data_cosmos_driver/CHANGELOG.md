@@ -22,7 +22,7 @@
 
 ### Bugs Fixed
 
-- Fixed `serde_json::value::RawValue` deserialization on the Cosmos binary JSON path: `binary_json::from_slice` and `ResponseBody::into_single`/`into_items` now render the value's JSON text for a `RawValue` target instead of failing with a misclassified serialization error, so `RawValue` callers keep working now that binary encoding is on by default. ([#5328](https://github.com/Azure/azure-sdk-for-rust/issues/5328))
+- Fixed `serde_json::value::RawValue` deserialization on the Cosmos binary JSON path: `binary_json::from_slice` and `ResponseBody::into_single`/`into_items` now render the value's JSON text for a `RawValue` target instead of failing with a misclassified serialization error, so `RawValue` callers keep working now that binary encoding is on by default. ([#5338](https://github.com/Azure/azure-sdk-for-rust/pull/5338))
 - Fixed V1 partition key routing for non-ASCII strings by truncating at 100 UTF-16 code units and applying the service's separate binary byte limit without panicking on split characters. ([#5280](https://github.com/Azure/azure-sdk-for-rust/pull/5280))
 - Added partition-merge routing support, advertised the merge capability bits, and retained point-in-time change feed filtering across merged partitions on Gateway V1 and Gateway V2. ([#4122](https://github.com/Azure/azure-sdk-for-rust/issues/4122))
 - Cosmos driver user agents now include the build-time Rust compiler version instead of `rustc/unknown`. ([#5201](https://github.com/Azure/azure-sdk-for-rust/pull/5201))
