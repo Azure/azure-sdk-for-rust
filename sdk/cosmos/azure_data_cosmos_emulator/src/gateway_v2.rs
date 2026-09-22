@@ -173,12 +173,13 @@ mod tests {
         let base_url = Url::parse("http://127.0.0.1:18444/").unwrap();
         let region = VirtualRegion::new("East US", Url::parse("http://127.0.0.1:18081/").unwrap())
             .with_gateway_v2_url(base_url.clone());
+        let metrics = Arc::new(HostMetrics::default());
         let state = GatewayV2State {
             emulator: Arc::new(InMemoryEmulatorHttpClient::new(
                 VirtualAccountConfig::new(vec![region]).unwrap(),
             )),
             base_url,
-            metrics: Arc::new(HostMetrics::default()),
+            metrics: metrics.clone(),
             request_count: None,
             probe_count: None,
         };
@@ -193,6 +194,7 @@ mod tests {
             let error = execute(state.clone(), request).await.unwrap_err();
             assert_eq!(error.0, StatusCode::METHOD_NOT_ALLOWED);
         }
+        assert_eq!(metrics.gateway20_requests(), 0);
     }
 
     #[tokio::test]

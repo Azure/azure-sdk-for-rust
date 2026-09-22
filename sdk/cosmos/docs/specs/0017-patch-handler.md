@@ -75,6 +75,10 @@ receives no marker-backed duplicate suppression.
    - reject ops whose path overlaps any partition-key path (we cannot
      move a document between physical partitions). For MoveOp this
      covers BOTH the source (`from`) and the destination (`path`).
+  - reject ops whose path overlaps the immutable item identity path `/id`.
+    For MoveOp this covers both the source and destination. This validation
+    runs before strategy selection, so server-side and client-side RMW PATCH
+    have the same identity contract.
   - reject every op that overlaps the reserved tracking path.
    - reject empty op lists.
 

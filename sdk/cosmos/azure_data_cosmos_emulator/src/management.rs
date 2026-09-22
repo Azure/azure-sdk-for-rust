@@ -117,6 +117,7 @@ async fn health(State(state): State<ManagementState>) -> Json<serde_json::Value>
             .iter()
             .any(|binding| binding.gateway20_url.is_some()),
         "connectivityProbes": state.metrics.connectivity_probes(),
+        "gatewayRequests": state.metrics.gateway_requests(),
         "gateway20Requests": state.metrics.gateway20_requests()
     }))
 }
