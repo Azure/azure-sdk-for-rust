@@ -257,6 +257,7 @@ pub mod builders {
         pub fn with_max_partition_count(self, max_partition_count: usize) -> Self;
         pub fn with_partition_expiration_duration(self, partition_expiration_duration: Duration) -> Self;
         pub fn with_prefetch(self, prefetch: u32) -> Self;
+        pub fn with_receive_timeout(self, receive_timeout: Duration) -> Self;
         pub fn with_start_positions(self, start_positions: StartPositions) -> Self;
         pub fn with_update_interval(self, update_interval: Duration) -> Self;
     }
