@@ -6,7 +6,8 @@ use crate::common::recover_azure_operation;
 use crate::common::retry::ErrorRecoveryAction;
 use azure_core::{error::ErrorKind as AzureErrorKind, http::Url, time::Duration};
 use azure_core_amqp::{
-    error::Result, AmqpError, AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSource,
+    error::{AmqpErrorKind, Result},
+    AmqpError, AmqpReceiverApis, AmqpReceiverOptions, AmqpSession, AmqpSource,
 };
 use futures::{select, FutureExt};
 use std::sync::Weak;
@@ -49,6 +50,20 @@ impl RecoverableReceiver {
             AzureErrorKind::Io,
             std::io::Error::from(std::io::ErrorKind::TimedOut),
         ))
+    }
+
+    /// Whether `error` is the one [`Self::receive_timeout_error`] builds: an
+    /// I/O error whose cause is `std::io::ErrorKind::TimedOut`. Kept beside the
+    /// constructor so the two cannot drift apart.
+    pub(crate) fn is_receive_timeout(error: &AmqpError) -> bool {
+        match error.kind() {
+            AmqpErrorKind::AzureCore(e) => {
+                e.kind() == &AzureErrorKind::Io
+                    && e.downcast_ref::<std::io::Error>()
+                        .is_some_and(|io| io.kind() == std::io::ErrorKind::TimedOut)
+            }
+            _ => false,
+        }
     }
 
     /// Wraps an `ensure_receiver` failure so the original error stays reachable
@@ -173,10 +188,7 @@ impl AmqpReceiverApis for RecoverableReceiver {
 mod tests {
     use super::*;
     use crate::error::{find_link_stolen, ErrorKind};
-    use azure_core_amqp::{
-        error::{AmqpErrorCondition, AmqpErrorKind},
-        AmqpDescribedError,
-    };
+    use azure_core_amqp::{error::AmqpErrorCondition, AmqpDescribedError};
 
     fn stolen() -> AmqpError {
         AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(

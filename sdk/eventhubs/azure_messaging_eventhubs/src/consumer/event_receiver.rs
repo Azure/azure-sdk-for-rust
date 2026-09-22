@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 use crate::{
-    common::recoverable::RecoverableConnection,
+    common::recoverable::{receiver::RecoverableReceiver, RecoverableConnection},
     error::{find_link_stolen, ErrorKind, EventHubsError, Result},
     models::ReceivedEventData,
 };
@@ -44,6 +44,17 @@ fn translate_receive_error(
             "Receiver link stolen by the broker (epoch displacement); mapping to ConsumerDisconnected."
         );
         return EventHubsError::from(ErrorKind::ConsumerDisconnected(Some(described.clone())));
+    }
+    // A receive timeout is the signal a caller asked for with `receive_timeout`,
+    // not a failure: on an idle partition it recurs every interval, so it is
+    // logged at debug to keep the warning level for receives that failed.
+    if RecoverableReceiver::is_receive_timeout(&error) {
+        debug!(
+            partition_id = %partition_id,
+            source_url = %source_url,
+            "Receive timed out with no event; the receiver stays open."
+        );
+        return EventHubsError::from(error);
     }
     if let AmqpErrorKind::AmqpDescribedError(described) = error.kind() {
         warn!(
@@ -315,7 +326,7 @@ mod tests {
     #[test]
     fn translate_receive_error_keeps_the_timeout_cause_reachable() {
         let translated = translate_receive_error(
-            crate::common::recoverable::receiver::RecoverableReceiver::receive_timeout_error(),
+            RecoverableReceiver::receive_timeout_error(),
             "0",
             &source_url(),
         );
@@ -328,6 +339,21 @@ mod tests {
             timed_out,
             "the receive timeout must stay reachable as std::io::ErrorKind::TimedOut, got {translated:?}"
         );
+    }
+
+    // The detector must recognise exactly the error the timeout constructor
+    // builds, and nothing else that carries an I/O kind.
+    #[test]
+    fn is_receive_timeout_matches_only_the_timeout_error() {
+        assert!(RecoverableReceiver::is_receive_timeout(
+            &RecoverableReceiver::receive_timeout_error()
+        ));
+        let other_io = AmqpError::from(azure_core::Error::new(
+            azure_core::error::ErrorKind::Io,
+            std::io::Error::from(std::io::ErrorKind::ConnectionReset),
+        ));
+        assert!(!RecoverableReceiver::is_receive_timeout(&other_io));
+        assert!(!RecoverableReceiver::is_receive_timeout(&stolen()));
     }
 
     // A stolen link reported directly on the receive path is the case the
