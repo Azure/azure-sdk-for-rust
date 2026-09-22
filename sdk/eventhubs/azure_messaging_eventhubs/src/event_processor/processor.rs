@@ -709,6 +709,20 @@ pub mod builders {
         Ok(())
     }
 
+    /// Returns an error if `receive_timeout` is not strictly positive. The
+    /// timeout reaches `azure_core::sleep`, which cannot represent a negative
+    /// duration, and a zero timeout would make every partition stream yield a
+    /// timeout on each poll. Extracted from `build()` for the same reason as
+    /// [`validate_expiration_vs_update_interval`].
+    pub(crate) fn validate_receive_timeout(receive_timeout: Option<Duration>) -> Result<()> {
+        match receive_timeout {
+            Some(timeout) if timeout <= Duration::ZERO => Err(crate::EventHubsError::with_message(
+                format!("receive_timeout ({timeout:?}) must be greater than zero"),
+            )),
+            _ => Ok(()),
+        }
+    }
+
     impl EventProcessorBuilder {
         pub(super) fn new() -> Self {
             EventProcessorBuilder {
@@ -767,6 +781,7 @@ pub mod builders {
         /// timeouts is a stream whose receive is stuck.
         ///
         /// The default is no timeout: a stream waits for an event indefinitely.
+        /// `build` rejects a timeout that is not greater than zero.
         ///
         /// # Examples
         ///
@@ -866,6 +881,7 @@ pub mod builders {
                 .unwrap_or(DEFAULT_PARTITION_EXPIRATION_DURATION);
 
             validate_expiration_vs_update_interval(partition_expiration_duration, update_interval)?;
+            validate_receive_timeout(self.receive_timeout)?;
 
             // Retrieve the set of partitions from the consumer client
             // and limit the number of partitions to the specified max_partition_count.
@@ -895,7 +911,7 @@ pub mod builders {
 
 #[cfg(test)]
 mod tests {
-    use super::builders::validate_expiration_vs_update_interval;
+    use super::builders::{validate_expiration_vs_update_interval, validate_receive_timeout};
     use super::{
         EventProcessor, EventProcessorOptions, PartitionClient, ProcessorConsumersMap,
         ProcessorStrategy, StartPositions,
@@ -1041,5 +1057,20 @@ mod tests {
     fn larger_expiration_is_accepted() {
         validate_expiration_vs_update_interval(Duration::seconds(120), Duration::seconds(60))
             .expect("2x ratio should be accepted");
+    }
+
+    /// No timeout is the default and must pass; a positive one must pass.
+    #[test]
+    fn receive_timeout_absent_or_positive_is_accepted() {
+        validate_receive_timeout(None).expect("no timeout is the default");
+        validate_receive_timeout(Some(Duration::seconds(30))).expect("30s must be accepted");
+    }
+
+    /// Zero would make every poll time out at once; a negative value cannot
+    /// reach the sleep at all. Both are rejected before a consumer is touched.
+    #[test]
+    fn receive_timeout_zero_or_negative_is_rejected() {
+        assert!(validate_receive_timeout(Some(Duration::ZERO)).is_err());
+        assert!(validate_receive_timeout(Some(Duration::seconds(-1))).is_err());
     }
 }
