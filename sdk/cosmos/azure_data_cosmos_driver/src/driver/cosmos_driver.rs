@@ -3472,7 +3472,7 @@ impl CosmosDriver {
             body_length = operation.body().map(|b| b.len()),
             "executing operation");
 
-        // Step 1: Build the single OperationOptionsView for layered resolution.
+        // Build the single OperationOptionsView for layered resolution.
         let effective_options = self.operation_options_view(options);
         if operation.absolute_deadline().is_none() {
             let deadline = effective_options
@@ -3481,7 +3481,7 @@ impl CosmosDriver {
             operation = operation.with_absolute_deadline(deadline);
         }
 
-        // Step 2: Resolve effective throughput control headers.
+        // Resolve effective throughput control headers.
         let effective_throughput_control = if let Some(container) = operation.container() {
             Some(self.effective_throughput_control(&effective_options, container)?)
         } else {
@@ -3491,14 +3491,14 @@ impl CosmosDriver {
             None
         };
 
-        // Step 3: Initialize operation activity id
+        // Initialize the operation activity ID.
         let activity_id = ActivityId::new_uuid();
 
-        // Step 4: Get authentication (guaranteed to be present by AccountReference)
+        // Get authentication, guaranteed to be present by AccountReference.
         let account = operation.resource_reference().account().clone();
         let auth = account.auth().clone();
 
-        // Step 4.1: Resolve account metadata and select write-region endpoint.
+        // Resolve account metadata and select the write-region endpoint.
         // Uses `get_or_fetch` (cheap, no staleness check) because the
         // background account-metadata refresh loop spawned in
         // `CosmosDriver::new` keeps this cache fresh on a periodic timer.
@@ -3523,12 +3523,12 @@ impl CosmosDriver {
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(&account, write_region);
 
-        // Step 5: Select the adaptive transport context for the chosen pipeline.
+        // Select the adaptive transport context for the chosen pipeline.
         let transport = self.transport();
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
-        // Step 6: Initialize diagnostics (shared envelope shape with the bootstrap fetch).
+        // Initialize diagnostics using the bootstrap fetch's shared envelope shape.
         let fault_injection_enabled = {
             #[cfg(feature = "fault_injection")]
             {
@@ -3564,7 +3564,7 @@ impl CosmosDriver {
         let user_agent =
             azure_core::http::headers::HeaderValue::from(self.user_agent.as_str().to_owned());
 
-        // Step 7: Execute via the new operation pipeline.
+        // Execute via the operation pipeline.
         let result = super::pipeline::operation_pipeline::execute_operation_pipeline(
             self,
             &mut operation,
