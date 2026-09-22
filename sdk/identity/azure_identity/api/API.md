@@ -15,6 +15,8 @@
 - `tokio`
 
 ```rust
+#![crate_name = "azure_identity"]
+#![crate_type = "lib"]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]
 pub fn new_executor() -> std::sync::Arc<dyn Executor>;

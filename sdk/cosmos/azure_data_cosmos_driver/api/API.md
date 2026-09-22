@@ -15,6 +15,8 @@
 - `tokio`
 
 ```rust
+#![crate_name = "azure_data_cosmos_driver"]
+#![crate_type = "lib"]
 #![cfg_attr(fuzzing, recursion_limit = "256")]
 pub use azure_data_cosmos_driver::models::activity_id::ActivityId;
 pub use azure_data_cosmos_driver::driver::cosmos_driver::CosmosDriver;

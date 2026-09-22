@@ -11,6 +11,8 @@
 - `tracing-subscriber`
 
 ```rust
+#![crate_name = "azure_core_test"]
+#![crate_type = "lib"]
 pub fn load_dotenv_file<impl AsRef<Path>: AsRef<std::path::Path>>(cargo_dir: impl AsRef<std::path::Path>) -> azure_core::Result<()>;
 #[derive(Clone, Debug, Default, serde::Serialize)]
 pub struct ApplyCondition {

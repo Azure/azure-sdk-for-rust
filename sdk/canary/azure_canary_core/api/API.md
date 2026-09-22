@@ -9,6 +9,8 @@
 - `default`
 
 ```rust
+#![crate_name = "azure_canary_core"]
+#![crate_type = "lib"]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs)]
 pub use azure_canary_core::numeric::NumericCore;

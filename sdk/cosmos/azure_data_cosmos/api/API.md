@@ -22,6 +22,8 @@
 - `rustls`
 
 ```rust
+#![crate_name = "azure_data_cosmos"]
+#![crate_type = "lib"]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #[doc(inline)]
 pub use azure_data_cosmos::clients::container_client::ContainerClient;
