@@ -283,10 +283,11 @@ async fn repeated_recreation_signal_does_not_receive_a_second_recovery_budget() 
         error.status().sub_status().map(|value| value.into()),
         Some(1000)
     );
-    // The replacement request plus four ordinary 410 routing retries consume
-    // five hits. Any additional hit means the plan coordinator incorrectly
-    // opened another recreation recovery after that sequence terminated.
-    assert_eq!(rule.hit_count(), 5);
+    // Eager topology priming completes before the replacement request. The
+    // replacement and its ordinary 410 routing retries consume four hits. Any
+    // additional hit means the plan coordinator incorrectly opened another
+    // recreation recovery after that sequence terminated.
+    assert_eq!(rule.hit_count(), 4);
 }
 
 #[tokio::test]

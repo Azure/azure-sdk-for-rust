@@ -1,6 +1,6 @@
 # ADR-0010 — Resolve stable metadata during client construction
 
-**Status:** Accepted
+**Status:** Superseded by ADR-0015 (`adrs/0015-eager-partition-topology-loading.md`)
 **Date:** 2026-08-31
 
 ## Context
