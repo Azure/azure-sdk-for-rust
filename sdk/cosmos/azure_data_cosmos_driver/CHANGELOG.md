@@ -4,12 +4,17 @@
 
 ### Features Added
 
+- Added per-query `PlanOptions::max_buffered_query_window`, `with_max_buffered_query_window`, and `DEFAULT_MAX_BUFFERED_QUERY_WINDOW` (1000) to cap global OFFSET plus effective take for client-buffered queries, with no opt-out. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Extended Cosmos binary JSON query-page handling to cross-partition `DISTINCT`, including composition with streaming `ORDER BY` and `OFFSET`/`LIMIT`/`TOP`. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
-- Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes. Added layered `OperationOptions::query_plan_mode`, `QueryPlanMode::{LocalPreferred, GatewayOnly}`, and the authoritative `AZURE_COSMOS_QUERY_PLAN_MODE_OVERRIDE=gateway` break-glass setting to force Gateway planning globally or per operation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
-- Added a fully buffered cross-partition merge for finite non-streaming `ORDER BY` plans, including `VectorDistance(...)`. Unbounded, resumed, DISTINCT, and hybrid non-streaming plans are rejected with typed statuses. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
+- Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes, and `QueryPlanMode::{LocalPreferred, GatewayOnly}` to select providers per query. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
+- Added a fully buffered cross-partition merge for finite non-streaming `ORDER BY` plans, including `VectorDistance(...)`. Resumed, DISTINCT, and hybrid non-streaming plans are rejected with typed statuses. ([#5130](https://github.com/Azure/azure-sdk-for-rust/pull/5130))
 - Added Cosmos binary JSON encoding support over the thin client (Gateway 2.0) path by forwarding the `x-ms-cosmos-supported-serialization-formats` header as the RNTBD `SupportedSerializationFormats` token. ([#5284](https://github.com/Azure/azure-sdk-for-rust/pull/5284))
 
 ### Breaking Changes
+
+- Moved `query_plan_mode` from `OperationOptions` to `PlanOptions`; removed account/runtime defaults and environment settings, including the query-plan-mode override. The default remains `LocalPreferred`. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
+- Unordered cross-partition DISTINCT and non-streaming ORDER BY require finite global TOP/LIMIT with OFFSET plus effective take within the configured maximum; missing bounds, excess windows, and overflow share 400/20125 (`CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW`). ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
+- Unified client-buffered continuation errors under 400/20124 (`CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`), retaining the shape-specific constants as aliases; finite-window admission moved from 20126 to 20125 and non-streaming window/storage errors from 20127 to 20126. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 
 - `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
 - `CosmosRequestHeaders::offer_throughput`, `OfferAutoscaleSettings::max_throughput`, `OfferAutoscaleSettings::new`, `OfferAutoscaleSettings::with_increment_percent`, and `AutoscaleThroughputPolicy::increment_percent` now use `u32` instead of the platform-dependent `usize`, matching the RU/s values Cosmos DB actually returns. ([#5204](https://github.com/Azure/azure-sdk-for-rust/pull/5204))
@@ -18,6 +23,8 @@
 ### Bugs Fixed
 
 - Container recreation now preserves collection RID mismatch errors during cold partition routing and rejects incompatible stale partition keys with a dedicated client substatus. ([#5324](https://github.com/Azure/azure-sdk-for-rust/pull/5324))
+- Gateway 2.0 change feed requests now forward incremental-mode and wire-format-version metadata, so change feeds work over the thin-client transport. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
+- In-memory emulator query, change-feed, and point reads now apply composite session-token range validation only to the physical partitions selected by the request, so an obsolete unrelated segment no longer rejects an otherwise valid scoped read. Explicit stale physical-range targets still return 410/1002 and trigger partition-topology refresh and retry. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Fixed V1 partition key routing for non-ASCII strings by truncating at 100 UTF-16 code units and applying the service's separate binary byte limit without panicking on split characters. ([#5280](https://github.com/Azure/azure-sdk-for-rust/pull/5280))
 - Added partition-merge routing support, advertised the merge capability bits, and retained point-in-time change feed filtering across merged partitions on Gateway V1 and Gateway V2. ([#4122](https://github.com/Azure/azure-sdk-for-rust/issues/4122))
 - Cosmos driver user agents now include the build-time Rust compiler version instead of `rustc/unknown`. ([#5201](https://github.com/Azure/azure-sdk-for-rust/pull/5201))

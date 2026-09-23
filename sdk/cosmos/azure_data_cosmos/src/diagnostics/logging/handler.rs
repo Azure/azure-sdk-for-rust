@@ -72,6 +72,10 @@ impl DiagnosticsHandler for TracingLogHandler {
             .copied()
             .map(EmitReason::as_str)
             .unwrap_or("unsampled");
+        let operation_name = cx
+            .value::<CosmosOperationContext>()
+            .and_then(CosmosOperationContext::operation_name)
+            .unwrap_or_default();
 
         // Compute the JSON line inside each macro call so `to_json_string` is
         // only evaluated when a subscriber is actually listening for the event
@@ -101,20 +105,20 @@ impl DiagnosticsHandler for TracingLogHandler {
                 .unwrap_or_default();
             let hedge_terminal_state = hedge.terminal_state().as_str();
             if diagnostics.is_failure() {
-                tracing::warn!(target: SAMPLED_TARGET, reason, hedging_started = true, hedge_region, hedge_terminal_state, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+                tracing::warn!(target: SAMPLED_TARGET, reason, operation_name, hedging_started = true, hedge_region, hedge_terminal_state, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
             } else {
-                tracing::info!(target: SAMPLED_TARGET, reason, hedging_started = true, hedge_region, hedge_terminal_state, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+                tracing::info!(target: SAMPLED_TARGET, reason, operation_name, hedging_started = true, hedge_region, hedge_terminal_state, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
             }
         } else if diagnostics.hedging_started() {
             if diagnostics.is_failure() {
-                tracing::warn!(target: SAMPLED_TARGET, reason, hedging_started = true, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+                tracing::warn!(target: SAMPLED_TARGET, reason, operation_name, hedging_started = true, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
             } else {
-                tracing::info!(target: SAMPLED_TARGET, reason, hedging_started = true, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+                tracing::info!(target: SAMPLED_TARGET, reason, operation_name, hedging_started = true, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
             }
         } else if diagnostics.is_failure() {
-            tracing::warn!(target: SAMPLED_TARGET, reason, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+            tracing::warn!(target: SAMPLED_TARGET, reason, operation_name, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
         } else {
-            tracing::info!(target: SAMPLED_TARGET, reason, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
+            tracing::info!(target: SAMPLED_TARGET, reason, operation_name, diagnostics = %diagnostics.to_json_string(Some(DiagnosticsVerbosity::Summary)), "cosmos operation diagnostics");
         }
     }
 }

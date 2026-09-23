@@ -89,7 +89,8 @@ if ([string]::IsNullOrWhiteSpace($consistency)) { Fail "Account '$AccountSelecto
 if ([string]::IsNullOrWhiteSpace($testCategory)) { Fail "Account '$AccountSelector' is missing required 'testCategory'." }
 
 $connectionString = "AccountEndpoint=$endpoint;AccountKey=$key;"
-$rustFlags = "--cfg=test_category=`"$testCategory`""
+# Only fixed live-account jobs use this resolver; emulator setup never adds "live".
+$rustFlags = "--cfg=test_category=`"$testCategory`" --cfg=test_category=`"live`""
 
 function Emit-Public([string]$name, [string]$value) {
     if ($Local) {

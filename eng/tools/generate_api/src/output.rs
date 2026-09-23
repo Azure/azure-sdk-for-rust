@@ -24,7 +24,7 @@ pub(crate) fn render_markdown_metadata(
     rust_version: &str,
 ) -> Result<String, String> {
     let api_md_sha256 = sha256_hex(api_md_contents.as_bytes())
-        .map_err(|error| format!("Failed to hash API.md content: {error}"))?;
+        .map_err(|error| format!("Failed to hash api.md content: {error}"))?;
 
     Ok(format!(
         "apiMdSha256: {api_md_sha256}\npackageVersion: {}\nparserVersion: {}\nrustVersion: {}\n",

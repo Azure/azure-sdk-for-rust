@@ -12,12 +12,12 @@ use azure_data_cosmos::models::{
     ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    BinaryEncodingOptions, ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions,
-    ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder, PartitionFailoverOptions,
-    Precondition, QueryOptions, ReadConsistencyStrategy, Region,
+    BinaryEncodingOptions, ChangeFeedStartFrom, ConnectionPoolOptions, CreateContainerOptions,
+    ExcludedRegions, ItemReadOptions, ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder,
+    PartitionFailoverOptions, Precondition, QueryOptions, ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
-    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
+    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, CosmosStatus, FeedScope, Query,
     RoutingStrategy, SubStatusCode, TransactionalBatch,
 };
 use azure_data_cosmos_driver::{
@@ -104,33 +104,12 @@ async fn create_seed_item<P, T>(
     item: &T,
 ) -> Result<ItemResponse, Box<dyn std::error::Error>>
 where
-    P: Into<azure_data_cosmos::PartitionKey> + Clone,
+    P: Into<azure_data_cosmos::PartitionKey>,
     T: Serialize,
 {
-    const MAX_ATTEMPTS: u32 = 6;
-
-    let mut delay = std::time::Duration::from_millis(250);
-    for attempt in 1..=MAX_ATTEMPTS {
-        match container
-            .create_item(partition_key.clone(), item_id, item, None)
-            .await
-        {
-            Ok(response) => return Ok(response),
-            Err(error)
-                if error.status().status_code() == StatusCode::Unauthorized
-                    && error.to_string().contains("MAC signature")
-                    && attempt < MAX_ATTEMPTS =>
-            {
-                eprintln!(
-                    "transient 401 during Gateway 2.0 seed write; retrying attempt {attempt}/{MAX_ATTEMPTS} after {delay:?}: {error}"
-                );
-                tokio::time::sleep(delay).await;
-                delay = (delay * 2).min(std::time::Duration::from_secs(5));
-            }
-            Err(error) => return Err(error.into()),
-        }
-    }
-    unreachable!("the bounded retry loop always returns on its final attempt")
+    Ok(container
+        .create_item(partition_key, item_id, item, None)
+        .await?)
 }
 
 /// Build a [`CosmosClient`] against the live Gateway 2.0 account.
@@ -250,29 +229,31 @@ async fn build_client_ppcb_disabled(
     Ok(client)
 }
 
-/// Resolves a container client, retrying past the two transient windows that
-/// follow a fresh `create_container` on Gateway 2.0 accounts:
+/// Resolves a container client and proves that every readable region can serve
+/// a data-plane query, retrying past the transient windows that follow a fresh
+/// `create_container` on Gateway 2.0 accounts:
 ///
 /// - `404 / 1013 CollectionCreateInProgress` while the service finishes
 ///   provisioning the collection, and
 /// - `404 / 1003 OwnerResourceNotFound` while the metadata path's routing
 ///   caches catch up so the freshly-created collection becomes resolvable.
 ///
-/// Readiness is gated on the metadata path only (`container_client(..)` +
-/// container `read`). Firing a real data-plane query here to also warm the
-/// Gateway 2.0 proxy's routing table was found to reliably race the proxy's
-/// collection-key propagation window on freshly-created containers and
-/// surface downstream as `401 / MAC signature mismatch` on the caller's very
-/// next `POST /docs`; the caller is now expected to tolerate the residual
-/// `404 / 1003` window on its first data-plane request instead — queries in
-/// particular should drive their first attempt through
-/// [`retry_query_owner_not_found`], since query routing lags the metadata
-/// path's own cache by a beat.
-///
-/// It keeps retrying container resolution and the metadata `read` until both
-/// succeed, until an error outside those two transient conditions surfaces,
-/// or until the bounded poll budget is exhausted.
+/// Metadata readiness (`container_client(..)` + container `read`) is followed
+/// by a regional data-plane barrier. The barrier mirrors the Java test
+/// infrastructure: it excludes every non-target readable region and drains an
+/// empty `SELECT TOP 1` page until each regional collection-key and routing
+/// cache recognizes the new container.
 async fn wait_for_container_ready(
+    client: &CosmosClient,
+    db_client: &azure_data_cosmos::clients::DatabaseClient,
+    container_name: &str,
+) -> Result<azure_data_cosmos::clients::ContainerClient, Box<dyn std::error::Error>> {
+    let container = wait_for_container_metadata_ready(db_client, container_name).await?;
+    wait_for_container_data_plane_ready_in_regions(client, &container).await?;
+    Ok(container)
+}
+
+async fn wait_for_container_metadata_ready(
     db_client: &azure_data_cosmos::clients::DatabaseClient,
     container_name: &str,
 ) -> Result<azure_data_cosmos::clients::ContainerClient, Box<dyn std::error::Error>> {
@@ -322,13 +303,131 @@ async fn wait_for_container_ready(
     unreachable!("loop above always returns on the final iteration");
 }
 
+fn is_retryable_data_plane_readiness_failure(status: &CosmosStatus, message: &str) -> bool {
+    match status.status_code() {
+        StatusCode::Unauthorized => message.contains("MAC signature"),
+        StatusCode::RequestTimeout
+        | StatusCode::TooManyRequests
+        | StatusCode::InternalServerError
+        | StatusCode::ServiceUnavailable
+        | StatusCode::Gone => true,
+        StatusCode::NotFound => matches!(
+            status.sub_status().map(|sub_status| sub_status.value()),
+            None | Some(0 | 1003 | 1013 | 1024)
+        ),
+        StatusCode::BadRequest => {
+            status.sub_status().map(|sub_status| sub_status.value()) == Some(13002)
+                || message.contains("collection rid")
+                || message.contains("collection resource id")
+        }
+        _ => false,
+    }
+}
+
+async fn probe_container_data_plane(
+    container: &azure_data_cosmos::clients::ContainerClient,
+    options: QueryOptions,
+) -> azure_data_cosmos::Result<()> {
+    let mut pages = container
+        .query_items::<serde_json::Value>(
+            Query::from("SELECT TOP 1 c.id FROM c"),
+            FeedScope::full_container(),
+            Some(options),
+        )
+        .await?
+        .into_pages();
+    if let Some(page) = pages.next().await {
+        page?;
+    }
+    Ok(())
+}
+
+/// Proves that a newly-created container is usable through every readable
+/// regional data-plane endpoint before returning it to a test.
+async fn wait_for_container_data_plane_ready_in_regions(
+    client: &CosmosClient,
+    container: &azure_data_cosmos::clients::ContainerClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    const READINESS_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(120);
+    const ATTEMPT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+    const MAX_BACKOFF: std::time::Duration = std::time::Duration::from_secs(5);
+
+    let (_, readable_regions) = client
+        .cached_account_regions_for_testing()
+        .await
+        .ok_or("initialized Gateway 2.0 client must cache account topology")?;
+    if readable_regions.is_empty() {
+        return Err("Gateway 2.0 account must expose at least one readable region".into());
+    }
+
+    let deadline = tokio::time::Instant::now() + READINESS_TIMEOUT;
+    for target_region in &readable_regions {
+        let excluded_regions = readable_regions
+            .iter()
+            .filter(|region| *region != target_region)
+            .cloned()
+            .collect::<ExcludedRegions>();
+        let operation = OperationOptionsBuilder::new()
+            .with_excluded_regions(excluded_regions)
+            .build();
+        let options = QueryOptions::default().with_operation_options(operation);
+        let mut backoff = std::time::Duration::from_millis(100);
+        let mut attempt = 1_u32;
+
+        loop {
+            let attempt_deadline = deadline.min(tokio::time::Instant::now() + ATTEMPT_TIMEOUT);
+            match tokio::time::timeout_at(
+                attempt_deadline,
+                probe_container_data_plane(container, options.clone()),
+            )
+            .await
+            {
+                Ok(Ok(())) => break,
+                Ok(Err(error))
+                    if is_retryable_data_plane_readiness_failure(
+                        &error.status(),
+                        &error.to_string(),
+                    ) && tokio::time::Instant::now() < deadline =>
+                {
+                    eprintln!(
+                        "container data-plane readiness probe for region '{}' failed on attempt {attempt}; retrying after {backoff:?}: {error}",
+                        target_region.as_str()
+                    );
+                }
+                Ok(Err(error)) => {
+                    return Err(format!(
+                        "container data-plane readiness probe for region '{}' failed: {error}",
+                        target_region.as_str()
+                    )
+                    .into());
+                }
+                Err(_) if tokio::time::Instant::now() < deadline => {
+                    eprintln!(
+                        "container data-plane readiness probe for region '{}' timed out on attempt {attempt}; retrying after {backoff:?}",
+                        target_region.as_str()
+                    );
+                }
+                Err(_) => {
+                    return Err(format!(
+                        "container data-plane readiness probe for region '{}' exceeded {READINESS_TIMEOUT:?}",
+                        target_region.as_str()
+                    )
+                    .into());
+                }
+            }
+
+            tokio::time::sleep_until(deadline.min(tokio::time::Instant::now() + backoff)).await;
+            backoff = (backoff * 2).min(MAX_BACKOFF);
+            attempt += 1;
+        }
+    }
+    Ok(())
+}
+
 /// Retries `run` past the residual `404 / 1003 OwnerResourceNotFound` window
-/// that a **query** (unlike point CRUD) can still observe on its first
-/// attempt against a container [`wait_for_container_ready`] just reported
-/// ready: readiness there is gated on the metadata path only, and the
-/// query path resolves partition-key-range routing through a separate cache
-/// that can lag a beat behind it. `run` must be safe to call repeatedly from
-/// scratch (e.g. a read-only query drain).
+/// that a query can still observe while resolving partition-key-range routing.
+/// `run` must be safe to call repeatedly from scratch (e.g. a read-only query
+/// drain).
 async fn retry_query_owner_not_found<T, F, Fut>(mut run: F) -> Result<T, Box<dyn std::error::Error>>
 where
     F: FnMut() -> Fut,
@@ -357,6 +456,19 @@ where
     unreachable!("loop above always returns on the final iteration");
 }
 
+#[test]
+fn data_plane_readiness_retries_only_propagation_unauthorized() {
+    let unauthorized = CosmosStatus::new(StatusCode::Unauthorized);
+    assert!(is_retryable_data_plane_readiness_failure(
+        &unauthorized,
+        "The MAC signature found in the HTTP request is not the same as the computed signature"
+    ));
+    assert!(!is_retryable_data_plane_readiness_failure(
+        &unauthorized,
+        "The input authorization token can't serve the request"
+    ));
+}
+
 /// Provisions a fresh database + container scoped to the test invocation and
 /// returns the database name (so the caller can drop it) and a container
 /// client to drive operations against.
@@ -381,7 +493,7 @@ async fn provision_database_and_container(
             return Err(error.into());
         }
     }
-    let container_client = wait_for_container_ready(&db_client, &container_name).await?;
+    let container_client = wait_for_container_ready(client, &db_client, &container_name).await?;
 
     let body = container_client.read(None).await?.into_body().single()?;
     let raw: serde_json::Value = serde_json::from_slice(&body)?;
@@ -441,7 +553,7 @@ async fn provision_v1_container(
         )
         .into());
     }
-    let container_client = wait_for_container_ready(&db_client, &container_name).await?;
+    let container_client = wait_for_container_ready(client, &db_client, &container_name).await?;
 
     let body = container_client.read(None).await?.into_body().single()?;
     let raw: serde_json::Value = serde_json::from_slice(&body)?;
@@ -704,6 +816,67 @@ pub async fn gateway_v2_point_crud_round_trip() -> Result<(), Box<dyn std::error
     Ok(())
 }
 
+/// Verifies incremental change feed carries `A-IM` through RNTBD and executes
+/// on Gateway V2. AllVersionsAndDeletes remains covered by its Gateway V1
+/// eligibility test because that mode is not supported by Gateway V2.
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
+)]
+pub async fn gateway_v2_incremental_change_feed() -> Result<(), Box<dyn std::error::Error>> {
+    let Some((endpoint, key)) = live_credentials() else {
+        return Ok(());
+    };
+
+    let client = build_client(&endpoint, &key).await?;
+    let (db_name, container) = provision_database_and_container(&client).await?;
+    let result = AssertUnwindSafe(async {
+        let pk = format!("pk-{}", azure_core::Uuid::new_v4());
+        let item = GwV2TestItem {
+            id: format!("item-{}", azure_core::Uuid::new_v4()),
+            pk: pk.clone(),
+            value: 1,
+            label: "change-feed".into(),
+        };
+        create_seed_item(&container, &pk, &item.id, &item).await?;
+
+        let page = retry_query_owner_not_found(|| async {
+            let mut pages = container
+                .query_change_feed::<GwV2TestItem>(
+                    FeedScope::partition(pk.clone()),
+                    ChangeFeedStartFrom::Beginning,
+                    None,
+                )
+                .await?;
+            Ok(pages
+                .next()
+                .await
+                .expect("incremental change feed must return a page")?)
+        })
+        .await?;
+        assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
+        assert!(
+            page.items()
+                .iter()
+                .any(|change| change.current() == Some(&item)),
+            "incremental change feed must contain the created item"
+        );
+        Ok::<_, Box<dyn std::error::Error>>(())
+    })
+    .catch_unwind()
+    .await;
+
+    drop_database(&client, &db_name).await;
+    match result {
+        Ok(result) => result,
+        Err(panic) => std::panic::resume_unwind(panic),
+    }
+}
+
 /// Point CRUD round-trip (create → read → replace → read → delete) over Gateway
 /// 2.0 with **binary encoding enabled**.
 ///
@@ -961,7 +1134,8 @@ pub async fn gateway_v2_binary_encoding_wire_format_differential(
             return Err(error.into());
         }
     }
-    let binary_container = wait_for_container_ready(&db_client, &container_name).await?;
+    let binary_container =
+        wait_for_container_ready(&binary_client, &db_client, &container_name).await?;
 
     let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
     let item_id = format!("wire-{}", azure_core::Uuid::new_v4());
@@ -1312,7 +1486,7 @@ async fn provision_database_and_hpk_container(
     let pk_def = PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
     let properties = ContainerProperties::new(container_name.clone(), pk_def);
     db_client.create_container(properties, None).await?;
-    let container_client = wait_for_container_ready(&db_client, &container_name).await?;
+    let container_client = wait_for_container_ready(client, &db_client, &container_name).await?;
 
     Ok((db_name, container_client))
 }
@@ -1502,7 +1676,7 @@ async fn provision_database_and_multi_partition_container(
     db_client
         .create_container(properties, Some(create_options))
         .await?;
-    let container_client = wait_for_container_ready(&db_client, &container_name).await?;
+    let container_client = wait_for_container_ready(client, &db_client, &container_name).await?;
 
     Ok((db_name, container_client))
 }
@@ -1594,7 +1768,8 @@ pub async fn order_by_continuation_matches_gateway_v1_and_v2(
                 ),
             )
             .await?;
-        let v2_container = wait_for_container_ready(&database, &container_name).await?;
+        let v2_container =
+            wait_for_container_ready(&gateway_v2, &database, &container_name).await?;
 
         for index in 0..20 {
             let item = GwV2TestItem {
@@ -2224,7 +2399,7 @@ pub async fn gateway_v2_point_read_usable_from_every_region(
     let pk_def: PartitionKeyDefinition = "/pk".into();
     let properties = ContainerProperties::new(container_name.clone(), pk_def);
     db_client.create_container(properties, None).await?;
-    let container = wait_for_container_ready(&db_client, &container_name).await?;
+    let container = wait_for_container_ready(&client, &db_client, &container_name).await?;
 
     let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
     let item_id = format!("item-{}", azure_core::Uuid::new_v4());

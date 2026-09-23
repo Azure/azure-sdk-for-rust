@@ -14,6 +14,7 @@ use std::time::{Duration, Instant};
 
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use futures::future::{pending, select, Either, Future};
+use futures::FutureExt;
 
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineKind, TransportSecurity},
@@ -397,6 +398,10 @@ pub(crate) async fn execute_operation_pipeline(
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
     let mut throughput_control = throughput_control;
+    #[cfg(feature = "fault_injection")]
+    let fault_injection_enabled = driver.fault_injection_enabled();
+    #[cfg(not(feature = "fault_injection"))]
+    let fault_injection_enabled = false;
     let mut container_recreation_retry_attempted = false;
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
@@ -436,11 +441,21 @@ pub(crate) async fn execute_operation_pipeline(
         .read_consistency_strategy()
         .copied()
         .unwrap_or(ReadConsistencyStrategy::Default);
-    let effective_consistency =
-        resolve_effective_consistency(read_consistency_strategy, account_default_consistency);
-    let session_consistency_active = partition_key_range_cache_enabled
+    let operation_read_consistency_strategy =
+        read_consistency_strategy_for_operation(operation, read_consistency_strategy);
+    let effective_consistency = resolve_effective_consistency(
+        operation_read_consistency_strategy,
+        account_default_consistency,
+    );
+    let session_token_resolution_active = partition_key_range_cache_enabled
         && !session_capturing_disabled
-        && read_consistency_strategy.is_session_effective(account_default_consistency);
+        && operation_allows_automatic_session_token_resolution(
+            operation,
+            location_snapshot.account.multiple_write_locations_enabled,
+        )
+        && operation_read_consistency_strategy.is_session_effective(account_default_consistency);
+    let session_token_capture_active =
+        partition_key_range_cache_enabled && !session_capturing_disabled;
 
     // Rule 4 (RCS validation): GlobalStrong is
     // valid only on reads against accounts whose default consistency is Strong.
@@ -453,13 +468,7 @@ pub(crate) async fn execute_operation_pipeline(
     ) && operation.is_read_only()
         && account_default_consistency != DefaultConsistencyLevel::Strong
     {
-        return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
-            .with_message(
-                "ReadConsistencyStrategy::GlobalStrong is only valid against accounts whose \
-                 default consistency level is Strong",
-            )
-            .build());
+        return Err(global_strong_account_validation_error(diagnostics));
     }
     let max_session_retries = options
         .max_session_retry_count()
@@ -572,15 +581,20 @@ pub(crate) async fn execute_operation_pipeline(
             if operation.prefers_write_endpoints_for_read() && routing.routing_fallback.is_some() {
                 ReadConsistencyStrategy::Default
             } else {
-                read_consistency_strategy
+                operation_read_consistency_strategy
             };
         let attempt_effective_consistency = resolve_effective_consistency(
             attempt_read_consistency_strategy,
             account_default_consistency,
         );
-        let attempt_session_consistency_active = partition_key_range_cache_enabled
+        let attempt_session_token_resolution_active = partition_key_range_cache_enabled
             && !session_capturing_disabled
+            && operation_allows_automatic_session_token_resolution(
+                operation,
+                location.account.multiple_write_locations_enabled,
+            )
             && attempt_read_consistency_strategy.is_session_effective(account_default_consistency);
+        let attempt_session_token_capture_active = session_token_capture_active;
 
         // Emit one structured debug record per attempt with the chosen
         // routing decision. Tests and SREs filter on this to verify which
@@ -670,9 +684,11 @@ pub(crate) async fn execute_operation_pipeline(
                     effective_consistency,
                     read_consistency_strategy,
                     session_manager,
-                    session_consistency_active,
+                    session_token_resolution_active,
+                    session_token_capture_active,
                     options,
                     throughput_control,
+                    fault_injection_enabled,
                     deadline,
                     configured_request_timeout,
                     can_use_multiple_write_locations: retry_state.can_use_multiple_write_locations,
@@ -781,7 +797,7 @@ pub(crate) async fn execute_operation_pipeline(
             } else {
                 ReadConsistencyStrategy::Default
             },
-            resolved_session_token: attempt_session_consistency_active
+            resolved_session_token: attempt_session_token_resolution_active
                 .then(|| {
                     // Scope the session token to the target partition-key-range
                     // only for thin-client (Gateway 2.0) requests: the RNTBD
@@ -807,8 +823,13 @@ pub(crate) async fn execute_operation_pipeline(
                 .flatten(),
             throughput_control,
         };
-        let mut transport_request =
-            build_transport_request(operation, &overrides, custom_headers, &ctx)?;
+        let mut transport_request = build_transport_request_with_fault_injection(
+            operation,
+            &overrides,
+            custom_headers,
+            &ctx,
+            fault_injection_enabled,
+        )?;
 
         // Spec 0010, Hub-region processing header, §3 / public spec §3.4:
         // Emit the `x-ms-cosmos-hub-region-processing-only: True` header
@@ -884,7 +905,7 @@ pub(crate) async fn execute_operation_pipeline(
         // Abort, or a retry action. 409/412 map to Abort, and the Abort
         // variant does not carry headers — capturing after evaluation
         // would silently drop tokens from those responses.
-        if attempt_session_consistency_active {
+        if attempt_session_token_capture_active {
             if let Some(cosmos_headers) = result.cosmos_headers() {
                 if should_capture_session_token_from_status(
                     cosmos_headers.substatus.as_ref(),
@@ -944,7 +965,7 @@ pub(crate) async fn execute_operation_pipeline(
                         Box::pin(driver.pre_resolve_partition_key_range_id(
                             operation,
                             &overrides,
-                            session_consistency_active,
+                            session_token_resolution_active,
                             operation_options,
                         ))
                         .await;
@@ -1279,9 +1300,11 @@ pub(crate) async fn execute_operation_pipeline(
                     effective_consistency,
                     read_consistency_strategy,
                     session_manager,
-                    session_consistency_active,
+                    session_token_resolution_active,
+                    session_token_capture_active,
                     options,
                     throughput_control,
+                    fault_injection_enabled,
                     deadline,
                     configured_request_timeout,
                     can_use_multiple_write_locations: retry_state.can_use_multiple_write_locations,
@@ -2147,11 +2170,22 @@ struct TransportRequestContext<'a> {
 /// If `resolved_session_token` is provided, it is added to the request headers.
 /// Override headers from `overrides` are applied after operation headers, so they
 /// take precedence.
+#[cfg(test)]
 fn build_transport_request(
     operation: &CosmosOperation,
     overrides: &OperationOverrides,
     custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
     ctx: &TransportRequestContext<'_>,
+) -> crate::error::Result<TransportRequest> {
+    build_transport_request_with_fault_injection(operation, overrides, custom_headers, ctx, false)
+}
+
+fn build_transport_request_with_fault_injection(
+    operation: &CosmosOperation,
+    overrides: &OperationOverrides,
+    custom_headers: Option<&std::collections::HashMap<HeaderName, HeaderValue>>,
+    ctx: &TransportRequestContext<'_>,
+    fault_injection_enabled: bool,
 ) -> crate::error::Result<TransportRequest> {
     let paths = operation.compute_resource_paths();
     let url = {
@@ -2305,7 +2339,7 @@ fn build_transport_request(
 
     // Add operation type header for fault injection rule matching
     #[cfg(feature = "fault_injection")]
-    {
+    if fault_injection_enabled {
         if let Some(fault_op) =
             crate::fault_injection::FaultOperationType::from_operation_and_resource(
                 &operation.operation_type(),
@@ -2317,7 +2351,15 @@ fn build_transport_request(
                 fault_op,
             );
         }
+        if let Some(region) = ctx.routing.endpoint.region() {
+            headers.insert(
+                crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_REGION,
+                HeaderValue::from(region.as_str().to_owned()),
+            );
+        }
     }
+    #[cfg(not(feature = "fault_injection"))]
+    let _ = fault_injection_enabled;
 
     // Apply overrides — these take precedence over operation-level headers
     // (e.g., an override partition key replaces the operation's partition key).
@@ -2909,11 +2951,13 @@ struct AttemptContext<'a> {
     /// rationale as `effective_consistency`.
     read_consistency_strategy: ReadConsistencyStrategy,
     session_manager: &'a SessionManager,
-    /// Whether session consistency is in effect for this operation
-    /// (drives session-token resolve/capture inside the attempt).
-    session_consistency_active: bool,
+    /// Whether cached session-token resolution is active for this operation.
+    session_token_resolution_active: bool,
+    /// Whether the winning response's session token should be captured.
+    session_token_capture_active: bool,
     options: &'a OperationOptionsView<'a>,
     throughput_control: Option<ResolvedThroughputControl>,
+    fault_injection_enabled: bool,
     /// End-to-end deadline (operation timeout) — passed through to each
     /// per-attempt transport invocation.
     deadline: Option<Instant>,
@@ -3287,7 +3331,7 @@ async fn perform_single_attempt(
     // Scope to the target range only for thin-client (Gateway 2.0); classic
     // gateway keeps the composite token (see main-loop rationale).
     let resolved_session_token = ctx
-        .session_consistency_active
+        .session_token_resolution_active
         .then(|| {
             let scoped_pk_range_id = if matches!(routing.transport_mode, TransportMode::GatewayV2) {
                 ctx.partition_key_range_id.as_ref().map(|id| id.as_str())
@@ -3313,11 +3357,12 @@ async fn perform_single_attempt(
         read_consistency_strategy: ctx.read_consistency_strategy,
     };
 
-    let mut transport_request = build_transport_request(
+    let mut transport_request = build_transport_request_with_fault_injection(
         ctx.operation,
         ctx.overrides,
         ctx.custom_headers,
         &request_ctx,
+        ctx.fault_injection_enabled,
     )?;
     // Hedging attempts have no per-state latch to consult — the only
     // signal is the cross-hedge shared latch.
@@ -3392,7 +3437,7 @@ async fn perform_single_attempt(
 /// whose response the caller never observes would leak stale state and
 /// violate read-your-writes against the winning region.
 fn capture_session_token_for_winner(ctx: &AttemptContext<'_>, result: &TransportResult) {
-    if !ctx.session_consistency_active {
+    if !ctx.session_token_capture_active {
         return;
     }
     if let Some(cosmos_headers) = result.cosmos_headers() {
@@ -3552,13 +3597,31 @@ where
         > + Unpin
         + Send,
 {
-    let deadline_fut = deadline_signal(deadline);
-    match select(attempt, deadline_fut).await {
-        Either::Left((result, _deadline)) => Some(result),
-        Either::Right(((), remaining)) => {
-            harvest_remaining_attempt(remaining, parent, harvest_window).await;
+    if deadline_elapsed(deadline) {
+        harvest_remaining_attempt(attempt, parent, harvest_window).await;
+        return None;
+    }
+    let deadline_fut = deadline_signal(deadline).fuse();
+    let attempt = attempt.fuse();
+    futures::pin_mut!(deadline_fut, attempt);
+    // Bias toward the operation deadline so application cancellation wins when
+    // the partner attempt's own per-attempt deadline becomes ready at the same
+    // instant. Otherwise the race is classified as both-transient instead of
+    // cancelled-awaiting-partner based on scheduler polling order.
+    futures::select_biased! {
+        () = deadline_fut => {
+            harvest_remaining_attempt(attempt, parent, harvest_window).await;
             None
         }
+        result = attempt => {
+            if deadline_elapsed(deadline) {
+                let (_result, diagnostics) = result;
+                parent.merge_hedge_attempt(diagnostics);
+                None
+            } else {
+                Some(result)
+            }
+        },
     }
 }
 
@@ -4349,6 +4412,41 @@ async fn execute_hedged(
     }
 }
 
+fn read_consistency_strategy_for_operation(
+    operation: &CosmosOperation,
+    read_consistency_strategy: ReadConsistencyStrategy,
+) -> ReadConsistencyStrategy {
+    if operation.is_read_only() {
+        read_consistency_strategy
+    } else {
+        ReadConsistencyStrategy::Default
+    }
+}
+
+fn operation_allows_automatic_session_token_resolution(
+    operation: &CosmosOperation,
+    multiple_write_locations_enabled: bool,
+) -> bool {
+    operation.is_read_only()
+        || operation.operation_type() == OperationType::Batch
+        || multiple_write_locations_enabled
+}
+
+fn global_strong_account_validation_error(
+    mut diagnostics: DiagnosticsContextBuilder,
+) -> crate::error::CosmosError {
+    let status = crate::error::CosmosStatus::CLIENT_BAD_REQUEST;
+    diagnostics.set_operation_status(status.status_code(), status.sub_status());
+    crate::error::CosmosError::builder()
+        .with_status(status)
+        .with_message(
+            "ReadConsistencyStrategy::GlobalStrong is only valid against accounts whose \
+             default consistency level is Strong",
+        )
+        .with_diagnostics(Arc::new(diagnostics.complete()))
+        .build()
+}
+
 /// Generic "both sides transient" error carried inside
 /// [`HedgedRaceResult::BothTransient`] when neither leg produced a
 /// final response and the deadline has not elapsed. The surrounding
@@ -4648,8 +4746,12 @@ mod tests {
     use url::Url;
 
     use super::build_transport_request;
+    #[cfg(feature = "fault_injection")]
+    use super::build_transport_request_with_fault_injection;
     use super::OperationOverrides;
     use super::TransportRequestContext;
+    #[cfg(feature = "fault_injection")]
+    use crate::options::Region;
     use crate::{
         diagnostics::ExecutionContext,
         driver::{
@@ -4713,6 +4815,41 @@ mod tests {
         assert!(super::hedging_suppressed_for_attempt(
             &patch_read,
             &overrides
+        ));
+    }
+
+    #[test]
+    fn automatic_session_token_resolution_respects_operation_and_topology() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let write = CosmosOperation::create_item(item.clone()).with_body(b"{}".to_vec());
+        let read = CosmosOperation::read_item(item);
+        let batch = CosmosOperation::batch(test_container(), PartitionKey::from("pk1"));
+
+        assert_eq!(
+            super::read_consistency_strategy_for_operation(
+                &write,
+                crate::options::ReadConsistencyStrategy::Session,
+            ),
+            crate::options::ReadConsistencyStrategy::Default
+        );
+        assert_eq!(
+            super::read_consistency_strategy_for_operation(
+                &read,
+                crate::options::ReadConsistencyStrategy::Eventual,
+            ),
+            crate::options::ReadConsistencyStrategy::Eventual
+        );
+        assert!(super::operation_allows_automatic_session_token_resolution(
+            &read, false
+        ));
+        assert!(!super::operation_allows_automatic_session_token_resolution(
+            &write, false
+        ));
+        assert!(super::operation_allows_automatic_session_token_resolution(
+            &write, true
+        ));
+        assert!(super::operation_allows_automatic_session_token_resolution(
+            &batch, false
         ));
     }
 
@@ -4953,6 +5090,69 @@ mod tests {
                 .expect("request should build");
 
         assert_eq!(request.url.path(), "/dbs/mydb");
+    }
+
+    #[cfg(feature = "fault_injection")]
+    #[test]
+    fn fault_injection_headers_require_an_active_fault_client() {
+        let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
+        let operation = CosmosOperation::read_item(item);
+        let endpoint = CosmosEndpoint::regional(
+            Region::EAST_US,
+            Url::parse("https://test-eastus.documents.azure.com:443/").unwrap(),
+        );
+        let routing = RoutingDecision {
+            selected_url: endpoint.url().clone(),
+            endpoint_key: endpoint.endpoint_key(),
+            endpoint,
+            transport_mode: TransportMode::Gateway,
+            routing_fallback: None,
+        };
+        let activity_id = ActivityId::from_string("activity".to_string());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        let operation_header = HeaderName::from_static(
+            crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION,
+        );
+        let region_header = HeaderName::from_static(
+            crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_REGION,
+        );
+
+        let disabled = build_transport_request_with_fault_injection(
+            &operation,
+            &OperationOverrides::default(),
+            None,
+            &ctx,
+            false,
+        )
+        .expect("request should build");
+        assert!(disabled
+            .headers
+            .get_optional_str(&operation_header)
+            .is_none());
+        assert!(disabled.headers.get_optional_str(&region_header).is_none());
+
+        let enabled = build_transport_request_with_fault_injection(
+            &operation,
+            &OperationOverrides::default(),
+            None,
+            &ctx,
+            true,
+        )
+        .expect("request should build");
+        assert!(enabled
+            .headers
+            .get_optional_str(&operation_header)
+            .is_some());
+        assert!(enabled.headers.get_optional_str(&region_header).is_some());
     }
 
     #[test]
@@ -10266,6 +10466,27 @@ mod tests {
     }
 
     #[test]
+    fn global_strong_account_validation_preserves_zero_request_diagnostics() {
+        let error = super::global_strong_account_validation_error(test_diagnostics());
+
+        assert_eq!(
+            error.status(),
+            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+        );
+        assert!(error.response().is_none());
+        let diagnostics = error
+            .diagnostics()
+            .expect("client-side validation must preserve diagnostics");
+        assert_eq!(diagnostics.request_count(), 0);
+        assert_eq!(
+            diagnostics
+                .effective_status()
+                .map(|status| status.status_code()),
+            Some(azure_core::http::StatusCode::BadRequest)
+        );
+    }
+
+    #[test]
     fn enforce_deadline_none_is_ok() {
         let options = empty_options_view();
         let diagnostics = test_diagnostics();
@@ -10841,6 +11062,34 @@ mod tests {
                 panic!("deadline_signal(past) must resolve before a 50ms sleep");
             }
         }
+    }
+
+    #[tokio::test]
+    async fn awaiting_hedge_partner_prioritizes_elapsed_operation_deadline() {
+        let mut parent = test_diagnostics();
+        let attempt = Box::pin(async {
+            (
+                Err::<super::TransportResult, _>(
+                    crate::error::CosmosError::builder()
+                        .with_message("simultaneous attempt timeout")
+                        .build(),
+                ),
+                test_diagnostics(),
+            )
+        });
+
+        let result = super::await_attempt_or_deadline_harvest(
+            attempt,
+            Some(std::time::Instant::now() - Duration::from_millis(1)),
+            &mut parent,
+            super::HARVEST_WINDOW,
+        )
+        .await;
+
+        assert!(
+            result.is_none(),
+            "an elapsed operation deadline must win over a simultaneously ready attempt"
+        );
     }
 
     #[tokio::test]

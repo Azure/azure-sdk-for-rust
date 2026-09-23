@@ -322,6 +322,54 @@ pub async fn probe_data_plane_ready(
     unreachable!("loop should be exited by 'return' when attempts are exhausted")
 }
 
+/// Reads an item while retrying the transient propagation states expected on
+/// newly created live resources.
+pub async fn read_item_with_readiness_retry(
+    container: &ContainerClient,
+    partition_key: impl Into<PartitionKey>,
+    item_id: &str,
+    options: Option<ItemReadOptions>,
+) -> azure_data_cosmos::Result<ItemResponse> {
+    let partition_key = partition_key.into().to_owned();
+    let item_id = item_id.to_owned();
+    let mut backoff = Duration::from_millis(100);
+    const MAX_BACKOFF: Duration = Duration::from_secs(10);
+
+    loop {
+        match container
+            .read_item(
+                partition_key.clone(),
+                item_id.clone().as_str(),
+                options.clone(),
+            )
+            .await
+        {
+            Ok(response) => return Ok(response),
+            Err(error) if error.status().status_code() == StatusCode::NotFound => {
+                println!(
+                    "Read item failed with {:?}: {}. Retrying after {:?}...",
+                    error.status().status_code(),
+                    error,
+                    backoff
+                );
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(MAX_BACKOFF);
+            }
+            Err(error) if rbac_name_based_data_not_ready(&error) => {
+                println!(
+                    "Read item hit RBAC name-based data race ({:?}): {}. Retrying after {:?}...",
+                    error.status().status_code(),
+                    error,
+                    backoff
+                );
+                tokio::time::sleep(backoff).await;
+                backoff = (backoff * 2).min(MAX_BACKOFF);
+            }
+            Err(error) => return Err(error),
+        }
+    }
+}
+
 /// Options for configuring test execution.
 #[derive(Default)]
 pub struct TestOptions {
@@ -1162,51 +1210,7 @@ impl TestRunContext {
         item_id: &str,
         options: Option<ItemReadOptions>,
     ) -> azure_data_cosmos::Result<ItemResponse> {
-        // Own the inputs so no borrowed data must live across `.await`.
-        let partition_key = partition_key.into().to_owned();
-        let item_id = item_id.to_owned();
-        let mut backoff = Duration::from_millis(100);
-        const MAX_BACKOFF: Duration = Duration::from_secs(10);
-
-        loop {
-            match container
-                .read_item(
-                    partition_key.clone(),
-                    item_id.clone().as_str(),
-                    options.clone(),
-                )
-                .await
-            {
-                Ok(response) => return Ok(response),
-                Err(e) if e.status().status_code() == StatusCode::NotFound => {
-                    println!(
-                        "Read item failed with {:?}: {}. Retrying after {:?}...",
-                        e.status().status_code(),
-                        e,
-                        backoff
-                    );
-                    tokio::time::sleep(backoff).await;
-                    backoff = (backoff * 2).min(MAX_BACKOFF);
-                }
-                // AAD-only: the very first read on a fresh `ContainerClient` can
-                // race the server-side RBAC name→RID mapping for `items/read`
-                // and return `403/5302 RbacUnauthorizedNameBasedDataRequest`,
-                // even after `probe_data_plane_ready` has warmed `items/delete`
-                // on the container that was used to create the item. Retry with
-                // the same backoff so we do not spuriously fail the test.
-                Err(e) if rbac_name_based_data_not_ready(&e) => {
-                    println!(
-                        "Read item hit RBAC name-based data race ({:?}): {}. Retrying after {:?}...",
-                        e.status().status_code(),
-                        e,
-                        backoff
-                    );
-                    tokio::time::sleep(backoff).await;
-                    backoff = (backoff * 2).min(MAX_BACKOFF);
-                }
-                Err(e) => return Err(e),
-            }
-        }
+        read_item_with_readiness_retry(container, partition_key, item_id, options).await
     }
 
     /// Queries items from the specified container with exponential backoff retries on 404 errors.

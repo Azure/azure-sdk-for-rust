@@ -63,6 +63,12 @@ token that the client echoes back:
 - A token referencing a partition key range that no longer exists (completed
   split/merge, and not an ancestor of the routed partition) is answered with
   `410 Gone` / `1002`, telling the client to refresh routing state.
+- Composite-token syntax is validated as a whole, but range applicability is
+  evaluated only for the physical partitions selected by the request. A valid
+  targeted segment is not rejected because another segment names an obsolete,
+  unrelated range. An explicitly targeted physical range that no longer exists
+  still returns `410 Gone` / `1002`; the dataflow pipeline force-refreshes the
+  partition routing map and retries with the newly resolved range.
 - The guarantee is *per session*, not per account: monotonic reads, monotonic
   writes, and read-your-writes hold for the sequence of operations that share a
   token chain. Session tokens are only meaningful within one container.
@@ -119,12 +125,12 @@ Parsing tries V2 first and falls back to V1
 
 ### 2.2 Types
 
-| Type | Crate / module | Role |
-| --- | --- | --- |
-| `SessionToken` | `azure_data_cosmos_driver::models` (re-exported by `azure_data_cosmos::options`) | Public, opaque `Cow<'static, str>` newtype for a full header value. Exposes `merge()`. |
-| `SessionTokenSegment` | `azure_data_cosmos_driver::models` | Public parsed `<pkRangeId>:<value>` segment with `global_lsn()`, `is_as_recent_as()`, `merge_value()`. |
-| `SessionTokenValue` | driver-internal | `Simple(u64)` or `Vector(VectorSessionToken)`. |
-| `VectorSessionToken` | driver-internal | `version`, `global_lsn`, `region_progress: HashMap<u64, Option<u64>>`. |
+| Type                  | Crate / module                                                                   | Role                                                                                                   |
+| --------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `SessionToken`        | `azure_data_cosmos_driver::models` (re-exported by `azure_data_cosmos::options`) | Public, opaque `Cow<'static, str>` newtype for a full header value. Exposes `merge()`.                 |
+| `SessionTokenSegment` | `azure_data_cosmos_driver::models`                                               | Public parsed `<pkRangeId>:<value>` segment with `global_lsn()`, `is_as_recent_as()`, `merge_value()`. |
+| `SessionTokenValue`   | driver-internal                                                                  | `Simple(u64)` or `Vector(VectorSessionToken)`.                                                         |
+| `VectorSessionToken`  | driver-internal                                                                  | `version`, `global_lsn`, `region_progress: HashMap<u64, Option<u64>>`.                                 |
 
 The public surface is deliberately string-shaped and opaque: callers can carry,
 compare-by-merge, and re-supply tokens without depending on the wire grammar.
@@ -201,17 +207,32 @@ knobs.
 The pipeline computes, per attempt:
 
 ```text
-automatic_session_management_effective =
-    partition_key_range_cache_enabled
-    && !session_capturing_disabled
-    && read_consistency_strategy.is_session_effective(account_default)
+session_token_resolution_strategy =
+  read_consistency_strategy                         if operation is a read
+  Default                                           otherwise
+
+automatic_session_token_resolution_effective =
+  partition_key_range_cache_enabled
+  && !session_capturing_disabled
+  && (operation is a read
+      || operation is a batch
+      || account has multiple write locations)
+  && session_token_resolution_strategy.is_session_effective(account_default)
+
+automatic_session_token_capture_effective =
+  partition_key_range_cache_enabled
+  && !session_capturing_disabled
 ```
 
 `is_session_effective` is true when the strategy is `Session`, or when the
 strategy is `Default` and the account default consistency level is `Session`.
 `Eventual`, `LatestCommitted`, and `GlobalStrong` deliberately leave the session
-lane, so the pipeline neither resolves cached tokens nor captures response
-tokens.
+lane for reads. Capture is independent of consistency so a later Session read
+can use tokens returned by earlier operations on Strong, Bounded Staleness,
+Consistent Prefix, or Eventual accounts. Ordinary single-write operations do not
+automatically attach cached tokens. Batches and writes on multi-write accounts
+attach them when the account default consistency is Session. Explicit
+per-operation tokens remain authoritative on every topology.
 
 `session_capturing_disabled` is a single switch that turns off *both* automatic
 halves — no cache-based attach and no capture. Explicit per-operation tokens
@@ -260,7 +281,11 @@ carry headers, so capturing later would silently drop those tokens.
 
 Capture rules:
 
-- **Gated on session-effectiveness** for the attempt.
+- **Independent of the attempt's effective consistency.** Any eligible response token is cached
+  while automatic session management is enabled, including responses to `Eventual`,
+  `LatestCommitted`, and `GlobalStrong` reads. A subsequent operation can switch to `Session` and
+  must then resolve the token captured from the earlier response. Effective consistency gates
+  request-token resolution and enforcement, not response capture.
 - **Skipped for master/metadata reads.** `is_reading_from_master` mirrors Java's
   `ReplicatedResourceClientUtils`: `DatabaseAccount`, `Database`, `Offer`, and
   `PartitionKeyRange` always target master; `DocumentCollection` targets master
@@ -508,9 +533,10 @@ formatting of driver state.
   `driver/pipeline/operation_pipeline.rs` and `driver/pipeline/retry_evaluation.rs`.
 - **End-to-end (in-memory emulator)** —
   `azure_data_cosmos/tests/in_memory_emulator_tests/session_token.rs` observes the
-  outgoing `x-ms-session-token` header to prove capture-then-resolve, cache
-  advance across writes, caller-token precedence, and the negative controls
-  (Eventual consistency, capturing disabled, empty cache).
+  outgoing `x-ms-session-token` header to prove consistency-independent capture,
+  Session-read resolution, single-write omission, cache advance across writes,
+  caller-token precedence, and the negative controls (Eventual reads, capturing
+  disabled, empty cache).
 - **Cross-backend** — dual-backend tests compare response session tokens between
   the in-memory emulator and a real account, which is what keeps the emulator's
   modeled contract (§1.1) honest.
