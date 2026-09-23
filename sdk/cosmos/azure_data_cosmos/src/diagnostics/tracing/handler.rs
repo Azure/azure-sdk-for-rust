@@ -45,8 +45,8 @@ const SUPPRESSED_TARGET: &str = "azure_data_cosmos::diagnostics::tracing_suppres
 /// bounded failure reserve) so an error storm can't reconstruct millions of span
 /// trees per second and overwhelm exporters. When trees are suppressed, a single
 /// "suppressed N" warning is emitted per window on the
-/// `azure_data_cosmos::diagnostics::tracing_suppressed` target. Tune it with
-/// [`with_thresholds_and_rate_limit`](Self::with_thresholds_and_rate_limit).
+/// `azure_data_cosmos::diagnostics::tracing_suppressed` target. Configure it with
+/// [`builder`](Self::builder).
 ///
 /// # Examples
 ///
@@ -54,7 +54,7 @@ const SUPPRESSED_TARGET: &str = "azure_data_cosmos::diagnostics::tracing_suppres
 /// use std::sync::Arc;
 /// use azure_data_cosmos::diagnostics::CosmosTracingHandler;
 ///
-/// let handler = Arc::new(CosmosTracingHandler::new());
+/// let handler = Arc::new(CosmosTracingHandler::builder().build());
 /// // let client = CosmosClient::builder(endpoint, credential)
 /// //     .with_diagnostics_handler(handler)
 /// //     .build()?;
@@ -65,32 +65,23 @@ pub struct CosmosTracingHandler {
     limiter: RateLimiter,
 }
 
+/// Builder for a tail-sampled Cosmos tracing handler.
+#[derive(Default)]
+pub struct CosmosTracingHandlerBuilder {
+    thresholds: DiagnosticsThresholds,
+    rate_limit: RateLimiterConfig,
+}
+
+/// A Cosmos tracing handler bound to an explicit OpenTelemetry tracer.
+pub struct CosmosTracingHandlerWithTracer<T> {
+    handler: CosmosTracingHandler,
+    tracer: T,
+}
+
 impl CosmosTracingHandler {
-    /// Creates a handler using the default sampling thresholds and default span
-    /// emission rate limiting (~100/min).
-    pub fn new() -> Self {
-        Self::with_thresholds(DiagnosticsThresholds::default())
-    }
-
-    /// Creates a handler using the supplied sampling thresholds and default span
-    /// emission rate limiting.
-    pub fn with_thresholds(thresholds: DiagnosticsThresholds) -> Self {
-        Self::with_thresholds_and_rate_limit(thresholds, RateLimiterConfig::default())
-    }
-
-    /// Creates a handler using the supplied sampling thresholds and span emission
-    /// rate-limiter configuration.
-    ///
-    /// The rate limit bounds how many span trees are reconstructed per window
-    /// across all operations, so a failure storm can't overwhelm CPU/exporters.
-    pub fn with_thresholds_and_rate_limit(
-        thresholds: DiagnosticsThresholds,
-        rate_limit: RateLimiterConfig,
-    ) -> Self {
-        Self {
-            thresholds,
-            limiter: RateLimiter::new(rate_limit),
-        }
+    /// Creates a builder for configuring a tracing handler.
+    pub fn builder() -> CosmosTracingHandlerBuilder {
+        CosmosTracingHandlerBuilder::default()
     }
 
     /// Returns the sampling thresholds this handler applies.
@@ -104,24 +95,16 @@ impl CosmosTracingHandler {
     pub fn should_emit(&self, diagnostics: &DiagnosticsContext) -> bool {
         should_emit_span(diagnostics, &self.thresholds, None)
     }
-}
 
-impl Default for CosmosTracingHandler {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl DiagnosticsHandler for CosmosTracingHandler {
-    fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>) {
+    fn prepare_emission(
+        &self,
+        diagnostics: &DiagnosticsContext,
+        cx: &Context<'_>,
+    ) -> Option<Option<&'static str>> {
         let op = cx.value::<CosmosOperationContext>();
         if !should_emit_span(diagnostics, &self.thresholds, op) {
-            return;
+            return None;
         }
-
-        // Bound span reconstruction across operations so an error storm can't
-        // emit millions of trees per second. This is a synchronous, per-failure
-        // cost, so the limit applies before we build anything.
         let decision = self.limiter.check(diagnostics.is_failure(), Instant::now());
         if let Some(suppressed) = decision.suppression_notice {
             tracing::warn!(
@@ -131,25 +114,92 @@ impl DiagnosticsHandler for CosmosTracingHandler {
             );
         }
         if !decision.emit {
-            return;
+            return None;
         }
+        Some(EmitReason::of(diagnostics, &self.thresholds, op).map(EmitReason::as_str))
+    }
 
+    fn emit_with<T>(&self, tracer: &T, diagnostics: &DiagnosticsContext, cx: &Context<'_>)
+    where
+        T: opentelemetry::trace::Tracer,
+    {
+        let Some(reason) = self.prepare_emission(diagnostics, cx) else {
+            return;
+        };
+        emit_backdated_span_tree(
+            tracer,
+            diagnostics,
+            cx.value::<CosmosOperationContext>(),
+            reason,
+            Instant::now(),
+            SystemTime::now(),
+        );
+    }
+}
+
+impl CosmosTracingHandlerBuilder {
+    /// Sets the tail-sampling thresholds.
+    pub fn with_thresholds(mut self, thresholds: DiagnosticsThresholds) -> Self {
+        self.thresholds = thresholds;
+        self
+    }
+
+    /// Sets the span-tree emission rate limit.
+    pub fn with_rate_limit(mut self, rate_limit: RateLimiterConfig) -> Self {
+        self.rate_limit = rate_limit;
+        self
+    }
+
+    /// Builds a handler that resolves the process-global tracer when an
+    /// operation is selected for emission.
+    pub fn build(self) -> CosmosTracingHandler {
+        CosmosTracingHandler {
+            thresholds: self.thresholds,
+            limiter: RateLimiter::new(self.rate_limit),
+        }
+    }
+
+    /// Builds a handler bound to `tracer` rather than process-global state.
+    pub fn build_with_tracer<T>(self, tracer: T) -> CosmosTracingHandlerWithTracer<T>
+    where
+        T: opentelemetry::trace::Tracer + Send + Sync + 'static,
+    {
+        CosmosTracingHandlerWithTracer {
+            handler: self.build(),
+            tracer,
+        }
+    }
+}
+
+impl DiagnosticsHandler for CosmosTracingHandler {
+    fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>) {
         // Resolve the global tracer lazily, on the (rare) sampled emission path,
         // rather than caching it at construction. `global::tracer` binds to
         // whatever provider is installed *now*; caching it in the handler would
         // permanently capture the no-op default whenever the handler is built
         // before `global::set_tracer_provider`, silently dropping every sampled
         // span even after a provider is installed later.
+        let Some(reason) = self.prepare_emission(diagnostics, cx) else {
+            return;
+        };
         let tracer = global::tracer(TRACER_NAME);
-        let reason = EmitReason::of(diagnostics, &self.thresholds, op).map(EmitReason::as_str);
         emit_backdated_span_tree(
             &tracer,
             diagnostics,
-            op,
+            cx.value::<CosmosOperationContext>(),
             reason,
             Instant::now(),
             SystemTime::now(),
         );
+    }
+}
+
+impl<T> DiagnosticsHandler for CosmosTracingHandlerWithTracer<T>
+where
+    T: opentelemetry::trace::Tracer + Send + Sync + 'static,
+{
+    fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>) {
+        self.handler.emit_with(&self.tracer, diagnostics, cx);
     }
 }
 

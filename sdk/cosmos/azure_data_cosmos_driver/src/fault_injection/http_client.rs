@@ -7,6 +7,7 @@
 
 use super::result::FaultInjectionResult;
 use super::rule::{FaultInjectionHitReservation, FaultInjectionRule};
+use super::EvaluationCollector;
 use super::FaultInjectionErrorType;
 use super::FaultInjectionEvaluation;
 use super::FaultOperationType;
@@ -14,7 +15,9 @@ use crate::diagnostics::{RequestSentStatus, TransportKind};
 use crate::driver::transport::cosmos_transport_client::{
     HttpRequest, HttpResponse, TransportClient, TransportError,
 };
-use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
+use crate::models::cosmos_headers::fault_injection_header_names::{
+    FAULT_INJECTION_OPERATION, FAULT_INJECTION_REGION,
+};
 use crate::models::{CosmosResponseHeaders, CosmosStatus, SubStatusCode};
 use async_trait::async_trait;
 use azure_core::http::headers::HeaderName;
@@ -133,7 +136,13 @@ impl FaultClient {
         }
 
         if let Some(region) = condition.region() {
-            if !host_matches_region(&request.url, region.as_str()) {
+            let routed_region = request
+                .headers
+                .get_optional_str(&HeaderName::from_static(FAULT_INJECTION_REGION));
+            let matches = routed_region
+                .map(|routed| routed == region.as_str())
+                .unwrap_or_else(|| host_matches_region(&request.url, region.as_str()));
+            if !matches {
                 return Some(FaultInjectionEvaluation::RegionMismatch {
                     rule_id: rule.id().to_owned(),
                 });
@@ -191,6 +200,7 @@ impl FaultClient {
         server_error: &FaultInjectionResult,
         rule: &FaultInjectionRule,
         evaluations: &mut Vec<FaultInjectionEvaluation>,
+        collector: Option<&EvaluationCollector>,
     ) -> ApplyResult {
         // Check probability
         if server_error.probability() < 1.0 {
@@ -222,9 +232,17 @@ impl FaultClient {
             && server_error.error_type()
                 == Some(FaultInjectionErrorType::ResponseTimeoutAfterService);
         if !deferred {
-            evaluations.push(FaultInjectionEvaluation::Applied {
+            let applied = FaultInjectionEvaluation::Applied {
                 rule_id: rule_id.to_owned(),
-            });
+            };
+            evaluations.push(applied);
+            if let Some(collector) = collector {
+                tracing::trace!(
+                    evaluations = ?evaluations,
+                    "fault injection rule evaluation"
+                );
+                collector.push_all(evaluations);
+            }
             reservation
                 .take()
                 .expect("ordinary fault retains its reservation")
@@ -391,7 +409,12 @@ impl TransportClient for FaultClient {
         // written into the request's evaluation collector.
         let (fault_response, timeout_after_service) = if let Some(ref rule) = matched_rule {
             match self
-                .apply_fault(rule.result(), rule, &mut evaluations)
+                .apply_fault(
+                    rule.result(),
+                    rule,
+                    &mut evaluations,
+                    request.evaluation_collector.as_ref(),
+                )
                 .await
             {
                 ApplyResult::Injected(response) => (Some(response), None),
@@ -432,6 +455,7 @@ impl TransportClient for FaultClient {
             // before forwarding to the real transport.
             let mut clean_headers = request.headers.clone();
             clean_headers.remove(FAULT_INJECTION_OPERATION);
+            clean_headers.remove(FAULT_INJECTION_REGION);
 
             // Collector intentionally omitted: evaluations already captured above.
             let clean_request = HttpRequest {
@@ -515,7 +539,9 @@ mod tests {
         FaultInjectionErrorType, FaultInjectionEvaluation, FaultInjectionResultBuilder,
         FaultInjectionRuleBuilder, FaultOperationType,
     };
-    use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
+    use crate::models::cosmos_headers::fault_injection_header_names::{
+        FAULT_INJECTION_OPERATION, FAULT_INJECTION_REGION,
+    };
     use crate::models::{CosmosStatus, SubStatusCode};
     use crate::options::Region;
     use async_trait::async_trait;
@@ -794,6 +820,29 @@ mod tests {
         let (request, _collector) = create_test_request();
         let result = fault_client.send(&request).await;
 
+        assert!(result.is_ok());
+        assert_eq!(mock_client.call_count(), 1);
+    }
+
+    #[tokio::test]
+    async fn routed_region_header_overrides_endpoint_host_for_matching() {
+        let mock_client = Arc::new(MockTransportClient::new());
+        let condition = FaultInjectionConditionBuilder::new()
+            .with_region(Region::EAST_US)
+            .build();
+        let fault = FaultInjectionResultBuilder::new()
+            .with_error(FaultInjectionErrorType::ServiceUnavailable)
+            .build();
+        let rule = FaultInjectionRuleBuilder::new("routed-region-rule", fault)
+            .with_condition(condition)
+            .build();
+        let fault_client = FaultClient::new(mock_client.clone(), vec![Arc::new(rule)], None);
+
+        let (mut request, _collector) = create_test_request();
+        request.url = "https://eastus.example.com/".parse().unwrap();
+        request.headers.insert(FAULT_INJECTION_REGION, "westus");
+
+        let result = fault_client.send(&request).await;
         assert!(result.is_ok());
         assert_eq!(mock_client.call_count(), 1);
     }

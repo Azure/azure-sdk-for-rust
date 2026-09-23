@@ -245,12 +245,12 @@ pub(crate) fn emit_backdated_span_tree<T>(
         }
     }
     // Prefer the caller-supplied server-address override (mirroring the metrics
-    // handler) before falling back to the host of the first contacted endpoint,
+    // handler) before falling back to the host of the terminal contacted endpoint,
     // so an override changes both the metric and the root span consistently.
     let server_addr = op
         .and_then(CosmosOperationContext::server_address)
         .map(str::to_string)
-        .or_else(|| requests.first().and_then(server_address));
+        .or_else(|| requests.last().and_then(server_address));
     if let Some(addr) = server_addr {
         root_attrs.push(KeyValue::new(attributes::SERVER_ADDRESS, addr));
     }

@@ -198,7 +198,7 @@ fn register_handlers(builder: CosmosClientBuilder, config: &Config) -> CosmosCli
     let builder = {
         use azure_data_cosmos::diagnostics::CosmosTracingHandler;
 
-        builder.with_diagnostics_handler(Arc::new(CosmosTracingHandler::new()))
+        builder.with_diagnostics_handler(Arc::new(CosmosTracingHandler::builder().build()))
     };
 
     // The sampled log handler is not feature-gated in the SDK; always register it

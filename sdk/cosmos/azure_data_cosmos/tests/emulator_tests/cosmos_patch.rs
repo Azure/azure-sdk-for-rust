@@ -59,6 +59,7 @@ async fn create_container_in_database(
         )
         .await?;
     let container_client = db_client.container_client(&container_id, None).await?;
+    framework::probe_data_plane_ready("PATCH test container", &container_client, 1).await?;
     Ok(container_client)
 }
 
