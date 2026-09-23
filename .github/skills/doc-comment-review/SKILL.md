@@ -44,9 +44,9 @@ comment changes. Also use it when writing or revising public API documentation.
 
 ### 1. Apply Microsoft style to reference documentation
 
-Use the [Microsoft Style Guide](https://learn.microsoft.com/en-us/style-guide/).
+Use the [Microsoft Style Guide](https://learn.microsoft.com/style-guide/).
 The following checklist paraphrases and adapts its
-[Top 10 tips for style and voice](https://learn.microsoft.com/en-us/style-guide/top-10-tips-style-voice)
+[Top 10 tips for style and voice](https://learn.microsoft.com/style-guide/top-10-tips-style-voice)
 so routine reviews do not require fetching the guide:
 
 1. **Express the idea simply.** Remove unnecessary wording and complexity without
