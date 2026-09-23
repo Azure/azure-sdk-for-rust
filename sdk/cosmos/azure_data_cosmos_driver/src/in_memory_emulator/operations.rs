@@ -6505,6 +6505,7 @@ fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawRe
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::in_memory_emulator::response::headers::ETAG;
 
     #[test]
     fn synthesize_rewrite_replaces_trailing_offset_limit() {
