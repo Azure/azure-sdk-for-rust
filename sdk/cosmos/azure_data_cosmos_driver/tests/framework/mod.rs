@@ -6,7 +6,7 @@
 mod env;
 mod test_client;
 
-pub use azure_data_cosmos_test_support::arm_client;
+pub use azure_data_cosmos_test::arm_client;
 
 pub use arm_client::CosmosArmClient;
 pub use env::{get_test_mode, is_azure_pipelines, CosmosTestMode};

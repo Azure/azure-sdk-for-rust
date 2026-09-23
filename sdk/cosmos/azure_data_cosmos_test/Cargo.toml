@@ -1,5 +1,5 @@
 [package]
-name = "azure_data_cosmos_test_support"
+name = "azure_data_cosmos_test"
 version = "0.0.0"
 publish = false
 authors.workspace = true

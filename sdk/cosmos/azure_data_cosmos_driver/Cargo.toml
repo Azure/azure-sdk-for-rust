@@ -59,7 +59,7 @@ rustc_version.workspace = true
 
 [dev-dependencies]
 azure_core_test = { workspace = true, features = ["tracing"] }
-azure_data_cosmos_test_support = { path = "../azure_data_cosmos_test_support" }
+azure_data_cosmos_test = { path = "../azure_data_cosmos_test" }
 azure_identity.workspace = true
 quick-xml.workspace = true
 serde = { workspace = true, features = ["derive"] }

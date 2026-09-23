@@ -14,7 +14,7 @@
 //!
 //! The framework allows tests to easily run against real Cosmos DB instances, the local emulator, or a mock server using test-proxy.
 
-pub use azure_data_cosmos_test_support::arm_client;
+pub use azure_data_cosmos_test::arm_client;
 pub mod emulator_credential;
 pub mod mock_account;
 pub mod test_client;
