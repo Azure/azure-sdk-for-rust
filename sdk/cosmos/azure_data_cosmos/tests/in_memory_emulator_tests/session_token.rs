@@ -294,7 +294,7 @@ impl Harness {
 
 #[tokio::test]
 async fn eventual_read_response_is_captured_for_later_session_read() {
-    let h = Harness::setup_with_options(true, ConsistencyLevel::Eventual, None).await;
+    let h = Harness::setup_with_options(ConsistencyLevel::Eventual, None).await;
     let body = serde_json::to_vec(&TestItem {
         id: "item-1".to_owned(),
         pk: "pk1".to_owned(),
