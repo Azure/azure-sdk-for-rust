@@ -5,18 +5,22 @@ use super::{
     cosmos_cursor_checkpoint_submit, cosmos_cursor_completion_free,
     cosmos_cursor_completion_take_cursor, cosmos_cursor_free, cosmos_cursor_next_submit,
     cosmos_cursor_open_submit, cosmos_cursor_queue_create, cosmos_cursor_queue_wait,
-    cosmos_cursor_status, fixture, CosmosCursorCompletion, CursorHandle,
+    cosmos_cursor_status, fixture, CosmosCursorCompletion, CursorHandle, ResultData,
 };
 use crate::{
     completion::{
         cosmos_completion_queue_create, cosmos_completion_queue_free,
         cosmos_completion_queue_shutdown, cosmos_completion_queue_wait,
-        cosmos_operation_handle_cancel, cosmos_operation_handle_free,
-        cosmos_operation_handle_state, cosmos_operation_handle_status, CompletionQueue,
-        CosmosCompletion, CosmosOperationHandleState, OperationHandle,
+        cosmos_operation_handle_free, cosmos_operation_handle_state,
+        cosmos_operation_handle_status, CompletionQueue, CosmosCompletion,
+        CosmosOperationHandleState, OperationHandle,
     },
     container_ref::{cosmos_container_ref_free, ContainerRefHandle},
     cursor_request::{build_cursor_request, cosmos_cursor_request_init, CosmosCursorRequest},
+    diagnostics::{
+        cosmos_diagnostics_is_completed, cosmos_diagnostics_is_failure,
+        cosmos_diagnostics_request_count, cosmos_diagnostics_to_json, CosmosDiagnosticsVerbosity,
+    },
     driver::{cosmos_driver_free, DriverHandle},
     error::{CosmosErrorCode, COSMOS_STATUS_SUCCESS},
     op_request::cosmos_operation_options_default,
@@ -25,13 +29,17 @@ use crate::{
     string::view,
 };
 use azure_data_cosmos_driver::options::OperationOptions;
-use std::{mem::MaybeUninit, ptr, time::Duration};
+use std::{
+    mem::MaybeUninit,
+    ptr,
+    sync::{atomic::Ordering, Arc},
+    time::Duration,
+};
 
 #[test]
 fn only_legacy_representation_errors_recommend_cursor_migration() {
     for code in [
         CosmosErrorCode::CosmosErrorCodeRepresentationUnsupported,
-        CosmosErrorCode::CosmosErrorCodeOperationCancelled,
         CosmosErrorCode::CosmosErrorCodeCursorClosed,
         CosmosErrorCode::CosmosErrorCodeDeliveryLost,
         CosmosErrorCode::CosmosErrorCodeInternalError,
@@ -406,7 +414,7 @@ fn cross_partition_read_all_preserves_driver_rejection() {
 }
 
 #[test]
-fn admission_busy_cancel_shutdown_and_abandon_are_observable() {
+fn admission_busy_shutdown_and_abandon_are_observable() {
     let mut fixture = Fixture::new(1);
     let mut request = fixture.request();
     request.operation.kind = 15;
@@ -450,39 +458,92 @@ fn admission_busy_cancel_shutdown_and_abandon_are_observable() {
     request.operation.kind = 15;
     let cursor = fixture.open(&request);
     let op = cosmos_cursor_next_submit(cursor, 0, ptr::null_mut());
-    cosmos_operation_handle_cancel(op);
     cosmos_completion_queue_shutdown(fixture.queue);
-    let cancelled = fixture.receive(op);
+    let page = fixture.receive(op);
     // SAFETY: completion is owned and live.
     unsafe {
-        assert_eq!((*cancelled).common.outcome as i32, 2);
+        assert_eq!((*page).common.status, COSMOS_STATUS_SUCCESS);
+        assert_eq!((*page).result_kind, 2);
     }
-    assert_eq!(
-        cosmos_cursor_status(cursor),
-        CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code()
-    );
-    cosmos_cursor_completion_free(cancelled);
+    assert_eq!(cosmos_cursor_status(cursor), COSMOS_STATUS_SUCCESS);
+    cosmos_cursor_completion_free(page);
     cosmos_cursor_free(cursor);
 }
 
 #[test]
-fn late_cancel_does_not_retract_published_page_and_free_does_not_cancel() {
+fn published_page_survives_cursor_free() {
     let fixture = Fixture::new(1);
     let mut request = fixture.request();
     request.operation.kind = 15;
     let cursor = fixture.open(&request);
     let op = cosmos_cursor_next_submit(cursor, 7, ptr::null_mut());
     fixture.drive(op);
-    cosmos_operation_handle_cancel(op);
     cosmos_cursor_free(cursor);
     let page = fixture.receive(op);
     // SAFETY: page is owned and live even after cursor free.
     unsafe {
         assert_eq!((*page).common.status, COSMOS_STATUS_SUCCESS);
         assert_eq!((*page).result_kind, 2);
-        assert_eq!((*page).common.was_cancel_requested, 1);
     }
     cosmos_cursor_completion_free(page);
+}
+
+#[test]
+fn page_and_error_diagnostics_live_until_completion_free() {
+    for failed in [false, true] {
+        let gate = Arc::new(fixture::Gate::default());
+        let fixture = Fixture::from_handles(fixture::scripted_gated(true, Some(gate.clone())), 1);
+        let mut request = fixture.request();
+        request.operation.kind = 15;
+        let cursor = fixture.open(&request);
+        gate.failure
+            .store(if failed { 2 } else { 0 }, Ordering::Release);
+        gate.release.notify_one();
+        let op = cosmos_cursor_next_submit(cursor, 0, ptr::null_mut());
+        fixture.drive(op);
+        let weak = {
+            let queue = CompletionQueue::inner_arc(fixture.queue).unwrap();
+            let state = queue.cursor.as_ref().unwrap().inner.lock().unwrap();
+            let diagnostics = match &state.deliveries.front().unwrap().result {
+                Ok(ResultData::Page(page)) => page.diagnostics(),
+                Err(error) => error.diagnostics().unwrap(),
+                _ => panic!("expected page or error diagnostics"),
+            };
+            Arc::downgrade(&diagnostics)
+        };
+        let page = fixture.receive(op);
+        // SAFETY: the page owns this borrowed handle until completion free.
+        let diagnostics = unsafe { (*page).common.diagnostics };
+        assert!(!diagnostics.is_null());
+        let mut json = ptr::null();
+        let mut len = 0;
+        assert_eq!(
+            cosmos_diagnostics_to_json(
+                diagnostics,
+                CosmosDiagnosticsVerbosity::DETAILED,
+                &mut json,
+                &mut len,
+            ),
+            COSMOS_STATUS_SUCCESS
+        );
+        // SAFETY: JSON bytes are borrowed from the live completion.
+        let rendered = unsafe { std::slice::from_raw_parts(json, len) }.to_vec();
+        if !failed {
+            gate.release.notify_one();
+            let next = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+            cosmos_cursor_completion_free(next);
+        }
+        cosmos_cursor_free(cursor);
+        drop(fixture);
+        assert!(weak.upgrade().is_some());
+        assert!(cosmos_diagnostics_is_completed(diagnostics));
+        assert_eq!(cosmos_diagnostics_is_failure(diagnostics), failed);
+        assert_eq!(cosmos_diagnostics_request_count(diagnostics), 1);
+        // SAFETY: the original completion still owns the rendered bytes.
+        assert_eq!(unsafe { std::slice::from_raw_parts(json, len) }, rendered);
+        cosmos_cursor_completion_free(page);
+        assert!(weak.upgrade().is_none());
+    }
 }
 
 #[test]
@@ -740,12 +801,15 @@ fn change_feed_time_and_beginning_execute_and_mode_mismatch_is_rejected() {
 }
 
 #[test]
-fn cancellation_panic_and_error_during_io_are_terminal() {
-    for failure in [0, 1, 2] {
+fn panic_error_and_timeout_during_io_are_terminal() {
+    for failure in [1, 2, 3] {
         let gate = std::sync::Arc::new(fixture::Gate::default());
         let fixture = Fixture::from_handles(fixture::scripted_gated(true, Some(gate.clone())), 1);
         let mut request = fixture.request();
         request.operation.kind = 15;
+        let mut options = cosmos_operation_options_default();
+        options.end_to_end_timeout_ms = 1_000;
+        request.operation.options = &options;
         let cursor = fixture.open(&request);
         let op = cosmos_cursor_next_submit(cursor, 0, ptr::null_mut());
         let rt = RuntimeContext::inner_arc(fixture.runtime).unwrap();
@@ -754,15 +818,30 @@ fn cancellation_panic_and_error_during_io_are_terminal() {
                 .await
                 .unwrap();
         });
-        if failure == 0 {
-            cosmos_operation_handle_cancel(op);
+        if failure == 3 {
+            rt.tokio.block_on(async {
+                tokio::time::pause();
+                tokio::time::advance(Duration::from_secs(2)).await;
+            });
         } else {
             gate.failure
                 .store(failure, std::sync::atomic::Ordering::Release);
             gate.release.notify_one();
         }
+        fixture.drive(op);
+        let terminal = cosmos_operation_handle_status(op);
         let completion = fixture.receive(op);
-        assert_ne!(cosmos_cursor_status(cursor), COSMOS_STATUS_SUCCESS);
+        assert_ne!(terminal, COSMOS_STATUS_SUCCESS);
+        assert_eq!(cosmos_cursor_status(cursor), terminal);
+        // SAFETY: completion remains owned and live.
+        unsafe {
+            assert_eq!((*completion).common.status, terminal);
+            assert_eq!((*completion).result_kind, 0);
+            if failure == 3 {
+                assert_eq!(terminal.0 >> 16, 408);
+                assert!(!(*completion).common.diagnostics.is_null());
+            }
+        }
         let mut status = COSMOS_STATUS_SUCCESS;
         assert!(cosmos_cursor_next_submit(cursor, 0, &mut status).is_null());
         assert_eq!(

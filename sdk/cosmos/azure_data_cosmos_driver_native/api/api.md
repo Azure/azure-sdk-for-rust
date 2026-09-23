@@ -61,8 +61,6 @@ pub mod completion {
     #[no_mangle]
     pub extern "C" fn cosmos_completion_take_driver(c: *mut CosmosCompletion) -> *mut crate::driver::DriverHandle;
     #[no_mangle]
-    pub extern "C" fn cosmos_operation_handle_cancel(op: *mut OperationHandle);
-    #[no_mangle]
     pub extern "C" fn cosmos_operation_handle_free(op: *mut OperationHandle);
     #[no_mangle]
     pub extern "C" fn cosmos_operation_handle_state(op: *const OperationHandle) -> CosmosOperationHandleState;
@@ -75,7 +73,6 @@ pub mod completion {
         pub outcome: CosmosCompletionOutcome,
         pub status: crate::error::CosmosStatusCode,
         pub user_data: isize,
-        pub was_cancel_requested: u8,
         pub http_status_code: u16,
         pub is_from_wire: u8,
         pub message: *const std::ffi::c_char,
@@ -85,7 +82,7 @@ pub mod completion {
         pub headers_len: usize,
         pub body: *const u8,
         pub body_len: usize,
-        pub diagnostics: *mut std::ffi::c_void,
+        pub diagnostics: *const crate::diagnostics::CosmosDiagnostics,
         pub driver: *mut crate::driver::DriverHandle,
         pub container: *mut crate::container_ref::ContainerRefHandle,
         pub backing: *mut CosmosCompletionBacking,
@@ -223,6 +220,38 @@ pub mod database_ref {
     pub struct DatabaseRefHandle {
     }
 }
+pub mod diagnostics {
+    #[no_mangle]
+    pub extern "C" fn cosmos_diagnostics_is_compacted(d: *const CosmosDiagnostics) -> bool;
+    #[no_mangle]
+    pub extern "C" fn cosmos_diagnostics_is_completed(d: *const CosmosDiagnostics) -> bool;
+    #[no_mangle]
+    pub extern "C" fn cosmos_diagnostics_is_failure(d: *const CosmosDiagnostics) -> bool;
+    #[no_mangle]
+    pub extern "C" fn cosmos_diagnostics_iter_attempts(d: *const CosmosDiagnostics, visitor: Option<extern "C" fn(*mut std::ffi::c_void, *const std::ffi::c_char, *const std::ffi::c_char, u16, i32, u64, f64, f64)>, user_data: *mut std::ffi::c_void);
+    #[no_mangle]
+    pub extern "C" fn cosmos_diagnostics_iter_regions_contacted(d: *const CosmosDiagnostics, visitor: Option<extern "C" fn(*mut std::ffi::c_void, *const std::ffi::c_char)>, user_data: *mut std::ffi::c_void);
+    #[no_mangle]
+    pub extern "C" fn cosmos_diagnostics_request_count(d: *const CosmosDiagnostics) -> u32;
+    #[no_mangle]
+    pub extern "C" fn cosmos_diagnostics_retained_request_count(d: *const CosmosDiagnostics) -> u32;
+    #[no_mangle]
+    pub extern "C" fn cosmos_diagnostics_to_json(d: *const CosmosDiagnostics, verbosity: CosmosDiagnosticsVerbosity, out_data: *mut *const u8, out_len: *mut usize) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub extern "C" fn cosmos_diagnostics_total_elapsed_micros(d: *const CosmosDiagnostics) -> u64;
+    #[no_mangle]
+    pub extern "C" fn cosmos_diagnostics_total_request_charge(d: *const CosmosDiagnostics) -> f64;
+    pub struct CosmosDiagnostics {
+    }
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[repr(transparent)]
+    pub struct CosmosDiagnosticsVerbosity(pub i32);
+    impl CosmosDiagnosticsVerbosity {
+        const DEFAULT: Self = _;
+        const DETAILED: Self = _;
+        const SUMMARY: Self = _;
+    }
+}
 pub mod driver {
     #[no_mangle]
     pub extern "C" fn cosmos_driver_free(driver: *mut DriverHandle);
@@ -306,7 +335,6 @@ pub mod error {
         CosmosSubStatusClientRequestUrlMissingKnownPort = 20156,
         CosmosSubStatusClientImdsHttpClientConstructionFailed = 20157,
         CosmosSubStatusClientImdsReqwestFeatureRequired = 20158,
-        CosmosSubStatusClientPartitionKeyRangeCacheRequired = 20159,
         CosmosSubStatusClientContinuationTokenFetchInFlight = 20200,
         CosmosSubStatusClientTopologyProviderMissing = 20201,
         CosmosSubStatusClientDriverNotInitialized = 20202,

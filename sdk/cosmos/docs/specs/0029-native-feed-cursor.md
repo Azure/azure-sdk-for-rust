@@ -21,7 +21,7 @@ full-container item read-all returns `400/20112` (fan-out required).
 New query operators, pipeline-node APIs, range enumeration, processor leases,
 token formats, and native-managed prefetch/polling are outside scope. Wrapper SDKs
 can prefetch within their own buffer limits. Metrics aggregation, binary encoding
-optimization, and partial cancellation diagnostics remain separate concerns.
+optimization, and on-demand cancellation remain separate concerns.
 
 ## 2. Relationship to existing designs
 
@@ -52,7 +52,8 @@ fields are zero.
 The open record embeds the frozen legacy request plus change-feed selectors.
 Queries, read feeds, and change feed are accepted; writes, batches, and other
 singleton operations are rejected before planning. Common input and status
-contracts follow the native ABI; reserved diagnostics fields are not repurposed.
+contracts follow the native ABI, including the borrowed diagnostics handle in
+the common completion.
 
 Queue format is immutable. Mismatched submissions or cursor waits fail without
 consuming results. Legacy wait has no error output: on a cursor queue it logs a
@@ -84,7 +85,7 @@ cursor and a supported checkpoint. Different cursors can execute concurrently.
 
 | Field | Values |
 | --- | --- |
-| Outcome | Success, error, cancelled |
+| Outcome | Success, error (cancelled is reserved and never produced) |
 | Successful result | Opened, Page, Checkpoint, End |
 | Body shape | NoPayload, RawBytes, Items |
 
@@ -93,9 +94,11 @@ pointer/length array of **all** item buffers, including zero-length members.
 Shape is explicit, never inferred from application JSON fields. HTTP status,
 headers, and errors remain distinct from end-of-feed state.
 
-The completion owns its response, payload views, headers, and token/error text.
+The completion owns its response, payload views, headers, diagnostics, and token/error text.
 **Page buffers survive further advancement and cursor release**, until their
 completion is freed. Opened also owns its cursor until Take cursor detaches it.
+Successful pages and errors retain driver diagnostics through the common
+completion backing; the handle is NULL when no diagnostics were attached.
 
 Bytes retain the driver's negotiated encoding and complete change envelopes
 (`current`, `previous`, metadata). Binary items are not produced by slicing an
@@ -156,7 +159,7 @@ short synchronized transitions hold no blocking mutex across await points.
 | Page transferred | Ready; the previous completion can remain alive. |
 | End transferred | Exhausted; subsequent Next returns End without I/O. |
 | Successful/unsupported Checkpoint transferred | Previous Ready/Exhausted state restored. |
-| Execution failure, panic, or cancellation with uncertain progress | Failed/Cancelled; partially advanced state is unusable. |
+| Execution failure, panic, or timeout with uncertain progress | Failed; partially advanced state is unusable. |
 | Admission rejection | Previous state preserved; no asynchronous completion. |
 | Host Free | Caller handle released; admitted work retains ownership. |
 
@@ -166,7 +169,7 @@ after receipt. Driver retries remain unchanged; an uncertain failure escaping
 Next requires recovery from a saved checkpoint or a restart, not an automatic
 whole-plan retry.
 
-### 5.2 Delivery, cancellation, and release
+### 5.2 Delivery, timeouts, and release
 
 Capacity covers all admitted-but-undrained operations, including Open. Reservations
 are released on transfer or preflight rollback, ensuring space for an admitted
@@ -177,10 +180,10 @@ abandons undelivered results and invalidates affected cursors. **Lost delivery
 cannot be followed by successful advancement past the missing page.** Terminal
 cursor/operation status remains observable without the queue.
 
-Cancellation is ordered atomically against publication. Cancellation that wins
-can terminate uncertain progress; a published result is preserved, with late
-cancellation reflected at transfer. Future-drop cancellation has no partial
-diagnostics.
+On-demand and future-drop cancellation are not offered by the native API.
+The driver's end-to-end timeout bounds execution and preserves any attached
+partial diagnostics in the error completion. A wait timeout does not affect
+admitted work or cursor progress.
 
 Free is non-blocking and does not cancel admitted work, which retains strong
 references through completion. Callers synchronize raw-handle release against

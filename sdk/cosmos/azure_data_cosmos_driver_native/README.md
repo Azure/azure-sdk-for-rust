@@ -183,13 +183,13 @@ Bound that buffering in the host SDK. Capture and associate supported checkpoint
 with page boundaries before advancing, and persist only the token matching
 application-consumed progress. Native automatic prefetch/polling is not performed.
 
-Cancellation that wins before publication terminates execution conservatively;
-late cancellation preserves the result and sets `was_cancel_requested`.
-Free is non-blocking and does not cancel admitted work. Synchronize raw handle
+On-demand cancellation is not supported; configure the operation's end-to-end
+timeout to bound execution. Free is non-blocking and does not cancel admitted work. Synchronize raw handle
 Free against new calls. Queue shutdown permits admitted work to drain, whereas
 queue Free abandons undelivered results and makes affected cursors unusable.
 Use `cosmos_operation_handle_status` to observe delivery loss even without a
-completion. Partial cancellation diagnostics remain a separate unsupported feature.
+completion. Successful pages and driver errors, including timeouts, expose borrowed
+diagnostics through `common.diagnostics`, valid until the cursor completion is freed.
 
 **Legacy migration:** existing ABI layouts are unchanged, but one-shot feed
 submission now returns an explicit error for unsupported checkpoints or Items
@@ -282,8 +282,8 @@ below for the production-shape guidance.
 > stores `_azsdkPatchTracking` on the item. Passing NULL/0 for
 > `patch_tracking_id` generates an ID for the invocation. Retrieve the effective
 > UUID from `cosmos_completion_patch_tracking_id`, then persist and reuse it for
-> application retries. Cancelled completions also expose the resolved ID because
-> the wrapper generates it before starting the driver operation. Entries use a
+> application retries. The wrapper resolves the ID before starting the driver
+> operation, so it is available on the completion regardless of outcome. Entries use a
 > 5-minute retention window by default;
 > `patch_tracking_retention_seconds` configures a positive whole-second window.
 > The default capacity is 1024; when full, the oldest entry is evicted. Duplicate
@@ -424,7 +424,6 @@ internal static class Cosmos
         public int     outcome;
         public int     status;
         public IntPtr  user_data;
-        public byte    was_cancel_requested;
         public ushort  http_status_code;
         public byte    is_from_wire;
         public IntPtr  message;
@@ -727,11 +726,9 @@ public final class CosmosSample {
         JAVA_INT.withName("outcome"),
         JAVA_INT.withName("status"),
         JAVA_LONG.withName("user_data"),
-        JAVA_BYTE.withName("was_cancel_requested"),
-        MemoryLayout.paddingLayout(1),
         JAVA_SHORT.withName("http_status_code"),
         JAVA_BYTE.withName("is_from_wire"),
-        MemoryLayout.paddingLayout(3),
+        MemoryLayout.paddingLayout(5),
         ADDRESS.withName("message"),
         ADDRESS.withName("next_continuation"),
         ADDRESS.withName("backtrace"),
@@ -1296,7 +1293,6 @@ class CosmosCompletion(ctypes.Structure):
         ("outcome", ctypes.c_int32),
         ("status", ctypes.c_int32),
         ("user_data", intptr_t),
-        ("was_cancel_requested", ctypes.c_uint8),
         ("http_status_code", ctypes.c_uint16),
         ("is_from_wire", ctypes.c_uint8),
         ("message", c_char_p),
@@ -1514,9 +1510,21 @@ if __name__ == "__main__":
    `cosmos_operation_request_t.body` / `.body_len`.
    Bytes are **copied** before the submit call returns; callers may release
    their source buffer immediately.
-6. **Diagnostics-on-error** is currently only available via the rich
-   `cosmos_error_t` on `outcome == ERROR` completions. The success-path
-   `cosmos_response_diagnostics` accessor is a planned follow-up.
+6. **Diagnostics on every completion.** When an operation produces driver
+   diagnostics, the completion's `diagnostics` field points at an opaque
+   `cosmos_diagnostics_t` owned by the completion (NULL when none are
+   available). It is populated on success and on errors that carry
+   diagnostics — including timeouts — and stays valid until the completion is
+   freed; do not free it separately. Read it with the NULL-safe
+   `cosmos_diagnostics_*` accessors: scalar rollups
+   (`total_request_charge`, `total_elapsed_micros`, `request_count`),
+   operation-level status (`is_completed`, `is_failure`),
+   the `iter_regions_contacted` / `iter_attempts` visitors (per-attempt
+   endpoint, region, status + sub-status, latency, and RU), and a borrowed
+   JSON snapshot via `to_json` (which takes a verbosity selector). Under a
+   retry storm the per-attempt list can be a compacted subset — `is_compacted`
+   / `retained_request_count` report that, while `request_count` and
+   `total_request_charge` stay exact.
 7. **Single-runtime caching.** Drivers are cached by endpoint URL on the
    `cosmos_runtime_t` that created them. Multiple `cosmos_runtime_t`
    instances do **not** share their caches — see

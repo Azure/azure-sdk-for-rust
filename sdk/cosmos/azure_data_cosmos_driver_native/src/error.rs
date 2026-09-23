@@ -170,8 +170,6 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientImdsHttpClientConstructionFailed = 20157,
     /// `CLIENT_IMDS_REQWEST_FEATURE_REQUIRED` (20158).
     CosmosSubStatusClientImdsReqwestFeatureRequired = 20158,
-    /// `CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED` (20159).
-    CosmosSubStatusClientPartitionKeyRangeCacheRequired = 20159,
     /// `CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT` (20200).
     CosmosSubStatusClientContinuationTokenFetchInFlight = 20200,
     /// `CLIENT_TOPOLOGY_PROVIDER_MISSING` (20201).
@@ -228,7 +226,9 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientFfiQueueShutdown = 20358,
     /// `CLIENT_FFI_QUEUE_FULL` (20359).
     CosmosSubStatusClientFfiQueueFull = 20359,
-    /// `CLIENT_FFI_OPERATION_CANCELLED` (20360).
+    /// `CLIENT_FFI_OPERATION_CANCELLED` (20360). Reserved and unused: it
+    /// mirrors the driver constant, but no wrapper path produces it. The
+    /// value is kept fixed for future use.
     CosmosSubStatusClientFfiOperationCancelled = 20360,
     /// `CLIENT_FFI_RUNTIME_BUILD_FAILED` (20361).
     CosmosSubStatusClientFfiRuntimeBuildFailed = 20361,
@@ -329,7 +329,6 @@ const _: () = {
         CosmosSubStatusClientRequestUrlMissingKnownPort => CLIENT_REQUEST_URL_MISSING_KNOWN_PORT,
         CosmosSubStatusClientImdsHttpClientConstructionFailed => CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED,
         CosmosSubStatusClientImdsReqwestFeatureRequired => CLIENT_IMDS_REQWEST_FEATURE_REQUIRED,
-        CosmosSubStatusClientPartitionKeyRangeCacheRequired => CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED,
         CosmosSubStatusClientContinuationTokenFetchInFlight => CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT,
         CosmosSubStatusClientTopologyProviderMissing => CLIENT_TOPOLOGY_PROVIDER_MISSING,
         CosmosSubStatusClientDriverNotInitialized => CLIENT_DRIVER_NOT_INITIALIZED,
@@ -404,7 +403,9 @@ pub(crate) enum CosmosErrorCode {
     CosmosErrorCodeTooManyPartitionKeyComponents,
     /// An account endpoint URL or credential could not be parsed.
     CosmosErrorCodeInvalidAccountReference,
-    /// An operation was cancelled before it completed.
+    /// Reserved and unused. No wrapper path produces this. The variant and its
+    /// `(408, 20360)` packed status are kept fixed for future use.
+    #[allow(dead_code, reason = "reserved slot kept fixed for ABI stability")]
     CosmosErrorCodeOperationCancelled,
     /// A submit targeted a completion queue that was already shut down.
     CosmosErrorCodeQueueShutdown,

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{io, sync::Arc};
+use std::{io, str::FromStr, sync::Arc};
 
 use axum::{
     body::{to_bytes, Body},
@@ -12,7 +12,9 @@ use axum::{
     Json, Router,
 };
 use azure_core::http::{Method, Request as CosmosRequest};
-use azure_data_cosmos_driver::in_memory_emulator::InMemoryEmulatorHttpClient;
+use azure_data_cosmos_driver::{
+    in_memory_emulator::InMemoryEmulatorHttpClient, options::ReadConsistencyStrategy,
+};
 use serde_json::json;
 use tokio::net::TcpListener;
 use url::Url;
@@ -74,18 +76,27 @@ async fn execute(
     state: GatewayState,
     request: Request,
 ) -> Result<Response<Body>, (StatusCode, String)> {
-    let cosmos_request = into_cosmos_request(request, &state.base_url).await?;
+    let cosmos_request =
+        into_cosmos_request_with_metrics(request, &state.base_url, Some(&state.metrics)).await?;
     let response = state
         .emulator
         .execute_request(&cosmos_request)
         .await
         .map_err(internal_error)?;
-    into_http_response(response).await
+    into_http_response_with_metrics(response, Some(&state.metrics)).await
 }
 
 pub(crate) async fn into_cosmos_request(
     request: Request,
     base_url: &Url,
+) -> Result<CosmosRequest, (StatusCode, String)> {
+    into_cosmos_request_with_metrics(request, base_url, None).await
+}
+
+async fn into_cosmos_request_with_metrics(
+    request: Request,
+    base_url: &Url,
+    metrics: Option<&HostMetrics>,
 ) -> Result<CosmosRequest, (StatusCode, String)> {
     let (parts, body) = request.into_parts();
     let method = parts
@@ -109,6 +120,24 @@ pub(crate) async fn into_cosmos_request(
     let bytes = to_bytes(body, MAX_REQUEST_BODY_SIZE)
         .await
         .map_err(|error| (StatusCode::PAYLOAD_TOO_LARGE, error.to_string()))?;
+    if let Some(metrics) = metrics {
+        let negotiated = parts
+            .headers
+            .get("x-ms-cosmos-supported-serialization-formats")
+            .and_then(|value| value.to_str().ok())
+            .is_some_and(|value| {
+                value
+                    .split(',')
+                    .any(|format| format.trim().eq_ignore_ascii_case("CosmosBinary"))
+            });
+        metrics.record_binary_request(negotiated, bytes.first() == Some(&0x80));
+        let strategy = parts
+            .headers
+            .get("x-ms-cosmos-read-consistency-strategy")
+            .and_then(|value| value.to_str().ok())
+            .and_then(|value| ReadConsistencyStrategy::from_str(value).ok());
+        metrics.record_read_consistency_strategy(strategy);
+    }
 
     let mut cosmos_request = CosmosRequest::new(url, method);
     // `azure_core::http::headers::Headers` is backed by a map keyed on header
@@ -134,10 +163,20 @@ pub(crate) async fn into_cosmos_request(
 pub(crate) async fn into_http_response(
     response: azure_core::http::AsyncRawResponse,
 ) -> Result<Response<Body>, (StatusCode, String)> {
+    into_http_response_with_metrics(response, None).await
+}
+
+async fn into_http_response_with_metrics(
+    response: azure_core::http::AsyncRawResponse,
+    metrics: Option<&HostMetrics>,
+) -> Result<Response<Body>, (StatusCode, String)> {
     let response = response
         .try_into_raw_response()
         .await
         .map_err(internal_error)?;
+    if let Some(metrics) = metrics {
+        metrics.record_binary_response(response.body().first() == Some(&0x80));
+    }
 
     let mut builder = Response::builder().status(u16::from(response.status()));
     for (name, value) in response.headers().iter() {

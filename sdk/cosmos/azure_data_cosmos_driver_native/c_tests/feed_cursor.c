@@ -296,8 +296,53 @@ cleanup:
     return result;
 }
 
+static int test_diagnostics_lifetime(void) {
+    int result = TEST_PASS;
+    fixture f = {0};
+    cosmos_cursor_t *cursor = NULL;
+    cosmos_cursor_completion_t *page = NULL;
+    char *saved = NULL;
+    for (unsigned mode = 1; mode <= 2; ++mode) {
+        REQUIRE(fixture_create(&f, 1), "scripted diagnostics fixture");
+        cosmos_cursor_request_t request;
+        cosmos_cursor_request_init(&request);
+        request.change_feed_mode = mode;
+        request.start_from = 1;
+        request.operation.container = f.container;
+        cursor = open_cursor(&f, &request);
+        REQUIRE(cursor, "open change feed for diagnostics");
+        page = receive(&f, cosmos_cursor_next_submit(cursor, 0, NULL));
+        REQUIRE(page, "completion delivered");
+        ASSERT(COSMOS_STATUS_HTTP(page->common.status) == (mode == 1 ? 0 : 400),
+            "success or AVAD service rejection");
+        const cosmos_diagnostics_t *diagnostics = page->common.diagnostics;
+        REQUIRE(diagnostics, "success and error completions carry diagnostics");
+        const uint8_t *json = NULL;
+        size_t len = 0;
+        REQUIRE(!cosmos_diagnostics_to_json(diagnostics,
+            cosmos_diagnostics_verbosity_t_DETAILED, &json, &len), "render diagnostics");
+        REQUIRE(json && len, "nonempty diagnostics JSON");
+        saved = text_copy(json, len);
+        cosmos_cursor_free(cursor); cursor = NULL;
+        fixture_free(&f); memset(&f, 0, sizeof(f));
+        ASSERT(cosmos_diagnostics_is_completed(diagnostics), "completed diagnostics survive cursor free");
+        ASSERT(cosmos_diagnostics_is_failure(diagnostics) == (mode == 2), "failure state retained");
+        ASSERT(cosmos_diagnostics_request_count(diagnostics) > 0, "attempts retained");
+        ASSERT(memcmp(saved, json, len) == 0, "borrowed JSON survives all other owners");
+        free(saved); saved = NULL;
+        cosmos_cursor_completion_free(page); page = NULL;
+    }
+cleanup:
+    free(saved);
+    cosmos_cursor_completion_free(page);
+    cosmos_cursor_free(cursor);
+    fixture_free(&f);
+    return result;
+}
+
 TEST_SUITE_BEGIN("feed_cursor")
 TEST_REGISTER(populated_queries)
 TEST_REGISTER(read_feeds)
 TEST_REGISTER(change_feeds)
+TEST_REGISTER(diagnostics_lifetime)
 TEST_SUITE_END("feed_cursor")

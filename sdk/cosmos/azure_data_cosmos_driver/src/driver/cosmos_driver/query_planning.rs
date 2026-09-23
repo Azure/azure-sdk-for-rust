@@ -31,26 +31,6 @@ impl From<crate::query::local_plan_adapter::ProviderResolution> for ResolvedQuer
     }
 }
 
-/// Returns an empty resolution when local planning proves topology is unnecessary.
-pub(super) fn try_resolve_without_topology(
-    container: &ContainerReference,
-    operation: &CosmosOperation,
-    plan_options: &PlanOptions,
-) -> Option<ResolvedQueryPlan> {
-    if plan_options.query_plan_mode == QueryPlanMode::GatewayOnly {
-        return None;
-    }
-
-    matches!(
-        crate::query::local_plan_adapter::try_local_plan(
-            operation.body(),
-            container.partition_key_definition(),
-        ),
-        Ok(crate::query::local_plan_adapter::ProviderResolution::Empty)
-    )
-    .then_some(ResolvedQueryPlan::Empty)
-}
-
 /// Resolves a query plan through the enabled providers in precedence order.
 pub(super) async fn resolve_query_plan(
     driver: &CosmosDriver,

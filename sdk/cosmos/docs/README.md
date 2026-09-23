@@ -65,22 +65,23 @@ directly by Rust source remain with their crates.
 
 ## Architecture decision records
 
-| Number | Decision |
-| --- | --- |
-| 0001 | SDK, driver, and native layering (`adrs/0001-sdk-driver-native-layering.md`) |
-| 0002 | Schema-agnostic driver boundary (`adrs/0002-schema-agnostic-driver-boundary.md`) |
-| 0003 | SDK requires the driver (`adrs/0003-sdk-requires-driver.md`) |
-| 0004 | Three-tier execution pipeline (`adrs/0004-three-tier-execution-pipeline.md`) |
-| 0005 | Flat native ABI data model (`adrs/0005-flat-native-abi-data-model.md`) |
-| 0006 | Internal HTTP transport (`adrs/0006-internal-http-transport.md`) |
-| 0007 | Cargo feature categories (`adrs/0007-cargo-feature-categories.md`) |
-| 0008 | Layered operation configuration (`adrs/0008-layered-operation-configuration.md`) |
-| 0009 | Environment variables are options (`adrs/0009-environment-variables-are-options.md`) |
-| 0010 | Metadata resolution and client construction (`adrs/0010-metadata-resolution-and-client-construction.md`) |
-| 0011 | Status/SubStatus error taxonomy (`adrs/0011-status-substatus-error-taxonomy.md`) |
-| 0012 | Regional endpoint routing (`adrs/0012-regional-endpoint-routing.md`) |
-| 0013 | Basic control-plane operations (`adrs/0013-basic-control-plane-operations.md`) |
-| 0014 | Diagnostics collection and emission (`adrs/0014-diagnostics-collection-and-emission.md`) |
+| Number | Decision | Status |
+| --- | --- | --- |
+| 0001 | SDK, driver, and native layering (`adrs/0001-sdk-driver-native-layering.md`) | Accepted |
+| 0002 | Schema-agnostic driver boundary (`adrs/0002-schema-agnostic-driver-boundary.md`) | Accepted |
+| 0003 | SDK requires the driver (`adrs/0003-sdk-requires-driver.md`) | Accepted |
+| 0004 | Three-tier execution pipeline (`adrs/0004-three-tier-execution-pipeline.md`) | Accepted |
+| 0005 | Flat native ABI data model (`adrs/0005-flat-native-abi-data-model.md`) | Accepted |
+| 0006 | Internal HTTP transport (`adrs/0006-internal-http-transport.md`) | Accepted |
+| 0007 | Cargo feature categories (`adrs/0007-cargo-feature-categories.md`) | Accepted |
+| 0008 | Layered operation configuration (`adrs/0008-layered-operation-configuration.md`) | Accepted |
+| 0009 | Environment variables are options (`adrs/0009-environment-variables-are-options.md`) | Accepted |
+| 0010 | Metadata resolution and client construction (`adrs/0010-metadata-resolution-and-client-construction.md`) | Superseded |
+| 0011 | Status/SubStatus error taxonomy (`adrs/0011-status-substatus-error-taxonomy.md`) | Accepted |
+| 0012 | Regional endpoint routing (`adrs/0012-regional-endpoint-routing.md`) | Accepted |
+| 0013 | Basic control-plane operations (`adrs/0013-basic-control-plane-operations.md`) | Accepted |
+| 0014 | Diagnostics collection and emission (`adrs/0014-diagnostics-collection-and-emission.md`) | Accepted |
+| 0015 | Eager partition topology loading (`adrs/0015-eager-partition-topology-loading.md`) | Accepted |
 
 ## Reports
 

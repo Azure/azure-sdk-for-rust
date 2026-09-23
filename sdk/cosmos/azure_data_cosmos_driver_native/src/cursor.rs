@@ -105,11 +105,9 @@ enum ResultData {
 
 struct Delivery {
     result: Result<ResultData, CosmosError>,
-    cancelled: bool,
     cursor: Option<Arc<CursorInner>>,
     op: Arc<OperationInner>,
     user_data: isize,
-    cancel_requested: bool,
 }
 
 impl Delivery {
@@ -129,8 +127,6 @@ impl Delivery {
     }
 
     fn transfer(self, include_details: bool) -> *mut CosmosCursorCompletion {
-        let cancel_requested =
-            self.cancel_requested || self.op.cancel_requested.load(Ordering::Acquire);
         let mut kind = 0;
         let mut body_kind = 0;
         let mut items = Vec::new();
@@ -172,14 +168,9 @@ impl Delivery {
                 }
                 PendingCompletion::ok_response(self.user_data, self.op, response, token)
             }
-            Err(error) if self.cancelled => {
-                drop(error);
-                PendingCompletion::cancelled(self.user_data, self.op)
-            }
             Err(error) => PendingCompletion::error(self.user_data, self.op, error, include_details),
         };
-        let mut common = pending.into_ffi();
-        common.was_cancel_requested = u8::from(cancel_requested);
+        let common = pending.into_ffi();
         let checkpoint = CosmosStringView {
             data: common.next_continuation.cast(),
             len: token_len,
@@ -268,19 +259,9 @@ impl CursorQueue {
         Ok(plan)
     }
 
-    fn publish(&self, mut delivery: Delivery) {
+    fn publish(&self, delivery: Delivery) {
         let mut queue = self.inner.lock_recover();
         let op = Arc::clone(&delivery.op);
-        let _publication = op.publication.lock_recover();
-        delivery.cancel_requested = op.cancel_requested.load(Ordering::Acquire);
-        // Order cancellation against publication, including the gap after future completion.
-        if delivery.cancel_requested && !delivery.cancelled {
-            delivery.result = Err(error(CosmosErrorCode::CosmosErrorCodeOperationCancelled));
-            delivery.cancelled = true;
-            if let Some(cursor) = &delivery.cursor {
-                cursor.fail(CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code());
-            }
-        }
         if queue.abandoned {
             queue.reserved -= 1;
             delivery.lost();
@@ -292,11 +273,7 @@ impl CursorQueue {
                 COSMOS_STATUS_SUCCESS,
             ),
             Err(err) => (
-                if delivery.cancelled {
-                    CosmosOperationHandleState::CosmosOperationHandleStateCancelled
-                } else {
-                    CosmosOperationHandleState::CosmosOperationHandleStateFailed
-                },
+                CosmosOperationHandleState::CosmosOperationHandleStateFailed,
                 CosmosStatusCode::from_driver_error(err),
             ),
         };
@@ -368,7 +345,6 @@ fn error(code: CosmosErrorCode) -> CosmosError {
         CosmosErrorCode::CosmosErrorCodeRepresentationUnsupported => {
             "The legacy response cannot represent all item buffers; use the retained cursor interface for feed results".into()
         }
-        CosmosErrorCode::CosmosErrorCodeOperationCancelled => "The cursor operation was cancelled".into(),
         CosmosErrorCode::CosmosErrorCodeCursorClosed => "The cursor is no longer usable".into(),
         CosmosErrorCode::CosmosErrorCodeDeliveryLost => {
             "The completion was not delivered; cursor progress can no longer be used safely".into()
@@ -479,15 +455,13 @@ pub extern "C" fn cosmos_cursor_open_submit(
                 }),
             })))
         };
-        let (result, cancelled) = run(work, &op).await;
+        let result = run(work).await;
         if let Some(cursor_queue) = &queue.cursor {
             cursor_queue.publish(Delivery {
                 result,
-                cancelled,
                 cursor: None,
                 op,
                 user_data,
-                cancel_requested: false,
             });
         }
     });
@@ -496,15 +470,11 @@ pub extern "C" fn cosmos_cursor_open_submit(
 
 async fn run(
     work: impl std::future::Future<Output = Result<ResultData, CosmosError>>,
-    op: &OperationInner,
-) -> (Result<ResultData, CosmosError>, bool) {
-    let work = std::panic::AssertUnwindSafe(work).catch_unwind();
-    tokio::pin!(work);
-    tokio::select! {
-        biased;
-        _ = op.cancel_notify.notified() => (Err(error(CosmosErrorCode::CosmosErrorCodeOperationCancelled)), true),
-        result = &mut work => (result.unwrap_or_else(|_| Err(error(CosmosErrorCode::CosmosErrorCodeInternalError))), false),
-    }
+) -> Result<ResultData, CosmosError> {
+    std::panic::AssertUnwindSafe(work)
+        .catch_unwind()
+        .await
+        .unwrap_or_else(|_| Err(error(CosmosErrorCode::CosmosErrorCodeInternalError)))
 }
 
 fn submit_cursor(
@@ -567,7 +537,7 @@ fn submit_cursor(
                 .await
                 .map(|page| page.map_or(ResultData::End, |page| ResultData::Page(Box::new(page))))
         };
-        let (result, cancelled) = run(work, &op).await;
+        let result = run(work).await;
         {
             let mut state = cursor.state.lock_recover();
             let unsupported = checkpoint
@@ -590,11 +560,9 @@ fn submit_cursor(
         if let Some(cursor_queue) = &queue.cursor {
             cursor_queue.publish(Delivery {
                 result,
-                cancelled,
                 cursor: Some(cursor),
                 op,
                 user_data,
-                cancel_requested: false,
             });
         }
     });

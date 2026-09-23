@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added `CosmosTracingHandlerBuilder::build_with_tracer` for binding the handler to an explicit OpenTelemetry tracer. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Added per-query `QueryOptions::max_buffered_query_window` and `with_max_buffered_query_window` to configure the maximum global OFFSET plus effective take for client-buffered queries (default 1000, no opt-out). ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Extended Cosmos binary JSON encoding to cross-partition `DISTINCT` query pages. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 - Added `QueryPlanMode::{LocalPreferred, GatewayOnly}`, allowing applications to force Gateway query planning for an individual query as a livesite mitigation. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
@@ -12,13 +13,18 @@
 
 ### Breaking Changes
 
+- `CosmosTracingHandler` is now constructed exclusively through `CosmosTracingHandler::builder()`. The `new`, `with_thresholds`, and `with_thresholds_and_rate_limit` constructors and the `Default` implementation were removed; configure the equivalent values with the builder and call `build` or `build_with_tracer`. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Moved `query_plan_mode` from `OperationOptions` to per-query `QueryOptions`; removed client/runtime defaults and environment settings, including the query-plan-mode override. The default remains `LocalPreferred`. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Unordered cross-partition DISTINCT and non-streaming ORDER BY require finite global TOP/LIMIT with OFFSET plus effective take within the configured maximum; missing bounds, excess windows, and overflow fail with 400/20125. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Unified client-buffered continuation errors under 400/20124, retaining the shape-specific constants as aliases; finite-window admission moved from 20126 to 20125 and non-streaming window/storage errors from 20127 to 20126. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Reviewed public API type consistency for time durations and integer sizes. `ResponseHeaders::server_duration_ms()` and `retry_after_ms()` are replaced by `server_duration()` and `retry_after()`, both returning `Option<Duration>`; `TransactionalBatchOperationResult::retry_after_milliseconds()` and `DistributedTransactionResponse::retry_after_ms()` are similarly replaced by `retry_after() -> Option<Duration>`. `ThroughputProperties::manual`, `autoscale`, `throughput()`, and `autoscale_maximum()` now use `u64` instead of the platform-dependent `usize`, allowing RU/s values above 4 billion; `autoscale_increment()` now uses `u32` because it returns a percentage. ([#5204](https://github.com/Azure/azure-sdk-for-rust/pull/5204))
+- Replaced `CosmosClientBuilder::with_partition_key_range_cache_enabled` with `PartitionFailoverOptionsBuilder::with_partition_topology_cache_mode`; partition topology caching can no longer be disabled, and `PartitionTopologyCacheMode::{Eager, Lazy}` controls only when the cache is loaded. ([#5319](https://github.com/Azure/azure-sdk-for-rust/pull/5319))
+- Container resolution now loads the complete partition topology by default and fails if it cannot load a valid routing map. `PartitionTopologyCacheMode::Lazy` preserves the previous first-use loading behavior as a compatibility escape hatch. ([#5319](https://github.com/Azure/azure-sdk-for-rust/pull/5319))
 
 ### Bugs Fixed
 
+- Change feed reads now work over Gateway 2.0 by forwarding incremental-mode and wire-format-version request metadata. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
+- Cosmos root spans now use the last retained request endpoint for their fallback `server.address`, matching the operation-duration metric when no SDK operation context supplies an address. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Added partition-merge support and preserved point-in-time change feed filtering across merged partitions by retaining `If-Modified-Since` alongside continuations on Gateway V1 and Gateway V2. ([#4122](https://github.com/Azure/azure-sdk-for-rust/issues/4122))
 - Name-based container clients now automatically recover when a container is deleted and recreated. ([#5219](https://github.com/Azure/azure-sdk-for-rust/pull/5219))
 

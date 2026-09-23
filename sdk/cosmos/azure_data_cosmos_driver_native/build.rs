@@ -140,6 +140,11 @@ fn generate_c_header() {
         ("FeedRange".into(), "feed_range_t".into()),
         ("FeedRangeHandle".into(), "feed_range_t".into()),
         ("DiagnosticsContext".into(), "diagnostics_t".into()),
+        ("CosmosDiagnostics".into(), "diagnostics_t".into()),
+        (
+            "CosmosDiagnosticsVerbosity".into(),
+            "diagnostics_verbosity_t".into(),
+        ),
         ("CompletionQueue".into(), "completion_queue_t".into()),
         (
             "CompletionQueueInner".into(),

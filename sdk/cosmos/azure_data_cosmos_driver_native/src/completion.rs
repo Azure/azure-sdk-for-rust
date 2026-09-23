@@ -21,8 +21,10 @@
 //! validated end-to-end independently of the real submit pipeline.
 
 use std::collections::VecDeque;
-use std::ffi::{c_char, c_void, CString};
-use std::sync::atomic::{AtomicBool, AtomicI32, AtomicU8, Ordering};
+#[cfg(test)]
+use std::ffi::c_void;
+use std::ffi::{c_char, CString};
+use std::sync::atomic::{AtomicI32, AtomicU8, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
@@ -31,8 +33,10 @@ use azure_data_cosmos_driver::models::{
     ContainerReference as DriverContainerReference, CosmosResponse, CosmosResponseHeaders,
     ResponseBody,
 };
+use azure_data_cosmos_driver::DiagnosticsContext;
 
 use crate::container_ref::ContainerRefHandle;
+use crate::diagnostics::CosmosDiagnostics;
 use crate::driver::DriverHandle;
 use crate::error::{CosmosErrorCode, CosmosStatusCode, COSMOS_STATUS_SUCCESS};
 use crate::response_header::{
@@ -60,8 +64,9 @@ pub enum CosmosCompletionOutcome {
     /// message, …) are populated (message/detail only when the queue opted in
     /// via `include_error_details`).
     CosmosCompletionOutcomeError = 1,
-    /// The operation was cancelled via [`cosmos_operation_handle_cancel`] or
-    /// [`cosmos_completion_queue_shutdown`].
+    /// Reserved and unused. On-demand cancellation is not supported, so no
+    /// operation produces this outcome. The value is kept fixed so it can be
+    /// reused if cancellation is added in the future.
     CosmosCompletionOutcomeCancelled = 2,
     /// Reserved sentinel for any non-zero outcome introduced after this spec.
     CosmosCompletionOutcomeUnknown = 255,
@@ -81,7 +86,9 @@ pub enum CosmosOperationHandleState {
     CosmosOperationHandleStateCompleted = 1,
     /// Completion was posted with `outcome == CosmosCompletionOutcomeError`.
     CosmosOperationHandleStateFailed = 2,
-    /// Completion was posted with `outcome == CosmosCompletionOutcomeCancelled`.
+    /// Reserved and unused. No completion drives a handle into this state.
+    /// The value is kept fixed so it can be reused if cancellation is added
+    /// in the future.
     CosmosOperationHandleStateCancelled = 3,
 }
 
@@ -138,19 +145,7 @@ impl CosmosCompletionQueueState {
 pub(crate) struct OperationInner {
     /// Lifecycle state — encoded as one of [`CosmosOperationHandleState`].
     pub(crate) state: AtomicU8,
-    /// True once `cosmos_operation_handle_cancel` has been called on any
-    /// handle pointing at this inner. The submit pipeline's
-    /// `enqueue_into_inner` reads it to set `was_cancel_requested` on the
-    /// published completion (so the receive loop can tell "cancel won" from
-    /// "cancel lost the race").
-    pub(crate) cancel_requested: AtomicBool,
-    pub(crate) publication: Mutex<()>,
     pub(crate) terminal_status: AtomicI32,
-    /// Wakes the submit task's `tokio::select!` cancel branch. A cancel
-    /// stores a permit via `notify_one`, so a cancel that races ahead of the
-    /// task starting to wait is still observed (the permit is consumed on the
-    /// first poll of `notified()`).
-    pub(crate) cancel_notify: tokio::sync::Notify,
     patch_tracking_id: OnceLock<CString>,
 }
 
@@ -160,10 +155,7 @@ impl OperationInner {
             state: AtomicU8::new(
                 CosmosOperationHandleState::CosmosOperationHandleStateInFlight as u8,
             ),
-            cancel_requested: AtomicBool::new(false),
-            publication: Mutex::new(()),
             terminal_status: AtomicI32::new(0),
-            cancel_notify: tokio::sync::Notify::new(),
             patch_tracking_id: OnceLock::new(),
         }
     }
@@ -259,7 +251,7 @@ impl OperationHandle {
 /// non-header signals live inline:
 ///
 /// - The completion / operation lifecycle (outcome, coarse status,
-///   user data, cancellation flag).
+///   user data).
 /// - The wire HTTP status code and error metadata (`http_status_code`,
 ///   `is_from_wire`, `message`, `backtrace`) — none of which appear as
 ///   response headers.
@@ -281,8 +273,6 @@ pub struct CosmosCompletion {
     /// The host's opaque pointer-sized cookie, round-tripped verbatim from
     /// submit; the wrapper never dereferences it.
     pub user_data: isize,
-    /// `1` iff cancellation was observed before the completion posted.
-    pub was_cancel_requested: u8,
     /// Wire HTTP status code, or `0` when there is no wire response.
     pub http_status_code: u16,
     /// `1` iff an error completion originated from a service wire response.
@@ -330,8 +320,13 @@ pub struct CosmosCompletion {
     pub body: *const u8,
     /// Number of bytes addressable from `body`.
     pub body_len: usize,
-    /// Reserved for a future diagnostics handle; always NULL for now.
-    pub diagnostics: *mut c_void,
+    /// Borrowed read-only diagnostics handle for the operation (request
+    /// charge, elapsed time, attempt count, regions contacted, per-attempt
+    /// timeline), or NULL when the driver attached none. Populated on success
+    /// and on errors that carry diagnostics. Valid until the completion is
+    /// freed; do not free separately. Read via the
+    /// [`cosmos_diagnostics_*`](crate::diagnostics) accessors.
+    pub diagnostics: *const CosmosDiagnostics,
     /// Owned driver handle for a `get_or_create` completion, else NULL. Detach
     /// with [`cosmos_completion_take_driver`] or let the free reclaim it.
     pub driver: *mut DriverHandle,
@@ -358,6 +353,7 @@ pub struct CosmosCompletionBacking {
     next_continuation: Option<CString>,
     backtrace: Option<CString>,
     patch_tracking_id: Option<CString>,
+    diagnostics: Option<CosmosDiagnostics>,
 }
 
 /// Internal queue item: owns every allocation a completion needs before it is
@@ -367,7 +363,6 @@ pub(crate) struct PendingCompletion {
     outcome: CosmosCompletionOutcome,
     status: CosmosStatusCode,
     user_data: isize,
-    was_cancel_requested: bool,
     http_status_code: u16,
     is_from_wire: bool,
     message: Option<CString>,
@@ -376,6 +371,7 @@ pub(crate) struct PendingCompletion {
     patch_tracking_id: Option<CString>,
     headers: OwnedResponseHeaders,
     response: Option<CosmosResponse>,
+    diagnostics: Option<Arc<DiagnosticsContext>>,
     driver: Option<Arc<DriverHandle>>,
     container: Option<DriverContainerReference>,
     /// Producing operation's shared state (advanced to a terminal state at
@@ -419,7 +415,6 @@ impl PendingCompletion {
             outcome,
             status,
             user_data,
-            was_cancel_requested: false,
             http_status_code: 0,
             is_from_wire: false,
             message: None,
@@ -428,6 +423,7 @@ impl PendingCompletion {
             patch_tracking_id,
             headers: OwnedResponseHeaders::empty(),
             response: None,
+            diagnostics: None,
             driver: None,
             container: None,
             op_inner,
@@ -472,6 +468,7 @@ impl PendingCompletion {
                 effective_headers.substatus = Some(sub);
             }
             p.headers = synthesize_response_headers(&effective_headers);
+            p.diagnostics = Some(resp.diagnostics());
             p.response = Some(resp);
         }
         p
@@ -527,6 +524,11 @@ impl PendingCompletion {
         p.patch_tracking_id = err
             .patch_tracking_id()
             .and_then(|id| to_cstring(id.to_string()));
+        // Diagnostics are operational telemetry, not error-detail content, so
+        // they are attached whenever the driver produced them regardless of
+        // `include_details` — this is what lets bounded-runtime errors (e.g. an
+        // end-to-end timeout) still carry their partial diagnostics.
+        p.diagnostics = err.diagnostics();
         if include_details {
             p.http_status_code = u16::from(err.status().status_code());
             p.is_from_wire = err.is_from_wire();
@@ -564,16 +566,6 @@ impl PendingCompletion {
         p
     }
 
-    /// Cancelled completion.
-    pub(crate) fn cancelled(user_data: isize, op_inner: Arc<OperationInner>) -> Self {
-        Self::base(
-            CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
-            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code(),
-            user_data,
-            op_inner,
-        )
-    }
-
     /// Moves the owned allocations into a heap-stable backing box and returns
     /// the `#[repr(C)]` completion with borrowed pointers into it plus any
     /// owned side-payload handles. `op_inner` is dropped here (its terminal
@@ -582,7 +574,6 @@ impl PendingCompletion {
         let outcome = self.outcome;
         let status = self.status;
         let user_data = self.user_data;
-        let was_cancel_requested = u8::from(self.was_cancel_requested);
         let http_status_code = self.http_status_code;
         let is_from_wire = u8::from(self.is_from_wire);
 
@@ -600,6 +591,7 @@ impl PendingCompletion {
             next_continuation: self.next_continuation,
             backtrace: self.backtrace,
             patch_tracking_id: self.patch_tracking_id,
+            diagnostics: self.diagnostics.map(CosmosDiagnostics::new),
         });
 
         // Borrowed pointers into the (now heap-stable) backing box.
@@ -611,12 +603,15 @@ impl PendingCompletion {
             .response
             .as_ref()
             .map_or((std::ptr::null(), 0), body_view);
+        let diagnostics = backing
+            .diagnostics
+            .as_ref()
+            .map_or(std::ptr::null(), |d| d as *const CosmosDiagnostics);
 
         CosmosCompletion {
             outcome,
             status,
             user_data,
-            was_cancel_requested,
             http_status_code,
             is_from_wire,
             message,
@@ -626,7 +621,7 @@ impl PendingCompletion {
             headers_len,
             body,
             body_len,
-            diagnostics: std::ptr::null_mut(),
+            diagnostics,
             driver,
             container,
             backing: Box::into_raw(backing),
@@ -661,8 +656,8 @@ impl CosmosCompletion {
 /// The returned NUL-terminated UTF-8 string is borrowed from `completion` and
 /// remains valid until that completion is freed. Returns NULL for non-PATCH
 /// operations, untracked retry-safe PATCH operations, or an invalid completion
-/// pointer. For tracked PATCH operations, the ID is also available on cancelled
-/// completions because it is resolved before execution begins.
+/// pointer. For tracked PATCH operations, the ID is resolved before execution
+/// begins, so it is available on the completion regardless of outcome.
 #[no_mangle]
 pub extern "C" fn cosmos_completion_patch_tracking_id(
     completion: *const CosmosCompletion,
@@ -915,16 +910,10 @@ impl CompletionQueue {
     /// `cosmos_completion_queue_free` from the producer side.
     pub(crate) fn enqueue_into_inner(
         inner: &Arc<CompletionQueueInner>,
-        mut c: PendingCompletion,
+        c: PendingCompletion,
     ) -> CosmosErrorCode {
         let mut guard = inner.inner.lock_recover();
 
-        // If the producer-side handle's cancel flag is set, mark the
-        // completion so the receive loop can distinguish "cancel won" from
-        // "cancel lost the race" per spec section 3.6.1.
-        if c.op_inner.cancel_requested.load(Ordering::Acquire) {
-            c.was_cancel_requested = true;
-        }
         // The terminal operation-handle state this completion implies. It is
         // stored on *every* path below \u2014 whether the completion is delivered
         // or rejected \u2014 so the op handle never stays stuck `IN_FLIGHT`: a host
@@ -1023,9 +1012,15 @@ pub extern "C" fn cosmos_completion_queue_create(
 
 /// Free a completion queue. NULL is a no-op.
 ///
-/// The "blocks until in-flight ops drain" contract from spec section 3.1.2 is
-/// observable here: if anyone enqueued completions but never drained, this
-/// drops them (and thus their pending allocations).
+/// Does **not** block or wait for in-flight operations — it drops the
+/// producer-side handle immediately. In-flight submissions keep the shared
+/// queue state alive through their own `Arc`s and still run to completion
+/// (there is no cancellation), but once the handle is freed their completions,
+/// and the diagnostics they carry, can no longer be observed and are dropped
+/// with any pending allocations. Hosts that must observe every completion first
+/// call `cosmos_completion_queue_shutdown` and drain via
+/// `cosmos_completion_queue_wait` until `cosmos_completion_queue_state` reports
+/// `DRAINED`, then free.
 #[no_mangle]
 pub extern "C" fn cosmos_completion_queue_free(queue: *mut CompletionQueue) {
     if queue.is_null() {
@@ -1356,31 +1351,6 @@ pub extern "C" fn cosmos_completion_queue_state(
 // FFI: cosmos_operation_handle_*
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Request cooperative cancellation. Idempotent and non-blocking.
-///
-/// Sets the cancel-requested flag and wakes the submit task's
-/// `tokio::select!` cancel branch (via a stored `Notify` permit, so a cancel
-/// that races ahead of the task is still observed). The task then drops the
-/// in-flight driver future and posts a `CANCELLED` completion. If the
-/// operation already produced a completion before the cancel was observed,
-/// the cancel is a no-op for the outcome but is still reflected in
-/// `cosmos_completion_was_cancel_requested`.
-#[no_mangle]
-pub extern "C" fn cosmos_operation_handle_cancel(op: *mut OperationHandle) {
-    // Clone the `Arc<OperationInner>` so the inner state survives a concurrent
-    // `cosmos_operation_handle_free` (matching the rest of the crate's
-    // ownership model). A borrowed reference would leave a use-after-free
-    // window if another thread freed the handle mid-call.
-    let Some(inner) = OperationHandle::inner_arc(op) else {
-        return;
-    };
-    let _publication = inner.publication.lock_recover();
-    inner.cancel_requested.store(true, Ordering::Release);
-    // Store a permit so the submit task observes the cancel even if it has
-    // not yet reached its `notified()` await point.
-    inner.cancel_notify.notify_one();
-}
-
 /// Terminal packed status, including delivery loss after queue abandonment.
 /// Zero means no error observed; inspect the lifecycle separately for completion.
 #[no_mangle]
@@ -1396,16 +1366,16 @@ pub extern "C" fn cosmos_operation_handle_status(op: *const OperationHandle) -> 
 pub extern "C" fn cosmos_operation_handle_state(
     op: *const OperationHandle,
 ) -> CosmosOperationHandleState {
-    // Clone the `Arc<OperationInner>` (rather than borrowing) for the same
-    // survive-concurrent-free reason as `cosmos_operation_handle_cancel`.
+    // Clone the `Arc<OperationInner>` (rather than borrowing) so the inner
+    // state survives a concurrent `cosmos_operation_handle_free` from another
+    // thread; a borrowed reference would leave a use-after-free window.
     let Some(inner) = OperationHandle::inner_arc(op) else {
         return CosmosOperationHandleState::CosmosOperationHandleStateInFlight;
     };
     CosmosOperationHandleState::from_u8(inner.state.load(Ordering::Acquire))
 }
 
-/// Free the FFI handle. Does NOT cancel the operation — call
-/// `cosmos_operation_handle_cancel` first if needed. NULL is a no-op.
+/// Free the FFI handle. NULL is a no-op.
 ///
 /// Drops this handle's `Arc` reference. If the completion record still holds
 /// its own reference, the inner operation state stays alive.
@@ -1486,12 +1456,10 @@ pub(crate) fn __test_only_enqueue_completion(
             });
             PendingCompletion::error(ud, op_inner, err, include_error)
         }
-        CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled => {
-            let mut p = PendingCompletion::cancelled(ud, op_inner);
-            p.status = status;
-            p
-        }
         other => {
+            // Non-error outcomes (Ok, and the reserved Cancelled / Unknown
+            // slots) reuse the OK shell with the outcome + status overridden
+            // so the ABI round-trip can still be exercised.
             let mut p = PendingCompletion::ok_response(ud, op_inner, None, None);
             p.outcome = other;
             p.status = status;
@@ -1697,7 +1665,48 @@ mod tests {
         );
         assert_eq!(c.user_data, token as isize);
         assert_eq!(c.status, COSMOS_STATUS_SUCCESS);
-        assert_eq!(c.was_cancel_requested, 0);
+        // Synthetic completions carry no driver diagnostics, so the borrowed
+        // handle must be NULL and inert (the accessors are NULL-safe).
+        assert!(c.diagnostics.is_null());
+
+        free_one(c);
+        cosmos_operation_handle_free(op);
+        cosmos_completion_queue_free(q);
+    }
+
+    #[test]
+    fn reserved_cancelled_outcome_round_trips_and_maps_handle_state() {
+        // On-demand cancellation is not supported, so no operation produces a
+        // Cancelled completion. The numeric value is still reserved: if a
+        // completion ever carries it, the ABI must round-trip the outcome and
+        // status verbatim and move the handle out of IN_FLIGHT. This locks in
+        // that the reserved outcome (2) and handle state (3) stay wired.
+        let q = fresh_queue(0, true);
+        let op = __test_only_create_operation_handle();
+        let status = CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code();
+        let code = __test_only_enqueue_completion(
+            q,
+            op,
+            CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
+            status,
+            std::ptr::null_mut(),
+            None,
+        );
+        assert_eq!(code, CosmosErrorCode::CosmosErrorCodeSuccess);
+
+        assert_eq!(
+            cosmos_operation_handle_state(op),
+            CosmosOperationHandleState::CosmosOperationHandleStateCancelled
+        );
+
+        let c = wait_one_ffi(q, 100).expect("a completion was delivered");
+        assert_eq!(
+            c.outcome,
+            CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled
+        );
+        assert_eq!(c.status, status);
+        let bits = c.status.0 as u32;
+        assert_eq!((bits >> 16, bits & 0xFFFF), (408, 20360));
 
         free_one(c);
         cosmos_operation_handle_free(op);
@@ -1830,41 +1839,6 @@ mod tests {
     }
 
     #[test]
-    fn cancel_flips_handle_state_and_completion_flag() {
-        let q = fresh_queue(0, true);
-        let op = __test_only_create_operation_handle();
-        // Cancel before enqueueing → completion should carry the
-        // was_cancel_requested flag.
-        cosmos_operation_handle_cancel(op);
-        __test_only_enqueue_completion(
-            q,
-            op,
-            CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
-            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code(),
-            std::ptr::null_mut(),
-            None,
-        );
-        let c = wait_one_ffi(q, 100).expect("completion delivered");
-        assert_eq!(
-            c.outcome,
-            CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled
-        );
-        assert_eq!(c.was_cancel_requested, 1);
-        let bits = c.status.0 as u32;
-        assert_eq!((bits >> 16, bits & 0xFFFF), (408, 20360));
-        assert_eq!(cosmos_operation_handle_status(op), c.status);
-        // The operation handle's state should reflect Cancelled.
-        assert_eq!(
-            cosmos_operation_handle_state(op),
-            CosmosOperationHandleState::CosmosOperationHandleStateCancelled
-        );
-
-        free_one(c);
-        cosmos_operation_handle_free(op);
-        cosmos_completion_queue_free(q);
-    }
-
-    #[test]
     fn legacy_handle_status_reports_errors_and_delivery_loss() {
         let q = fresh_queue(1, true);
         let op = __test_only_create_operation_handle();
@@ -1908,34 +1882,6 @@ mod tests {
         free_one(wait_one_ffi(q, 0).unwrap());
         cosmos_operation_handle_free(op);
         cosmos_operation_handle_free(rejected);
-        cosmos_completion_queue_free(q);
-    }
-
-    #[test]
-    fn cancel_lost_the_race_keeps_natural_outcome_with_flag() {
-        let q = fresh_queue(0, true);
-        let op = __test_only_create_operation_handle();
-        // Cancel arrives after a successful outcome was already chosen by
-        // the producer-side. The spec says was_cancel_requested = true,
-        // outcome = Ok. We exercise the same code path: cancel before
-        // enqueue with outcome = Ok.
-        cosmos_operation_handle_cancel(op);
-        __test_only_enqueue_completion(
-            q,
-            op,
-            CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
-            COSMOS_STATUS_SUCCESS,
-            std::ptr::null_mut(),
-            None,
-        );
-        let c = wait_one_ffi(q, 100).expect("completion delivered");
-        assert_eq!(
-            c.outcome,
-            CosmosCompletionOutcome::CosmosCompletionOutcomeOk
-        );
-        assert_eq!(c.was_cancel_requested, 1);
-        free_one(c);
-        cosmos_operation_handle_free(op);
         cosmos_completion_queue_free(q);
     }
 

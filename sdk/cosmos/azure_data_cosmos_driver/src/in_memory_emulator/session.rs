@@ -7,7 +7,8 @@
 //! Supports V2 vector-clock session tokens with the wire format:
 //! `{pkrangeId}:{version}#{globalLSN}#{regionId}={localLSN}`
 //!
-//! Also accepts V1 tokens (`{pkrangeId}:-1#{lsn}`) for backward compatibility.
+//! Also accepts simple V1 tokens (`{pkrangeId}:{lsn}`) and legacy V1 tokens
+//! (`{pkrangeId}:-1#{lsn}`) for backward compatibility.
 
 use std::collections::HashSet;
 use std::sync::Mutex;
@@ -28,7 +29,8 @@ pub(crate) struct LocalLsn(pub u64);
 /// Parsed session token for a single partition key range.
 ///
 /// V2 format: `{pkrange_id}:{version}#{global_lsn}#{region_id}={local_lsn}`
-/// V1 format: `{pkrange_id}:-1#{lsn}` (parsed as version=0, global_lsn=lsn)
+/// V1 formats: `{pkrange_id}:{lsn}` or `{pkrange_id}:-1#{lsn}` (both parsed as
+/// version=0, global_lsn=lsn)
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct SessionToken {
     pub pkrange_id: u32,
@@ -41,7 +43,7 @@ impl SessionToken {
     /// Parses a session token. Supports both V1 and V2 formats.
     ///
     /// V2: `"0:1#100#0=100"` → pkrange_id=0, version=1, global_lsn=100, region 0=100
-    /// V1: `"0:-1#5"` → pkrange_id=0, version=0, global_lsn=5, no regions
+    /// V1: `"0:5"` or `"0:-1#5"` → pkrange_id=0, version=0, global_lsn=5, no regions
     /// Convenience wrapper around `parse_detailed` for callers that don't
     /// care which segment failed.
     #[cfg(test)]
@@ -64,6 +66,18 @@ impl SessionToken {
             .parse::<u32>()
             .map_err(|_| InvalidPkRangeId(pkrange_str.to_string()))?;
 
+        if !rest.contains('#') {
+            let lsn = rest
+                .parse::<u64>()
+                .map_err(|_| InvalidV1Lsn(rest.to_string()))?;
+            return Ok(SessionToken {
+                pkrange_id,
+                version: 0,
+                global_lsn: lsn,
+                region_progress: vec![],
+            });
+        }
+
         let mut hash_parts = rest.split('#');
         let version_str = hash_parts.next().ok_or(MissingVersion)?;
 
@@ -83,8 +97,9 @@ impl SessionToken {
 
         // V2: version#globalLSN#region=lsn#...
         let version = version_str
-            .parse::<u64>()
-            .map_err(|_| InvalidVersion(version_str.to_string()))?;
+            .parse::<i64>()
+            .map_err(|_| InvalidVersion(version_str.to_string()))?
+            .max(0) as u64;
         let global_lsn_str = hash_parts.next().ok_or(MissingGlobalLsn)?;
         let global_lsn = global_lsn_str
             .parse::<u64>()
@@ -102,8 +117,9 @@ impl SessionToken {
                 .parse::<u64>()
                 .map_err(|_| InvalidRegionId(region_str.to_string()))?;
             let lsn = lsn_str
-                .parse::<u64>()
-                .map_err(|_| InvalidRegionLsn(lsn_str.to_string()))?;
+                .parse::<i64>()
+                .map_err(|_| InvalidRegionLsn(lsn_str.to_string()))?
+                .max(0) as u64;
             region_progress.push((region_id, lsn));
         }
 
@@ -305,6 +321,15 @@ mod tests {
     }
 
     #[test]
+    fn parse_simple_v1_token() {
+        let token = SessionToken::parse("0:5").unwrap();
+        assert_eq!(token.pkrange_id, 0);
+        assert_eq!(token.version, 0);
+        assert_eq!(token.global_lsn, 5);
+        assert!(token.region_progress.is_empty());
+    }
+
+    #[test]
     fn parse_v2_token() {
         let token = SessionToken::parse("0:1#100#0=100").unwrap();
         assert_eq!(token.pkrange_id, 0);
@@ -320,6 +345,15 @@ mod tests {
         assert_eq!(token.version, 3);
         assert_eq!(token.global_lsn, 50);
         assert_eq!(token.region_progress, vec![(0, 50), (1, 45)]);
+    }
+
+    #[test]
+    fn parse_v2_signed_no_progress_values() {
+        let token = SessionToken::parse("2:-2#50#0=50#1=-1").unwrap();
+        assert_eq!(token.pkrange_id, 2);
+        assert_eq!(token.version, 0);
+        assert_eq!(token.global_lsn, 50);
+        assert_eq!(token.region_progress, vec![(0, 50), (1, 0)]);
     }
 
     #[test]
