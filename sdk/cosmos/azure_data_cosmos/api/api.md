@@ -244,7 +244,6 @@ pub mod clients {
     impl CosmosClientBuilder {
         pub async fn build(self, account: AccountReference, routing_strategy: RoutingStrategy) -> crate::Result<CosmosClient>;
         pub fn new() -> Self;
-        pub fn register_throughput_control_group(self, group: ThroughputControlGroupOptions) -> crate::Result<Self>;
         pub fn with_backup_endpoints(self, endpoints: Vec<crate::AccountEndpoint>) -> Self;
         pub fn with_binary_encoding_options(self, options: BinaryEncodingOptions) -> Self;
         pub fn with_default_operation_options(self, options: OperationOptions) -> Self;
@@ -1295,8 +1294,6 @@ pub mod models {
         const CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE: CosmosStatus = _;
         const CLIENT_SPLIT_RETRIES_EXHAUSTED: CosmosStatus = _;
         const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = _;
-        const CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED: CosmosStatus = _;
-        const CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED: CosmosStatus = _;
         const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: CosmosStatus = _;
         const CLIENT_TOPOLOGY_PROVIDER_MISSING: CosmosStatus = _;
         const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = _;
@@ -2942,56 +2939,9 @@ pub mod options {
         pub fn new(env: Option<::std::sync::Arc<ThrottlingRetryOptions>>, runtime: Option<::std::sync::Arc<ThrottlingRetryOptions>>, account: Option<::std::sync::Arc<ThrottlingRetryOptions>>, operation: Option<&'a ThrottlingRetryOptions>) -> Self;
     }
     #[doc(inline)]
-    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-    pub struct ThroughputControlGroupName(pub std::borrow::Cow<'static, str>);
-    #[doc(inline)]
-    impl ThroughputControlGroupName {
-        pub fn as_str(&self) -> &str;
-        pub fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(name: impl Into<Cow<'static, str>>) -> Self;
-    }
-    #[doc(inline)]
-    impl AsRef<str> for ThroughputControlGroupName {
-        fn as_ref(&self) -> &str;
-    }
-    #[doc(inline)]
-    impl Display for ThroughputControlGroupName {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
-    }
-    #[doc(inline)]
-    impl From<&'static str> for ThroughputControlGroupName {
-        fn from(name: &'static str) -> Self;
-    }
-    #[doc(inline)]
-    impl From<Cow<'static, str>> for ThroughputControlGroupName {
-        fn from(name: Cow<'static, str>) -> Self;
-    }
-    #[doc(inline)]
-    impl From<String> for ThroughputControlGroupName {
-        fn from(name: String) -> Self;
-    }
-    #[doc(inline)]
-    #[derive(Clone, Debug)]
-    #[non_exhaustive]
-    pub struct ThroughputControlGroupOptions {
-    }
-    #[doc(inline)]
-    impl ThroughputControlGroupOptions {
-        pub fn container(&self) -> &ContainerReference;
-        pub fn is_default(&self) -> bool;
-        pub fn name(&self) -> &ThroughputControlGroupName;
-        pub fn new<impl Into<ThroughputControlGroupName>: Into<ThroughputControlGroupName>>(name: impl Into<ThroughputControlGroupName>, container: ContainerReference, is_default: bool) -> Self;
-        pub fn priority_level(&self) -> Option<PriorityLevel>;
-        pub fn set_priority_level(&self, level: PriorityLevel);
-        pub fn set_throughput_bucket(&self, bucket: u32);
-        pub fn throughput_bucket(&self) -> Option<u32>;
-        pub fn with_priority_level(self, level: PriorityLevel) -> Self;
-        pub fn with_throughput_bucket(self, bucket: u32) -> Self;
-    }
-    #[doc(inline)]
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct ThroughputControlOptions {
-        pub group_name: Option<crate::models::ThroughputControlGroupName>,
         pub throughput_bucket: Option<u32>,
         pub priority_level: Option<crate::options::PriorityLevel>,
     }
@@ -3005,7 +2955,6 @@ pub mod options {
         #[must_use]
         pub fn build(self) -> ThroughputControlOptions;
         pub fn new() -> Self;
-        pub fn with_group_name(self, value: ThroughputControlGroupName) -> Self;
         pub fn with_priority_level(self, value: PriorityLevel) -> Self;
         pub fn with_throughput_bucket(self, value: u32) -> Self;
     }
@@ -3016,7 +2965,6 @@ pub mod options {
     #[doc(inline)]
     #[automatically_derived]
     impl<'a> ThroughputControlOptionsView<'a> {
-        pub fn group_name(&self) -> Option<&ThroughputControlGroupName>;
         pub fn new(env: Option<::std::sync::Arc<ThroughputControlOptions>>, runtime: Option<::std::sync::Arc<ThroughputControlOptions>>, account: Option<::std::sync::Arc<ThroughputControlOptions>>, operation: Option<&'a ThroughputControlOptions>) -> Self;
         pub fn priority_level(&self) -> Option<&PriorityLevel>;
         pub fn throughput_bucket(&self) -> Option<&u32>;

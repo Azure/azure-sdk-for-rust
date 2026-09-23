@@ -272,11 +272,11 @@ hands back text — so a node keyed off the wire format would re-encode items th
 - ✅ **Management/metadata resource representations**: Account properties, offers, database properties, container properties, partition key ranges (NOT data plane documents/items)
 - ✅ **Supporting structures**: Types that are properties of models (IndexingPolicy, PartitionKeyDefinition, VectorEmbeddingPolicy, consistency levels, indexing modes, connection modes)
 - ✅ **Operation-specific envelopes**: Structures created for operation support (TransactionalBatch, PatchInstructions, BulkOperations)
-- ✅ **Header/wire values**: Types serialized into request headers or body (ETag, SessionToken, PartitionKey, TriggerReference, ThroughputControlGroupName)
+- ✅ **Header/wire values**: Types serialized into request headers or body (ETag, SessionToken, PartitionKey, TriggerReference)
 
 **Exclude from `models/` (use dedicated modules)**:
 
-- ❌ **Configuration/options types** → `options/` module (e.g., Region for excluded regions, TriggerOptions for which triggers to use, ThroughputControlGroupOptions)
+- ❌ **Configuration/options types** → `options/` module (e.g., Region for excluded regions, TriggerOptions for which triggers to use, ThroughputControlOptions)
 - ❌ Client types → `clients/` module
 - ❌ Error types → `error.rs` or crate root
 - ❌ **Diagnostics/telemetry types** → `diagnostics/` module

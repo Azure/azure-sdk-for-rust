@@ -9,13 +9,10 @@ use std::time::Duration;
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_data_cosmos_macros::CosmosOptions;
 
-use crate::{
-    models::ThroughputControlGroupName,
-    options::{
-        AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
-        EndToEndOperationLatencyPolicy, ExcludedRegions, PatchStrategy, PriorityLevel,
-        ReadConsistencyStrategy,
-    },
+use crate::options::{
+    AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
+    EndToEndOperationLatencyPolicy, ExcludedRegions, PatchStrategy, PriorityLevel,
+    ReadConsistencyStrategy,
 };
 
 /// Options that apply to individual Cosmos DB requests.
@@ -226,63 +223,27 @@ pub struct ThrottlingRetryOptions {
 
 /// Throughput-control tuning for an individual request (or layer default).
 ///
-/// Mirrors the [`ThrottlingRetryOptions`] pattern: three independently
+/// Mirrors the [`ThrottlingRetryOptions`] pattern: two independently
 /// layered knobs grouped under a single nested option group on
 /// [`OperationOptions`]. None of these fields read from environment
 /// variables — throughput control is a per-application policy.
 ///
-/// # Resolution
-///
-/// Each inner field participates independently in the standard runtime →
-/// account → operation layered resolution. Once resolved, the driver
-/// computes the wire headers (`x-ms-cosmos-priority-level`,
-/// `x-ms-cosmos-throughput-bucket`) using a two-step rule per field:
-///
-/// 1. If the layered value for the field is `Some`, use it directly.
-/// 2. Else, if [`group_name`](Self::group_name) resolves to a group
-///    registered on the driver via
-///    [`DriverOptionsBuilder::register_throughput_control_group`](crate::options::DriverOptionsBuilder::register_throughput_control_group),
-///    use the group's value for the field (if the group sets it).
-/// 3. Else, the header is omitted.
-///
-/// The two fields resolve independently, so a layered
-/// `throughput_bucket = Some(...)` does not suppress a
-/// `priority_level` carried by the registered group, and vice versa.
-///
-/// # Why direct overrides exist
-///
-/// The direct [`throughput_bucket`](Self::throughput_bucket) /
-/// [`priority_level`](Self::priority_level) overrides let callers set the
-/// per-operation headers without having to register a
-/// [`ThroughputControlGroupOptions`](super::ThroughputControlGroupOptions)
-/// on the driver. Use a registered group when you want shared, mutable
-/// values to apply to a family of operations; use the direct fields for
-/// one-off overrides.
+/// Each inner field resolves independently across the runtime → account →
+/// operation layers. When set, the driver sends it in the corresponding
+/// `x-ms-cosmos-throughput-bucket` or `x-ms-cosmos-priority-level` header;
+/// otherwise that header is omitted.
 #[derive(CosmosOptions, Clone, Debug)]
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct ThroughputControlOptions {
-    /// Name of a previously-registered throughput-control group.
-    ///
-    /// Used as the fallback source for
-    /// [`throughput_bucket`](Self::throughput_bucket) and
-    /// [`priority_level`](Self::priority_level) when those fields are not
-    /// set at any layer. A name that does not resolve to a registered group
-    /// produces an error at request time.
-    pub group_name: Option<ThroughputControlGroupName>,
-
     /// Direct override for the `x-ms-cosmos-throughput-bucket` header.
     ///
-    /// Takes precedence over the bucket carried by the resolved
-    /// [`group_name`](Self::group_name) (if any). `None` falls back to the
-    /// resolved group's bucket, then to no header.
+    /// `None` inherits from a lower layer, then omits the header if unset.
     pub throughput_bucket: Option<u32>,
 
     /// Direct override for the `x-ms-cosmos-priority-level` header.
     ///
-    /// Takes precedence over the priority carried by the resolved
-    /// [`group_name`](Self::group_name) (if any). `None` falls back to the
-    /// resolved group's priority level, then to no header.
+    /// `None` inherits from a lower layer, then omits the header if unset.
     pub priority_level: Option<PriorityLevel>,
 }
 
@@ -753,7 +714,6 @@ mod tests {
 
         let runtime = Arc::new(OperationOptions {
             throughput_control: Some(ThroughputControlOptions {
-                group_name: Some(ThroughputControlGroupName::new("runtime-group")),
                 throughput_bucket: Some(7),
                 priority_level: Some(PriorityLevel::Low),
             }),
@@ -762,7 +722,6 @@ mod tests {
 
         let operation = OperationOptions {
             throughput_control: Some(ThroughputControlOptions {
-                group_name: None,
                 throughput_bucket: Some(99),
                 priority_level: None,
             }),
@@ -772,11 +731,6 @@ mod tests {
         let view = OperationOptionsView::new(None, Some(runtime), None, Some(&operation));
         let throughput = view.throughput_control();
 
-        assert_eq!(
-            throughput.group_name(),
-            Some(&ThroughputControlGroupName::new("runtime-group")),
-            "missing inner field on the operation layer must fall through to runtime",
-        );
         assert_eq!(
             throughput.throughput_bucket(),
             Some(&99),
@@ -798,7 +752,6 @@ mod tests {
         let view = OperationOptionsView::new(None, None, None, Some(&op));
         let throughput = view.throughput_control();
 
-        assert!(throughput.group_name().is_none());
         assert!(throughput.throughput_bucket().is_none());
         assert!(throughput.priority_level().is_none());
     }
