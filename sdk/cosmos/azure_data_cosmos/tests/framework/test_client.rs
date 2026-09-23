@@ -1261,7 +1261,25 @@ impl TestRunContext {
     /// Creates a new, empty, database for this test run with default throughput options.
     pub async fn create_db(&self) -> azure_data_cosmos::Result<DatabaseClient> {
         let db_name = self.db_name();
-        self.create_database(&db_name).await?;
+        if let Some(arm_client) = self.arm_client() {
+            arm_client
+                .delete_database(&db_name)
+                .await
+                .map_err(arm_error)?;
+            arm_client
+                .create_database(&db_name)
+                .await
+                .map_err(arm_error)?;
+        } else {
+            match self.client().create_database(&db_name, None).await {
+                Ok(_) => {}
+                Err(error) if error.status().status_code() == StatusCode::Conflict => {
+                    self.client().database_client(&db_name).delete(None).await?;
+                    self.client().create_database(&db_name, None).await?;
+                }
+                Err(error) => return Err(error),
+            }
+        }
         Ok(self.client().database_client(db_name))
     }
 
