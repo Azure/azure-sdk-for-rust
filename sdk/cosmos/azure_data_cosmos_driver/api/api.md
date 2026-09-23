@@ -2103,8 +2103,25 @@ pub mod models {
         type Iter = IntoIter<(HeaderName, HeaderValue)>;
         fn as_headers(&self) -> Result<<Self as >::Iter, <Self as >::Error>;
     }
-    impl From<Vec<PartitionKeyValue>> for PartitionKey {
-        fn from(values: Vec<PartitionKeyValue>) -> Self;
+    impl TryFrom<Option<f32>> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: Option<f32>) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<Option<f64>> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: Option<f64>) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<Vec<PartitionKeyValue>> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(values: Vec<PartitionKeyValue>) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<f32> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: f32) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<f64> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: f64) -> Result<Self, <Self as >::Error>;
     }
     impl<T1, T2, T3> From<(T1, T2, T3)> for PartitionKey where T1: Into<PartitionKeyValue>, T2: Into<PartitionKeyValue>, T3: Into<PartitionKeyValue> {
         fn from((v1, v2, v3): (T1, T2, T3)) -> Self;
@@ -2176,12 +2193,6 @@ pub mod models {
     impl From<bool> for PartitionKeyValue {
         fn from(value: bool) -> Self;
     }
-    impl From<f32> for PartitionKeyValue {
-        fn from(value: f32) -> Self;
-    }
-    impl From<f64> for PartitionKeyValue {
-        fn from(value: f64) -> Self;
-    }
     impl From<i16> for PartitionKeyValue {
         fn from(value: i16) -> Self;
     }
@@ -2211,6 +2222,22 @@ pub mod models {
     }
     impl From<usize> for PartitionKeyValue {
         fn from(value: usize) -> Self;
+    }
+    impl TryFrom<Option<f32>> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: Option<f32>) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<Option<f64>> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: Option<f64>) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<f32> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: f32) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<f64> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: f64) -> Result<Self, <Self as >::Error>;
     }
     impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
         fn from(value: Option<T>) -> Self;
@@ -3599,7 +3626,6 @@ pub mod options {
     impl UserAgentSuffix {
         const MAX_LENGTH: usize = 25;
         pub fn as_str(&self) -> &str;
-        pub fn new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Self;
         pub fn try_new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Option<Self>;
     }
     impl AsRef<str> for UserAgentSuffix {
@@ -3607,6 +3633,14 @@ pub mod options {
     }
     impl Display for UserAgentSuffix {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+    }
+    impl TryFrom<&str> for UserAgentSuffix {
+        type Error = CosmosError;
+        fn try_from(value: &str) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<String> for UserAgentSuffix {
+        type Error = CosmosError;
+        fn try_from(value: String) -> Result<Self, <Self as >::Error>;
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct WorkloadId(/* private fields */);
