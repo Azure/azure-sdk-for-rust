@@ -124,10 +124,9 @@ impl ResponseBody {
     /// either Cosmos binary JSON or UTF-8 text JSON (auto-detected by the
     /// `0x80` preamble).
     ///
-    /// `serde_json::value::RawValue` is supported under both encodings. On the
-    /// binary path the raw text is the codec's normalized rendering (key order
-    /// and number spelling may differ from the service's original bytes); on the
-    /// text path it is the response bytes verbatim.
+    /// Owned `serde_json::value::RawValue` is supported; on the binary path its
+    /// raw text is the codec's normalized rendering, not the service bytes
+    /// verbatim.
     ///
     /// Returns an error if the body is a feed [`Items`](Self::Items) response
     /// or if the body is [`NoPayload`](Self::NoPayload) (nothing to parse).

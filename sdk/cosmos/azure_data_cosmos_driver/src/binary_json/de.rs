@@ -34,11 +34,10 @@ const MAX_DEPTH: usize = 256;
 /// straight off the bytes, materializing a [`serde_json::Value`] only for the
 /// rare exotic forms handled by the fallback (see the module docs).
 ///
-/// `serde_json::value::RawValue` targets are supported: the value at the cursor
-/// is rendered to JSON text and handed to `RawValue`. Because that text is
-/// produced by the codec (like [`transcode_to_text`](super::transcode_to_text)),
-/// object key order and number spelling are the codec's normalized form, not
-/// the service's original bytes.
+/// Owned `serde_json::value::RawValue` targets (such as `Box<RawValue>`) are
+/// supported: the value is rendered to normalized JSON text (key order and
+/// number spelling follow the codec, not the original service bytes). A
+/// borrowed `&RawValue` is not, since that text cannot borrow from the input.
 ///
 /// # Errors
 ///
@@ -268,13 +267,9 @@ impl<'de> Deserializer<'de> for &mut BinaryDeserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        // `serde_json::value::RawValue` asks for the value's verbatim JSON text
-        // through this magic newtype name. Render the value at the cursor back
-        // to text and feed it to RawValue's map-shaped visitor. Reading through
-        // the full-buffer reader keeps reference strings (`STR_R1`..`STR_R4`)
-        // resolving against absolute page offsets. `normalize_integral_floats`
-        // matches the text path, so `Box<RawValue>` reads identically under
-        // both encodings.
+        // Owned `RawValue` (e.g. `Box<RawValue>`) wants the value's JSON text.
+        // Render it through the full-buffer reader so reference strings resolve
+        // against absolute page offsets, normalized to match the text path.
         if name == RAW_VALUE_TOKEN {
             let mut value = self.reader.read_value(self.depth)?;
             super::normalize_integral_floats(&mut value);
@@ -1017,6 +1012,21 @@ mod tests {
 
         assert_eq!(from_binary.get(), from_text.get());
         assert_eq!(from_binary.get(), r#"{"v":1}"#);
+    }
+
+    /// A borrowed `&RawValue` cannot borrow the freshly-rendered text, so the
+    /// binary path rejects it cleanly (an error, never a panic), matching the
+    /// documented owned-only guarantee.
+    #[test]
+    fn borrowed_raw_value_from_binary_is_rejected() {
+        use serde_json::value::RawValue;
+
+        let binary = crate::binary_json::transcode_to_binary(br#"{"v":1}"#).unwrap();
+        let borrowed: Result<&RawValue> = from_slice(&binary);
+        assert!(
+            borrowed.is_err(),
+            "borrowed &RawValue must not deserialize from binary, got {borrowed:?}"
+        );
     }
 
     /// `serde_json::value::RawValue` must deserialize from a binary payload with

@@ -42,10 +42,6 @@ impl ResponseBody {
     }
 
     /// Deserializes a single-payload body as JSON of type `T`.
-    ///
-    /// `serde_json::value::RawValue` is supported. When the response arrived
-    /// binary-encoded, its raw text is the codec's normalized rendering, so
-    /// object key order and number spelling may differ from a text response.
     pub fn into_single<T: DeserializeOwned>(self) -> crate::Result<T> {
         self.0.into_single().map_err(Into::into)
     }
