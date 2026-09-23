@@ -104,6 +104,22 @@ impl CosmosClient {
         CosmosClientBuilder::new()
     }
 
+    /// Returns the writable and readable regions cached from the account
+    /// properties response used to initialize this client.
+    ///
+    /// **Unsupported internal API** used only by tests that need to mirror the
+    /// topology of an optional live account.
+    #[cfg(any(feature = "__internal_in_memory_emulator", feature = "fault_injection"))]
+    #[doc(hidden)]
+    pub async fn cached_account_regions_for_testing(
+        &self,
+    ) -> Option<(Vec<crate::options::Region>, Vec<crate::options::Region>)> {
+        self.context
+            .driver
+            .cached_account_regions_for_testing()
+            .await
+    }
+
     /// Gets a [`DatabaseClient`] that can be used to access the database with the
     /// specified identity.
     ///

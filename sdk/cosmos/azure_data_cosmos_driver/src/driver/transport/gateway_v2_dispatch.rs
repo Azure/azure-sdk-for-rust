@@ -436,10 +436,14 @@ pub(crate) fn wrap_request_for_gateway_v2(
     // operation-typed rules against the G2 path the same way it matches V1.
     #[cfg(feature = "fault_injection")]
     {
-        use crate::models::cosmos_headers::fault_injection_header_names::FAULT_INJECTION_OPERATION;
-        let fault_op_header = HeaderName::from_static(FAULT_INJECTION_OPERATION);
-        if let Some(op) = request.headers.get_optional_str(&fault_op_header) {
-            headers.insert(fault_op_header, HeaderValue::from(op.to_owned()));
+        use crate::models::cosmos_headers::fault_injection_header_names::{
+            FAULT_INJECTION_OPERATION, FAULT_INJECTION_REGION,
+        };
+        for name in [FAULT_INJECTION_OPERATION, FAULT_INJECTION_REGION] {
+            let header = HeaderName::from_static(name);
+            if let Some(value) = request.headers.get_optional_str(&header) {
+                headers.insert(header, HeaderValue::from(value.to_owned()));
+            }
         }
     }
 

@@ -19,6 +19,36 @@
       "status": "active"
     },
     {
+      "id": "bootstrap.backup-fallback",
+      "test": "bootstrap_backup_fallback::unreachable_primary_uses_ordered_backup",
+      "status": "active"
+    },
+    {
+      "id": "configuration.binary-routing",
+      "test": "configuration_binary_routing::binary_text_and_routing_options_preserve_behavior",
+      "status": "active"
+    },
+    {
+      "id": "consistency.feed-read-strategies",
+      "test": "consistency_feed_read_strategies::feeds_honor_account_and_operation_consistency",
+      "status": "active"
+    },
+    {
+      "id": "consistency.response-token-capture",
+      "test": "consistency_session_management::response_tokens_are_captured_before_switching_to_session",
+      "status": "active"
+    },
+    {
+      "id": "consistency.session-management",
+      "test": "consistency_session_management::explicit_tokens_work_when_automatic_capture_is_disabled",
+      "status": "active"
+    },
+    {
+      "id": "consistency.session-staleness",
+      "test": "consistency_session_management::disabled_capture_exposes_delayed_replica",
+      "status": "active"
+    },
+    {
       "id": "item.lifecycle",
       "test": "item_lifecycle::crud_lifecycle",
       "status": "active"
@@ -111,6 +141,51 @@
     {
       "id": "diagnostics.success-and-error",
       "test": "diagnostics_success_and_error::diagnostics_cover_success_and_error",
+      "status": "active"
+    },
+    {
+      "id": "diagnostics.handlers-telemetry",
+      "test": "diagnostics_handlers_telemetry::handlers_emit_metrics_spans_and_sampled_failures",
+      "status": "active"
+    },
+    {
+      "id": "resilience.throttling-retry",
+      "test": "resilience_throttling_retry::bounded_throttling_retries_succeed_with_attempt_history",
+      "status": "active"
+    },
+    {
+      "id": "resilience.deadline",
+      "test": "resilience_deadline::operation_deadline_preempts_delayed_response",
+      "status": "active"
+    },
+    {
+      "id": "resilience.hedge-deadline",
+      "test": "resilience_hedging::deadline_cancels_active_hedge_awaiting_partner",
+      "status": "active"
+    },
+    {
+      "id": "resilience.hedging",
+      "test": "resilience_hedging::alternate_region_wins_delayed_primary_hedge",
+      "status": "active"
+    },
+    {
+      "id": "resilience.partition-topology-retry",
+      "test": "resilience_transient_retries::partition_topology_change_refreshes_and_retries_query",
+      "status": "active"
+    },
+    {
+      "id": "resilience.request-timeout-retry",
+      "test": "resilience_transient_retries::request_timeout_retries_respect_failover_budget",
+      "status": "active"
+    },
+    {
+      "id": "resilience.service-retry",
+      "test": "resilience_transient_retries::service_unavailable_is_retried_with_attempt_history",
+      "status": "active"
+    },
+    {
+      "id": "resilience.transport-retry",
+      "test": "resilience_transient_retries::response_timeout_is_retried_with_attempt_history",
       "status": "active"
     }
   ]

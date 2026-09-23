@@ -39,6 +39,7 @@ use super::system_properties::{
 use crate::driver::pipeline::patch_eval::apply_patch_ops;
 use crate::models::PatchInstructions;
 use crate::models::{PartitionKeyDefinition, MAX_SERVER_SIDE_PATCH_OPERATIONS};
+use crate::options::ReadConsistencyStrategy;
 use crate::query::ast::{
     SqlCollection, SqlCollectionExpression, SqlQuery, SqlScalarExpression, SqlSelectSpec,
 };
@@ -60,6 +61,19 @@ static DTX_RESOURCE_TYPE: HeaderName =
 /// Sub-status paired with `410 Gone` when a physical partition is locked because
 /// a split or merge is in progress.
 const PARTITION_SPLIT_OR_MERGE_SUBSTATUS: u16 = 1007;
+
+fn session_consistency_active(
+    strategy: Option<ReadConsistencyStrategy>,
+    account_default_is_session: bool,
+) -> bool {
+    match strategy.unwrap_or(ReadConsistencyStrategy::Default) {
+        ReadConsistencyStrategy::Session => true,
+        ReadConsistencyStrategy::Default => account_default_is_session,
+        ReadConsistencyStrategy::Eventual
+        | ReadConsistencyStrategy::LatestCommitted
+        | ReadConsistencyStrategy::GlobalStrong => false,
+    }
+}
 
 /// HTTP status a prepared-then-rolled-back write operation reports in an aborted
 /// distributed transaction, paired with sub-status 5415 (DtcOperationRolledBack).
@@ -3379,6 +3393,34 @@ fn collect_item_documents(
         .build());
     }
 
+    let session_consistency_active = session_consistency_active(
+        parsed.read_consistency_strategy,
+        store.config().consistency().is_session(),
+    );
+    // Parse valid tokens for response-token preservation on every consistency;
+    // only malformed-token rejection and progress enforcement are Session-gated.
+    let incoming_sessions = match parsed.session_token.as_deref() {
+        Some(raw) => match super::session::parse_composite_session_token(raw) {
+            Ok(tokens) => tokens,
+            Err(parse_err) => {
+                if session_consistency_active {
+                    return Err(error_response(
+                        StatusCode::BadRequest,
+                        None,
+                        "BadRequest",
+                        &format!("Invalid session token: {}", parse_err),
+                        0.0,
+                        "",
+                        start,
+                    )
+                    .build());
+                }
+                Vec::new()
+            }
+        },
+        None => Vec::new(),
+    };
+
     let result = region_ref.with_container(db_id, coll_id, |state| {
         let requested_epk = match parsed.partition_key_header.as_deref() {
             Some(header) => match parse_partition_key_header(header) {
@@ -3462,10 +3504,41 @@ fn collect_item_documents(
             }
             max_lsn = max_lsn.max(partition.current_lsn());
             let region_id = store.config().region_id_for(region_name);
+            let incoming_session = incoming_sessions
+                .iter()
+                .find(|token| token.pkrange_id == partition.id)
+                .cloned();
+            if session_consistency_active {
+                if let Some(incoming) = incoming_session.as_ref() {
+                    if incoming.version > partition.current_version()
+                        || (incoming.version == partition.current_version()
+                            && incoming.global_lsn > partition.current_lsn())
+                    {
+                        let requested = SessionToken::format_v2(
+                            partition.id,
+                            incoming.version,
+                            incoming.global_lsn,
+                            super::session::RegionId(region_id),
+                            super::session::LocalLsn(incoming.global_lsn),
+                            &incoming.region_progress,
+                        );
+                        return Err(error_response(
+                            StatusCode::NotFound,
+                            Some(1002),
+                            "ReadSessionNotAvailable",
+                            "The read session is not available for the input session token.",
+                            0.0,
+                            &requested,
+                            start,
+                        )
+                        .build());
+                    }
+                }
+            }
             token_parts.push(session_token_for(
                 partition,
                 region_id,
-                incoming_session_for(parsed, partition.id).as_ref(),
+                incoming_session.as_ref(),
             ));
             let stored = partition.documents.read().unwrap();
             for (epk, logical) in stored.iter() {
@@ -4465,14 +4538,14 @@ fn session_token_for(
 }
 
 /// Pulls the incoming session-token entry for a specific partition out of the
-/// request, if any. Used so the response token can preserve per-region
-/// progress the client has already accumulated for partitions other than the
-/// local one. Malformed composite tokens are silently treated as missing
-/// (handlers that need to surface a 400 do so independently).
+/// request, if any. Operations that enforce session-token validity parse and
+/// reject malformed tokens before calling this response-token helper.
 fn incoming_session_for(parsed: &ParsedRequest, pkrange_id: u32) -> Option<SessionToken> {
     let raw = parsed.session_token.as_deref()?;
     let tokens = super::session::parse_composite_session_token(raw).ok()?;
-    tokens.into_iter().find(|t| t.pkrange_id == pkrange_id)
+    tokens
+        .into_iter()
+        .find(|token| token.pkrange_id == pkrange_id)
 }
 
 pub(crate) struct PointResponseHeaders {
@@ -5053,17 +5126,10 @@ fn handle_read(
         // a token that the partition trivially satisfies and treat the
         // failure as transient. Echoing back what they asked for makes the
         // mismatch visible.
-        let session_consistency_active = match parsed.read_consistency_strategy {
-            Some(crate::options::ReadConsistencyStrategy::Session) => true,
-            Some(crate::options::ReadConsistencyStrategy::Default) | None => {
-                store.config().consistency().is_session()
-            }
-            Some(
-                crate::options::ReadConsistencyStrategy::Eventual
-                | crate::options::ReadConsistencyStrategy::LatestCommitted
-                | crate::options::ReadConsistencyStrategy::GlobalStrong,
-            ) => false,
-        };
+        let session_consistency_active = session_consistency_active(
+            parsed.read_consistency_strategy,
+            store.config().consistency().is_session(),
+        );
         if session_consistency_active {
             if let Some(session_header) = &parsed.session_token {
                 let tokens = match super::session::parse_composite_session_token(session_header) {
@@ -5081,44 +5147,6 @@ fn handle_read(
                         .build());
                     }
                 };
-                // Reject stale pkrange ids (e.g. parent of a completed split that
-                // is *not* an ancestor of this request's partition) with 410/1002
-                // — real Cosmos surfaces PartitionKeyRangeGone here so the client
-                // refreshes its pkrange cache and retries. Without this, a stale
-                // token referencing some other (now-defunct) partition silently
-                // skipped the consistency check.
-                //
-                // Tokens referencing a *direct ancestor* of this partition are
-                // considered valid: the EPK-routed successor partition's LSN is
-                // at least as advanced as any pre-split LSN the client could
-                // legitimately have observed, so the consistency check below is
-                // satisfied trivially. This matches the real gateway, which
-                // routes by EPK and treats stale-but-related tokens as best-
-                // effort rather than fatal.
-                for st in &tokens {
-                    if st.pkrange_id == super::store::MASTER_PARTITION_ID
-                        || st.pkrange_id == partition.id
-                        || partition.parents.contains(&st.pkrange_id)
-                    {
-                        continue;
-                    }
-                    let exists = state
-                        .physical_partitions
-                        .iter()
-                        .any(|p| p.id == st.pkrange_id);
-                    if !exists {
-                        return Err(error_response(
-                            StatusCode::Gone,
-                            Some(1002),
-                            "Gone",
-                            "The partition key range referenced by the session token is no longer present (split/merge).",
-                            0.0,
-                            &token,
-                            start,
-                        )
-                        .build());
-                    }
-                }
                 for st in &tokens {
                     if st.pkrange_id == partition.id {
                         let partition_version = partition.current_version();
@@ -6505,6 +6533,26 @@ fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawRe
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn session_consistency_activation_matches_strategy_and_account_default() {
+        for strategy in [None, Some(ReadConsistencyStrategy::Default)] {
+            assert!(session_consistency_active(strategy, true));
+            assert!(!session_consistency_active(strategy, false));
+        }
+        assert!(session_consistency_active(
+            Some(ReadConsistencyStrategy::Session),
+            false
+        ));
+        for strategy in [
+            ReadConsistencyStrategy::Eventual,
+            ReadConsistencyStrategy::LatestCommitted,
+            ReadConsistencyStrategy::GlobalStrong,
+        ] {
+            assert!(!session_consistency_active(Some(strategy), true));
+            assert!(!session_consistency_active(Some(strategy), false));
+        }
+    }
 
     #[test]
     fn synthesize_rewrite_replaces_trailing_offset_limit() {
