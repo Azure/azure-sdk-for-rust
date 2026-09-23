@@ -83,7 +83,7 @@ cargo doc
 
 Runs in: [Analyze-Code.ps1](https://github.com/Azure/azure-sdk-for-rust/blob/main/eng/scripts/Analyze-Code.ps1)
 
-Verifies that generated `API.md` and `API.metadata.yml` files are up to date for the selected
+Verifies that generated `api.md` and `api.metadata.yml` files are up to date for the selected
 crates.
 
 ```bash

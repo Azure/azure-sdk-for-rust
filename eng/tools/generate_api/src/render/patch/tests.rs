@@ -47,7 +47,7 @@ fn doc(text: &str) -> RenderedLine {
 fn renders_empty_patch_without_doc_comments() {
     let lines = vec![code("```rust"), code("pub fn foo();"), code("```")];
 
-    assert!(render(&lines, "API.md").is_empty());
+    assert!(render(&lines, "api.md").is_empty());
 }
 
 #[test]
@@ -63,12 +63,12 @@ fn renders_one_hunk_per_doc_block() {
         code("```"),
     ];
 
-    let patch = render(&lines, "API.md");
+    let patch = render(&lines, "api.md");
 
     assert_eq!(
         patch,
-        "--- a/API.md\n\
-         +++ b/API.md\n\
+        "--- a/api.md\n\
+         +++ b/api.md\n\
          @@ -2,1 +2,4 @@\n\
          +/// Does foo.\n\
          +///\n\
@@ -93,7 +93,7 @@ fn keeps_following_context_to_one_line() {
         code("```"),
     ];
 
-    let patch = render(&lines, "API.md");
+    let patch = render(&lines, "api.md");
 
     assert_eq!(patch.matches("@@ -").count(), 2);
     assert!(patch.contains("@@ -2,1 +2,2 @@\n+/// Foo.\n pub struct Foo {\n"));
@@ -112,12 +112,12 @@ fn anchors_doc_comments_through_attributes_and_declaration() {
         code("```"),
     ];
 
-    let patch = render(&lines, "API.md");
+    let patch = render(&lines, "api.md");
 
     assert_eq!(
         patch,
-        "--- a/API.md\n\
-         +++ b/API.md\n\
+        "--- a/api.md\n\
+         +++ b/api.md\n\
          @@ -2,3 +2,4 @@\n\
          +/// Foo.\n\
          \x20#[cfg(feature = \"preview\")]\n\
@@ -140,7 +140,7 @@ fn keeps_documented_members_in_separate_hunks_with_attributes() {
         code("}"),
     ];
 
-    let patch = render(&lines, "API.md");
+    let patch = render(&lines, "api.md");
 
     assert_eq!(patch.matches("@@ -").count(), 2);
     assert!(patch.contains(
@@ -170,12 +170,12 @@ fn anchors_root_doc_comments_only_to_synthetic_root_attributes() {
         code("```"),
     ];
 
-    let patch = render(&lines, "API.md");
+    let patch = render(&lines, "api.md");
 
     assert_eq!(
         patch,
-        "--- a/API.md\n\
-         +++ b/API.md\n\
+        "--- a/api.md\n\
+         +++ b/api.md\n\
          @@ -2,2 +2,3 @@\n\
          +//! Demo crate.\n\
          \x20#![crate_name = \"demo\"]\n\
