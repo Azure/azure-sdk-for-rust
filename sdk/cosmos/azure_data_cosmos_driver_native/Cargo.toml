@@ -26,7 +26,7 @@ crate-type = ["cdylib", "staticlib"]
 # HTTP client (the driver's default factory needs either `rustls` or
 # `native_tls` — `rustls` matches the driver's own default and avoids the
 # OpenSSL-on-Windows breakage that bites `native_tls`).
-azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.8.0", default-features = false, features = ["tokio", "rustls"] }
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.8.0", default-features = false, features = ["tokio", "rustls", "fault_injection"] }
 # Required at runtime for master-key auth — `Secret` lives in
 # `azure_core::credentials` and `Url::parse` is the gate for the account
 # endpoint. Both are zero-cost wrappers around existing driver deps so
@@ -64,7 +64,7 @@ cbindgen = "0.29.2"
 # builds do not expose these symbols. Enabled by the CMake C-test build
 # (`corrosion_import_crate(FEATURES test-abi)`); Rust integration tests
 # and normal consumer builds must not enable it.
-test-abi = []
+test-abi = ["azure_data_cosmos_driver/__internal_mocking"]
 
 [lints]
 workspace = true

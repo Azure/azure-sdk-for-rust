@@ -318,7 +318,7 @@ pub struct CosmosHeaderKv {
 ///
 /// `headers` must be NULL/0 or point at `len` initialized entries in one allocation.
 /// Each view follows [`CosmosStringView`]'s allocation contract.
-unsafe fn decode_headers(
+pub(crate) unsafe fn decode_headers(
     headers: *const CosmosHeaderKv,
     len: usize,
 ) -> Result<Option<HashMap<HeaderName, HeaderValue>>, CosmosErrorCode> {

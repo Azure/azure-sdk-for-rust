@@ -539,6 +539,7 @@ impl PendingCompletion {
                 .backtrace()
                 .and_then(|bt| to_cstring(bt.as_ref().to_string()));
             if let Some(resp) = err.response() {
+                p.response = Some(resp.clone());
                 // Wire response: overlay the effective sub-status onto the
                 // wire headers before synthesis. `err.status().sub_status()`
                 // is authoritative — for a body-attached deserialization

@@ -53,6 +53,9 @@
 #define COSMOS_QUERY_PLAN_MODE_LOCAL_PREFERRED 1
 #define COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY    2
 
+// Version of the size-prefixed native fault-injection records.
+#define COSMOS_FAULT_INJECTION_ABI_VERSION_1 1
+
 /**
  * Per spec section 3.6.1, every completion has exactly one of these outcomes.
  *
@@ -843,6 +846,87 @@ typedef int32_t cosmos_sub_status_t;
 #endif // __cplusplus
 
 /**
+ * Operation/resource pair used by a fault-injection condition.
+ */
+enum cosmos_fault_injection_operation_type_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_UNSET = 0,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_READ_ITEM = 1,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_QUERY_ITEM = 2,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_CREATE_ITEM = 3,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_UPSERT_ITEM = 4,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_REPLACE_ITEM = 5,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_DELETE_ITEM = 6,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_PATCH_ITEM = 7,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_BATCH_ITEM = 8,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_CHANGE_FEED_ITEM = 9,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_METADATA_READ_CONTAINER = 10,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_METADATA_READ_DATABASE_ACCOUNT = 11,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_METADATA_QUERY_PLAN = 12,
+  COSMOS_FAULT_INJECTION_OPERATION_TYPE_METADATA_PARTITION_KEY_RANGES = 13,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_fault_injection_operation_type_t cosmos_fault_injection_operation_type_t;
+#else
+typedef int32_t cosmos_fault_injection_operation_type_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
+ * Fault outcome selected when a rule matches.
+ */
+enum cosmos_fault_injection_error_type_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_UNSET = 0,
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_INTERNAL_SERVER_ERROR = 1,
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_TOO_MANY_REQUESTS = 2,
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_RETRY_WITH = 3,
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_READ_SESSION_NOT_AVAILABLE = 4,
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_TIMEOUT = 5,
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_SERVICE_UNAVAILABLE = 6,
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_PARTITION_IS_GONE = 7,
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_WRITE_FORBIDDEN = 8,
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_DATABASE_ACCOUNT_NOT_FOUND = 9,
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_CONNECTION_ERROR = 10,
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_RESPONSE_TIMEOUT = 11,
+  COSMOS_FAULT_INJECTION_ERROR_TYPE_RESPONSE_TIMEOUT_AFTER_SERVICE = 12,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_fault_injection_error_type_t cosmos_fault_injection_error_type_t;
+#else
+typedef int32_t cosmos_fault_injection_error_type_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
+ * Transport matcher for a fault-injection condition.
+ */
+enum cosmos_fault_injection_transport_kind_t
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+  : int32_t
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
+ {
+  COSMOS_FAULT_INJECTION_TRANSPORT_KIND_UNSET = 0,
+  COSMOS_FAULT_INJECTION_TRANSPORT_KIND_GATEWAY = 1,
+  COSMOS_FAULT_INJECTION_TRANSPORT_KIND_GATEWAY_V2 = 2,
+};
+#ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum cosmos_fault_injection_transport_kind_t cosmos_fault_injection_transport_kind_t;
+#else
+typedef int32_t cosmos_fault_injection_transport_kind_t;
+#endif // __STDC_VERSION__ >= 202311L
+#endif // __cplusplus
+
+/**
  * The C ABI handle for an account reference (`cosmos_account_ref_t`).
  *
  * Wraps the driver's account reference; the C side holds it as an opaque
@@ -1532,6 +1616,79 @@ typedef struct cosmos_driver_options_config_t {
    */
   const struct cosmos_operation_options_t *operation_options;
 } cosmos_driver_options_config_t;
+
+/**
+ * Size/version prefix shared by native fault-injection records.
+ */
+typedef struct cosmos_fault_injection_record_header_t {
+  uintptr_t struct_size;
+  uint32_t version;
+} cosmos_fault_injection_record_header_t;
+
+/**
+ * Match conditions for a native fault-injection rule.
+ */
+typedef struct cosmos_fault_injection_condition_t {
+  struct cosmos_fault_injection_record_header_t header;
+  int32_t operation_type;
+  struct cosmos_string_view_t region;
+  struct cosmos_string_view_t container_id;
+  int32_t transport_kind;
+} cosmos_fault_injection_condition_t;
+
+/**
+ * Injected result for a native fault-injection rule.
+ */
+typedef struct cosmos_fault_injection_result_t {
+  struct cosmos_fault_injection_record_header_t header;
+  int32_t error_type;
+  int64_t delay_ms;
+  float probability;
+  int32_t custom_status_code;
+  int32_t custom_sub_status;
+  int64_t retry_after_ms;
+  const struct cosmos_header_kv_t *custom_headers;
+  uintptr_t custom_headers_len;
+  const uint8_t *body;
+  uintptr_t body_len;
+} cosmos_fault_injection_result_t;
+
+/**
+ * Complete native fault-injection rule.
+ */
+typedef struct cosmos_fault_injection_rule_t {
+  struct cosmos_fault_injection_record_header_t header;
+  struct cosmos_string_view_t id;
+  const struct cosmos_fault_injection_condition_t *condition;
+  const struct cosmos_fault_injection_result_t *result;
+  int64_t hit_limit;
+  int64_t start_delay_ms;
+  int64_t expire_after_ms;
+} cosmos_fault_injection_rule_t;
+
+/**
+ * Versioned driver-options record with native fault-injection rules.
+ *
+ * The caller owns every pointer reachable from this record. The build call
+ * validates and copies all regions, operation options, rules, headers, and
+ * body bytes before returning; none of those input buffers need to outlive
+ * [`cosmos_driver_options_build_v2`].
+ *
+ * `fault_injection_rules` is a strided array. For v1 records set
+ * `fault_injection_rule_stride` to `sizeof(cosmos_fault_injection_rule_t)`.
+ * A future larger rule record can be passed without changing this layout by
+ * increasing its own `struct_size` and the stride while retaining ABI version
+ * 1. A new ABI version is rejected until the native wrapper supports it.
+ */
+typedef struct cosmos_driver_options_config_v2_t {
+  struct cosmos_fault_injection_record_header_t header;
+  const struct cosmos_string_view_t *preferred_regions;
+  uintptr_t preferred_regions_len;
+  const struct cosmos_operation_options_t *operation_options;
+  const struct cosmos_fault_injection_rule_t *fault_injection_rules;
+  uintptr_t fault_injection_rules_len;
+  uintptr_t fault_injection_rule_stride;
+} cosmos_driver_options_config_v2_t;
 
 /**
  * Payload half of a [`CosmosPartitionKeyComponent`] — a C `union` whose
@@ -2267,6 +2424,11 @@ void cosmos_driver_options_free(struct cosmos_driver_options_t *options);
 struct cosmos_driver_options_config_t cosmos_driver_options_config_default(void);
 
 /**
+ * Returns an all-unset versioned driver-options record.
+ */
+struct cosmos_driver_options_config_v2_t cosmos_driver_options_config_v2_default(void);
+
+/**
  * Builds a `cosmos_driver_options_t *` from an account reference and a flat
  * [`CosmosDriverOptionsConfig`] in a single call.
  *
@@ -2297,6 +2459,17 @@ cosmos_status_code_t cosmos_driver_options_build(const struct cosmos_account_ref
                                                  struct cosmos_driver_options_t **out_options);
 
 /**
+ * Builds driver options from the versioned v2 record.
+ *
+ * On success the returned handle owns Rust copies of every configured rule.
+ * The handle may be freed immediately after driver construction because the
+ * driver clones the rules' `Arc` ownership.
+ */
+cosmos_status_code_t cosmos_driver_options_build_v2(const struct cosmos_account_ref_t *account,
+                                                    const struct cosmos_driver_options_config_v2_t *config,
+                                                    struct cosmos_driver_options_t **out_options);
+
+/**
  * Frees a `cosmos_error_t *` obtained from a synchronous `out_error` slot,
  * including all of its owned strings. NULL is a no-op.
  */
@@ -2312,6 +2485,12 @@ void cosmos_error_free(struct cosmos_error_t *e);
  */
 void cosmos_set_backtrace_options(uint32_t max_captures_per_second,
                                   uint32_t max_resolutions_per_second);
+
+struct cosmos_fault_injection_condition_t cosmos_fault_injection_condition_default(void);
+
+struct cosmos_fault_injection_result_t cosmos_fault_injection_result_default(void);
+
+struct cosmos_fault_injection_rule_t cosmos_fault_injection_rule_default(void);
 
 /**
  * Constructs a feed range covering the entire EPK key space. Mirrors
