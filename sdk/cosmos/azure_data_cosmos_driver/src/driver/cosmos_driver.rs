@@ -1706,7 +1706,8 @@ impl CosmosDriver {
         // initial account-metadata probe only take effect on post-bootstrap
         // refreshes — matching the previous runtime-level FI semantics.
         #[cfg(feature = "fault_injection")]
-        let fault_injection_enabled = options.fault_injection_rules().is_some();
+        let fault_injection_enabled =
+            options.fault_injection_rules().is_some() || runtime.fault_injection_enabled();
         let http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory> = {
             #[cfg(feature = "fault_injection")]
             {
@@ -1940,17 +1941,20 @@ impl CosmosDriver {
 
     /// **Internal test hook -- not part of the public API.**
     ///
-    /// Returns cached writable and readable account regions. The in-memory
-    /// emulator comparison tests use this to pin a live multi-region account
-    /// to one hub region via default `ExcludedRegions`. It does not fetch
-    /// account metadata; callers should use it after the driver has been
-    /// initialized.
+    /// Returns cached writable and readable account regions. Integration tests
+    /// use this to target individual live-account regions via
+    /// `ExcludedRegions`. It does not fetch account metadata; callers should
+    /// use it after the driver has been initialized.
     ///
     /// **Do not call from production code.** Available only because
     /// integration tests live outside the crate and cannot reach the account
     /// metadata cache directly. May be changed or removed at any time without
     /// a semver bump.
-    #[cfg(any(test, feature = "__internal_in_memory_emulator"))]
+    #[cfg(any(
+        test,
+        feature = "__internal_in_memory_emulator",
+        feature = "fault_injection"
+    ))]
     #[doc(hidden)]
     pub async fn cached_account_regions_for_testing(
         &self,

@@ -52,15 +52,15 @@ pub(crate) enum OutputFormat {
     Apiview,
 }
 
-/// File name of the patch that adds documentation comments back to `API.md`.
-pub(crate) const COMMENTS_PATCH_FILE_NAME: &str = "API.comments.patch";
-pub(crate) const MARKDOWN_METADATA_FILE_NAME: &str = "API.metadata.yml";
-pub(crate) const SOURCE_MAP_FILE_NAME: &str = "API.md.map";
+/// File name of the patch that adds documentation comments back to `api.md`.
+pub(crate) const COMMENTS_PATCH_FILE_NAME: &str = "api.comments.patch";
+pub(crate) const MARKDOWN_METADATA_FILE_NAME: &str = "api.metadata.yml";
+pub(crate) const SOURCE_MAP_FILE_NAME: &str = "api.md.map";
 
 impl OutputFormat {
     pub(crate) fn default_file_name(self) -> &'static str {
         match self {
-            Self::Markdown => "API.md",
+            Self::Markdown => "api.md",
             Self::Apiview => "apiview.json",
         }
     }

@@ -1,6 +1,6 @@
 ---
 name: export-api
-description: Generate API.md artifacts for changed Rust crates after code generation or source edits.
+description: Generate api.md artifacts for changed Rust crates after code generation or source edits.
 ---
 
 # Export API artifacts
@@ -41,8 +41,8 @@ Run this after regenerating sources or changing Rust code that can affect a crat
 
 ## Optional outputs
 
-- To include `API.comments.patch`, omit `--no-docs`.
-- To include `API.md.map`, omit `--no-map`.
+- To include `api.comments.patch`, omit `--no-docs`.
+- To include `api.md.map`, omit `--no-map`.
 
 ## No changed crates
 
@@ -51,5 +51,5 @@ report that no crate API artifacts need regeneration.
 
 ## Validation
 
-After generation, check the resulting `api/API.md` and `api/API.metadata.yml` files in `git diff`
+After generation, check the resulting `api/api.md` and `api/api.metadata.yml` files in `git diff`
 and report which crates were updated.

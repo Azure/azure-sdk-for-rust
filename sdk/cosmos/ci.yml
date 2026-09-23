@@ -120,6 +120,19 @@ extends:
         Path: sdk/cosmos/inmemory-emulator-matrix.json
         Selection: all
         GenerateVMJobs: true
+      # Public Rust SDK core-operation contracts run independently from the
+      # PR smoke profile so broader state and continuation assertions do not
+      # increase every existing emulator shard.
+      - Name: Cosmos_e2e_core_operations
+        Path: sdk/cosmos/e2e-core-operations-matrix.json
+        Selection: all
+        GenerateVMJobs: true
+      # Configuration, session, retry, hedging, and telemetry contracts use a
+      # deterministic two-region account and run through both hosted gateways.
+      - Name: Cosmos_e2e_configuration_resilience
+        Path: sdk/cosmos/e2e-configuration-resilience-matrix.json
+        Selection: all
+        GenerateVMJobs: true
       # The full consistency × read-consistency-strategy lifecycle matrix is
       # intentionally scheduled rather than blocking every PR. Jobs select
       # account/runtime/client cells from the two focused profiles. Non-Strong

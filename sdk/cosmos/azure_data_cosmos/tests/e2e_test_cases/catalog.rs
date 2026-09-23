@@ -22,24 +22,56 @@ const BACKENDS: [&str; 3] = [
 
 const SCENARIOS: &[&str] = &[
     include_str!("../../../e2e_tests/scenarios/management/capabilities.json"),
+    include_str!("../../../e2e_tests/scenarios/management/resource-lifecycle.json"),
     include_str!("../../../e2e_tests/scenarios/bootstrap/primary-success.json"),
+    include_str!("../../../e2e_tests/scenarios/bootstrap/backup-fallback.json"),
+    include_str!("../../../e2e_tests/scenarios/configuration/binary-routing.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/feed-read-strategies.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/response-token-capture.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/session-management.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/session-staleness.json"),
     include_str!("../../../e2e_tests/scenarios/items/lifecycle.json"),
     include_str!("../../../e2e_tests/scenarios/items/upsert-create-update.json"),
     include_str!("../../../e2e_tests/scenarios/items/create-conflict.json"),
     include_str!("../../../e2e_tests/scenarios/items/not-found-wrong-partition-key.json"),
     include_str!("../../../e2e_tests/scenarios/items/optimistic-concurrency.json"),
+    include_str!("../../../e2e_tests/scenarios/items/scalar-partition-keys.json"),
+    include_str!("../../../e2e_tests/scenarios/items/hierarchical-partition-key.json"),
+    include_str!("../../../e2e_tests/scenarios/items/transactional-batch-atomicity.json"),
+    include_str!("../../../e2e_tests/scenarios/items/patch-state.json"),
+    include_str!("../../../e2e_tests/scenarios/items/validation-contracts.json"),
+    include_str!("../../../e2e_tests/scenarios/items/numeric-unique-key-equivalence.json"),
+    include_str!("../../../e2e_tests/scenarios/items/quoted-partition-key-paths.json"),
     include_str!("../../../e2e_tests/scenarios/queries/parameterized-filter.json"),
     include_str!("../../../e2e_tests/scenarios/queries/invalid-syntax.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/pagination-resume.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/feed-ranges.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/change-feed-pagination-resume.json"),
+    include_str!("../../../e2e_tests/scenarios/queries/change-feed-all-versions-starts.json"),
     include_str!("../../../e2e_tests/scenarios/diagnostics/success-and-error.json"),
+    include_str!("../../../e2e_tests/scenarios/diagnostics/handlers-telemetry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/throttling-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/deadline.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/hedge-deadline.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/hedging.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/partition-topology-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/request-timeout-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/service-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/transport-retry.json"),
 ];
 
 const PROFILES: &[&str] = &[
     include_str!("../../../e2e_tests/profiles/smokeTests.json"),
+    include_str!("../../../e2e_tests/profiles/coreOperations.json"),
+    include_str!("../../../e2e_tests/profiles/configurationResilience.json"),
     include_str!("../../../e2e_tests/profiles/lifecycleConsistencyMatrix.json"),
     include_str!("../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"),
 ];
 
 const RUST_IMPLEMENTATIONS: &str = include_str!("../../../e2e_tests/implementations/rust.json");
+const CORE_OPERATIONS_MATRIX: &str = include_str!("../../../e2e-core-operations-matrix.json");
+const CONFIGURATION_RESILIENCE_MATRIX: &str =
+    include_str!("../../../e2e-configuration-resilience-matrix.json");
 const CONSISTENCY_MATRIX: &str = include_str!("../../../e2e-consistency-matrix.json");
 const OVERRIDE_MATRIX: &str = include_str!("../../../e2e-read-consistency-override-matrix.json");
 const SCENARIO_SCHEMA: &str = include_str!("../../../e2e_tests/schema/scenario.v1.json");
@@ -113,7 +145,14 @@ struct Backend {
 #[serde(rename_all = "camelCase")]
 pub(super) enum Capability {
     Capabilities,
+    ChangeFeed,
+    Container,
+    Database,
     GatewayV2,
+    Item,
+    Patch,
+    Query,
+    TransactionalBatch,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
@@ -370,6 +409,23 @@ pub(super) fn required_capabilities_for(
         .clone())
 }
 
+pub(super) fn scenario_applies_to_backend(
+    scenario_id: &str,
+    backend: &str,
+) -> Result<bool, String> {
+    let scenarios = load_scenarios()?;
+    let scenario = scenarios
+        .iter()
+        .find(|scenario| scenario.id == scenario_id)
+        .ok_or_else(|| format!("E2E scenario '{scenario_id}' does not exist"))?;
+    Ok(scenario
+        .backends
+        .get(backend)
+        .ok_or_else(|| format!("E2E scenario '{scenario_id}' has no backend '{backend}'"))?
+        .applicability
+        != Applicability::NotApplicable)
+}
+
 pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
     // Full JSON Schema evaluation is owned by Test-CosmosE2eScenarioDocuments in
     // Invoke-CosmosTestSetup.ps1. Keep these repository-native semantic checks aligned with
@@ -468,6 +524,20 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
         }
     }
     validate_pipeline_matrix(
+        CONFIGURATION_RESILIENCE_MATRIX,
+        profiles
+            .iter()
+            .find(|profile| profile.id == "configurationResilience")
+            .expect("configuration resilience profile must be registered"),
+    )?;
+    validate_pipeline_matrix(
+        CORE_OPERATIONS_MATRIX,
+        profiles
+            .iter()
+            .find(|profile| profile.id == "coreOperations")
+            .expect("core operations profile must be registered"),
+    )?;
+    validate_pipeline_matrix(
         CONSISTENCY_MATRIX,
         profiles
             .iter()
@@ -558,9 +628,11 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
             .difference(&discovered_scenario_ids)
             .cloned()
             .collect();
-        return Err(format!(
+        return Err(
+            format!(
             "scenario inventory differs from e2e_tests/scenarios; unregistered: {unregistered:?}, missing: {missing:?}"
-        ));
+            )
+        );
     }
     let referenced_profiles: BTreeSet<_> = scenarios
         .iter()
@@ -675,10 +747,12 @@ fn validate_pipeline_matrix(json: &str, profile: &Profile) -> Result<(), String>
         ),
     ] {
         if actual != expected {
-            return Err(format!(
+            return Err(
+                format!(
                 "pipeline matrix for '{}' does not cover its {axis} axis: expected {expected:?}, got {actual:?}",
                 profile.id
-            ));
+                )
+            );
         }
     }
     let flavors = matrix_axis(matrix, "AZURE_COSMOS_EMULATOR_FLAVOR")?;

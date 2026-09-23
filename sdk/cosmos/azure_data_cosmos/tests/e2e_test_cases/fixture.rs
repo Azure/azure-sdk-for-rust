@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::panic::AssertUnwindSafe;
+use std::{panic::AssertUnwindSafe, sync::OnceLock};
 
 use azure_core::Uuid;
 use azure_data_cosmos::{
@@ -11,13 +11,21 @@ use azure_data_cosmos::{
         BinaryEncodingOptions, ConnectionPoolOptions, OperationOptions, PartitionFailoverOptions,
         ReadConsistencyStrategy, Region,
     },
-    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, RoutingStrategy,
+    AccountEndpoint, AccountReference, CosmosClient, CosmosClientBuilder, CosmosRuntime,
+    RoutingStrategy,
 };
 use futures::FutureExt;
 
 use crate::e2e_test_cases::catalog::{ClientDefinition, RuntimeDefinition};
 
 pub type TestResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
+
+/// Serializes tests that share hosted-emulator account state, including
+/// replication controls, wire counters, and PR4 topology transitions.
+pub(super) fn fixture_test_lock() -> &'static tokio::sync::Mutex<()> {
+    static LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| tokio::sync::Mutex::new(()))
+}
 
 pub struct E2eTestFixture {
     cleanup: DatabaseCleanup,
@@ -107,16 +115,50 @@ impl E2eTestBuilder {
     where
         F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
     {
+        let _guard = fixture_test_lock().lock().await;
         let client = match self.client {
             Some(client) => client,
             None => build_client().await?,
         };
-        E2eTestFixture::run(client, self.partition_key, test).await
+        E2eTestFixture::run_with_client_unlocked(client, self.partition_key, test).await
     }
 }
 
 impl E2eTestFixture {
-    async fn run<F>(
+    pub async fn run<F>(test: F) -> TestResult
+    where
+        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+    {
+        let _guard = fixture_test_lock().lock().await;
+        let client = build_client().await?;
+        Self::run_with_client_unlocked(client, "/pk".into(), test).await
+    }
+
+    pub async fn run_with_partition_key<F>(
+        partition_key: PartitionKeyDefinition,
+        test: F,
+    ) -> TestResult
+    where
+        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+    {
+        let _guard = fixture_test_lock().lock().await;
+        let client = build_client().await?;
+        Self::run_with_client_unlocked(client, partition_key, test).await
+    }
+
+    pub async fn run_with_container_properties<F>(
+        properties: ContainerProperties,
+        test: F,
+    ) -> TestResult
+    where
+        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+    {
+        let _guard = fixture_test_lock().lock().await;
+        let client = build_client().await?;
+        Self::run_with_client_and_properties(client, properties, test).await
+    }
+
+    async fn run_with_client_unlocked<F>(
         client: CosmosClient,
         partition_key: PartitionKeyDefinition,
         test: F,
@@ -124,7 +166,20 @@ impl E2eTestFixture {
     where
         F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
     {
-        let fixture = Self::new(client, partition_key).await?;
+        let container_id = format!("items-{}", Uuid::now_v7());
+        let properties = ContainerProperties::new(container_id, partition_key);
+        Self::run_with_client_and_properties(client, properties, test).await
+    }
+
+    async fn run_with_client_and_properties<F>(
+        client: CosmosClient,
+        properties: ContainerProperties,
+        test: F,
+    ) -> TestResult
+    where
+        F: AsyncFnOnce(&E2eTestFixture) -> TestResult,
+    {
+        let fixture = Self::new(client, properties).await?;
         let outcome = AssertUnwindSafe(test(&fixture)).catch_unwind().await;
         let cleanup = fixture.cleanup().await;
         match outcome {
@@ -145,20 +200,15 @@ impl E2eTestFixture {
         }
     }
 
-    async fn new(client: CosmosClient, partition_key: PartitionKeyDefinition) -> TestResult<Self> {
+    async fn new(client: CosmosClient, properties: ContainerProperties) -> TestResult<Self> {
         // Preserve creation time in leaked resource IDs so cleanup tooling can age them out.
         let database_id = format!("e2e-{}", Uuid::now_v7());
-        let container_id = format!("items-{}", Uuid::now_v7());
+        let container_id = properties.id.to_string();
         client.create_database(&database_id, None).await?;
         let database = client.database_client(&database_id);
         let cleanup = DatabaseCleanup::new(client.clone(), database_id);
         let setup = async {
-            database
-                .create_container(
-                    ContainerProperties::new(container_id.clone(), partition_key),
-                    None,
-                )
-                .await?;
+            database.create_container(properties, None).await?;
             database.container_client(&container_id, None).await
         }
         .await;
@@ -215,6 +265,16 @@ pub async fn build_client_with_routing(
 }
 
 pub async fn build_client_with_defaults(setup: ClientSetup) -> TestResult<CosmosClient> {
+    build_client_with_customizer(setup, Ok).await
+}
+
+pub async fn build_client_with_customizer<F>(
+    setup: ClientSetup,
+    customize: F,
+) -> TestResult<CosmosClient>
+where
+    F: FnOnce(CosmosClientBuilder) -> TestResult<CosmosClientBuilder>,
+{
     let connection_string = std::env::var("AZURE_COSMOS_CONNECTION_STRING")?;
     let endpoint = connection_string_value(&connection_string, "AccountEndpoint")?;
     let key = connection_string_value(&connection_string, "AccountKey")?;
@@ -249,7 +309,7 @@ pub async fn build_client_with_defaults(setup: ClientSetup) -> TestResult<Cosmos
         client_builder = client_builder
             .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(enabled));
     }
-    Ok(client_builder
+    Ok(customize(client_builder)?
         .build(
             AccountReference::with_authentication_key(endpoint, key),
             setup.routing_strategy,
@@ -257,7 +317,7 @@ pub async fn build_client_with_defaults(setup: ClientSetup) -> TestResult<Cosmos
         .await?)
 }
 
-fn connection_string_value(connection_string: &str, key: &str) -> TestResult<String> {
+pub(super) fn connection_string_value(connection_string: &str, key: &str) -> TestResult<String> {
     connection_string
         .split(';')
         .filter_map(|part| part.split_once('='))

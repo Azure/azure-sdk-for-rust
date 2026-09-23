@@ -65,14 +65,14 @@ updated `main` and reviewed independently after its predecessor merges.
 The suite deliberately separates reusable configuration data from executable
 behavior.
 
-| Owner | Contents |
-| --- | --- |
-| Scenario JSON | Stable ID, title, requirement, maturity, tags, precedents, applicable setup profiles, backend applicability, fidelity, and required backend capabilities. |
-| Profile JSON | Account topology and consistency, replication behavior, runtime configuration, and client configuration. |
-| SDK implementation map | Scenario ID to source-native test implementation and implementation status. |
-| Rust source | Fixtures, operation-level options, generated cases, sequencing, retries, concurrency, state validation, diagnostics, and assertions. |
-| Pipeline matrices | Backend and setup-profile selection, scheduling, and sharding. |
-| Hosted emulator management API | Deterministic external controls for emulator-only orchestration. |
+| Owner                          | Contents                                                                                                                                                  |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scenario JSON                  | Stable ID, title, requirement, maturity, tags, precedents, applicable setup profiles, backend applicability, fidelity, and required backend capabilities. |
+| Profile JSON                   | Account topology and consistency, replication behavior, runtime configuration, and client configuration.                                                  |
+| SDK implementation map         | Scenario ID to source-native test implementation and implementation status.                                                                               |
+| Rust source                    | Fixtures, operation-level options, generated cases, sequencing, retries, concurrency, state validation, diagnostics, and assertions.                      |
+| Pipeline matrices              | Backend and setup-profile selection, scheduling, and sharding.                                                                                            |
+| Hosted emulator management API | Deterministic external controls for emulator-only orchestration.                                                                                          |
 
 This boundary prevents the catalog from becoming a second programming language.
 Operation-specific dimensions such as `ReadConsistencyStrategy`, patch
@@ -235,6 +235,9 @@ CI.
 
 ### PR2 — Core operations and emulator fidelity
 
+**Status:** Implemented for hosted-emulator validation; live differential
+execution is deferred to the live-promotion phase.
+
 Scope:
 
 - database and container control-plane lifecycle;
@@ -250,14 +253,31 @@ Scope:
 - patch operation and strategy behavior;
 - exact post-operation state assertions;
 - expanded negative status/substatus coverage;
-- emulator support needed for those scenarios; and
-- selected live differential baselines used to confirm emulator fidelity.
+- emulator support needed for those scenarios.
 
 PR2 should add emulator behavior only when required by a concrete SDK scenario.
 Differences discovered against live accounts must be fixed, explicitly modeled
 as simulated, or documented as not applicable.
 
+The query executor's synthetic-response diagnostics fallback includes every
+successful backend response in its aggregate accounting while bounding detailed
+retention. `PageAggregator` folds retained source contexts at 32 entries, and
+`DiagnosticsContext::aggregate_sub_operations` re-bounds retained request
+records to `max_request_diagnostics`. Folding preserves exact request counts and
+request charge while retaining bounded representative detail, so inefficient
+queries that consume many empty backend pages remain observable without
+unbounded diagnostics memory growth.
+
+The PR2 pipeline does not run a live-account job. Its `azureLive: supported`
+metadata remains declarative until targeted differential scenarios are wired
+and validated during live promotion; hosted-emulator results must not be
+treated as evidence of live-service fidelity.
+
 ### PR3 — Configuration, consistency, and resilience
+
+**Status:** Implemented for hosted-emulator validation. Entra ID remains on the
+existing dedicated live AAD pipeline until PR5 promotes catalog-driven Azure
+Live execution.
 
 Scope:
 
@@ -281,10 +301,45 @@ Scope:
 PR3 keeps fault predicates and operation-specific configuration in source code.
 Only reusable environment setup belongs in profile JSON.
 
+The hosted deadline scenario intentionally retains its one-second deadline,
+1.5-second injected delay, and two-second completion ceiling. The typed
+`CLIENT_OPERATION_TIMEOUT`, applied-fault count, and retained diagnostics are the primary
+contract; the wall-clock bounds are a practical smoke-test check rather than a precise scheduler
+guarantee. Wider delay/ceiling separation may be added as optional hardening, but is not required
+for PR3.
+
+The hosted Gateway V2 binary audit deliberately checks the protocol-defined `CosmosBinary` flag
+bit (`0x02`) independently of the production encoder's named constant. Sharing that constant would
+couple the implementation and its wire oracle, allowing both to agree on an incorrect value. Keep
+the independent literal and its explicit wire-value tests rather than centralizing it for style.
+
+The `configurationResilience` profile provides a fixed two-region Session
+account with deterministic replication delay. Source-native Rust scenarios own
+ordered backup fallback, preferred-region and account-order routing, binary
+encoding/text-response overrides, session-token management, bounded throttle
+retry, partition-topology refresh and retry signaling, operation deadlines,
+hedging, per-attempt diagnostics, diagnostics handlers, metrics, sampled logging,
+and OpenTelemetry spans. The existing
+scheduled consistency profile additionally runs feed-read contracts across all
+five account consistency levels. Key authentication is exercised by these
+hosted runs; Entra ID cannot be faithfully validated by the unauthenticated
+hosted emulator and remains covered by the live AAD pipeline.
+
 ### PR4 — Dynamic topology and availability
 
 Scope:
 
+- TODO: before adding PR4 topology profiles, validate each profile's
+  `client.routing` value against the routing strategy implemented by its test fixture so a profile
+  change cannot silently exercise a different routing mode. Scenarios that intentionally cover
+  multiple source-owned strategies, such as preferred-region plus account-order routing, must
+  declare that override explicitly instead of weakening validation globally;
+- TODO: generalize replication helpers before PR4 adds alternate region layouts or partition-key
+  values. `wait_for_item_replication` currently reads partition key `"A"` while excluding East US,
+  and current pause callers target West US. These are accepted PR3 constraints because every
+  applicable profile and caller has that shape. PR4 fixtures must instead derive the write region,
+  alternate read region, and partition key from the selected profile/scenario, or fail setup with
+  an explicit unsupported-topology error;
 - runtime region add, remove, offline, online, and recovery;
 - write-region failover and failback;
 - deterministic partition migration simulation;
@@ -309,10 +364,22 @@ Scope:
 
 - complete live-account setup profiles;
 - fixed-account and provisioned-account E2E matrices;
+- targeted live differential baselines that confirm emulator fidelity;
 - Azure Live execution for every eligible scenario;
 - promotion of validated `azureLive` applicability from `supported` to
   `required`;
 - complete diagnostics and OpenTelemetry audit;
+- TODO: define the semantic boundary of every hosted-emulator `/health` counter before treating
+  the counters as a reporting contract: decoded request, completed emulator operation, or
+  successfully emitted host response. Then place related Gateway V1/Gateway V2 increments on the
+  chosen side of fallible conversion boundaries and add failure-path tests that pin the result.
+  PR3 intentionally keeps the current placement because generated Gateway V2 responses are
+  buffered and use validated headers, no reachable conversion failure or cross-counter equality
+  contract has been demonstrated, and moving counters now would choose semantics implicitly. The
+  current `defaultConsistencyRequests` name is also retained in PR3: it is used as the wire bucket
+  for requests carrying no non-default read-consistency-strategy signal, not as a semantic count of
+  Default reads. PR5 must decide whether to rename it to reflect that wire meaning or add separate
+  semantic read counters before exposing these values in reports;
 - generated pull-request and scheduled shard manifests;
 - JUnit and scenario/profile/backend coverage reports;
 - runtime measurement and shard calibration;

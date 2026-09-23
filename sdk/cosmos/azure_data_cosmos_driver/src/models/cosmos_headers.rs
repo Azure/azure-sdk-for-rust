@@ -225,6 +225,8 @@ pub const PATCH_CONTENT_TYPE: &str = "application/json_patch+json";
 pub(crate) mod fault_injection_header_names {
     /// Operation type header set on requests for fault injection rule matching.
     pub const FAULT_INJECTION_OPERATION: &str = "x-ms-fault-injection-operation";
+    /// Routed region tag used when endpoint host names do not encode a region.
+    pub const FAULT_INJECTION_REGION: &str = "x-ms-fault-injection-region";
 }
 
 /// Cosmos request headers for operation-level customization.

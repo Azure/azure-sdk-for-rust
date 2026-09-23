@@ -4,10 +4,10 @@
 
 `eng/tools/generate_api` is a Rust CLI that generates the following public API artifacts for a target crate:
 
-1. `API.md` — one fenced `rust` block
-2. `API.metadata.yml` — YAML metadata for `API.md`
-3. `API.md.map` — an ECMA-426 source map for declaration lines in `API.md`
-4. `API.comments.patch` — a unified diff that adds doc comments back to `API.md`
+1. `api.md` — one fenced `rust` block
+2. `api.metadata.yml` — YAML metadata for `api.md`
+3. `api.md.map` — an ECMA-426 source map for declaration lines in `api.md`
+4. `api.comments.patch` — a unified diff that adds doc comments back to `api.md`
 5. `apiview.json` — an APIView tree-style `CodeFile`
 
 ## Scope
@@ -24,15 +24,15 @@ The tool exposes:
 
 - `--manifest-path <path/to/Cargo.toml>`
 - `--format <markdown|apiview>` default `markdown`
-- `--no-docs` suppresses doc comments in `apiview` and skips `API.comments.patch`
-- `--no-map` skips `API.md.map`; it is a no-op for `apiview`
+- `--no-docs` suppresses doc comments in `apiview` and skips `api.comments.patch`
+- `--no-map` skips `api.md.map`; it is a no-op for `apiview`
 - `--check` compares generated content with existing files without writing; missing files pass
 - `--output <directory>`
 
 Behavior:
 
-- default `markdown` writes `API.md`, `API.md.map`, and `API.comments.patch`
-- default `markdown` also writes `API.metadata.yml`
+- default `markdown` writes `api.md`, `api.md.map`, and `api.comments.patch`
+- default `markdown` also writes `api.metadata.yml`
 - `--format apiview` writes `apiview.json`
 - `--no-docs` suppresses APIView doc comment tokens and the Markdown comments patch
 - check comparisons ignore line-ending differences and mismatches exit `1`
@@ -119,6 +119,7 @@ Ordering is deterministic and shared by both output formats.
 - Markdown output renders child modules as nested `pub mod name { ... }`
 - APIView uses the same logical module tree with root unwrapped
 - Module doc comments and attributes render above the module declaration
+- Markdown renders crate-root docs above synthetic `#![crate_name = "..."]` and `#![crate_type = "..."]`; real crate attrs follow those anchors
 - Trait members are extracted into `ApiItem.members` instead of being embedded in the declaration string. Renderers handle the opening `{` and implied closing `}` separately so each member gets its own APIView `LineId`
 - Inherent impl blocks on structs enums and unions are first-class items with `ApiItem.members`. Do not flatten their members into the owning type. This preserves typestate surfaces such as multiple `read()` methods on different `SasBuilder` impls
 - Keep separate source impl blocks separate even when their rendered headers match. Preserve each block's own attrs docs and members
@@ -184,7 +185,7 @@ Documentation handling:
 Package metadata rendering:
 
 - Markdown renders the crate name first; APIView uses only the top-level `PackageName`
-- Markdown also writes `API.metadata.yml` with `apiMdSha256`, `packageVersion`, `parserVersion`, and `rustVersion`
+- Markdown also writes `api.metadata.yml` with `apiMdSha256`, `packageVersion`, `parserVersion`, and `rustVersion`
 - missing description, edition, or rust-version values are omitted
 - multiline descriptions render with the `Description` label on its own line
 - features use `default` plus `package.metadata.docs.rs.features` when present
@@ -213,11 +214,12 @@ For traits whose rustdoc-expanded methods carry synthetic async-trait lifetimes:
 ## Comments patch output
 
 - `render::markdown::render_lines` renders every line and marks doc comment lines
-- `render::markdown::render_from_lines` drops the marked lines to produce `API.md`
-- `render::patch` turns the marked lines into a unified diff against `API.md`
+- `render::markdown::render_from_lines` drops the marked lines to produce `api.md`
+- `render::patch` turns the marked lines into a unified diff against `api.md`
 - the diff only contains insertions
 - each contiguous doc-comment block becomes its own hunk
-- each hunk includes only the doc comments plus the next non-doc line as context
+- each hunk includes the doc comments, all following attributes, and the first declaration line as context
+- crate-root doc hunks anchor only to the synthetic `crate_name` and `crate_type` lines, not to later real crate attrs
 - no doc comments means an empty patch file
 
 ## Source map output

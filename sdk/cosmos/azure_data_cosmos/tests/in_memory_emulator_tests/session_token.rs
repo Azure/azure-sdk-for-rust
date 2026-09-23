@@ -8,9 +8,9 @@
 //! header on each request the transport actually sees. They prove two halves of
 //! the session-token contract:
 //!
-//! 1. **Capture** — write responses carry a session token, and the driver's
-//!    [`SessionContainer`] cache is updated with it (and advances as later
-//!    writes arrive).
+//! 1. **Capture** — eligible responses carry a session token, and the driver's
+//!    [`SessionContainer`] cache is updated independently of the operation's
+//!    effective consistency (and advances as later responses arrive).
 //! 2. **Resolve** — subsequent **read** requests carry the cached token on the
 //!    wire when (and only when) Session consistency is effective.
 //!
@@ -176,6 +176,7 @@ pub(crate) fn global_lsn(token: &str) -> u64 {
 /// resolved container, all under Session consistency.
 struct Harness {
     driver: Arc<CosmosDriver>,
+    peer_driver: Arc<CosmosDriver>,
     observer: Arc<RecordingObserver>,
     container: ContainerReference,
 }
@@ -236,7 +237,9 @@ impl Harness {
                     .build(),
             );
         }
-        let driver = runtime.create_driver(driver_options.build()).await.unwrap();
+        let driver_options = driver_options.build();
+        let peer_driver = runtime.create_driver(driver_options.clone()).await.unwrap();
+        let driver = runtime.create_driver(driver_options).await.unwrap();
 
         let container = driver
             .resolve_container(
@@ -249,6 +252,7 @@ impl Harness {
 
         Self {
             driver,
+            peer_driver,
             observer,
             container,
         }
@@ -305,6 +309,64 @@ impl Harness {
             .as_ref()
             .map(|t| t.as_str().to_string())
     }
+}
+
+#[tokio::test]
+async fn eventual_read_response_is_captured_for_later_session_read() {
+    let h = Harness::setup_with_options(true, ConsistencyLevel::Eventual, None).await;
+    let body = serde_json::to_vec(&TestItem {
+        id: "item-1".to_owned(),
+        pk: "pk1".to_owned(),
+        value: 1,
+    })
+    .unwrap();
+    h.peer_driver
+        .execute_singleton_operation(
+            CosmosOperation::create_item(h.item_ref("pk1", "item-1")).with_body(body),
+            OperationOptionsBuilder::new().build(),
+        )
+        .await
+        .expect("peer create_item should succeed");
+
+    h.observer.clear();
+    let eventual_response = h
+        .driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(h.item_ref("pk1", "item-1")),
+            OperationOptionsBuilder::new()
+                .with_read_consistency_strategy(ReadConsistencyStrategy::Eventual)
+                .build(),
+        )
+        .await
+        .expect("Eventual read should succeed");
+    assert_eq!(
+        h.observer.single_item_read().session_token,
+        None,
+        "Eventual read must not resolve a cached session token"
+    );
+    let eventual_token = eventual_response
+        .headers()
+        .session_token
+        .as_ref()
+        .expect("Eventual response should carry a session token")
+        .as_str()
+        .to_owned();
+
+    h.observer.clear();
+    h.driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(h.item_ref("pk1", "item-1")),
+            OperationOptionsBuilder::new()
+                .with_read_consistency_strategy(ReadConsistencyStrategy::Session)
+                .build(),
+        )
+        .await
+        .expect("Session read should succeed");
+    assert_eq!(
+        h.observer.single_item_read().session_token.as_deref(),
+        Some(eventual_token.as_str()),
+        "Session read must use the token captured from the preceding Eventual response"
+    );
 }
 
 #[tokio::test]

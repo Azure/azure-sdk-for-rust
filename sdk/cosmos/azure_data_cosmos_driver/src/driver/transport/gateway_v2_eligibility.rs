@@ -167,7 +167,7 @@ mod tests {
     fn full_fidelity_change_feed_read_feed_is_ineligible() {
         // A `Document`/`ReadFeed` is otherwise eligible, but a full-fidelity
         // (AllVersionsAndDeletes) change feed must route through the standard
-        // gateway because Gateway 2.0 does not forward the `A-IM` header.
+        // gateway.
         assert!(is_operation_supported_by_gateway_v2(
             ResourceType::Document,
             OperationType::ReadFeed,

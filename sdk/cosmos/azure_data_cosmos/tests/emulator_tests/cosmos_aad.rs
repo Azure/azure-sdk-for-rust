@@ -26,7 +26,9 @@ use azure_core::Uuid;
 use azure_data_cosmos::feed::FeedScope;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::{PartitionKey, Query};
-use framework::{probe_data_plane_ready, TestClient, TestRunContext};
+use framework::{
+    probe_data_plane_ready, read_item_with_readiness_retry, TestClient, TestRunContext,
+};
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -102,7 +104,7 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
             );
 
             // Point read via AAD.
-            let read = aad_container.read_item(&pk, &item_id, None).await?;
+            let read = read_item_with_readiness_retry(&aad_container, &pk, &item_id, None).await?;
             assert_eq!(read.status(), StatusCode::Ok);
             assert_eq!(
                 read.into_model::<AadTestItem>()?,

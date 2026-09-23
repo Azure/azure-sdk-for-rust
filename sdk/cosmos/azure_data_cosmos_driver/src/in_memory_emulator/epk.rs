@@ -49,7 +49,8 @@ pub(crate) fn compute_epk(
 /// - Empty strings and `[]` parse to an empty vector (cross-partition).
 /// - Malformed JSON returns `BadRequest` (HTTP 400).
 /// - NaN / +Inf / -Inf numbers return `BadRequest` (HTTP 400).
-/// - Object / array components return `BadRequest` (HTTP 400).
+/// - The empty-object `{}` sentinel maps to an undefined component.
+/// - Other object / array components return `BadRequest` (HTTP 400).
 pub(crate) fn parse_partition_key_header(
     header: &str,
 ) -> crate::error::Result<Vec<PartitionKeyValue>> {
@@ -106,19 +107,16 @@ pub(crate) fn extract_pk_from_body(
         .collect()
 }
 
-/// Walks `body` along `path` (slash-separated, leading `/` stripped),
-/// rejecting non-object intermediates and converting the leaf to a
-/// [`PartitionKeyValue`]. A leaf-absent traversal returns
-/// [`PartitionKeyValue::undefined`].
+/// Walks `body` along a Cosmos partition-key path, including quoted segments
+/// whose property names contain `/` characters.
 fn extract_pk_at_path(
     body: &serde_json::Value,
     path: &str,
 ) -> crate::error::Result<PartitionKeyValue> {
-    let path_str = path.trim_start_matches('/');
-    if path_str.is_empty() {
+    let segments = parse_partition_key_path(path)?;
+    if segments.is_empty() {
         return json_to_pk_component(body);
     }
-    let segments: Vec<&str> = path_str.split('/').collect();
     let last_idx = segments.len() - 1;
     let mut current = body;
     for (i, segment) in segments.iter().enumerate() {
@@ -132,7 +130,7 @@ fn extract_pk_at_path(
                 ))
                 .build()
         })?;
-        match obj.get(*segment) {
+        match obj.get(segment) {
             Some(next) if i == last_idx => return json_to_pk_component(next),
             Some(next) => current = next,
             None => return Ok(PartitionKeyValue::UNDEFINED),
@@ -140,6 +138,68 @@ fn extract_pk_at_path(
     }
     // Unreachable: loop returns or assigns on every iteration.
     Ok(PartitionKeyValue::UNDEFINED)
+}
+
+fn parse_partition_key_path(path: &str) -> crate::error::Result<Vec<String>> {
+    let bytes = path.as_bytes();
+    let mut segments = Vec::new();
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] != b'/' {
+            return Err(invalid_partition_key_path(path, index));
+        }
+        index += 1;
+        if index == bytes.len() {
+            break;
+        }
+
+        if matches!(bytes[index], b'\'' | b'"') {
+            let quote = bytes[index];
+            let start = index + 1;
+            index = start;
+            loop {
+                let Some(relative) = bytes[index..].iter().position(|value| *value == quote) else {
+                    return Err(invalid_partition_key_path(path, start - 1));
+                };
+                index += relative;
+                let escaped = bytes[..index]
+                    .iter()
+                    .rev()
+                    .take_while(|value| **value == b'\\')
+                    .count()
+                    % 2
+                    == 1;
+                if !escaped {
+                    break;
+                }
+                index += 1;
+            }
+            segments.push(path[start..index].to_owned());
+            index += 1;
+            if index < bytes.len() && bytes[index] != b'/' {
+                return Err(invalid_partition_key_path(path, index));
+            }
+        } else {
+            let end = bytes[index..]
+                .iter()
+                .position(|value| *value == b'/')
+                .map_or(bytes.len(), |relative| index + relative);
+            segments.push(path[index..end].trim().to_owned());
+            index = end;
+        }
+    }
+    Ok(segments)
+}
+
+fn invalid_partition_key_path(path: &str, index: usize) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            azure_core::http::StatusCode::BadRequest,
+        ))
+        .with_message(format!(
+            "invalid partition key path '{path}' at byte index {index}"
+        ))
+        .build()
 }
 
 /// Converts a single JSON value to a [`PartitionKeyValue`], rejecting non-scalars
@@ -170,6 +230,7 @@ fn json_to_pk_component(value: &serde_json::Value) -> crate::error::Result<Parti
             }
             Ok(PartitionKeyValue::from(f))
         }
+        serde_json::Value::Object(object) if object.is_empty() => Ok(PartitionKeyValue::UNDEFINED),
         serde_json::Value::Object(_) | serde_json::Value::Array(_) => {
             Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
@@ -207,6 +268,12 @@ mod tests {
         let components = parse_partition_key_header("[null]").unwrap();
         let expected: PartitionKeyValue = Option::<&str>::None.into();
         assert_eq!(components, vec![expected]);
+    }
+
+    #[test]
+    fn parse_pk_header_undefined() {
+        let components = parse_partition_key_header("[{}]").unwrap();
+        assert_eq!(components, vec![PartitionKeyValue::UNDEFINED]);
     }
 
     #[test]
@@ -257,6 +324,46 @@ mod tests {
     }
 
     #[test]
+    fn extract_pk_double_quoted_segments_preserve_slashes() {
+        let body = serde_json::json!({"first level' 1*()": {"le/vel2": "value"}});
+        let components =
+            extract_pk_from_body(&body, &[r#"/"first level' 1*()"/"le/vel2""#]).unwrap();
+        assert_eq!(components, [PartitionKeyValue::from("value")]);
+    }
+
+    #[test]
+    fn extract_pk_single_quoted_segments_preserve_slashes() {
+        let body = serde_json::json!({"first level\" 1*()": {"le/vel2": "value"}});
+        let components =
+            extract_pk_from_body(&body, &[r#"/'first level" 1*()'/'le/vel2'"#]).unwrap();
+        assert_eq!(components, [PartitionKeyValue::from("value")]);
+    }
+
+    #[test]
+    fn extract_pk_matching_quotes_preserve_preceding_backslashes() {
+        let body = serde_json::json!({
+            "double\\\"quote": "double-value",
+            "single\\'quote": "single-value",
+            "double\"quote": "must-not-match"
+        });
+        assert_eq!(
+            extract_pk_from_body(&body, &[r#"/"double\"quote""#]).unwrap(),
+            [PartitionKeyValue::from("double-value")]
+        );
+        assert_eq!(
+            extract_pk_from_body(&body, &[r#"/'single\'quote'"#]).unwrap(),
+            [PartitionKeyValue::from("single-value")]
+        );
+    }
+
+    #[test]
+    fn malformed_quoted_partition_key_paths_error() {
+        let body = serde_json::json!({"pk": "value"});
+        assert!(extract_pk_from_body(&body, &[r#"/"pk"suffix"#]).is_err());
+        assert!(extract_pk_from_body(&body, &[r#"/"pk"#]).is_err());
+    }
+
+    #[test]
     fn extract_pk_missing_path_is_undefined() {
         let body = serde_json::json!({"id": "doc1"});
         let components = extract_pk_from_body(&body, &["/missing"]).unwrap();
@@ -267,6 +374,15 @@ mod tests {
     fn extract_pk_object_value_errors() {
         let body = serde_json::json!({"pk": {"nested": "object"}});
         assert!(extract_pk_from_body(&body, &["/pk"]).is_err());
+    }
+
+    #[test]
+    fn extract_pk_empty_object_value_is_undefined() {
+        let body = serde_json::json!({"pk": {}});
+        assert_eq!(
+            extract_pk_from_body(&body, &["/pk"]).unwrap(),
+            [PartitionKeyValue::UNDEFINED]
+        );
     }
 
     #[test]

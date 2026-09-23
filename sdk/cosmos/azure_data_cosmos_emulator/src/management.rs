@@ -117,6 +117,15 @@ async fn health(State(state): State<ManagementState>) -> Json<serde_json::Value>
             .iter()
             .any(|binding| binding.gateway20_url.is_some()),
         "connectivityProbes": state.metrics.connectivity_probes(),
+        "binaryNegotiatedRequests": state.metrics.binary_negotiated_requests(),
+        "binaryPayloadRequests": state.metrics.binary_payload_requests(),
+        "binaryResponsePayloads": state.metrics.binary_response_payloads(),
+        "defaultConsistencyRequests": state.metrics.default_consistency_requests(),
+        "eventualConsistencyRequests": state.metrics.eventual_consistency_requests(),
+        "sessionConsistencyRequests": state.metrics.session_consistency_requests(),
+        "latestCommittedConsistencyRequests": state.metrics.latest_committed_consistency_requests(),
+        "globalStrongConsistencyRequests": state.metrics.global_strong_consistency_requests(),
+        "gatewayRequests": state.metrics.gateway_requests(),
         "gateway20Requests": state.metrics.gateway20_requests()
     }))
 }
