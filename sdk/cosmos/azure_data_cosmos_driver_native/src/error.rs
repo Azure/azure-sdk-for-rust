@@ -228,7 +228,9 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientFfiQueueShutdown = 20358,
     /// `CLIENT_FFI_QUEUE_FULL` (20359).
     CosmosSubStatusClientFfiQueueFull = 20359,
-    /// `CLIENT_FFI_OPERATION_CANCELLED` (20360).
+    /// `CLIENT_FFI_OPERATION_CANCELLED` (20360). Reserved and unused: it
+    /// mirrors the driver constant, but no wrapper path produces it. The
+    /// value is kept fixed for future use.
     CosmosSubStatusClientFfiOperationCancelled = 20360,
     /// `CLIENT_FFI_RUNTIME_BUILD_FAILED` (20361).
     CosmosSubStatusClientFfiRuntimeBuildFailed = 20361,
@@ -389,7 +391,9 @@ pub(crate) enum CosmosErrorCode {
     CosmosErrorCodeTooManyPartitionKeyComponents,
     /// An account endpoint URL or credential could not be parsed.
     CosmosErrorCodeInvalidAccountReference,
-    /// An operation was cancelled before it completed.
+    /// Reserved and unused. No wrapper path produces this. The variant and its
+    /// `(408, 20360)` packed status are kept fixed for future use.
+    #[allow(dead_code, reason = "reserved slot kept fixed for ABI stability")]
     CosmosErrorCodeOperationCancelled,
     /// A submit targeted a completion queue that was already shut down.
     CosmosErrorCodeQueueShutdown,

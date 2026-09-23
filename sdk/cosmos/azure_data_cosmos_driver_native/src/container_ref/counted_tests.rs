@@ -279,7 +279,6 @@ fn public_async_resolution_owns_identifiers_before_scheduling() {
     );
     assert_eq!(completion.status, COSMOS_STATUS_SUCCESS);
     assert_eq!(completion.user_data, 42);
-    assert_eq!(completion.was_cancel_requested, 0);
     assert_eq!(
         *fixture.transport.paths.lock().unwrap(),
         vec![CONTAINER_PATH.to_owned()]
