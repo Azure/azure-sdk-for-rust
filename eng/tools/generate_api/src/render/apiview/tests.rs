@@ -116,6 +116,7 @@ fn renders_package_metadata_and_features_as_leading_text_tokens() {
             description: Some("Multi-line\ncomment\n".to_string()),
             edition: Some("2021".to_string()),
             rust_version: Some("1.88".to_string()),
+            crate_type: "lib".to_string(),
             features: BTreeMap::from([
                 ("alpha".to_string(), vec!["dep:alpha".to_string()]),
                 (

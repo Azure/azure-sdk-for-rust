@@ -192,8 +192,10 @@ pub async fn probe_driver_data_plane_ready(
             }
             Err(error) => {
                 let status = error.status();
-                let retryable = (status.status_code() == StatusCode::Forbidden
-                    && status.sub_status() == Some(SubStatusCode::new(5302)))
+                let retryable = (status.status_code() == StatusCode::Unauthorized
+                    && status.sub_status() == Some(SubStatusCode::new(5007)))
+                    || (status.status_code() == StatusCode::Forbidden
+                        && status.sub_status() == Some(SubStatusCode::new(5302)))
                     || (status.status_code() == StatusCode::NotFound
                         && status.sub_status()
                             == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS))
@@ -1150,9 +1152,11 @@ impl DriverTestRunContext {
                     let create_in_progress = status.status_code() == StatusCode::NotFound
                         && status.sub_status()
                             == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
+                    let owner_not_found = status.status_code() == StatusCode::NotFound
+                        && status.sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND);
                     let ambiguous_not_found = ambiguous_create_error.is_some()
                         && status.status_code() == StatusCode::NotFound;
-                    if create_in_progress || ambiguous_not_found {
+                    if create_in_progress || owner_not_found || ambiguous_not_found {
                         tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
                         delay_ms = (delay_ms * 2).min(5000);
                         last_err_msg = Some(format!("{e}"));
