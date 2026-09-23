@@ -504,6 +504,8 @@ impl SubStatusCode {
             20124 => Some("ClientBufferedQueryContinuationUnsupported"),
             20125 => Some("ClientBufferedQueryRequiresFiniteWindow"),
             20126 => Some("ClientNonStreamingOrderByWindowTooLarge"),
+            20127 => Some("ClientPartitionKeyNumberNonFinite"),
+            20128 => Some("ClientUserAgentSuffixInvalid"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
             20152 => Some("ClientThroughputControlGroupNotRegistered"),
@@ -1415,6 +1417,12 @@ impl SubStatusCode {
     /// A non-streaming `ORDER BY` query's candidate storage cannot be represented
     /// or allocated by the current process (20126).
     pub const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: SubStatusCode = SubStatusCode(20126);
+
+    /// A partition key number is non-finite (20127).
+    pub const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: SubStatusCode = SubStatusCode(20127);
+
+    /// A user-agent suffix is too long or contains invalid characters (20128).
+    pub const CLIENT_USER_AGENT_SUFFIX_INVALID: SubStatusCode = SubStatusCode(20128);
 
     // ----- 20150-20199: SDK configuration / setup errors -----
 
@@ -2410,6 +2418,18 @@ impl CosmosStatus {
         sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE),
     };
 
+    /// 400 / 20127 — a partition key number is non-finite.
+    pub const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE),
+    };
+
+    /// 400 / 20128 — a user-agent suffix is too long or contains invalid characters.
+    pub const CLIENT_USER_AGENT_SUFFIX_INVALID: CosmosStatus = CosmosStatus {
+        status_code: StatusCode::BadRequest,
+        sub_status: Some(SubStatusCode::CLIENT_USER_AGENT_SUFFIX_INVALID),
+    };
+
     /// 500 / 20217 — a `DISTINCT` node was asked to forward a partition split,
     /// which would discard its deduplication state.
     pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = CosmosStatus {
@@ -2789,10 +2809,30 @@ mod tests {
         }
         assert_eq!(
             CosmosStatus::new(StatusCode::BadRequest)
-                .with_sub_status(20127)
+                .with_sub_status(20129)
                 .name(),
             None
         );
+    }
+
+    #[test]
+    fn constructor_validation_status_codes_and_names() {
+        for (code, expected, name) in [
+            (
+                20127,
+                CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE,
+                "ClientPartitionKeyNumberNonFinite",
+            ),
+            (
+                20128,
+                CosmosStatus::CLIENT_USER_AGENT_SUFFIX_INVALID,
+                "ClientUserAgentSuffixInvalid",
+            ),
+        ] {
+            let status = CosmosStatus::new(StatusCode::BadRequest).with_sub_status(code);
+            assert_eq!(status, expected);
+            assert_eq!(status.name(), Some(name));
+        }
     }
 
     #[test]

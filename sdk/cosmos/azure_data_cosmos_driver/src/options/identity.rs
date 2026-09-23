@@ -220,7 +220,7 @@ impl TryFrom<String> for UserAgentSuffix {
         };
 
         Err(CosmosError::builder()
-            .with_status(CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+            .with_status(CosmosStatus::CLIENT_USER_AGENT_SUFFIX_INVALID)
             .with_message(message)
             .build())
     }
@@ -322,7 +322,7 @@ mod tests {
         ] {
             assert_eq!(
                 error.status(),
-                CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                CosmosStatus::CLIENT_USER_AGENT_SUFFIX_INVALID
             );
             assert!(error.to_string().contains("at most 25 characters"));
         }
@@ -346,7 +346,7 @@ mod tests {
             ] {
                 assert_eq!(
                     error.status(),
-                    CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
+                    CosmosStatus::CLIENT_USER_AGENT_SUFFIX_INVALID
                 );
                 assert!(error.to_string().contains("HTTP header-safe"));
                 assert!(!error.to_string().contains(invalid));

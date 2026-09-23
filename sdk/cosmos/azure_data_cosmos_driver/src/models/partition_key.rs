@@ -9,7 +9,6 @@ use crate::{
     models::FiniteF64,
 };
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
-use azure_core::http::StatusCode;
 use std::{borrow::Cow, hash::Hash};
 
 /// Header name for partition key.
@@ -231,7 +230,7 @@ impl From<Cow<'static, str>> for PartitionKeyValue {
 
 fn non_finite_partition_key_error() -> CosmosError {
     CosmosError::builder()
-        .with_status(CosmosStatus::new(StatusCode::BadRequest))
+        .with_status(CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE)
         .with_message("partition key number must be finite")
         .build()
 }
@@ -638,12 +637,23 @@ mod tests {
         for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
             assert_eq!(
                 PartitionKeyValue::try_from(value).unwrap_err().status(),
-                CosmosStatus::new(StatusCode::BadRequest)
+                CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
             );
-            assert!(PartitionKey::try_from(value).is_err());
-            assert!(PartitionKeyValue::try_from(Some(value)).is_err());
+            assert_eq!(
+                PartitionKey::try_from(value).unwrap_err().status(),
+                CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+            );
+            assert_eq!(
+                PartitionKeyValue::try_from(Some(value))
+                    .unwrap_err()
+                    .status(),
+                CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+            );
         }
-        assert!(PartitionKeyValue::try_from(f32::NAN).is_err());
+        assert_eq!(
+            PartitionKeyValue::try_from(f32::NAN).unwrap_err().status(),
+            CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+        );
         assert_eq!(
             PartitionKeyValue::try_from(None::<f64>).unwrap(),
             PartitionKeyValue::NULL

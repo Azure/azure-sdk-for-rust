@@ -129,8 +129,8 @@ pub(crate) unsafe fn partition_key_from_components(
         return Err(CosmosErrorCode::CosmosErrorCodeInvalidPartitionKey);
     }
     if len > MAX_COMPONENTS {
-        // Cosmos DB caps hierarchical keys at 3 levels; reject before
-        // `From<Vec<...>>` (which panics above 3 levels) is reached.
+        // Reject oversized keys at the FFI boundary with the native error
+        // code before reading or allocating the component array.
         return Err(CosmosErrorCode::CosmosErrorCodeTooManyPartitionKeyComponents);
     }
     // SAFETY: caller guarantees `components` points to `len` initialized values.

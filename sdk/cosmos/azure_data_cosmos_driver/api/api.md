@@ -680,6 +680,7 @@ pub mod error {
         const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: CosmosStatus = _;
         const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_EMPTY: CosmosStatus = _;
+        const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: CosmosStatus = _;
         const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: CosmosStatus = _;
         const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: CosmosStatus = _;
@@ -702,6 +703,7 @@ pub mod error {
         const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: CosmosStatus = _;
         const CLIENT_UNKNOWN_PRIORITY_LEVEL: CosmosStatus = _;
         const CLIENT_UNSUPPORTED_QUERY_FEATURE: CosmosStatus = _;
+        const CLIENT_USER_AGENT_SUFFIX_INVALID: CosmosStatus = _;
         const COMPLETING_PARTITION_MIGRATION: CosmosStatus = _;
         const COMPLETING_SPLIT: CosmosStatus = _;
         const CROSS_PARTITION_QUERY_NOT_SERVABLE: CosmosStatus = _;
@@ -852,6 +854,7 @@ pub mod error {
         const CLIENT_OPERATION_TIMEOUT: SubStatusCode = _;
         const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = _;
         const CLIENT_PARTITION_KEY_EMPTY: SubStatusCode = _;
+        const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: SubStatusCode = _;
         const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: SubStatusCode = _;
         const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: SubStatusCode = _;
         const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: SubStatusCode = _;
@@ -875,6 +878,7 @@ pub mod error {
         const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: SubStatusCode = _;
         const CLIENT_UNKNOWN_PRIORITY_LEVEL: SubStatusCode = _;
         const CLIENT_UNSUPPORTED_QUERY_FEATURE: SubStatusCode = _;
+        const CLIENT_USER_AGENT_SUFFIX_INVALID: SubStatusCode = _;
         const COLLECTIONS_IN_PARTITION_GOT_UPDATED: SubStatusCode = _;
         const COLLECTION_CREATE_IN_PROGRESS: SubStatusCode = _;
         const COLLECTION_QUOTA_EXCEEDED: SubStatusCode = _;
@@ -1842,6 +1846,7 @@ pub mod models {
         const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: CosmosStatus = _;
         const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_EMPTY: CosmosStatus = _;
+        const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: CosmosStatus = _;
         const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: CosmosStatus = _;
         const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: CosmosStatus = _;
@@ -1864,6 +1869,7 @@ pub mod models {
         const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: CosmosStatus = _;
         const CLIENT_UNKNOWN_PRIORITY_LEVEL: CosmosStatus = _;
         const CLIENT_UNSUPPORTED_QUERY_FEATURE: CosmosStatus = _;
+        const CLIENT_USER_AGENT_SUFFIX_INVALID: CosmosStatus = _;
         const COMPLETING_PARTITION_MIGRATION: CosmosStatus = _;
         const COMPLETING_SPLIT: CosmosStatus = _;
         const CROSS_PARTITION_QUERY_NOT_SERVABLE: CosmosStatus = _;
@@ -2442,6 +2448,7 @@ pub mod models {
         const CLIENT_OPERATION_TIMEOUT: SubStatusCode = _;
         const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = _;
         const CLIENT_PARTITION_KEY_EMPTY: SubStatusCode = _;
+        const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: SubStatusCode = _;
         const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: SubStatusCode = _;
         const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: SubStatusCode = _;
         const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: SubStatusCode = _;
@@ -2465,6 +2472,7 @@ pub mod models {
         const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: SubStatusCode = _;
         const CLIENT_UNKNOWN_PRIORITY_LEVEL: SubStatusCode = _;
         const CLIENT_UNSUPPORTED_QUERY_FEATURE: SubStatusCode = _;
+        const CLIENT_USER_AGENT_SUFFIX_INVALID: SubStatusCode = _;
         const COLLECTIONS_IN_PARTITION_GOT_UPDATED: SubStatusCode = _;
         const COLLECTION_CREATE_IN_PROGRESS: SubStatusCode = _;
         const COLLECTION_QUOTA_EXCEEDED: SubStatusCode = _;
