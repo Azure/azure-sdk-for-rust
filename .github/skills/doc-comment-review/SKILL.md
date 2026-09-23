@@ -1,6 +1,6 @@
 ---
 name: doc-comment-review
-description: Review Rust public API doc comments for human-first clarity, Microsoft style, user relevance, Rust links and sections, and buildable examples. Use whenever reviewing code that affects public APIs, even if no doc comments changed.
+description: Write and review Rust public API doc comments for human-first clarity, Microsoft style, user relevance, Rust links and sections, and buildable examples. Use when writing or revising public API documentation, and whenever reviewing code that affects public APIs, even if no doc comments changed.
 ---
 
 # Review public API doc comments
