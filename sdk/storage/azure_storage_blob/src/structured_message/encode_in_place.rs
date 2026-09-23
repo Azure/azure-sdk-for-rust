@@ -7,7 +7,7 @@ use azure_core::{error::ErrorKind, http::Body, stream::SeekableStream, Error, Re
 use bytes::Bytes;
 use crc_fast::{CrcAlgorithm, Digest};
 
-use super::smv1;
+use super::{derive_structured_message_length, smv1};
 use crate::streams::multi_body_stream::MultiBodyStream;
 
 /// Wraps a body in a single-segment structured message using the CRC 64 NVME feature with the provided crc.
@@ -71,7 +71,7 @@ pub fn encode_bytes_in_structured_message(
         .collect::<Vec<_>>();
 
     let stream_header = smv1::StreamHeader {
-        message_len: content.len() as u64,
+        message_len: derive_structured_message_length(content.len() as u64, segment_len as u64),
         flags: smv1::Flags::CRC_64_NVME,
         segment_count: segments_with_checksums.len() as u16,
     }
@@ -107,12 +107,10 @@ fn crc_inline(data: &[u8]) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use std::{pin::pin, task::Poll};
-
     use azure_core::stream::BytesStream;
-    use futures::{AsyncRead, AsyncReadExt};
+    use futures::AsyncReadExt;
 
-    use crate::structured_message::derive_structured_message_length;
+    use crate::structured_message::tests::*;
 
     use super::*;
 
@@ -412,10 +410,7 @@ mod tests {
         dst_offset += 8;
 
         // check stream footer
-        assert_eq!(
-            &dst[dst_offset + SEGMENT_0_LEN..],
-            &expected_data_crc.to_le_bytes()[..],
-        );
+        assert_eq!(&dst[dst_offset..], &expected_data_crc.to_le_bytes()[..],);
     }
 
     #[test]
@@ -449,53 +444,5 @@ mod tests {
         sm_stream.read_to_end(&mut dst_2).await.unwrap();
 
         assert_eq!(dst_1, dst_2);
-    }
-
-    #[derive(Clone, Debug)]
-    struct SeekableStreamHideLen {
-        inner: Box<dyn SeekableStream>,
-    }
-    impl AsyncRead for SeekableStreamHideLen {
-        fn poll_read(
-            self: std::pin::Pin<&mut Self>,
-            cx: &mut std::task::Context<'_>,
-            buf: &mut [u8],
-        ) -> Poll<std::io::Result<usize>> {
-            pin!(self.get_mut().inner.as_mut()).poll_read(cx, buf)
-        }
-    }
-
-    #[async_trait::async_trait]
-    impl SeekableStream for SeekableStreamHideLen {
-        fn len(&self) -> Option<u64> {
-            None
-        }
-        async fn reset(&mut self) -> Result<()> {
-            self.inner.reset().await
-        }
-    }
-
-    #[derive(Clone, Debug)]
-    struct SeekableStreamFailReset {
-        inner: Box<dyn SeekableStream>,
-    }
-    impl AsyncRead for SeekableStreamFailReset {
-        fn poll_read(
-            self: std::pin::Pin<&mut Self>,
-            cx: &mut std::task::Context<'_>,
-            buf: &mut [u8],
-        ) -> Poll<std::io::Result<usize>> {
-            pin!(self.get_mut().inner.as_mut()).poll_read(cx, buf)
-        }
-    }
-
-    #[async_trait::async_trait]
-    impl SeekableStream for SeekableStreamFailReset {
-        fn len(&self) -> Option<u64> {
-            self.inner.len()
-        }
-        async fn reset(&mut self) -> Result<()> {
-            Err(Error::with_message(ErrorKind::Io, "Stream reset blocked."))
-        }
     }
 }

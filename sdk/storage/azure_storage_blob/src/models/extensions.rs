@@ -178,3 +178,27 @@ impl From<HashMap<String, AccessPolicy>> for SignedIdentifiers {
         }
     }
 }
+
+pub(crate) trait VecExt {
+    type Item;
+    fn get_or_extend(&mut self, index: usize, value: Self::Item) -> &Self::Item;
+    fn get_or_extend_mut(&mut self, index: usize, value: Self::Item) -> &mut Self::Item;
+}
+
+impl<T: Clone> VecExt for Vec<T> {
+    type Item = T;
+
+    fn get_or_extend(&mut self, index: usize, value: Self::Item) -> &Self::Item {
+        if index >= self.len() {
+            self.resize(index + 1, value);
+        }
+        &self[index]
+    }
+
+    fn get_or_extend_mut(&mut self, index: usize, value: Self::Item) -> &mut Self::Item {
+        if index >= self.len() {
+            self.resize(index + 1, value);
+        }
+        &mut self[index]
+    }
+}

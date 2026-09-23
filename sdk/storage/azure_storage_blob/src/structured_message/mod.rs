@@ -42,3 +42,61 @@ const fn derive_structured_message_length(content_len: u64, segment_len: u64) ->
         + (content_len.div_ceil(segment_len)) * (smv1::SEGMENT_HEADER_LENGTH as u64 + CRC_64_LEN)
         + CRC_64_LEN
 }
+
+#[cfg(test)]
+mod tests {
+    use std::{pin::pin, task::Poll};
+
+    use azure_core::{error::ErrorKind, stream::SeekableStream, Error};
+    use futures::AsyncRead;
+
+    use super::*;
+
+    #[derive(Clone, Debug)]
+    pub struct SeekableStreamHideLen {
+        pub inner: Box<dyn SeekableStream>,
+    }
+    impl AsyncRead for SeekableStreamHideLen {
+        fn poll_read(
+            self: std::pin::Pin<&mut Self>,
+            cx: &mut std::task::Context<'_>,
+            buf: &mut [u8],
+        ) -> Poll<std::io::Result<usize>> {
+            pin!(self.get_mut().inner.as_mut()).poll_read(cx, buf)
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl SeekableStream for SeekableStreamHideLen {
+        fn len(&self) -> Option<u64> {
+            None
+        }
+        async fn reset(&mut self) -> Result<()> {
+            self.inner.reset().await
+        }
+    }
+
+    #[derive(Clone, Debug)]
+    pub struct SeekableStreamFailReset {
+        pub inner: Box<dyn SeekableStream>,
+    }
+    impl AsyncRead for SeekableStreamFailReset {
+        fn poll_read(
+            self: std::pin::Pin<&mut Self>,
+            cx: &mut std::task::Context<'_>,
+            buf: &mut [u8],
+        ) -> Poll<std::io::Result<usize>> {
+            pin!(self.get_mut().inner.as_mut()).poll_read(cx, buf)
+        }
+    }
+
+    #[async_trait::async_trait]
+    impl SeekableStream for SeekableStreamFailReset {
+        fn len(&self) -> Option<u64> {
+            self.inner.len()
+        }
+        async fn reset(&mut self) -> Result<()> {
+            Err(Error::with_message(ErrorKind::Io, "Stream reset blocked."))
+        }
+    }
+}

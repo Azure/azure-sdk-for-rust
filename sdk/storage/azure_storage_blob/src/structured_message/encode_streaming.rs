@@ -17,6 +17,8 @@ use bytes::Bytes;
 use crc_fast::{checksum_combine, CrcAlgorithm, Digest};
 use futures::AsyncRead;
 
+use crate::models::extensions::VecExt;
+
 use super::{derive_structured_message_length, smv1};
 
 #[derive(Clone, Debug)]
@@ -25,20 +27,39 @@ pub struct SeekableStructuredMessageEncodingStream {
     content: Box<dyn SeekableStream>,
 
     /// Cached length of content. Constructor fails if content.len() == None and so we can skip all the Option
-    /// checks and just work with a value. Additionally, structured message cannot tolerate a change to this value,
-    /// so we do not need to accommodate such a check.
+    /// checks and just work with a value.
+    ///
+    /// Structured message encodes the content length into the stream header. Therefore, a change to len() during
+    /// streaming is intolerable. This cached value helps enforce that constraint.
+    /// On stream reset, a change is technically tolerated by the spec, but is undesirable for a content-validation
+    /// feature and should also not be tolerated. Therefore, this value must remain constant over the stream lifetime.
+    ///
+    /// DO NOT MODIFY.
     content_len: u64,
 
     /// Number of bytes that have been read so far from content.
+    /// This value should be reset on stream reset.
     content_read: u64,
 
+    /// Current segment index. This is tracked separately because the current segment index is often needed exactly on
+    /// the border of `content_read / segment_len` on both sides of the border.
+    ///
+    /// The value is modified when transitioning to the next segment (when `state` is set to
+    /// `StructuredMetadata(SegmentHeader, _)`). Therefore, it will always reflect the correct segment while operating
+    /// with `SegmentContent`, `StructuredMetadata(SegmentHeader, _)`, and `StructuredMetadata(SegmentFooter, _)`
+    current_segment: u16,
+
     /// Exact number of content bytes to encode per segment, excluding the final segment which may be smaller.
+    ///
+    /// DO NOT MODIFY.
     segment_len: u64,
 
     /// Checksums which have already been calculated for the segments, in order. These are held even after use
     /// in case of stream reset. This not only avoids recompute, it also catches any corruption between the
     /// initial streaming and post-reset streaming.
-    segment_checksums: Vec<u64>,
+    ///
+    /// Once placed, a checksum should never be modified.
+    segment_checksums: Vec<Option<u64>>,
 
     /// State of which section of a structured message is currently being read.
     state: StructuredMessageStateMachine,
@@ -49,7 +70,8 @@ pub struct SeekableStructuredMessageEncodingStream {
 #[allow(clippy::large_enum_variant)] // SegmentContent is the 99% use case
 enum StructuredMessageStateMachine {
     /// Contains the number of bytes read from the segment so far and the running digest of the segment content.
-    SegmentContent(u64, Digest),
+    /// Digest is optional to avoid recalculation on stream reset.
+    SegmentContent(u64, Option<Digest>),
 
     /// Currently reading structured metadata: bytes that are not part of the underlying content.
     /// Contains the type of structured metadata being read and the remaining bytes of that metadata.
@@ -75,29 +97,115 @@ impl SeekableStructuredMessageEncodingStream {
                 "Structured message requires content of a known length.",
             ));
         };
+        let segment_count: u16 = content_len.div_ceil(segment_len).try_into().with_context(
+            ErrorKind::DataConversion,
+            "Unsupported segment count (exceeds u16). Increase segment length to support the content length.",
+        )?;
         Ok(Self {
             content,
             content_len,
             content_read: 0,
+            current_segment: 0,
             segment_len,
-            segment_checksums: Vec::with_capacity(
-                (content_len.div_ceil(segment_len))
-                    .try_into()
-                    .with_context(
-                        ErrorKind::DataConversion,
-                        "usize overflow constructing a SeekableStructuredMessageEncodingStream",
-                    )?,
-            ),
+            segment_checksums: vec![None; segment_count as usize],
             state: StructuredMessageStateMachine::StructuredMetadata(
                 StructuredMetadata::StreamHeader,
                 smv1::StreamHeader {
                     message_len: derive_structured_message_length(content_len, segment_len),
                     flags: smv1::Flags::CRC_64_NVME,
-                    segment_count: content_len.div_ceil(segment_len) as u16,
+                    segment_count,
                 }
                 .as_bytes(),
             ),
         })
+    }
+
+    /// Total segments in structured message.
+    /// # Error
+    /// Returns an error if the calculation exceeds the u16 limit.
+    /// This should never happen in practice, as this limit is checked at construction and the values involved in the
+    /// calculation should never change over the struct lifetime.
+    fn segment_count(&self) -> std::io::Result<u16> {
+        self.content_len
+            .div_ceil(self.segment_len)
+            .try_into()
+            .map_err(std::io::Error::other)
+    }
+
+    /// Composes the overall checksum from individual segment checksums.
+    /// # Error
+    /// Returns an error if any segment checksums are missing.
+    fn compose_checksum_cache(&self) -> std::io::Result<u64> {
+        // pair checksums with segment length for composition
+        let mut checksums = self
+            .segment_checksums
+            .iter()
+            .filter_map(|crc_slot| {
+                crc_slot.map(|crc| ChecksumPair {
+                    crc: crc,
+                    length: self.segment_len,
+                })
+            })
+            .collect::<Vec<_>>();
+
+        // if missing segment checksums, fail fast
+        // we should not be calling this before all checksums are calculated
+        if checksums.len() != self.segment_count()? as usize {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!(
+                    "Error composing cached segment checksums. Found {}, expected {}",
+                    checksums.len(),
+                    self.segment_count()?
+                ),
+            ));
+        }
+
+        // special-case last segment, which may be shorter than other segments
+        if let Some(last) = checksums.last_mut() {
+            last.length = self.content_len % self.segment_len;
+            // special-case modulo resulting in 0. the segment was full-length, not empty
+            if last.length == 0 {
+                last.length = self.segment_len;
+            }
+        }
+
+        Ok(checksum_multi_compose(checksums))
+    }
+
+    /// Transitions state from segment content to segment footer, handling crc finalization and caching.
+    /// # Error
+    /// Returns an error if the current state is not segment content.
+    /// Returns and error if there is no crc available for the current segment.
+    fn transition_to_segment_footer(&mut self) -> std::io::Result<()> {
+        let StructuredMessageStateMachine::SegmentContent(_, digest) = self.state else {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Invalid state transition. Attempted to transition to segment footer, but current state was not segment content.",
+            ));
+        };
+        let segment_checksum_cache_slot = self
+            .segment_checksums
+            .get_or_extend_mut(self.current_segment as usize, None);
+        let segment_crc: u64 =
+            // if there's a cached value, always use it
+            if let Some(cached_crc) = segment_checksum_cache_slot {
+                *cached_crc
+            } else {
+                let crc = digest.map(|d| d.finalize()).ok_or(
+                    std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "No crc for the given segment",
+                    ),
+                )?;
+                *segment_checksum_cache_slot = Some(crc);
+                crc
+            };
+        self.state = StructuredMessageStateMachine::StructuredMetadata(
+            StructuredMetadata::SegmentFooter,
+            segment_crc.to_le_bytes().to_vec().into(),
+        );
+        Ok(())
     }
 }
 
@@ -107,35 +215,44 @@ impl AsyncRead for SeekableStructuredMessageEncodingStream {
         cx: &mut std::task::Context<'_>,
         mut buf: &mut [u8],
     ) -> std::task::Poll<std::io::Result<usize>> {
-        if buf.is_empty() {
-            return Poll::Ready(Ok(0));
-        }
         let this = self.get_mut();
         let mut total_read = 0;
         loop {
+            if buf.is_empty() || total_read > 0 {
+                break;
+            }
             match &mut this.state {
-                StructuredMessageStateMachine::SegmentContent(segment_cursor, digest) => {
-                    // If we've already read some bytes into the buffer, they should be returned
-                    // before attempting to perform a read that could result in an error.
-                    if total_read > 0 {
-                        break;
-                    }
-
-                    // we've already determined buf is not empty at start of this method.
-                    // if limit == 0, it means we've reached the end of the current segment.
+                StructuredMessageStateMachine::Complete => break,
+                StructuredMessageStateMachine::SegmentContent(segment_cursor, segment_digest) => {
+                    // Limit read by remaining max segment len, transition if at limit
                     let limit = min(this.segment_len - *segment_cursor, buf.len() as u64) as usize;
                     if limit == 0 {
-                        todo!("transition to segment footer")
+                        this.transition_to_segment_footer()?;
+                        continue;
                     }
 
                     let inner_read =
                         ready!(pin!(&mut this.content).poll_read(cx, &mut buf[..limit]))?;
                     if inner_read == 0 {
-                        todo!("handle end of content stream. get checksum. finish segment and finish stream.")
+                        // handle premature EOF
+                        if this.content_read < this.content_len {
+                            return Poll::Ready(Err(std::io::Error::new(
+                                std::io::ErrorKind::UnexpectedEof,
+                                "Premature EOF reading structured message content",
+                            )));
+                        }
+                        this.transition_to_segment_footer()?;
+                        continue;
                     }
-                    digest.update(&buf[..inner_read]);
+                    if let Some(digest) = segment_digest {
+                        digest.update(&buf[..inner_read]);
+                    }
+                    *segment_cursor += inner_read as u64;
                     this.content_read += inner_read as u64;
                     total_read += inner_read;
+                    if this.content_read > this.content_len {
+                        todo!("handle late EOF")
+                    }
                     buf = &mut buf[inner_read..];
                 }
                 StructuredMessageStateMachine::StructuredMetadata(structured_metadata, bytes) => {
@@ -148,43 +265,27 @@ impl AsyncRead for SeekableStructuredMessageEncodingStream {
 
                     if remaining.is_empty() {
                         this.state = match structured_metadata {
-                            // move to next segment if any
+                            // move to next segment header if any
                             StructuredMetadata::StreamHeader
                             | StructuredMetadata::SegmentFooter => {
                                 // if underlying content stream finished, move to stream footer, where we must compose checksums
                                 if this.content_read >= this.content_len {
-                                    // pair each segment checksum with the segment length
-                                    let mut checksums = this
-                                        .segment_checksums
-                                        .iter()
-                                        .map(|crc| ChecksumPair {
-                                            crc: *crc,
-                                            length: this.segment_len,
-                                        })
-                                        .collect::<Vec<_>>();
-                                    // special-case last segment, which may be shorter than other segments
-                                    if let Some(last) = checksums.last_mut() {
-                                        last.length = this.content_len % this.segment_len;
-                                        // special-case modulo resulting in 0. the segment was full-length, not empty
-                                        if last.length == 0 {
-                                            last.length = this.segment_len;
-                                        }
-                                    }
-                                    // change state to stream footer as the bytes of the composed checksums
                                     StructuredMessageStateMachine::StructuredMetadata(
                                         StructuredMetadata::StreamFooter,
-                                        checksum_multi_compose(checksums)
+                                        this.compose_checksum_cache()?
                                             .to_le_bytes()
                                             .to_vec()
                                             .into(),
                                     )
+                                // otherwise move to the next segment header
                                 } else {
+                                    this.current_segment = (this.content_read / this.segment_len)
+                                        .try_into()
+                                        .map_err(std::io::Error::other)?;
                                     StructuredMessageStateMachine::StructuredMetadata(
                                         StructuredMetadata::SegmentHeader,
                                         smv1::SegmentHeader {
-                                            segment_number: (this.content_read / this.segment_len)
-                                                .try_into()
-                                                .map_err(std::io::Error::other)?,
+                                            segment_number: this.current_segment,
                                             content_length: min(
                                                 this.segment_len,
                                                 this.content_len - this.content_read,
@@ -195,9 +296,18 @@ impl AsyncRead for SeekableStructuredMessageEncodingStream {
                                 }
                             }
                             StructuredMetadata::SegmentHeader => {
+                                let segment_number =
+                                    (this.content_read / this.segment_len) as usize;
                                 StructuredMessageStateMachine::SegmentContent(
                                     0,
-                                    Digest::new(CrcAlgorithm::Crc64Nvme),
+                                    // if checksum already calculated, don't recalculate it
+                                    if let Some(Some(_crc)) =
+                                        this.segment_checksums.get(segment_number)
+                                    {
+                                        None
+                                    } else {
+                                        Some(Digest::new(CrcAlgorithm::Crc64Nvme))
+                                    },
                                 )
                             }
                             StructuredMetadata::StreamFooter => {
@@ -208,7 +318,6 @@ impl AsyncRead for SeekableStructuredMessageEncodingStream {
                         *bytes = remaining
                     };
                 }
-                StructuredMessageStateMachine::Complete => break,
             }
         }
         Poll::Ready(Ok(total_read))
@@ -266,6 +375,8 @@ where
 mod tests {
     use azure_core::stream::BytesStream;
     use futures::AsyncReadExt;
+
+    use crate::structured_message::tests::*;
 
     use super::*;
 
@@ -412,11 +523,92 @@ mod tests {
         dst_offset += 8;
 
         // check stream footer
-        assert_eq!(
-            &dst[dst_offset + SEGMENT_0_LEN..],
-            &expected_data_crc.to_le_bytes()[..],
+        assert_eq!(&dst[dst_offset..], &expected_data_crc.to_le_bytes()[..],);
+    }
+
+    #[tokio::test]
+    async fn test_len() {
+        const DATA_LEN: usize = 1024;
+        const SEGMENT_LEN: u64 = usize::MAX as u64;
+        const TOTAL_STRUCTURED_LEN: usize =
+            derive_structured_message_length(DATA_LEN as u64, SEGMENT_LEN) as usize;
+
+        let data = rand::random::<[u8; DATA_LEN]>();
+
+        let sm_stream = SeekableStructuredMessageEncodingStream::new(
+            Box::new(BytesStream::new(data.to_vec())),
+            SEGMENT_LEN,
+        )
+        .unwrap();
+
+        assert_eq!(sm_stream.len().unwrap(), TOTAL_STRUCTURED_LEN as u64);
+    }
+
+    #[tokio::test]
+    async fn test_no_len_fail_construct() {
+        const DATA_LEN: usize = 1024;
+        const SEGMENT_LEN: u64 = usize::MAX as u64;
+
+        let data = rand::random::<[u8; DATA_LEN]>();
+
+        let stream_no_len = SeekableStreamHideLen {
+            inner: Box::new(BytesStream::new(data.to_vec())),
+        };
+
+        assert!(
+            SeekableStructuredMessageEncodingStream::new(Box::new(stream_no_len), SEGMENT_LEN)
+                .is_err()
         );
     }
+
+    #[tokio::test]
+    async fn test_reset() {
+        const DATA_LEN: usize = 1024;
+        const SEGMENT_LEN: u64 = usize::MAX as u64;
+
+        let data = rand::random::<[u8; DATA_LEN]>();
+
+        let mut sm_stream = SeekableStructuredMessageEncodingStream::new(
+            Box::new(BytesStream::new(data.to_vec())),
+            SEGMENT_LEN,
+        )
+        .unwrap();
+
+        let mut dst_1 = Vec::new();
+        let mut dst_2 = Vec::new();
+
+        sm_stream.read_to_end(&mut dst_1).await.unwrap();
+        sm_stream.reset().await.unwrap();
+        sm_stream.read_to_end(&mut dst_2).await.unwrap();
+
+        assert_eq!(dst_1, dst_2);
+    }
+
+    #[tokio::test]
+    async fn test_reset_fail_propagates() {
+        const DATA_LEN: usize = 1024;
+        const SEGMENT_LEN: u64 = usize::MAX as u64;
+
+        let data = rand::random::<[u8; DATA_LEN]>();
+
+        let stream_no_reset = SeekableStreamFailReset {
+            inner: Box::new(BytesStream::new(data.to_vec())),
+        };
+
+        let mut sm_stream =
+            SeekableStructuredMessageEncodingStream::new(Box::new(stream_no_reset), SEGMENT_LEN)
+                .unwrap();
+
+        assert!(sm_stream.reset().await.is_err());
+    }
+
+    // fn test_early_eof() {
+    //     todo!("Implement test for early EOF in structured message encoding stream");
+    // }
+
+    // fn test_late_eof() {
+    //     todo!("Implement test for late EOF in structured message encoding stream");
+    // }
 
     fn crc_inline(data: &[u8]) -> u64 {
         let mut digest = Digest::new(CrcAlgorithm::Crc64Nvme);
