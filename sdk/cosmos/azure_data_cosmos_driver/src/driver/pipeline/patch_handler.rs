@@ -1130,6 +1130,16 @@ pub(crate) fn validate_partition_key_paths(
             _ => None,
         };
         for path in std::iter::once(dest).chain(from) {
+            if path_overlaps_partition_key(path, "/id") {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::CosmosStatus::new(
+                        azure_core::http::StatusCode::BadRequest,
+                    ))
+                    .with_message(format!(
+                        "PATCH op '{path}' overlaps immutable item ID path '/id'"
+                    ))
+                    .build());
+            }
             if path_overlaps_partition_key(path, PATCH_TRACKING_POINTER) {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(crate::error::CosmosStatus::new(

@@ -40,13 +40,15 @@ impl InMemoryEmulatorHttpClient {
         let frame = match RntbdRequestFrame::read(request_body.as_ref()) {
             Ok(frame) => frame,
             Err(error) => {
-                return encode_error_response(gateway_v2_bad_request(error), Uuid::new_v4()).await
+                return encode_error_response(gateway_v2_bad_request(error), Uuid::new_v4()).await;
             }
         };
         let activity_id = frame.activity_id;
         let request = match decode_request(request, frame, self.store().config().consistency()) {
             Ok(request) => request,
-            Err(error) => return encode_error_response(error, activity_id).await,
+            Err(error) => {
+                return encode_error_response(error, activity_id).await;
+            }
         };
         let response = self.execute_request(&request).await?;
         encode_response(response, activity_id).await
@@ -86,6 +88,8 @@ struct RequestMetadata {
     session_token: Option<String>,
     match_condition: Option<String>,
     if_modified_since: Option<String>,
+    a_im: Option<String>,
+    change_feed_wire_format_version: Option<String>,
     effective_partition_key: Option<String>,
     start_epk: Option<String>,
     end_epk: Option<String>,
@@ -199,7 +203,7 @@ fn decode_request(
         operation => {
             return Err(gateway_v2_bad_request(format!(
                 "unsupported hosted Gateway V2 operation {operation:?}"
-            )))
+            )));
         }
     };
 
@@ -275,6 +279,14 @@ fn decode_request(
     }
     if let Some(value) = metadata.if_modified_since {
         request.headers_mut().insert("if-modified-since", value);
+    }
+    if let Some(value) = metadata.a_im {
+        request.headers_mut().insert("a-im", value);
+    }
+    if let Some(value) = metadata.change_feed_wire_format_version {
+        request
+            .headers_mut()
+            .insert("x-ms-cosmos-changefeed-wire-format-version", value);
     }
     if let Some(value) = metadata.start_epk {
         request.headers_mut().insert("x-ms-start-epk", value);
@@ -362,52 +374,58 @@ fn decode_metadata(
         };
         match kind {
             RntbdRequestToken::DatabaseName => {
-                metadata.database = Some(expect_string(kind, token.value)?)
+                metadata.database = Some(expect_string(kind, token.value)?);
             }
             RntbdRequestToken::CollectionName => {
-                metadata.collection = Some(expect_string(kind, token.value)?)
+                metadata.collection = Some(expect_string(kind, token.value)?);
             }
             RntbdRequestToken::DocumentName => {
-                metadata.document = Some(expect_string(kind, token.value)?)
+                metadata.document = Some(expect_string(kind, token.value)?);
             }
             RntbdRequestToken::PartitionKey => {
-                metadata.partition_key = Some(expect_string(kind, token.value)?)
+                metadata.partition_key = Some(expect_string(kind, token.value)?);
             }
             RntbdRequestToken::PartitionKeyRangeId => {
-                metadata.partition_key_range_id = Some(expect_string(kind, token.value)?)
+                metadata.partition_key_range_id = Some(expect_string(kind, token.value)?);
             }
             RntbdRequestToken::ContinuationToken => {
-                metadata.continuation = Some(expect_string(kind, token.value)?)
+                metadata.continuation = Some(expect_string(kind, token.value)?);
             }
             RntbdRequestToken::SessionToken => {
-                metadata.session_token = Some(expect_string(kind, token.value)?)
+                metadata.session_token = Some(expect_string(kind, token.value)?);
             }
             RntbdRequestToken::Match => {
-                metadata.match_condition = Some(expect_string(kind, token.value)?)
+                metadata.match_condition = Some(expect_string(kind, token.value)?);
             }
             RntbdRequestToken::IfModifiedSince => {
-                metadata.if_modified_since = Some(expect_string(kind, token.value)?)
+                metadata.if_modified_since = Some(expect_string(kind, token.value)?);
+            }
+            RntbdRequestToken::AIm => {
+                metadata.a_im = Some(expect_string(kind, token.value)?);
+            }
+            RntbdRequestToken::ChangeFeedWireFormatVersion => {
+                metadata.change_feed_wire_format_version = Some(expect_string(kind, token.value)?);
             }
             RntbdRequestToken::StartEpkHash => {
-                metadata.start_epk = Some(expect_hex(kind, token.value)?)
+                metadata.start_epk = Some(expect_hex(kind, token.value)?);
             }
             RntbdRequestToken::EndEpkHash => {
-                metadata.end_epk = Some(expect_hex(kind, token.value)?)
+                metadata.end_epk = Some(expect_hex(kind, token.value)?);
             }
             RntbdRequestToken::EffectivePartitionKey => {
-                metadata.effective_partition_key = Some(expect_hex(kind, token.value)?)
+                metadata.effective_partition_key = Some(expect_hex(kind, token.value)?);
             }
             RntbdRequestToken::PageSize => {
                 metadata.page_size = Some(expect_ulong(kind, token.value)?);
             }
             RntbdRequestToken::ReturnPreference => {
-                metadata.return_minimal = expect_byte(kind, token.value)? != 0
+                metadata.return_minimal = expect_byte(kind, token.value)? != 0;
             }
             RntbdRequestToken::SupportedQueryFeatures => {
-                metadata.supported_query_features = Some(expect_string(kind, token.value)?)
+                metadata.supported_query_features = Some(expect_string(kind, token.value)?);
             }
             RntbdRequestToken::QueryVersion => {
-                metadata.query_version = Some(expect_small_string(kind, token.value)?)
+                metadata.query_version = Some(expect_small_string(kind, token.value)?);
             }
             RntbdRequestToken::SupportedSerializationFormats => {
                 // Captured here and re-emitted as the HTTP negotiation header in
@@ -415,7 +433,7 @@ fn decode_metadata(
                 metadata.supported_serialization_formats = Some(expect_byte(kind, token.value)?);
             }
             RntbdRequestToken::AllowTentativeWrites => {
-                metadata.allow_tentative_writes = expect_byte(kind, token.value)? != 0
+                metadata.allow_tentative_writes = expect_byte(kind, token.value)? != 0;
             }
             RntbdRequestToken::ConsistencyLevel => {
                 metadata.consistency_level = Some(expect_byte(kind, token.value)?);
@@ -611,9 +629,12 @@ fn gateway_v2_internal_error(error: impl std::fmt::Display) -> crate::error::Cos
 mod tests {
     use super::*;
     use crate::{
-        driver::transport::rntbd::Token,
+        driver::transport::{
+            cosmos_transport_client::HttpRequest, rntbd::Token, wrap_request_for_gateway_v2,
+            AuthorizationContext, WrapInputs,
+        },
         in_memory_emulator::{ContainerConfig, VirtualAccountConfig, VirtualRegion},
-        models::PartitionKeyDefinition,
+        models::{DefaultConsistencyLevel, PartitionKeyDefinition},
     };
     use url::Url;
 
@@ -679,6 +700,232 @@ mod tests {
         assert_eq!(response.status.status_code(), StatusCode::Created);
         assert_eq!(response.activity_id, activity_id);
         assert!(!response.body.is_empty());
+    }
+
+    #[tokio::test]
+    async fn ordinary_read_feed_remains_flat_and_paginates_through_gateway_v2() {
+        let thin_url = Url::parse("http://127.0.0.1:18444/").unwrap();
+        let gateway_url = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let region = VirtualRegion::new("East US", gateway_url.clone())
+            .with_gateway_v2_url(thin_url.clone());
+        let emulator =
+            InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![region]).unwrap());
+        let store = emulator.store();
+        store.create_database("db");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        store.create_container("db", "coll", partition_key);
+
+        let read_page = |continuation: Option<String>| {
+            let mut metadata = vec![
+                Token::database_name("db".to_owned()),
+                Token::collection_name("coll".to_owned()),
+                Token::page_size(1),
+                Token::payload_present(false),
+            ];
+            if let Some(continuation) = continuation {
+                metadata.push(Token::continuation_token(continuation));
+            }
+            RntbdRequestFrame {
+                resource_type: ResourceType::Document,
+                operation_type: OperationType::ReadFeed,
+                activity_id: Uuid::new_v4(),
+                metadata,
+                body: None,
+            }
+        };
+
+        let empty = execute_frame(&emulator, &thin_url, read_page(None)).await;
+        assert_eq!(empty.status.status_code(), StatusCode::Ok);
+        let empty_body: serde_json::Value = serde_json::from_slice(&empty.body).unwrap();
+        assert_eq!(empty_body["Documents"].as_array().unwrap().len(), 0);
+        assert!(empty.continuation_token.is_none());
+
+        for id in ["item-1", "item-2"] {
+            let mut seed = Request::new(
+                gateway_url.join("dbs/db/colls/coll/docs").unwrap(),
+                Method::Post,
+            );
+            seed.headers_mut().insert(
+                "x-ms-documentdb-partitionkey",
+                HeaderValue::from_static(r#"["A"]"#),
+            );
+            seed.set_body(serde_json::to_vec(&serde_json::json!({ "id": id, "pk": "A" })).unwrap());
+            assert_eq!(
+                emulator.execute_request(&seed).await.unwrap().status(),
+                StatusCode::Created
+            );
+        }
+
+        let legacy_change_feed = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::ReadFeed,
+            activity_id: Uuid::new_v4(),
+            metadata: vec![
+                Token::database_name("db".to_owned()),
+                Token::collection_name("coll".to_owned()),
+                Token::a_im("Incremental Feed".to_owned()),
+                Token::page_size(1),
+                Token::payload_present(false),
+            ],
+            body: None,
+        };
+        let legacy = execute_frame(&emulator, &thin_url, legacy_change_feed).await;
+        let legacy_body: serde_json::Value = serde_json::from_slice(&legacy.body).unwrap();
+        let legacy_document = &legacy_body["Documents"].as_array().unwrap()[0];
+        assert!(legacy_document.get("id").is_some());
+        assert!(legacy_document.get("current").is_none());
+
+        let structured_change_feed = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::ReadFeed,
+            activity_id: Uuid::new_v4(),
+            metadata: vec![
+                Token::database_name("db".to_owned()),
+                Token::collection_name("coll".to_owned()),
+                Token::a_im("Incremental Feed".to_owned()),
+                Token::change_feed_wire_format_version("2021-09-15".to_owned()),
+                Token::page_size(1),
+                Token::payload_present(false),
+            ],
+            body: None,
+        };
+        let structured = execute_frame(&emulator, &thin_url, structured_change_feed).await;
+        let structured_body: serde_json::Value = serde_json::from_slice(&structured.body).unwrap();
+        let structured_document = &structured_body["Documents"].as_array().unwrap()[0];
+        assert!(structured_document.get("current").is_some());
+        let structured_metadata = structured_document["metadata"].as_object().unwrap();
+        assert!(structured_metadata.get("crts").is_some());
+        assert!(structured_metadata.get("operationType").is_none());
+
+        let first = execute_frame(&emulator, &thin_url, read_page(None)).await;
+        let first_body: serde_json::Value = serde_json::from_slice(&first.body).unwrap();
+        let first_document = &first_body["Documents"].as_array().unwrap()[0];
+        assert!(first_document.get("id").is_some());
+        assert!(first_document.get("current").is_none());
+        let second = execute_frame(
+            &emulator,
+            &thin_url,
+            read_page(first.continuation_token.clone()),
+        )
+        .await;
+        let second_body: serde_json::Value = serde_json::from_slice(&second.body).unwrap();
+        assert_eq!(second_body["Documents"].as_array().unwrap().len(), 1);
+        assert!(second.continuation_token.is_none());
+    }
+
+    #[tokio::test]
+    async fn ordinary_read_feed_stays_flat_through_gateway_v2_encoder_and_bridge() {
+        let thin_url = Url::parse("http://127.0.0.1:18444/").unwrap();
+        let gateway_url = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let region = VirtualRegion::new("East US", gateway_url.clone())
+            .with_gateway_v2_url(thin_url.clone());
+        let emulator =
+            InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(vec![region]).unwrap());
+        let store = emulator.store();
+        store.create_database("db");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        store.create_container("db", "coll", partition_key);
+
+        let mut seed = Request::new(
+            gateway_url.join("dbs/db/colls/coll/docs").unwrap(),
+            Method::Post,
+        );
+        seed.headers_mut().insert(
+            "x-ms-documentdb-partitionkey",
+            HeaderValue::from_static(r#"["A"]"#),
+        );
+        seed.set_body(
+            serde_json::to_vec(&serde_json::json!({ "id": "item-1", "pk": "A" })).unwrap(),
+        );
+        assert_eq!(
+            emulator.execute_request(&seed).await.unwrap().status(),
+            StatusCode::Created
+        );
+
+        let activity_id = Uuid::new_v4();
+        let mut headers = Headers::new();
+        headers.insert("authorization", "auth-token");
+        headers.insert("x-ms-date", "Wed, 21 Oct 2015 07:28:00 GMT");
+        headers.insert("x-ms-activity-id", activity_id.to_string());
+        let request = HttpRequest {
+            url: thin_url.join("dbs/db/colls/coll/docs").unwrap(),
+            method: Method::Get,
+            headers,
+            body: None,
+            timeout: None,
+            #[cfg(feature = "fault_injection")]
+            evaluation_collector: None,
+        };
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db/colls/coll/docs",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            request,
+            &WrapInputs {
+                auth_context: &auth_context,
+                operation_type: OperationType::ReadFeed,
+                resource_type: ResourceType::Document,
+                effective_partition_key: None,
+                effective_consistency: DefaultConsistencyLevel::Session,
+                read_consistency_strategy: ReadConsistencyStrategy::Default,
+                account_name: Some("account"),
+                collection_rid: None,
+            },
+        )
+        .unwrap();
+
+        let mut request = Request::new(
+            thin_url.join("dbs/db/colls/coll/docs").unwrap(),
+            Method::Post,
+        );
+        request.set_body(
+            wrapped
+                .body
+                .expect("Gateway V2 request must carry an RNTBD frame"),
+        );
+        let response = emulator
+            .execute_gateway_v2_request(&request)
+            .await
+            .unwrap()
+            .try_into_raw_response()
+            .await
+            .unwrap();
+        let response = RntbdResponse::read(response.body().as_ref()).unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&response.body).unwrap();
+        let item = &body["Documents"].as_array().unwrap()[0];
+        assert_eq!(item["id"], "item-1");
+        assert!(item.get("current").is_none());
+        assert!(item.get("metadata").is_none());
+    }
+
+    async fn execute_frame(
+        emulator: &InMemoryEmulatorHttpClient,
+        thin_url: &Url,
+        frame: RntbdRequestFrame,
+    ) -> RntbdResponse {
+        let mut bytes = Vec::new();
+        frame.write(&mut bytes).unwrap();
+        let mut request = Request::new(
+            thin_url.join("dbs/db/colls/coll/docs").unwrap(),
+            Method::Post,
+        );
+        request.set_body(bytes);
+        let response = emulator
+            .execute_gateway_v2_request(&request)
+            .await
+            .unwrap()
+            .try_into_raw_response()
+            .await
+            .unwrap();
+        RntbdResponse::read(response.body().as_ref()).unwrap()
     }
 
     #[tokio::test]
@@ -1010,6 +1257,68 @@ mod tests {
                 "x-ms-cosmos-supported-serialization-formats"
             )),
             Some("JsonText,CosmosBinary")
+        );
+    }
+
+    #[test]
+    fn ordinary_read_feed_does_not_gain_change_feed_header() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::ReadFeed,
+            activity_id: Uuid::new_v4(),
+            metadata: vec![
+                Token::database_name("db".to_owned()),
+                Token::collection_name("coll".to_owned()),
+                Token::payload_present(false),
+            ],
+            body: None,
+        };
+        let outer = Request::new(
+            Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs").unwrap(),
+            Method::Post,
+        );
+
+        let request = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
+        assert_eq!(
+            request
+                .headers()
+                .get_optional_str(&HeaderName::from_static("a-im")),
+            None
+        );
+    }
+
+    #[test]
+    fn incremental_read_feed_forwards_a_im_token() {
+        let frame = RntbdRequestFrame {
+            resource_type: ResourceType::Document,
+            operation_type: OperationType::ReadFeed,
+            activity_id: Uuid::new_v4(),
+            metadata: vec![
+                Token::database_name("db".to_owned()),
+                Token::collection_name("coll".to_owned()),
+                Token::a_im("Incremental Feed".to_owned()),
+                Token::change_feed_wire_format_version("2021-09-15".to_owned()),
+                Token::payload_present(false),
+            ],
+            body: None,
+        };
+        let outer = Request::new(
+            Url::parse("http://127.0.0.1:18444/dbs/db/colls/coll/docs").unwrap(),
+            Method::Post,
+        );
+
+        let request = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
+        assert_eq!(
+            request
+                .headers()
+                .get_optional_str(&HeaderName::from_static("a-im")),
+            Some("Incremental Feed")
+        );
+        assert_eq!(
+            request.headers().get_optional_str(&HeaderName::from_static(
+                "x-ms-cosmos-changefeed-wire-format-version"
+            )),
+            Some("2021-09-15")
         );
     }
 

@@ -68,7 +68,7 @@ function Get-RepoRelativePath(
 function Get-MissingRequiredApiFiles(
   [string] $OutputDirectory
 ) {
-  $requiredFiles = @('API.md', 'API.metadata.yml')
+  $requiredFiles = @('api.md', 'api.metadata.yml')
   return @(
     foreach ($fileName in $requiredFiles) {
       $path = [System.IO.Path]::Combine($OutputDirectory, $fileName)
@@ -128,6 +128,11 @@ if ($PackageInfoDirectory -and !(Test-Path -Path $PackageInfoDirectory -PathType
 $packages = Get-PackagesToExport -SelectedPackageInfoDirectory $packageInfoPath
 
 foreach ($package in $packages) {
+  if (!(Test-CargoPackagePublishable $package)) {
+    LogWarning "Skipping API files for non-publishable package '$($package.name)'."
+    continue
+  }
+
   Write-Host "$($Check ? 'Checking' : 'Exporting') API files for '$($package.name)'"
   if ($Check) {
     $outputDirectory = Get-OutputDirectory -Package $package
@@ -139,7 +144,7 @@ API files are missing for '$($package.name)': $($missingFiles -join ', ').
 Regenerate them locally with:
     $(Get-RegenerateCommand -Package $package)
 
-Then add api/API.md and api/API.metadata.yml in a new commit to this pull request.
+Then add api/api.md and api/api.metadata.yml in a new commit to this pull request.
 "@
       exit 1
     }
@@ -159,7 +164,7 @@ API files are out of date for '$($package.name)'.
 Regenerate them locally with:
     $(Get-RegenerateCommand -Package $package)
 
-Then add api/API.md and api/API.metadata.yml in a new commit to this pull request.
+Then add api/api.md and api/api.metadata.yml in a new commit to this pull request.
 "@
     }
 

@@ -407,7 +407,7 @@ fn comments_patch_accounts_for_package_metadata_lines() {
         .iter()
         .map(|line| format!("{}\n", line.text))
         .collect::<String>();
-    let patch = crate::render::patch::render(&lines, "API.md");
+    let patch = crate::render::patch::render(&lines, "api.md");
     let parsed_patch = diffy::Patch::from_str(&patch).expect("patch should parse");
 
     assert!(api_without_docs.contains(concat!(

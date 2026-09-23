@@ -169,7 +169,6 @@ async fn latest_version_returns_current_documents() {
 async fn all_versions_and_deletes_returns_envelopes() {
     let container = setup().await.unwrap();
     let items = vec![TestItem::new("item-1", 10), TestItem::new("item-2", 20)];
-    insert_items(&container, &items).await;
 
     let options = ChangeFeedOptions::default().with_mode(ChangeFeedMode::AllVersionsAndDeletes);
     let mut pages = Box::pin(container.query_change_feed::<TestItem>(
@@ -179,6 +178,15 @@ async fn all_versions_and_deletes_returns_envelopes() {
     ))
     .await
     .unwrap();
+
+    let initial = pages
+        .next()
+        .await
+        .expect("the change feed should yield an initial page")
+        .expect("the initial page should not be an error");
+    assert!(initial.items().is_empty());
+
+    insert_items(&container, &items).await;
 
     let page = pages
         .next()

@@ -184,8 +184,8 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
     $runId = [System.Guid]::NewGuid().ToString('N')
     $runDirectory = ([System.IO.Path]::Combine(
-        $runDirectoryRoot,
-        "azure-data-cosmos-emulator-$runId"))
+            $runDirectoryRoot,
+            "azure-data-cosmos-emulator-$runId"))
     New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
     Set-Content `
         -LiteralPath ([System.IO.Path]::Combine($runDirectory, '.azure-data-cosmos-emulator-run')) `
@@ -201,7 +201,7 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
     }
     $ready = $false
     $expectedGateway20 = $env:AZURE_COSMOS_EMULATOR_FLAVOR -eq 'inmemory-v2'
-    $expectedAccountId = $null
+    $expectedAccountId = 'emulator-account'
     if ($env:AZURE_COSMOS_E2E_PROFILE) {
         $e2eConfiguration = New-CosmosE2eEmulatorConfig `
             -ProfileId $env:AZURE_COSMOS_E2E_PROFILE `

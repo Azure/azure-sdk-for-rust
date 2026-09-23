@@ -9,6 +9,11 @@
       "status": "active"
     },
     {
+      "id": "management.resource-lifecycle",
+      "test": "management_resource_lifecycle::database_and_container_resource_lifecycle",
+      "status": "active"
+    },
+    {
       "id": "bootstrap.primary-success",
       "test": "bootstrap_primary::bootstrap_primary_endpoint",
       "status": "active"
@@ -39,6 +44,41 @@
       "status": "active"
     },
     {
+      "id": "item.scalar-partition-keys",
+      "test": "item_scalar_partition_keys::scalar_partition_key_values_remain_distinct",
+      "status": "active"
+    },
+    {
+      "id": "item.hierarchical-partition-key",
+      "test": "item_hierarchical_partition_key::hierarchical_key_point_and_prefix_operations",
+      "status": "active"
+    },
+    {
+      "id": "batch.atomicity",
+      "test": "transactional_batch_atomicity::batch_success_and_failure_are_atomic",
+      "status": "active"
+    },
+    {
+      "id": "item.patch-state",
+      "test": "item_patch_state::patch_paths_persist_exact_post_images",
+      "status": "active"
+    },
+    {
+      "id": "item.validation-contracts",
+      "test": "item_validation_contracts::invalid_writes_preserve_state",
+      "status": "active"
+    },
+    {
+      "id": "item.numeric-unique-key-equivalence",
+      "test": "numeric_unique_key_equivalence::wide_integers_follow_service_unique_key_equivalence",
+      "status": "active"
+    },
+    {
+      "id": "item.quoted-partition-key-paths",
+      "test": "quoted_partition_key_paths::quoted_paths_work_across_item_operations",
+      "status": "active"
+    },
+    {
       "id": "query.parameterized-filter",
       "test": "query_parameterized_filter::parameterized_query_filters_and_orders",
       "status": "active"
@@ -46,6 +86,26 @@
     {
       "id": "query.invalid-syntax",
       "test": "query_invalid_syntax::invalid_query_is_not_an_empty_feed",
+      "status": "active"
+    },
+    {
+      "id": "query.pagination-resume",
+      "test": "query_pagination_resume::query_resumes_without_loss_or_duplication",
+      "status": "active"
+    },
+    {
+      "id": "query.feed-ranges",
+      "test": "query_feed_ranges::feed_ranges_cover_partition_key_routing",
+      "status": "active"
+    },
+    {
+      "id": "changefeed.pagination-resume",
+      "test": "change_feed_pagination_resume::change_feed_resumes_without_replay",
+      "status": "active"
+    },
+    {
+      "id": "changefeed.all-versions-start-validation",
+      "test": "change_feed_all_versions_starts::all_versions_rejects_unsupported_starts",
       "status": "active"
     },
     {
