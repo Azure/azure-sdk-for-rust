@@ -103,15 +103,24 @@ async fn execute(
             .map_err(data_plane::internal_error);
     }
     let request = data_plane::into_cosmos_request(request, &state.base_url).await?;
-    let response = state
+    let (response, audit) = state
         .emulator
-        .execute_gateway_v2_request(&request)
+        .execute_gateway_v2_request_audited(&request)
         .await
         .map_err(|error| {
             let status = StatusCode::from_u16(u16::from(error.status().status_code()))
                 .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
             (status, error.to_string())
         })?;
+    state
+        .metrics
+        .record_binary_request(audit.binary_negotiated, audit.binary_request_payload);
+    state
+        .metrics
+        .record_binary_response(audit.binary_response_payload);
+    state
+        .metrics
+        .record_read_consistency_strategy(audit.read_consistency_strategy);
     let response = data_plane::into_http_response(response).await?;
     state.metrics.record_gateway20_request();
     #[cfg(test)]

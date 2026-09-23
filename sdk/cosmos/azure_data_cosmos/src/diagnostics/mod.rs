@@ -54,7 +54,9 @@ pub use operation_context::CosmosOperationContext;
 pub use rate_limiter::RateLimiterConfig;
 pub use region::{RequestedRegion, RequestedRegionReason};
 #[cfg(feature = "distributed_tracing")]
-pub use tracing::CosmosTracingHandler;
+pub use tracing::{
+    CosmosTracingHandler, CosmosTracingHandlerBuilder, CosmosTracingHandlerWithTracer,
+};
 
 #[cfg(feature = "metrics")]
 pub use metrics::{CosmosMetricsHandler, MetricsOptions};

@@ -1,11 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod bootstrap_backup_fallback;
 mod bootstrap_primary;
 mod capabilities;
 mod catalog;
 mod change_feed_all_versions_starts;
 mod change_feed_pagination_resume;
+mod configuration_binary_routing;
+mod consistency_feed_read_strategies;
+mod consistency_session_management;
+mod diagnostics_handlers_telemetry;
 mod diagnostics_success_and_error;
 mod fixture;
 mod item_create_conflict;
@@ -24,6 +29,10 @@ mod query_invalid_syntax;
 mod query_pagination_resume;
 mod query_parameterized_filter;
 mod quoted_partition_key_paths;
+mod resilience_deadline;
+mod resilience_hedging;
+mod resilience_throttling_retry;
+mod resilience_transient_retries;
 mod support;
 mod transactional_batch_atomicity;
 
@@ -31,6 +40,12 @@ const IMPLEMENTED_TESTS: &[&str] = &[
     "capabilities::capability_document_is_versioned",
     "management_resource_lifecycle::database_and_container_resource_lifecycle",
     "bootstrap_primary::bootstrap_primary_endpoint",
+    "bootstrap_backup_fallback::unreachable_primary_uses_ordered_backup",
+    "configuration_binary_routing::binary_text_and_routing_options_preserve_behavior",
+    "consistency_feed_read_strategies::feeds_honor_account_and_operation_consistency",
+    "consistency_session_management::response_tokens_are_captured_before_switching_to_session",
+    "consistency_session_management::explicit_tokens_work_when_automatic_capture_is_disabled",
+    "consistency_session_management::disabled_capture_exposes_delayed_replica",
     "item_lifecycle::crud_lifecycle",
     "item_upsert::upsert_creates_then_updates",
     "item_create_conflict::duplicate_create_preserves_original",
@@ -50,6 +65,15 @@ const IMPLEMENTED_TESTS: &[&str] = &[
     "change_feed_pagination_resume::change_feed_resumes_without_replay",
     "change_feed_all_versions_starts::all_versions_rejects_unsupported_starts",
     "diagnostics_success_and_error::diagnostics_cover_success_and_error",
+    "diagnostics_handlers_telemetry::handlers_emit_metrics_spans_and_sampled_failures",
+    "resilience_throttling_retry::bounded_throttling_retries_succeed_with_attempt_history",
+    "resilience_deadline::operation_deadline_preempts_delayed_response",
+    "resilience_hedging::deadline_cancels_active_hedge_awaiting_partner",
+    "resilience_hedging::alternate_region_wins_delayed_primary_hedge",
+    "resilience_transient_retries::partition_topology_change_refreshes_and_retries_query",
+    "resilience_transient_retries::request_timeout_retries_respect_failover_budget",
+    "resilience_transient_retries::service_unavailable_is_retried_with_attempt_history",
+    "resilience_transient_retries::response_timeout_is_retried_with_attempt_history",
 ];
 
 #[test]
