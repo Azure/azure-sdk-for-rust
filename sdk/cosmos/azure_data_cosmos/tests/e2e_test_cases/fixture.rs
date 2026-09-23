@@ -29,6 +29,8 @@ pub(super) fn fixture_test_lock() -> &'static tokio::sync::Mutex<()> {
 
 pub struct E2eTestFixture {
     cleanup: DatabaseCleanup,
+    pub database_id: String,
+    pub container_id: String,
     pub container: ContainerClient,
 }
 
@@ -50,6 +52,29 @@ pub struct ClientSetup {
 
 impl ClientSetup {
     pub fn from_profile(
+        runtime: &RuntimeDefinition,
+        client: &ClientDefinition,
+        routing_strategy: RoutingStrategy,
+    ) -> TestResult<Self> {
+        let matches_profile = match (client.routing.as_str(), &routing_strategy) {
+            ("proximity", RoutingStrategy::ProximityTo(_)) => true,
+            ("preferredRegions", RoutingStrategy::PreferredRegions(regions)) => !regions.is_empty(),
+            ("accountOrder", RoutingStrategy::PreferredRegions(regions)) => regions.is_empty(),
+            _ => false,
+        };
+        if !matches_profile {
+            return Err(format!(
+                "client profile '{}' declares routing '{}' but the test constructed {routing_strategy:?}",
+                client.id, client.routing
+            )
+            .into());
+        }
+        Self::from_profile_with_routing_override(runtime, client, routing_strategy)
+    }
+
+    /// Applies profile defaults while allowing a scenario that explicitly
+    /// exercises multiple routing strategies to override `client.routing`.
+    pub fn from_profile_with_routing_override(
         runtime: &RuntimeDefinition,
         client: &ClientDefinition,
         routing_strategy: RoutingStrategy,
@@ -206,14 +231,19 @@ impl E2eTestFixture {
         let container_id = properties.id.to_string();
         client.create_database(&database_id, None).await?;
         let database = client.database_client(&database_id);
-        let cleanup = DatabaseCleanup::new(client.clone(), database_id);
+        let cleanup = DatabaseCleanup::new(client.clone(), database_id.clone());
         let setup = async {
             database.create_container(properties, None).await?;
             database.container_client(&container_id, None).await
         }
         .await;
         match setup {
-            Ok(container) => Ok(Self { cleanup, container }),
+            Ok(container) => Ok(Self {
+                cleanup,
+                database_id,
+                container_id,
+                container,
+            }),
             Err(setup_error) => match cleanup.cleanup().await {
                 Ok(()) => Err(setup_error.into()),
                 Err(cleanup_error) => Err(format!(

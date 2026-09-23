@@ -52,13 +52,37 @@ pub(super) async fn wait_for_item_replication(
     item_id: &str,
     expected: &Item,
 ) -> TestResult {
+    wait_for_item_replication_in_region(
+        container,
+        "A",
+        item_id,
+        expected,
+        Region::WEST_US,
+        [Region::EAST_US, Region::WEST_US],
+    )
+    .await
+}
+
+pub(super) async fn wait_for_item_replication_in_region(
+    container: &ContainerClient,
+    partition_key: &str,
+    item_id: &str,
+    expected: &Item,
+    target_region: Region,
+    configured_regions: impl IntoIterator<Item = Region>,
+) -> TestResult {
     let mut operation = OperationOptions::default();
     operation.read_consistency_strategy = Some(ReadConsistencyStrategy::Eventual);
     operation.availability_strategy = Some(AvailabilityStrategy::Disabled);
     operation.max_failover_retry_count = Some(0);
     operation.max_session_retry_count = Some(0);
-    operation.excluded_regions =
-        Some(azure_data_cosmos::options::ExcludedRegions::new().with_region(Region::EAST_US));
+    let mut excluded = azure_data_cosmos::options::ExcludedRegions::new();
+    for region in configured_regions {
+        if region != target_region {
+            excluded = excluded.with_region(region);
+        }
+    }
+    operation.excluded_regions = Some(excluded);
     let options = ItemReadOptions::default().with_operation_options(operation);
     let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
     loop {
@@ -67,7 +91,7 @@ pub(super) async fn wait_for_item_replication(
         }
         match tokio::time::timeout_at(
             deadline,
-            container.read_item("A", item_id, Some(options.clone())),
+            container.read_item(partition_key.to_owned(), item_id, Some(options.clone())),
         )
         .await
         {
@@ -208,9 +232,21 @@ async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
             Capability::Database => capabilities.data_plane_contains("database"),
             Capability::Item => capabilities.data_plane_contains("item"),
             Capability::Patch => capabilities.data_plane_contains("patch"),
+            Capability::PartitionMerge => capabilities.management_contains("partitionMerge"),
+            Capability::PartitionSplit => capabilities.management_contains("partitionSplit"),
+            Capability::PerPartitionFailover => {
+                capabilities.management_contains("perPartitionFailover")
+            }
             Capability::Query => capabilities.data_plane_contains("query"),
+            Capability::RegionLifecycle => capabilities.management_contains("regionLifecycle"),
+            Capability::ReplicationPauseResume => {
+                capabilities.management_contains("replicationPauseResume")
+            }
             Capability::TransactionalBatch => {
                 capabilities.data_plane_contains("transactionalBatch")
+            }
+            Capability::WriteRegionFailover => {
+                capabilities.management_contains("writeRegionFailover")
             }
         };
         if !available {
@@ -229,11 +265,18 @@ struct CapabilityDocument {
     api_version: u32,
     protocols: ProtocolCapabilities,
     data_plane: Vec<String>,
+    management_actions: Vec<String>,
 }
 
 impl CapabilityDocument {
     fn data_plane_contains(&self, capability: &str) -> bool {
         self.data_plane.iter().any(|value| value == capability)
+    }
+
+    fn management_contains(&self, capability: &str) -> bool {
+        self.management_actions
+            .iter()
+            .any(|value| value == capability)
     }
 }
 

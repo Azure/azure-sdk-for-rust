@@ -1,0 +1,37 @@
+{
+  "displayNames": {
+    "inmemory-v1": "gateway_v1",
+    "inmemory-v2": "gateway_v2",
+    "dynamicTopology": "dynamic_topology",
+    "singleWriteThreeRegions": "single_write_three_regions",
+    "ppcbEnabled": "ppcb_enabled",
+    "preferredRegions": "preferred_regions"
+  },
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": [
+      "stable"
+    ],
+    "AZURE_COSMOS_EMULATOR_FLAVOR": [
+      "inmemory-v1",
+      "inmemory-v2"
+    ],
+    "AZURE_COSMOS_E2E_PROFILE": [
+      "dynamicTopology"
+    ],
+    "AZURE_COSMOS_E2E_ACCOUNT": [
+      "singleWriteThreeRegions"
+    ],
+    "AZURE_COSMOS_E2E_RUNTIME": [
+      "ppcbEnabled"
+    ],
+    "AZURE_COSMOS_E2E_CLIENT": [
+      "preferredRegions"
+    ]
+  }
+}

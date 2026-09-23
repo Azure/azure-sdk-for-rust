@@ -64,6 +64,37 @@ impl ControlPlaneProgression {
     }
 }
 
+struct ControlPlaneExecution {
+    progression: ControlPlaneProgression,
+    completion: Option<futures::channel::oneshot::Sender<bool>>,
+    transition_guard: Option<async_lock::MutexGuardArc<()>>,
+}
+
+impl ControlPlaneExecution {
+    fn automatic(
+        duration: Duration,
+        completion: Option<futures::channel::oneshot::Sender<bool>>,
+    ) -> Self {
+        Self {
+            progression: ControlPlaneProgression::Automatic(duration),
+            completion,
+            transition_guard: None,
+        }
+    }
+
+    fn manual(
+        release: futures::channel::oneshot::Receiver<()>,
+        completion: futures::channel::oneshot::Sender<bool>,
+        transition_guard: async_lock::MutexGuardArc<()>,
+    ) -> Self {
+        Self {
+            progression: ControlPlaneProgression::Manual(release),
+            completion: Some(completion),
+            transition_guard: Some(transition_guard),
+        }
+    }
+}
+
 /// Handle for a manually progressed split or merge operation.
 #[doc(hidden)]
 pub struct ManualControlPlaneOperation {
@@ -90,6 +121,21 @@ impl ManualControlPlaneOperation {
                 "manual operation could not update the requested partitions",
             ))
         }
+    }
+
+    /// Cancels the operation and waits until its partition locks are released.
+    pub async fn cancel(mut self) -> crate::error::Result<()> {
+        self.release.take();
+        if self
+            .completed
+            .await
+            .map_err(|_| host_control_plane_error("manual operation ended without a result"))?
+        {
+            return Err(host_control_plane_error(
+                "manual operation completed while cancellation was requested",
+            ));
+        }
+        Ok(())
     }
 }
 
@@ -981,6 +1027,14 @@ impl EmulatorStore {
                 .get(&source_name)
                 .map(Arc::clone)
                 .expect("the current write region must have a region store");
+            if source.containers.read().unwrap().values().any(|container| {
+                container
+                    .physical_partitions
+                    .iter()
+                    .any(PhysicalPartition::is_locked)
+            }) {
+                return Err(partition_transition_conflict());
+            }
             let region_store = RegionStore::seeded_from(&source);
             if matches!(seeding, SeedingPolicy::Delayed(_)) {
                 region_store.clear_documents();
@@ -2100,7 +2154,7 @@ pub(crate) struct PhysicalPartition {
     pub rid_prefix: u32,
     pub throughput_fraction: f64,
     pub parents: Vec<u32>,
-    pub locked: AtomicBool,
+    lock_count: AtomicUsize,
     pub throughput_tracker: Option<ThroughputTracker>,
     /// Replicated writes that arrived while this partition was locked for a
     /// split/merge. `execute_split` / `execute_merge` drain this buffer
@@ -2130,7 +2184,7 @@ impl PhysicalPartition {
             rid_prefix: self.rid_prefix,
             throughput_fraction: self.throughput_fraction,
             parents: self.parents.clone(),
-            locked: AtomicBool::new(false),
+            lock_count: AtomicUsize::new(0),
             throughput_tracker: self
                 .throughput_tracker
                 .as_ref()
@@ -2171,7 +2225,19 @@ impl PhysicalPartition {
 
     /// Returns whether this partition is currently locked (split/merge in progress).
     pub fn is_locked(&self) -> bool {
-        self.locked.load(Ordering::SeqCst)
+        self.lock_count.load(Ordering::SeqCst) > 0
+    }
+
+    fn lock(&self) {
+        self.lock_count.fetch_add(1, Ordering::SeqCst);
+    }
+
+    fn unlock(&self) {
+        self.lock_count
+            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |count| {
+                count.checked_sub(1)
+            })
+            .expect("partition transition lock count cannot underflow");
     }
 
     /// Restores the partition's LSN counters to previously captured values.
@@ -2306,7 +2372,7 @@ fn create_partitions(
             rid_prefix: i,
             throughput_fraction: 1.0 / n as f64,
             parents: Vec::new(),
-            locked: AtomicBool::new(false),
+            lock_count: AtomicUsize::new(0),
             throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
             deferred_replications: RwLock::new(Vec::new()),
         });
@@ -2686,8 +2752,7 @@ impl EmulatorStore {
             coll_id,
             partition_id,
             Some(split_epk),
-            ControlPlaneProgression::Automatic(min_lock_duration),
-            Some(completion),
+            ControlPlaneExecution::automatic(min_lock_duration, Some(completion)),
         );
         if !completed
             .await
@@ -2714,7 +2779,11 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id: u32,
         split_epk: Epk,
-    ) -> ManualControlPlaneOperation {
+    ) -> crate::error::Result<ManualControlPlaneOperation> {
+        let transition_guard = self
+            .split_merge_lock(db_id, coll_id)
+            .try_lock_arc()
+            .ok_or_else(partition_transition_conflict)?;
         let (release, released) = futures::channel::oneshot::channel();
         let (completion, completed) = futures::channel::oneshot::channel();
         self.split_partition_internal(
@@ -2722,13 +2791,12 @@ impl EmulatorStore {
             coll_id,
             partition_id,
             Some(split_epk),
-            ControlPlaneProgression::Manual(released),
-            Some(completion),
+            ControlPlaneExecution::manual(released, completion, transition_guard),
         );
-        ManualControlPlaneOperation {
+        Ok(ManualControlPlaneOperation {
             release: Some(release),
             completed,
-        }
+        })
     }
 
     /// Splits a physical partition into two child partitions.
@@ -2750,8 +2818,7 @@ impl EmulatorStore {
             coll_id,
             partition_id,
             None,
-            ControlPlaneProgression::Automatic(min_lock_duration),
-            None,
+            ControlPlaneExecution::automatic(min_lock_duration, None),
         );
     }
 
@@ -2770,8 +2837,7 @@ impl EmulatorStore {
             coll_id,
             partition_id,
             Some(split_epk),
-            ControlPlaneProgression::Automatic(min_lock_duration),
-            None,
+            ControlPlaneExecution::automatic(min_lock_duration, None),
         );
     }
 
@@ -2781,9 +2847,13 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id: u32,
         split_epk: Option<Epk>,
-        progression: ControlPlaneProgression,
-        completion: Option<futures::channel::oneshot::Sender<bool>>,
+        execution: ControlPlaneExecution,
     ) {
+        let ControlPlaneExecution {
+            progression,
+            completion,
+            transition_guard,
+        } = execution;
         // Lock the partition in all regions
         {
             let regions = self.regions.read().unwrap();
@@ -2796,7 +2866,7 @@ impl EmulatorStore {
                         .iter()
                         .find(|p| p.id == partition_id)
                     {
-                        p.locked.store(true, Ordering::SeqCst);
+                        p.lock();
                     }
                 }
             }
@@ -2814,7 +2884,10 @@ impl EmulatorStore {
         };
         let track_in_test_registry = completion.is_none();
         let handle = tokio::spawn(async move {
-            let _guard = lock.lock().await;
+            let _guard = match transition_guard {
+                Some(guard) => guard,
+                None => lock.lock_arc().await,
+            };
             if !progression.wait().await {
                 store.unlock_partitions(&(db.clone(), coll.clone()), &[partition_id]);
                 if let Some(completion) = completion {
@@ -3047,7 +3120,7 @@ impl EmulatorStore {
                     rid_prefix: child_id_1,
                     throughput_fraction: 1.0 / n as f64,
                     parents: vec![partition_id],
-                    locked: AtomicBool::new(false),
+                    lock_count: AtomicUsize::new(0),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
                     deferred_replications: RwLock::new(Vec::new()),
                 };
@@ -3065,7 +3138,7 @@ impl EmulatorStore {
                     rid_prefix: child_id_2,
                     throughput_fraction: 1.0 / n as f64,
                     parents: vec![partition_id],
-                    locked: AtomicBool::new(false),
+                    lock_count: AtomicUsize::new(0),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
                     deferred_replications: RwLock::new(Vec::new()),
                 };
@@ -3123,8 +3196,7 @@ impl EmulatorStore {
             coll_id,
             partition_id_a,
             partition_id_b,
-            ControlPlaneProgression::Automatic(min_lock_duration),
-            None,
+            ControlPlaneExecution::automatic(min_lock_duration, None),
         );
     }
 
@@ -3145,8 +3217,7 @@ impl EmulatorStore {
             coll_id,
             partition_id_a,
             partition_id_b,
-            ControlPlaneProgression::Automatic(min_lock_duration),
-            Some(completion),
+            ControlPlaneExecution::automatic(min_lock_duration, Some(completion)),
         );
         if !completed
             .await
@@ -3173,7 +3244,11 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id_a: u32,
         partition_id_b: u32,
-    ) -> ManualControlPlaneOperation {
+    ) -> crate::error::Result<ManualControlPlaneOperation> {
+        let transition_guard = self
+            .split_merge_lock(db_id, coll_id)
+            .try_lock_arc()
+            .ok_or_else(partition_transition_conflict)?;
         let (release, released) = futures::channel::oneshot::channel();
         let (completion, completed) = futures::channel::oneshot::channel();
         self.merge_partitions_internal(
@@ -3181,13 +3256,12 @@ impl EmulatorStore {
             coll_id,
             partition_id_a,
             partition_id_b,
-            ControlPlaneProgression::Manual(released),
-            Some(completion),
+            ControlPlaneExecution::manual(released, completion, transition_guard),
         );
-        ManualControlPlaneOperation {
+        Ok(ManualControlPlaneOperation {
             release: Some(release),
             completed,
-        }
+        })
     }
 
     fn merge_partitions_internal(
@@ -3196,9 +3270,13 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id_a: u32,
         partition_id_b: u32,
-        progression: ControlPlaneProgression,
-        completion: Option<futures::channel::oneshot::Sender<bool>>,
+        execution: ControlPlaneExecution,
     ) {
+        let ControlPlaneExecution {
+            progression,
+            completion,
+            transition_guard,
+        } = execution;
         // Lock both partitions in all regions
         {
             let regions = self.regions.read().unwrap();
@@ -3208,7 +3286,7 @@ impl EmulatorStore {
                 if let Some(state) = containers.get(&key) {
                     for p in &state.physical_partitions {
                         if p.id == partition_id_a || p.id == partition_id_b {
-                            p.locked.store(true, Ordering::SeqCst);
+                            p.lock();
                         }
                     }
                 }
@@ -3227,7 +3305,10 @@ impl EmulatorStore {
         };
         let track_in_test_registry = completion.is_none();
         let handle = tokio::spawn(async move {
-            let _guard = lock.lock().await;
+            let _guard = match transition_guard {
+                Some(guard) => guard,
+                None => lock.lock_arc().await,
+            };
             if !progression.wait().await {
                 store.unlock_partitions(
                     &(db.clone(), coll.clone()),
@@ -3258,7 +3339,7 @@ impl EmulatorStore {
                         let deferred = {
                             let mut deferred = partition.deferred_replications.write().unwrap();
                             let entries = std::mem::take(&mut *deferred);
-                            partition.locked.store(false, Ordering::SeqCst);
+                            partition.unlock();
                             entries
                         };
                         for (doc, is_delete) in deferred {
@@ -3506,7 +3587,7 @@ impl EmulatorStore {
                     rid_prefix: child_id,
                     throughput_fraction: 1.0 / n as f64,
                     parents: vec![partition_id_a, partition_id_b],
-                    locked: AtomicBool::new(false),
+                    lock_count: AtomicUsize::new(0),
                     throughput_tracker: per_partition_ru.map(ThroughputTracker::new),
                     deferred_replications: RwLock::new(Vec::new()),
                 };
@@ -3533,6 +3614,15 @@ fn host_control_plane_error(message: impl Into<String>) -> crate::error::CosmosE
             azure_core::http::StatusCode::BadRequest,
         ))
         .with_message(message.into())
+        .build()
+}
+
+fn partition_transition_conflict() -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::CosmosStatus::new(
+            azure_core::http::StatusCode::Conflict,
+        ))
+        .with_message("another partition transition is already active")
         .build()
 }
 
@@ -3952,7 +4042,9 @@ mod tests {
         );
 
         let split_epk = store.midpoint_split_epk("db", "c", 0).unwrap();
-        let operation = store.begin_manual_split_partition("db", "c", 0, split_epk);
+        let operation = store
+            .begin_manual_split_partition("db", "c", 0, split_epk)
+            .unwrap();
         let locked = store
             .region("r1")
             .unwrap()

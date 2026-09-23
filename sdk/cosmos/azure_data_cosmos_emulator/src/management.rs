@@ -22,7 +22,8 @@ use axum::{
     Json, Router,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
-    EmulatorStore, Epk, InMemoryEmulatorHttpClient, ManualControlPlaneOperation, WriteMode,
+    EmulatorStore, Epk, InMemoryEmulatorHttpClient, ManualControlPlaneOperation, SeedingPolicy,
+    VirtualRegion, WriteMode,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
@@ -94,6 +95,7 @@ fn router(
             "/operations/{operation_id}/advance",
             post(advance_operation),
         )
+        .route("/operations/{operation_id}/cancel", post(cancel_operation))
         .route(
             "/config/per-partition-failover",
             put(set_per_partition_failover),
@@ -106,6 +108,22 @@ fn router(
             "/regions/{region}/replication/resume",
             post(resume_replication),
         )
+        .route("/regions/{region}/add", post(add_region))
+        .route(
+            "/regions/{region}/removal/begin",
+            post(begin_region_removal),
+        )
+        .route(
+            "/regions/{region}/removal/cancel",
+            post(cancel_region_removal),
+        )
+        .route("/regions/{region}/remove", post(remove_region))
+        .route("/regions/{region}/offline", post(offline_region))
+        .route("/regions/{region}/online", post(online_region))
+        .route("/failover/{region}/announce", post(announce_failover))
+        .route("/failover/{region}/begin", post(begin_failover))
+        .route("/failover/complete", post(complete_failover))
+        .route("/failover/priorities", put(set_failover_priorities))
         .with_state(state)
 }
 
@@ -179,6 +197,8 @@ async fn capabilities(State(state): State<ManagementState>) -> Json<Capabilities
             "partitionMerge",
             "perPartitionFailover",
             "replicationPauseResume",
+            "regionLifecycle",
+            "writeRegionFailover",
         ],
         limitations: &[
             "authenticationNotEnforced",
@@ -195,6 +215,7 @@ struct AccountResponse {
     write_mode: &'static str,
     consistency: String,
     per_partition_failover: bool,
+    write_region: String,
     regions: Vec<RegionResponse>,
 }
 
@@ -205,6 +226,7 @@ struct RegionResponse {
     gateway_endpoint: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     gateway20_endpoint: Option<String>,
+    writable: bool,
 }
 
 async fn account(State(state): State<ManagementState>) -> Json<AccountResponse> {
@@ -213,16 +235,29 @@ async fn account(State(state): State<ManagementState>) -> Json<AccountResponse> 
         WriteMode::Single => "single",
         WriteMode::Multi => "multi",
     };
-    let regions = state
-        .bindings
-        .iter()
-        .map(|binding| RegionResponse {
-            name: binding.region_name.clone(),
-            gateway_endpoint: binding.gateway_url.as_str().to_owned(),
-            gateway20_endpoint: binding
-                .gateway20_url
-                .as_ref()
-                .map(|url| url.as_str().to_owned()),
+    let topology = config.topology_snapshot();
+    let writable: std::collections::HashSet<_> = topology
+        .writable(true)
+        .into_iter()
+        .map(|region| region.name().to_owned())
+        .collect();
+    let regions = topology
+        .advertised()
+        .into_iter()
+        .filter_map(|region| {
+            state
+                .bindings
+                .iter()
+                .find(|binding| binding.region_name == region.name())
+                .map(|binding| RegionResponse {
+                    name: binding.region_name.clone(),
+                    gateway_endpoint: binding.gateway_url.as_str().to_owned(),
+                    gateway20_endpoint: binding
+                        .gateway20_url
+                        .as_ref()
+                        .map(|url| url.as_str().to_owned()),
+                    writable: writable.contains(region.name()),
+                })
         })
         .collect();
     Json(AccountResponse {
@@ -230,6 +265,7 @@ async fn account(State(state): State<ManagementState>) -> Json<AccountResponse> 
         write_mode,
         consistency: config.consistency().as_str().to_owned(),
         per_partition_failover: config.per_partition_failover_enabled(),
+        write_region: topology.write_region,
         regions,
     })
 }
@@ -289,7 +325,10 @@ enum OperationKind {
 impl OperationKind {
     /// Locks the operation's target partition(s) and returns the handle that
     /// completes it once released.
-    fn begin_manual(&self, store: &Arc<EmulatorStore>) -> ManualControlPlaneOperation {
+    fn begin_manual(
+        &self,
+        store: &Arc<EmulatorStore>,
+    ) -> azure_data_cosmos_driver::error::Result<ManualControlPlaneOperation> {
         match self {
             Self::Split {
                 database,
@@ -608,7 +647,6 @@ async fn merge_partitions(
 
     Ok((StatusCode::ACCEPTED, Json(response)))
 }
-
 /// Spawns the background task that advances an `automatic`-progression
 /// operation from `Swapping` through to its terminal phase.
 fn spawn_automatic(
@@ -621,7 +659,15 @@ fn spawn_automatic(
         let store = state.emulator.store();
         let operation = {
             let mut operations = state.operations.records.lock().await;
-            let operation = kind.begin_manual(&store);
+            let operation = match kind.begin_manual(&store) {
+                Ok(operation) => operation,
+                Err(error) => {
+                    if let Some(record) = operations.get_mut(&operation_id) {
+                        record.fail(error.to_string());
+                    }
+                    return;
+                }
+            };
             if let Some(record) = operations.get_mut(&operation_id) {
                 record.phase = OperationPhase::Swapping;
             }
@@ -630,8 +676,8 @@ fn spawn_automatic(
         if !lock_duration.is_zero() {
             tokio::time::sleep(lock_duration).await;
         }
-        let mut operations = state.operations.records.lock().await;
         let outcome = kind.complete(&store, operation).await;
+        let mut operations = state.operations.records.lock().await;
         finish_operation_locked(&mut operations, &operation_id, outcome);
     });
 }
@@ -642,6 +688,12 @@ fn finish_operation_locked(
     outcome: Result<serde_json::Value, String>,
 ) {
     if let Some(operation) = operations.get_mut(operation_id) {
+        if matches!(
+            operation.phase,
+            OperationPhase::Succeeded | OperationPhase::Failed
+        ) {
+            return;
+        }
         match outcome {
             Ok(result) => operation.succeed(result),
             Err(error) => operation.fail(error),
@@ -736,7 +788,13 @@ async fn advance_operation(
         })?;
         match action {
             OperationAction::Pending(kind) => {
-                let manual_operation = kind.begin_manual(&state.emulator.store());
+                let manual_operation = match kind.begin_manual(&state.emulator.store()) {
+                    Ok(operation) => operation,
+                    Err(error) => {
+                        operation.fail(error.to_string());
+                        return Err(error.into());
+                    }
+                };
                 operation.phase = OperationPhase::Swapping;
                 operation.action = Some(OperationAction::Active(kind, manual_operation));
                 return Ok(Json(operation_response(&operation_id, operation)));
@@ -748,11 +806,45 @@ async fn advance_operation(
     let store = state.emulator.store();
     let completion_id = operation_id.clone();
     tokio::spawn(async move {
-        let mut records = operations.records.lock().await;
         let outcome = kind.complete(&store, manual_operation).await;
+        let mut records = operations.records.lock().await;
         finish_operation_locked(&mut records, &completion_id, outcome);
     });
     Ok(Json(response))
+}
+
+async fn cancel_operation(
+    State(state): State<ManagementState>,
+    ApiPath(operation_id): ApiPath<String>,
+) -> ApiResult<Json<serde_json::Value>> {
+    let action = {
+        let mut operations = state.operations.records.lock().await;
+        let operation = operations.get_mut(&operation_id).ok_or_else(|| {
+            ApiError::not_found(format!("operation '{operation_id}' does not exist"))
+        })?;
+        if matches!(
+            operation.phase,
+            OperationPhase::Succeeded | OperationPhase::Failed
+        ) {
+            return Err(ApiError::conflict(format!(
+                "operation '{operation_id}' is already terminal"
+            )));
+        }
+        operation.action.take().ok_or_else(|| {
+            ApiError::conflict(format!(
+                "operation '{operation_id}' cannot be cancelled after completion starts"
+            ))
+        })?
+    };
+    if let OperationAction::Active(_, manual_operation) = action {
+        manual_operation.cancel().await?;
+    }
+    let mut operations = state.operations.records.lock().await;
+    let operation = operations
+        .get_mut(&operation_id)
+        .expect("operation remains registered while cancellation completes");
+    operation.fail("operation cancelled");
+    Ok(Json(operation_response(&operation_id, operation)))
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -788,6 +880,113 @@ async fn resume_replication(
     ensure_region(&state.emulator.store(), &region)?;
     state.emulator.store().resume_replication(&region);
     Ok(Json(json!({ "region": region, "replication": "resumed" })))
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AddRegionRequest {}
+
+async fn add_region(
+    State(state): State<ManagementState>,
+    ApiPath(region): ApiPath<String>,
+    request: Request,
+) -> ApiResult<(StatusCode, Json<serde_json::Value>)> {
+    let _: AddRegionRequest = parse_optional_json(request).await?;
+    let binding = state
+        .bindings
+        .iter()
+        .find(|binding| binding.region_name == region)
+        .ok_or_else(|| {
+            ApiError::not_found(format!("region '{region}' has no pre-bound hosted gateway"))
+        })?;
+    let mut virtual_region = VirtualRegion::new(&region, binding.gateway_url.clone());
+    if let Some(gateway20_url) = &binding.gateway20_url {
+        virtual_region = virtual_region.with_gateway_v2_url(gateway20_url.clone());
+    }
+    state
+        .emulator
+        .store()
+        .add_region(virtual_region, SeedingPolicy::Immediate)?;
+    Ok((
+        StatusCode::CREATED,
+        Json(json!({ "region": region, "state": "active" })),
+    ))
+}
+
+async fn begin_region_removal(
+    State(state): State<ManagementState>,
+    ApiPath(region): ApiPath<String>,
+) -> ApiResult<Json<serde_json::Value>> {
+    state.emulator.store().begin_region_removal(&region)?;
+    Ok(Json(json!({ "region": region, "state": "draining" })))
+}
+
+async fn cancel_region_removal(
+    State(state): State<ManagementState>,
+    ApiPath(region): ApiPath<String>,
+) -> ApiResult<Json<serde_json::Value>> {
+    state.emulator.store().cancel_region_removal(&region)?;
+    Ok(Json(json!({ "region": region, "state": "active" })))
+}
+
+async fn remove_region(
+    State(state): State<ManagementState>,
+    ApiPath(region): ApiPath<String>,
+) -> ApiResult<Json<serde_json::Value>> {
+    state.emulator.store().remove_region(&region)?;
+    Ok(Json(json!({ "region": region, "state": "removed" })))
+}
+
+async fn offline_region(
+    State(state): State<ManagementState>,
+    ApiPath(region): ApiPath<String>,
+) -> ApiResult<Json<serde_json::Value>> {
+    state.emulator.store().set_region_offline(&region)?;
+    Ok(Json(json!({ "region": region, "state": "offline" })))
+}
+
+async fn online_region(
+    State(state): State<ManagementState>,
+    ApiPath(region): ApiPath<String>,
+) -> ApiResult<Json<serde_json::Value>> {
+    state.emulator.store().set_region_online(&region)?;
+    Ok(Json(json!({ "region": region, "state": "online" })))
+}
+
+async fn announce_failover(
+    State(state): State<ManagementState>,
+    ApiPath(region): ApiPath<String>,
+) -> ApiResult<Json<serde_json::Value>> {
+    state.emulator.store().announce_failover(&region)?;
+    Ok(Json(json!({ "region": region, "phase": "announced" })))
+}
+
+async fn begin_failover(
+    State(state): State<ManagementState>,
+    ApiPath(region): ApiPath<String>,
+) -> ApiResult<Json<serde_json::Value>> {
+    state.emulator.store().begin_failover(&region)?;
+    Ok(Json(json!({ "region": region, "phase": "swapping" })))
+}
+
+async fn complete_failover(State(state): State<ManagementState>) -> Json<serde_json::Value> {
+    state.emulator.store().complete_failover();
+    Json(json!({ "phase": "completed" }))
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FailoverPrioritiesRequest {
+    regions: Vec<String>,
+}
+
+async fn set_failover_priorities(
+    State(state): State<ManagementState>,
+    ApiJson(request): ApiJson<FailoverPrioritiesRequest>,
+) -> ApiResult<Json<serde_json::Value>> {
+    let regions: Vec<_> = request.regions.iter().map(String::as_str).collect();
+    state.emulator.store().set_failover_priorities(&regions)?;
+    Ok(Json(json!({ "regions": request.regions })))
 }
 
 fn ensure_region(store: &EmulatorStore, name: &str) -> ApiResult<()> {
@@ -1296,6 +1495,118 @@ mod tests {
         assert!(terminal["splitEpk"].is_string());
 
         server.abort();
+    }
+
+    #[tokio::test]
+    async fn split_conflicts_and_cancellation_releases_transition_lock() {
+        let gateway_url = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let account =
+            VirtualAccountConfig::new(vec![VirtualRegion::new("East US", gateway_url)]).unwrap();
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(account));
+        emulator.store().create_database("testdb");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        emulator.store().create_container_with_config(
+            "testdb",
+            "testcoll",
+            partition_key,
+            ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
+        );
+        let state = ManagementState {
+            emulator,
+            account_id: "test-account".into(),
+            bindings: Vec::<GatewayBinding>::new().into(),
+            metrics: Arc::new(HostMetrics::default()),
+            operations: Arc::new(OperationRegistry::default()),
+        };
+
+        let first = split_partition_inner(
+            state.clone(),
+            "testdb".to_owned(),
+            "testcoll".to_owned(),
+            0,
+            SplitRequest {
+                mode: SplitMode::Midpoint,
+                epk: None,
+                progression_mode: ProgressionMode::Manual,
+                lock_duration_ms: None,
+            },
+        )
+        .await
+        .unwrap();
+        let first_id = first.1["operationId"].as_str().unwrap().to_owned();
+        assert_eq!(
+            advance_operation(State(state.clone()), ApiPath(first_id.clone()))
+                .await
+                .unwrap()["phase"],
+            "Swapping"
+        );
+
+        let overlapping_split = split_partition_inner(
+            state.clone(),
+            "testdb".to_owned(),
+            "testcoll".to_owned(),
+            0,
+            SplitRequest {
+                mode: SplitMode::Midpoint,
+                epk: None,
+                progression_mode: ProgressionMode::Manual,
+                lock_duration_ms: None,
+            },
+        )
+        .await
+        .unwrap();
+        let overlapping_split_id = overlapping_split.1["operationId"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let split_conflict = advance_operation(State(state.clone()), ApiPath(overlapping_split_id))
+            .await
+            .unwrap_err();
+        assert_eq!(split_conflict.status, StatusCode::CONFLICT);
+
+        let cancelled = cancel_operation(State(state.clone()), ApiPath(first_id))
+            .await
+            .unwrap();
+        assert_eq!(cancelled["phase"], "Failed");
+
+        let replacement = split_partition_inner(
+            state.clone(),
+            "testdb".to_owned(),
+            "testcoll".to_owned(),
+            0,
+            SplitRequest {
+                mode: SplitMode::Midpoint,
+                epk: None,
+                progression_mode: ProgressionMode::Manual,
+                lock_duration_ms: None,
+            },
+        )
+        .await
+        .unwrap();
+        let replacement_id = replacement.1["operationId"].as_str().unwrap().to_owned();
+        assert_eq!(
+            advance_operation(State(state.clone()), ApiPath(replacement_id.clone()))
+                .await
+                .unwrap()["phase"],
+            "Swapping"
+        );
+        assert_eq!(
+            advance_operation(State(state.clone()), ApiPath(replacement_id.clone()))
+                .await
+                .unwrap()["phase"],
+            "Swapping"
+        );
+        let too_late = cancel_operation(State(state.clone()), ApiPath(replacement_id.clone()))
+            .await
+            .unwrap_err();
+        assert_eq!(too_late.status, StatusCode::CONFLICT);
+        wait_for_phase(&state, &replacement_id, "Succeeded").await;
     }
 
     #[tokio::test]

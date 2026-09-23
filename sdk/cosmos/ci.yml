@@ -133,6 +133,12 @@ extends:
         Path: sdk/cosmos/e2e-configuration-resilience-matrix.json
         Selection: all
         GenerateVMJobs: true
+      # Dynamic region, failover, replication, partition-transition, PPCB,
+      # hedging, and continuation contracts run through both hosted gateways.
+      - Name: Cosmos_e2e_dynamic_topology
+        Path: sdk/cosmos/e2e-dynamic-topology-matrix.json
+        Selection: all
+        GenerateVMJobs: true
       # The full consistency × read-consistency-strategy lifecycle matrix is
       # intentionally scheduled rather than blocking every PR. Jobs select
       # account/runtime/client cells from the two focused profiles. Non-Strong

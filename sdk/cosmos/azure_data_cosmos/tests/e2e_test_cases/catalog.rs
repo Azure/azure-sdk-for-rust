@@ -58,6 +58,13 @@ const SCENARIOS: &[&str] = &[
     include_str!("../../../e2e_tests/scenarios/resilience/request-timeout-retry.json"),
     include_str!("../../../e2e_tests/scenarios/resilience/service-retry.json"),
     include_str!("../../../e2e_tests/scenarios/resilience/transport-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/partition-circuit-breaker.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/hedging-topology.json"),
+    include_str!("../../../e2e_tests/scenarios/topology/region-lifecycle.json"),
+    include_str!("../../../e2e_tests/scenarios/topology/write-failover.json"),
+    include_str!("../../../e2e_tests/scenarios/topology/replication-pause-resume.json"),
+    include_str!("../../../e2e_tests/scenarios/topology/partition-split-merge.json"),
+    include_str!("../../../e2e_tests/scenarios/topology/continuation-transitions.json"),
 ];
 
 const PROFILES: &[&str] = &[
@@ -66,6 +73,7 @@ const PROFILES: &[&str] = &[
     include_str!("../../../e2e_tests/profiles/configurationResilience.json"),
     include_str!("../../../e2e_tests/profiles/lifecycleConsistencyMatrix.json"),
     include_str!("../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"),
+    include_str!("../../../e2e_tests/profiles/dynamicTopology.json"),
 ];
 
 const RUST_IMPLEMENTATIONS: &str = include_str!("../../../e2e_tests/implementations/rust.json");
@@ -74,6 +82,7 @@ const CONFIGURATION_RESILIENCE_MATRIX: &str =
     include_str!("../../../e2e-configuration-resilience-matrix.json");
 const CONSISTENCY_MATRIX: &str = include_str!("../../../e2e-consistency-matrix.json");
 const OVERRIDE_MATRIX: &str = include_str!("../../../e2e-read-consistency-override-matrix.json");
+const DYNAMIC_TOPOLOGY_MATRIX: &str = include_str!("../../../e2e-dynamic-topology-matrix.json");
 const SCENARIO_SCHEMA: &str = include_str!("../../../e2e_tests/schema/scenario.v1.json");
 const PROFILE_SCHEMA: &str = include_str!("../../../e2e_tests/schema/profile.v1.json");
 
@@ -151,8 +160,14 @@ pub(super) enum Capability {
     GatewayV2,
     Item,
     Patch,
+    PartitionMerge,
+    PartitionSplit,
+    PerPartitionFailover,
     Query,
+    RegionLifecycle,
+    ReplicationPauseResume,
     TransactionalBatch,
+    WriteRegionFailover,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
@@ -303,6 +318,12 @@ impl Profile {
             .map(|definition| definition.id.as_str())
             .collect();
         Ok(self.client(selected_axis("AZURE_COSMOS_E2E_CLIENT", &ids)?))
+    }
+}
+
+impl AccountDefinition {
+    pub fn region_names(&self) -> impl Iterator<Item = &str> {
+        self.regions.iter().map(|region| region.name.as_str())
     }
 }
 
@@ -550,6 +571,13 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
             .iter()
             .find(|profile| profile.id == "readConsistencyOverrideMatrix")
             .expect("override profile must be registered"),
+    )?;
+    validate_pipeline_matrix(
+        DYNAMIC_TOPOLOGY_MATRIX,
+        profiles
+            .iter()
+            .find(|profile| profile.id == "dynamicTopology")
+            .expect("dynamic topology profile must be registered"),
     )?;
 
     let scenarios = load_scenarios()?;
