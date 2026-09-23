@@ -21,8 +21,8 @@ pub use azure_data_cosmos_driver::options::{
     OperationOptionsView, PartitionFailoverOptions, PartitionFailoverOptionsBuilder,
     PartitionTopologyCacheMode, PriorityLevel, QueryPlanMode, ReadConsistencyStrategy, Region,
     ServerCertificateValidation, ThrottlingRetryOptions, ThrottlingRetryOptionsBuilder,
-    ThrottlingRetryOptionsView, ThroughputControlOptions,
-    ThroughputControlOptionsBuilder, ThroughputControlOptionsView, TlsBackend, UserAgentSuffix,
+    ThrottlingRetryOptionsView, ThroughputControlOptions, ThroughputControlOptionsBuilder,
+    ThroughputControlOptionsView, TlsBackend, UserAgentSuffix,
 };
 pub use batch::{
     BatchDeleteOptions, BatchOptions, BatchReadOptions, BatchReplaceOptions, BatchUpsertOptions,
