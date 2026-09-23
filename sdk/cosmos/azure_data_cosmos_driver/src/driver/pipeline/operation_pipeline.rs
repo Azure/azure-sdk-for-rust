@@ -487,7 +487,6 @@ pub(crate) async fn execute_operation_pipeline(
     session_manager: &SessionManager,
     account_default_consistency: DefaultConsistencyLevel,
     throughput_control: Option<ResolvedThroughputControl>,
-    partition_key_range_cache_enabled: bool,
     hedge_budget: &HedgeBudget,
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
@@ -541,15 +540,13 @@ pub(crate) async fn execute_operation_pipeline(
         operation_read_consistency_strategy,
         account_default_consistency,
     );
-    let session_token_resolution_active = partition_key_range_cache_enabled
-        && !session_capturing_disabled
+    let session_token_resolution_active = !session_capturing_disabled
         && operation_allows_automatic_session_token_resolution(
             operation,
             location_snapshot.account.multiple_write_locations_enabled,
         )
         && operation_read_consistency_strategy.is_session_effective(account_default_consistency);
-    let session_token_capture_active =
-        partition_key_range_cache_enabled && !session_capturing_disabled;
+    let session_token_capture_active = !session_capturing_disabled;
 
     // Rule 4 (RCS validation): GlobalStrong is
     // valid only on reads against accounts whose default consistency is Strong.
@@ -680,8 +677,7 @@ pub(crate) async fn execute_operation_pipeline(
             attempt_read_consistency_strategy,
             account_default_consistency,
         );
-        let attempt_session_token_resolution_active = partition_key_range_cache_enabled
-            && !session_capturing_disabled
+        let attempt_session_token_resolution_active = !session_capturing_disabled
             && operation_allows_automatic_session_token_resolution(
                 operation,
                 location.account.multiple_write_locations_enabled,

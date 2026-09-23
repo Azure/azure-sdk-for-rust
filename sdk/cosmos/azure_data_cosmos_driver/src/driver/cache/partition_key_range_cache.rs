@@ -38,8 +38,8 @@ pub(crate) struct PkRangeFetchResult {
 /// this cache computes the effective partition key (EPK) from the partition key
 /// values and looks up the corresponding range ID in the routing map.
 ///
-/// The routing map is fetched lazily from the service the first time a
-/// container is queried, then cached until invalidated.
+/// The routing map is loaded during container resolution in eager mode or on
+/// first use in lazy mode, then cached until invalidated.
 #[derive(Debug)]
 pub(crate) struct PartitionKeyRangeCache {
     /// Keyed by [`ContainerReference`], which provides the container RID
