@@ -9,10 +9,13 @@ use std::time::Duration;
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_data_cosmos_macros::CosmosOptions;
 
-use crate::options::{
-    AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
-    EndToEndOperationLatencyPolicy, ExcludedRegions, PatchStrategy, PriorityLevel,
-    ReadConsistencyStrategy,
+#[cfg(feature = "preview_patch")]
+use crate::options::PatchStrategy;
+use crate::{
+    options::{
+        AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
+        EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
+    },
 };
 
 /// Options that apply to individual Cosmos DB requests.
@@ -45,6 +48,7 @@ pub struct OperationOptions {
     /// it. Unsafe server-side PATCH does not persist a tracking marker and is
     /// not retried after an ambiguous outcome; client-side-only settings are
     /// ignored whenever the resolved strategy uses the server path.
+    #[cfg(feature = "preview_patch")]
     #[option(env = "AZURE_COSMOS_PATCH_STRATEGY")]
     pub patch_strategy: Option<PatchStrategy>,
 
@@ -254,6 +258,7 @@ mod tests {
     #[test]
     fn default_operation_options() {
         let options = OperationOptions::default();
+        #[cfg(feature = "preview_patch")]
         assert!(options.patch_strategy.is_none());
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.excluded_regions.is_none());
@@ -269,8 +274,10 @@ mod tests {
             .with_max_retry_count(4)
             .with_max_retry_wait_time(Duration::from_secs(12))
             .build();
-        let options = OperationOptionsBuilder::new()
-            .with_patch_strategy(PatchStrategy::ClientSide)
+        let builder = OperationOptionsBuilder::new();
+        #[cfg(feature = "preview_patch")]
+        let builder = builder.with_patch_strategy(PatchStrategy::ClientSide);
+        let options = builder
             .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .with_read_consistency_strategy(ReadConsistencyStrategy::Session)
             .with_max_failover_retry_count(5)
@@ -278,6 +285,7 @@ mod tests {
             .with_throttling_retry_options(throttling)
             .build();
 
+        #[cfg(feature = "preview_patch")]
         assert_eq!(options.patch_strategy, Some(PatchStrategy::ClientSide));
         assert_eq!(
             options.content_response_on_write,
@@ -304,6 +312,7 @@ mod tests {
         use std::sync::Arc;
 
         let env = Arc::new(OperationOptions {
+            #[cfg(feature = "preview_patch")]
             patch_strategy: Some(PatchStrategy::ServerSide),
             read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
             max_failover_retry_count: Some(3),
@@ -322,6 +331,7 @@ mod tests {
         });
 
         let operation = OperationOptions {
+            #[cfg(feature = "preview_patch")]
             patch_strategy: Some(PatchStrategy::ClientSide),
             read_consistency_strategy: Some(ReadConsistencyStrategy::Session),
             ..Default::default()
@@ -331,6 +341,7 @@ mod tests {
             OperationOptionsView::new(Some(env), Some(runtime), Some(account), Some(&operation));
 
         // Operation overrides env
+        #[cfg(feature = "preview_patch")]
         assert_eq!(view.patch_strategy(), Some(&PatchStrategy::ClientSide));
         // Operation overrides env
         assert_eq!(
@@ -387,6 +398,7 @@ mod tests {
             _ => Err(std::env::VarError::NotPresent),
         });
 
+        #[cfg(feature = "preview_patch")]
         assert_eq!(options.patch_strategy, Some(PatchStrategy::ServerSide));
         assert_eq!(
             options.read_consistency_strategy,
@@ -424,6 +436,7 @@ mod tests {
     fn from_env_vars_returns_none_for_missing_vars() {
         let options = OperationOptions::from_env_vars(|_| Err(std::env::VarError::NotPresent));
 
+        #[cfg(feature = "preview_patch")]
         assert!(options.patch_strategy.is_none());
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.content_response_on_write.is_none());
@@ -432,6 +445,15 @@ mod tests {
         assert!(options.max_session_retry_count.is_none());
         assert!(options.availability_strategy.is_none());
         assert!(options.hedging_enabled.is_none());
+    }
+
+    #[cfg(not(feature = "preview_patch"))]
+    #[test]
+    fn from_env_does_not_read_preview_patch_strategy() {
+        OperationOptions::from_env_vars(|key| {
+            assert_ne!(key, "AZURE_COSMOS_PATCH_STRATEGY");
+            Err(std::env::VarError::NotPresent)
+        });
     }
 
     #[test]
@@ -776,6 +798,7 @@ mod real_env_tests {
         // With no variables set, the env layer contributes nothing.
         with_scoped_env(OPERATION_ENV_VARS, &[], || {
             let o = OperationOptions::from_env();
+            #[cfg(feature = "preview_patch")]
             assert!(o.patch_strategy.is_none());
             assert!(o.read_consistency_strategy.is_none());
             assert!(o.content_response_on_write.is_none());
@@ -797,6 +820,7 @@ mod real_env_tests {
             ],
             || {
                 let o = OperationOptions::from_env();
+                #[cfg(feature = "preview_patch")]
                 assert_eq!(o.patch_strategy, Some(PatchStrategy::ClientSide));
                 assert_eq!(
                     o.read_consistency_strategy,

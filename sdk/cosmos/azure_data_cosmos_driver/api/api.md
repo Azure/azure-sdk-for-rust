@@ -3270,6 +3270,7 @@ pub mod options {
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct OperationOptions {
+        #[cfg(feature = "preview_patch")]
         pub patch_strategy: Option<crate::options::PatchStrategy>,
         pub read_consistency_strategy: Option<crate::options::ReadConsistencyStrategy>,
         pub excluded_regions: Option<crate::options::ExcludedRegions>,
@@ -3309,6 +3310,7 @@ pub mod options {
         pub fn with_hedging_enabled(self, value: bool) -> Self;
         pub fn with_max_failover_retry_count(self, value: u32) -> Self;
         pub fn with_max_session_retry_count(self, value: u32) -> Self;
+        #[cfg(feature = "preview_patch")]
         pub fn with_patch_strategy(self, value: PatchStrategy) -> Self;
         pub fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
@@ -3332,6 +3334,7 @@ pub mod options {
         pub fn max_session_retry_count(&self) -> Option<&u32>;
         pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
+        #[cfg(feature = "preview_patch")]
         pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
         pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
         pub fn session_capturing_disabled(&self) -> Option<&bool>;

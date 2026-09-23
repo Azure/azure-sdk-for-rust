@@ -8,7 +8,9 @@
 //! that is not yet generally available, and may change or be removed without
 //! notice. They are **not supported for production use**.
 
-use std::{borrow::Cow, sync::Arc};
+#[cfg(feature = "preview_patch")]
+use std::borrow::Cow;
+use std::sync::Arc;
 
 use azure_core::fmt::SafeDebug;
 use azure_core::Bytes;
@@ -17,7 +19,9 @@ use serde::{de::DeserializeOwned, Serialize};
 
 use crate::clients::{ClientContext, ContainerClient};
 use crate::diagnostics::{CosmosOperationContext, DiagnosticsContext};
-use crate::models::{PartitionKey, PatchInstructions, ResponseHeaders};
+#[cfg(feature = "preview_patch")]
+use crate::models::PatchInstructions;
+use crate::models::{PartitionKey, ResponseHeaders};
 use crate::options::{Precondition, SessionToken};
 
 /// Options for a single operation inside a distributed transaction.
@@ -45,6 +49,7 @@ impl DistributedTransactionOperationOptions {
 }
 
 /// Options for a patch operation inside a distributed transaction.
+#[cfg(feature = "preview_patch")]
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct DistributedTransactionPatchOperationOptions {
@@ -56,6 +61,7 @@ pub struct DistributedTransactionPatchOperationOptions {
     pub filter_predicate: Option<Cow<'static, str>>,
 }
 
+#[cfg(feature = "preview_patch")]
 impl DistributedTransactionPatchOperationOptions {
     /// Sets the per-operation session token.
     pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
@@ -179,6 +185,7 @@ impl DistributedWriteTransaction {
     }
 
     /// Adds a patch item operation.
+    #[cfg(feature = "preview_patch")]
     pub fn patch_item(
         mut self,
         container: &ContainerClient,
@@ -281,6 +288,7 @@ fn operation_with_options(
     operation
 }
 
+#[cfg(feature = "preview_patch")]
 fn patch_operation_with_options(
     container: &ContainerClient,
     partition_key: impl Into<PartitionKey>,

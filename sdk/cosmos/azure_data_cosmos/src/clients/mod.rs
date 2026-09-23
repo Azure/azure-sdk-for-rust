@@ -11,11 +11,13 @@ pub use container_client::ContainerClient;
 pub use cosmos_client::CosmosClient;
 pub use cosmos_client_builder::CosmosClientBuilder;
 pub use database_client::DatabaseClient;
+#[cfg(all(feature = "preview_dtx", feature = "preview_patch"))]
+pub use distributed_transaction::DistributedTransactionPatchOperationOptions;
 #[cfg(feature = "preview_dtx")]
 pub use distributed_transaction::{
     DistributedReadTransaction, DistributedTransactionOperationOptions,
-    DistributedTransactionOperationResult, DistributedTransactionPatchOperationOptions,
-    DistributedTransactionResponse, DistributedWriteTransaction,
+    DistributedTransactionOperationResult, DistributedTransactionResponse,
+    DistributedWriteTransaction,
 };
 #[cfg(feature = "control_plane")]
 pub use throughput_poller::ThroughputPoller;
@@ -184,7 +186,7 @@ impl ClientContext {
     /// tracing and sampled logging still run. Zero-overhead no-op when no handler
     /// is registered: neither the error's diagnostics nor the operation context
     /// is materialized.
-    #[cfg(feature = "control_plane")]
+    #[cfg(any(feature = "control_plane", feature = "preview_dtx"))]
     pub(crate) fn dispatch_error(
         &self,
         err: &crate::CosmosError,
