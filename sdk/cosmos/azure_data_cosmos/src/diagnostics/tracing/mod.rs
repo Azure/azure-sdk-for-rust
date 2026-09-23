@@ -12,13 +12,15 @@
 mod handler;
 mod span_builder;
 
-pub use handler::CosmosTracingHandler;
+pub use handler::{
+    CosmosTracingHandler, CosmosTracingHandlerBuilder, CosmosTracingHandlerWithTracer,
+};
 
 #[cfg(test)]
 mod tests {
     use std::time::{Duration, Instant, SystemTime};
 
-    use azure_core::http::StatusCode;
+    use azure_core::http::{Context, StatusCode};
     use azure_data_cosmos_driver::diagnostics::{
         DiagnosticsContext, ExecutionContext, HedgeDiagnostics, HedgeTerminalState,
         RequestDiagnostics,
@@ -30,10 +32,10 @@ mod tests {
     use opentelemetry::{Array, Value};
     use opentelemetry_sdk::trace::{in_memory_exporter::InMemorySpanExporter, SdkTracerProvider};
 
-    use super::handler::should_emit_span;
+    use super::handler::{should_emit_span, CosmosTracingHandler};
     use super::span_builder::emit_backdated_span_tree;
     use crate::diagnostics::attributes;
-    use crate::diagnostics::CosmosOperationContext;
+    use crate::diagnostics::{CosmosOperationContext, DiagnosticsHandler};
 
     /// Builds a completed context: `duration` long, final `status`, and one
     /// synthetic attempt per `(offset_ms, dur_ms, status)` triple. `offset_ms` is
@@ -117,6 +119,31 @@ mod tests {
             now,
         );
         assert!(should_emit_span(&slow, &thresholds, None));
+    }
+
+    #[test]
+    fn explicit_tracer_honors_custom_thresholds() {
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("explicit-tracer-test");
+        let thresholds = DiagnosticsThresholds::default().with_request_charge(1.0);
+        let handler = CosmosTracingHandler::builder()
+            .with_thresholds(thresholds)
+            .build_with_tracer(tracer);
+        let now = Instant::now();
+        let expensive = context(
+            Duration::from_millis(5),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("read_item"),
+            &[(5, 5, CosmosStatus::new(StatusCode::Ok))],
+            now,
+        );
+
+        handler.handle(&expensive, &Context::new());
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        assert_eq!(spans.len(), 2, "operation root + one request child");
+        assert!(spans.iter().any(|span| span.name == "read_item"));
     }
 
     #[test]
@@ -453,6 +480,58 @@ mod tests {
             }),
             "root server.address must honor the op-context override"
         );
+    }
+
+    #[test]
+    fn root_span_falls_back_to_last_retained_request_endpoint() {
+        let (provider, exporter) = exportable();
+        let tracer = provider.tracer("endpoint-fallback-test");
+        let now_instant = Instant::now();
+        let requests = vec![
+            RequestDiagnostics::for_testing(
+                "https://first.documents.azure.com:443/",
+                Some(Region::EAST_US),
+                CosmosStatus::new(StatusCode::ServiceUnavailable),
+                RequestCharge::new(0.0),
+                now_instant - Duration::from_millis(20),
+                now_instant - Duration::from_millis(15),
+            ),
+            RequestDiagnostics::for_testing(
+                "https://last.documents.azure.com:443/",
+                Some(Region::WEST_US),
+                CosmosStatus::new(StatusCode::Ok),
+                RequestCharge::new(1.0),
+                now_instant - Duration::from_millis(10),
+                now_instant - Duration::from_millis(5),
+            ),
+        ];
+        let diagnostics = DiagnosticsContext::for_testing_with_requests(
+            ActivityId::new_uuid(),
+            Duration::from_millis(20),
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("read_item"),
+            requests,
+        );
+
+        emit_backdated_span_tree(
+            &tracer,
+            &diagnostics,
+            None,
+            None,
+            now_instant,
+            SystemTime::now(),
+        );
+        provider.force_flush().unwrap();
+
+        let spans = exporter.get_finished_spans().unwrap();
+        let root = spans
+            .iter()
+            .find(|span| span.name == "read_item")
+            .expect("root span present");
+        assert!(root.attributes.iter().any(|attribute| {
+            attribute.key.as_str() == attributes::SERVER_ADDRESS
+                && attribute.value.as_str() == "last.documents.azure.com"
+        }));
     }
 
     #[test]

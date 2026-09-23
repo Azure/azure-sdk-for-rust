@@ -56,6 +56,13 @@ transactional batch, patch, and item validation. It runs independently through
 Gateway V1 and Gateway V2 so this coverage does not expand every PR1 smoke or
 consistency shard.
 
+The `configurationResilience` profile selects PR3 configuration, consistency,
+session, retry, deadline, hedging, diagnostics-handler, and OpenTelemetry
+contracts. Its reusable setup is a two-region Session account with a fixed
+replication delay. Operation defaults, fault rules, retry budgets, hedging
+thresholds, diagnostics assertions, and telemetry exporters remain in the Rust
+implementations rather than expanding the profile schema into a behavior DSL.
+
 Operation-level `ReadConsistencyStrategy` cases, session-token choices,
 acceptable transient statuses, retry deadlines, and assertions are defined in
 the Rust test source. Future operation-specific dimensions follow the same
@@ -68,6 +75,11 @@ category.
 
 The blocking `e2e-core-operations-matrix.json` selects the single
 `coreOperations` setup cell through both hosted gateways.
+
+The blocking `e2e-configuration-resilience-matrix.json` selects the single
+`configurationResilience` setup cell through both hosted gateways. The
+existing scheduled consistency matrix additionally runs the feed-consistency
+scenario across all account consistency levels.
 
 ## Precedents and implementations
 

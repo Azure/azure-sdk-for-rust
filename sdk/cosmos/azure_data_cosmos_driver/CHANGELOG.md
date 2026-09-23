@@ -22,6 +22,8 @@
 
 ### Bugs Fixed
 
+- Gateway 2.0 change feed requests now forward incremental-mode and wire-format-version metadata, so change feeds work over the thin-client transport. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
+- In-memory emulator query, change-feed, and point reads now apply composite session-token range validation only to the physical partitions selected by the request, so an obsolete unrelated segment no longer rejects an otherwise valid scoped read. Explicit stale physical-range targets still return 410/1002 and trigger partition-topology refresh and retry. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Fixed V1 partition key routing for non-ASCII strings by truncating at 100 UTF-16 code units and applying the service's separate binary byte limit without panicking on split characters. ([#5280](https://github.com/Azure/azure-sdk-for-rust/pull/5280))
 - Added partition-merge routing support, advertised the merge capability bits, and retained point-in-time change feed filtering across merged partitions on Gateway V1 and Gateway V2. ([#4122](https://github.com/Azure/azure-sdk-for-rust/issues/4122))
 - Cosmos driver user agents now include the build-time Rust compiler version instead of `rustc/unknown`. ([#5201](https://github.com/Azure/azure-sdk-for-rust/pull/5201))

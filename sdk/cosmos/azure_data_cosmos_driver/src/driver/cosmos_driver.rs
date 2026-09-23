@@ -1628,7 +1628,8 @@ impl CosmosDriver {
         // initial account-metadata probe only take effect on post-bootstrap
         // refreshes — matching the previous runtime-level FI semantics.
         #[cfg(feature = "fault_injection")]
-        let fault_injection_enabled = options.fault_injection_rules().is_some();
+        let fault_injection_enabled =
+            options.fault_injection_rules().is_some() || runtime.fault_injection_enabled();
         let http_client_factory: Arc<dyn super::transport::http_client_factory::HttpClientFactory> = {
             #[cfg(feature = "fault_injection")]
             {

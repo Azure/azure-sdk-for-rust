@@ -24,6 +24,12 @@ const SCENARIOS: &[&str] = &[
     include_str!("../../../e2e_tests/scenarios/management/capabilities.json"),
     include_str!("../../../e2e_tests/scenarios/management/resource-lifecycle.json"),
     include_str!("../../../e2e_tests/scenarios/bootstrap/primary-success.json"),
+    include_str!("../../../e2e_tests/scenarios/bootstrap/backup-fallback.json"),
+    include_str!("../../../e2e_tests/scenarios/configuration/binary-routing.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/feed-read-strategies.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/response-token-capture.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/session-management.json"),
+    include_str!("../../../e2e_tests/scenarios/consistency/session-staleness.json"),
     include_str!("../../../e2e_tests/scenarios/items/lifecycle.json"),
     include_str!("../../../e2e_tests/scenarios/items/upsert-create-update.json"),
     include_str!("../../../e2e_tests/scenarios/items/create-conflict.json"),
@@ -43,17 +49,29 @@ const SCENARIOS: &[&str] = &[
     include_str!("../../../e2e_tests/scenarios/queries/change-feed-pagination-resume.json"),
     include_str!("../../../e2e_tests/scenarios/queries/change-feed-all-versions-starts.json"),
     include_str!("../../../e2e_tests/scenarios/diagnostics/success-and-error.json"),
+    include_str!("../../../e2e_tests/scenarios/diagnostics/handlers-telemetry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/throttling-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/deadline.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/hedge-deadline.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/hedging.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/partition-topology-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/request-timeout-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/service-retry.json"),
+    include_str!("../../../e2e_tests/scenarios/resilience/transport-retry.json"),
 ];
 
 const PROFILES: &[&str] = &[
     include_str!("../../../e2e_tests/profiles/smokeTests.json"),
     include_str!("../../../e2e_tests/profiles/coreOperations.json"),
+    include_str!("../../../e2e_tests/profiles/configurationResilience.json"),
     include_str!("../../../e2e_tests/profiles/lifecycleConsistencyMatrix.json"),
     include_str!("../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"),
 ];
 
 const RUST_IMPLEMENTATIONS: &str = include_str!("../../../e2e_tests/implementations/rust.json");
 const CORE_OPERATIONS_MATRIX: &str = include_str!("../../../e2e-core-operations-matrix.json");
+const CONFIGURATION_RESILIENCE_MATRIX: &str =
+    include_str!("../../../e2e-configuration-resilience-matrix.json");
 const CONSISTENCY_MATRIX: &str = include_str!("../../../e2e-consistency-matrix.json");
 const OVERRIDE_MATRIX: &str = include_str!("../../../e2e-read-consistency-override-matrix.json");
 const SCENARIO_SCHEMA: &str = include_str!("../../../e2e_tests/schema/scenario.v1.json");
@@ -505,6 +523,13 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
             ));
         }
     }
+    validate_pipeline_matrix(
+        CONFIGURATION_RESILIENCE_MATRIX,
+        profiles
+            .iter()
+            .find(|profile| profile.id == "configurationResilience")
+            .expect("configuration resilience profile must be registered"),
+    )?;
     validate_pipeline_matrix(
         CORE_OPERATIONS_MATRIX,
         profiles

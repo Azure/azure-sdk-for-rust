@@ -77,17 +77,17 @@ implying everything already exists:
 
 Each requirement below traces to a section here (and to the workstream that implements it).
 
-| # | Requirement | Where addressed in this doc |
-| -- | ----------- | --------------------------- |
-| R1 | Long-running (10–12 h) benchmark observability: **quiet at steady state, rich on error**, enough to root-cause a 5–10 min error window | The whole design; realized by §4 (chain) + §5 (tail-sampling + rate-limit) + §10.2 (always-on metrics) |
-| R2 | Emit **OTel metrics** (top priority) — stable semconv first | §10.2 (operation-level metrics) |
-| R3 | Emit **OTel tracing** with rich, Java-like features | §10.4 (span tree) |
-| R4 | **Tail-based / late-bound sampling**: decide span emission *after* an op completes, by latency/outcome | §5.2 (the emit/skip decision) |
-| R5 | **Rate-limit under error storms**: cap emissions so 10k errors/sec don't peg CPU | §5.3 (cross-operation rate limiting) + §8 (bounded per-artifact size) |
-| R6 | **Driver → context only** (≤ debug level); **SDK decides emission** from the context | §4 (handler chain) + §11 (SDK↔driver split) |
-| R7 | Metrics power **client-side Grafana dashboards** (account/region SLA) | §10.2 (metric instruments + dimensions) |
-| R8 | Metrics carry **dimensions** (operation, status, consistency, region…) → per-combination series | §10.2 + §10.3 (attribute tiers) |
-| R9 | Don't lock/log a line for **every fast op** — steady state must be near-zero cost | §5 defaults (tail-sampling skips fast successes) + §10.2 (low-cardinality always-on) |
+| #   | Requirement                                                                                                                            | Where addressed in this doc                                                                            |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| R1  | Long-running (10–12 h) benchmark observability: **quiet at steady state, rich on error**, enough to root-cause a 5–10 min error window | The whole design; realized by §4 (chain) + §5 (tail-sampling + rate-limit) + §10.2 (always-on metrics) |
+| R2  | Emit **OTel metrics** (top priority) — stable semconv first                                                                            | §10.2 (operation-level metrics)                                                                        |
+| R3  | Emit **OTel tracing** with rich, Java-like features                                                                                    | §10.4 (span tree)                                                                                      |
+| R4  | **Tail-based / late-bound sampling**: decide span emission *after* an op completes, by latency/outcome                                 | §5.2 (the emit/skip decision)                                                                          |
+| R5  | **Rate-limit under error storms**: cap emissions so 10k errors/sec don't peg CPU                                                       | §5.3 (cross-operation rate limiting) + §8 (bounded per-artifact size)                                  |
+| R6  | **Driver → context only** (≤ debug level); **SDK decides emission** from the context                                                   | §4 (handler chain) + §11 (SDK↔driver split)                                                            |
+| R7  | Metrics power **client-side Grafana dashboards** (account/region SLA)                                                                  | §10.2 (metric instruments + dimensions)                                                                |
+| R8  | Metrics carry **dimensions** (operation, status, consistency, region…) → per-combination series                                        | §10.2 + §10.3 (attribute tiers)                                                                        |
+| R9  | Don't lock/log a line for **every fast op** — steady state must be near-zero cost                                                      | §5 defaults (tail-sampling skips fast successes) + §10.2 (low-cardinality always-on)                   |
 
 ## 2. Why a contract first
 
@@ -172,6 +172,13 @@ Properties:
   as an **additive, swappable** surface — deliberately *not* over-fitted to the Java
   `CosmosDiagnosticsHandler` shape. If other Azure SDKs want the same extension point, the
   abstraction can be **promoted into `azure_core` later** without breaking Cosmos callers.
+- **Tracing-handler construction is builder-only.** `CosmosTracingHandler::builder()` is the
+  sole construction entry point; callers finish with `build()` for lazy process-global tracer
+  resolution or `build_with_tracer()` for an explicit tracer. The former `new`, `Default`,
+  `with_thresholds`, and `with_thresholds_and_rate_limit` entry points were intentionally
+  removed in 0.39.0 so default and customized handlers share one extensible configuration path.
+  Do not restore convenience constructors for backward compatibility; this is an accepted,
+  documented breaking change.
 - **SDK maps to its own semconv view.** Each handler translates the driver's
   `DiagnosticsContext` into its **own** OTel/semantic-convention representation (§10); the
   driver's internal model never leaks into the emitted telemetry.
@@ -224,11 +231,11 @@ logged/traced and peg the CPU:
 
 ## 6. The three representations (views over one model)
 
-| Materializer | Consumer intent | Backed by |
-| --- | --- | --- |
-| **Structured object** | metrics | `DiagnosticsContext::requests()` [main], reduced into an operation roll-up |
-| **OTel span tree** | traces | reconstructed from `DiagnosticsContext` + per-attempt `RequestDiagnostics` [main]; a `Span`/`Attr` in-memory form is the OTel-aligned shape (kept in [WS7]) |
-| **String** | logs | `DiagnosticsContext::to_json_string(verbosity)` [main] |
+| Materializer          | Consumer intent | Backed by                                                                                                                                                   |
+| --------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Structured object** | metrics         | `DiagnosticsContext::requests()` [main], reduced into an operation roll-up                                                                                  |
+| **OTel span tree**    | traces          | reconstructed from `DiagnosticsContext` + per-attempt `RequestDiagnostics` [main]; a `Span`/`Attr` in-memory form is the OTel-aligned shape (kept in [WS7]) |
+| **String**            | logs            | `DiagnosticsContext::to_json_string(verbosity)` [main]                                                                                                      |
 
 Materialization is **explicit, lazy, and per-representation**: each is paid only when a handler
 asks for it, so the expensive JSON step is never paid on a metrics-only or span-only path.
@@ -238,10 +245,10 @@ asks for it, so the expensive JSON step is never paid on a metrics-only or span-
 **Gating bounds high-cardinality TRANSPORT-level telemetry — it never eliminates
 diagnostics.**
 
-| Tier | Examples | Cardinality | Gating |
-| --- | --- | --- | --- |
-| **Operation-level** | operation name, final status, request/retry/throttled counts, total RU, total duration, regions contacted | low | **Always on.** Never gated away. |
-| **Transport-level** | per-replica / per-partition (partition key range, feed range), endpoint, direct-mode channel, transport kind/security/http-version, per-attempt RU/latency | high | **Gated by `DiagnosticsLevel` / threshold.** Included on error / slow / high level; summarized or elided on a fast-success low level. |
+| Tier                | Examples                                                                                                                                                   | Cardinality | Gating                                                                                                                                |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Operation-level** | operation name, final status, request/retry/throttled counts, total RU, total duration, regions contacted                                                  | low         | **Always on.** Never gated away.                                                                                                      |
+| **Transport-level** | per-replica / per-partition (partition key range, feed range), endpoint, direct-mode channel, transport kind/security/http-version, per-attempt RU/latency | high        | **Gated by `DiagnosticsLevel` / threshold.** Included on error / slow / high level; summarized or elided on a fast-success low level. |
 
 `DiagnosticsLevel { Minimal, Standard, Full }` [design] maps onto the internal
 `DiagnosticsVerbosity` [main]:
@@ -296,12 +303,12 @@ finishes, and when transport fails. They cannot currently separate DNS
 resolution, connection-pool acquisition, new-versus-reused connection setup,
 TLS handshake, time to first byte, or request-body transmission.
 
-| Observable event | Meaning |
-| --- | --- |
-| `TransportStart` | The request was handed to `reqwest`; DNS, connect, TLS, and send occur opaquely. |
-| `ResponseHeadersReceived` | Response headers arrived, confirming that the request was sent. |
-| `TransportComplete` | Response headers and body were fully received. |
-| `TransportFailed` | Transport failed; the error and request-sent state determine retry safety. |
+| Observable event          | Meaning                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| `TransportStart`          | The request was handed to `reqwest`; DNS, connect, TLS, and send occur opaquely. |
+| `ResponseHeadersReceived` | Response headers arrived, confirming that the request was sent.                  |
+| `TransportComplete`       | Response headers and body were fully received.                                   |
+| `TransportFailed`         | Transport failed; the error and request-sent state determine retry safety.       |
 
 If finer-grained events become necessary, investigate a low-level
 `ClientBuilder::connector_layer` integration rather than fabricating timings
@@ -370,12 +377,12 @@ Source: an operation roll-up over `DiagnosticsContext::requests()` [main], emitt
 `CosmosMetricsHandler` [WS3]. **Emit the *stable* instruments first**, with only low-cardinality
 attributes. This powers client-side Grafana dashboards (R7) with per-combination series (R8).
 
-| Instrument | Stability | Kind | Unit | Description |
-| --- | --- | --- | --- | --- |
-| `db.client.operation.duration` | stable | histogram | `s` | End-to-end operation duration — **the primary metric**. |
-| `db.client.response.returned_rows` | development | histogram | `{row}` | Rows returned in the result set. |
-| `azure.cosmosdb.client.operation.request_charge` | development | histogram | `{request_unit}` | Request units (RU) consumed by the operation. |
-| `azure.cosmosdb.client.active_instance.count` | development | up-down counter | `{instance}` | Number of live Cosmos client instances per account endpoint. *(Opt-in via `MetricsOptions::with_active_instance_metric`; `CosmosMetricsHandler` records +1 when a `CosmosClient` is built with it registered and −1 when that client and every client derived from it is dropped, so the value follows client lifetime rather than handler lifetime — one handler shared across N clients reports N, and a handler registered on no client reports nothing — [#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874).)* |
+| Instrument                                       | Stability   | Kind            | Unit             | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------------------ | ----------- | --------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `db.client.operation.duration`                   | stable      | histogram       | `s`              | End-to-end operation duration — **the primary metric**.                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `db.client.response.returned_rows`               | development | histogram       | `{row}`          | Rows returned in the result set.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `azure.cosmosdb.client.operation.request_charge` | development | histogram       | `{request_unit}` | Request units (RU) consumed by the operation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `azure.cosmosdb.client.active_instance.count`    | development | up-down counter | `{instance}`     | Number of live Cosmos client instances per account endpoint. *(Opt-in via `MetricsOptions::with_active_instance_metric`; `CosmosMetricsHandler` records +1 when a `CosmosClient` is built with it registered and −1 when that client and every client derived from it is dropped, so the value follows client lifetime rather than handler lifetime — one handler shared across N clients reports N, and a handler registered on no client reports nothing — [#4874](https://github.com/Azure/azure-sdk-for-rust/pull/4874).)* |
 
 **Always-on metric attributes (low cardinality, D7):** `db.operation.name`,
 `db.response.status_code`, `db.collection.name`, `db.namespace`, `error.type`, `server.address`,
@@ -396,32 +403,32 @@ a metric dimension to control time-series cardinality (D7).
 
 **Stable** (safe as always-on metric dimensions)
 
-| Attribute | Notes |
-| --- | --- |
-| `db.operation.name` | Canonical snake_case op name — use verbatim (see §10.3.1). |
-| `db.collection.name` | Cosmos container name. |
-| `db.namespace` | Database name. |
-| `db.response.status_code` | Cosmos status code (string). 4xx/5xx are errors. |
-| `error.type` | Present iff the operation failed; matches status or exception type. |
-| `server.address` / `server.port` | Host / port (port only when not default 443). |
-| `db.operation.batch.size` | Number of ops in a batch. |
-| `db.query.text` | Query text (parameterized; sanitized per DB span rules). |
-| `db.stored_procedure.name` | Stored-procedure name, when applicable. |
-| `user_agent.original` | SDK-generated user-agent string. |
+| Attribute                        | Notes                                                               |
+| -------------------------------- | ------------------------------------------------------------------- |
+| `db.operation.name`              | Canonical snake_case op name — use verbatim (see §10.3.1).          |
+| `db.collection.name`             | Cosmos container name.                                              |
+| `db.namespace`                   | Database name.                                                      |
+| `db.response.status_code`        | Cosmos status code (string). 4xx/5xx are errors.                    |
+| `error.type`                     | Present iff the operation failed; matches status or exception type. |
+| `server.address` / `server.port` | Host / port (port only when not default 443).                       |
+| `db.operation.batch.size`        | Number of ops in a batch.                                           |
+| `db.query.text`                  | Query text (parameterized; sanitized per DB span rules).            |
+| `db.stored_procedure.name`       | Stored-procedure name, when applicable.                             |
+| `user_agent.original`            | SDK-generated user-agent string.                                    |
 
 **Development** (span-first; opt-in as metric dimensions)
 
-| Attribute | Notes |
-| --- | --- |
-| `azure.cosmosdb.connection.mode` | `gateway` or `direct`. *(Deferred — not yet populated by the automatic operation path; [#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789).)* |
-| `azure.cosmosdb.consistency.level` | `Eventual` / `Session` / `Strong` / `BoundedStaleness` / `ConsistentPrefix`. *(Deferred — not yet populated by the automatic operation path; [#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789).)* |
-| `azure.cosmosdb.operation.contacted_regions` | Ordered list of contacted regions (cross-region call if > 1). |
-| `azure.cosmosdb.operation.request_charge` | RU consumed (double). |
-| `azure.cosmosdb.response.sub_status_code` | Cosmos sub-status code (int). |
-| `db.response.returned_rows` | Row count in the result set (int). |
-| `azure.cosmosdb.request.body.size` | Request payload size in bytes. |
-| `azure.client.id` | Stable per-client instance id (see D10). |
-| `azure.resource_provider.namespace` | `Microsoft.DocumentDB`. |
+| Attribute                                    | Notes                                                                                                                                                                                                          |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `azure.cosmosdb.connection.mode`             | `gateway` or `direct`. *(Deferred — not yet populated by the automatic operation path; [#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789).)*                                                       |
+| `azure.cosmosdb.consistency.level`           | `Eventual` / `Session` / `Strong` / `BoundedStaleness` / `ConsistentPrefix`. *(Deferred — not yet populated by the automatic operation path; [#4789](https://github.com/Azure/azure-sdk-for-rust/pull/4789).)* |
+| `azure.cosmosdb.operation.contacted_regions` | Ordered list of contacted regions (cross-region call if > 1).                                                                                                                                                  |
+| `azure.cosmosdb.operation.request_charge`    | RU consumed (double).                                                                                                                                                                                          |
+| `azure.cosmosdb.response.sub_status_code`    | Cosmos sub-status code (int).                                                                                                                                                                                  |
+| `db.response.returned_rows`                  | Row count in the result set (int).                                                                                                                                                                             |
+| `azure.cosmosdb.request.body.size`           | Request payload size in bytes.                                                                                                                                                                                 |
+| `azure.client.id`                            | Stable per-client instance id (see D10).                                                                                                                                                                       |
+| `azure.resource_provider.namespace`          | `Microsoft.DocumentDB`.                                                                                                                                                                                        |
 
 > **Client instance id (D10).** `azure.client.id` is a stable per-client instance id. Prefer
 > `vmId`; when VM metadata is unreachable, fall back to a **static GUID** so two requests can be
@@ -452,13 +459,13 @@ operations unnamed rather than emitting a non-canonical value
 
 Emitted by `CosmosTracingHandler` [WS4], **only when tail-sampling (§5.2) says so**.
 
-| `DiagnosticsContext` element | OTel span |
-| --- | --- |
-| operation (root) | root span, kind `CLIENT`, name `<operation> <target>`; window backdated over `duration()` [main] |
-| each retained `RequestDiagnostics` (attempt / hedge leg) | child span, kind `CLIENT` |
-| request-event timeline | timed span **events** on the attempt span |
-| hedging | a hedge span with terminal state + regions |
-| aggregated multi-run op | a **single synthetic operation root** spanning the first run's start to the last run's end, each run's attempts as children |
+| `DiagnosticsContext` element                             | OTel span                                                                                                                   |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| operation (root)                                         | root span, kind `CLIENT`, name `<operation> <target>`; window backdated over `duration()` [main]                            |
+| each retained `RequestDiagnostics` (attempt / hedge leg) | child span, kind `CLIENT`                                                                                                   |
+| request-event timeline                                   | timed span **events** on the attempt span                                                                                   |
+| hedging                                                  | a hedge span with terminal state + regions                                                                                  |
+| aggregated multi-run op                                  | a **single synthetic operation root** spanning the first run's start to the last run's end, each run's attempts as children |
 
 - **Backdating (Gap A / D3).** A *completed* `DiagnosticsContext` is reconstructed into a
   **backdated** span tree — because the current `typespec_client_core` `Tracer`/`Span` traits
@@ -479,15 +486,15 @@ Emitted by `CosmosTracingHandler` [WS4], **only when tail-sampling (§5.2) says 
 Where a Cosmos span overlaps `azure_core`-emitted HTTP spans, reuse the `azure_core`
 span-attribute names so the spans correlate:
 
-| Diagnostics field | `azure_core` attribute name |
-| --- | --- |
-| operation activity id | `az.client_request_id` |
-| per-attempt service request id | `az.service_request.id` ⚠ **dot**, not underscore |
-| HTTP status | `http.response.status_code` |
-| retry index | `http.request.resend_count` |
-| endpoint | `server.address` / `url.full` |
-| namespace | `azure.resource_provider.namespace` (`Microsoft.DocumentDB`) |
-| error | `error.type` |
+| Diagnostics field              | `azure_core` attribute name                                  |
+| ------------------------------ | ------------------------------------------------------------ |
+| operation activity id          | `az.client_request_id`                                       |
+| per-attempt service request id | `az.service_request.id` ⚠ **dot**, not underscore            |
+| HTTP status                    | `http.response.status_code`                                  |
+| retry index                    | `http.request.resend_count`                                  |
+| endpoint                       | `server.address` / `url.full`                                |
+| namespace                      | `azure.resource_provider.namespace` (`Microsoft.DocumentDB`) |
+| error                          | `error.type`                                                 |
 
 > ⚠ **Two `azure_core` gotchas (D2/D3).** (1) The constant is `az.service_request.id` (a **dot**
 > before `id`), while `az.client_request_id` uses an underscore. (2) These constants are
@@ -514,18 +521,18 @@ span-attribute names so the spans correlate:
 
 These map to the plan's decisions D1–D10.
 
-| # | Decision | Resolution |
-| --- | --- | --- |
-| **D1** | Emission model | **`DiagnosticsHandler` chain** in the SDK (not a materializer-only API). Built Cosmos-local, additive/swappable, promotable to `azure_core` later. (§4) |
-| **D2** | Metrics transport (Gap B) | No `Meter` abstraction exists in `azure_core`/`typespec_client_core`. Emit via the **raw `opentelemetry` metrics API behind an off-by-default feature** now; drive an `azure_core` `Meter` follow-up, then migrate. (§10.2) |
-| **D3** | Span backdating (Gap A) | Two-track: **(a) upstream** trait additions to `typespec_client_core` + `azure_core_opentelemetry` [WS4c]; **(b) Cosmos-local** raw-`opentelemetry` `SpanBuilder` now. Ship (b) behind one seam; migrate to (a). (§10.4) |
-| **D4** | Tail-sampling policy | Default: emit a span only when `is_completed` and (`is_failure` or `is_threshold_violated`). Fast successes emit no span; thresholds configurable via the standard options chain, Java-like defaults. (§5.2) |
-| **D5** | Rate limiting | Token-bucket / count-per-interval limiter used by `SamplingLogHandler`; always allow a bounded number of failures + one "suppressed N" line per window. **On by default.** (§5.3) |
-| **D6** | Semconv naming | Real names only: `db.client.operation.duration`; `db.operation.name`, `db.response.status_code`, `azure.cosmosdb.*`, `db.system.name="azure.cosmosdb"`. Centralize attribute literals Cosmos-local. (§10) |
-| **D7** | Metric cardinality | Operation-scope tags always-on; high-cardinality tags (consistency level, per-request region, partition-key-range, endpoint, replica) off by default, opt-in. (§10.2/§10.3) |
-| **D8** | SDK vs driver emission | Default **SDK-side** emission → exactly one public span per op; driver may expose an opt-in exporter. (§11) |
-| **D9** | Bounded size vs capture engine | Land the **bounded-size guarantee** [WS6] as a customer-facing property; keep the append-only capture engine [WS7] as an OFF-by-default internal optimization. (§8) |
-| **D10** | Client instance id | Stable per-client id feeds the active-instance metric + `azure.client.id`. Prefer `vmId`, fall back to a static GUID; check whether `DiagnosticsContext` already carries it. (§10.3) |
+| #       | Decision                       | Resolution                                                                                                                                                                                                                  |
+| ------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D1**  | Emission model                 | **`DiagnosticsHandler` chain** in the SDK (not a materializer-only API). Built Cosmos-local, additive/swappable, promotable to `azure_core` later. (§4)                                                                     |
+| **D2**  | Metrics transport (Gap B)      | No `Meter` abstraction exists in `azure_core`/`typespec_client_core`. Emit via the **raw `opentelemetry` metrics API behind an off-by-default feature** now; drive an `azure_core` `Meter` follow-up, then migrate. (§10.2) |
+| **D3**  | Span backdating (Gap A)        | Two-track: **(a) upstream** trait additions to `typespec_client_core` + `azure_core_opentelemetry` [WS4c]; **(b) Cosmos-local** raw-`opentelemetry` `SpanBuilder` now. Ship (b) behind one seam; migrate to (a). (§10.4)    |
+| **D4**  | Tail-sampling policy           | Default: emit a span only when `is_completed` and (`is_failure` or `is_threshold_violated`). Fast successes emit no span; thresholds configurable via the standard options chain, Java-like defaults. (§5.2)                |
+| **D5**  | Rate limiting                  | Token-bucket / count-per-interval limiter used by `SamplingLogHandler`; always allow a bounded number of failures + one "suppressed N" line per window. **On by default.** (§5.3)                                           |
+| **D6**  | Semconv naming                 | Real names only: `db.client.operation.duration`; `db.operation.name`, `db.response.status_code`, `azure.cosmosdb.*`, `db.system.name="azure.cosmosdb"`. Centralize attribute literals Cosmos-local. (§10)                   |
+| **D7**  | Metric cardinality             | Operation-scope tags always-on; high-cardinality tags (consistency level, per-request region, partition-key-range, endpoint, replica) off by default, opt-in. (§10.2/§10.3)                                                 |
+| **D8**  | SDK vs driver emission         | Default **SDK-side** emission → exactly one public span per op; driver may expose an opt-in exporter. (§11)                                                                                                                 |
+| **D9**  | Bounded size vs capture engine | Land the **bounded-size guarantee** [WS6] as a customer-facing property; keep the append-only capture engine [WS7] as an OFF-by-default internal optimization. (§8)                                                         |
+| **D10** | Client instance id             | Stable per-client id feeds the active-instance metric + `azure.client.id`. Prefer `vmId`, fall back to a static GUID; check whether `DiagnosticsContext` already carries it. (§10.3)                                        |
 
 ## 13. Scope & guardrails
 
