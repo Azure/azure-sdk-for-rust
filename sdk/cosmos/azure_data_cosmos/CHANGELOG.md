@@ -13,6 +13,7 @@
 
 ### Breaking Changes
 
+- Replaced the `metrics` and `distributed_tracing` feature flags with the off-by-default `preview_opentelemetry` flag for both OpenTelemetry handlers; enable `preview_opentelemetry` to keep emitting metrics and traces. Diagnostics types remain available without it. ([#5353](https://github.com/Azure/azure-sdk-for-rust/pull/5353))
 - `CosmosTracingHandler` is now constructed exclusively through `CosmosTracingHandler::builder()`. The `new`, `with_thresholds`, and `with_thresholds_and_rate_limit` constructors and the `Default` implementation were removed; configure the equivalent values with the builder and call `build` or `build_with_tracer`. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Re-exported `UserAgentSuffix` replaces panicking `new` with `TryFrom<String>` and `TryFrom<&str>`, returning a typed `CosmosError` for invalid suffixes. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
 - Re-exported `PartitionKey` and `PartitionKeyValue` now use `TryFrom` for dynamically sized key vectors and floating-point values, returning typed errors instead of panicking on excess components or non-finite numbers. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
