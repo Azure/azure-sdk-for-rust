@@ -100,8 +100,9 @@ Verify the behavior and symbol resolution before proposing text.
 
 - Use rustdoc intra-doc links for linkable public items: `` [`StorageClient`] `` rather than
   plain text or code formatting.
-- Qualify or disambiguate targets when needed, such as `` [`StorageClient::new`] `` or
-  `` [`new`](StorageClient::new) ``.
+- Qualify or disambiguate targets when needed. Include `()` in function and method link text,
+  such as `` [`StorageClient::new()`] `` or `` [`new()`](StorageClient::new) ``; rustdoc
+  ignores the parentheses when resolving links.
 - Verify links resolve from the documenting item's scope to public documentation.
 - Format parameters, variables, and literals as code, not links. Do not place Markdown links
   in code fences.
