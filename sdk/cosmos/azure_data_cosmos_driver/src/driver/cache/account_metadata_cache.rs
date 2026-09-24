@@ -187,6 +187,13 @@ pub(crate) struct AccountProperties {
     #[serde(default)]
     pub enable_per_partition_failover_behavior: bool,
 
+    /// Service-controlled suppression signal for cross-region hedging.
+    ///
+    /// `None` means the service omitted the property, which lets refresh
+    /// reconciliation preserve the last explicitly observed value.
+    #[serde(default)]
+    pub disable_cross_regional_hedging: Option<bool>,
+
     /// User replication settings (min/max replica set sizes).
     #[serde(default)]
     pub user_replication_policy: ReplicationPolicy,
@@ -525,6 +532,7 @@ mod tests {
             "continuousBackupEnabled": false,
             "enableNRegionSynchronousCommit": false,
             "enablePerPartitionFailoverBehavior": false,
+            "disableCrossRegionalHedging": true,
             "userReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
             "userConsistencyPolicy": { "defaultConsistencyLevel": "Session" },
             "systemReplicationPolicy": { "minReplicaSetSize": 3, "maxReplicasetSize": 4 },
@@ -545,6 +553,7 @@ mod tests {
             DefaultConsistencyLevel::Session
         );
         assert!(!props.enable_multiple_write_locations);
+        assert_eq!(props.disable_cross_regional_hedging, Some(true));
     }
 
     #[test]
@@ -608,6 +617,7 @@ mod tests {
         assert!(props.media.is_empty());
         assert!(props.query_engine_configuration.is_empty());
         assert!(!props.enable_multiple_write_locations);
+        assert_eq!(props.disable_cross_regional_hedging, None);
 
         // Present fields are still honored.
         assert_eq!(props.write_region().unwrap().as_str(), "southcentralus");

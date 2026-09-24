@@ -20,6 +20,8 @@ pub mod error_diagnostics;
 pub mod excluded_regions_fallback;
 #[cfg(feature = "fault_injection")]
 pub mod hedging;
+#[cfg(feature = "fault_injection")]
+pub mod hedging_dynamic_suppression;
 pub mod host_recorder;
 pub mod local_query_planning;
 pub mod metadata_hedging;

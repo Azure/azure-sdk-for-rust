@@ -264,6 +264,9 @@ pub enum SeedingPolicy {
 ///
 /// - the per-partition-failover flag (PPAF, `enablePerPartitionFailoverBehavior`),
 ///   flipped with [`Self::set_per_partition_failover`];
+/// - the cross-region hedging suppression signal
+///   (`disableCrossRegionalHedging`), flipped with
+///   [`Self::set_cross_region_hedging_disabled`];
 /// - the account topology -- region membership, write mode and current write
 ///   region -- mutated through [`super::EmulatorStore`], which owns the
 ///   corresponding per-region data stores.
@@ -283,6 +286,9 @@ pub struct VirtualAccountConfig {
     /// shared so test code can toggle the value after the config has been
     /// moved into `EmulatorStore` and is reachable only by `&self`.
     enable_per_partition_failover: Arc<AtomicBool>,
+    /// Account-level service signal emitted as
+    /// `disableCrossRegionalHedging`. `None` omits the property.
+    disable_cross_region_hedging: Arc<RwLock<Option<bool>>>,
 }
 
 impl VirtualAccountConfig {
@@ -346,6 +352,7 @@ impl VirtualAccountConfig {
             ru_model: RequestUnitChargingModel::default(),
             throttling_enabled: false,
             enable_per_partition_failover: Arc::new(AtomicBool::new(false)),
+            disable_cross_region_hedging: Arc::new(RwLock::new(Some(false))),
         })
     }
 
@@ -493,6 +500,24 @@ impl VirtualAccountConfig {
     pub fn set_per_partition_failover(&self, enabled: bool) {
         self.enable_per_partition_failover
             .store(enabled, Ordering::SeqCst);
+    }
+
+    /// Sets the initial account-level cross-region hedging suppression signal.
+    pub fn with_cross_region_hedging_disabled(self, disabled: bool) -> Self {
+        self.set_cross_region_hedging_disabled(Some(disabled));
+        self
+    }
+
+    /// Returns the account-level hedging suppression signal.
+    pub fn cross_region_hedging_disabled(&self) -> Option<bool> {
+        *self.disable_cross_region_hedging.read().unwrap()
+    }
+
+    /// Changes the account-level hedging suppression signal at runtime.
+    ///
+    /// Passing `None` omits the property from subsequent account responses.
+    pub fn set_cross_region_hedging_disabled(&self, disabled: Option<bool>) {
+        *self.disable_cross_region_hedging.write().unwrap() = disabled;
     }
 
     /// Returns a single consistent snapshot of the topology.

@@ -49,7 +49,7 @@ use super::{
     },
     hedge_budget::{HedgeBudget, HedgePermit},
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
-    hedging_eligibility::evaluate_hedge_eligibility,
+    hedging_eligibility::evaluate_hedge_eligibility_for_account,
     retry_evaluation::{
         build_service_error, evaluate_hedge_leg_effects, evaluate_transport_result,
         is_region_confirming_status, partition_effects_for_deferral,
@@ -736,12 +736,13 @@ pub(crate) async fn execute_operation_pipeline(
             && retry_state.session_token_retry_count == 0
             && !hedging_suppressed_for_attempt(operation, &overrides)
         {
-            let admitted = evaluate_hedge_eligibility(
+            let admitted = evaluate_hedge_eligibility_for_account(
                 operation,
                 options,
                 &location.account,
                 &routing,
                 configured_request_timeout,
+                location.cross_region_hedging_disabled,
             )
             .and_then(|upgrade| match hedge_budget.try_admit(pipeline_type) {
                 Some(permit) => Some((upgrade, permit)),
@@ -1103,6 +1104,7 @@ pub(crate) async fn execute_operation_pipeline(
                 operation,
                 options,
                 &location.account,
+                location.cross_region_hedging_disabled,
                 &routing,
                 configured_request_timeout,
                 hedge_budget,
@@ -1339,12 +1341,13 @@ pub(crate) async fn execute_operation_pipeline(
                 // no distinct alternate remains, fall back to non-hedged
                 // dispatch via `continue` — we intentionally do NOT set
                 // `hedge_already_fired` since no race actually started.
-                let secondary_routing = match evaluate_hedge_eligibility(
+                let secondary_routing = match evaluate_hedge_eligibility_for_account(
                     operation,
                     options,
                     &location.account,
                     &primary_routing,
                     configured_request_timeout,
+                    location.cross_region_hedging_disabled,
                 ) {
                     Some(upgrade) => upgrade.secondary_routing,
                     None => {
@@ -3298,6 +3301,7 @@ fn maybe_upgrade_to_hedge<'a>(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
     account_state: &AccountEndpointState,
+    cross_region_hedging_disabled: bool,
     primary: &RoutingDecision,
     request_timeout: Option<Duration>,
     hedge_budget: &'a HedgeBudget,
@@ -3319,7 +3323,14 @@ fn maybe_upgrade_to_hedge<'a>(
         _ => return (action, None),
     };
 
-    match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
+    match evaluate_hedge_eligibility_for_account(
+        operation,
+        options,
+        account_state,
+        primary,
+        request_timeout,
+        cross_region_hedging_disabled,
+    ) {
         Some(upgrade) => {
             // Hedge consumes two failover-budget slots on the race
             // (primary + secondary) and a third on BothTransient

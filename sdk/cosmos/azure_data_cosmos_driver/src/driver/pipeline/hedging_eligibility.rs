@@ -222,6 +222,7 @@ pub(crate) struct HedgeUpgrade {
 /// or no applicable region distinct from `primary` exists — in all cases
 /// the caller falls back to its non-hedged decision (typically
 /// `FailoverRetry`).
+#[cfg(test)]
 pub(crate) fn evaluate_hedge_eligibility(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
@@ -229,6 +230,29 @@ pub(crate) fn evaluate_hedge_eligibility(
     primary: &RoutingDecision,
     request_timeout: Option<Duration>,
 ) -> Option<HedgeUpgrade> {
+    evaluate_hedge_eligibility_for_account(
+        operation,
+        options,
+        account_state,
+        primary,
+        request_timeout,
+        false,
+    )
+}
+
+/// Evaluates hedge eligibility with the current account-level service signal.
+pub(crate) fn evaluate_hedge_eligibility_for_account(
+    operation: &CosmosOperation,
+    options: &OperationOptionsView<'_>,
+    account_state: &AccountEndpointState,
+    primary: &RoutingDecision,
+    request_timeout: Option<Duration>,
+    cross_region_hedging_disabled: bool,
+) -> Option<HedgeUpgrade> {
+    if cross_region_hedging_disabled {
+        return None;
+    }
+
     let strategy = resolve_availability_strategy(options, request_timeout)?;
 
     let user_excluded: Vec<Region> = options
@@ -1016,6 +1040,50 @@ mod tests {
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
         assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+    }
+
+    #[test]
+    fn account_suppression_overrides_enabled_data_and_metadata_hedging() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let primary = primary_routing_for(&state);
+        let strategy =
+            HedgingStrategy::new(HedgeThreshold::new(Duration::from_millis(200)).unwrap());
+        let op_opts = OperationOptionsBuilder::new()
+            .with_hedging_enabled(true)
+            .with_availability_strategy(AvailabilityStrategy::Hedging(strategy))
+            .build();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        for operation in [
+            read_item_operation(),
+            read_container_operation(),
+            read_pk_ranges_operation(),
+        ] {
+            assert!(evaluate_hedge_eligibility_for_account(
+                &operation, &view, &state, &primary, None, true,
+            )
+            .is_none());
+            assert!(evaluate_hedge_eligibility_for_account(
+                &operation, &view, &state, &primary, None, false,
+            )
+            .is_some());
+        }
+    }
+
+    #[test]
+    fn account_resume_does_not_override_local_disable() {
+        let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
+        let primary = primary_routing_for(&state);
+        let operation = read_item_operation();
+        let op_opts = OperationOptionsBuilder::new()
+            .with_availability_strategy(AvailabilityStrategy::Disabled)
+            .build();
+        let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
+
+        assert!(evaluate_hedge_eligibility_for_account(
+            &operation, &view, &state, &primary, None, false,
+        )
+        .is_none());
     }
 
     #[test]
