@@ -100,6 +100,7 @@ axum = { version = "0.8", features = ["json", "macros"] }
 base64 = "0.22"
 arc-swap = "1.7"
 backtrace = "0.3"
+bitflags = "2.13"
 bytes = "1.11.1"
 cargo_metadata = "0.23.1"
 clap = { version = "4.5.58", features = ["derive"] }
