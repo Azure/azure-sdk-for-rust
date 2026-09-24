@@ -47,7 +47,7 @@ AI agents can assist with:
    - Running `cargo fmt` and `cargo clippy` on all modified crates (see [Linting and Formatting](#linting-and-formatting))
 
 2. **Code Review**
-   - Use the [doc-comment-review skill](.github/skills/doc-comment-review/SKILL.md) whenever reviewing code that affects public APIs, even when no doc comments changed.
+   - Use the [review-doc-comments skill](.github/skills/review-doc-comments/SKILL.md) whenever reviewing code that affects public APIs, even when no doc comments changed.
    - Identifying potential bugs or safety issues
    - Suggesting improvements for idiomatic Rust patterns
    - Checking adherence to Azure SDK design guidelines
