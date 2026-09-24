@@ -178,48 +178,6 @@ impl ContainerRoutingMap {
         self.ordered_ranges[start_idx..end_idx].iter().collect()
     }
 
-    /// Returns the ID of the single partition key range that overlaps the given
-    /// EPK range, or `None` when the range maps to zero or more than one
-    /// physical partition.
-    ///
-    /// This is a cheaper alternative to [`get_overlapping_ranges`](Self::get_overlapping_ranges)
-    /// for callers that only need to know whether a feed range is owned by
-    /// exactly one physical partition (e.g. PPCB/PPAF first-attempt
-    /// attribution). It reuses the same O(log n) binary-search bounds but
-    /// clones at most a single ID instead of every overlapping range.
-    ///
-    /// A multi-partition overlap is unexpected for callers on the operation
-    /// pipeline path: the dataflow pipeline splits multi-partition feed ranges
-    /// into one sub-operation per physical partition before execution. If it
-    /// happens here it signals a stale routing map / partition-split race, so
-    /// we surface it via `warn!` + `debug_assert!` and still return `None` so
-    /// the caller degrades gracefully.
-    pub fn single_overlapping_range_id(
-        &self,
-        epk_range: Range<&EffectivePartitionKey>,
-    ) -> Option<String> {
-        let (start_idx, end_idx) = self.overlapping_range_bounds(epk_range)?;
-        match end_idx - start_idx {
-            0 => None,
-            1 => Some(self.ordered_ranges[start_idx].id.clone()),
-            count => {
-                debug_assert!(
-                    false,
-                    "feed range mapped to {count} physical partitions; expected \
-                     exactly one at the operation pipeline (stale routing map / \
-                     partition-split race)"
-                );
-                tracing::warn!(
-                    overlapping_partition_count = count,
-                    "feed range mapped to multiple physical partitions during \
-                     single-owner resolution; treating as no single owner (stale \
-                     routing map / partition-split race)"
-                );
-                None
-            }
-        }
-    }
-
     /// Computes the `[start_idx, end_idx)` slice of `ordered_ranges` that
     /// overlaps the given EPK range. Returns `None` when the map is empty.
     ///
@@ -580,38 +538,6 @@ mod tests {
         let overlapping = map.get_overlapping_ranges(&epk("40")..&epk("50"));
         let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["2"]);
-    }
-
-    #[test]
-    fn single_overlapping_range_id_one_partition_returns_id() {
-        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
-            .unwrap()
-            .unwrap();
-        // Query [40, 50) — owned entirely by range 2 [3F, 7F).
-        let id = map.single_overlapping_range_id(&epk("40")..&epk("50"));
-        assert_eq!(id.as_deref(), Some("2"));
-    }
-
-    #[test]
-    #[should_panic(expected = "physical partitions")]
-    fn single_overlapping_range_id_multiple_partitions_panics_in_debug() {
-        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
-            .unwrap()
-            .unwrap();
-        // A multi-partition overlap is an invariant violation for this helper
-        // (the dataflow pipeline should have split the range first), so it trips
-        // the `debug_assert!`. In release builds it returns `None` instead.
-        let _ = map.single_overlapping_range_id(&epk("")..&epk("FF"));
-    }
-
-    #[test]
-    fn single_overlapping_range_id_single_partition_map_returns_id() {
-        let map = ContainerRoutingMap::try_create(single_range(), None, None)
-            .unwrap()
-            .unwrap();
-        // Whole space against a one-partition container → that partition owns it.
-        let id = map.single_overlapping_range_id(&epk("")..&epk("FF"));
-        assert_eq!(id.as_deref(), Some("0"));
     }
 
     #[test]

@@ -1588,7 +1588,9 @@ pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip(
     // the dispatcher sees a 1-component value against a 3-path container.
     let (mut returned_ids, pages_seen) = retry_query_owner_not_found(|| {
         let query = Query::from("SELECT * FROM c");
-        let partial_pk = PartitionKey::from(vec![PartitionKeyValue::from(target_tenant.clone())]);
+        let partial_pk =
+            PartitionKey::try_from(vec![PartitionKeyValue::from(target_tenant.clone())])
+                .expect("valid one-component partition key");
         let target_tenant = &target_tenant;
         let container = &container;
         async move {

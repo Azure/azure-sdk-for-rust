@@ -79,10 +79,6 @@ impl RequestSnapshot {
     fn is_item_read(&self) -> bool {
         self.method == Method::Get && self.is_item_request()
     }
-
-    fn is_partition_key_range_request(&self) -> bool {
-        self.url.path().ends_with("/pkranges")
-    }
 }
 
 /// [`RequestObserver`] that records every request the emulator sees so tests can
@@ -129,15 +125,6 @@ impl RecordingObserver {
         );
         reads.into_iter().next().unwrap()
     }
-
-    fn assert_no_partition_key_range_requests(&self) {
-        assert!(
-            self.snapshots()
-                .iter()
-                .all(|request| !request.is_partition_key_range_request()),
-            "cache-disabled operations must not request /pkranges"
-        );
-    }
 }
 
 impl RequestObserver for RecordingObserver {
@@ -183,15 +170,10 @@ struct Harness {
 
 impl Harness {
     async fn setup() -> Self {
-        Self::setup_with_options(true, ConsistencyLevel::Session, None).await
-    }
-
-    async fn setup_with_partition_key_range_cache(enabled: bool) -> Self {
-        Self::setup_with_options(enabled, ConsistencyLevel::Session, None).await
+        Self::setup_with_options(ConsistencyLevel::Session, None).await
     }
 
     async fn setup_with_options(
-        partition_key_range_cache_enabled: bool,
         account_consistency: ConsistencyLevel,
         read_consistency_strategy: Option<ReadConsistencyStrategy>,
     ) -> Self {
@@ -228,8 +210,7 @@ impl Harness {
             Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
             EMULATOR_KEY,
         );
-        let mut driver_options = DriverOptions::builder(account)
-            .with_partition_key_range_cache_enabled(partition_key_range_cache_enabled);
+        let mut driver_options = DriverOptions::builder(account);
         if let Some(strategy) = read_consistency_strategy {
             driver_options = driver_options.with_operation_options(
                 OperationOptionsBuilder::new()
@@ -313,7 +294,7 @@ impl Harness {
 
 #[tokio::test]
 async fn eventual_read_response_is_captured_for_later_session_read() {
-    let h = Harness::setup_with_options(true, ConsistencyLevel::Eventual, None).await;
+    let h = Harness::setup_with_options(ConsistencyLevel::Eventual, None).await;
     let body = serde_json::to_vec(&TestItem {
         id: "item-1".to_owned(),
         pk: "pk1".to_owned(),
@@ -371,7 +352,7 @@ async fn eventual_read_response_is_captured_for_later_session_read() {
 
 #[tokio::test]
 async fn session_strategy_on_eventual_account_captures_write_token_for_read() {
-    let h = Harness::setup_with_options(true, ConsistencyLevel::Eventual, None).await;
+    let h = Harness::setup_with_options(ConsistencyLevel::Eventual, None).await;
 
     h.observer.clear();
     let create_token = h
@@ -462,70 +443,6 @@ async fn session_capturing_disabled_prevents_write_response_capture() {
         h.observer.single_item_read().session_token, None,
         "a response captured with automatic session management disabled must not populate the cache"
     );
-}
-
-#[tokio::test]
-async fn cache_disabled_preserves_explicit_tokens_without_automatic_session_management() {
-    let h = Harness::setup_with_partition_key_range_cache(false).await;
-
-    h.observer.clear();
-    let response_token = h
-        .create("pk1", "item-1", 1)
-        .await
-        .expect("create should return a session token");
-
-    h.driver
-        .execute_singleton_operation(
-            CosmosOperation::read_item(h.item_ref("pk1", "item-1")),
-            OperationOptionsBuilder::new().build(),
-        )
-        .await
-        .expect("read without an explicit token should succeed");
-    assert_eq!(
-        h.observer.single_item_read().session_token,
-        None,
-        "the write response token must not be captured automatically"
-    );
-    h.observer.assert_no_partition_key_range_requests();
-
-    h.observer.clear();
-    h.driver
-        .execute_singleton_operation(
-            CosmosOperation::read_item(h.item_ref("pk1", "item-1"))
-                .with_session_token(response_token.clone()),
-            OperationOptionsBuilder::new().build(),
-        )
-        .await
-        .expect("read with an explicit token should succeed");
-    assert_eq!(
-        h.observer.single_item_read().session_token.as_deref(),
-        Some(response_token.as_str()),
-        "the explicit token must be sent unchanged"
-    );
-
-    h.observer.assert_no_partition_key_range_requests();
-}
-
-#[tokio::test]
-async fn explicit_false_cannot_reactivate_cache_disabled_session_management() {
-    let h = Harness::setup_with_partition_key_range_cache(false).await;
-    h.create("pk1", "item-1", 1)
-        .await
-        .expect("create should return a session token");
-
-    h.observer.clear();
-    h.driver
-        .execute_singleton_operation(
-            CosmosOperation::read_item(h.item_ref("pk1", "item-1")),
-            OperationOptionsBuilder::new()
-                .with_session_capturing_disabled(false)
-                .build(),
-        )
-        .await
-        .expect("read should succeed");
-
-    assert_eq!(h.observer.single_item_read().session_token, None);
-    h.observer.assert_no_partition_key_range_requests();
 }
 
 /// A read that follows a create must carry the **cached** session token equal to

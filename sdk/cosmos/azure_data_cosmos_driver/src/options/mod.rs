@@ -54,7 +54,9 @@ pub use operation_options::{
     ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView, ThroughputControlOptions,
     ThroughputControlOptionsBuilder, ThroughputControlOptionsView,
 };
-pub use partition_failover::{PartitionFailoverOptions, PartitionFailoverOptionsBuilder};
+pub use partition_failover::{
+    PartitionFailoverOptions, PartitionFailoverOptionsBuilder, PartitionTopologyCacheMode,
+};
 pub use patch_strategy::PatchStrategy;
 pub use plan_options::{PlanOptions, DEFAULT_MAX_BUFFERED_QUERY_WINDOW, DEFAULT_MAX_FAN_OUT};
 pub use policies::{

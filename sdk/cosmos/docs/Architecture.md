@@ -69,10 +69,13 @@ A typed SDK call becomes bytes on the wire and typed results again:
    converts partition keys, resource references, and options into driver types,
    and builds a `CosmosOperation`.
 2. **Driver entry.** `execute_operation` takes the operation plus resolved
-   options and enters the execution pipelines. Account and container metadata
-   were resolved during fallible async client construction; partition key ranges
-   are loaded lazily on the first operation that needs them. See
-   adrs/0010-metadata-resolution-and-client-construction.md (`adrs/0010-metadata-resolution-and-client-construction.md`).
+   options and enters the execution pipelines. Account metadata is resolved
+   during fallible client construction. Container metadata and, by default, the
+   complete partition topology are resolved during fallible container-client
+   construction. See
+   adrs/0010-metadata-resolution-and-client-construction.md (`adrs/0010-metadata-resolution-and-client-construction.md`)
+   and adrs/0015-eager-partition-topology-loading.md
+   (`adrs/0015-eager-partition-topology-loading.md`).
 3. **Planning and pagination.** For feed operations, a dataflow pipeline decides
    which partitions to contact and in what order, and advances one page per call.
    Point operations are a single trivial leaf.
@@ -133,10 +136,13 @@ consistent view and cannot be perturbed mid-flight.
   and specs/0009-cross-region-hedging.md (`specs/0009-cross-region-hedging.md`).
 - **Metadata caches.** Account metadata, container properties, and partition key
   ranges are cached with single-pending-I/O (single-flight) semantics. Account
-  and container metadata are resolved eagerly during client construction;
-  partition key ranges remain lazy. See
+  and container metadata are resolved eagerly during client construction.
+  Partition key ranges are eagerly loaded during container resolution by
+  default; `Lazy` mode defers them until first use as a compatibility escape
+  hatch. See
   adrs/0010-metadata-resolution-and-client-construction.md (`adrs/0010-metadata-resolution-and-client-construction.md`)
-  and
+  and adrs/0015-eager-partition-topology-loading.md
+  (`adrs/0015-eager-partition-topology-loading.md`), and
   specs/0007-partition-key-range-cache.md (`specs/0007-partition-key-range-cache.md`).
 - **Sessions.** Session tokens are captured from responses and resolved per
   request by a session manager, gated on consistency level and on whether the

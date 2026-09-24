@@ -30,7 +30,9 @@ use azure_data_cosmos_driver::in_memory_emulator::{
     VirtualAccountConfig, VirtualRegion,
 };
 use azure_data_cosmos_driver::models::{AccountReference, FeedRange, PartitionKey};
-use azure_data_cosmos_driver::options::DriverOptions;
+use azure_data_cosmos_driver::options::{
+    DriverOptions, PartitionFailoverOptions, PartitionTopologyCacheMode,
+};
 use azure_data_cosmos_driver::CosmosDriver;
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
@@ -138,9 +140,20 @@ async fn create_driver(emulator: &Arc<InMemoryEmulatorHttpClient>) -> Arc<Cosmos
         .await
         .expect("runtime should build");
     runtime
-        .create_driver(DriverOptions::builder(account()).build())
+        .create_driver(lazy_driver_options())
         .await
         .expect("driver should initialize against the in-memory emulator")
+}
+
+fn lazy_driver_options() -> DriverOptions {
+    DriverOptions::builder(account())
+        .with_partition_failover_options(
+            PartitionFailoverOptions::builder()
+                .with_partition_topology_cache_mode(PartitionTopologyCacheMode::Lazy)
+                .build()
+                .expect("lazy partition topology options should be valid"),
+        )
+        .build()
 }
 
 fn hash_pk_def() -> serde_json::Value {
@@ -189,7 +202,7 @@ async fn concurrent_cold_requests_share_one_pkranges_fetch() {
         .await
         .expect("runtime should build");
     let driver = runtime
-        .create_driver(DriverOptions::builder(account()).build())
+        .create_driver(lazy_driver_options())
         .await
         .expect("driver should initialize against the in-memory emulator");
     let container = driver

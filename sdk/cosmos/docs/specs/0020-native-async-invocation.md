@@ -147,14 +147,14 @@ flowchart TB
         submit["cosmos_driver_submit...<br/>(pre-flight + Tokio spawn)"]
         cqapi["cosmos_cq_wait / _try_wait /<br/>_wait_batch / _shutdown / _state"]
         compl["cosmos_completion_*<br/>(outcome / status /<br/>take_response / take_error)"]
-        oph["cosmos_operation_handle_*<br/>(cancel / state / free)"]
+        oph["cosmos_operation_handle_*<br/>(state / free)"]
     end
 
     subgraph wrap["Wrapper (Rust)"]
         direction TB
         runtime["RuntimeContext<br/>Tokio + Arc&lt;CosmosDriverRuntime&gt;"]
         cq["CompletionQueue<br/>mpsc channel + state"]
-        opstate["OperationInner (Arc)<br/>cancel Notify + final state"]
+        opstate["OperationInner (Arc)<br/>final state"]
     end
 
     subgraph driver["azure_data_cosmos_driver"]
@@ -171,9 +171,6 @@ flowchart TB
     cqapi -->|"6. record"| compl
     rcv -->|"loops"| cqapi
     rcv -.->|"7. resolve TCS / channel"| app
-    app -->|"optional cancel"| oph
-    oph -->|"notifies"| opstate
-    opstate -.->|"drops the in-flight future"| cdriver
     cdriver -->|"on error"| cerror
     runtime -.-> cdriver
 
@@ -204,7 +201,7 @@ Tokio's.
 ## 2. The submission and completion lifecycle
 
 This is the canonical happy-path flow, end-to-end. Everything else
-(cancellation, queue shutdown, pre-flight rejection) is a variation on it.
+(queue shutdown, pre-flight rejection) is a variation on it.
 
 ```mermaid
 sequenceDiagram
@@ -236,8 +233,6 @@ sequenceDiagram
         Rcv->>Cont: SetResult(take_response)
     else outcome == ERROR
         Rcv->>Cont: SetException(take_error)
-    else outcome == CANCELLED
-        Rcv->>Cont: SetCanceled()
     end
     Rcv->>Rcv: cosmos_completion_free + free user_data alloc
     Cont-->>App: resume awaiter
@@ -249,9 +244,8 @@ sequenceDiagram
    with a handle.
 2. **`user_data` is the per-call correlator.** The wrapper round-trips it
    verbatim. The host owns its lifetime.
-3. **Exactly one completion lands per successful submit.** Including the
-   cancelled case (see section 4) — there is no "silent drop"
-   path.
+3. **Exactly one completion lands per successful submit.** There is no
+   "silent drop" path.
 4. **Pre-flight rejection (`*out_pre_error != SUCCESS`, return value
    `NULL`) does NOT post a completion.** The host's exception path runs
    synchronously inside the submit wrapper.
@@ -279,7 +273,7 @@ flowchart LR
     end
 
     subgraph inner["Shared inner state"]
-        I["OperationInner (Arc)<br/>{ cancel: Notify,<br/>&nbsp;&nbsp;state: AtomicU8,<br/>&nbsp;&nbsp;...}"]
+        I["OperationInner (Arc)<br/>{ state: AtomicU8,<br/>&nbsp;&nbsp;...}"]
     end
 
     H -->|"Arc::clone"| I
@@ -299,62 +293,55 @@ flowchart LR
 
 | Scenario | What the host does |
 |---|---|
-| Fire-and-forget submit, no cancel, no diagnostics polling | Free `cosmos_operation_handle_t*` immediately after submit. The completion still arrives; the receive loop reaches the same `OperationInner` via `cosmos_completion_op_handle`. |
-| Wants cancel propagation (`.NET CancellationToken`, `Go ctx.Done()`, `Java CompletableFuture.cancel`) | Stash the handle alongside the continuation. Cancel from the app side. Free from the receive loop after the completion is observed. |
+| Fire-and-forget submit, no diagnostics polling | Free `cosmos_operation_handle_t*` immediately after submit. The completion still arrives; the receive loop reaches the same `OperationInner` via `cosmos_completion_op_handle`. |
 | Wants `cosmos_operation_handle_state` polling without draining the queue | Keep the handle. State remains observable after `cosmos_completion_free` because the handle's own `Arc` keeps the inner state alive. |
 
-Freeing the handle **never** cancels the op — it only drops the
-producer's reference. See
+Freeing the handle only drops the producer's reference. See
 [section 3.6.2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md#362-cosmos_operation_handle_t) for the
 exact contract.
 
 ---
 
-## 4. Cancellation flow
+## 4. Cancellation
 
-Cancellation lives entirely in the wrapper layer because the driver doesn't
-yet accept a `CancellationToken` on its execute methods. The wrapper drives
-the driver future inside a `tokio::select!` against a per-operation
-`Notify`; `cosmos_operation_handle_cancel` signals the `Notify`, the future
-is dropped, and a `CANCELLED` completion is synthesized.
+On-demand cancellation is **not supported**. The wrapper does not expose
+`cosmos_operation_handle_cancel`, and the submit task simply awaits the driver
+operation to completion (`let done = work.await;`) behind the `catch_unwind`
+panic firewall.
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant App as App / CancellationToken
-    participant OH as cosmos_operation_handle_t
-    participant Sel as Tokio select (future vs cancel)
-    participant Drv as CosmosDriver future
-    participant CQ as cosmos_cq_t
-    participant Rcv as Receive-loop
+### Why
 
-    App->>OH: cosmos_operation_handle_cancel(op)
-    OH->>Sel: cancel_notify.notify_one()
-    alt cancel won the race
-        Sel-->>Sel: select picks the cancel branch
-        Sel->>Drv: drop the future (reqwest aborts in Drop)
-        Sel->>CQ: enqueue Completion CANCELLED with was_cancel_requested=true
-    else operation completed before cancel observed
-        Sel-->>Sel: select picks the future branch
-        Sel->>CQ: enqueue Completion OK or ERROR with was_cancel_requested=true
-    end
-    CQ-->>Rcv: cosmos_completion_t*
-    Rcv->>Rcv: cosmos_completion_outcome + cosmos_completion_was_cancel_requested
-    Note over Rcv: Host distinguishes cancel-succeeded from cancel-lost-the-race.
-```
+Cancelling a request in the wrapper is only possible by dropping the in-flight
+driver future. Dropping it also discards the partial `DiagnosticsContext` the
+driver was building, because `DiagnosticsContextBuilder::complete()` never runs.
+Losing diagnostics is not acceptable, and the wrapper has no other way to stop a
+request, so it does not offer cancellation. Every remaining terminal state
+(Ok / Err / driver request-timeout / retry-budget exhaustion) runs `complete()`
+and carries diagnostics.
 
-**Caveats** — flagged here for visibility, fully documented in
-[section 3.6.3](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md#363-cancellation):
+Callers that need to bound how long an operation runs use the driver's
+end-to-end timeout (`CosmosOperationOptions.end_to_end_timeout_ms`), which
+resolves as an ordinary `Err` **carrying diagnostics** through the normal
+completion path.
 
-- Granularity is "drop at the next await point", not
-  "check a token every operation". A future parked inside a
-  non-cancellable syscall (e.g. `getaddrinfo`) cancels only when control
-  returns to the reactor — usually within a few milliseconds.
-- In-flight requests are not actively aborted on the wire. Dropping the
-  `reqwest` future closes the TCP connection but does not send a
-  protocol-level cancel; the gateway may still execute the request.
-- Cancelled completions carry **no** response and **no** diagnostics —
-  the driver's partial `DiagnosticsContext` is dropped with the future.
+### Reserved values
+
+The numeric values below are kept fixed (defined but never produced) so
+cancellation can be added later without renumbering anything:
+
+- `COSMOS_COMPLETION_OUTCOME_CANCELLED = 2`
+- `COSMOS_OPERATION_HANDLE_STATE_CANCELLED = 3`
+- `COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED = 20360` (the internal
+  `CosmosErrorCodeOperationCancelled`, `408/20360`)
+
+`COSMOS_COMPLETION_OUTCOME_UNKNOWN` stays pinned at `255`.
+
+### Future direction (out of scope here)
+
+On-demand cancellation that also preserves diagnostics can only be built in the
+driver, which already stops a request and keeps its diagnostics when its
+deadline elapses. Extending that path to accept an external cancel signal is a
+separate `azure_data_cosmos_driver` change.
 
 ---
 
@@ -364,11 +351,11 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> RUNNING : cosmos_cq_create
     RUNNING --> RUNNING : submits succeed<br/>cosmos_cq_wait returns completions
-    RUNNING --> SHUTDOWN : cosmos_cq_shutdown<br/>(cancels in-flight ops)
+    RUNNING --> SHUTDOWN : cosmos_cq_shutdown
     SHUTDOWN --> SHUTDOWN : pending completions drain<br/>new submits fail with QUEUE_SHUTDOWN
     SHUTDOWN --> DRAINED : queue empty + no in-flight ops
     DRAINED --> [*] : cosmos_cq_free (non-blocking)
-    RUNNING --> [*] : cosmos_cq_free (blocks: implicit shutdown + drain)
+    RUNNING --> [*] : cosmos_cq_free (non-blocking; abandons in-flight completions)
 ```
 
 Submits against a queue at hard capacity
@@ -432,7 +419,7 @@ Full code examples for all three are in
 |---|---|---|---|
 | `cosmos_runtime_t` | Yes, but typically one per process | Yes | n/a |
 | `cosmos_cq_t` | **Yes** — any thread holding the pointer may submit | **No** — only one thread at a time may call `cosmos_cq_wait` (v1) | FIFO from a given producer; no global ordering across producers |
-| `cosmos_operation_handle_t` | n/a | `_cancel` / `_state` / `_free` callable from any thread | n/a |
+| `cosmos_operation_handle_t` | n/a | `_state` / `_free` callable from any thread | n/a |
 | `cosmos_completion_t` | n/a | Single-threaded use (the receive loop) | n/a |
 
 If you want work-stealing across multiple consumer threads, create

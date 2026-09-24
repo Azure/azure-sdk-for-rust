@@ -56,8 +56,8 @@ type CachedRoutingMap = crate::error::Result<Arc<ContainerRoutingMap>>;
 /// this cache computes the effective partition key (EPK) from the partition key
 /// values and looks up the corresponding range ID in the routing map.
 ///
-/// The routing map is fetched lazily from the service the first time a
-/// container is queried, then cached until invalidated.
+/// The routing map is loaded during container resolution in eager mode or on
+/// first use in lazy mode, then cached until invalidated.
 #[derive(Debug)]
 pub(crate) struct PartitionKeyRangeCache {
     /// Keyed by [`ContainerReference`], which provides the container RID
@@ -232,36 +232,6 @@ impl PartitionKeyRangeCache {
                 .cloned()
                 .collect(),
         ))
-    }
-
-    /// Resolves the ID of the single partition key range that owns the given
-    /// EPK range, or `None` when the range maps to zero or more than one
-    /// physical partition (or the routing map cannot be resolved).
-    ///
-    /// Unlike [`resolve_overlapping_ranges`](Self::resolve_overlapping_ranges),
-    /// this clones at most a single range ID rather than every overlapping
-    /// range, making it the cheaper choice for callers that only need
-    /// single-owner attribution (e.g. PPCB/PPAF first-attempt seeding).
-    /// When `force_refresh` is true, the cached routing map is refreshed before lookup.
-    pub async fn resolve_single_overlapping_range_id<F, Fut, R>(
-        &self,
-        container: &ContainerReference,
-        epk_range: std::ops::Range<&EffectivePartitionKey>,
-        force_refresh: bool,
-        fetch_pk_ranges: F,
-    ) -> Option<String>
-    where
-        F: Fn(ContainerReference, Option<String>) -> Fut,
-        Fut: std::future::Future<Output = R>,
-        R: IntoPkRangeFetchOutcome,
-    {
-        let routing_map = self
-            .try_lookup_result(container, force_refresh, fetch_pk_ranges)
-            .await
-            .ok()
-            .flatten()?;
-
-        routing_map.single_overlapping_range_id(epk_range)
     }
 
     /// Resolves a partition key range by its ID.
