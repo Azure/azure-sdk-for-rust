@@ -10,17 +10,16 @@ use std::hash::{Hash, Hasher};
 ///
 /// Guarantees:
 /// - `-0.0` is normalized to `+0.0` for stable hashing.
-/// - `new_strict` rejects non-finite values (NaN, ±∞).
+/// - `try_new` rejects non-finite values (NaN, ±∞).
 /// - `new_lossy` maps non-finite values to `0.0`.
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize)]
 #[serde(transparent)]
 pub(crate) struct FiniteF64(f64);
 
 impl FiniteF64 {
-    /// Creates a finite value and panics if input is not finite.
-    pub(crate) fn new_strict(value: f64) -> Self {
-        assert!(value.is_finite(), "FiniteF64 value must be finite");
-        Self::new_lossy(value)
+    /// Creates a finite value, returning `None` for non-finite input.
+    pub(crate) fn try_new(value: f64) -> Option<Self> {
+        value.is_finite().then(|| Self::new_lossy(value))
     }
 
     /// Creates a finite value, mapping non-finite values to `0.0`.
@@ -93,13 +92,14 @@ mod tests {
     }
 
     #[test]
-    fn new_strict_accepts_finite_values() {
-        assert_eq!(FiniteF64::new_strict(1.5).value(), 1.5);
+    fn try_new_accepts_finite_values() {
+        assert_eq!(FiniteF64::try_new(1.5).unwrap().value(), 1.5);
     }
 
     #[test]
-    #[should_panic(expected = "FiniteF64 value must be finite")]
-    fn new_strict_rejects_infinity() {
-        let _ = FiniteF64::new_strict(f64::INFINITY);
+    fn try_new_rejects_non_finite_values() {
+        assert!(FiniteF64::try_new(f64::NAN).is_none());
+        assert!(FiniteF64::try_new(f64::INFINITY).is_none());
+        assert!(FiniteF64::try_new(f64::NEG_INFINITY).is_none());
     }
 }
