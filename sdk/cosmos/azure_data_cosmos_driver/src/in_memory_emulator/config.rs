@@ -250,15 +250,16 @@ pub enum SeedingPolicy {
 /// # Cloning shares mutable topology
 ///
 /// `Clone` is shallow for the runtime-mutable state: region membership, write
-/// mode, write region and the PPAF flag all live behind `Arc`s that clones
-/// share. That is deliberate — [`super::EmulatorStore`] holds one config and
-/// tests mutate it through `&self` — but it means a clone is **not** an
-/// independent account. Build separate accounts with [`Self::new`].
+/// mode, write region, PPAF flag, and cross-region hedging suppression signal
+/// all live behind `Arc`s that clones share. That is deliberate —
+/// [`super::EmulatorStore`] holds one config and tests mutate it through
+/// `&self` — but it means a clone is **not** an independent account. Build
+/// separate accounts with [`Self::new`].
 ///
 /// # Runtime-mutable fields
 ///
 /// Static fields (consistency, replication, RU model) are set at construction
-/// time and never change. Two groups are deliberately mutable through a shared
+/// time and never change. Three groups are deliberately mutable through a shared
 /// `&self` handle, because the real service changes them under a running client
 /// and the driver is expected to notice via its background account refresh:
 ///
@@ -271,7 +272,7 @@ pub enum SeedingPolicy {
 ///   region -- mutated through [`super::EmulatorStore`], which owns the
 ///   corresponding per-region data stores.
 ///
-/// Cloning a config shares both, so a clone observes the same topology.
+/// Cloning a config shares all three, so a clone observes the same state.
 #[derive(Clone, Debug)]
 pub struct VirtualAccountConfig {
     topology: Arc<RwLock<AccountTopology>>,

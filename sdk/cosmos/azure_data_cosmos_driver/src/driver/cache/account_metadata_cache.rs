@@ -343,6 +343,25 @@ impl AccountMetadataCache {
         self.cache.get(endpoint).await
     }
 
+    /// Applies `action` only if `properties` is still the cached value.
+    ///
+    /// Cache replacement is blocked until the synchronous action completes,
+    /// preventing a stale operation from publishing account state after a
+    /// newer refresh has replaced the cache entry.
+    pub(crate) async fn apply_if_current<F>(
+        &self,
+        endpoint: &AccountEndpoint,
+        properties: &Arc<AccountProperties>,
+        action: F,
+    ) -> bool
+    where
+        F: FnOnce(),
+    {
+        self.cache
+            .apply_if_current(endpoint, properties, action)
+            .await
+    }
+
     /// Atomically replaces the cached account properties for an endpoint by
     /// running the supplied factory under the cache's single-pending-I/O
     /// lock. Use this when the caller has already produced fresh data
@@ -379,7 +398,7 @@ impl Default for AccountMetadataCache {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
     fn test_endpoint(name: &str) -> AccountEndpoint {
         AccountEndpoint::from(
@@ -510,6 +529,53 @@ mod tests {
 
         assert!(cache.cache.get(&test_endpoint("account1")).await.is_none());
         assert!(cache.cache.get(&test_endpoint("account2")).await.is_none());
+    }
+
+    #[tokio::test]
+    async fn stale_properties_cannot_be_applied_after_refresh() {
+        let cache = AccountMetadataCache::new();
+        let endpoint = test_endpoint("myaccount");
+        let stale = cache
+            .get_or_fetch(endpoint.clone(), || async {
+                let mut properties = test_properties("westus");
+                properties.disable_cross_regional_hedging = Some(false);
+                Ok(properties)
+            })
+            .await
+            .unwrap();
+        let current = cache
+            .get_or_refresh_with(
+                endpoint.clone(),
+                |_| true,
+                || async {
+                    let mut properties = test_properties("westus");
+                    properties.disable_cross_regional_hedging = Some(true);
+                    properties
+                },
+            )
+            .await
+            .unwrap();
+
+        assert!(
+            !cache
+                .apply_if_current(&endpoint, &stale, || {
+                    panic!("a replaced cache value must not be applied");
+                })
+                .await,
+            "a replaced cache value must not be published"
+        );
+        let current_value_applied = AtomicBool::new(false);
+        assert!(
+            cache
+                .apply_if_current(&endpoint, &current, || {
+                    current_value_applied.store(
+                        current.disable_cross_regional_hedging.unwrap(),
+                        Ordering::SeqCst,
+                    );
+                })
+                .await
+        );
+        assert!(current_value_applied.load(Ordering::SeqCst));
     }
 
     #[test]
