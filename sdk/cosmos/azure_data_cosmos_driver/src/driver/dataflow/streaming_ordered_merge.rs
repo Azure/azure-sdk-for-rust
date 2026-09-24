@@ -834,9 +834,10 @@ pub(super) fn build_children(
 
     if unchanged {
         let resolved_range = &resolved[0];
-        let target = RequestTarget::effective_partition_key_range(
+        let target = RequestTarget::effective_partition_key_range_with_parents(
             scope.clone(),
             resolved_range.partition_key_range_id.clone(),
+            resolved_range.parents.clone(),
             resolved_range.range.clone(),
         );
         let child = if let Some(continuation) = prior_continuation {
@@ -897,9 +898,10 @@ pub(super) fn build_children(
     // per-range row-count attribution.
     let mut children = Vec::with_capacity(clipped.len());
     for (owned, resolved_range) in clipped {
-        let target = RequestTarget::effective_partition_key_range(
+        let target = RequestTarget::effective_partition_key_range_with_parents(
             owned.clone(),
             resolved_range.partition_key_range_id.clone(),
+            resolved_range.parents.clone(),
             resolved_range.range.clone(),
         );
         let child = match prior_boundary {
@@ -2256,6 +2258,7 @@ mod tests {
     fn resolved_range(min: &str, max: &str, id: &str) -> ResolvedRange {
         ResolvedRange {
             partition_key_range_id: id.to_owned(),
+            parents: Vec::new(),
             range: range(min, max),
         }
     }

@@ -83,6 +83,7 @@ where
                 .map(|pkr| {
                     Ok(ResolvedRange {
                         partition_key_range_id: pkr.id,
+                        parents: pkr.parents.unwrap_or_default(),
                         range: FeedRange::new(pkr.min_inclusive, pkr.max_exclusive)?,
                     })
                 })
@@ -123,8 +124,10 @@ mod tests {
                 not_modified: true,
             })
         } else {
+            let mut range = PkRange::new("0".into(), "", "FF");
+            range.parents = Some(vec!["parent".to_string()]);
             Some(PkRangeFetchResult {
-                ranges: vec![PkRange::new("0".into(), "", "FF")],
+                ranges: vec![range],
                 continuation: Some("etag-1".to_string()),
                 not_modified: false,
             })
@@ -228,6 +231,7 @@ mod tests {
 
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].partition_key_range_id, "0");
+        assert_eq!(ranges[0].parents, vec!["parent".to_string()]);
         assert_eq!(ranges[0].range.min_inclusive(), &EffectivePartitionKey::MIN);
         assert_eq!(ranges[0].range.max_exclusive(), &EffectivePartitionKey::MAX);
     }

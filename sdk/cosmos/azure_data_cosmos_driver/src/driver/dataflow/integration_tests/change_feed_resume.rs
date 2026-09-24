@@ -101,6 +101,7 @@ fn avad_change_feed_operation(start_from: Option<ChangeFeedStartFrom>) -> Arc<Co
 fn resolved(min: &str, max: &str, pk_range_id: &str) -> ResolvedRange {
     ResolvedRange {
         partition_key_range_id: pk_range_id.to_string(),
+        parents: Vec::new(),
         range: fr(min, max),
     }
 }

@@ -59,7 +59,8 @@ mod topology;
 mod unordered_merge;
 
 pub(crate) use context::{
-    PartitionRoutingRefresh, PipelineContext, RequestExecutor, ResolvedRange, TopologyProvider,
+    single_resolved_range, PartitionRoutingRefresh, PipelineContext, RequestExecutor,
+    ResolvedRange, TopologyProvider,
 };
 pub(crate) use distinct::Distinct;
 pub(crate) use drain::SequentialDrain;
@@ -143,5 +144,18 @@ mod tests {
             Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
             "a plan that was never poisoned must not report transcode poisoning; got: {err}"
         );
+    }
+
+    #[test]
+    fn planning_deadline_is_consumed_without_remaining_on_reusable_plan() {
+        let mut plan = plan();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+
+        plan.set_initial_execution_deadline(deadline);
+
+        assert!(plan.operation.absolute_deadline().is_none());
+        assert_eq!(plan.take_initial_execution_deadline(), Some(deadline));
+        assert!(plan.take_initial_execution_deadline().is_none());
+        assert!(plan.operation.absolute_deadline().is_none());
     }
 }

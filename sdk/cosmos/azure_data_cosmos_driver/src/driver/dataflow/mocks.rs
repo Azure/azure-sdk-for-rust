@@ -190,12 +190,16 @@ impl TopologyProvider for NoopTopologyProvider {
 /// A mock topology provider that returns pre-configured resolved ranges.
 pub(crate) struct MockTopologyProvider {
     results: VecDeque<crate::error::Result<Vec<ResolvedRange>>>,
+    pub refresh_calls: Vec<PartitionRoutingRefresh>,
+    pub range_calls: Vec<FeedRange>,
 }
 
 impl MockTopologyProvider {
     pub fn new(results: Vec<crate::error::Result<Vec<ResolvedRange>>>) -> Self {
         Self {
             results: results.into(),
+            refresh_calls: Vec::new(),
+            range_calls: Vec::new(),
         }
     }
 }
@@ -203,9 +207,11 @@ impl MockTopologyProvider {
 impl TopologyProvider for MockTopologyProvider {
     fn resolve_ranges<'a>(
         &'a mut self,
-        _range: &'a FeedRange,
-        _refresh: PartitionRoutingRefresh,
+        range: &'a FeedRange,
+        refresh: PartitionRoutingRefresh,
     ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
+        self.refresh_calls.push(refresh);
+        self.range_calls.push(range.clone());
         let result = self
             .results
             .pop_front()
@@ -285,7 +291,7 @@ pub(crate) fn operation() -> CosmosOperation {
 
 /// Creates a `RequestTarget` for a logical partition key.
 pub(crate) fn logical_partition_target() -> RequestTarget {
-    RequestTarget::LogicalPartitionKey(PartitionKey::from("pk"))
+    RequestTarget::logical_partition_key(PartitionKey::from("pk"), None)
 }
 
 /// Creates a `RequestTarget` for an EPK range ("" to "80", partition key range ID "0").

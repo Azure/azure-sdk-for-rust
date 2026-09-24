@@ -130,13 +130,17 @@ impl SessionContainer {
     /// If the target range has no token, parent ranges are merged and emitted
     /// using the target range ID. This mirrors the gateway's parent walk for
     /// freshly split children.
-    #[cfg(feature = "preview_dtx")]
     pub(crate) fn resolve_session_token_for_partition_key_range(
         &self,
         container: &ContainerReference,
         partition_key_range_id: &str,
         parents: &[String],
     ) -> Option<SessionToken> {
+        if let Some(token) = self.resolve_session_token_for_range(container, partition_key_range_id)
+        {
+            return Some(token);
+        }
+
         let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
         let pk_map = guard.tokens.get(container.rid()).or_else(|| {
             let np = index_path(container);
@@ -145,12 +149,6 @@ impl SessionContainer {
                 .get(np)
                 .and_then(|resolved_rid| guard.tokens.get(resolved_rid))
         })?;
-
-        if let Some(token) = pk_map.get(partition_key_range_id) {
-            return Some(SessionToken::new(format!(
-                "{partition_key_range_id}:{token}"
-            )));
-        }
 
         let mut merged: Option<SessionTokenValue> = None;
         for parent in parents {
@@ -364,7 +362,6 @@ mod tests {
         assert!(s.contains("0:") && s.contains("1:"));
     }
 
-    #[cfg(feature = "preview_dtx")]
     #[test]
     fn resolves_specific_partition_key_range_token() {
         let sc = SessionContainer::new();
@@ -378,7 +375,6 @@ mod tests {
         assert_eq!(token.as_str(), "1:1#200#1=20");
     }
 
-    #[cfg(feature = "preview_dtx")]
     #[test]
     fn resolves_child_partition_key_range_from_parent_tokens() {
         let sc = SessionContainer::new();
