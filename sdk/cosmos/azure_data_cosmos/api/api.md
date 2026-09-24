@@ -235,7 +235,6 @@ pub mod clients {
         #[cfg(feature = "fault_injection")]
         pub fn with_fault_injection_rules(self, rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>) -> crate::Result<Self>;
         pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
-        pub fn with_partition_key_range_cache_enabled(self, enabled: bool) -> Self;
         pub fn with_runtime(self, runtime: CosmosRuntime) -> Self;
         pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
@@ -1264,7 +1263,6 @@ pub mod models {
         const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: CosmosStatus = _;
         const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_EMPTY: CosmosStatus = _;
-        const CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: CosmosStatus = _;
         const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: CosmosStatus = _;
         const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: CosmosStatus = _;
@@ -2557,6 +2555,7 @@ pub mod options {
         pub fn consecutive_hedge_win_threshold(&self) -> u32;
         pub fn counter_reset_window(&self) -> Duration;
         pub fn failback_sweep_interval(&self) -> Duration;
+        pub fn partition_topology_cache_mode(&self) -> PartitionTopologyCacheMode;
         pub fn partition_unavailability_duration(&self) -> Duration;
         pub fn read_failure_threshold(&self) -> u32;
         pub fn write_failure_threshold(&self) -> u32;
@@ -2578,6 +2577,7 @@ pub mod options {
         pub fn with_consecutive_hedge_win_threshold(self, value: u32) -> Self;
         pub fn with_counter_reset_window(self, value: Duration) -> Self;
         pub fn with_failback_sweep_interval(self, value: Duration) -> Self;
+        pub fn with_partition_topology_cache_mode(self, value: PartitionTopologyCacheMode) -> Self;
         pub fn with_partition_unavailability_duration(self, value: Duration) -> Self;
         pub fn with_read_failure_threshold(self, value: u32) -> Self;
         pub fn with_write_failure_threshold(self, value: u32) -> Self;
@@ -3086,6 +3086,19 @@ pub mod options {
     pub enum MaxItemCountHint {
         ServerDecides,
         Limit(std::num::NonZeroU32),
+    }
+    #[doc(inline)]
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
+    #[non_exhaustive]
+    pub enum PartitionTopologyCacheMode {
+        #[default]
+        Eager,
+        Lazy,
+    }
+    #[doc(inline)]
+    impl FromStr for PartitionTopologyCacheMode {
+        type Err = String;
+        fn from_str(value: &str) -> Result<Self, <Self as >::Err>;
     }
     #[cfg(feature = "preview_patch")]
     #[doc(inline)]

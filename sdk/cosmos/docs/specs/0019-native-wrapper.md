@@ -187,7 +187,7 @@ When this spec says "inherited from the original wrapper" elsewhere, it means PR
 
 ### 3.1 Invocation model — completion queues
 
-> **Visual overview:** see [`sdk/cosmos/docs/specs/0020-native-async-invocation.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0020-native-async-invocation.md) for the picture-first walkthrough of every flow described below (component layout, submission lifecycle, two-handle ownership, cancellation, queue states, per-language pinning).
+> **Visual overview:** see [`sdk/cosmos/docs/specs/0020-native-async-invocation.md`](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0020-native-async-invocation.md) for the picture-first walkthrough of every flow described below (component layout, submission lifecycle, two-handle ownership, queue states, per-language pinning).
 
 Every operation that touches the network in this wrapper is **asynchronous and non-blocking at the FFI boundary**. Submitting a request returns a lightweight in-flight handle (`cosmos_operation_handle_t`); the response (or error) is delivered later on a caller-owned **completion queue** (`cosmos_cq_t`). Host SDKs spin one or more "receive loop" threads that wait on a queue, dequeue completed operations, and dispatch them — typically by carrying the host-language continuation (e.g. a .NET `TaskCompletionSource`) through the `void *user_data` field round-trip.
 
@@ -211,9 +211,9 @@ public Task<CosmosResponse> ReadItemAsync(...) {
         throw TranslatePreflight(preErr);
     }
     // Free the operation handle immediately — this caller does not retain it
-    // for cancel / poll. The receive loop can still borrow the handle via
+    // for state polling. The receive loop can still borrow the handle via
     // cosmos_completion_op_handle for diagnostics. A host SDK that wants to
-    // expose CancellationToken integration would instead stash `op` alongside
+    // poll cosmos_operation_handle_state would instead stash `op` alongside
     // `tcs` and free it after the completion is observed (see Go example).
     NativeMethods.cosmos_operation_handle_free(op);
     return tcs.Task;
@@ -228,7 +228,6 @@ while (!shutdown) {
     switch (NativeMethods.cosmos_completion_outcome(c)) {
         case OK:        tcs.SetResult(WrapResponse(NativeMethods.cosmos_completion_take_response(c))); break;
         case ERROR:     tcs.SetException(WrapError(NativeMethods.cosmos_completion_take_error(c)));     break;
-        case CANCELLED: tcs.SetCanceled();                                                              break;
     }
     GCHandle.FromIntPtr(ud).Free();
     NativeMethods.cosmos_completion_free(c);
@@ -254,8 +253,8 @@ public CompletableFuture<CosmosResponse> readItemAsync(...) {
             throw translatePreflight(preErr.get(ValueLayout.JAVA_INT, 0));
         }
         // Same pattern as the .NET example: this caller does not retain the
-        // handle, so free it immediately. To support CompletableFuture.cancel
-        // propagation, stash `op` in the inflight map alongside the future
+        // handle, so free it immediately. To support cosmos_operation_handle_state
+        // polling, stash `op` in the inflight map alongside the future
         // and free it from the receive loop after the completion lands.
         cosmos_operation_handle_free.invokeExact(op);
     }
@@ -272,7 +271,6 @@ while (!shutdown) {
     switch (outcome) {
         case OK        -> future.complete(wrapResponse((MemorySegment) cosmos_completion_take_response.invokeExact(c)));
         case ERROR     -> future.completeExceptionally(wrapError((MemorySegment) cosmos_completion_take_error.invokeExact(c)));
-        case CANCELLED -> future.cancel(false);
         default        -> future.completeExceptionally(new IllegalStateException("unknown outcome " + outcome));
     }
     cosmos_completion_free.invokeExact(c);
@@ -311,9 +309,14 @@ func (d *Driver) ReadItemAsync(ctx context.Context, op *Operation, opts *Options
     case c := <-ch:
         return wrapResponse(c.resp), c.err
     case <-ctx.Done():
-        C.cosmos_operation_handle_cancel(handle)
-        c := <-ch // still wait for the completion record so we can free it
-        if c.resp != nil { C.cosmos_response_free(c.resp) }
+        // On-demand cancellation is not supported — the in-flight
+        // operation cannot be aborted and runs to its natural completion. Stop
+        // waiting, but drain the eventual completion in the background so its
+        // response is freed rather than leaked.
+        go func() {
+            c := <-ch
+            if c.resp != nil { C.cosmos_response_free(c.resp) }
+        }()
         return nil, ctx.Err()
     }
 }
@@ -331,14 +334,12 @@ for !shutdown.Load() {
         ch <- completion{resp: C.cosmos_completion_take_response(c)}
     case C.COSMOS_COMPLETION_OUTCOME_ERROR:
         ch <- completion{err: wrapError(C.cosmos_completion_take_error(c))}
-    case C.COSMOS_COMPLETION_OUTCOME_CANCELLED:
-        ch <- completion{err: context.Canceled}
     }
     C.cosmos_completion_free(c)
 }
 ```
 
-Go's `context.Context` integration is the key benefit of the cancel path — propagating a caller's `ctx.Done()` into `cosmos_operation_handle_cancel` requires no special wrapper support, since the handle is just a `uintptr` the goroutine retains until it has drained the completion. The same pattern fits Python (`asyncio.Future` + ticket map driven by a dedicated thread that bridges into the event loop via `loop.call_soon_threadsafe`) and Node.js (`Promise` resolvers + `napi_async_work` for the receive loop).
+Go's `context.Context` still composes cleanly: a caller whose `ctx` is cancelled stops waiting immediately, and — because the completion channel is buffered with capacity 1 — the receive goroutine can always deposit the eventual completion for the background drainer to free. Note that this abandons the *wait*, not the *operation*: the request runs to completion on the driver (bounded by `end_to_end_timeout_ms`, see §3.6.3). The same pattern fits Python (`asyncio.Future` + ticket map driven by a dedicated thread that bridges into the event loop via `loop.call_soon_threadsafe`) and Node.js (`Promise` resolvers + `napi_async_work` for the receive loop).
 
 #### 3.1.1 Types
 
@@ -353,7 +354,7 @@ typedef struct cosmos_completion       cosmos_completion_t;
 
 - `cosmos_runtime_t` owns the async runtime (Tokio by default) **plus a strong reference to a shared `CosmosDriverRuntime`** (see §4.1). One per process is typical.
 - `cosmos_cq_t` is a multi-producer / single-consumer completion queue. Multiple submissions from multiple threads can target the same queue; **only one thread at a time** should call `cosmos_cq_wait` on a given queue. Host SDKs that want work-stealing across multiple consumer threads should create one queue per consumer, not one queue shared by all consumers — the wrapper does not coordinate cross-thread fairness inside a single queue. (See §9 Q12 for whether a multi-consumer mode will ever be added.)
-- `cosmos_operation_handle_t` is the in-flight identity of a submitted operation. The caller can use it to (a) request cancellation, (b) snapshot diagnostics mid-flight, and (c) correlate to the eventually-delivered completion. It is **not** the place the response is delivered — that's the completion record.
+- `cosmos_operation_handle_t` is the in-flight identity of a submitted operation. The caller can use it to (a) poll the operation's lifecycle state via `cosmos_operation_handle_state`, and (b) correlate to the eventually-delivered completion. It is **not** the place the response is delivered — that's the completion record.
 - `cosmos_completion_t` is a single dequeued record — it pairs the caller's `user_data` with the response or error. See §3.6 for the full surface.
 
 #### 3.1.2 Lifecycle
@@ -392,7 +393,7 @@ void         cosmos_cq_free(cosmos_cq_t *queue);   /* NULL is a no-op */
 const cosmos_runtime_t *cosmos_cq_runtime(const cosmos_cq_t *queue);
 ```
 
-**Freeing a queue with operations still in-flight** is a programming error: `cosmos_cq_free` will block until all in-flight submissions targeting that queue have completed (cancelling each one first). Host SDKs that need a non-blocking shutdown must call `cosmos_cq_shutdown` and drain via `cosmos_cq_wait` until `cosmos_cq_state` returns `DRAINED`, then `_free`. See §3.6.4.
+**Freeing a queue with operations still in-flight** is a programming error, but a memory-safe one: `cosmos_cq_free` does **not** block or wait — it drops the producer-side handle immediately. In-flight submissions keep the queue state alive through their own reference counts and still run to their natural completion (there is no cancellation, see §3.6.3), but once the handle is freed nothing can observe those completions and the diagnostics they carry are dropped. Host SDKs that must observe every completion call `cosmos_cq_shutdown` and drain via `cosmos_cq_wait` until `cosmos_cq_state` returns `DRAINED`, then `_free`. See §3.6.4.
 
 #### 3.1.3 Waiting for completions
 
@@ -450,8 +451,10 @@ uint32_t cosmos_cq_wait_batch(cosmos_cq_t *queue,
  */
 bool cosmos_cq_wait_writable(cosmos_cq_t *queue, uint32_t timeout_ms);
 
-/* Signal shutdown: in-flight ops are cancelled and any thread blocked in
- * cosmos_cq_wait wakes with NULL. Idempotent. After shutdown, no further
+/* Signal shutdown: no further submissions are accepted and any thread blocked
+ * in cosmos_cq_wait wakes with NULL once the queue has drained. In-flight ops
+ * are NOT cancelled — they run to their natural completion (see §3.6.3).
+ * Idempotent. After shutdown, no further
  * submissions targeting this queue succeed (they fail pre-flight with a
  * 503 + COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_SHUTDOWN packed status). Pending completions can still be drained
  * via cosmos_cq_wait until empty. */
@@ -558,7 +561,7 @@ Rationale:
 | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `cosmos_runtime_t*`                                  | `cosmos_runtime_builder_build`                                                                           | `cosmos_runtime_free`                                                                                 | No (use one per process; see §4.1)                                                             |
 | `cosmos_driver_t*`                                   | `cosmos_driver_get_or_create`                                                                            | `cosmos_driver_free`                                                                                  | Internally `Arc`; FFI handle is a single owner                                                 |
-| `cosmos_cq_t*`                                       | `cosmos_cq_create(runtime, options)`                                                                     | `cosmos_cq_free` (blocks until drained — call `cosmos_cq_shutdown` first for non-blocking)            | No                                                                                             |
+| `cosmos_cq_t*`                                       | `cosmos_cq_create(runtime, options)`                                                                     | `cosmos_cq_free` (non-blocking; abandons any in-flight completions — `cosmos_cq_shutdown` + drain first to observe them) | No                                                                                             |
 | `cosmos_operation_handle_t*`                         | every `cosmos_*_submit`                                                                                  | `cosmos_operation_handle_free` (independent of completion lifetime — see §3.6.2)                      | No                                                                                             |
 | `cosmos_completion_t*`                               | `cosmos_cq_wait` / `cosmos_cq_try_wait`                                                                  | `cosmos_completion_free` (response/error obtained via `_take_*` remain owned by caller)               | No                                                                                             |
 | `cosmos_account_ref_t*`                              | `cosmos_account_ref_with_*`                                                                              | `cosmos_account_ref_free`                                                                             | Yes, via `cosmos_account_ref_clone` (cheap; new strong handle to the same `Arc`)               |
@@ -617,7 +620,7 @@ Hosts decode with the macros emitted in the header: `COSMOS_STATUS_HTTP(code) = 
   | 400  | `COSMOS_SUB_STATUS_CLIENT_INVALID_ACCOUNT_ENDPOINT_URL` | Account endpoint URL or credential could not be parsed.                                                                                                                     |
   | 400  | `COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_EMPTY`          | A `PartitionKey` builder produced an empty / inconsistent key.                                                                                                              |
   | 404  | `COSMOS_SUB_STATUS_CLIENT_FFI_FEED_EXHAUSTED`           | A single-shot submit of a feed-style operation yielded no further page.                                                                                                     |
-  | 408  | `COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED`      | An operation was cancelled (explicit cancel or queue shutdown). Surfaced on the `COSMOS_COMPLETION_OUTCOME_CANCELLED` completion's status.                                  |
+  | 408  | `COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED`      | Reserved and unused. On-demand cancellation is not supported (§3.6.3); the numeric value (`408` + `20360`) is kept fixed and is not currently produced by any operation.                                  |
   | 503  | `COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_SHUTDOWN`           | A submit targeted a `cosmos_cq_t` already shut down. Pre-flight rejection — no completion is posted.                                                                        |
   | 503  | `COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_FULL`               | A submit targeted a `cosmos_cq_t` already at its hard capacity. Pre-flight rejection. Default configuration sets no hard cap; only fires when the host opts in. See §3.1.2. |
   | 500  | `COSMOS_SUB_STATUS_CLIENT_FFI_RUNTIME_BUILD_FAILED`     | `cosmos_runtime_builder_build` could not construct the underlying `CosmosDriverRuntime`. The rich `cosmos_error_t` carries the inner cause.                                 |
@@ -765,15 +768,17 @@ Status-code main values follow the same approach via the packed `cosmos_status_c
 
 #### 3.6.1 `cosmos_completion_t`
 
-Every async submission eventually produces exactly one completion record — success, failure, or cancellation. The record is an opaque handle with the following accessors:
+Every async submission eventually produces exactly one completion record — success or failure. The record is an opaque handle with the following accessors:
 
 ```c
-/* Outcome — exactly one of OK / ERROR / CANCELLED. UNKNOWN is reserved
- * for forward compatibility. */
+/* Outcome — exactly one of OK / ERROR. UNKNOWN is reserved for forward
+ * compatibility. CANCELLED (2) is reserved and unused: on-demand
+ * cancellation is not supported (see §3.6.3) and no operation produces
+ * it; the numeric value is kept fixed. */
 typedef enum cosmos_completion_outcome {
     COSMOS_COMPLETION_OUTCOME_OK        = 0,
     COSMOS_COMPLETION_OUTCOME_ERROR     = 1,
-    COSMOS_COMPLETION_OUTCOME_CANCELLED = 2,
+    COSMOS_COMPLETION_OUTCOME_CANCELLED = 2, /* reserved, unused */
     COSMOS_COMPLETION_OUTCOME_UNKNOWN   = 255,
 } cosmos_completion_outcome_t;
 
@@ -797,7 +802,6 @@ const cosmos_operation_handle_t *cosmos_completion_op_handle(const cosmos_comple
 /* Packed status — always populated, even when the rich cosmos_error_t was
  * suppressed via include_error_details = false. Population rules:
  *   • outcome = OK         → COSMOS_STATUS_SUCCESS (0).
- *   • outcome = CANCELLED  → 408 + COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED.
  *   • outcome = ERROR      → the inner CosmosError's (status, sub_status) pair
  *     packed verbatim as (http << 16) | sub (see §6.3). Decode with
  *     COSMOS_STATUS_HTTP / COSMOS_STATUS_SUB. Examples:
@@ -811,14 +815,6 @@ const cosmos_operation_handle_t *cosmos_completion_op_handle(const cosmos_comple
  *     SDKs that only care about the packed status can disable rich capture
  *     without losing routing information. */
 cosmos_status_code_t cosmos_completion_status(const cosmos_completion_t *c);
-
-/* True iff the caller invoked cosmos_operation_handle_cancel on this
- * operation's handle before the completion was posted, regardless of the
- * eventual outcome. Allows host SDKs to express "cancel was requested, but
- * the operation completed naturally before the cancellation landed" (cf.
- * Java CompletableFuture.cancel() returning false for already-completed
- * futures) by combining this predicate with the outcome accessor. */
-bool cosmos_completion_was_cancel_requested(const cosmos_completion_t *c);
 
 /* Take ownership of the response. Returns NULL when outcome != OK or after a
  * previous _take_response on this completion. After this call,
@@ -834,7 +830,7 @@ const cosmos_response_t *cosmos_completion_response(const cosmos_completion_t *c
  * previous _take_error on this completion. */
 cosmos_error_t *cosmos_completion_take_error(cosmos_completion_t *c);
 
-/* Borrowed access to the rich error. NULL on OK / CANCELLED, when details
+/* Borrowed access to the rich error. NULL on OK, when details
  * are suppressed, or after a previous cosmos_completion_take_error call on
  * the same completion (the take call transfers ownership; subsequent
  * borrows return NULL). */
@@ -859,7 +855,6 @@ for (;;) {
     switch (cosmos_completion_outcome(c)) {
         case COSMOS_COMPLETION_OUTCOME_OK:        dispatch_ok(ud,  cosmos_completion_take_response(c)); break;
         case COSMOS_COMPLETION_OUTCOME_ERROR:     dispatch_err(ud, cosmos_completion_take_error(c));    break;
-        case COSMOS_COMPLETION_OUTCOME_CANCELLED: dispatch_cancel(ud);                                  break;
         default:                                  dispatch_unknown(ud, cosmos_completion_status(c));    break;
     }
     cosmos_completion_free(c);
@@ -872,13 +867,6 @@ for (;;) {
 A submit returns one of these. It is the caller's handle to an in-flight (or just-completed) operation.
 
 ```c
-/* Request cooperative cancellation. Idempotent; non-blocking. The operation
- * still posts a completion record to its queue — with outcome = CANCELLED
- * if the cancellation arrived before the natural completion, or
- * outcome = OK / ERROR if the cancellation lost the race. See §3.6.3 for
- * exactly how cancellation is implemented. */
-void cosmos_operation_handle_cancel(cosmos_operation_handle_t *op);
-
 /* Poll the operation's lifecycle state. Lock-free, non-blocking; safe to
  * call from any thread without coordinating with the receive loop. Lets a
  * producer that did not retain the completion (e.g. a fire-and-forget
@@ -888,7 +876,8 @@ void cosmos_operation_handle_cancel(cosmos_operation_handle_t *op);
  *   IN_FLIGHT   — submission succeeded; no completion has been posted yet.
  *   COMPLETED   — completion was posted with outcome = OK.
  *   FAILED      — completion was posted with outcome = ERROR.
- *   CANCELLED   — completion was posted with outcome = CANCELLED.
+ *   CANCELLED   — reserved and unused (on-demand cancellation is not
+ *                 supported, see §3.6.3); no completion drives this state.
  *
  * After cosmos_operation_handle_free this function is a use-after-free and
  * must NOT be called. After the completion has been freed via
@@ -898,14 +887,13 @@ typedef enum cosmos_operation_handle_state {
     COSMOS_OPERATION_HANDLE_STATE_IN_FLIGHT = 0,
     COSMOS_OPERATION_HANDLE_STATE_COMPLETED = 1,
     COSMOS_OPERATION_HANDLE_STATE_FAILED    = 2,
-    COSMOS_OPERATION_HANDLE_STATE_CANCELLED = 3,
+    COSMOS_OPERATION_HANDLE_STATE_CANCELLED = 3, /* reserved, unused */
 } cosmos_operation_handle_state_t;
 cosmos_operation_handle_state_t cosmos_operation_handle_state(
     const cosmos_operation_handle_t *op);
 
 /* Free the FFI handle. Safe to call before or after the completion has been
- * delivered. Does NOT cancel the operation — call _cancel first if that's
- * what you want. cosmos_operation_handle_free(NULL) is a no-op.
+ * delivered. cosmos_operation_handle_free(NULL) is a no-op.
  *
  * Freeing only drops THIS handle's Arc reference; if the completion holds
  * its own reference (it does — see cosmos_completion_op_handle in §3.6.1)
@@ -918,52 +906,57 @@ void cosmos_operation_handle_free(cosmos_operation_handle_t *op);
 
 **Lifetime relationship between handle and completion.** The operation handle and its completion record are independent FFI handles with overlapping lifetimes. The handle is alive from submit-return until `cosmos_operation_handle_free`; the completion is alive from `cosmos_cq_wait` return until `cosmos_completion_free`. Both hold their own `Arc<OperationInner>` strong reference, so:
 
-- A caller that does not want cancel / state-poll integration can free `op` immediately after a successful submit. The receive loop still sees a valid completion and can borrow the operation handle via `cosmos_completion_op_handle` if it needs the `_state` accessor.
-- A caller that wants cancel propagation (e.g. .NET `CancellationToken`, Go `ctx.Done()`, Java `CompletableFuture.cancel`) stashes `op` alongside the host-language continuation and frees it from the receive loop after the completion has been observed.
+- A caller that does not want state-poll integration can free `op` immediately after a successful submit. The receive loop still sees a valid completion and can borrow the operation handle via `cosmos_completion_op_handle` if it needs the `_state` accessor.
+- A caller that wants `cosmos_operation_handle_state` polling stashes `op` alongside the host-language continuation and frees it from the receive loop after the completion has been observed.
 
-Freeing the handle does **not** cancel the operation — the inner driver-side state is independently reachable from the completion's Arc, so the underlying request continues to completion.
+Freeing the handle does not affect the operation — the inner driver-side state is independently reachable from the completion's Arc, so the underlying request continues to completion.
 
 #### 3.6.3 Cancellation
 
-`cosmos_operation_handle_cancel` requests cancellation. The driver crate does **not** currently accept a `CancellationToken` on `CosmosDriver::execute_operation` or `execute_singleton_operation` (`src/driver/cosmos_driver.rs:1242,1281`) — the only end-to-end timing primitive the pipeline honors is the `deadline: Option<Instant>` carried through `OperationOptions` (`pipeline/components.rs`, enforced in `transport_pipeline.rs` at every retry boundary). Cancellation is therefore implemented **in the wrapper layer**, not the driver, with the following semantics:
+On-demand cancellation is **not supported**. There is no
+`cosmos_operation_handle_cancel` and no `cosmos_completion_was_cancel_requested`.
+Every async submit simply awaits the driver operation to completion
+(`let done = work.await;`) behind the `catch_unwind` panic firewall.
 
-**Implementation.** For every async submit, the wrapper drives the driver future inside a `tokio::select!` against a per-operation `tokio::sync::Notify` (or equivalent) tied to the operation handle:
+**Why.** Cancelling a request in the wrapper is only possible by dropping the
+in-flight driver future. Dropping it also discards the partial
+`DiagnosticsContext` the driver was building, because
+`DiagnosticsContextBuilder::complete()` never runs. Losing diagnostics is not
+acceptable, and the wrapper has no other way to stop a request, so it does not
+offer cancellation. Every terminal state — `Ok`, `Err`, driver request-timeout,
+retry-budget exhaustion — runs `complete()` and carries diagnostics through the
+normal completion path.
 
-```rust
-let cancel = Arc::new(Notify::new());
-let fut = driver.execute_singleton_operation(operation, options);
-let outcome = tokio::select! {
-    biased;
-    _ = cancel.notified()       => Outcome::Cancelled,
-    r = fut                      => match r { Ok(resp) => Outcome::Ok(resp), Err(e) => Outcome::Error(e) },
-};
-post_completion_to_queue(outcome, /* was_cancel_requested = */ cancel_observed, user_data);
-```
+**Bounding how long an operation runs.** Callers that need an upper bound use
+the driver's end-to-end timeout
+(`CosmosOperationOptions.end_to_end_timeout_ms`, wired to
+`EndToEndOperationLatencyPolicy`). It is deadline-based and resolves as an
+ordinary `Err` (`408` / `CLIENT_OPERATION_TIMEOUT`) that **carries
+diagnostics**.
 
-`cosmos_operation_handle_cancel` signals the `Notify`. The driver future is then **dropped**. Tokio unwinds its parked awaits; `reqwest` aborts any in-flight HTTP request as part of its `Drop` impl (closing the connection if mid-body, leaving the pool intact otherwise); buffered request bodies and per-attempt retry state are released. The wrapper synthesizes a completion record with `outcome = COSMOS_COMPLETION_OUTCOME_CANCELLED` and `cosmos_completion_status` packing `408 + COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED`.
+**Reserved values.** The numeric values below are kept fixed (defined but never
+produced) so cancellation can be added later without renumbering anything:
+`COSMOS_COMPLETION_OUTCOME_CANCELLED = 2`,
+`COSMOS_OPERATION_HANDLE_STATE_CANCELLED = 3`, and the internal
+`CosmosErrorCodeOperationCancelled` (`408` +
+`COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED = 20360`).
+`COSMOS_COMPLETION_OUTCOME_UNKNOWN` stays pinned at `255`.
 
-**Caveats — call these out to host SDK authors.**
-
-- **Granularity is "drop at the next await point", not "check a token between operations".** The future is abandoned wherever it is currently parked. If it is parked inside a non-cancellable syscall (e.g. a DNS lookup that has already entered `getaddrinfo` on a thread-pool blocking task), the cancel takes effect only when control returns to the Tokio reactor — typically within a few milliseconds, but not instantaneous.
-- **Cancel-vs-completion race.** If the driver future resolves to `Ok(resp)` / `Err(e)` before the `Notify` is observed, the completion is delivered with the natural outcome (`OK` / `ERROR`). `cosmos_completion_was_cancel_requested` (§3.6.1) returns `true` in this case so host SDKs that model "cancel won the race vs. operation succeeded but caller no longer wants the result" can distinguish them.
-- **No driver-side cancellation diagnostics.** Because the driver future is dropped rather than receiving a cancellation signal, the partial `DiagnosticsContext` it was building is dropped with it — the wrapper has no `Arc` view into mid-flight diagnostics (see §3.6.2 and §9 Q16). A cancelled completion therefore carries no `cosmos_response_t` and no `cosmos_diagnostics_t`. Host SDKs that want partial diagnostics for cancelled operations should rely on the `cosmos_operation_handle_state` poller plus their own external instrumentation, not on the completion record.
-- **In-flight requests are not actively aborted on the wire.** Dropping the `reqwest` future closes the underlying TCP connection (preventing connection-pool reuse for that request) but does not send a protocol-level cancel; the gateway may still execute the request server-side. Idempotency considerations for writes are unchanged from the regular retry path.
-- **Hedging is not in scope.** Hedged-read / hedged-write features that exist in the .NET and Java SDKs are not currently implemented in the Rust driver. References to "hedge race" cancellation behavior in earlier drafts of this spec are removed; if hedging lands in a future driver version, this section must be revisited.
-
-A cancelled operation **always** produces a completion record — there is no "silent drop" path. The `was_cancel_requested` flag plus `outcome` give host SDKs everything they need to express the four cases: (cancel requested, outcome = CANCELLED), (cancel requested, outcome = OK / ERROR — race lost), and (no cancel requested, outcome = OK / ERROR).
-
-**Future driver-side primitive.** A first-class `execute_operation(op, options, cancel: CancellationToken)` overload in the driver — propagating the token through the pipeline and checking it at every `await` boundary — would let the wrapper retire its `select!` shim and surface mid-flight cancellation diagnostics. Tracked in §9 Q13; not blocking on v1.
+**Future direction.** On-demand cancellation that also preserves diagnostics can
+only be built in the driver, which already stops a request and keeps its
+diagnostics when its deadline elapses. Extending that to accept an external
+cancel signal is a separate `azure_data_cosmos_driver` change. Tracked in §9 Q13.
 
 #### 3.6.4 Queue shutdown semantics
 
 `cosmos_cq_shutdown(queue)`:
 
 1. Marks the queue as shutting down (`cosmos_cq_state` → `SHUTDOWN`).
-2. Requests cancellation on every in-flight operation targeting this queue.
-3. Wakes any thread currently blocked in `cosmos_cq_wait` — it returns NULL.
+2. Stops accepting new submissions; in-flight operations run to their natural completion (there is no cancellation — see §3.6.3).
+3. Wakes any thread currently blocked in `cosmos_cq_wait` once the queue has drained — it returns NULL.
 4. Subsequent submits targeting this queue fail their pre-flight check with a `503 + COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_SHUTDOWN` packed status.
 
-The consumer drains by calling `cosmos_cq_wait` until it returns NULL **and** `cosmos_cq_state` returns `DRAINED`. Only at that point is `cosmos_cq_free` safe to call without blocking on in-flight work.
+The consumer drains by calling `cosmos_cq_wait` until it returns NULL **and** `cosmos_cq_state` returns `DRAINED`. Only at that point can `cosmos_cq_free` reclaim the queue without abandoning in-flight completions (the free call itself never blocks — see §3.1.2).
 
 ---
 
@@ -1349,9 +1342,9 @@ The tracking fields are valid only when `kind` is `PatchItem`; setting
 either field for another operation is rejected during preflight. Unsafe PATCH
 instructions persist the tracking ID under `_azsdkPatchTracking`. Language
 SDKs retrieve the effective ID, including a generated ID, from
-`cosmos_completion_patch_tracking_id` on successful, failed, or cancelled
+`cosmos_completion_patch_tracking_id` on successful or failed
 completions. The wrapper resolves generated IDs before spawning the operation,
-so cancellation cannot lose the retry identity even when an in-flight write
+so a retried write cannot lose the retry identity even when an in-flight write
 may still commit.
 Those that retry across calls or process restarts must persist and reuse the
 same UUID for the same logical operation and item.
@@ -1479,9 +1472,9 @@ cosmos_operation_handle_t *cosmos_submit_operation(
 The contract (shared by both entry points; full response / accessor surface in §4.7):
 
 1. **Each successful submit posts exactly one completion** to `queue` — `OK`
-   (response), `ERROR` (rich error payload), or `CANCELLED` — and returns a
+   (response) or `ERROR` (rich error payload) — and returns a
    non-NULL `cosmos_operation_handle_t*`. The handle is the in-flight identity:
-   it supports `cosmos_operation_handle_cancel` / `_state` and lives until
+   it supports `cosmos_operation_handle_state` and lives until
    `cosmos_operation_handle_free`, independent of the completion record.
 2. **A pre-flight rejection posts no completion.** When the driver / request is
    NULL, the request fails validation, or the queue is shut down / at hard
@@ -1562,10 +1555,9 @@ surface) and posts exactly one completion to the queue.
  *               (service / transport / client / authentication, etc.).
  *               cosmos_completion_status is the coarse code derived per
  *               §3.6.1.
- *   CANCELLED — cosmos_operation_handle_cancel or cosmos_cq_shutdown won
- *               the race against the natural completion. status is
- *               408 + COSMOS_SUB_STATUS_CLIENT_FFI_OPERATION_CANCELLED. See §3.6.3
- *               for the wrapper-layer drop-based implementation.
+ *
+ * (COSMOS_COMPLETION_OUTCOME_CANCELLED = 2 is reserved and unused; on-demand
+ *  cancellation is not supported — see §3.6.3.)
  *
  * Pre-flight rejection (NULL driver/request, malformed request, queue shut
  * down, queue at hard capacity, ...) returns NULL and writes a coarse code
@@ -1642,33 +1634,75 @@ void cosmos_response_free(cosmos_response_t *r);
 
 The error-payload accessors (`cosmos_error_status_code`, `cosmos_error_sub_status`, `cosmos_error_is_throttled`, etc.) are defined in §3.5.2 and live on `cosmos_error_t` — they are **not** redundantly re-exposed on `cosmos_response_t`. A completion whose `outcome == OK` yields a `cosmos_response_t` whose `cosmos_response_status_code` may still be a Cosmos-success status (200, 201, 204, ...); a completion whose `outcome == ERROR` yields a `cosmos_error_t` whose accessors expose the equivalent service-error fields.
 
-### 4.8 Diagnostics (`src/handles/diagnostics.rs`)
+### 4.8 Diagnostics (`src/diagnostics.rs`)
 
-`DiagnosticsContext` exposes timings, regions contacted, retry attempts, and per-request `RequestDiagnostics`. We expose it as an opaque handle with accessors:
+`DiagnosticsContext` exposes timings, regions contacted, per-attempt
+`RequestDiagnostics`, and aggregate request charge. It is surfaced as an
+opaque, read-only handle borrowed from the completion's `diagnostics` field
+(NULL when the operation produced none). The handle is owned by the completion
+and stays valid until `cosmos_completion_queue_free_completions` reclaims it,
+so it is never freed on its own. It is populated on success and on errors that
+carry diagnostics (including deadline timeouts). Every accessor is NULL-safe:
 
 ```c
-/* Aggregate metrics */
-double  cosmos_diagnostics_total_request_charge(const cosmos_diagnostics_t *d);
+/* Aggregate metrics (exact even when the per-attempt list is compacted) */
+double   cosmos_diagnostics_total_request_charge(const cosmos_diagnostics_t *d);
 uint64_t cosmos_diagnostics_total_elapsed_micros(const cosmos_diagnostics_t *d);
-uint32_t cosmos_diagnostics_retry_count(const cosmos_diagnostics_t *d);
+uint32_t cosmos_diagnostics_request_count(const cosmos_diagnostics_t *d);
 
-/* Region info — iteration via visitor */
-typedef void (*cosmos_region_visitor)(
-    void *user_data, const char *region_name, const char *endpoint,
-    bool succeeded, uint64_t elapsed_micros);
+/* Operation-level status */
+bool cosmos_diagnostics_is_completed(const cosmos_diagnostics_t *d);
+bool cosmos_diagnostics_is_failure(const cosmos_diagnostics_t *d);
+
+/* Compaction signalling — under a retry storm the per-attempt list is capped.
+ * The retained count is what iter_attempts yields; the aggregates above stay
+ * exact against the true total. */
+uint32_t cosmos_diagnostics_retained_request_count(const cosmos_diagnostics_t *d);
+bool     cosmos_diagnostics_is_compacted(const cosmos_diagnostics_t *d);
+
+/* Regions contacted — one callback per distinct region, first-contact order */
 void cosmos_diagnostics_iter_regions_contacted(
     const cosmos_diagnostics_t *d,
-    cosmos_region_visitor visitor, void *user_data);
+    void (*visitor)(void *user_data, const char *region_name),
+    void *user_data);
 
-/* Full JSON snapshot for log/telemetry forwarding (allocates). The returned
- * cosmos_bytes_t is an opaque handle (see §3.3); free with cosmos_bytes_free. */
+/* Per-attempt retry timeline — one callback per retained attempt, in order.
+ * `region` is NULL when the attempt has no region; `sub_status` is -1 when the
+ * attempt recorded none; `server_duration_ms` is negative when the service did
+ * not report one. */
+void cosmos_diagnostics_iter_attempts(
+    const cosmos_diagnostics_t *d,
+    void (*visitor)(void *user_data, const char *endpoint, const char *region,
+                    uint16_t status_code, int32_t sub_status,
+                    uint64_t latency_ms, double request_charge,
+                    double server_duration_ms),
+    void *user_data);
+
+/* JSON snapshot for log/telemetry forwarding. Zero-copy: `*out_data` /
+ * `*out_len` borrow UTF-8 bytes cached inside the handle and valid until the
+ * completion is freed — the caller must not free them. `verbosity` selects the
+ * rendering (0 = runtime default, 1 = summary, 2 = detailed); an unrecognized
+ * value renders at the runtime default. */
 cosmos_status_code_t cosmos_diagnostics_to_json(
-    const cosmos_diagnostics_t *d, cosmos_bytes_t **out_json);
-
-void cosmos_diagnostics_free(cosmos_diagnostics_t *d);
+    const cosmos_diagnostics_t *d, cosmos_diagnostics_verbosity_t verbosity,
+    const uint8_t **out_data, uintptr_t *out_len);
 ```
 
-The JSON snapshot is the **only** place the wrapper serializes anything to JSON, and it's purely a debugging aid — schema-agnosticism is preserved on the data plane.
+The JSON snapshot is the **only** place the wrapper serializes anything to
+JSON, and it's purely a debugging aid — schema-agnosticism is preserved on the
+data plane. Because the handle is borrowed from the completion, there is no
+separate `cosmos_diagnostics_free`.
+
+`DiagnosticsContext::is_threshold_violated` is intentionally **not** exposed:
+it takes a `DiagnosticsThresholds` input that has no stable C-ABI form yet, so
+threshold classification stays a host-side concern until a diagnostics-options
+type is designed.
+
+`DiagnosticsContext::operation_name` is intentionally **not** exposed either:
+the driver only records it on test-constructed contexts (the production builder
+always leaves it unset), so the accessor would report nothing on every real
+completion. The host already knows which operation it submitted, so exposing a
+perpetually-empty field would only mislead.
 
 ### 4.9 Host token credentials (`src/credential.rs`)
 
@@ -1884,12 +1918,12 @@ Each phase is independently shippable, has explicit acceptance criteria, and end
 
 ### Phase 1 — Error + async invocation primitives *(Goal: reusable plumbing for every later API)*
 
-- Port `CosmosError` / `CosmosErrorCode` / `Error` (extended with the new 40xx codes from §3.5.1 — including `QUEUE_SHUTDOWN` and `OPERATION_CANCELLED`).
+- Port `CosmosError` / `CosmosErrorCode` / `Error` (extended with the new 40xx codes from §3.5.1 — including `QUEUE_SHUTDOWN`; `OPERATION_CANCELLED` is reserved and unused per §3.6.3).
 - Implement the rich `cosmos_error_t` accessor + predicate surface from §3.5.2 against `azure_data_cosmos::Error` (from PR #4442).
 - Implement `CompletionQueue` + `OperationHandle` + `Completion` Rust types and their Tokio-backed delivery channel. Public C entry points (`cosmos_cq_create`, etc.) require a runtime and therefore land green only after Phase 2 wires the runtime in — Phase 1 ships the plumbing + a workspace-internal test scaffold that constructs a stub `RuntimeContext` so the queue / completion / handle types can be exercised in isolation.
 - `cosmos_cq_create` / `_free` / `_wait` / `_try_wait` / `_wait_batch` / `_wait_writable` / `_shutdown` / `_state`.
-- `cosmos_completion_*` accessors (outcome / status / user_data / op_handle / was_cancel_requested / take_response / take_error / response / error / free).
-- `cosmos_operation_handle_cancel` / `_state` / `_free`.
+- `cosmos_completion_*` accessors (outcome / status / user_data / op_handle / take_response / take_error / response / error / free).
+- `cosmos_operation_handle_state` / `_free`.
 - Error-handling C tests (null-pointer rejection, error-detail string lifecycle, `cosmos_error_*` accessor coverage, forward-compat behavior for sub-status values introduced after this spec).
 
 **Done when:** Calling APIs with `NULL` runtime, `NULL` queue, etc. produce the right pre-flight `cosmos_status_code_t`; submitting and dequeuing a synthetic completion round-trips `user_data` and the rich error payload; every `cosmos_error_is_*` predicate is exercised by at least one synthetic test (no emulator needed).
@@ -1901,7 +1935,7 @@ Each phase is independently shippable, has explicit acceptance criteria, and end
 - Expose `cosmos_set_backtrace_options(max_captures_per_second, max_resolutions_per_second)` per §6.4 (process-global, no per-runtime variant on the merged driver).
 - `c_tests/runtime_lifecycle.c`: create/free runtime in loop; submit-and-drain a synthetic op against a `cosmos_cq_t` from multiple producer threads with a single consumer; verify clean shutdown via `cosmos_cq_shutdown` + drain.
 
-**Done when:** Multiple producer threads can submit against one `cosmos_cq_t` while a single consumer drains, and `cosmos_cq_shutdown` cleanly cancels in-flight ops and drains the queue.
+**Done when:** Multiple producer threads can submit against one `cosmos_cq_t` while a single consumer drains, and `cosmos_cq_shutdown` cleanly drains the queue (in-flight ops run to natural completion — no cancellation).
 
 ### Phase 3 — Account / resource references + driver instance *(Goal: open a connection to a real Cosmos account)*
 
@@ -2007,7 +2041,7 @@ Each item below is independent; ship as feature-gated when ready.
     - **EPK-range construction.** `FeedRange::new(min: EffectivePartitionKey, max: EffectivePartitionKey)` exists on the driver (`feed_range.rs:71`) but takes strongly-typed EPK values, not strings. Decide whether to (a) wait for a driver-side `FeedRange::from_hex_range(min_hex, max_hex)` parser, or (b) add a `cosmos_effective_partition_key_t` opaque type to the wrapper with its own `_from_hex` / `_min` / `_max` constructors. Phase 8 (pager) is the natural forcing function — if continuation-token resumption is operation-level (Q9 option B), this gap may never bite.
     - **Physical-partition-range targeting.** The driver's `FeedRangeRepr` has no `PartitionKeyRangeId` variant; PKRangeId-keyed routing happens elsewhere (PPAF/PPCB). Decide whether host SDKs that want explicit physical-partition pinning should drive that through some other surface, or whether the driver should grow a `FeedRange::for_partition_key_range_id(pkrange_id)` constructor that the wrapper can mirror.
 12. **Multi-consumer (MPMC) `cosmos_cq_t`.** §3.1.2 / §3.1.3 ship the queue as multi-producer / single-consumer in v1, with the explicit workaround of "one queue per consumer" for work-stealing. Decide whether a future revision promotes the queue to MPMC (internal lock around the consumer side; lets host SDKs spin N receive-loop threads against one queue) or keeps the v1 contract permanently. The decision affects whether `cosmos_cq_wait` ever needs a fairness / batching mode and whether per-completion ordering across consumers needs to be specified.
-13. **Driver-side `CancellationToken` primitive.** §3.6.3 documents that v1 cancellation is implemented in the wrapper layer via `tokio::select!` + future-drop, because `CosmosDriver::execute_operation` / `execute_singleton_operation` (`src/driver/cosmos_driver.rs:1242,1281`) and `execute_plan` (`:1313`) do **not** currently accept a `CancellationToken`. A first-class `execute_*(op, options, cancel: CancellationToken)` overload — checked at every `await` boundary in `pipeline/components.rs` and `transport_pipeline.rs`, alongside the existing `deadline: Option<Instant>` — would let the wrapper retire its drop-based shim, surface mid-flight cancellation diagnostics, and give the host SDK author a "cancelled" outcome carrying the partial `DiagnosticsContext`. Decide whether to land this driver-side change in the same release as the wrapper (so the §3.6.3 caveats become historical) or defer it to a v2 revision. The wrapper API surface does not change either way — only the §3.6.3 caveat list shrinks.
+13. **On-demand cancellation in the driver.** §3.6.3 records that the wrapper does not support on-demand cancellation: `CosmosDriver::execute_operation` / `execute_singleton_operation` / `execute_plan` accept no cancel signal, and the wrapper's only way to stop a request (dropping the future) would discard the partial `DiagnosticsContext`. The driver already stops a request and keeps its diagnostics when its deadline elapses; extending that path to accept an external cancel signal would let the wrapper offer on-demand cancellation that still carries diagnostics, reusing the reserved values (`COSMOS_COMPLETION_OUTCOME_CANCELLED = 2`, `_STATE_CANCELLED = 3`, sub-status `20360`). Decide whether/when to make this driver change. Until then, callers bound how long an operation runs with the deadline-based `end_to_end_timeout_ms`, which resolves as an ordinary diagnostics-carrying `Err`.
 14. **Pager ownership: wrapper-side vs. driver-side.** §4.7 documents that `cosmos_pager_t` is a wrapper-owned opaque type built on top of `(OperationPlan, execute_plan)`, because the driver crate has no `Pager` / `PageStream` type. Two consequences: (a) the wrapper has to keep the originating `CosmosDriver` Arc-cloned for the pager's lifetime so `execute_plan` can re-enter the driver per page, and (b) any host SDK that wants prefetched/pipelined pages has to issue multiple pagers because a single `cosmos_pager_t` is strictly sequential. Decide whether to (i) keep the wrapper-side pager as the long-term contract, (ii) push for a driver-side `Pager` type that owns the `OperationPlan` and exposes `async fn next_page()` (cleaner ownership, opens the door to driver-side prefetch), or (iii) wait for the streaming-feed redesign tracked elsewhere. Resolve before Phase 8 ships.
 15. **Runtime API: keep builder, or eventually add a fast-path constructor?** §4.1 ships only the `cosmos_runtime_builder_*` family — there is no `cosmos_runtime_create(options)` shortcut, because `CosmosDriverRuntimeBuilder::build()` is async + does network I/O and the runtime carries too many knobs for a flat options struct. For host SDKs that pass nothing but defaults the builder is a 3-call dance (`_new` / `_build` / `_free`). Decide whether to (a) leave the builder as the only entry point permanently — clean, mirrors the driver crate — or (b) once the runtime stabilizes, add a `cosmos_runtime_default(out_runtime, out_error)` convenience that internally does `_new` + `_build`. Not blocking on v1; revisit when host-SDK author feedback arrives.
 16. **Mid-flight diagnostics snapshot.** §3.6.2 removes the v0 `cosmos_operation_handle_diagnostics_snapshot` accessor because the driver's `DiagnosticsContext` is constructed inside the executing future's stack frame, not in a shared `Arc<Mutex<…>>` the wrapper can clone while the future is still running (`CosmosResponse::diagnostics()` at `models/cosmos_response.rs:109` is only reachable post-completion). Two driver-side options would re-enable mid-flight snapshots: (a) refactor the pipeline to thread an `Arc<RwLock<DiagnosticsContext>>` (or equivalent lock-free append-only structure) through every stage, allowing concurrent readers, or (b) emit a snapshot eagerly to a per-operation shared-memory ring buffer the wrapper exports. Decide whether stuck-op observability is a v1.x must-have (and which driver-side mechanism is preferred) or a v2 nice-to-have. Until resolved, host SDKs that need stuck-op visibility must rely on `cosmos_operation_handle_state` polling plus external instrumentation (request timestamps captured at submit time).
@@ -2034,7 +2068,7 @@ Each item below is independent; ship as feature-gated when ready.
     /* Attach the pooled buffer as the operation's body. The buffer is consumed
      * (Box<Option<...>> sentinel pattern, like cosmos_operation_t in §4.6.3) —
      * ownership transfers to the operation, which returns it to the pool when
-     * the operation completes (success / error / cancel — all three paths). */
+     * the operation completes (success / error — both paths). */
     cosmos_status_code_t cosmos_operation_with_body_pooled(
         cosmos_operation_t *op, cosmos_request_buffer_t *buf);
 
