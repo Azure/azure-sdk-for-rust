@@ -217,6 +217,33 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn cancelled_initializer_can_be_retried() {
+        let lazy = Arc::new(AsyncLazy::new());
+        let started = Arc::new(Notify::new());
+        let blocker = Arc::new(Notify::new());
+        let task = {
+            let lazy = Arc::clone(&lazy);
+            let started = Arc::clone(&started);
+            let blocker = Arc::clone(&blocker);
+            tokio::spawn(async move {
+                lazy.get_or_init(|| async move {
+                    started.notify_one();
+                    blocker.notified().await;
+                    1
+                })
+                .await
+            })
+        };
+
+        started.notified().await;
+        task.abort();
+        let _ = task.await;
+
+        let value = lazy.get_or_init(|| async { 42 }).await;
+        assert_eq!(*value, 42);
+    }
+
+    #[tokio::test]
     async fn get_waits_for_initialization() {
         let lazy = Arc::new(AsyncLazy::new());
         let lazy_clone = lazy.clone();

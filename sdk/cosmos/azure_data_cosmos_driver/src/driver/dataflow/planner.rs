@@ -54,8 +54,9 @@ use super::{
 /// Debug-asserts that the operation is indeed trivial. In release builds,
 /// returns an error if a non-trivial operation (e.g. a cross-partition query)
 /// is passed.
-pub(crate) fn build_trivial_pipeline(
+pub(crate) async fn build_trivial_pipeline(
     operation: Arc<CosmosOperation>,
+    topology_provider: Option<&mut dyn TopologyProvider>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
     debug_assert!(
@@ -93,7 +94,41 @@ pub(crate) fn build_trivial_pipeline(
         None => RequestTarget::NonPartitioned,
         Some(f) => {
             if let Some(pk) = f.partition_key() {
-                RequestTarget::LogicalPartitionKey(pk.clone())
+                let resolved_partition_key_range = match topology_provider {
+                    Some(provider) => {
+                        match provider
+                            .resolve_ranges(f, PartitionRoutingRefresh::UseCached)
+                            .await
+                        {
+                            Ok(ranges) => {
+                                let resolved = super::single_resolved_range(&ranges);
+                                if resolved.is_none() {
+                                    tracing::debug!(
+                                        resolved_range_count = ranges.len(),
+                                        "logical partition planning did not resolve exactly one physical partition"
+                                    );
+                                }
+                                resolved.map(|range| {
+                                    (range.partition_key_range_id.clone(), range.parents.clone())
+                                })
+                            }
+                            Err(error) => {
+                                tracing::debug!(
+                                    error = %error,
+                                    "logical partition topology resolution failed; planning without a physical partition identity"
+                                );
+                                None
+                            }
+                        }
+                    }
+                    None => None,
+                };
+                match resolved_partition_key_range {
+                    Some((id, parents)) => {
+                        RequestTarget::logical_partition_key_with_parents(pk.clone(), id, parents)
+                    }
+                    None => RequestTarget::logical_partition_key(pk.clone(), None),
+                }
             } else {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
@@ -1061,9 +1096,10 @@ fn push_change_feed_leaf(
     resolved_range: &ResolvedRange,
     continuation: Option<String>,
 ) {
-    let target = RequestTarget::effective_partition_key_range(
+    let target = RequestTarget::effective_partition_key_range_with_parents(
         leaf_range,
         resolved_range.partition_key_range_id.clone(),
+        resolved_range.parents.clone(),
         resolved_range.range.clone(),
     );
     request_nodes.push(Box::new(Request::new(
@@ -1116,9 +1152,10 @@ async fn plan_fresh(
                     topology_range_not_overlapping_error(&resolved_range.range, &feed_range)
                 })?;
 
-            let target = RequestTarget::effective_partition_key_range(
+            let target = RequestTarget::effective_partition_key_range_with_parents(
                 range,
                 resolved_range.partition_key_range_id,
+                resolved_range.parents,
                 resolved_range.range,
             );
             nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
@@ -1221,9 +1258,10 @@ async fn plan_resume_from_saved_snapshot(
                 if overlap_min > cursor_within_leaf {
                     // Gap before this token entry — fresh-start sub-leaf.
                     let gap = FeedRange::new(cursor_within_leaf.clone(), overlap_min.clone())?;
-                    let target = RequestTarget::effective_partition_key_range(
+                    let target = RequestTarget::effective_partition_key_range_with_parents(
                         gap,
                         resolved_range.partition_key_range_id.clone(),
+                        resolved_range.parents.clone(),
                         resolved_range.range.clone(),
                     );
                     nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
@@ -1231,9 +1269,10 @@ async fn plan_resume_from_saved_snapshot(
 
                 let intersection = FeedRange::new(overlap_min, overlap_max.clone())?;
                 coverage[idx].push(intersection.clone());
-                let target = RequestTarget::effective_partition_key_range(
+                let target = RequestTarget::effective_partition_key_range_with_parents(
                     intersection,
                     resolved_range.partition_key_range_id.clone(),
+                    resolved_range.parents.clone(),
                     resolved_range.range.clone(),
                 );
                 nodes.push(Box::new(Request::new(
@@ -1249,9 +1288,10 @@ async fn plan_resume_from_saved_snapshot(
                 // Trailing gap after the last overlapping token entry.
                 let gap =
                     FeedRange::new(cursor_within_leaf, effective_leaf.max_exclusive().clone())?;
-                let target = RequestTarget::effective_partition_key_range(
+                let target = RequestTarget::effective_partition_key_range_with_parents(
                     gap,
                     resolved_range.partition_key_range_id.clone(),
+                    resolved_range.parents.clone(),
                     resolved_range.range.clone(),
                 );
                 nodes.push(Box::new(Request::new(Arc::clone(operation), target, None)));
@@ -1950,10 +1990,12 @@ mod tests {
 
     // --- build_trivial_pipeline tests ---
 
-    #[test]
-    fn plans_non_partitioned_pipeline_for_database_read() {
+    #[tokio::test]
+    async fn plans_non_partitioned_pipeline_for_database_read() {
         let op = CosmosOperation::read_database(test_database());
-        let pipeline = build_trivial_pipeline(Arc::new(op), None).unwrap();
+        let pipeline = build_trivial_pipeline(Arc::new(op), None, None)
+            .await
+            .unwrap();
 
         let request = pipeline.root().downcast_ref::<Request>().unwrap();
         assert_eq!(*request.target(), RequestTarget::NonPartitioned);
@@ -1961,24 +2003,50 @@ mod tests {
         assert_eq!(request.operation().resource_type(), ResourceType::Database);
     }
 
-    #[test]
-    fn plans_logical_partition_pipeline_for_item_read() {
+    #[tokio::test]
+    async fn plans_logical_partition_pipeline_for_item_read() {
         let pk = PartitionKey::from("pk-value");
         let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
         let op = CosmosOperation::read_item(item);
-        let pipeline = build_trivial_pipeline(Arc::new(op), None).unwrap();
+        let pipeline = build_trivial_pipeline(Arc::new(op), None, None)
+            .await
+            .unwrap();
 
         let request = pipeline.root().downcast_ref::<Request>().unwrap();
         assert_eq!(
             *request.target(),
-            RequestTarget::LogicalPartitionKey(pk.clone())
+            RequestTarget::logical_partition_key(pk.clone(), None)
         );
         assert_eq!(request.operation().operation_type(), OperationType::Read);
         assert_eq!(request.operation().resource_type(), ResourceType::Document);
     }
 
-    #[test]
-    fn plans_logical_partition_pipeline_for_partition_scoped_query() {
+    #[tokio::test]
+    async fn plans_item_read_with_resolved_physical_identity() {
+        let pk = PartitionKey::from("pk-value");
+        let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
+        let op = CosmosOperation::read_item(item);
+        let expected_range = op.target().cloned().unwrap();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "7")])]);
+
+        let pipeline = build_trivial_pipeline(Arc::new(op), Some(&mut topology), None)
+            .await
+            .unwrap();
+
+        let request = pipeline.root().downcast_ref::<Request>().unwrap();
+        assert_eq!(
+            *request.target(),
+            RequestTarget::logical_partition_key(pk, Some("7".to_string()))
+        );
+        assert_eq!(
+            topology.refresh_calls,
+            vec![PartitionRoutingRefresh::UseCached]
+        );
+        assert_eq!(topology.range_calls, vec![expected_range]);
+    }
+
+    #[tokio::test]
+    async fn plans_logical_partition_pipeline_for_partition_scoped_query() {
         // Regression for the SDK→driver differentiation (issue #4574 follow-up):
         // a query scoped to a COMPLETE partition key via `FeedScope::Partition`
         // / `cosmos_feed_range_for_partition_key` (a `LogicalPartition` feed
@@ -1994,20 +2062,123 @@ mod tests {
         // The operation is trivial (complete PK), so it routes through the
         // single-request trivial pipeline rather than the cross-partition planner.
         assert!(op.is_trivial());
-        let pipeline = build_trivial_pipeline(Arc::new(op), None).unwrap();
+        let pipeline = build_trivial_pipeline(Arc::new(op), None, None)
+            .await
+            .unwrap();
 
         let request = pipeline.root().downcast_ref::<Request>().unwrap();
-        assert_eq!(*request.target(), RequestTarget::LogicalPartitionKey(pk));
+        assert_eq!(
+            *request.target(),
+            RequestTarget::logical_partition_key(pk, None)
+        );
     }
 
-    #[test]
-    fn rejects_feed_range_target() {
+    #[tokio::test]
+    async fn plans_partition_scoped_query_with_resolved_physical_identity() {
+        let pk = PartitionKey::from("pk-value");
+        let feed_range = FeedRange::for_partition(pk.clone(), &test_partition_key_definition());
+        let op = CosmosOperation::query_items(test_container(), Some(feed_range))
+            .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec());
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "9")])]);
+
+        let pipeline = build_trivial_pipeline(Arc::new(op), Some(&mut topology), None)
+            .await
+            .unwrap();
+
+        let request = pipeline.root().downcast_ref::<Request>().unwrap();
+        assert_eq!(
+            *request.target(),
+            RequestTarget::logical_partition_key(pk, Some("9".to_string()))
+        );
+    }
+
+    #[tokio::test]
+    async fn plans_logical_partition_without_identity_when_resolution_fails() {
+        let pk = PartitionKey::from("pk-value");
+        let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
+        let op = CosmosOperation::read_item(item);
+        let mut topology = MockTopologyProvider::new(vec![Err(gone_error())]);
+
+        let pipeline = build_trivial_pipeline(Arc::new(op), Some(&mut topology), None)
+            .await
+            .unwrap();
+
+        let request = pipeline.root().downcast_ref::<Request>().unwrap();
+        assert_eq!(
+            *request.target(),
+            RequestTarget::logical_partition_key(pk, None)
+        );
+    }
+
+    #[tokio::test]
+    async fn plans_logical_partition_without_identity_for_non_single_resolution() {
+        for ranges in [Vec::new(), vec![rr("", "80", "0"), rr("80", "FF", "1")]] {
+            let pk = PartitionKey::from("pk-value");
+            let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
+            let op = CosmosOperation::read_item(item);
+            let mut topology = MockTopologyProvider::new(vec![Ok(ranges)]);
+
+            let pipeline = build_trivial_pipeline(Arc::new(op), Some(&mut topology), None)
+                .await
+                .unwrap();
+
+            let request = pipeline.root().downcast_ref::<Request>().unwrap();
+            assert_eq!(
+                *request.target(),
+                RequestTarget::logical_partition_key(pk, None)
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn non_partitioned_trivial_plan_does_not_resolve_topology() {
+        let op = CosmosOperation::read_database(test_database());
+        let mut topology = NoopTopologyProvider;
+
+        let pipeline = build_trivial_pipeline(Arc::new(op), Some(&mut topology), None)
+            .await
+            .unwrap();
+
+        let request = pipeline.root().downcast_ref::<Request>().unwrap();
+        assert_eq!(*request.target(), RequestTarget::NonPartitioned);
+    }
+
+    #[tokio::test]
+    async fn resumed_logical_plan_resolves_current_physical_identity() {
+        let pk = PartitionKey::from("pk-value");
+        let item = ItemReference::from_name(&test_container(), pk.clone(), "doc1");
+        let op = CosmosOperation::read_item(item);
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![rr("", "FF", "current")])]);
+        let resume = PipelineNodeState::Request {
+            server_continuation: Some("server-token".to_string()),
+        };
+
+        let pipeline = build_trivial_pipeline(Arc::new(op), Some(&mut topology), Some(resume))
+            .await
+            .unwrap();
+
+        let request = pipeline.root().downcast_ref::<Request>().unwrap();
+        assert_eq!(
+            *request.target(),
+            RequestTarget::logical_partition_key(pk, Some("current".to_string()))
+        );
+        assert_eq!(
+            request.snapshot_state().unwrap(),
+            PipelineNodeState::Request {
+                server_continuation: Some("server-token".to_string())
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn rejects_feed_range_target() {
         let op = CosmosOperation::read_all_items_cross_partition(test_container());
 
         // In debug builds, this panics via debug_assert; in release builds it returns Err.
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            build_trivial_pipeline(Arc::new(op), None)
-        }));
+        use futures::FutureExt;
+        let result = std::panic::AssertUnwindSafe(build_trivial_pipeline(Arc::new(op), None, None))
+            .catch_unwind()
+            .await;
 
         match result {
             // Panicked in debug mode (expected)
@@ -2045,6 +2216,7 @@ mod tests {
     fn rr(min: &str, max: &str, pk_range_id: &str) -> ResolvedRange {
         ResolvedRange {
             partition_key_range_id: pk_range_id.to_string(),
+            parents: Vec::new(),
             range: FeedRange::new(
                 EffectivePartitionKey::from(min),
                 EffectivePartitionKey::from(max),

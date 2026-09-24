@@ -26,6 +26,7 @@
 
 ### Bugs Fixed
 
+- Reconciled dataflow partition-range identity resolution across logical, EPK, sequential, and hedged requests, preserving split-parent session tokens on Gateway 2.0 while keeping logical partition-key wire routing unchanged, and enforcing the end-to-end timeout across planning and first-page execution. ([#5315](https://github.com/Azure/azure-sdk-for-rust/pull/5315))
 - Gateway 2.0 change feed requests now forward incremental-mode and wire-format-version metadata, so change feeds work over the thin-client transport. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - In-memory emulator query, change-feed, and point reads now apply composite session-token range validation only to the physical partitions selected by the request, so an obsolete unrelated segment no longer rejects an otherwise valid scoped read. Explicit stale physical-range targets still return 410/1002 and trigger partition-topology refresh and retry. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Fixed V1 partition key routing for non-ASCII strings by truncating at 100 UTF-16 code units and applying the service's separate binary byte limit without panicking on split characters. ([#5280](https://github.com/Azure/azure-sdk-for-rust/pull/5280))
