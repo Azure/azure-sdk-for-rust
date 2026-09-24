@@ -4,7 +4,10 @@
 
 //! Partition key types for Cosmos DB operations.
 
-use crate::models::FiniteF64;
+use crate::{
+    error::{CosmosError, CosmosStatus},
+    models::FiniteF64,
+};
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use std::{borrow::Cow, hash::Hash};
 
@@ -18,8 +21,9 @@ pub(crate) const PARTITION_KEY: HeaderName =
 
 /// Represents a value for a single partition key.
 ///
-/// You shouldn't need to construct this type directly. The various implementations
-/// of [`Into<PartitionKey>`] will handle it for you.
+/// Infallible partition key inputs convert automatically. Use [`TryFrom<f64>`]
+/// or [`TryFrom<f32>`] to reject non-finite numeric values before building a
+/// hierarchical key.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct PartitionKeyValue(InnerPartitionKeyValue);
@@ -224,11 +228,18 @@ impl From<Cow<'static, str>> for PartitionKeyValue {
     }
 }
 
+fn non_finite_partition_key_error() -> CosmosError {
+    CosmosError::builder()
+        .with_status(CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE)
+        .with_message("partition key number must be finite")
+        .build()
+}
+
 macro_rules! impl_from_number {
     ($source_type:ty) => {
         impl From<$source_type> for PartitionKeyValue {
             fn from(value: $source_type) -> Self {
-                InnerPartitionKeyValue::Number(FiniteF64::new_strict(value as f64)).into()
+                InnerPartitionKeyValue::Number(FiniteF64::new_lossy(value as f64)).into()
             }
         }
     };
@@ -244,8 +255,23 @@ impl_from_number!(u16);
 impl_from_number!(u32);
 impl_from_number!(u64);
 impl_from_number!(usize);
-impl_from_number!(f32);
-impl_from_number!(f64);
+impl TryFrom<f32> for PartitionKeyValue {
+    type Error = CosmosError;
+
+    fn try_from(value: f32) -> Result<Self, Self::Error> {
+        Self::try_from(f64::from(value))
+    }
+}
+
+impl TryFrom<f64> for PartitionKeyValue {
+    type Error = CosmosError;
+
+    fn try_from(value: f64) -> Result<Self, Self::Error> {
+        FiniteF64::try_new(value)
+            .map(|value| InnerPartitionKeyValue::Number(value).into())
+            .ok_or_else(non_finite_partition_key_error)
+    }
+}
 
 impl From<bool> for PartitionKeyValue {
     fn from(value: bool) -> Self {
@@ -262,6 +288,28 @@ impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
     }
 }
 
+impl TryFrom<Option<f32>> for PartitionKeyValue {
+    type Error = CosmosError;
+
+    fn try_from(value: Option<f32>) -> Result<Self, Self::Error> {
+        value
+            .map(Self::try_from)
+            .transpose()
+            .map(|value| value.unwrap_or(Self::NULL))
+    }
+}
+
+impl TryFrom<Option<f64>> for PartitionKeyValue {
+    type Error = CosmosError;
+
+    fn try_from(value: Option<f64>) -> Result<Self, Self::Error> {
+        value
+            .map(Self::try_from)
+            .transpose()
+            .map(|value| value.unwrap_or(Self::NULL))
+    }
+}
+
 /// A partition key used to identify the target partition for an operation.
 ///
 /// Supports both single and hierarchical partition keys (HPK).
@@ -274,14 +322,19 @@ impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
 ///
 /// let pk = PartitionKey::from("my-partition");
 /// let pk_num = PartitionKey::from(42);
+/// let pk_float = PartitionKey::try_from(1.5_f64)?;
+/// # Ok::<(), azure_data_cosmos_driver::error::CosmosError>(())
 /// ```
 ///
 /// Hierarchical partition key (tuple):
 /// ```
-/// use azure_data_cosmos_driver::models::PartitionKey;
+/// use azure_data_cosmos_driver::models::{PartitionKey, PartitionKeyValue};
 ///
 /// let pk = PartitionKey::from(("tenant-1", "user-123"));
 /// let pk3 = PartitionKey::from(("region", "tenant", 42));
+/// let numeric = PartitionKeyValue::try_from(1.5_f64)?;
+/// let pk_mixed = PartitionKey::from(("region", numeric));
+/// # Ok::<(), azure_data_cosmos_driver::error::CosmosError>(())
 /// ```
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
@@ -420,24 +473,59 @@ impl<T: Into<PartitionKeyValue>> From<T> for PartitionKey {
     }
 }
 
-impl From<Vec<PartitionKeyValue>> for PartitionKey {
+impl TryFrom<Vec<PartitionKeyValue>> for PartitionKey {
+    type Error = CosmosError;
     /// Creates a [`PartitionKey`] from a vector of partition key components.
     ///
     /// This is useful when the partition key structure is determined at runtime,
     /// such as when working with multiple containers with different schemas or
-    /// building partition keys from configuration.
+    /// building partition keys from configuration. Empty vectors remain valid
+    /// for internal cross-partition routing.
     ///
-    /// # Panics
-    ///
-    /// Panics if the vector contains more than 3 elements, as Cosmos DB supports
-    /// a maximum of 3 hierarchical partition key levels.
-    fn from(values: Vec<PartitionKeyValue>) -> Self {
-        assert!(
-            values.len() <= 3,
-            "Partition keys can have at most 3 levels, got {}",
-            values.len()
-        );
-        PartitionKey(values)
+    /// Returns an error if more than 3 components are provided.
+    fn try_from(values: Vec<PartitionKeyValue>) -> Result<Self, Self::Error> {
+        if values.len() > 3 {
+            return Err(CosmosError::builder()
+                .with_status(CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+                .with_message(format!(
+                    "Partition keys can have at most 3 levels, got {}",
+                    values.len()
+                ))
+                .build());
+        }
+        Ok(PartitionKey(values))
+    }
+}
+
+impl TryFrom<f32> for PartitionKey {
+    type Error = CosmosError;
+
+    fn try_from(value: f32) -> Result<Self, Self::Error> {
+        Ok(Self::new(PartitionKeyValue::try_from(value)?))
+    }
+}
+
+impl TryFrom<f64> for PartitionKey {
+    type Error = CosmosError;
+
+    fn try_from(value: f64) -> Result<Self, Self::Error> {
+        Ok(Self::new(PartitionKeyValue::try_from(value)?))
+    }
+}
+
+impl TryFrom<Option<f32>> for PartitionKey {
+    type Error = CosmosError;
+
+    fn try_from(value: Option<f32>) -> Result<Self, Self::Error> {
+        Ok(Self::new(PartitionKeyValue::try_from(value)?))
+    }
+}
+
+impl TryFrom<Option<f64>> for PartitionKey {
+    type Error = CosmosError;
+
+    fn try_from(value: Option<f64>) -> Result<Self, Self::Error> {
+        Ok(Self::new(PartitionKeyValue::try_from(value)?))
     }
 }
 
@@ -478,7 +566,7 @@ mod tests {
     fn numeric_partition_key() {
         let pk1 = PartitionKey::from(42);
         let pk2 = PartitionKey::from(42i64);
-        let pk3 = PartitionKey::from(1.5f64);
+        let pk3 = PartitionKey::try_from(1.5f64).unwrap();
         assert_eq!(pk1.len(), 1);
         assert_eq!(pk2.len(), 1);
         assert_eq!(pk3.len(), 1);
@@ -530,7 +618,6 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "at most 3 levels")]
     fn too_many_levels() {
         let values = vec![
             PartitionKeyValue::from("a"),
@@ -538,6 +625,54 @@ mod tests {
             PartitionKeyValue::from("c"),
             PartitionKeyValue::from("d"),
         ];
-        let _pk = PartitionKey::from(values);
+        let error = PartitionKey::try_from(values).unwrap_err();
+        assert_eq!(
+            error.status(),
+            CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS
+        );
+    }
+
+    #[test]
+    fn non_finite_numeric_components_are_errors() {
+        for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            assert_eq!(
+                PartitionKeyValue::try_from(value).unwrap_err().status(),
+                CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+            );
+            assert_eq!(
+                PartitionKey::try_from(value).unwrap_err().status(),
+                CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+            );
+            assert_eq!(
+                PartitionKeyValue::try_from(Some(value))
+                    .unwrap_err()
+                    .status(),
+                CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+            );
+        }
+        assert_eq!(
+            PartitionKeyValue::try_from(f32::NAN).unwrap_err().status(),
+            CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+        );
+        assert_eq!(
+            PartitionKeyValue::try_from(None::<f64>).unwrap(),
+            PartitionKeyValue::NULL
+        );
+        assert_eq!(PartitionKey::try_from(Vec::new()).unwrap().len(), 0);
+        assert_eq!(
+            PartitionKey::try_from(vec![PartitionKeyValue::NULL; 3])
+                .unwrap()
+                .len(),
+            3
+        );
+        let mixed = PartitionKey::from(("tenant", PartitionKeyValue::try_from(1.5_f64).unwrap()));
+        assert_eq!(
+            mixed.as_headers().unwrap().next().unwrap().1.as_str(),
+            r#"["tenant",1.5]"#
+        );
+        assert_eq!(
+            PartitionKeyValue::try_from(-0.0_f64).unwrap(),
+            PartitionKeyValue::try_from(0.0_f64).unwrap()
+        );
     }
 }

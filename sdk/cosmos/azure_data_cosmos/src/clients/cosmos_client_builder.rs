@@ -160,12 +160,9 @@ impl CosmosClientBuilder {
     /// Sets a per-client suffix to append to the User-Agent header for
     /// telemetry, overriding any runtime-wide default suffix.
     ///
-    /// Construct the suffix explicitly via
-    /// [`UserAgentSuffix::new`](crate::options::UserAgentSuffix::new) for trusted
-    /// values, or [`UserAgentSuffix::try_new`](crate::options::UserAgentSuffix::try_new)
-    /// for untrusted input. Validation rules (max 25 characters,
-    /// HTTP-header-safe) are enforced at the construction site rather than
-    /// here, which keeps any panic local to the caller's input handling.
+    /// Construct the suffix with [`UserAgentSuffix::try_from`] and handle
+    /// invalid input before passing it to this builder. Validation (max 25
+    /// characters, HTTP-header-safe) occurs at construction.
     ///
     /// # Arguments
     ///
@@ -439,7 +436,7 @@ mod tests {
     /// onto `CosmosDriverRuntimeBuilder::with_user_agent_suffix`.
     #[tokio::test]
     async fn user_agent_suffix_is_forwarded_to_driver_runtime() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
 
         let options = CosmosClientOptions {
             user_agent_suffix: Some(suffix.clone()),
@@ -476,7 +473,7 @@ mod tests {
 
     #[test]
     fn user_agent_suffix_setter_records_value() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
         let builder = CosmosClientBuilder::new().with_user_agent_suffix(suffix.clone());
         assert_eq!(builder.options.user_agent_suffix.as_ref(), Some(&suffix));
     }
@@ -566,7 +563,7 @@ mod tests {
     /// the driver builds a User-Agent that overrides the runtime default.
     #[test]
     fn user_agent_suffix_flows_to_driver_options() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
         let opts = DriverOptionsInput {
             user_agent_suffix: Some(suffix.clone()),
             ..test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()))

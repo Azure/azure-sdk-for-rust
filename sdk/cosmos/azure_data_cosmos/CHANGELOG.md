@@ -14,6 +14,8 @@
 ### Breaking Changes
 
 - `CosmosTracingHandler` is now constructed exclusively through `CosmosTracingHandler::builder()`. The `new`, `with_thresholds`, and `with_thresholds_and_rate_limit` constructors and the `Default` implementation were removed; configure the equivalent values with the builder and call `build` or `build_with_tracer`. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
+- Re-exported `UserAgentSuffix` replaces panicking `new` with `TryFrom<String>` and `TryFrom<&str>`, returning a typed `CosmosError` for invalid suffixes. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
+- Re-exported `PartitionKey` and `PartitionKeyValue` now use `TryFrom` for dynamically sized key vectors and floating-point values, returning typed errors instead of panicking on excess components or non-finite numbers. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
 - Moved `query_plan_mode` from `OperationOptions` to per-query `QueryOptions`; removed client/runtime defaults and environment settings, including the query-plan-mode override. The default remains `LocalPreferred`. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Unordered cross-partition DISTINCT and non-streaming ORDER BY require finite global TOP/LIMIT with OFFSET plus effective take within the configured maximum; missing bounds, excess windows, and overflow fail with 400/20125. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Unified client-buffered continuation errors under 400/20124, retaining the shape-specific constants as aliases; finite-window admission moved from 20126 to 20125 and non-streaming window/storage errors from 20127 to 20126. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
