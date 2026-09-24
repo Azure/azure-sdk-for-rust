@@ -59,7 +59,7 @@ pub struct SeekableStructuredMessageEncodingStream {
     /// initial streaming and post-reset streaming.
     ///
     /// Once placed, a checksum should never be modified.
-    segment_checksums: Vec<Option<u64>>,
+    segment_checksums: Vec<Option<ChecksumPair>>,
 
     /// State of which section of a structured message is currently being read.
     state: StructuredMessageStateMachine,
@@ -136,20 +136,15 @@ impl SeekableStructuredMessageEncodingStream {
     /// # Error
     /// Returns an error if any segment checksums are missing.
     fn compose_checksum_cache(&self) -> std::io::Result<u64> {
-        // pair checksums with segment length for composition
-        let mut checksums = self
+        // get all Some values from segment checksum slots
+        let checksums = self
             .segment_checksums
             .iter()
-            .filter_map(|crc_slot| {
-                crc_slot.map(|crc| ChecksumPair {
-                    crc: crc,
-                    length: self.segment_len,
-                })
-            })
+            .filter_map(|crc_slot| *crc_slot)
             .collect::<Vec<_>>();
 
-        // if missing segment checksums, fail fast
-        // we should not be calling this before all checksums are calculated
+        // if any empty slots, fail fast
+        // we should not be calling this method before all checksums are calculated
         if checksums.len() != self.segment_count()? as usize {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::Other,
@@ -161,15 +156,6 @@ impl SeekableStructuredMessageEncodingStream {
             ));
         }
 
-        // special-case last segment, which may be shorter than other segments
-        if let Some(last) = checksums.last_mut() {
-            last.length = self.content_len % self.segment_len;
-            // special-case modulo resulting in 0. the segment was full-length, not empty
-            if last.length == 0 {
-                last.length = self.segment_len;
-            }
-        }
-
         Ok(checksum_multi_compose(checksums))
     }
 
@@ -178,7 +164,8 @@ impl SeekableStructuredMessageEncodingStream {
     /// Returns an error if the current state is not segment content.
     /// Returns and error if there is no crc available for the current segment.
     fn transition_to_segment_footer(&mut self) -> std::io::Result<()> {
-        let StructuredMessageStateMachine::SegmentContent(_, digest) = self.state else {
+        let StructuredMessageStateMachine::SegmentContent(segment_cursor, digest) = self.state
+        else {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::Other,
                 "Invalid state transition. Attempted to transition to segment footer, but current state was not segment content.",
@@ -186,11 +173,14 @@ impl SeekableStructuredMessageEncodingStream {
         };
         let segment_checksum_cache_slot = self
             .segment_checksums
+            // effectively we will never need to actually extend the vector, as it is initialized
+            // upfront with the encoded segment count, but the most harm it does is deny a fast
+            // fail and it buys us a safe, guaranteed successful get()
             .get_or_extend_mut(self.current_segment as usize, None);
         let segment_crc: u64 =
             // if there's a cached value, always use it
             if let Some(cached_crc) = segment_checksum_cache_slot {
-                *cached_crc
+                cached_crc.crc
             } else {
                 let crc = digest.map(|d| d.finalize()).ok_or(
                     std::io::Error::new(
@@ -198,7 +188,7 @@ impl SeekableStructuredMessageEncodingStream {
                         "No crc for the given segment",
                     ),
                 )?;
-                *segment_checksum_cache_slot = Some(crc);
+                *segment_checksum_cache_slot = Some(ChecksumPair { crc, length: segment_cursor });
                 crc
             };
         self.state = StructuredMessageStateMachine::StructuredMetadata(
