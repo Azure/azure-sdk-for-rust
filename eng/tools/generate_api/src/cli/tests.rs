@@ -9,14 +9,12 @@ fn defaults_to_markdown_format() {
         "generate_api",
         "--manifest-path",
         "sdk/core/azure_core/Cargo.toml",
-        "--output",
-        "/tmp/generate_api",
     ]);
 
     assert_eq!(args.format, OutputFormat::Markdown);
-    assert!(!args.no_docs);
-    assert!(!args.no_map);
+    assert!(!args.review);
     assert!(!args.check);
+    assert_eq!(args.output, None);
 }
 
 #[test]
@@ -35,19 +33,16 @@ fn accepts_explicit_apiview_format() {
 }
 
 #[test]
-fn accepts_no_docs_switch() {
+fn accepts_review_for_markdown() {
     let args = Args::parse_from([
         "generate_api",
         "--manifest-path",
         "sdk/core/azure_core/Cargo.toml",
-        "--format",
-        "apiview",
-        "--no-docs",
-        "--output",
-        "/tmp/generate_api",
+        "--review",
     ]);
 
-    assert!(args.no_docs);
+    let request = Request::try_from(args).unwrap();
+    assert!(request.review);
 }
 
 #[test]
@@ -65,19 +60,31 @@ fn accepts_check_switch() {
 }
 
 #[test]
-fn accepts_no_map_switch_for_any_format() {
-    for format in ["markdown", "apiview"] {
-        let args = Args::parse_from([
-            "generate_api",
-            "--manifest-path",
-            "sdk/core/azure_core/Cargo.toml",
-            "--format",
-            format,
-            "--no-map",
-            "--output",
-            "/tmp/generate_api",
-        ]);
+fn rejects_review_for_apiview() {
+    let args = Args::parse_from([
+        "generate_api",
+        "--manifest-path",
+        "sdk/core/azure_core/Cargo.toml",
+        "--format",
+        "apiview",
+        "--review",
+    ]);
 
-        assert!(args.no_map);
-    }
+    assert_eq!(
+        Request::try_from(args).unwrap_err(),
+        "--review can only be used with --format markdown"
+    );
+}
+
+#[test]
+fn accepts_explicit_output_directory() {
+    let args = Args::parse_from([
+        "generate_api",
+        "--manifest-path",
+        "sdk/core/azure_core/Cargo.toml",
+        "--output",
+        "/tmp/generate_api",
+    ]);
+
+    assert_eq!(args.output, Some(PathBuf::from("/tmp/generate_api")));
 }
