@@ -32,6 +32,7 @@
     "asyncoperation",
     "azsdk",
     "azurecli",
+    "bitflags",
     "bugbug",
     "callsite",
     "callsites",
