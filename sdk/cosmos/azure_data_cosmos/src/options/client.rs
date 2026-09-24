@@ -16,7 +16,7 @@ use crate::diagnostics::{DiagnosticsHandler, DiagnosticsHandlerChain};
 /// to configure client options.
 #[derive(Clone, Default, Debug)]
 #[non_exhaustive]
-pub struct CosmosClientOptions {
+pub(crate) struct CosmosClientOptions {
     /// Default [`OperationOptions`] applied to all requests made by this client,
     /// unless overridden by per-request options.
     pub operation: OperationOptions,
@@ -27,13 +27,14 @@ pub struct CosmosClientOptions {
     pub(crate) diagnostics_handlers: DiagnosticsHandlerChain,
 }
 
+#[allow(dead_code)]
 impl CosmosClientOptions {
-    pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
+    pub(crate) fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
         self.user_agent_suffix = Some(suffix);
         self
     }
 
-    pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
+    pub(crate) fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
         self
     }
@@ -43,7 +44,7 @@ impl CosmosClientOptions {
     ///
     /// Handlers run in registration order. Call this multiple times to build an
     /// ordered chain.
-    pub fn with_diagnostics_handler(mut self, handler: Arc<dyn DiagnosticsHandler>) -> Self {
+    pub(crate) fn with_diagnostics_handler(mut self, handler: Arc<dyn DiagnosticsHandler>) -> Self {
         self.diagnostics_handlers = self.diagnostics_handlers.with_handler(handler);
         self
     }

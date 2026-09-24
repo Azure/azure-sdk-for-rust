@@ -2360,16 +2360,6 @@ pub mod options {
     pub struct ContainerClientOptions {
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
     }
-    #[derive(Clone, Debug, Default)]
-    #[non_exhaustive]
-    pub struct CosmosClientOptions {
-        pub operation: azure_data_cosmos_driver::options::OperationOptions,
-    }
-    impl CosmosClientOptions {
-        pub fn with_diagnostics_handler(self, handler: Arc<dyn DiagnosticsHandler>) -> Self;
-        pub fn with_operation_options(self, operation: OperationOptions) -> Self;
-        pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
-    }
     #[cfg(feature = "control_plane")]
     #[derive(Clone, Default)]
     #[non_exhaustive]
@@ -2461,7 +2451,7 @@ pub mod options {
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
-    pub struct ExcludedRegions(pub Vec<crate::options::Region>);
+    pub struct ExcludedRegions(/* private fields */);
     #[doc(inline)]
     impl ExcludedRegions {
         pub fn is_empty(&self) -> bool;
@@ -2581,32 +2571,6 @@ pub mod options {
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
         pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
         pub fn with_throughput_control(self, value: ThroughputControlOptions) -> Self;
-    }
-    #[doc(inline)]
-    #[automatically_derived]
-    pub struct OperationOptionsView<'a> {
-    }
-    #[doc(inline)]
-    #[automatically_derived]
-    impl<'a> OperationOptionsView<'a> {
-        pub fn availability_strategy(&self) -> Option<&AvailabilityStrategy>;
-        pub fn binary_encoding(&self) -> Option<&BinaryEncodingOptions>;
-        pub fn content_response_on_write(&self) -> Option<&ContentResponseOnWrite>;
-        pub fn custom_headers(&self) -> Option<&HashMap<HeaderName, HeaderValue>>;
-        pub fn end_to_end_latency_policy(&self) -> Option<&EndToEndOperationLatencyPolicy>;
-        pub fn endpoint_unavailability_ttl(&self) -> Option<&Duration>;
-        pub fn excluded_regions(&self) -> Option<&ExcludedRegions>;
-        pub fn hedging_enabled(&self) -> Option<&bool>;
-        pub fn max_failover_retry_count(&self) -> Option<&u32>;
-        pub fn max_session_retry_count(&self) -> Option<&u32>;
-        pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
-        pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
-        #[cfg(feature = "preview_patch")]
-        pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
-        pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
-        pub fn session_capturing_disabled(&self) -> Option<&bool>;
-        pub fn throttling_retry_options(&self) -> ThrottlingRetryOptionsView<'_>;
-        pub fn throughput_control(&self) -> ThroughputControlOptionsView<'_>;
     }
     #[doc(inline)]
     #[derive(Clone, Debug)]
@@ -2899,7 +2863,7 @@ pub mod options {
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-    pub struct SessionToken(pub std::borrow::Cow<'static, str>);
+    pub struct SessionToken(/* private fields */);
     #[doc(inline)]
     impl SessionToken {
         pub fn as_str(&self) -> &str;
@@ -2944,17 +2908,6 @@ pub mod options {
         pub fn with_max_retry_wait_time(self, value: Duration) -> Self;
     }
     #[doc(inline)]
-    #[automatically_derived]
-    pub struct ThrottlingRetryOptionsView<'a> {
-    }
-    #[doc(inline)]
-    #[automatically_derived]
-    impl<'a> ThrottlingRetryOptionsView<'a> {
-        pub fn max_retry_count(&self) -> Option<&u32>;
-        pub fn max_retry_wait_time(&self) -> Option<&Duration>;
-        pub fn new(env: Option<::std::sync::Arc<ThrottlingRetryOptions>>, runtime: Option<::std::sync::Arc<ThrottlingRetryOptions>>, account: Option<::std::sync::Arc<ThrottlingRetryOptions>>, operation: Option<&'a ThrottlingRetryOptions>) -> Self;
-    }
-    #[doc(inline)]
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct ThroughputControlOptions {
@@ -2973,17 +2926,6 @@ pub mod options {
         pub fn new() -> Self;
         pub fn with_priority_level(self, value: PriorityLevel) -> Self;
         pub fn with_throughput_bucket(self, value: u32) -> Self;
-    }
-    #[doc(inline)]
-    #[automatically_derived]
-    pub struct ThroughputControlOptionsView<'a> {
-    }
-    #[doc(inline)]
-    #[automatically_derived]
-    impl<'a> ThroughputControlOptionsView<'a> {
-        pub fn new(env: Option<::std::sync::Arc<ThroughputControlOptions>>, runtime: Option<::std::sync::Arc<ThroughputControlOptions>>, account: Option<::std::sync::Arc<ThroughputControlOptions>>, operation: Option<&'a ThroughputControlOptions>) -> Self;
-        pub fn priority_level(&self) -> Option<&PriorityLevel>;
-        pub fn throughput_bucket(&self) -> Option<&u32>;
     }
     #[cfg(feature = "control_plane")]
     #[derive(Clone, Default)]
@@ -3043,17 +2985,6 @@ pub mod options {
         Beginning,
         Now,
         PointInTime(time::OffsetDateTime),
-    }
-    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, serde::Deserialize, serde::Serialize)]
-    pub enum ConsistencyLevel {
-        ConsistentPrefix,
-        Eventual,
-        Session,
-        BoundedStaleness,
-        Strong,
-    }
-    impl Display for ConsistencyLevel {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
     }
     #[doc(inline)]
     #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]

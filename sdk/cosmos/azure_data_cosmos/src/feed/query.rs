@@ -29,6 +29,14 @@ impl FeedScope {
     /// prefix scope is executed as a filtered cross-partition query bounded to the
     /// prefix's effective-partition-key range, so it only returns items under the
     /// prefix rather than scanning whole physical partitions.
+    ///
+    /// The logical partition-key identity is needed to recreate this scope.
+    /// A serialized or stringified feed range retains only effective bounds and
+    /// does not restore logical routing semantics. Preserve the partition key
+    /// and recreate the scope with the current container definition rather than
+    /// persisting a single-partition range. Use the operation's continuation
+    /// token to resume an existing feed or query; a serialized range is not a
+    /// replacement for a continuation token.
     pub fn partition(pk: impl Into<PartitionKey>) -> Self {
         Self::Partition(pk.into())
     }
@@ -36,6 +44,10 @@ impl FeedScope {
     /// Returns a [`FeedScope`] that represents the given feed range, which can be used for partition-specific or cross-partition queries depending on the feed range provided.
     ///
     /// WARNING: Using a feed range that covers multiple partitions may result in a full scan of those partitions, which can be expensive and slow for large datasets. Use with caution.
+    ///
+    /// If the range originated from a logical partition, serializing or
+    /// stringifying it retains only effective bounds. Parsing it does not
+    /// restore the partition-key identity or logical routing semantics.
     pub fn range(fr: impl Into<FeedRange>) -> Self {
         Self::Range(fr.into())
     }

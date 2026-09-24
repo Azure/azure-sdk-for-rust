@@ -56,7 +56,7 @@ type Result<T> = ::std::result::Result<T, syn::Error>;
 /// #[options(layers(runtime, account, operation))]
 /// pub struct RequestOptions {
 ///     #[option(env = "AZURE_COSMOS_CONSISTENCY_LEVEL")]
-///     pub consistency_level: Option<ConsistencyLevel>,
+///     pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
 ///
 ///     pub throughput_bucket: Option<usize>,
 ///

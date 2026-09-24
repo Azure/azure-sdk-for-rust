@@ -573,7 +573,7 @@ async fn stale_fallback_session_retries_before_increment_replace() {
     );
     assert_eq!(
         requests[0].session_token.as_deref(),
-        Some(external_session_token.0.as_ref())
+        Some(external_session_token.as_ref())
     );
     assert_eq!(requests[0].read_consistency_strategy, None);
     assert_eq!(

@@ -23,6 +23,15 @@ use crate::models::{partition_key_range::PartitionKeyRange, PartitionKeyDefiniti
 /// topology.
 ///
 /// Use [`FeedRange::full()`] for the entire key space (`""..FF`).
+///
+/// Serializing or stringifying a logical-partition range retains only its
+/// effective bounds. Parsing or deserializing it does not restore the
+/// partition-key identity or logical routing semantics. Do not persist a
+/// single-partition feed range to recreate logical scope later; preserve the
+/// partition key and recreate the scope or range with the current container
+/// definition. To resume an existing feed or query, use that operation's
+/// continuation token and follow its documented scope requirements. A
+/// serialized range is not a replacement for a continuation token.
 #[derive(Clone, SafeDebug, PartialEq, Eq, Hash)]
 #[safe(true)]
 pub struct FeedRange(FeedRangeRepr);
@@ -123,6 +132,13 @@ impl FeedRange {
     /// (`min < max`) so the thin-client proxy can scope the per-pkrange request
     /// down to just the prefix subrange instead of returning every row in the
     /// pkrange.
+    ///
+    /// The partition-key identity is retained only in this in-memory logical
+    /// range. Serialization/stringification keeps the effective bounds, but
+    /// parsing/deserialization cannot restore the identity or its logical
+    /// routing semantics. Preserve the partition key and use the current
+    /// container definition to recreate this range when needed. Use the
+    /// operation's continuation token to resume an existing feed or query.
     pub fn for_partition(partition_key: PartitionKey, definition: &PartitionKeyDefinition) -> Self {
         // `compute_range` returns the right shape for both full and partial keys.
         // Fall back to a point range built from `compute` if the inputs are
