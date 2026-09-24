@@ -12,6 +12,8 @@
 
 use std::fmt;
 
+use crate::error::{CosmosError, CosmosStatus};
+
 /// Workload identifier for resource governance.
 ///
 /// Must be a value between 1 and 50 (inclusive) if set.
@@ -162,6 +164,8 @@ impl fmt::Display for CorrelationId {
 /// Appended to the user agent string to identify the source of requests.
 /// Limited to 25 characters and must contain only HTTP header-safe characters
 /// (alphanumeric, hyphen, underscore, dot, tilde).
+/// Convert from a `String` or `&str` with `TryFrom`; invalid values return
+/// a [`CosmosError`] with HTTP 400 status.
 ///
 /// # Server-Side Enforcement
 ///
@@ -188,39 +192,45 @@ impl UserAgentSuffix {
     /// Maximum length for a user agent suffix.
     pub const MAX_LENGTH: usize = 25;
 
-    /// Creates a new user agent suffix.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the value exceeds 25 characters or contains invalid characters.
-    pub fn new(value: impl Into<String>) -> Self {
-        let value = value.into();
-        assert!(
-            value.len() <= Self::MAX_LENGTH,
-            "UserAgentSuffix must be at most {} characters, got {}",
-            Self::MAX_LENGTH,
-            value.len()
-        );
-        assert!(
-            is_http_header_safe(&value),
-            "UserAgentSuffix must contain only HTTP header-safe characters (alphanumeric, hyphen, underscore, dot, tilde)"
-        );
-        Self(value)
-    }
-
     /// Creates a new user agent suffix, returning `None` if validation fails.
     pub fn try_new(value: impl Into<String>) -> Option<Self> {
-        let value = value.into();
-        if value.len() <= Self::MAX_LENGTH && is_http_header_safe(&value) {
-            Some(Self(value))
-        } else {
-            None
-        }
+        Self::try_from(value.into()).ok()
     }
 
     /// Returns the user agent suffix string.
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+}
+
+impl TryFrom<String> for UserAgentSuffix {
+    type Error = CosmosError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        let message = if value.len() > Self::MAX_LENGTH {
+            format!(
+                "UserAgentSuffix must be at most {} characters, got {}",
+                Self::MAX_LENGTH,
+                value.len()
+            )
+        } else if !is_http_header_safe(&value) {
+            "UserAgentSuffix must contain only HTTP header-safe characters (alphanumeric, hyphen, underscore, dot, tilde)".to_owned()
+        } else {
+            return Ok(Self(value));
+        };
+
+        Err(CosmosError::builder()
+            .with_status(CosmosStatus::CLIENT_USER_AGENT_SUFFIX_INVALID)
+            .with_message(message)
+            .build())
+    }
+}
+
+impl TryFrom<&str> for UserAgentSuffix {
+    type Error = CosmosError;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Self::try_from(value.to_owned())
     }
 }
 
@@ -285,22 +295,62 @@ mod tests {
 
     #[test]
     fn user_agent_suffix_valid() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
         assert_eq!(suffix.as_str(), "myapp-westus2");
     }
 
     #[test]
     fn user_agent_suffix_max_length() {
-        let long_suffix = "a".repeat(25);
-        assert!(UserAgentSuffix::try_new(&long_suffix).is_some());
+        let at_limit = "a".repeat(UserAgentSuffix::MAX_LENGTH);
+        assert_eq!(
+            UserAgentSuffix::try_from(at_limit.clone())
+                .unwrap()
+                .as_str(),
+            at_limit
+        );
+        assert_eq!(
+            UserAgentSuffix::try_from(at_limit.as_str())
+                .unwrap()
+                .as_str(),
+            at_limit
+        );
 
-        let too_long = "a".repeat(26);
-        assert!(UserAgentSuffix::try_new(&too_long).is_none());
+        let too_long = "a".repeat(UserAgentSuffix::MAX_LENGTH + 1);
+        for error in [
+            UserAgentSuffix::try_from(too_long.as_str()).unwrap_err(),
+            UserAgentSuffix::try_from(too_long).unwrap_err(),
+        ] {
+            assert_eq!(
+                error.status(),
+                CosmosStatus::CLIENT_USER_AGENT_SUFFIX_INVALID
+            );
+            assert!(error.to_string().contains("at most 25 characters"));
+        }
     }
 
     #[test]
     fn user_agent_suffix_invalid_chars() {
-        assert!(UserAgentSuffix::try_new("valid-suffix").is_some());
-        assert!(UserAgentSuffix::try_new("invalid suffix").is_none()); // space
+        for valid in ["", "a-Z_09.~"] {
+            assert_eq!(UserAgentSuffix::try_from(valid).unwrap().as_str(), valid);
+            assert_eq!(
+                UserAgentSuffix::try_from(valid.to_owned())
+                    .unwrap()
+                    .as_str(),
+                valid
+            );
+        }
+        for invalid in ["invalid suffix", "invalid/suffix", "é", "bad\nheader"] {
+            for error in [
+                UserAgentSuffix::try_from(invalid).unwrap_err(),
+                UserAgentSuffix::try_from(invalid.to_owned()).unwrap_err(),
+            ] {
+                assert_eq!(
+                    error.status(),
+                    CosmosStatus::CLIENT_USER_AGENT_SUFFIX_INVALID
+                );
+                assert!(error.to_string().contains("HTTP header-safe"));
+                assert!(!error.to_string().contains(invalid));
+            }
+        }
     }
 }

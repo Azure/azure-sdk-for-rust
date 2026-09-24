@@ -133,10 +133,11 @@ fn duplicate_create_cases() -> Vec<DuplicateCreateCase> {
             ])
             .with_kind(PartitionKeyKind::MultiHash)
             .with_version(PartitionKeyVersion::V2),
-            partition_key: PartitionKey::from(vec![
+            partition_key: PartitionKey::try_from(vec![
                 PartitionKeyValue::from("tenant-a"),
                 PartitionKeyValue::from("user-1"),
-            ]),
+            ])
+            .expect("valid hierarchical partition key"),
             original: json!({
                 "id": "duplicate-1",
                 "tenant": "tenant-a",

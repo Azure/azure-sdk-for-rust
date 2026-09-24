@@ -4996,7 +4996,7 @@ mod tests {
         let runtime = CosmosDriverRuntimeBuilder::new()
             .with_workload_id(WorkloadId::new(25))
             .with_correlation_id(CorrelationId::new("aks-prod-eastus"))
-            .with_user_agent_suffix(UserAgentSuffix::new("myapp-westus2"))
+            .with_user_agent_suffix(UserAgentSuffix::try_from("myapp-westus2").unwrap())
             .build()
             .await
             .unwrap();
@@ -5018,7 +5018,7 @@ mod tests {
     #[tokio::test]
     async fn user_agent_computed_from_suffix() {
         let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_user_agent_suffix(UserAgentSuffix::new("my-suffix"))
+            .with_user_agent_suffix(UserAgentSuffix::try_from("my-suffix").unwrap())
             .build()
             .await
             .unwrap();
@@ -5064,7 +5064,7 @@ mod tests {
     #[tokio::test]
     async fn user_agent_suffix_takes_priority_over_workload_id() {
         let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_user_agent_suffix(UserAgentSuffix::new("suffix"))
+            .with_user_agent_suffix(UserAgentSuffix::try_from("suffix").unwrap())
             .with_workload_id(WorkloadId::new(25))
             .with_correlation_id(CorrelationId::new("correlation"))
             .build()
@@ -5095,7 +5095,7 @@ mod tests {
     async fn effective_correlation_prefers_correlation_id() {
         let runtime = CosmosDriverRuntimeBuilder::new()
             .with_correlation_id(CorrelationId::new("correlation"))
-            .with_user_agent_suffix(UserAgentSuffix::new("suffix"))
+            .with_user_agent_suffix(UserAgentSuffix::try_from("suffix").unwrap())
             .build()
             .await
             .unwrap();
@@ -5106,7 +5106,7 @@ mod tests {
     #[tokio::test]
     async fn effective_correlation_falls_back_to_suffix() {
         let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_user_agent_suffix(UserAgentSuffix::new("suffix"))
+            .with_user_agent_suffix(UserAgentSuffix::try_from("suffix").unwrap())
             .build()
             .await
             .unwrap();
@@ -6955,7 +6955,7 @@ mod tests {
         let runtime = Arc::new(
             CosmosDriverRuntimeBuilder::new()
                 .with_http_client_factory(factory)
-                .with_user_agent_suffix(UserAgentSuffix::new("runtime-default"))
+                .with_user_agent_suffix(UserAgentSuffix::try_from("runtime-default").unwrap())
                 .build()
                 .await
                 .unwrap(),
@@ -6966,7 +6966,7 @@ mod tests {
             DriverOptionsBuilder::new(signed_test_account(
                 "https://account.documents.azure.com:443/",
             ))
-            .with_user_agent_suffix(UserAgentSuffix::new("driver-override"))
+            .with_user_agent_suffix(UserAgentSuffix::try_from("driver-override").unwrap())
             .build(),
         )
         .expect("CosmosDriver::new should succeed in tests");

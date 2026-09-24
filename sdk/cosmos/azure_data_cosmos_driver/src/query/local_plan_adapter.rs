@@ -34,7 +34,7 @@ pub(crate) fn model_partition_key_values(
         .iter()
         .map(|value| match value {
             plan::PartitionKeyValue::String(s) => Ok(PartitionKeyValue::from(s.clone())),
-            plan::PartitionKeyValue::Number(n) => Ok(PartitionKeyValue::from(*n)),
+            plan::PartitionKeyValue::Number(n) => PartitionKeyValue::try_from(*n),
             plan::PartitionKeyValue::Bool(b) => Ok(PartitionKeyValue::from(*b)),
             plan::PartitionKeyValue::Null => Ok(PartitionKeyValue::NULL),
             plan::PartitionKeyValue::Undefined => Ok(PartitionKeyValue::UNDEFINED),

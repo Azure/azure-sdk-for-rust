@@ -329,7 +329,7 @@ async fn user_agent_suffix_appears_on_data_plane_requests() {
     let observer = RecordingObserver::new();
     let emulator = build_emulator(observer.clone());
 
-    perform_create_and_read(emulator, Some(UserAgentSuffix::new(SUFFIX))).await;
+    perform_create_and_read(emulator, Some(UserAgentSuffix::try_from(SUFFIX).unwrap())).await;
 
     let snapshots = observer.snapshots();
     let data_plane: Vec<&RequestSnapshot> = snapshots
@@ -434,7 +434,7 @@ async fn user_agent_suffix_appears_on_metadata_requests() {
     let observer = RecordingObserver::new();
     let emulator = build_emulator(observer.clone());
 
-    perform_metadata_reads(emulator, Some(UserAgentSuffix::new(SUFFIX))).await;
+    perform_metadata_reads(emulator, Some(UserAgentSuffix::try_from(SUFFIX).unwrap())).await;
 
     let snapshots = observer.snapshots();
     let metadata: Vec<&RequestSnapshot> = snapshots
@@ -487,7 +487,10 @@ async fn wrapping_sdk_identifier_appears_on_all_requests() {
         env!("CARGO_PKG_VERSION"),
     );
 
-    for suffix in [None, Some(UserAgentSuffix::new("myapp-westus2"))] {
+    for suffix in [
+        None,
+        Some(UserAgentSuffix::try_from("myapp-westus2").unwrap()),
+    ] {
         let observer = RecordingObserver::new();
         let emulator = build_emulator(observer.clone());
 
@@ -583,7 +586,7 @@ async fn user_agent_appends_feature_token_after_suffix_on_the_wire() {
     let observer = RecordingObserver::new();
     let emulator = build_emulator(observer.clone());
 
-    perform_create_and_read(emulator, Some(UserAgentSuffix::new(SUFFIX))).await;
+    perform_create_and_read(emulator, Some(UserAgentSuffix::try_from(SUFFIX).unwrap())).await;
 
     let snapshots = observer.snapshots();
     let data_plane: Vec<&RequestSnapshot> = snapshots

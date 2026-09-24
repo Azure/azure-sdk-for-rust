@@ -104,8 +104,25 @@ impl AsHeaders for PartitionKey {
     type Iter = IntoIter<(HeaderName, HeaderValue)>;
     fn as_headers(&self) -> Result<<Self as >::Iter, <Self as >::Error>;
 }
-impl From<Vec<PartitionKeyValue>> for PartitionKey {
-    fn from(values: Vec<PartitionKeyValue>) -> Self;
+impl TryFrom<Option<f32>> for PartitionKey {
+    type Error = CosmosError;
+    fn try_from(value: Option<f32>) -> Result<Self, <Self as >::Error>;
+}
+impl TryFrom<Option<f64>> for PartitionKey {
+    type Error = CosmosError;
+    fn try_from(value: Option<f64>) -> Result<Self, <Self as >::Error>;
+}
+impl TryFrom<Vec<PartitionKeyValue>> for PartitionKey {
+    type Error = CosmosError;
+    fn try_from(values: Vec<PartitionKeyValue>) -> Result<Self, <Self as >::Error>;
+}
+impl TryFrom<f32> for PartitionKey {
+    type Error = CosmosError;
+    fn try_from(value: f32) -> Result<Self, <Self as >::Error>;
+}
+impl TryFrom<f64> for PartitionKey {
+    type Error = CosmosError;
+    fn try_from(value: f64) -> Result<Self, <Self as >::Error>;
 }
 impl<T1, T2, T3> From<(T1, T2, T3)> for PartitionKey where T1: Into<PartitionKeyValue>, T2: Into<PartitionKeyValue>, T3: Into<PartitionKeyValue> {
     fn from((v1, v2, v3): (T1, T2, T3)) -> Self;
@@ -1263,6 +1280,7 @@ pub mod models {
         const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: CosmosStatus = _;
         const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_EMPTY: CosmosStatus = _;
+        const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: CosmosStatus = _;
         const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: CosmosStatus = _;
         const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: CosmosStatus = _;
@@ -1285,6 +1303,7 @@ pub mod models {
         const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: CosmosStatus = _;
         const CLIENT_UNKNOWN_PRIORITY_LEVEL: CosmosStatus = _;
         const CLIENT_UNSUPPORTED_QUERY_FEATURE: CosmosStatus = _;
+        const CLIENT_USER_AGENT_SUFFIX_INVALID: CosmosStatus = _;
         const COMPLETING_PARTITION_MIGRATION: CosmosStatus = _;
         const COMPLETING_SPLIT: CosmosStatus = _;
         const CROSS_PARTITION_QUERY_NOT_SERVABLE: CosmosStatus = _;
@@ -1548,8 +1567,29 @@ pub mod models {
         fn as_headers(&self) -> Result<<Self as >::Iter, <Self as >::Error>;
     }
     #[doc(inline)]
-    impl From<Vec<PartitionKeyValue>> for PartitionKey {
-        fn from(values: Vec<PartitionKeyValue>) -> Self;
+    impl TryFrom<Option<f32>> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: Option<f32>) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<Option<f64>> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: Option<f64>) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<Vec<PartitionKeyValue>> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(values: Vec<PartitionKeyValue>) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<f32> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: f32) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<f64> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: f64) -> Result<Self, <Self as >::Error>;
     }
     #[doc(inline)]
     impl<T1, T2, T3> From<(T1, T2, T3)> for PartitionKey where T1: Into<PartitionKeyValue>, T2: Into<PartitionKeyValue>, T3: Into<PartitionKeyValue> {
@@ -1630,14 +1670,6 @@ pub mod models {
         fn from(value: bool) -> Self;
     }
     #[doc(inline)]
-    impl From<f32> for PartitionKeyValue {
-        fn from(value: f32) -> Self;
-    }
-    #[doc(inline)]
-    impl From<f64> for PartitionKeyValue {
-        fn from(value: f64) -> Self;
-    }
-    #[doc(inline)]
     impl From<i16> for PartitionKeyValue {
         fn from(value: i16) -> Self;
     }
@@ -1676,6 +1708,26 @@ pub mod models {
     #[doc(inline)]
     impl From<usize> for PartitionKeyValue {
         fn from(value: usize) -> Self;
+    }
+    #[doc(inline)]
+    impl TryFrom<Option<f32>> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: Option<f32>) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<Option<f64>> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: Option<f64>) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<f32> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: f32) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<f64> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: f64) -> Result<Self, <Self as >::Error>;
     }
     #[doc(inline)]
     impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
@@ -2986,7 +3038,6 @@ pub mod options {
     impl UserAgentSuffix {
         const MAX_LENGTH: usize = 25;
         pub fn as_str(&self) -> &str;
-        pub fn new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Self;
         pub fn try_new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Option<Self>;
     }
     #[doc(inline)]
@@ -2996,6 +3047,16 @@ pub mod options {
     #[doc(inline)]
     impl Display for UserAgentSuffix {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+    }
+    #[doc(inline)]
+    impl TryFrom<&str> for UserAgentSuffix {
+        type Error = CosmosError;
+        fn try_from(value: &str) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<String> for UserAgentSuffix {
+        type Error = CosmosError;
+        fn try_from(value: String) -> Result<Self, <Self as >::Error>;
     }
     #[doc(inline)]
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

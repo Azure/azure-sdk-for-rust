@@ -4921,10 +4921,11 @@ mod tests {
     /// pipeline) so wire layers receive a ready-to-encode EPK.
     #[test]
     fn effective_partition_key_rejects_too_many_components() {
-        let partition_key = PartitionKey::from(vec![
+        let partition_key = PartitionKey::try_from(vec![
             PartitionKeyValue::from("tenant1".to_string()),
             PartitionKeyValue::from("extra".to_string()),
-        ]);
+        ])
+        .unwrap();
         let item = ItemReference::from_name(&test_container(), partition_key, "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 

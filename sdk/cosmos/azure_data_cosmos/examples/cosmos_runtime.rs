@@ -148,7 +148,7 @@ async fn build_client_for_emulator() -> Result<CosmosClient, Box<dyn Error>> {
 async fn build_clients_shared_runtime() -> Result<(CosmosClient, CosmosClient), Box<dyn Error>> {
     // Build a runtime once with any shared configuration you need.
     let runtime = CosmosRuntime::builder()
-        .with_user_agent_suffix(UserAgentSuffix::new("multi-account-app"))
+        .with_user_agent_suffix(UserAgentSuffix::try_from("multi-account-app")?)
         .build()
         .await?;
 

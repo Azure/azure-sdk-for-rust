@@ -568,6 +568,15 @@ fn hex_nibble(c: u8) -> Option<u8> {
 }
 
 #[cfg(test)]
+fn pk_value<T>(value: T) -> PartitionKeyValue
+where
+    T: TryInto<PartitionKeyValue>,
+    T::Error: std::fmt::Debug,
+{
+    value.try_into().expect("valid partition key fixture")
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -904,44 +913,32 @@ mod tests {
                 PartitionKeyValue::from(false),
                 "2FE1BE91E90A3439635E0E9E37361EF2",
             ),
+            (pk_value(-128f64), "01DAEDABF913540367FE219B2AD06148"),
+            (pk_value(127f64), "0C507ACAC853ECA7977BF4CEFB562A25"),
             (
-                PartitionKeyValue::from(-128f64),
-                "01DAEDABF913540367FE219B2AD06148",
-            ),
-            (
-                PartitionKeyValue::from(127f64),
-                "0C507ACAC853ECA7977BF4CEFB562A25",
-            ),
-            (
-                PartitionKeyValue::from(i64::MIN as f64),
+                pk_value(i64::MIN as f64),
                 "23D5C6395512BDFEAFADAD15328AD2BB",
             ),
             (
-                PartitionKeyValue::from(i64::MAX as f64),
+                pk_value(i64::MAX as f64),
                 "2EDB959178DFCCA18983F89384D1629B",
             ),
             (
-                PartitionKeyValue::from(i32::MIN as f64),
+                pk_value(i32::MIN as f64),
                 "0B1660D5233C3171725B30D4A5F4CC1F",
             ),
             (
-                PartitionKeyValue::from(i32::MAX as f64),
+                pk_value(i32::MAX as f64),
                 "2D9349D64712AEB5EB1406E2F0BE2725",
             ),
             (
-                PartitionKeyValue::from(f64::from_bits(0x1)),
+                pk_value(f64::from_bits(0x1)),
                 "0E6CBA63A280927DE485DEF865800139",
             ),
+            (pk_value(f64::MAX), "31424D996457102634591FF245DBCC4D"),
+            (pk_value(5.0f64), "19C08621B135968252FB34B4CF66F811"),
             (
-                PartitionKeyValue::from(f64::MAX),
-                "31424D996457102634591FF245DBCC4D",
-            ),
-            (
-                PartitionKeyValue::from(5.0f64),
-                "19C08621B135968252FB34B4CF66F811",
-            ),
-            (
-                PartitionKeyValue::from(5.123_124_190_509_124f64),
+                pk_value(5.123_124_190_509_124f64),
                 "0EF2E2D82460884AF0F6440BE4F726A8",
             ),
             (
@@ -969,7 +966,7 @@ mod tests {
     #[test]
     fn effective_partition_key_hash_v2_multiple_keys() {
         let components = vec![
-            PartitionKeyValue::from(5.0f64),
+            pk_value(5.0f64),
             PartitionKeyValue::from("redmond".to_string()),
             PartitionKeyValue::from(true),
             PartitionKeyValue::from(None::<String>),
@@ -1111,35 +1108,35 @@ mod tests {
                 "05C1DB857D857C02",
             ),
             (
-                PartitionKeyValue::from(-128f64),
+                pk_value(-128f64),
                 "05C1D73349F54C053FA0",
             ),
             (
-                PartitionKeyValue::from(127f64),
+                pk_value(127f64),
                 "05C1DD539DDFCC05C05FE0",
             ),
             (
-                PartitionKeyValue::from(i64::MIN as f64),
+                pk_value(i64::MIN as f64),
                 "05C1DB35F33D1C053C20",
             ),
             (
-                PartitionKeyValue::from(i64::MAX as f64),
+                pk_value(i64::MAX as f64),
                 "05C1B799AB2DD005C3E0",
             ),
             (
-                PartitionKeyValue::from(i32::MIN as f64),
+                pk_value(i32::MIN as f64),
                 "05C1DFBF252BCC053E20",
             ),
             (
-                PartitionKeyValue::from(i32::MAX as f64),
+                pk_value(i32::MAX as f64),
                 "05C1E1F503DFB205C1DFFFFFFFFC",
             ),
             (
-                PartitionKeyValue::from(f64::from_bits(0x1)),
+                pk_value(f64::from_bits(0x1)),
                 "05C1E5C91F4D3005800101010101010102",
             ),
             (
-                PartitionKeyValue::from(f64::MAX),
+                pk_value(f64::MAX),
                 "05C1CBE367C53005FFEFFFFFFFFFFFFFFE",
             ),
         ];
@@ -1218,7 +1215,7 @@ mod tests {
     fn multi_hash_two_components() {
         let pk = vec![
             PartitionKeyValue::from("redmond".to_string()),
-            PartitionKeyValue::from(5.0f64),
+            pk_value(5.0f64),
         ];
         let multi = EffectivePartitionKey::compute(
             &pk,
@@ -1293,7 +1290,7 @@ mod tests {
     #[test]
     fn multi_hash_differs_from_single_hash() {
         let pk = vec![
-            PartitionKeyValue::from(5.0f64),
+            pk_value(5.0f64),
             PartitionKeyValue::from("redmond".to_string()),
             PartitionKeyValue::from(true),
             PartitionKeyValue::from(None::<String>),
@@ -1412,7 +1409,7 @@ mod tests {
 
 #[cfg(test)]
 mod conformance_tests {
-    use super::EffectivePartitionKey;
+    use super::{pk_value, EffectivePartitionKey};
     use crate::models::{PartitionKey, PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion};
     use serde::Deserialize;
     use std::collections::{BTreeMap, BTreeSet};
@@ -1471,10 +1468,11 @@ mod conformance_tests {
                 Self::Undefined => PartitionKeyValue::UNDEFINED,
                 Self::Null => PartitionKeyValue::NULL,
                 Self::Bool { value } => value.into(),
-                Self::Number { value } => value
-                    .parse::<f64>()
-                    .unwrap_or_else(|error| panic!("invalid fixture number {value:?}: {error}"))
-                    .into(),
+                Self::Number { value } => {
+                    pk_value(value.parse::<f64>().unwrap_or_else(|error| {
+                        panic!("invalid fixture number {value:?}: {error}")
+                    }))
+                }
                 Self::String { value } => value.into(),
                 Self::RepeatedString { value, count } => value.repeat(count).into(),
             }
@@ -1544,12 +1542,13 @@ mod conformance_tests {
                 "{} declares unsupported MultiHash V1",
                 case.id
             );
-            let partition_key = PartitionKey::from(
+            let partition_key = PartitionKey::try_from(
                 case.values
                     .into_iter()
                     .map(FixtureValue::into_partition_key_value)
                     .collect::<Vec<_>>(),
-            );
+            )
+            .expect("valid partition key fixture");
             let actual = EffectivePartitionKey::compute(partition_key.values(), kind, version);
 
             assert_eq!(
@@ -1572,6 +1571,7 @@ mod conformance_tests {
 /// Final wire EPKs are covered by `conformance_tests`.
 #[cfg(test)]
 mod baseline_tests {
+    use super::pk_value;
     use crate::models::murmur_hash::{murmurhash3_128, murmurhash3_32};
     use crate::models::PartitionKeyValue;
     use quick_xml::events::Event;
@@ -1643,7 +1643,7 @@ mod baseline_tests {
                 if n == 0.0 && n.is_sign_negative() {
                     ParsedValue::RawNumber(n)
                 } else {
-                    ParsedValue::Value(PartitionKeyValue::from(n))
+                    ParsedValue::Value(pk_value(n))
                 }
             }
         }

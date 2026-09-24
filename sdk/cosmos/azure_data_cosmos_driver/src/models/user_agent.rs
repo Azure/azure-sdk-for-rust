@@ -461,7 +461,7 @@ mod tests {
 
     #[test]
     fn user_agent_from_user_agent_suffix() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
         let ua = UserAgent::from_suffix(None, &suffix, UserAgentFeatureFlags::NONE);
         assert!(ua.as_str().contains("myapp-westus2"));
     }
@@ -505,7 +505,7 @@ mod tests {
 
     #[test]
     fn user_agent_wrapping_plus_suffix() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
         let ua = UserAgent::from_suffix(
             Some("azsdk-rust-cosmos/0.34.0"),
             &suffix,
@@ -544,7 +544,7 @@ mod tests {
     fn user_agent_respects_max_length_with_wrapping_and_suffix() {
         // Force a long wrapping identifier and a long suffix; total must still be capped.
         let long_wrap = format!("azsdk-rust-{}", "x".repeat(200));
-        let suffix = UserAgentSuffix::new("a".repeat(25));
+        let suffix = UserAgentSuffix::try_from("a".repeat(25)).unwrap();
         let ua = UserAgent::from_suffix(Some(&long_wrap), &suffix, UserAgentFeatureFlags::HTTP2);
         assert!(
             ua.as_str().len() <= MAX_USER_AGENT_LENGTH,
@@ -561,7 +561,7 @@ mod tests {
         // primary telemetry-tag carrier. The wrapping identifier is
         // truncated instead.
         let long_wrap = format!("azsdk-rust-{}", "x".repeat(500));
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
         let ua = UserAgent::from_suffix(Some(&long_wrap), &suffix, UserAgentFeatureFlags::NONE);
         assert!(
             ua.as_str().len() <= MAX_USER_AGENT_LENGTH,
@@ -653,7 +653,7 @@ mod tests {
 
     #[test]
     fn user_agent_appends_feature_token_after_suffix() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
         let flags =
             UserAgentFeatureFlags::PER_PARTITION_CIRCUIT_BREAKER | UserAgentFeatureFlags::HTTP2;
         let ua = UserAgent::from_suffix(None, &suffix, flags);
@@ -695,7 +695,7 @@ mod tests {
         // for the full suffix, the suffix is truncated but the token survives
         // and the total stays within the cap.
         let long_wrap = format!("azsdk-rust-{}", "x".repeat(500));
-        let suffix = UserAgentSuffix::new("a".repeat(UserAgentSuffix::MAX_LENGTH));
+        let suffix = UserAgentSuffix::try_from("a".repeat(UserAgentSuffix::MAX_LENGTH)).unwrap();
         let flags =
             UserAgentFeatureFlags::PER_PARTITION_CIRCUIT_BREAKER | UserAgentFeatureFlags::HTTP2;
         let ua = UserAgent::from_suffix(Some(&long_wrap), &suffix, flags);
