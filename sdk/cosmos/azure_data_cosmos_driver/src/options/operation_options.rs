@@ -11,11 +11,9 @@ use azure_data_cosmos_macros::CosmosOptions;
 
 #[cfg(feature = "preview_patch")]
 use crate::options::PatchStrategy;
-use crate::{
-    options::{
-        AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
-        EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
-    },
+use crate::options::{
+    AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
+    EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
 };
 
 /// Options that apply to individual Cosmos DB requests.
