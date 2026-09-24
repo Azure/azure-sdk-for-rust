@@ -251,7 +251,10 @@ impl AsyncRead for SeekableStructuredMessageEncodingStream {
                     this.content_read += inner_read as u64;
                     total_read += inner_read;
                     if this.content_read > this.content_len {
-                        todo!("handle late EOF")
+                        return Poll::Ready(Err(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "Content stream exceeded reported length producing invalid structured message.",
+                        )));
                     }
                     buf = &mut buf[inner_read..];
                 }
@@ -551,8 +554,9 @@ mod tests {
 
         let data = rand::random::<[u8; DATA_LEN]>();
 
-        let stream_no_len = SeekableStreamHideLen {
+        let stream_no_len = SeekableStreamOverrideLen {
             inner: Box::new(BytesStream::new(data.to_vec())),
+            len_override: None,
         };
 
         assert!(
@@ -602,13 +606,41 @@ mod tests {
         assert!(sm_stream.reset().await.is_err());
     }
 
-    // fn test_early_eof() {
-    //     todo!("Implement test for early EOF in structured message encoding stream");
-    // }
+    #[tokio::test]
+    async fn test_early_eof() {
+        const DATA_LEN: usize = 1024;
+        const SEGMENT_LEN: u64 = usize::MAX as u64;
 
-    // fn test_late_eof() {
-    //     todo!("Implement test for late EOF in structured message encoding stream");
-    // }
+        let data = rand::random::<[u8; DATA_LEN]>();
+
+        let stream_no_len = SeekableStreamOverrideLen {
+            inner: Box::new(BytesStream::new(data.to_vec())),
+            len_override: Some(data.len() as u64 * 2),
+        };
+        let mut sm_stream =
+            SeekableStructuredMessageEncodingStream::new(Box::new(stream_no_len), SEGMENT_LEN)
+                .unwrap();
+
+        assert!(sm_stream.read_to_end(&mut Vec::new()).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_late_eof() {
+        const DATA_LEN: usize = 1024;
+        const SEGMENT_LEN: u64 = usize::MAX as u64;
+
+        let data = rand::random::<[u8; DATA_LEN]>();
+
+        let stream_no_len = SeekableStreamOverrideLen {
+            inner: Box::new(BytesStream::new(data.to_vec())),
+            len_override: Some(data.len() as u64 / 2),
+        };
+        let mut sm_stream =
+            SeekableStructuredMessageEncodingStream::new(Box::new(stream_no_len), SEGMENT_LEN)
+                .unwrap();
+
+        assert!(sm_stream.read_to_end(&mut Vec::new()).await.is_err());
+    }
 
     fn crc_inline(data: &[u8]) -> u64 {
         let mut digest = Digest::new(CrcAlgorithm::Crc64Nvme);

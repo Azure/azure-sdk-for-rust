@@ -53,10 +53,11 @@ mod tests {
     use super::*;
 
     #[derive(Clone, Debug)]
-    pub struct SeekableStreamHideLen {
+    pub struct SeekableStreamOverrideLen {
         pub inner: Box<dyn SeekableStream>,
+        pub len_override: Option<u64>,
     }
-    impl AsyncRead for SeekableStreamHideLen {
+    impl AsyncRead for SeekableStreamOverrideLen {
         fn poll_read(
             self: std::pin::Pin<&mut Self>,
             cx: &mut std::task::Context<'_>,
@@ -67,9 +68,9 @@ mod tests {
     }
 
     #[async_trait::async_trait]
-    impl SeekableStream for SeekableStreamHideLen {
+    impl SeekableStream for SeekableStreamOverrideLen {
         fn len(&self) -> Option<u64> {
-            None
+            self.len_override
         }
         async fn reset(&mut self) -> Result<()> {
             self.inner.reset().await

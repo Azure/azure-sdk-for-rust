@@ -15,6 +15,9 @@ use crate::streams::multi_body_stream::MultiBodyStream;
 ///
 /// If `body` has a length, returns a [MultiBodyStream] containing the structured message.
 /// Otherwise, returns [Err].
+///
+/// This is dependent on `len()` being not just available, but accurate, since len is encoded into a
+/// structured message. The service will reject structured messages with mismatched lengths.
 pub fn wrap_body_with_structured_message(
     body: Body,
     crc_64_nvme: u64,
@@ -193,8 +196,9 @@ mod tests {
         let data = rand::random::<[u8; DATA_LEN]>();
         let data_crc = crc_inline(&data);
 
-        let stream_no_len = SeekableStreamHideLen {
+        let stream_no_len = SeekableStreamOverrideLen {
             inner: Box::new(BytesStream::new(data.to_vec())),
+            len_override: None,
         };
 
         assert!(wrap_body_with_structured_message(
