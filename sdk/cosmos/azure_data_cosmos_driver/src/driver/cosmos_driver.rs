@@ -2717,11 +2717,16 @@ impl CosmosDriver {
             )?;
         }
 
+        #[cfg(feature = "preview_patch")]
         let requested = self
             .operation_options_view(options)
             .patch_strategy()
             .copied()
             .unwrap_or_default();
+        #[cfg(not(feature = "preview_patch"))]
+        let _ = options;
+        #[cfg(not(feature = "preview_patch"))]
+        let requested = crate::options::PatchStrategy::Auto;
         let execution = resolve_patch_strategy(requested, instructions.as_ref())?;
         tracing::debug!(
             requested_patch_strategy = requested.as_str(),
