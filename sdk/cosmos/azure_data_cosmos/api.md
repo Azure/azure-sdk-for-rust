@@ -11,13 +11,12 @@
   - `reqwest`
   - `rustls`
 - `control_plane`
-- `distributed_tracing`
 - `fault_injection`
 - `hmac_openssl`
 - `hmac_rust`
 - `key_auth`
-- `metrics`
 - `native_tls`
+- `preview_opentelemetry`
 - `preview_patch`
 - `rustls`
 
@@ -388,9 +387,8 @@ pub mod clients {
     }
 }
 pub mod diagnostics {
-    #[cfg(feature = "metrics")]
+    #[cfg(feature = "preview_opentelemetry")]
     pub use azure_data_cosmos::diagnostics::metrics::handler::CosmosMetricsHandler;
-    #[cfg(feature = "metrics")]
     pub use azure_data_cosmos::diagnostics::metrics::options::MetricsOptions;
     pub struct ClientLifetimeToken {
     }
@@ -437,34 +435,34 @@ pub mod diagnostics {
         #[must_use]
         pub fn with_server_address<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, address: impl Into<Cow<'static, str>>) -> Self;
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     pub struct CosmosTracingHandler {
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     impl CosmosTracingHandler {
         pub fn builder() -> CosmosTracingHandlerBuilder;
         pub fn should_emit(&self, diagnostics: &DiagnosticsContext) -> bool;
         pub fn thresholds(&self) -> &DiagnosticsThresholds;
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     impl DiagnosticsHandler for CosmosTracingHandler {
         fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     #[derive(Default)]
     pub struct CosmosTracingHandlerBuilder {
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     impl CosmosTracingHandlerBuilder {
         pub fn build(self) -> CosmosTracingHandler;
         pub fn build_with_tracer<T>(self, tracer: T) -> CosmosTracingHandlerWithTracer<T> where T: opentelemetry::trace::Tracer + Send + Sync + 'static;
         pub fn with_rate_limit(self, rate_limit: RateLimiterConfig) -> Self;
         pub fn with_thresholds(self, thresholds: DiagnosticsThresholds) -> Self;
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     pub struct CosmosTracingHandlerWithTracer<T> {
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     impl<T> DiagnosticsHandler for CosmosTracingHandlerWithTracer<T> where T: opentelemetry::trace::Tracer + Send + Sync + 'static {
         fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
     }
@@ -656,22 +654,26 @@ pub mod diagnostics {
         fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
         fn on_client_created(&self, client: &CosmosClientInfo) -> Option<ClientLifetimeToken>;
     }
-    #[cfg(feature = "metrics")]
     pub mod metrics {
+        #[cfg(feature = "preview_opentelemetry")]
         pub struct CosmosMetricsHandler {
         }
+        #[cfg(feature = "preview_opentelemetry")]
         impl CosmosMetricsHandler {
             pub fn new() -> Self;
             pub fn with_meter(meter: Meter) -> Self;
             pub fn with_meter_and_options(meter: Meter, options: MetricsOptions) -> Self;
             pub fn with_options(options: MetricsOptions) -> Self;
         }
+        #[cfg(feature = "preview_opentelemetry")]
         impl Debug for CosmosMetricsHandler {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
         }
+        #[cfg(feature = "preview_opentelemetry")]
         impl Default for CosmosMetricsHandler {
             fn default() -> Self;
         }
+        #[cfg(feature = "preview_opentelemetry")]
         impl DiagnosticsHandler for CosmosMetricsHandler {
             fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
             fn on_client_created(&self, client: &CosmosClientInfo) -> Option<ClientLifetimeToken>;

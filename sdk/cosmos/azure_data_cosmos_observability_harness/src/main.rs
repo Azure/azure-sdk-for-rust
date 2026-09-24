@@ -73,10 +73,8 @@ fn print_banner(config: &Config) {
 /// Lists the diagnostics handlers compiled into this build.
 fn enabled_handlers() -> Vec<&'static str> {
     let mut handlers = Vec::new();
-    if cfg!(feature = "metrics") {
+    if cfg!(feature = "preview_opentelemetry") {
         handlers.push("metrics");
-    }
-    if cfg!(feature = "distributed_tracing") {
         handlers.push("distributed_tracing");
     }
     // The sampled log handler is always registered.
