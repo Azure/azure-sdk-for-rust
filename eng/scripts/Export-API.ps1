@@ -19,6 +19,8 @@ param(
 
   [switch] $Check,
 
+  [Parameter(ParameterSetName = 'PackageName')]
+  [Parameter(ParameterSetName = 'ManifestDir')]
   [ValidateNotNullOrEmpty()]
   [string] $OutputPath
 )
@@ -32,6 +34,16 @@ Set-StrictMode -Version 2.0
 function Get-PackagesToExport(
   [string] $SelectedPackageInfoDirectory
 ) {
+  if ($OutputPath -and @($PackageName).Count -gt 1) {
+    LogError '-OutputPath can only be used with a single -PackageName value.'
+    exit 1
+  }
+
+  if ($OutputPath -and @($ManifestDir).Count -gt 1) {
+    LogError '-OutputPath can only be used with a single -ManifestDir value.'
+    exit 1
+  }
+
   return Get-CargoSelectedPackages `
     -PackageName $PackageName `
     -ManifestDir $ManifestDir `
