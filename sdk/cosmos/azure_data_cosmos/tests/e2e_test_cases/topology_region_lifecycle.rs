@@ -151,7 +151,7 @@ async fn read_until_region(
             .await?;
         let diagnostics = response.diagnostics();
         assert_eq!(response.into_model::<Item>()?, *expected);
-        if diagnostics.regions_contacted().first() == Some(&region) {
+        if diagnostics.request_count() == 1 && diagnostics.requests()[0].region() == Some(&region) {
             return Ok(());
         }
         if tokio::time::Instant::now() >= deadline {

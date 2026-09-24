@@ -147,7 +147,9 @@ async fn partition_breaker_avoids_then_probes_recovered_region() -> TestResult {
                     .await?;
                 let diagnostics = probe.diagnostics();
                 assert_eq!(probe.into_model::<Item>()?, expected);
-                if diagnostics.regions_contacted().first() == Some(&Region::new("East US")) {
+                if diagnostics.request_count() == 1
+                    && diagnostics.requests()[0].region() == Some(&Region::new("East US"))
+                {
                     break;
                 }
                 if tokio::time::Instant::now() >= deadline {
@@ -246,6 +248,10 @@ async fn hedge_completes_while_preferred_region_transitions_offline() -> TestRes
                     tokio::task::yield_now().await;
                 }
                 manager.offline("East US").await?;
+                assert!(
+                    !read.is_finished(),
+                    "hedged read completed before the region transition was applied"
+                );
                 let response = read.await??;
                 let diagnostics = response.diagnostics();
                 assert_eq!(response.into_model::<Item>()?, expected);

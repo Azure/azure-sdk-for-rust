@@ -22,8 +22,8 @@ use axum::{
     Json, Router,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
-    EmulatorStore, Epk, InMemoryEmulatorHttpClient, ManualControlPlaneOperation, SeedingPolicy,
-    VirtualRegion, WriteMode,
+    EmulatorStore, Epk, InMemoryEmulatorHttpClient, ManualControlPlaneOperation,
+    ManualControlPlaneResult, SeedingPolicy, VirtualRegion, WriteMode,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::json;
@@ -355,7 +355,6 @@ impl OperationKind {
     /// Releases the manual operation's lock and reports the operation-kind-specific result.
     async fn complete(
         self,
-        store: &Arc<EmulatorStore>,
         operation: ManualControlPlaneOperation,
     ) -> Result<serde_json::Value, String> {
         match self {
@@ -365,17 +364,12 @@ impl OperationKind {
                 parent,
                 mode,
                 split_epk,
-            } => {
-                complete_split(
-                    store, database, container, parent, mode, split_epk, operation,
-                )
-                .await
-            }
+            } => complete_split(database, container, parent, mode, split_epk, operation).await,
             Self::Merge {
                 database,
                 container,
                 partitions,
-            } => complete_merge(store, database, container, partitions, operation).await,
+            } => complete_merge(database, container, partitions, operation).await,
         }
     }
 }
@@ -662,6 +656,8 @@ fn spawn_automatic(
             let operation = match kind.begin_manual(&store) {
                 Ok(operation) => operation,
                 Err(error) => {
+                    // Automatic operations are accepted before execution starts, then fail
+                    // rather than queue when another transition owns the container guard.
                     if let Some(record) = operations.get_mut(&operation_id) {
                         record.fail(error.to_string());
                     }
@@ -676,7 +672,7 @@ fn spawn_automatic(
         if !lock_duration.is_zero() {
             tokio::time::sleep(lock_duration).await;
         }
-        let outcome = kind.complete(&store, operation).await;
+        let outcome = kind.complete(operation).await;
         let mut operations = state.operations.records.lock().await;
         finish_operation_locked(&mut operations, &operation_id, outcome);
     });
@@ -702,7 +698,6 @@ fn finish_operation_locked(
 }
 
 async fn complete_split(
-    store: &Arc<EmulatorStore>,
     database: String,
     container: String,
     parent: u32,
@@ -711,44 +706,34 @@ async fn complete_split(
     operation: ManualControlPlaneOperation,
 ) -> Result<serde_json::Value, String> {
     match operation.complete().await {
-        Ok(()) => {
-            let children = store.child_partition_ids(&database, &container, &[parent]);
-            if children.len() == 2 {
-                Ok(json!(SplitResponse {
-                    database,
-                    container,
-                    parent,
-                    children,
-                    mode,
-                    split_epk: split_epk.to_hex(),
-                }))
-            } else {
-                Err("split completed without producing exactly two child partitions".to_owned())
-            }
+        Ok(ManualControlPlaneResult::Split(children)) => Ok(json!(SplitResponse {
+            database,
+            container,
+            parent,
+            children: children.into(),
+            mode,
+            split_epk: split_epk.to_hex(),
+        })),
+        Ok(ManualControlPlaneResult::Merge(_)) => {
+            Err("split operation returned a merge result".to_owned())
         }
         Err(error) => Err(error.to_string()),
     }
 }
 
 async fn complete_merge(
-    store: &Arc<EmulatorStore>,
-    database: String,
-    container: String,
+    _database: String,
+    _container: String,
     partitions: [u32; 2],
     operation: ManualControlPlaneOperation,
 ) -> Result<serde_json::Value, String> {
     match operation.complete().await {
-        Ok(()) => {
-            let children = store.child_partition_ids(&database, &container, &partitions);
-            match children.as_slice() {
-                [merged_child] => Ok(json!(MergeResponse {
-                    merged: partitions,
-                    into: *merged_child,
-                })),
-                _ => {
-                    Err("merge completed without producing exactly one child partition".to_owned())
-                }
-            }
+        Ok(ManualControlPlaneResult::Merge(merged_child)) => Ok(json!(MergeResponse {
+            merged: partitions,
+            into: merged_child,
+        })),
+        Ok(ManualControlPlaneResult::Split(_)) => {
+            Err("merge operation returned a split result".to_owned())
         }
         Err(error) => Err(error.to_string()),
     }
@@ -803,10 +788,9 @@ async fn advance_operation(
         }
     };
     let operations = state.operations.clone();
-    let store = state.emulator.store();
     let completion_id = operation_id.clone();
     tokio::spawn(async move {
-        let outcome = kind.complete(&store, manual_operation).await;
+        let outcome = kind.complete(manual_operation).await;
         let mut records = operations.records.lock().await;
         finish_operation_locked(&mut records, &completion_id, outcome);
     });
@@ -1607,6 +1591,77 @@ mod tests {
             .unwrap_err();
         assert_eq!(too_late.status, StatusCode::CONFLICT);
         wait_for_phase(&state, &replacement_id, "Succeeded").await;
+    }
+
+    #[tokio::test]
+    async fn automatic_split_contention_fails_without_queueing() {
+        let gateway_url = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let account =
+            VirtualAccountConfig::new(vec![VirtualRegion::new("East US", gateway_url)]).unwrap();
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(account));
+        emulator.store().create_database("testdb");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        emulator.store().create_container_with_config(
+            "testdb",
+            "testcoll",
+            partition_key,
+            ContainerConfig::new()
+                .with_partition_count(2)
+                .build()
+                .unwrap(),
+        );
+        let state = ManagementState {
+            emulator,
+            account_id: "test-account".into(),
+            bindings: Vec::<GatewayBinding>::new().into(),
+            metrics: Arc::new(HostMetrics::default()),
+            operations: Arc::new(OperationRegistry::default()),
+        };
+
+        let first = split_partition_inner(
+            state.clone(),
+            "testdb".to_owned(),
+            "testcoll".to_owned(),
+            0,
+            SplitRequest {
+                mode: SplitMode::Midpoint,
+                epk: None,
+                progression_mode: ProgressionMode::Automatic,
+                lock_duration_ms: Some(100),
+            },
+        )
+        .await
+        .unwrap();
+        let first_id = first.1["operationId"].as_str().unwrap().to_owned();
+        wait_for_phase(&state, &first_id, "Swapping").await;
+
+        let second = split_partition_inner(
+            state.clone(),
+            "testdb".to_owned(),
+            "testcoll".to_owned(),
+            1,
+            SplitRequest {
+                mode: SplitMode::Midpoint,
+                epk: None,
+                progression_mode: ProgressionMode::Automatic,
+                lock_duration_ms: Some(100),
+            },
+        )
+        .await
+        .unwrap();
+        assert_eq!(second.0, StatusCode::ACCEPTED);
+        let second_id = second.1["operationId"].as_str().unwrap().to_owned();
+        let failed = wait_for_phase(&state, &second_id, "Failed").await;
+        assert!(failed["error"]
+            .as_str()
+            .unwrap()
+            .contains("another partition transition is already active"));
+
+        tokio::time::sleep(Duration::from_millis(150)).await;
+        wait_for_phase(&state, &first_id, "Succeeded").await;
     }
 
     #[tokio::test]

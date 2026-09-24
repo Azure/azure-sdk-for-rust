@@ -1,36 +1,36 @@
 {
-    "displayNames": {
-        "inmemory-v1": "gateway_v1",
-        "inmemory-v2": "gateway_v2",
-        "configurationResilience": "configuration_resilience",
-        "sessionTwoRegionsDelayed": "session_two_regions_delayed",
-        "sdkDefault": "sdk_default"
+  "displayNames": {
+    "inmemory-v1": "gateway_v1",
+    "inmemory-v2": "gateway_v2",
+    "configurationResilience": "configuration_resilience",
+    "sessionTwoRegionsDelayed": "session_two_regions_delayed",
+    "sdkDefault": "sdk_default"
+  },
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
     },
-    "matrix": {
-        "Agent": {
-            "ubuntu": {
-                "OSVmImage": "env:LINUXVMIMAGE",
-                "Pool": "env:LINUXPOOL"
-            }
-        },
-        "RustToolchainName": [
-            "stable"
-        ],
-        "AZURE_COSMOS_EMULATOR_FLAVOR": [
-            "inmemory-v1",
-            "inmemory-v2"
-        ],
-        "AZURE_COSMOS_E2E_PROFILE": [
-            "configurationResilience"
-        ],
-        "AZURE_COSMOS_E2E_ACCOUNT": [
-            "sessionTwoRegionsDelayed"
-        ],
-        "AZURE_COSMOS_E2E_RUNTIME": [
-            "sdkDefault"
-        ],
-        "AZURE_COSMOS_E2E_CLIENT": [
-            "sdkDefault"
-        ]
-    }
+    "RustToolchainName": [
+      "stable"
+    ],
+    "AZURE_COSMOS_EMULATOR_FLAVOR": [
+      "inmemory-v1",
+      "inmemory-v2"
+    ],
+    "AZURE_COSMOS_E2E_PROFILE": [
+      "configurationResilience"
+    ],
+    "AZURE_COSMOS_E2E_ACCOUNT": [
+      "sessionTwoRegionsDelayed"
+    ],
+    "AZURE_COSMOS_E2E_RUNTIME": [
+      "sdkDefault"
+    ],
+    "AZURE_COSMOS_E2E_CLIENT": [
+      "sdkDefault"
+    ]
+  }
 }

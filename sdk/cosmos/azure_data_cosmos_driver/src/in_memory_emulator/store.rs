@@ -66,14 +66,14 @@ impl ControlPlaneProgression {
 
 struct ControlPlaneExecution {
     progression: ControlPlaneProgression,
-    completion: Option<futures::channel::oneshot::Sender<bool>>,
+    completion: Option<futures::channel::oneshot::Sender<Option<ManualControlPlaneResult>>>,
     transition_guard: Option<async_lock::MutexGuardArc<()>>,
 }
 
 impl ControlPlaneExecution {
     fn automatic(
         duration: Duration,
-        completion: Option<futures::channel::oneshot::Sender<bool>>,
+        completion: Option<futures::channel::oneshot::Sender<Option<ManualControlPlaneResult>>>,
     ) -> Self {
         Self {
             progression: ControlPlaneProgression::Automatic(duration),
@@ -84,7 +84,7 @@ impl ControlPlaneExecution {
 
     fn manual(
         release: futures::channel::oneshot::Receiver<()>,
-        completion: futures::channel::oneshot::Sender<bool>,
+        completion: futures::channel::oneshot::Sender<Option<ManualControlPlaneResult>>,
         transition_guard: async_lock::MutexGuardArc<()>,
     ) -> Self {
         Self {
@@ -95,32 +95,39 @@ impl ControlPlaneExecution {
     }
 }
 
+/// Immutable result captured while a manual split or merge owns its transition guard.
+#[doc(hidden)]
+#[derive(Debug, PartialEq, Eq)]
+pub enum ManualControlPlaneResult {
+    /// The physical partition IDs produced by a split.
+    Split([u32; 2]),
+    /// The physical partition ID produced by a merge.
+    Merge(u32),
+}
+
 /// Handle for a manually progressed split or merge operation.
 #[doc(hidden)]
 pub struct ManualControlPlaneOperation {
     release: Option<futures::channel::oneshot::Sender<()>>,
-    completed: futures::channel::oneshot::Receiver<bool>,
+    completed: futures::channel::oneshot::Receiver<Option<ManualControlPlaneResult>>,
 }
 
 impl ManualControlPlaneOperation {
     /// Releases the operation's partition lock and waits for topology replacement.
-    pub async fn complete(mut self) -> crate::error::Result<()> {
+    pub async fn complete(mut self) -> crate::error::Result<ManualControlPlaneResult> {
         self.release
             .take()
             .ok_or_else(|| host_control_plane_error("manual operation was already released"))?
             .send(())
             .map_err(|_| host_control_plane_error("manual operation task ended before release"))?;
-        if self
-            .completed
+        self.completed
             .await
             .map_err(|_| host_control_plane_error("manual operation ended without a result"))?
-        {
-            Ok(())
-        } else {
-            Err(host_control_plane_error(
-                "manual operation could not update the requested partitions",
-            ))
-        }
+            .ok_or_else(|| {
+                host_control_plane_error(
+                    "manual operation could not update the requested partitions",
+                )
+            })
     }
 
     /// Cancels the operation and waits until its partition locks are released.
@@ -130,6 +137,7 @@ impl ManualControlPlaneOperation {
             .completed
             .await
             .map_err(|_| host_control_plane_error("manual operation ended without a result"))?
+            .is_some()
         {
             return Err(host_control_plane_error(
                 "manual operation completed while cancellation was requested",
@@ -2754,21 +2762,15 @@ impl EmulatorStore {
             Some(split_epk),
             ControlPlaneExecution::automatic(min_lock_duration, Some(completion)),
         );
-        if !completed
+        match completed
             .await
             .map_err(|_| host_control_plane_error("split task ended before reporting a result"))?
         {
-            return Err(host_control_plane_error(
+            Some(ManualControlPlaneResult::Split(children)) => Ok(children.into()),
+            _ => Err(host_control_plane_error(
                 "split did not complete; verify the partition and EPK boundary",
-            ));
+            )),
         }
-        let children = self.child_partition_ids(db_id, coll_id, &[partition_id]);
-        if children.len() != 2 {
-            return Err(host_control_plane_error(
-                "split completed without producing exactly two child partitions",
-            ));
-        }
-        Ok(children)
     }
 
     /// Locks a partition for a split that completes only when its handle is released.
@@ -2891,15 +2893,15 @@ impl EmulatorStore {
             if !progression.wait().await {
                 store.unlock_partitions(&(db.clone(), coll.clone()), &[partition_id]);
                 if let Some(completion) = completion {
-                    let _ = completion.send(false);
+                    let _ = completion.send(None);
                 }
                 return;
             }
             // execute_split does the actual doc redistribution under the lock,
             // then unlocks partitions when done
-            let succeeded = store.execute_split(&db, &coll, partition_id, split_epk);
+            let children = store.execute_split(&db, &coll, partition_id, split_epk);
             if let Some(completion) = completion {
-                let _ = completion.send(succeeded);
+                let _ = completion.send(children.map(ManualControlPlaneResult::Split));
             }
         });
         if track_in_test_registry {
@@ -2914,7 +2916,7 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id: u32,
         split_epk: Option<Epk>,
-    ) -> bool {
+    ) -> Option<[u32; 2]> {
         // Local-only enum used to ferry preview state out of a regions read
         // guard so we can drop the guard before re-acquiring it on the abort
         // path. Avoids recursive same-thread RwLock::read (unspecified in std).
@@ -3040,9 +3042,9 @@ impl EmulatorStore {
             Some(SplitPreview::Found { .. }) => preview.unwrap(),
             Some(SplitPreview::AbortUnlock) => {
                 self.unlock_partitions(&key, &[partition_id]);
-                return false;
+                return None;
             }
-            None => return false,
+            None => return None,
         })
         else {
             unreachable!()
@@ -3173,7 +3175,7 @@ impl EmulatorStore {
                 // child IDs were allocated.
             }
         }
-        true
+        Some([child_id_1, child_id_2])
     }
 
     /// Merges two adjacent physical partitions into one child partition.
@@ -3219,19 +3221,13 @@ impl EmulatorStore {
             partition_id_b,
             ControlPlaneExecution::automatic(min_lock_duration, Some(completion)),
         );
-        if !completed
+        match completed
             .await
             .map_err(|_| host_control_plane_error("merge task ended before reporting a result"))?
         {
-            return Err(host_control_plane_error(
-                "merge did not complete; verify that both partitions exist and are adjacent",
-            ));
-        }
-        let children = self.child_partition_ids(db_id, coll_id, &[partition_id_a, partition_id_b]);
-        match children.as_slice() {
-            [child] => Ok(*child),
+            Some(ManualControlPlaneResult::Merge(child)) => Ok(child),
             _ => Err(host_control_plane_error(
-                "merge completed without producing exactly one child partition",
+                "merge did not complete; verify that both partitions exist and are adjacent",
             )),
         }
     }
@@ -3315,13 +3311,13 @@ impl EmulatorStore {
                     &[partition_id_a, partition_id_b],
                 );
                 if let Some(completion) = completion {
-                    let _ = completion.send(false);
+                    let _ = completion.send(None);
                 }
                 return;
             }
-            let succeeded = store.execute_merge(&db, &coll, partition_id_a, partition_id_b);
+            let child = store.execute_merge(&db, &coll, partition_id_a, partition_id_b);
             if let Some(completion) = completion {
-                let _ = completion.send(succeeded);
+                let _ = completion.send(child.map(ManualControlPlaneResult::Merge));
             }
         });
         if track_in_test_registry {
@@ -3358,7 +3354,7 @@ impl EmulatorStore {
         coll_id: &str,
         partition_id_a: u32,
         partition_id_b: u32,
-    ) -> bool {
+    ) -> Option<u32> {
         enum MergePreview {
             Ready((Epk, Epk, u64, u32, String, Option<u64>)),
             NonAdjacent(Epk, Epk),
@@ -3431,11 +3427,11 @@ impl EmulatorStore {
                         "in-memory emulator: rejecting merge for non-adjacent partitions",
                     );
                     self.unlock_partitions(&key, &[partition_id_a, partition_id_b]);
-                    return false;
+                    return None;
                 }
                 None => {
                     self.unlock_partitions(&key, &[partition_id_a, partition_id_b]);
-                    return false;
+                    return None;
                 }
             };
         let new_container_etag = new_etag();
@@ -3603,7 +3599,7 @@ impl EmulatorStore {
                 state.metadata.etag = new_container_etag.clone();
             }
         }
-        true
+        Some(child_id)
     }
 }
 

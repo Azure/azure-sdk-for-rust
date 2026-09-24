@@ -307,8 +307,12 @@ where
 {
     let outcome = AssertUnwindSafe(operation).catch_unwind().await;
     let cleanup = async {
-        let current = manager.operation(operation_id).await?;
-        if !matches!(current.phase.as_str(), "Succeeded" | "Failed") {
+        let current = manager.operation(operation_id).await;
+        let needs_cancel = current.as_ref().map_or(true, |operation| {
+            !matches!(operation.phase.as_str(), "Succeeded" | "Failed")
+        });
+        let probe_error = current.err();
+        if needs_cancel {
             if manager.cancel(operation_id).await.is_err() {
                 let deadline = tokio::time::Instant::now() + Duration::from_secs(10);
                 loop {
@@ -325,6 +329,12 @@ where
                     tokio::time::sleep(Duration::from_millis(20)).await;
                 }
             }
+        }
+        if let Some(error) = probe_error {
+            return Err(format!(
+                "manual operation '{operation_id}' status probe failed before cleanup: {error}"
+            )
+            .into());
         }
         Ok::<_, Box<dyn std::error::Error>>(())
     }
