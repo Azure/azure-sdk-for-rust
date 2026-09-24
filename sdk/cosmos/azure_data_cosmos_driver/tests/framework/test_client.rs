@@ -158,11 +158,11 @@ pub async fn probe_driver_data_plane_ready(
     const RETRY_DELAY: Duration = Duration::from_millis(500);
 
     let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
-    let partition_key = PartitionKey::from(
+    let partition_key = PartitionKey::try_from(
         (0..partition_key_component_count)
             .map(|_| PartitionKeyValue::from(probe_id.clone()))
             .collect::<Vec<_>>(),
-    );
+    )?;
 
     for attempt in 1..=MAX_ATTEMPTS {
         let item = ItemReference::from_name(container, partition_key.clone(), probe_id.clone());

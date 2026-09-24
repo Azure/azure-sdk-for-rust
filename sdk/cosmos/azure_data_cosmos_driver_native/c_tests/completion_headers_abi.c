@@ -29,8 +29,22 @@
 #include "test_common.h"
 
 #include <inttypes.h>
+#include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
+
+// Pin the `cosmos_completion_t` layout so an accidental field add/remove or a
+// padding mistake (e.g. a host binding mirroring the struct) is caught at
+// compile time instead of corrupting every pointer past the change. Offsets
+// assume 64-bit pointers; the 32-bit ABI is not a shipping target.
+#if UINTPTR_MAX == UINT64_MAX
+_Static_assert(sizeof(cosmos_completion_t) == 112, "completion layout");
+_Static_assert(offsetof(cosmos_completion_t, http_status_code) == 16, "http_status_code offset");
+_Static_assert(offsetof(cosmos_completion_t, is_from_wire) == 18, "is_from_wire offset");
+_Static_assert(offsetof(cosmos_completion_t, message) == 24, "message offset");
+_Static_assert(offsetof(cosmos_completion_t, diagnostics) == 80, "diagnostics offset");
+_Static_assert(offsetof(cosmos_completion_t, backing) == 104, "backing offset");
+#endif
 
 // Test-only enqueue helper. Not part of the public ABI, forward-declared
 // so the auto-discovered CMake target can link against it.
@@ -38,7 +52,7 @@ extern cosmos_status_code_t
 __test_only_enqueue_ok_completion_with_all_value_kinds(cosmos_completion_queue_t *queue);
 
 // Small helper: build a runtime + queue, or return non-zero on failure so
-// the caller can SKIP cleanly (mirrors the pattern in `cancellation.c`).
+// the caller can SKIP cleanly (mirrors the pattern in `submit_and_response.c`).
 static int make_runtime_and_cq(cosmos_runtime_t **out_runtime,
                                cosmos_completion_queue_t **out_cq)
 {

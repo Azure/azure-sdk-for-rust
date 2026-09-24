@@ -3,7 +3,7 @@
 
 //! [`Pipeline`] (driver-internal) and [`OperationPlan`] (driver-public).
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use crate::{
     models::{ContinuationToken, CosmosOperation, CosmosResponse},
@@ -95,6 +95,11 @@ pub struct OperationPlan {
     pub(crate) is_resumed: bool,
     pub(crate) has_progressed: bool,
     pub(crate) container_recreation_recovery_attempted: bool,
+    /// Policy-derived deadline shared by planning and the first page only.
+    ///
+    /// Consumed by the first `execute_plan` call so later pages receive a fresh
+    /// per-call budget instead of inheriting an expired planning timestamp.
+    initial_execution_deadline: Option<Instant>,
     /// Set when a page advanced every node's resume position but could not be
     /// handed to the caller, so the plan's progress and what the caller
     /// received have diverged. Once set, no continuation token can be minted:
@@ -120,8 +125,27 @@ impl OperationPlan {
             is_resumed,
             has_progressed: false,
             container_recreation_recovery_attempted: false,
+            initial_execution_deadline: None,
             continuation_poisoned: false,
         }
+    }
+
+    /// Moves a policy-derived planning deadline out of the retained operation.
+    pub(crate) fn set_initial_execution_deadline(&mut self, deadline: Instant) {
+        self.initial_execution_deadline = Some(deadline);
+        self.operation = Arc::new(self.operation.as_ref().clone().with_absolute_deadline(None));
+    }
+
+    /// Takes the deadline shared by planning and the first page.
+    pub(crate) fn take_initial_execution_deadline(&mut self) -> Option<Instant> {
+        self.initial_execution_deadline.take()
+    }
+
+    /// Clears deadlines retained by an internal replan after the current
+    /// `execute_plan` call has already adopted that budget.
+    pub(crate) fn clear_execution_deadlines(&mut self) {
+        self.initial_execution_deadline = None;
+        self.operation = Arc::new(self.operation.as_ref().clone().with_absolute_deadline(None));
     }
 
     /// Records that a page advanced the pipeline but never reached the caller.
@@ -156,11 +180,6 @@ impl OperationPlan {
                  minted; re-run the query from the last token that was captured successfully",
             )
             .build()
-    }
-
-    /// Returns whether executing this plan can require physical partition topology.
-    pub(crate) fn requires_partition_key_range_topology(&self) -> bool {
-        !self.operation.is_trivial() && self.pipeline.fan_out_width() > 0
     }
 
     /// Snapshots this plan into a [`ContinuationToken`] suitable for cross-process

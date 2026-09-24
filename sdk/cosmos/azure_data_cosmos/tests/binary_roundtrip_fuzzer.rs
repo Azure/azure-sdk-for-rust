@@ -1832,6 +1832,7 @@ async fn build_client(
             Region::EAST_US,
             Vec::new(),
             binary.clone(),
+            false,
         )
         .await?
         .0);

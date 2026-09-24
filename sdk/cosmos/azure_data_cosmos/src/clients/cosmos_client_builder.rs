@@ -99,7 +99,6 @@ pub struct CosmosClientBuilder {
     backup_endpoints: Vec<azure_core::http::Url>,
     /// Options to use for per-partition failover (PPAF, PPCB)
     partition_failover_options: Option<PartitionFailoverOptions>,
-    partition_key_range_cache_enabled: Option<bool>,
 }
 
 impl CosmosClientBuilder {
@@ -133,20 +132,22 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Configures the driver-level partition-failover / PPCB tuning for this
-    /// client.
+    /// Configures driver-level partition topology loading, partition failover,
+    /// and PPCB tuning for this client.
     ///
     /// These knobs are read once when the client's underlying driver is
     /// constructed (in [`build`](Self::build)) and govern the per-partition
-    /// circuit breaker and partition-level failover for the lifetime of the
-    /// client. They are independent of per-request [`OperationOptions`].
+    /// partition topology cache, circuit breaker, and partition-level failover
+    /// behavior for the lifetime of the client. They are independent of
+    /// per-request [`OperationOptions`].
     ///
     /// When this setter is **not** called, the driver resolves these options
-    /// from the `AZURE_COSMOS_PPCB_*` environment variables — including the
-    /// `AZURE_COSMOS_PPCB_ENABLED` master switch and the
+    /// from `AZURE_COSMOS_PARTITION_TOPOLOGY_CACHE_MODE` and the
+    /// `AZURE_COSMOS_PPCB_*` environment variables — including the
+    /// `AZURE_COSMOS_PPCB_ENABLED` master switch and
     /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch — falling back to
-    /// compile-time defaults for anything unset. Passing an explicit value
-    /// here takes precedence over those variables (except the
+    /// compile-time defaults for anything unset. Passing an explicit value here
+    /// takes precedence over those variables (except the
     /// `AZURE_COSMOS_PPCB_ENABLED_OVERRIDE` kill switch, which is read from the
     /// environment when you build the [`PartitionFailoverOptions`] and remains
     /// authoritative). To disable PPCB regardless of the account property, set
@@ -156,27 +157,12 @@ impl CosmosClientBuilder {
         self
     }
 
-    /// Enables or disables partition key range topology caching for this client.
-    ///
-    /// When disabled, the client never requests `/pkranges`. Cross-partition
-    /// queries, change-feed reads requiring physical topology, and physical
-    /// feed-range APIs are unavailable. Logical-partition change-feed reads remain
-    /// available. Automatic session token management is disabled, but user-provided
-    /// session tokens are still sent unchanged.
-    pub fn with_partition_key_range_cache_enabled(mut self, enabled: bool) -> Self {
-        self.partition_key_range_cache_enabled = Some(enabled);
-        self
-    }
-
     /// Sets a per-client suffix to append to the User-Agent header for
     /// telemetry, overriding any runtime-wide default suffix.
     ///
-    /// Construct the suffix explicitly via
-    /// [`UserAgentSuffix::new`](crate::options::UserAgentSuffix::new) for trusted
-    /// values, or [`UserAgentSuffix::try_new`](crate::options::UserAgentSuffix::try_new)
-    /// for untrusted input. Validation rules (max 25 characters,
-    /// HTTP-header-safe) are enforced at the construction site rather than
-    /// here, which keeps any panic local to the caller's input handling.
+    /// Construct the suffix with [`UserAgentSuffix::try_from`] and handle
+    /// invalid input before passing it to this builder. Validation (max 25
+    /// characters, HTTP-header-safe) occurs at construction.
     ///
     /// # Arguments
     ///
@@ -334,9 +320,6 @@ impl CosmosClientBuilder {
             operation_options: self.options.operation,
             user_agent_suffix: self.options.user_agent_suffix,
             partition_failover_options: self.partition_failover_options,
-            partition_key_range_cache_enabled: self
-                .partition_key_range_cache_enabled
-                .unwrap_or(true),
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules,
             throughput_control_groups: self.throughput_control_groups,
@@ -371,7 +354,6 @@ struct DriverOptionsInput {
     operation_options: OperationOptions,
     user_agent_suffix: Option<UserAgentSuffix>,
     partition_failover_options: Option<PartitionFailoverOptions>,
-    partition_key_range_cache_enabled: bool,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
     throughput_control_groups: Vec<ThroughputControlGroupOptions>,
@@ -394,8 +376,7 @@ impl DriverOptionsInput {
         };
         let mut builder = azure_data_cosmos_driver::options::DriverOptions::builder(self.account)
             .with_preferred_regions(preferred_regions)
-            .with_operation_options(self.operation_options)
-            .with_partition_key_range_cache_enabled(self.partition_key_range_cache_enabled);
+            .with_operation_options(self.operation_options);
         if let Some(suffix) = self.user_agent_suffix {
             builder = builder.with_user_agent_suffix(suffix);
         }
@@ -455,7 +436,7 @@ mod tests {
     /// onto `CosmosDriverRuntimeBuilder::with_user_agent_suffix`.
     #[tokio::test]
     async fn user_agent_suffix_is_forwarded_to_driver_runtime() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
 
         let options = CosmosClientOptions {
             user_agent_suffix: Some(suffix.clone()),
@@ -492,7 +473,7 @@ mod tests {
 
     #[test]
     fn user_agent_suffix_setter_records_value() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
         let builder = CosmosClientBuilder::new().with_user_agent_suffix(suffix.clone());
         assert_eq!(builder.options.user_agent_suffix.as_ref(), Some(&suffix));
     }
@@ -511,7 +492,6 @@ mod tests {
             operation_options: OperationOptions::default(),
             user_agent_suffix: None,
             partition_failover_options: None,
-            partition_key_range_cache_enabled: true,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
             throughput_control_groups: Vec::new(),
@@ -583,7 +563,7 @@ mod tests {
     /// the driver builds a User-Agent that overrides the runtime default.
     #[test]
     fn user_agent_suffix_flows_to_driver_options() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
         let opts = DriverOptionsInput {
             user_agent_suffix: Some(suffix.clone()),
             ..test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()))
@@ -633,17 +613,5 @@ mod tests {
             opts.partition_failover_options().circuit_breaker_enabled(),
             PartitionFailoverOptions::default().circuit_breaker_enabled(),
         );
-    }
-
-    #[test]
-    fn partition_key_range_cache_option_flows_to_driver_options() {
-        let opts = DriverOptionsInput {
-            partition_key_range_cache_enabled: false,
-            ..test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()))
-        }
-        .build()
-        .expect("driver options should build");
-
-        assert!(!opts.partition_key_range_cache_enabled());
     }
 }

@@ -292,11 +292,11 @@ pub async fn probe_data_plane_ready(
     const RETRY_DELAY: Duration = Duration::from_millis(500);
 
     let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
-    let partition_key = PartitionKey::from(
+    let partition_key = PartitionKey::try_from(
         (0..partition_key_component_count)
             .map(|_| PartitionKeyValue::from(probe_id.clone()))
             .collect::<Vec<_>>(),
-    );
+    )?;
     for attempt in 1..=MAX_ATTEMPTS {
         let outcome = container
             .delete_item(partition_key.clone(), probe_id.as_str(), None)
@@ -481,6 +481,8 @@ pub struct TestOptions {
     ///
     /// [`CosmosClientBuilder::with_binary_encoding_options`]: azure_data_cosmos::CosmosClientBuilder::with_binary_encoding_options
     pub binary_encoding: Option<BinaryEncodingOptions>,
+    /// Whether every client created for this test must use classic Gateway.
+    pub gateway_v2_disabled: bool,
 }
 
 impl TestOptions {
@@ -545,6 +547,12 @@ impl TestOptions {
     /// standard client option, avoiding any `std::env` mutation.
     pub fn with_binary_encoding(mut self, options: BinaryEncodingOptions) -> Self {
         self.binary_encoding = Some(options);
+        self
+    }
+
+    /// Forces every client created for this test to use classic Gateway.
+    pub fn with_gateway_v2_disabled(mut self, disabled: bool) -> Self {
+        self.gateway_v2_disabled = disabled;
         self
     }
 }
@@ -707,6 +715,7 @@ impl TestClient {
         application_region: Option<Region>,
         allow_invalid_certificates: bool,
         binary_encoding: Option<BinaryEncodingOptions>,
+        gateway_v2_disabled: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         Self::from_env_inner(
             application_region,
@@ -714,6 +723,7 @@ impl TestClient {
             None,
             allow_invalid_certificates,
             binary_encoding,
+            gateway_v2_disabled,
         )
         .await
     }
@@ -723,6 +733,7 @@ impl TestClient {
         application_region: Option<Region>,
         allow_invalid_certificates: bool,
         binary_encoding: Option<BinaryEncodingOptions>,
+        gateway_v2_disabled: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         Self::from_env_inner(
             None,
@@ -730,6 +741,7 @@ impl TestClient {
             application_region,
             allow_invalid_certificates,
             binary_encoding,
+            gateway_v2_disabled,
         )
         .await
     }
@@ -745,6 +757,7 @@ impl TestClient {
         fault_client_application_region: Option<Region>,
         allow_invalid_certificates: bool,
         binary_encoding: Option<BinaryEncodingOptions>,
+        gateway_v2_disabled: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
             // No connection string provided, so we'll skip tests that require it.
@@ -771,6 +784,7 @@ impl TestClient {
                     fault_rules,
                     None,
                     binary_encoding,
+                    gateway_v2_disabled,
                 )
                 .await
             }
@@ -782,6 +796,7 @@ impl TestClient {
                     fault_rules,
                     fault_client_application_region,
                     binary_encoding,
+                    gateway_v2_disabled,
                 )
                 .await
             }
@@ -795,6 +810,7 @@ impl TestClient {
         fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         fault_client_application_region: Option<Region>,
         binary_encoding: Option<BinaryEncodingOptions>,
+        gateway_v2_disabled: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let connection_string: ConnectionString = connection_string.parse()?;
 
@@ -816,15 +832,16 @@ impl TestClient {
             .unwrap_or(HUB_REGION);
         let strategy = RoutingStrategy::ProximityTo(region);
 
-        if allow_invalid_certificates {
+        if allow_invalid_certificates || gateway_v2_disabled {
+            let mut connection_pool =
+                ConnectionPoolOptions::builder().with_gateway_v2_disabled(gateway_v2_disabled);
+            if allow_invalid_certificates {
+                connection_pool = connection_pool.with_server_certificate_validation(
+                    ServerCertificateValidation::RequiredUnlessEmulator,
+                );
+            }
             let runtime = CosmosRuntime::builder()
-                .with_connection_pool(
-                    ConnectionPoolOptions::builder()
-                        .with_server_certificate_validation(
-                            ServerCertificateValidation::RequiredUnlessEmulator,
-                        )
-                        .build()?,
-                )
+                .with_connection_pool(connection_pool.build()?)
                 .build()
                 .await?;
             builder = builder.with_runtime(runtime);
@@ -929,9 +946,14 @@ impl TestClient {
                     .clone()
                     .unwrap_or(HUB_REGION);
                 Some(
-                    build_aad_client_from_env(region, Vec::new(), options.binary_encoding.clone())
-                        .await?
-                        .0,
+                    build_aad_client_from_env(
+                        region,
+                        Vec::new(),
+                        options.binary_encoding.clone(),
+                        options.gateway_v2_disabled,
+                    )
+                    .await?
+                    .0,
                 )
             }
             AuthMode::Key => {
@@ -939,6 +961,7 @@ impl TestClient {
                     options.client_application_region.clone(),
                     options.allow_invalid_certificates,
                     options.binary_encoding.clone(),
+                    options.gateway_v2_disabled,
                 )
                 .await?
                 .cosmos_client
@@ -964,6 +987,7 @@ impl TestClient {
                                 region,
                                 rules,
                                 options.binary_encoding.clone(),
+                                options.gateway_v2_disabled,
                             )
                             .await?
                             .0,
@@ -975,6 +999,7 @@ impl TestClient {
                             options.fault_client_application_region.clone(),
                             options.allow_invalid_certificates,
                             options.binary_encoding.clone(),
+                            options.gateway_v2_disabled,
                         )
                         .await?
                         .cosmos_client
@@ -994,6 +1019,7 @@ impl TestClient {
                 fault_cosmos_client,
                 arm_client,
                 fault_injection_rules,
+                options.gateway_v2_disabled,
             );
 
             // Apply timeout around entire test including retries on 429s
@@ -1113,6 +1139,7 @@ pub struct TestRunContext {
     /// The ARM client used for resource lifecycle in live AAD mode.
     arm_client: Option<CosmosArmClient>,
     fault_injection_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
+    gateway_v2_disabled: bool,
 }
 
 struct DisabledFaultInjectionRules(Vec<(std::sync::Arc<FaultInjectionRule>, bool)>);
@@ -1147,6 +1174,7 @@ impl TestRunContext {
         fault_client: Option<CosmosClient>,
         arm_client: Option<CosmosArmClient>,
         fault_injection_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
+        gateway_v2_disabled: bool,
     ) -> Self {
         let run_id = azure_core::Uuid::new_v4().simple().to_string();
         Self {
@@ -1155,6 +1183,7 @@ impl TestRunContext {
             fault_client,
             arm_client,
             fault_injection_rules,
+            gateway_v2_disabled,
         }
     }
 
@@ -1232,6 +1261,14 @@ impl TestRunContext {
             .await?
             .await?
             .into_model()?)
+    }
+
+    /// Creates a client with an independent runtime using the configured authentication mode.
+    ///
+    /// Use this when a test must mutate service state without advancing the
+    /// primary client's metadata caches.
+    pub async fn fresh_management_client(&self) -> Result<CosmosClient, BoxError> {
+        Self::create_client_with_preferred_region(HUB_REGION, self.gateway_v2_disabled).await
     }
 
     /// Gets the fault injection [`CosmosClient`], if configured.
@@ -1509,7 +1546,7 @@ impl TestRunContext {
     /// Cosmos can return `404/1013 CollectionCreateInProgress` after a create
     /// request succeeds. Only that explicitly transient status is retried;
     /// authorization, routing, and all other errors fail immediately.
-    async fn wait_for_container_ready(
+    pub(crate) async fn wait_for_container_ready(
         db_client: &DatabaseClient,
         container_id: &str,
     ) -> azure_data_cosmos::Result<ContainerClient> {
@@ -1646,9 +1683,14 @@ impl TestRunContext {
                 .await?;
 
             // Create two clients with different preferred regions to ensure container is available in both
-            let hub_client = Self::create_client_with_preferred_region(HUB_REGION).await?;
-            let satellite_client =
-                Self::create_client_with_preferred_region(SATELLITE_REGION).await?;
+            let hub_client =
+                Self::create_client_with_preferred_region(HUB_REGION, self.gateway_v2_disabled)
+                    .await?;
+            let satellite_client = Self::create_client_with_preferred_region(
+                SATELLITE_REGION,
+                self.gateway_v2_disabled,
+            )
+            .await?;
 
             let container_id = container_id.to_string();
 
@@ -1908,9 +1950,16 @@ impl TestRunContext {
     }
 
     /// Creates a CosmosClient with a specific preferred region.
-    async fn create_client_with_preferred_region(region: Region) -> Result<CosmosClient, BoxError> {
+    async fn create_client_with_preferred_region(
+        region: Region,
+        gateway_v2_disabled: bool,
+    ) -> Result<CosmosClient, BoxError> {
         if AuthMode::from_env() == AuthMode::Aad {
-            return Ok(build_aad_client_from_env(region, Vec::new(), None).await?.0);
+            return Ok(
+                build_aad_client_from_env(region, Vec::new(), None, gateway_v2_disabled)
+                    .await?
+                    .0,
+            );
         }
 
         let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)
@@ -1929,6 +1978,7 @@ impl TestRunContext {
             CosmosRuntime::builder()
                 .with_connection_pool(
                     ConnectionPoolOptions::builder()
+                        .with_gateway_v2_disabled(gateway_v2_disabled)
                         .with_server_certificate_validation(
                             ServerCertificateValidation::RequiredUnlessEmulator,
                         )
@@ -1964,7 +2014,7 @@ impl TestRunContext {
     pub async fn aad_client(
         &self,
     ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
-        build_aad_client_from_env(HUB_REGION, Vec::new(), None).await
+        build_aad_client_from_env(HUB_REGION, Vec::new(), None, self.gateway_v2_disabled).await
     }
 
     /// Cleans up test resources.
@@ -2176,6 +2226,7 @@ pub async fn build_aad_client_from_env(
     region: Region,
     fault_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
     binary_encoding: Option<BinaryEncodingOptions>,
+    gateway_v2_disabled: bool,
 ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
     use super::CosmosEmulatorCredential;
 
@@ -2210,25 +2261,25 @@ pub async fn build_aad_client_from_env(
     }
     let strategy = RoutingStrategy::ProximityTo(region);
 
+    if is_emulator || gateway_v2_disabled {
+        let mut connection_pool =
+            ConnectionPoolOptions::builder().with_gateway_v2_disabled(gateway_v2_disabled);
+        if is_emulator {
+            connection_pool = connection_pool.with_server_certificate_validation(
+                ServerCertificateValidation::RequiredUnlessEmulator,
+            );
+        }
+        let runtime = CosmosRuntime::builder()
+            .with_connection_pool(connection_pool.build()?)
+            .build()
+            .await?;
+        builder = builder.with_runtime(runtime);
+    }
+
     let (credential, recorder): (
         std::sync::Arc<dyn azure_core::credentials::TokenCredential>,
         Option<super::CredentialRecorder>,
     ) = if is_emulator {
-        // The emulator serves a self-signed certificate, so route the client
-        // through a runtime that skips certificate validation for emulator
-        // hosts (mirroring the key-auth emulator client setup).
-        let runtime = CosmosRuntime::builder()
-            .with_connection_pool(
-                ConnectionPoolOptions::builder()
-                    .with_server_certificate_validation(
-                        ServerCertificateValidation::RequiredUnlessEmulator,
-                    )
-                    .build()?,
-            )
-            .build()
-            .await?;
-        builder = builder.with_runtime(runtime);
-
         // Sign the fake JWT with the same master key the emulator validates against.
         let master_key = parsed
             .as_ref()

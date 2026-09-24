@@ -64,11 +64,11 @@ impl SessionManager {
     /// 1. If the user explicitly provided a session token via
     ///    [`CosmosOperation::with_session_token`](crate::models::CosmosOperation::with_session_token), use that.
     /// 2. If the request targets a specific partition-key range (`pk_range_id`
-    ///    is `Some`), return only that range's cached token. The RNTBD/thin-client
-    ///    backend rejects a multi-range composite token on a partition-scoped
-    ///    request with `"Session token specified is invalid."`, so a scoped
-    ///    request must carry only its own range's token (matching direct-mode
-    ///    semantics). Returns `None` when that range has no cached token yet.
+    ///    is `Some`), return only that range's cached token. Parent-aware callers
+    ///    may additionally re-key merged parent vectors for a freshly split
+    ///    child. The RNTBD/thin-client backend rejects a multi-range composite
+    ///    token on a partition-scoped request with `"Session token specified is
+    ///    invalid."`, so a scoped request must carry one range segment.
     /// 3. Otherwise (no resolved range — e.g. a not-yet-routed or non-partitioned
     ///    request), fall back to the full composite cached by container.
     ///
@@ -79,21 +79,27 @@ impl SessionManager {
         user_token: Option<&SessionToken>,
         pk_range_id: Option<&str>,
     ) -> Option<SessionToken> {
+        self.resolve_session_token_with_parents(operation, user_token, pk_range_id, &[])
+    }
+
+    /// Resolves a scoped token, falling back to parent vectors after a split.
+    pub(crate) fn resolve_session_token_with_parents(
+        &self,
+        operation: &CosmosOperation,
+        user_token: Option<&SessionToken>,
+        pk_range_id: Option<&str>,
+        parents: &[String],
+    ) -> Option<SessionToken> {
         // User-provided token takes precedence
         if let Some(token) = user_token {
             return Some(token.clone());
         }
 
-        // TODO(partition-key-range-parents): When a PKRange cache is available,
-        // use it to resolve parent range IDs during splits/merges. Currently
-        // only the direct RID is looked up. Java uses PartitionKeyRangeCache to
-        // map child ranges back to their parent session tokens.
-
         let container = operation.container()?;
         match pk_range_id {
             Some(pk_range_id) => self
                 .container
-                .resolve_session_token_for_range(container, pk_range_id),
+                .resolve_session_token_for_partition_key_range(container, pk_range_id, parents),
             None => self.container.resolve_session_token(container),
         }
     }
@@ -318,6 +324,29 @@ mod tests {
 
         let token = mgr.resolve_session_token(&op, None, None).unwrap();
         assert_eq!(token.as_str(), "0:1#100#1=10");
+    }
+
+    #[test]
+    fn resolves_split_child_from_parent_session_token() {
+        let mgr = SessionManager::new();
+        let container = test_container();
+        let op = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+        let headers = make_response_headers(
+            Some("parent:1#100#1=10"),
+            Some("coll_rid1"),
+            Some("dbs/db1/colls/coll1"),
+        );
+        mgr.capture_session_token(&op, &headers);
+
+        let token = mgr
+            .resolve_session_token_with_parents(&op, None, Some("child"), &["parent".to_string()])
+            .unwrap();
+
+        assert_eq!(token.as_str(), "child:1#100#1=10");
     }
 
     #[test]

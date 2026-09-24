@@ -5,9 +5,9 @@
 //! failover behavior tested against the local emulator via fault injection.
 //!
 //! These tests cover:
-//!   1. PK range fetch failure graceful fallback — when the metadata request for
-//!      partition key ranges fails (503), the pre-resolution returns `None` and the
-//!      operation still succeeds without a pre-resolved pk_range_id.
+//!   1. Lazy PK range fetch failure graceful fallback — when the metadata request
+//!      for partition key ranges fails (503), pre-resolution returns `None` and
+//!      the operation still succeeds without a pre-resolved pk_range_id.
 //!   2. Partition split / 410 Gone handling — when a data operation returns 410
 //!      (PartitionIsGone), the pipeline performs a failover retry and the operation
 //!      ultimately succeeds.
@@ -22,7 +22,7 @@
 
 use crate::framework::DriverTestClient;
 use azure_data_cosmos_driver::fault_injection::*;
-use azure_data_cosmos_driver::options::PartitionFailoverOptions;
+use azure_data_cosmos_driver::options::{PartitionFailoverOptions, PartitionTopologyCacheMode};
 use std::error::Error;
 use std::sync::Arc;
 
@@ -30,9 +30,9 @@ use std::sync::Arc;
 // PK Range Cache Tests
 // ────────────────────────────────────────────────────────────────────────────
 
-/// When the `MetadataPartitionKeyRanges` request returns 503, the pre-resolution
-/// of the partition key range ID for PPCB/PPAF is non-fatal: the driver falls
-/// back to executing the operation without a pre-resolved `partition_key_range_id`.
+/// In lazy mode, a 503 from `MetadataPartitionKeyRanges` during partition-range
+/// pre-resolution is non-fatal: the driver executes the operation without a
+/// pre-resolved `partition_key_range_id`.
 ///
 /// The data operation (ReadItem) must still succeed — the 503 on pkranges only
 /// prevents the driver from pre-routing the request to the optimal region;
@@ -42,7 +42,7 @@ use std::sync::Arc;
     not(test_category = "emulator"),
     ignore = "requires test_category 'emulator'"
 )]
-pub async fn pkrange_fetch_503_falls_back_gracefully_to_data_operation(
+pub async fn in_lazy_mode_pkrange_fetch_503_falls_back_gracefully_to_data_operation(
 ) -> Result<(), Box<dyn Error>> {
     // Inject a persistent 503 on ALL MetadataPartitionKeyRanges requests so
     // that pre-resolution always fails.
@@ -65,6 +65,7 @@ pub async fn pkrange_fetch_503_falls_back_gracefully_to_data_operation(
     // PPCB must be enabled for the driver to actually fetch PK ranges
     // (pre_resolve_partition_key_range_id short-circuits otherwise).
     let partition_failover_options = PartitionFailoverOptions::builder()
+        .with_partition_topology_cache_mode(PartitionTopologyCacheMode::Lazy)
         .with_circuit_breaker_enabled(true)
         .build()?;
 
@@ -75,7 +76,8 @@ pub async fn pkrange_fetch_503_falls_back_gracefully_to_data_operation(
             let container_name = context.unique_container_name();
             let container = context
                 .create_container(&database, &container_name, "/pk")
-                .await?;
+                .await
+                .expect("Container creation must succeed");
 
             // Create an item — succeeds even though pkrange pre-resolution is failing.
             let item_json = br#"{"id": "pkrange-fallback-1", "pk": "pk1", "value": "test"}"#;

@@ -329,7 +329,7 @@ pub async fn feed_range_from_empty_partition_key_fails() -> Result<(), Box<dyn E
                 .create_container(db_client, properties, None)
                 .await?;
 
-            let empty = PartitionKey::from(Vec::<PartitionKeyValue>::new());
+            let empty = PartitionKey::try_from(Vec::<PartitionKeyValue>::new())?;
             let err = container_client
                 .feed_range_from_partition_key(empty, None)
                 .await
