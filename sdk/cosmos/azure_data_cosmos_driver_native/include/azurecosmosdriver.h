@@ -1642,10 +1642,25 @@ typedef struct cosmos_fault_injection_condition_t {
 typedef struct cosmos_fault_injection_result_t {
   struct cosmos_fault_injection_record_header_t header;
   int32_t error_type;
+  /**
+   * Delay before completing the injected result, in milliseconds.
+   *
+   * Use `-1` to leave unset. `0` is a configured zero-duration delay.
+   */
   int64_t delay_ms;
   float probability;
   int32_t custom_status_code;
+  /**
+   * Injected Cosmos sub-status for a custom HTTP response.
+   *
+   * Use `-1` to leave unset. `0` is a configured sub-status value.
+   */
   int32_t custom_sub_status;
+  /**
+   * Injected `x-ms-retry-after-ms` value for a custom HTTP response.
+   *
+   * Use `-1` to leave unset. `0` is a configured zero retry-after value.
+   */
   int64_t retry_after_ms;
   const struct cosmos_header_kv_t *custom_headers;
   uintptr_t custom_headers_len;
@@ -1661,8 +1676,25 @@ typedef struct cosmos_fault_injection_rule_t {
   struct cosmos_string_view_t id;
   const struct cosmos_fault_injection_condition_t *condition;
   const struct cosmos_fault_injection_result_t *result;
+  /**
+   * Maximum number of matching requests to inject.
+   *
+   * Use `-1` to leave unset. `0` disables injection for this rule.
+   */
   int64_t hit_limit;
+  /**
+   * Delay before the rule becomes active, in milliseconds.
+   *
+   * Use `-1` to leave unset. `0` makes the rule active immediately.
+   */
   int64_t start_delay_ms;
+  /**
+   * Active duration after the computed start time, in milliseconds.
+   *
+   * Use `-1` to leave unset. `0` expires the rule at its start time. When
+   * `start_delay_ms` is set, expiration is measured from that delayed start,
+   * not from the options build call.
+   */
   int64_t expire_after_ms;
 } cosmos_fault_injection_rule_t;
 

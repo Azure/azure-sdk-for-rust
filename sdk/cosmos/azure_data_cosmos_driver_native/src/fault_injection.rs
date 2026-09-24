@@ -241,10 +241,19 @@ pub struct CosmosFaultInjectionCondition {
 pub struct CosmosFaultInjectionResult {
     pub header: CosmosFaultInjectionRecordHeader,
     pub error_type: i32,
+    /// Delay before completing the injected result, in milliseconds.
+    ///
+    /// Use `-1` to leave unset. `0` is a configured zero-duration delay.
     pub delay_ms: i64,
     pub probability: f32,
     pub custom_status_code: i32,
+    /// Injected Cosmos sub-status for a custom HTTP response.
+    ///
+    /// Use `-1` to leave unset. `0` is a configured sub-status value.
     pub custom_sub_status: i32,
+    /// Injected `x-ms-retry-after-ms` value for a custom HTTP response.
+    ///
+    /// Use `-1` to leave unset. `0` is a configured zero retry-after value.
     pub retry_after_ms: i64,
     pub custom_headers: *const CosmosHeaderKv,
     pub custom_headers_len: usize,
@@ -260,8 +269,19 @@ pub struct CosmosFaultInjectionRule {
     pub id: CosmosStringView,
     pub condition: *const CosmosFaultInjectionCondition,
     pub result: *const CosmosFaultInjectionResult,
+    /// Maximum number of matching requests to inject.
+    ///
+    /// Use `-1` to leave unset. `0` disables injection for this rule.
     pub hit_limit: i64,
+    /// Delay before the rule becomes active, in milliseconds.
+    ///
+    /// Use `-1` to leave unset. `0` makes the rule active immediately.
     pub start_delay_ms: i64,
+    /// Active duration after the computed start time, in milliseconds.
+    ///
+    /// Use `-1` to leave unset. `0` expires the rule at its start time. When
+    /// `start_delay_ms` is set, expiration is measured from that delayed start,
+    /// not from the options build call.
     pub expire_after_ms: i64,
 }
 
@@ -513,10 +533,14 @@ pub(crate) unsafe fn decode_rules(
         || rule_stride < size_of::<CosmosFaultInjectionRule>()
         || !rule_stride.is_multiple_of(align_of::<CosmosFaultInjectionRule>())
         || rules_len.checked_mul(rule_stride).is_none()
+        || rules_len > (isize::MAX as usize) / rule_stride
     {
         return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code());
     }
-    let mut decoded = Vec::with_capacity(rules_len);
+    let mut decoded = Vec::new();
+    decoded
+        .try_reserve(rules_len)
+        .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code())?;
     for index in 0..rules_len {
         // SAFETY: validated stride arithmetic and caller-provided readable records.
         let ptr = unsafe {
@@ -661,6 +685,95 @@ mod tests {
             unsafe { decode_rules(misaligned, 1, size_of::<CosmosFaultInjectionRule>(),) }
                 .unwrap_err(),
             CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+    }
+
+    #[test]
+    fn strided_rules_reject_spans_larger_than_isize() {
+        let rules = std::ptr::NonNull::<CosmosFaultInjectionRule>::dangling().as_ptr();
+        let stride = size_of::<CosmosFaultInjectionRule>();
+        let rules_len = (isize::MAX as usize / stride) + 1;
+        // SAFETY: the decoder rejects the metadata before allocation or reads.
+        assert_eq!(
+            unsafe { decode_rules(rules, rules_len, stride) }.unwrap_err(),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+    }
+
+    #[test]
+    fn strided_rules_accept_larger_same_version_records() {
+        #[repr(C)]
+        #[derive(Clone, Copy)]
+        struct ExtendedCondition {
+            prefix: CosmosFaultInjectionCondition,
+            _tail: [u8; 8],
+        }
+
+        #[repr(C)]
+        #[derive(Clone, Copy)]
+        struct ExtendedResult {
+            prefix: CosmosFaultInjectionResult,
+            _tail: [u8; 8],
+        }
+
+        #[repr(C)]
+        #[derive(Clone, Copy)]
+        struct ExtendedRule {
+            prefix: CosmosFaultInjectionRule,
+            _tail: [u8; 8],
+        }
+
+        let mut condition = ExtendedCondition {
+            prefix: cosmos_fault_injection_condition_default(),
+            _tail: [0xCD; 8],
+        };
+        condition.prefix.header.struct_size = size_of::<ExtendedCondition>();
+        condition.prefix.operation_type =
+            CosmosFaultInjectionOperationType::CosmosFaultInjectionOperationTypeReadItem as i32;
+
+        let mut result = ExtendedResult {
+            prefix: cosmos_fault_injection_result_default(),
+            _tail: [0xCD; 8],
+        };
+        result.prefix.header.struct_size = size_of::<ExtendedResult>();
+        result.prefix.custom_status_code = 429;
+        result.prefix.custom_sub_status = 3200;
+
+        let mut rule = ExtendedRule {
+            prefix: cosmos_fault_injection_rule_default(),
+            _tail: [0xCD; 8],
+        };
+        rule.prefix.header.struct_size = size_of::<ExtendedRule>();
+        rule.prefix.id = view(b"extended-prefix");
+        rule.prefix.condition = (&condition as *const ExtendedCondition).cast();
+        rule.prefix.result = (&result as *const ExtendedResult).cast();
+        let rules = [rule];
+
+        // SAFETY: all borrowed records and buffers remain live during decoding.
+        let decoded = unsafe {
+            decode_rules(
+                rules.as_ptr().cast::<CosmosFaultInjectionRule>(),
+                rules.len(),
+                size_of::<ExtendedRule>(),
+            )
+        }
+        .expect("larger same-version records decode");
+
+        assert_eq!(decoded.len(), 1);
+        assert_eq!(decoded[0].id(), "extended-prefix");
+        assert_eq!(
+            decoded[0].condition().operation_type(),
+            Some(FaultOperationType::ReadItem)
+        );
+        let response = decoded[0].result().custom_response().unwrap();
+        assert_eq!(u16::from(response.status_code()), 429);
+        assert_eq!(
+            response
+                .headers()
+                .get_optional_str(&azure_core::http::headers::HeaderName::from(
+                    "x-ms-substatus"
+                )),
+            Some("3200")
         );
     }
 }

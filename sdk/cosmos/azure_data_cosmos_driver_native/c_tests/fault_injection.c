@@ -130,6 +130,73 @@ cleanup:
     return result;
 }
 
+static int create_connection_error_fixture(fault_fixture_t *fixture)
+{
+    int result = TEST_PASS;
+    cosmos_account_ref_t *account = NULL;
+    cosmos_driver_options_t *options = NULL;
+    cosmos_error_t *error = NULL;
+
+    cosmos_fault_injection_rule_t rule =
+        cosmos_fault_injection_rule_default();
+    cosmos_fault_injection_condition_t condition =
+        cosmos_fault_injection_condition_default();
+    cosmos_fault_injection_result_t fault_result =
+        cosmos_fault_injection_result_default();
+
+    rule.id = SV("linked-c-connection-error");
+    condition.operation_type =
+        COSMOS_FAULT_INJECTION_OPERATION_TYPE_READ_ITEM;
+    fault_result.error_type =
+        COSMOS_FAULT_INJECTION_ERROR_TYPE_CONNECTION_ERROR;
+    rule.condition = &condition;
+    rule.result = &fault_result;
+    rule.hit_limit = 100;
+
+    int32_t rc = cosmos_account_ref_with_master_key(
+        SV("https://native-fault.invalid/"), SV("dGVzdA=="), &account, &error);
+    REQUIRE(rc == COSMOS_STATUS_SUCCESS && account != NULL,
+            "account constructed (rc=%d)", rc);
+
+    cosmos_driver_options_config_v2_t config =
+        cosmos_driver_options_config_v2_default();
+    config.fault_injection_rules = &rule;
+    config.fault_injection_rules_len = 1;
+    config.fault_injection_rule_stride = sizeof(rule);
+    rc = cosmos_driver_options_build_v2(account, &config, &options);
+    REQUIRE(rc == COSMOS_STATUS_SUCCESS && options != NULL,
+            "v2 options constructed (rc=%d)", rc);
+
+    rc = __test_only_create_fault_injection_fixture(
+        options, &fixture->runtime, &fixture->driver, &fixture->container);
+    REQUIRE(rc == COSMOS_STATUS_SUCCESS && fixture->runtime != NULL &&
+                fixture->driver != NULL && fixture->container != NULL,
+            "mock-backed driver fixture constructed (rc=%d)", rc);
+
+    cosmos_driver_options_free(options);
+    options = NULL;
+    cosmos_account_ref_free(account);
+    account = NULL;
+
+    cosmos_completion_queue_options_t queue_options = {
+        .capacity_hint = 0,
+        .max_capacity = 0,
+        .include_error_details = true,
+    };
+    fixture->queue =
+        cosmos_completion_queue_create(fixture->runtime, &queue_options);
+    REQUIRE(fixture->queue != NULL, "completion queue constructed");
+
+cleanup:
+    cosmos_error_free(error);
+    cosmos_driver_options_free(options);
+    cosmos_account_ref_free(account);
+    if (result != TEST_PASS) {
+        free_fixture(fixture);
+    }
+    return result;
+}
+
 static int find_i64_header(const cosmos_completion_t *completion,
                            cosmos_header_id_t id,
                            int64_t *value)
@@ -270,6 +337,45 @@ cleanup:
     return result;
 }
 
+static int test_connection_fault_flows_through_completion(void)
+{
+    int result = TEST_PASS;
+    fault_fixture_t fixture = {0};
+    cosmos_completion_t completion = {0};
+    int completion_owned = 0;
+
+    REQUIRE(create_connection_error_fixture(&fixture) == TEST_PASS,
+            "connection-error fixture created");
+
+    REQUIRE(submit_item(&fixture, COSMOS_OPERATION_KIND_READ_ITEM, &completion),
+            "read completion received");
+    completion_owned = 1;
+    ASSERT(completion.outcome == COSMOS_COMPLETION_OUTCOME_ERROR,
+           "read is injected as a transport error");
+    ASSERT(completion.http_status_code == 503,
+           "connection error synthetic HTTP status is 503 (got %u)",
+           (unsigned)completion.http_status_code);
+    ASSERT(COSMOS_STATUS_HTTP(completion.status) == 503 &&
+               COSMOS_STATUS_SUB(completion.status) ==
+                   COSMOS_SUB_STATUS_TRANSPORT_GENERATED_503,
+           "packed status is 503/TRANSPORT_GENERATED_503 (got %d)",
+           completion.status);
+
+    int64_t sub_status = -1;
+    ASSERT(find_i64_header(&completion, COSMOS_HEADER_ID_SUB_STATUS, &sub_status) &&
+               sub_status == COSMOS_SUB_STATUS_TRANSPORT_GENERATED_503,
+           "typed substatus header is I64 TRANSPORT_GENERATED_503 (got %" PRId64 ")",
+           sub_status);
+
+cleanup:
+    if (completion_owned) {
+        cosmos_completion_queue_free_completions(&completion, 1);
+    }
+    free_fixture(&fixture);
+    return result;
+}
+
 TEST_SUITE_BEGIN("Native fault injection")
 TEST_REGISTER(rules_flow_through_submit_and_completion)
+TEST_REGISTER(connection_fault_flows_through_completion)
 TEST_SUITE_END("Native fault injection")
