@@ -796,7 +796,7 @@ mod tests {
             .expect_err("http production endpoint must be rejected");
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+            crate::error::status_codes::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
         );
     }
 
@@ -818,7 +818,7 @@ mod tests {
             .expect_err("http backup endpoint must be rejected");
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+            crate::error::status_codes::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
         );
     }
 

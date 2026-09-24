@@ -33,8 +33,7 @@ async fn query_offer(
     let Some(driver_response) = context
         .driver
         .execute_operation(operation, operation_options)
-        .await
-        .map_err(crate::CosmosError::from)?
+        .await?
     else {
         return Ok(None);
     };
@@ -77,7 +76,7 @@ fn with_prior_diagnostics(
         sources.push(current);
     }
     match DiagnosticsContext::aggregate_sub_operations(&sources) {
-        Some(diagnostics) => error.with_diagnostics(Arc::new(diagnostics)),
+        Some(diagnostics) => crate::error::with_diagnostics(error, Arc::new(diagnostics)),
         None => error,
     }
 }
@@ -142,7 +141,7 @@ pub(crate) async fn find_offer_for_container(
     {
         Ok(replacement) => replacement,
         Err(error) => {
-            let error = with_prior_diagnostics(error.into(), &[first.diagnostics]);
+            let error = with_prior_diagnostics(error, &[first.diagnostics]);
             context.dispatch_error(&error, || op_context);
             return Err(error);
         }
@@ -267,8 +266,8 @@ async fn begin_replace_with_offer(
         // No offer exists for the resource — typically the caller
         // pointed at a resource that doesn't support throughput
         // (e.g. a serverless or shared-throughput container).
-        crate::DriverCosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE)
+        crate::CosmosError::builder()
+            .with_status(azure_data_cosmos_driver::error::status_codes::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE)
             .with_message("no throughput offer found for this resource")
             .build()
     })?;
@@ -277,11 +276,12 @@ async fn begin_replace_with_offer(
         // Service contract violation: an offer was returned but it has
         // no id. Map to 500 with a dedicated sub-status so callers can
         // distinguish this from a transport-generated 503.
-        return Err(crate::DriverCosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERVICE_RETURNED_OFFER_WITHOUT_ID)
+        return Err(crate::CosmosError::builder()
+            .with_status(
+                azure_data_cosmos_driver::error::status_codes::SERVICE_RETURNED_OFFER_WITHOUT_ID,
+            )
             .with_message("throughput offer has an empty id")
-            .build()
-            .into());
+            .build());
     }
 
     let offer_id = current_throughput.offer_id.clone();

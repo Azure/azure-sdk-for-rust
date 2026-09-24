@@ -48,13 +48,3 @@ mod region_proximity;
 mod resource_identity;
 mod runtime;
 mod session_helpers;
-
-// =========================================================================
-// Crate-internal re-exports
-// =========================================================================
-
-/// Internal alias for the driver's `CosmosError`. Used at error-construction
-/// sites inside this crate so they can call the driver's
-/// `CosmosError::builder()` directly and then `.into()` the result into the
-/// public [`CosmosError`] newtype. Not exposed in the public API.
-pub(crate) use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;

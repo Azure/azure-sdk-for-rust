@@ -153,7 +153,7 @@ impl StructuralHasher {
     fn hash(&self, value: &Value, seed: u128, depth: usize) -> crate::error::Result<u128> {
         if depth > MAX_DEPTH {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED)
+                .with_status(crate::error::status_codes::CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED)
                 .with_message(format!(
                     "value nests deeper than the {MAX_DEPTH}-level limit for DISTINCT hashing"
                 ))
@@ -493,7 +493,7 @@ mod tests {
         let err = hash_value(&value).expect_err("must reject over-deep values");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED),
+            Some(crate::error::status_codes::substatus::CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED),
         );
     }
 

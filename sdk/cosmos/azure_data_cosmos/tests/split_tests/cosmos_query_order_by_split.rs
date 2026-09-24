@@ -41,7 +41,7 @@ use azure_data_cosmos::{
         IndexingPolicy, ThroughputProperties,
     },
     options::{MaxItemCountHint, QueryOptions},
-    CosmosError, CosmosStatus, Query,
+    CosmosError, Query,
 };
 use framework::{MockItem, TestClient, TestOptions};
 use futures::StreamExt;
@@ -665,7 +665,7 @@ pub async fn order_by_live_mixed_types_and_join_resume_matrix() -> Result<(), Bo
                 .await;
                 assert_eq!(
                     error.status(),
-                    CosmosStatus::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED,
+                    azure_data_cosmos_driver::error::status_codes::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED,
                     "ORDER BY {direction} over a complex sort key must be rejected, got: {error}"
                 );
             }

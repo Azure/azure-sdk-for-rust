@@ -16,8 +16,7 @@ use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition, ThroughputProperties},
     options::{CreateContainerOptions, ItemReadOptions, MaxItemCountHint, QueryOptions, Region},
     AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
-    CosmosRuntimeBuilder, FeedScope, PartitionKey, Query, RoutingStrategy, SubStatusCode,
-    TransactionalBatch,
+    CosmosRuntimeBuilder, FeedScope, PartitionKey, Query, RoutingStrategy, TransactionalBatch,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
@@ -652,7 +651,7 @@ async fn incompatible_partition_key_shape_does_not_reach_replacement() {
     assert_eq!(error.status().status_code(), StatusCode::BadRequest);
     assert_eq!(
         error.status().sub_status(),
-        Some(SubStatusCode::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+        Some(azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
     );
     let attempts = harness.observer.item_creates();
     assert_eq!(
@@ -695,7 +694,7 @@ async fn stale_epk_range_does_not_cross_container_recreation() {
     assert_eq!(error.status().status_code(), StatusCode::BadRequest);
     assert_eq!(
         error.status().sub_status(),
-        Some(SubStatusCode::COLLECTION_RID_MISMATCH)
+        Some(azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
     );
     let query_requests = harness.observer.query_requests();
     let query_transitions = intended_rid_transitions(&query_requests);

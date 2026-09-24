@@ -430,7 +430,7 @@ pub async fn hpk_item_partial_key_point_op_fails() -> Result<(), Box<dyn Error>>
             );
             assert_eq!(
                 err.status().sub_status(),
-                Some(SubStatusCode::PARTITION_KEY_MISMATCH),
+                Some(azure_data_cosmos_driver::error::status_codes::substatus::PARTITION_KEY_MISMATCH),
                 "partial-key point read should carry sub-status 1001 PartitionKeyMismatch"
             );
 
@@ -884,7 +884,7 @@ pub async fn hpk_query_cross_partition_advanced_not_servable() -> Result<(), Box
                 );
                 if let Some(sub) = status.sub_status() {
                     assert!(
-                        sub == SubStatusCode::CROSS_PARTITION_QUERY_NOT_SERVABLE
+                        sub == azure_data_cosmos_driver::error::status_codes::substatus::CROSS_PARTITION_QUERY_NOT_SERVABLE
                             || sub == SubStatusCode::new(0),
                         "expected sub-status 1004 or 0 for {query}, got {sub:?}"
                     );

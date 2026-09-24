@@ -96,7 +96,7 @@ fn parse_endpoint(
         Err(e) => {
             let driver_err = azure_data_cosmos_driver::error::CosmosError::builder()
                 .with_status(
-                    azure_data_cosmos_driver::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL,
+                    azure_data_cosmos_driver::error::status_codes::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL,
                 )
                 .with_message(format!("failed to parse account endpoint URL: {e}"))
                 .build();

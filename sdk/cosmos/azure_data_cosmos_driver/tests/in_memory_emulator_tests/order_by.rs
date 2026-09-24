@@ -405,7 +405,7 @@ async fn cross_partition_order_by_enforces_max_fan_out() {
     assert_eq!(
         err.status().sub_status(),
         Some(
-            azure_data_cosmos_driver::error::SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED
+            azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED
         ),
         "unexpected error: {err}",
     );

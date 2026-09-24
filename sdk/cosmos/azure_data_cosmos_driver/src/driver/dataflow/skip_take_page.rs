@@ -79,7 +79,7 @@ pub(crate) fn split_feed_envelope(body: &Bytes) -> crate::error::Result<Vec<Byte
     let body = &super::query_response::normalize_page_body(body)?;
     let page: RawQueryPage = serde_json::from_slice(body).map_err(|e| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message("failed to parse cross-partition query page envelope")
             .with_source(e)
             .build()
@@ -132,7 +132,7 @@ pub(crate) fn encode_items(
                 .map_err(|e| {
                     crate::error::CosmosError::builder()
                         .with_status(
-                            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+                            crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
                         )
                         .with_message(
                             "failed to re-encode cross-partition query document to binary",

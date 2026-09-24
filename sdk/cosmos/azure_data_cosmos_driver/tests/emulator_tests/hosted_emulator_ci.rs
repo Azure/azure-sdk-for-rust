@@ -459,7 +459,7 @@ async fn driver_observes_410_1007_while_merge_is_swapping() -> TestResult {
         assert_eq!(error.status().status_code(), StatusCode::Gone);
         assert_eq!(
             error.status().sub_status(),
-            Some(SubStatusCode::COMPLETING_SPLIT)
+            Some(azure_data_cosmos_driver::error::status_codes::substatus::COMPLETING_SPLIT)
         );
         let diagnostics = error
             .diagnostics()
@@ -467,7 +467,7 @@ async fn driver_observes_410_1007_while_merge_is_swapping() -> TestResult {
         assert_diagnostics_include(
             diagnostics.as_ref(),
             StatusCode::Gone,
-            SubStatusCode::COMPLETING_SPLIT,
+            azure_data_cosmos_driver::error::status_codes::substatus::COMPLETING_SPLIT,
         );
         Ok(())
     })

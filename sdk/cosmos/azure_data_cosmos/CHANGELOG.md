@@ -13,6 +13,7 @@
 
 ### Breaking Changes
 
+- Re-exported the driver's `CosmosError`, `CosmosStatus`, and `SubStatusCode` directly, removing the SDK-owned `CosmosError` wrapper and all associated `CosmosStatus` and `SubStatusCode` constants from the supported SDK surface.
 - `CosmosTracingHandler` is now constructed exclusively through `CosmosTracingHandler::builder()`. The `new`, `with_thresholds`, and `with_thresholds_and_rate_limit` constructors and the `Default` implementation were removed; configure the equivalent values with the builder and call `build` or `build_with_tracer`. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Re-exported `UserAgentSuffix` replaces panicking `new` with `TryFrom<String>` and `TryFrom<&str>`, returning a typed `CosmosError` for invalid suffixes. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
 - Re-exported `PartitionKey` and `PartitionKeyValue` now use `TryFrom` for dynamically sized key vectors and floating-point values, returning typed errors instead of panicking on excess components or non-finite numbers. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))

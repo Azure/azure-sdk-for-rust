@@ -367,9 +367,7 @@ impl DriverOptionsInput {
         }
         #[cfg(feature = "fault_injection")]
         if !self.fault_injection_rules.is_empty() {
-            builder = builder
-                .with_fault_injection_rules(self.fault_injection_rules)
-                .map_err(crate::CosmosError::from)?;
+            builder = builder.with_fault_injection_rules(self.fault_injection_rules)?;
         }
         Ok(builder.build())
     }
@@ -491,7 +489,7 @@ mod tests {
             .expect_err("http production endpoint must be rejected");
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
+            azure_data_cosmos_driver::error::status_codes::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL
         );
     }
 

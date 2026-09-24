@@ -97,10 +97,10 @@ impl CosmosResponse {
         let tracking_id = self.patch_tracking_id();
         let diagnostics = self.diagnostics;
         self.body.into_single().map_err(|error| {
-            let error = error.with_diagnostics(diagnostics);
+            let error = crate::error::with_diagnostics(error, diagnostics);
             #[cfg(feature = "preview_patch")]
             if let Some(tracking_id) = tracking_id {
-                return error.with_patch_tracking_id(tracking_id);
+                return crate::error::with_patch_tracking_id(error, tracking_id);
             }
             error
         })

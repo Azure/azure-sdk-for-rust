@@ -191,7 +191,7 @@ async fn gateway_query_plan(
         crate::models::ResponseBody::Bytes(body) => body.clone(),
         _ => {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("query plan response did not contain a body")
                 .with_source(std::io::Error::other("missing body"))
                 .build());
@@ -199,7 +199,7 @@ async fn gateway_query_plan(
     };
     let raw_plan: RawQueryPlan = serde_json::from_slice(&query_plan_body).map_err(|error| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message("failed to parse query plan response")
             .with_source(error)
             .build()

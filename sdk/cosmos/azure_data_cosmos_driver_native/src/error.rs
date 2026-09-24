@@ -89,7 +89,7 @@ impl CosmosStatusCode {
 /// from the driver — or a driver constant that is renamed or removed — fails the
 /// build instead of silently diverging.
 ///
-/// [`SubStatusCode`] is a set of associated `pub const`s, not an enumerable
+/// The driver exposes these values as free constants, not an enumerable
 /// type, so exposing a *new* synthetic `2xxxx` sub-status on the C surface is
 /// still a manual step: add the variant to the Rust enum and pin it in that same
 /// guard. Because the guard maps variants with an exhaustive match, a variant
@@ -263,7 +263,7 @@ const _: () = {
             // pinned to a driver constant (a new, unlisted variant won't compile).
             const fn driver_of(v: CosmosSubStatus) -> SubStatusCode {
                 match v {
-                    $( CosmosSubStatus::$variant => SubStatusCode::$driver, )+
+                    $( CosmosSubStatus::$variant => azure_data_cosmos_driver::error::status_codes::substatus::$driver, )+
                 }
             }
             // Correctness: each literal discriminant equals its driver value.
@@ -408,51 +408,51 @@ impl CosmosErrorCode {
             Self::CosmosErrorCodeSuccess => return None,
             Self::CosmosErrorCodeInvalidArgument => (
                 StatusCode::BadRequest,
-                SubStatusCode::CLIENT_FFI_NULL_ARGUMENT,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_NULL_ARGUMENT,
             ),
             Self::CosmosErrorCodeInvalidUtf8 => (
                 StatusCode::BadRequest,
-                SubStatusCode::CLIENT_FFI_INVALID_UTF8,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_INVALID_UTF8,
             ),
             Self::CosmosErrorCodeInvalidHeader => (
                 StatusCode::BadRequest,
-                SubStatusCode::CLIENT_FFI_INVALID_HEADER,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_INVALID_HEADER,
             ),
             Self::CosmosErrorCodeInvalidOptionValue => (
                 StatusCode::BadRequest,
-                SubStatusCode::CLIENT_FFI_INVALID_OPTION_VALUE,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_INVALID_OPTION_VALUE,
             ),
             Self::CosmosErrorCodeInvalidPartitionKey => (
                 StatusCode::BadRequest,
-                SubStatusCode::CLIENT_PARTITION_KEY_EMPTY,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_PARTITION_KEY_EMPTY,
             ),
             Self::CosmosErrorCodeTooManyPartitionKeyComponents => (
                 StatusCode::BadRequest,
-                SubStatusCode::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
             ),
             Self::CosmosErrorCodeInvalidAccountReference => (
                 StatusCode::BadRequest,
-                SubStatusCode::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL,
             ),
             Self::CosmosErrorCodeOperationCancelled => (
                 StatusCode::RequestTimeout,
-                SubStatusCode::CLIENT_FFI_OPERATION_CANCELLED,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_OPERATION_CANCELLED,
             ),
             Self::CosmosErrorCodeQueueShutdown => (
                 StatusCode::ServiceUnavailable,
-                SubStatusCode::CLIENT_FFI_QUEUE_SHUTDOWN,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_QUEUE_SHUTDOWN,
             ),
             Self::CosmosErrorCodeQueueFull => (
                 StatusCode::ServiceUnavailable,
-                SubStatusCode::CLIENT_FFI_QUEUE_FULL,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_QUEUE_FULL,
             ),
             Self::CosmosErrorCodeRuntimeBuildFailed => (
                 StatusCode::InternalServerError,
-                SubStatusCode::CLIENT_FFI_RUNTIME_BUILD_FAILED,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_RUNTIME_BUILD_FAILED,
             ),
             Self::CosmosErrorCodeInternalError => (
                 StatusCode::InternalServerError,
-                SubStatusCode::CLIENT_FFI_PANIC,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_PANIC,
             ),
         };
         Some(CosmosStatus::new(status_code).with_sub_status(sub_status.value()))
@@ -467,7 +467,7 @@ impl CosmosErrorCode {
     }
 
     /// Infallible [`CosmosStatus`] for the internal panic-firewall condition
-    /// (`500` / [`SubStatusCode::CLIENT_FFI_PANIC`]).
+    /// (`500` / [`azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_PANIC`]).
     ///
     /// The submit-path panic firewall must never itself panic, so it builds the
     /// synthesized error's status here instead of unwrapping the `Option`
@@ -479,8 +479,10 @@ impl CosmosErrorCode {
         Self::CosmosErrorCodeInternalError
             .to_status()
             .unwrap_or_else(|| {
-                CosmosStatus::new(StatusCode::InternalServerError)
-                    .with_sub_status(SubStatusCode::CLIENT_FFI_PANIC.value())
+                CosmosStatus::new(StatusCode::InternalServerError).with_sub_status(
+                    azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_PANIC
+                        .value(),
+                )
             })
     }
 }
@@ -787,7 +789,10 @@ mod tests {
             unpack(CosmosStatusCode::from_status(
                 CosmosErrorCode::panic_status()
             )),
-            (500, SubStatusCode::CLIENT_FFI_PANIC.value())
+            (
+                500,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_PANIC.value()
+            )
         );
     }
 
@@ -802,8 +807,10 @@ mod tests {
 
     #[test]
     fn into_raw_populates_flat_fields_and_frees() {
-        let status = CosmosStatus::new(StatusCode::RequestTimeout)
-            .with_sub_status(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value());
+        let status = CosmosStatus::new(StatusCode::RequestTimeout).with_sub_status(
+            azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT
+                .value(),
+        );
         let err = DriverCosmosError::builder()
             .with_status(status)
             .with_message("operation timeout")
@@ -816,7 +823,10 @@ mod tests {
         assert_eq!(e.http_status_code, 408);
         assert_eq!(
             e.sub_status,
-            i32::from(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value())
+            i32::from(
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT
+                    .value()
+            )
         );
         assert_eq!(e.is_from_wire, 0);
         assert_eq!(unpack(e.status), (408, 20008));

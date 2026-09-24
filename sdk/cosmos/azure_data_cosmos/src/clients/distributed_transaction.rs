@@ -342,7 +342,7 @@ pub(crate) async fn commit_distributed_write(
             Ok(response)
         }
         Err(err) => {
-            let err = crate::CosmosError::from(err);
+            let err = err;
             context.dispatch_error(&err, || transaction_op_context("commit_distributed_write"));
             Err(err)
         }
@@ -370,7 +370,7 @@ pub(crate) async fn execute_distributed_read(
             Ok(response)
         }
         Err(err) => {
-            let err = crate::CosmosError::from(err);
+            let err = err;
             context.dispatch_error(&err, || transaction_op_context("execute_distributed_read"));
             Err(err)
         }
@@ -408,15 +408,14 @@ fn validate_transaction_account(
     {
         Ok(())
     } else {
-        Err(crate::DriverCosmosError::builder()
+        Err(crate::CosmosError::builder()
             .with_status(crate::CosmosStatus::new(
                 azure_core::http::StatusCode::BadRequest,
             ))
             .with_message(
                 "distributed transaction operations must target containers from the same Cosmos account as the committing client",
             )
-            .build()
-            .into())
+            .build())
     }
 }
 

@@ -289,7 +289,7 @@ impl FromStr for FeedRange {
 
         let json: FeedRangeJson = serde_json::from_slice(&decoded_bytes).map_err(|e| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("feed range JSON is invalid")
                 .with_source(e)
                 .build()

@@ -18,7 +18,7 @@ use azure_data_cosmos::options::{
 };
 use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, CosmosStatus, FeedScope, Query,
-    RoutingStrategy, SubStatusCode, TransactionalBatch,
+    RoutingStrategy, TransactionalBatch,
 };
 use azure_data_cosmos_driver::{
     models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
@@ -269,8 +269,8 @@ async fn wait_for_container_metadata_ready(
             && matches!(
                 status.sub_status(),
                 Some(
-                    SubStatusCode::COLLECTION_CREATE_IN_PROGRESS
-                        | SubStatusCode::OWNER_RESOURCE_NOT_FOUND
+                    azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS
+                        | azure_data_cosmos_driver::error::status_codes::substatus::OWNER_RESOURCE_NOT_FOUND
                 )
             )
     }
@@ -440,7 +440,7 @@ where
         e.downcast_ref::<azure_data_cosmos::CosmosError>()
             .is_some_and(|ce| {
                 ce.status().status_code() == StatusCode::NotFound
-                    && ce.status().sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND)
+                    && ce.status().sub_status() == Some(azure_data_cosmos_driver::error::status_codes::substatus::OWNER_RESOURCE_NOT_FOUND)
             })
     }
 

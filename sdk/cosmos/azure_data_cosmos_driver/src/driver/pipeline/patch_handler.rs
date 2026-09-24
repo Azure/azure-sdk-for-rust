@@ -183,7 +183,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         .is_some_and(Precondition::is_if_none_match)
     {
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+            .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
             .with_message("PATCH supports If-Match preconditions; If-None-Match is read-only")
             .build());
     }
@@ -194,7 +194,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         .ok_or_else(|| missing_body_error("PATCH operation requires a PatchInstructions body"))?;
     let spec: PatchInstructions = serde_json::from_slice(body).map_err(|err| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_REQUEST_BODY_INVALID)
             .with_message("failed to parse PATCH body as PatchInstructions")
             .with_source(err)
             .build()
@@ -346,7 +346,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
             .single()
             .map_err(|err| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("PATCH could not extract Read response body")
                     .with_source(err)
                     .build()
@@ -362,7 +362,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         let mut value: serde_json::Value = serde_json::from_slice(&read_body_bytes)
             .map_err(|err| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!(
                         "PATCH could not deserialize current item body: {err}"
                     ))
@@ -467,7 +467,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         let merged_bytes = serde_json::to_vec(&value)
             .map_err(|err| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("PATCH could not serialize merged item")
                     .with_source(err)
                     .build()
@@ -681,9 +681,10 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
 fn is_container_recreation_error(error: &crate::error::CosmosError) -> bool {
     let status = error.status();
     (status.status_code() == StatusCode::BadRequest
-        && status.sub_status() == Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH))
+        && status.sub_status()
+            == Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH))
         || (status.status_code() == StatusCode::Gone
-            && status.sub_status() == Some(crate::models::SubStatusCode::NAME_CACHE_STALE))
+            && status.sub_status() == Some(crate::error::status_codes::substatus::NAME_CACHE_STALE))
         || status.is_read_session_not_available()
 }
 
@@ -820,7 +821,7 @@ async fn verify_committed_patch<D: SubOperationDispatcher + ?Sized>(
     let body = response.into_body().single()?;
     let mut value = serde_json::from_slice::<serde_json::Value>(&body).map_err(|error| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message("PATCH could not deserialize verification Read response body")
             .with_source(error)
             .build()
@@ -1437,11 +1438,11 @@ mod tests {
                 handle,
                 "transport failed",
                 request_sent,
-                CosmosStatus::TRANSPORT_IO_FAILED,
+                crate::error::status_codes::TRANSPORT_IO_FAILED,
             );
         }
         let error = crate::error::CosmosError::builder()
-            .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+            .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
             .with_diagnostics(Arc::new(diagnostics.complete()))
             .build();
 
@@ -1459,7 +1460,7 @@ mod tests {
                 .with_message("synthetic")
                 .build(),
             CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("bad json")
                 .with_source(std::io::Error::new(std::io::ErrorKind::InvalidData, "stub"))
                 .build(),
@@ -2776,7 +2777,7 @@ mod tests {
             crate::error::CosmosError::builder()
                 .with_status(CosmosStatus::from_parts(
                     StatusCode::RequestTimeout,
-                    Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+                    Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
                 ))
                 .with_message("end-to-end operation timeout exceeded")
                 .build()
@@ -2803,7 +2804,7 @@ mod tests {
         assert_eq!(error.status().status_code(), StatusCode::RequestTimeout);
         assert_eq!(
             error.status().sub_status(),
-            Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
         );
         let effective_id = error
             .patch_tracking_id()
@@ -3045,7 +3046,7 @@ mod tests {
 
         assert_eq!(
             error.status(),
-            CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID
+            crate::error::status_codes::SERIALIZATION_REQUEST_BODY_INVALID
         );
         assert!(dispatcher.calls().is_empty());
     }
@@ -3118,7 +3119,7 @@ mod tests {
 
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+            crate::error::status_codes::CLIENT_BAD_REQUEST
         );
         assert!(dispatcher.calls().is_empty());
     }

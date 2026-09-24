@@ -45,7 +45,7 @@ use azure_data_cosmos::options::{
 };
 use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, FeedScope, Query,
-    RoutingStrategy, SubStatusCode,
+    RoutingStrategy,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
 use futures::TryStreamExt;
@@ -1966,7 +1966,7 @@ const MAX_OP_ATTEMPTS: u32 = 6;
 /// must surface immediately rather than be retried into a masking 409.
 fn is_transient(err: &azure_data_cosmos::CosmosError) -> bool {
     let status = err.status();
-    if status.sub_status() == Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID) {
+    if status.sub_status() == Some(azure_data_cosmos_driver::error::status_codes::substatus::SERIALIZATION_RESPONSE_BODY_INVALID) {
         return false;
     }
     matches!(

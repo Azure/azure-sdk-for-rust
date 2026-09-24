@@ -16,9 +16,9 @@ use azure_data_cosmos::{
     clients::ContainerClient,
     feed::FeedScope,
     models::{
-        ContainerProperties, CosmosStatus, IndexingMode, IndexingPolicy, ThroughputProperties,
-        VectorDataType, VectorDistanceFunction, VectorEmbedding, VectorEmbeddingPolicy,
-        VectorIndex, VectorIndexType,
+        ContainerProperties, IndexingMode, IndexingPolicy, ThroughputProperties, VectorDataType,
+        VectorDistanceFunction, VectorEmbedding, VectorEmbeddingPolicy, VectorIndex,
+        VectorIndexType,
     },
     options::{CreateContainerOptions, MaxItemCountHint, QueryOptions},
     Query,
@@ -637,7 +637,7 @@ pub async fn cross_partition_vector_search() -> Result<(), Box<dyn Error>> {
                     .expect_err("buffered vector queries must not mint continuation tokens");
                 assert_eq!(
                     continuation_error.status(),
-                    CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
+                    azure_data_cosmos_driver::error::status_codes::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
                 );
 
                 let mut matches = Vec::new();
@@ -698,7 +698,7 @@ pub async fn finite_vector_query_admission_and_execution() -> Result<(), Box<dyn
             // A service rejection is not evidence of client admission.
             assert_eq!(
                 error.status(),
-                CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW,
+                azure_data_cosmos_driver::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW,
                 "the service must supply a no-TOP vector plan to validate client admission: {error}"
             );
             let bounded = Query::from(
@@ -723,7 +723,7 @@ pub async fn finite_vector_query_admission_and_execution() -> Result<(), Box<dyn
                 .into_pages();
             assert_eq!(
                 pages.to_continuation_token().unwrap_err().status(),
-                CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
+                azure_data_cosmos_driver::error::status_codes::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
             );
             let mut ids = Vec::new();
             while let Some(page) = pages.next().await {

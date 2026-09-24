@@ -12,7 +12,7 @@ use azure_data_cosmos::{
         AvailabilityStrategy, EndToEndOperationLatencyPolicy, HedgeThreshold, HedgingStrategy,
         ItemReadOptions, OperationOptionsBuilder, Region,
     },
-    RoutingStrategy, SubStatusCode,
+    RoutingStrategy,
 };
 
 use crate::e2e_test_cases::{
@@ -181,7 +181,7 @@ async fn deadline_cancels_active_hedge_awaiting_partner() -> TestResult {
             assert!(elapsed < Duration::from_secs(2));
             assert_eq!(
                 error.status().sub_status(),
-                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+                Some(azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
             );
             assert_eq!(observed_primary.hit_count(), 1);
             assert_eq!(observed_alternate.hit_count(), 1);

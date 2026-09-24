@@ -186,12 +186,15 @@ where
 
 fn collection_create_in_progress(error: &CosmosError) -> bool {
     error.status().status_code() == StatusCode::NotFound
-        && error.status().sub_status() == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS)
+        && error.status().sub_status() == Some(azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS)
 }
 
 fn owner_resource_not_found(error: &CosmosError) -> bool {
     error.status().status_code() == StatusCode::NotFound
-        && error.status().sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND)
+        && error.status().sub_status()
+            == Some(
+                azure_data_cosmos_driver::error::status_codes::substatus::OWNER_RESOURCE_NOT_FOUND,
+            )
 }
 
 fn aad_token_invalid_issuer(error: &CosmosError) -> bool {
@@ -254,7 +257,6 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
             "container readiness probe timed out in {region} after {attempts} attempts"
         ))
         .build()
-        .into()
 }
 
 /// Data-plane readiness probe used after container creation on AAD legs.
@@ -299,8 +301,7 @@ pub async fn probe_data_plane_ready(
                     .with_message(format!(
                         "data-plane readiness probe deleted {probe_id} on {label}, which cannot exist"
                     ))
-                    .build()
-                    .into());
+                    .build());
             }
             Err(error) => error,
         };
@@ -1338,7 +1339,7 @@ impl TestRunContext {
 
             let is_create_in_progress = error.status().status_code() == StatusCode::NotFound
                 && error.status().sub_status()
-                    == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
+                    == Some(azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS);
             if !is_create_in_progress || attempt + 1 == MAX_ATTEMPTS {
                 return Err(error);
             }
@@ -2017,7 +2018,6 @@ mod tests {
             .with_status(CosmosStatus::new(status).with_sub_status(sub_status.value()))
             .with_message("test error")
             .build()
-            .into()
     }
 
     #[test]
@@ -2028,7 +2028,7 @@ mod tests {
         )));
         assert!(!aad_token_invalid_issuer(&error_with_status(
             StatusCode::Unauthorized,
-            SubStatusCode::AAD_TOKEN_EXPIRED,
+            azure_data_cosmos_driver::error::status_codes::substatus::AAD_TOKEN_EXPIRED,
         )));
         assert!(!aad_token_invalid_issuer(&error_with_status(
             StatusCode::NotFound,
@@ -2059,18 +2059,18 @@ mod tests {
     fn satellite_readiness_retries_only_expected_transient_errors() {
         let create_in_progress = error_with_status(
             StatusCode::NotFound,
-            SubStatusCode::COLLECTION_CREATE_IN_PROGRESS,
+            azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS,
         );
         let owner_not_found = error_with_status(
             StatusCode::NotFound,
-            SubStatusCode::OWNER_RESOURCE_NOT_FOUND,
+            azure_data_cosmos_driver::error::status_codes::substatus::OWNER_RESOURCE_NOT_FOUND,
         );
         let aad_invalid_issuer =
             error_with_status(StatusCode::Unauthorized, SubStatusCode::new(5007));
         let rbac_not_ready = error_with_status(StatusCode::Forbidden, SubStatusCode::new(5302));
         let read_session_not_available = error_with_status(
             StatusCode::NotFound,
-            SubStatusCode::READ_SESSION_NOT_AVAILABLE,
+            azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE,
         );
 
         for auth_mode in [AuthMode::Key, AuthMode::Aad] {
@@ -2120,11 +2120,11 @@ mod tests {
         )));
         assert!(!item_not_found(&error_with_status(
             StatusCode::NotFound,
-            SubStatusCode::READ_SESSION_NOT_AVAILABLE,
+            azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE,
         )));
         assert!(!item_not_found(&error_with_status(
             StatusCode::NotFound,
-            SubStatusCode::COLLECTION_CREATE_IN_PROGRESS,
+            azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS,
         )));
         assert!(!item_not_found(&error_with_status(
             StatusCode::Forbidden,
@@ -2153,7 +2153,7 @@ mod tests {
         assert!(satellite_probe_should_retry(
             &error_with_status(
                 StatusCode::NotFound,
-                SubStatusCode::COLLECTION_CREATE_IN_PROGRESS
+                azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS
             ),
             AuthMode::Key
         ));

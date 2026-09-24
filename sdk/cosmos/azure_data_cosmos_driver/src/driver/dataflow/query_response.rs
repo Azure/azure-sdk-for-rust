@@ -297,7 +297,7 @@ struct RawFeedBody {
 /// # Errors
 ///
 /// Returns a typed [`crate::error::CosmosError`] with
-/// [`CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID`] for any malformed
+/// [`crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID`] for any malformed
 /// envelope: a non-feed body shape, an item missing `payload` or a
 /// non-empty `_rid`, or an `orderByItems` array whose length does not
 /// match `order_by_column_count`.
@@ -500,7 +500,7 @@ impl PageAggregator {
                 // A failure therefore indicates a driver-side encoder gap, not
                 // a malformed service response, and is not retriable.
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!(
                         "failed to re-encode merged ORDER BY item {index} to binary: {e}"
                     ))
@@ -575,7 +575,7 @@ pub(crate) fn normalize_page_body(bytes: &bytes::Bytes) -> crate::error::Result<
         .map(bytes::Bytes::from)
         .map_err(|source| {
             crate::error::CosmosError::builder()
-                .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("failed to transcode binary query page to text JSON")
                 .with_source(source)
                 .build()
@@ -584,14 +584,14 @@ pub(crate) fn normalize_page_body(bytes: &bytes::Bytes) -> crate::error::Result<
 
 fn envelope_error(message: impl Into<std::borrow::Cow<'static, str>>) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID)
+        .with_status(crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID)
         .with_message(message)
         .build()
 }
 
 fn body_error(message: &'static str, source: serde_json::Error) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID)
+        .with_status(crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID)
         .with_message(message)
         .with_source(source)
         .build()
@@ -599,7 +599,7 @@ fn body_error(message: &'static str, source: serde_json::Error) -> crate::error:
 
 fn body_error_msg(message: &'static str) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID)
+        .with_status(crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID)
         .with_message(message)
         .build()
 }
@@ -800,7 +800,7 @@ mod tests {
         let err = rewrite_query_body(None, "SELECT 1").unwrap_err();
         assert_eq!(
             err.status(),
-            CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID
+            crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
         );
     }
 
@@ -809,7 +809,7 @@ mod tests {
         let err = rewrite_query_body(Some(b"[1,2,3]"), "SELECT 1").unwrap_err();
         assert_eq!(
             err.status(),
-            CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID
+            crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
         );
     }
 
@@ -876,7 +876,7 @@ mod tests {
 
         assert_eq!(
             err.status(),
-            CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID
+            crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
         );
     }
 
@@ -1059,7 +1059,7 @@ mod tests {
         let err = parse_envelope_page(&body, 1).unwrap_err();
         assert_eq!(
             err.status(),
-            CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID
+            crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
         );
     }
 
@@ -1071,7 +1071,7 @@ mod tests {
         let err = parse_envelope_page(&body, 1).unwrap_err();
         assert_eq!(
             err.status(),
-            CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID
+            crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
         );
     }
 
@@ -1092,7 +1092,7 @@ mod tests {
         let err = parse_envelope_page(&body, 1).unwrap_err();
         assert_eq!(
             err.status(),
-            CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID
+            crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
         );
     }
 

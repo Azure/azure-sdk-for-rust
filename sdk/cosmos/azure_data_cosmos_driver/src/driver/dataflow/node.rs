@@ -197,7 +197,7 @@ pub(crate) fn split_replacement_invalid(
     message: impl Into<std::borrow::Cow<'static, str>>,
 ) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID)
+        .with_status(crate::error::status_codes::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID)
         .with_message(message)
         .build()
 }
@@ -337,7 +337,7 @@ mod tests {
                 .expect_err("a gap between replacements is rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
         );
     }
 
@@ -350,7 +350,7 @@ mod tests {
                 .expect_err("overlapping replacements are rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
         );
     }
 
@@ -363,7 +363,7 @@ mod tests {
                 .expect_err("replacements that stop short of the scope are rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
         );
     }
 
@@ -374,7 +374,7 @@ mod tests {
             .expect_err("an empty replacement set covers nothing and is rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
         );
     }
 
@@ -427,7 +427,7 @@ mod tests {
         .expect_err("a replacement without a feed_range is rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
         );
     }
 }

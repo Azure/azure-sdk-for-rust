@@ -8,7 +8,7 @@ use azure_data_cosmos::{
         AvailabilityStrategy, ChangeFeedOptions, ChangeFeedStartFrom, ItemReadOptions,
         OperationOptions, QueryOptions, ReadConsistencyStrategy, Region,
     },
-    Query, RoutingStrategy, SubStatusCode,
+    Query, RoutingStrategy,
 };
 use futures::StreamExt;
 
@@ -424,7 +424,7 @@ async fn assert_invalid_session_tokens_rejected(
     assert_eq!(query_error.status().status_code(), StatusCode::NotFound);
     assert_eq!(
         query_error.status().sub_status(),
-        Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
+        Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE)
     );
 
     let change_options = ChangeFeedOptions::default()
@@ -445,7 +445,7 @@ async fn assert_invalid_session_tokens_rejected(
     assert_eq!(change_error.status().status_code(), StatusCode::NotFound);
     assert_eq!(
         change_error.status().sub_status(),
-        Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
+        Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE)
     );
     Ok(())
 }

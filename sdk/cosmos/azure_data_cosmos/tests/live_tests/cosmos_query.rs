@@ -8,7 +8,7 @@ use azure_data_cosmos::{
         BinaryEncodingOptions, MaxItemCountHint, OperationOptions, QueryOptions, QueryPlanMode,
         Region,
     },
-    AccountReference, CosmosClient, CosmosStatus, Query, RoutingStrategy,
+    AccountReference, CosmosClient, Query, RoutingStrategy,
 };
 use futures::StreamExt;
 use std::error::Error;
@@ -111,14 +111,14 @@ async fn live_distinct_admission_and_per_query_options() -> Result<(), Box<dyn E
                             };
                             assert_eq!(
                                 error.status(),
-                                CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW,
+                                azure_data_cosmos_driver::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW,
                                 "{mode:?}, maximum={maximum:?}, binary={binary}"
                             );
                         } else {
                             let mut pages = result?.into_pages();
                             assert_eq!(
                                 pages.to_continuation_token().unwrap_err().status(),
-                                CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
+                                azure_data_cosmos_driver::error::status_codes::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
                             );
                             let mut actual = Vec::new();
                             while let Some(page) = pages.next().await {

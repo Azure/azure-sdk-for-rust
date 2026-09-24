@@ -1977,11 +1977,14 @@ mod tests {
         // `synthesize_response_headers` implementation as the wire
         // overlay, so both branches inherit the assertions below.
         use crate::response_header::{CosmosHeaderId, CosmosValueKind};
-        use azure_data_cosmos_driver::error::{CosmosError, CosmosStatus, SubStatusCode};
+        use azure_data_cosmos_driver::error::{CosmosError, CosmosStatus};
         let q = fresh_queue(0, true);
         let op = __test_only_create_operation_handle();
         let status = CosmosStatus::new(azure_core::http::StatusCode::RequestTimeout)
-            .with_sub_status(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value());
+            .with_sub_status(
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT
+                    .value(),
+            );
         let err = CosmosError::builder()
             .with_status(status)
             .with_message("client-side timeout")
@@ -2009,7 +2012,10 @@ mod tests {
         let sub = unsafe { entries[0].value.payload.i64_value };
         assert_eq!(
             sub,
-            i64::from(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value())
+            i64::from(
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT
+                    .value()
+            )
         );
         free_one(c);
         cosmos_operation_handle_free(op);

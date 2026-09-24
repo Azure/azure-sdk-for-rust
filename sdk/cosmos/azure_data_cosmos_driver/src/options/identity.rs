@@ -12,7 +12,7 @@
 
 use std::fmt;
 
-use crate::error::{CosmosError, CosmosStatus};
+use crate::error::CosmosError;
 
 /// Workload identifier for resource governance.
 ///
@@ -220,7 +220,7 @@ impl TryFrom<String> for UserAgentSuffix {
         };
 
         Err(CosmosError::builder()
-            .with_status(CosmosStatus::CLIENT_USER_AGENT_SUFFIX_INVALID)
+            .with_status(crate::error::status_codes::CLIENT_USER_AGENT_SUFFIX_INVALID)
             .with_message(message)
             .build())
     }
@@ -322,7 +322,7 @@ mod tests {
         ] {
             assert_eq!(
                 error.status(),
-                CosmosStatus::CLIENT_USER_AGENT_SUFFIX_INVALID
+                crate::error::status_codes::CLIENT_USER_AGENT_SUFFIX_INVALID
             );
             assert!(error.to_string().contains("at most 25 characters"));
         }
@@ -346,7 +346,7 @@ mod tests {
             ] {
                 assert_eq!(
                     error.status(),
-                    CosmosStatus::CLIENT_USER_AGENT_SUFFIX_INVALID
+                    crate::error::status_codes::CLIENT_USER_AGENT_SUFFIX_INVALID
                 );
                 assert!(error.to_string().contains("HTTP header-safe"));
                 assert!(!error.to_string().contains(invalid));

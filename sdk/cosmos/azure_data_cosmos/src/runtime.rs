@@ -138,7 +138,7 @@ impl CosmosRuntimeBuilder {
             "azsdk-rust-cosmos/{}",
             env!("CARGO_PKG_VERSION")
         ));
-        let runtime = inner.build().await.map_err(crate::CosmosError::from)?;
+        let runtime = inner.build().await?;
         Ok(CosmosRuntime(runtime))
     }
 }
