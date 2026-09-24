@@ -25,6 +25,7 @@
 - `CosmosRequestHeaders::offer_throughput`, `OfferAutoscaleSettings::max_throughput`, `OfferAutoscaleSettings::new`, `OfferAutoscaleSettings::with_increment_percent`, and `AutoscaleThroughputPolicy::increment_percent` now use `u32` instead of the platform-dependent `usize`, matching the RU/s values Cosmos DB actually returns. ([#5204](https://github.com/Azure/azure-sdk-for-rust/pull/5204))
 - Renamed several types for naming consistency: `diagnostics::PipelineType` is now `diagnostics::PipelineKind` (following the `Kind`-over-`Type` convention), `diagnostics::ProxyConfiguration` is now `diagnostics::ProxyConfig` (matching the `Config` naming used elsewhere), and `in_memory_emulator::RuChargingModel` is now `in_memory_emulator::RequestUnitChargingModel` (expanding the `RU` acronym). The unstable `testing` module (`__internal_mocking` feature) was renamed to `test`. ([#5203](https://github.com/Azure/azure-sdk-for-rust/pull/5203))
 - Moved `OperationOptions::patch_strategy` and its generated builder, view, and environment APIs behind the `preview_patch` feature. Core PATCH execution remains available without the feature. ([#5346](https://github.com/Azure/azure-sdk-for-rust/pull/5346))
+- Made the tuple fields of `SessionToken` and `ExcludedRegions` private. Use `SessionToken::new` and its `From`, `as_str`, `AsRef<str>`, and `Display` implementations, or `ExcludedRegions::new`, `with_region`, `FromIterator`, `iter`, `len`, and `is_empty` instead. ([#5352](https://github.com/Azure/azure-sdk-for-rust/pull/5352))
 
 ### Bugs Fixed
 

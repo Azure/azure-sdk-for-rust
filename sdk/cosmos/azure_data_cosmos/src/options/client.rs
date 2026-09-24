@@ -3,11 +3,9 @@
 
 //! [`CosmosClientOptions`] — options for [`CosmosClient`](crate::CosmosClient) construction.
 
-use std::sync::Arc;
-
 use azure_data_cosmos_driver::options::{BinaryEncodingOptions, OperationOptions, UserAgentSuffix};
 
-use crate::diagnostics::{DiagnosticsHandler, DiagnosticsHandlerChain};
+use crate::diagnostics::DiagnosticsHandlerChain;
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
 ///
@@ -25,27 +23,4 @@ pub(crate) struct CosmosClientOptions {
     pub(crate) binary_encoding: Option<BinaryEncodingOptions>,
     /// Diagnostics emission handlers invoked once per operation at completion.
     pub(crate) diagnostics_handlers: DiagnosticsHandlerChain,
-}
-
-#[allow(dead_code)]
-impl CosmosClientOptions {
-    pub(crate) fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
-        self.user_agent_suffix = Some(suffix);
-        self
-    }
-
-    pub(crate) fn with_operation_options(mut self, operation: OperationOptions) -> Self {
-        self.operation = operation;
-        self
-    }
-
-    /// Registers a [`DiagnosticsHandler`](crate::diagnostics::DiagnosticsHandler)
-    /// invoked once per operation at completion.
-    ///
-    /// Handlers run in registration order. Call this multiple times to build an
-    /// ordered chain.
-    pub(crate) fn with_diagnostics_handler(mut self, handler: Arc<dyn DiagnosticsHandler>) -> Self {
-        self.diagnostics_handlers = self.diagnostics_handlers.with_handler(handler);
-        self
-    }
 }

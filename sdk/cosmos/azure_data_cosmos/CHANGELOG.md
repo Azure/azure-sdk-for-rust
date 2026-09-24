@@ -24,6 +24,7 @@
 - Replaced `CosmosClientBuilder::with_partition_key_range_cache_enabled` with `PartitionFailoverOptionsBuilder::with_partition_topology_cache_mode`; partition topology caching can no longer be disabled, and `PartitionTopologyCacheMode::{Eager, Lazy}` controls only when the cache is loaded. ([#5319](https://github.com/Azure/azure-sdk-for-rust/pull/5319))
 - Container resolution now loads the complete partition topology by default and fails if it cannot load a valid routing map. `PartitionTopologyCacheMode::Lazy` preserves the previous first-use loading behavior as a compatibility escape hatch. ([#5319](https://github.com/Azure/azure-sdk-for-rust/pull/5319))
 - Moved the PATCH-specific models, distributed transaction PATCH APIs, and PATCH-related operation options behind the `preview_patch` feature. These APIs remain available to preview-feature consumers but are no longer part of the default feature set. ([#5346](https://github.com/Azure/azure-sdk-for-rust/pull/5346))
+- Removed the public `ConsistencyLevel` and `CosmosClientOptions` types and the `OperationOptionsView`, `ThrottlingRetryOptionsView`, and `ThroughputControlOptionsView` re-exports. Use `ReadConsistencyStrategy` and typed operation options instead; client configuration remains available through `CosmosClientBuilder`. The tuple fields of `SessionToken` and `ExcludedRegions` are now private; use their constructors, `From`, `iter`, `len`, and `is_empty` APIs. ([#5352](https://github.com/Azure/azure-sdk-for-rust/pull/5352))
 
 ### Bugs Fixed
 
