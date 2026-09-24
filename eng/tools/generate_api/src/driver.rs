@@ -12,15 +12,51 @@ use std::{
     collections::{BTreeMap, HashMap, HashSet},
     ffi::OsStr,
     fs,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Command,
     sync::Arc,
 };
 
-pub(crate) fn load_model(request: &Request) -> Result<ApiModel, String> {
+pub(crate) struct LoadedPackage {
+    pub(crate) model: ApiModel,
+    pub(crate) package_dir: PathBuf,
+    pub(crate) package_relative_path: String,
+}
+
+pub(crate) fn load_model(request: &Request) -> Result<LoadedPackage, String> {
     let metadata = load_workspace_metadata(request)?;
+    let package = metadata
+        .packages
+        .get(&metadata.current_package)
+        .cloned()
+        .ok_or_else(|| {
+            format!(
+                "Unknown current workspace crate '{}'",
+                metadata.current_package
+            )
+        })?;
+    let package_dir = package
+        .manifest_path
+        .parent()
+        .ok_or_else(|| {
+            format!(
+                "Manifest path '{}' has no parent directory",
+                package.manifest_path.display()
+            )
+        })?
+        .to_path_buf();
+    let repository_root = std::env::current_dir()
+        .and_then(std::fs::canonicalize)
+        .map_err(|error| format!("Failed to resolve repository root: {error}"))?;
+    let package_relative_path = package_relative_path(&package_dir, &repository_root)?;
+
     let mut loader = ModelLoader::new(metadata.packages);
-    Ok((*loader.load_model_for_workspace(&metadata.current_package)?).clone())
+    let model = (*loader.load_model_for_workspace(&metadata.current_package)?).clone();
+    Ok(LoadedPackage {
+        model,
+        package_dir,
+        package_relative_path,
+    })
 }
 
 pub(crate) fn rust_version() -> Result<String, String> {
@@ -274,6 +310,19 @@ fn select_features(
     }
 }
 
+fn package_relative_path(package_dir: &Path, repository_root: &Path) -> Result<String, String> {
+    package_dir
+        .strip_prefix(repository_root)
+        .map(|path| path.to_string_lossy().replace('\\', "/"))
+        .map_err(|_| {
+            format!(
+                "Package directory '{}' is not under repository root '{}'",
+                package_dir.display(),
+                repository_root.display()
+            )
+        })
+}
+
 struct WorkspaceMetadata {
     current_package: String,
     packages: BTreeMap<String, PackageMetadata>,
@@ -407,8 +456,8 @@ impl PackageMetadata {
 #[cfg(test)]
 mod tests {
     use super::{
-        crate_target_name, crate_type, parse_rust_version, select_features, CargoPackage,
-        CargoTarget,
+        crate_target_name, crate_type, package_relative_path, parse_rust_version, select_features,
+        CargoPackage, CargoTarget,
     };
     use std::{collections::BTreeMap, path::PathBuf};
 
@@ -504,6 +553,18 @@ mod tests {
         };
 
         assert!(package.rustdoc_selector_args().is_empty());
+    }
+
+    #[test]
+    fn renders_repo_relative_package_directory() {
+        assert_eq!(
+            package_relative_path(
+                &PathBuf::from("/repo/sdk/keyvault/azure_security_keyvault_keys"),
+                &PathBuf::from("/repo"),
+            )
+            .unwrap(),
+            "sdk/keyvault/azure_security_keyvault_keys"
+        );
     }
 
     #[test]
