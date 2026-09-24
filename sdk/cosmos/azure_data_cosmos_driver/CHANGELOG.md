@@ -14,6 +14,7 @@
 
 - `UserAgentSuffix` replaces panicking `new` with `TryFrom<String>` and `TryFrom<&str>`, returning a typed `CosmosError` for invalid suffixes. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
 - Replaced panicking partition-key vector and floating-point `From` conversions with typed `TryFrom` errors; infallible key conversions remain unchanged. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
+- Removed throughput-control group registration, group types, and `ThroughputControlOptions::group_name`; direct priority and throughput-bucket options remain available. ([#5343](https://github.com/Azure/azure-sdk-for-rust/pull/5343))
 - Moved `query_plan_mode` from `OperationOptions` to `PlanOptions`; removed account/runtime defaults and environment settings, including the query-plan-mode override. The default remains `LocalPreferred`. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Unordered cross-partition DISTINCT and non-streaming ORDER BY require finite global TOP/LIMIT with OFFSET plus effective take within the configured maximum; missing bounds, excess windows, and overflow share 400/20125 (`CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW`). ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Unified client-buffered continuation errors under 400/20124 (`CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`), retaining the shape-specific constants as aliases; finite-window admission moved from 20126 to 20125 and non-streaming window/storage errors from 20127 to 20126. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
@@ -27,6 +28,7 @@
 ### Bugs Fixed
 
 - Reconciled dataflow partition-range identity resolution across logical, EPK, sequential, and hedged requests, preserving split-parent session tokens on Gateway 2.0 while keeping logical partition-key wire routing unchanged, and enforcing the end-to-end timeout across planning and first-page execution. ([#5315](https://github.com/Azure/azure-sdk-for-rust/pull/5315))
+- Container recreation now preserves collection RID mismatch errors during cold partition routing and rejects incompatible stale partition keys with a dedicated client substatus. ([#5324](https://github.com/Azure/azure-sdk-for-rust/pull/5324))
 - Gateway 2.0 change feed requests now forward incremental-mode and wire-format-version metadata, so change feeds work over the thin-client transport. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - In-memory emulator query, change-feed, and point reads now apply composite session-token range validation only to the physical partitions selected by the request, so an obsolete unrelated segment no longer rejects an otherwise valid scoped read. Explicit stale physical-range targets still return 410/1002 and trigger partition-topology refresh and retry. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Fixed V1 partition key routing for non-ASCII strings by truncating at 100 UTF-16 code units and applying the service's separate binary byte limit without panicking on split characters. ([#5280](https://github.com/Azure/azure-sdk-for-rust/pull/5280))

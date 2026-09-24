@@ -10,7 +10,7 @@ use crate::{
     diagnostics::{CosmosClientInfo, DiagnosticsHandler},
     options::{
         BinaryEncodingOptions, CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
-        ThroughputControlGroupOptions, UserAgentSuffix,
+        UserAgentSuffix,
     },
     AccountReference, CosmosClient, CosmosCredential, CosmosRuntime, RoutingStrategy,
 };
@@ -87,8 +87,6 @@ pub struct CosmosClientBuilder {
     /// Pre-built runtime to attach. If `None`, the client falls back to
     /// a default global runtime.
     runtime: Option<CosmosRuntime>,
-    /// Throughput control groups to register on this client's driver options.
-    throughput_control_groups: Vec<ThroughputControlGroupOptions>,
     /// Fault-injection rules to apply on this client's driver.
     ///
     /// Evaluated by the driver's transport-layer fault-injection client.
@@ -233,20 +231,6 @@ impl CosmosClientBuilder {
         Ok(self)
     }
 
-    /// Throughput-control groups are scoped to this client's driver — the
-    /// per-runtime registry has been removed, so every client owns its own
-    /// set of groups. Duplicate group names supplied to the same builder are
-    /// surfaced as an error at `build()` time.
-    pub fn register_throughput_control_group(
-        mut self,
-        group: ThroughputControlGroupOptions,
-    ) -> crate::Result<Self> {
-        // Defer cross-layer validation to DriverOptionsInput::build where the
-        // full registry is composed; here we only collect.
-        self.throughput_control_groups.push(group);
-        Ok(self)
-    }
-
     /// Sets backup endpoints for resilience when the primary global endpoint
     /// is unavailable during initialization.
     ///
@@ -322,7 +306,6 @@ impl CosmosClientBuilder {
             partition_failover_options: self.partition_failover_options,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules,
-            throughput_control_groups: self.throughput_control_groups,
         }
         .build()?;
         let driver = runtime.into_inner().create_driver(driver_options).await?;
@@ -356,7 +339,6 @@ struct DriverOptionsInput {
     partition_failover_options: Option<PartitionFailoverOptions>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
-    throughput_control_groups: Vec<ThroughputControlGroupOptions>,
 }
 
 impl DriverOptionsInput {
@@ -387,11 +369,6 @@ impl DriverOptionsInput {
         if !self.fault_injection_rules.is_empty() {
             builder = builder
                 .with_fault_injection_rules(self.fault_injection_rules)
-                .map_err(crate::CosmosError::from)?;
-        }
-        for group in self.throughput_control_groups {
-            builder = builder
-                .register_throughput_control_group(group)
                 .map_err(crate::CosmosError::from)?;
         }
         Ok(builder.build())
@@ -494,7 +471,6 @@ mod tests {
             partition_failover_options: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
-            throughput_control_groups: Vec::new(),
         }
     }
 

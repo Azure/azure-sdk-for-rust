@@ -68,7 +68,4 @@ pub use query_plan_mode::QueryPlanMode;
 pub(crate) use read_consistency::resolve_effective_consistency;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
-pub use throughput_control::ThroughputControlGroupOptions;
-pub(crate) use throughput_control::{
-    ResolvedThroughputControl, ThroughputControlGroupRegistry, ThroughputControlGroupSnapshot,
-};
+pub(crate) use throughput_control::ResolvedThroughputControl;

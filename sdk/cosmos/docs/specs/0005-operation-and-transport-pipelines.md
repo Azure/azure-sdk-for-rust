@@ -2702,7 +2702,6 @@ outlive the epoch guard, or `ArcSwap` when the caller wants a long-lived `Arc<T>
 | `AsyncLazy<T>`                  | inner `RwLock<Option<Arc<T>>>` | `driver/cache/async_lazy.rs`    | After initialization the value is essentially immutable. Replace with `Atomic<T>` for truly zero-cost reads post-init. See §11.2.                       |
 | `DriverRuntime`                 | `driver_registry`              | `driver/runtime.rs`             | Read-heavy; new drivers created rarely.                                                                                                                 |
 | `SharedRuntimeOptions`          | inner `RwLock<RuntimeOptions>` | `options/runtime_options.rs`    | Read on every operation; mutated only by reconfiguration.                                                                                               |
-| `ThroughputControlGroupOptions` | mutable-value fields           | `options/throughput_control.rs` | Read per-request for throughput gating; written by background refresh.                                                                                  |
 | `CpuMemoryMonitorInner`         | `buffer` / `listener_count`    | `system/cpu_memory.rs`          | Lower priority — the monitor runs on a timer, not per-request. Still benefits from eliminating reader contention on the sample buffer.                  |
 
 ### 11.2 `AsyncCache` / `AsyncLazy` — Epoch-Guarded Reads
@@ -2750,9 +2749,9 @@ Recommended implementation order based on hot-path impact:
 3. **`AsyncCache` / `AsyncLazy`** — read on every operation for container metadata lookup.
 4. **`CachePadded` on `EndpointStats` / `ShardHealth`** — reduces cache-line bouncing
    under high concurrency.
-5. **`DriverRuntime.driver_registry`**, **`SharedRuntimeOptions`**,
-   **`ThroughputControlGroupOptions`** — moderate impact; operations read these for
-   configuration but contention is lower because the data is small.
+5. **`DriverRuntime.driver_registry`** and **`SharedRuntimeOptions`** —
+   moderate impact; operations read these for configuration but contention is
+   lower because the data is small.
 6. **`CpuMemoryMonitorInner`** — lowest priority; timer-driven, not per-request.
 
 ### 11.5 Crossbeam Feature Selection

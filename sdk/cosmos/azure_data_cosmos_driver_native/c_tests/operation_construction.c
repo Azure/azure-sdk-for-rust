@@ -53,7 +53,6 @@ static int test_options_default_is_all_unset(void)
               "e2e timeout unset (=%lld)", (long long)opts.end_to_end_timeout_ms);
        ASSERT(opts.endpoint_unavailability_ttl_ms < 0,
               "endpoint ttl unset (=%lld)", (long long)opts.endpoint_unavailability_ttl_ms);
-       ASSERT(opts.throughput_control_group.data == NULL && opts.throughput_control_group.len == 0, "throughput_control_group unset");
        ASSERT(opts.excluded_regions == NULL, "excluded_regions unset");
        ASSERT(opts.excluded_regions_len == 0, "excluded_regions_len 0");
        ASSERT(opts.custom_headers == NULL, "custom_headers unset");

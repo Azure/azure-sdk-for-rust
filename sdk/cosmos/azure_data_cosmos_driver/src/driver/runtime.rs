@@ -434,11 +434,6 @@ impl CosmosDriverRuntime {
 /// set, its value is prepended to the prefix so requests can be attributed to
 /// both the wrapping SDK and the driver.
 ///
-/// # Throughput Control Groups
-///
-/// Throughput control groups must be registered during builder construction.
-/// Once `build()` is called, the set of groups is immutable (though mutable
-/// values within each group can still be updated).
 #[non_exhaustive]
 #[derive(Clone, Debug, Default)]
 pub struct CosmosDriverRuntimeBuilder {
