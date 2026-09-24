@@ -2327,12 +2327,11 @@ impl CosmosDriver {
     /// loop is needed here.
     ///
     /// Permanent errors (401 Unauthorized, 403 Forbidden, 404 NotFound) are
-    /// terminal: `None` is returned immediately so the caller can surface a
-    /// clear misconfiguration signal.
+    /// terminal and returned to the caller.
     ///
-    /// Returns `None` if the pipeline exhausts its cross-region failover
-    /// budget or the response cannot be parsed. The caller (the PK range
-    /// cache) falls back gracefully on `None`.
+    /// Returns `Ok(None)` if the response cannot be parsed. Pipeline errors are
+    /// preserved so topology planning can surface typed failures; cache-only
+    /// callers use the lossy wrapper and retain their existing fallback.
     async fn fetch_pk_ranges_from_service(
         &self,
         container: ContainerReference,
@@ -2340,7 +2339,10 @@ impl CosmosDriver {
         region_pin: Option<RegionPin>,
         options: OperationOptions,
         absolute_deadline: Option<Instant>,
-    ) -> (Option<PkRangeFetchResult>, Option<CosmosEndpoint>) {
+    ) -> (
+        crate::error::Result<Option<PkRangeFetchResult>>,
+        Option<CosmosEndpoint>,
+    ) {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone())
@@ -2388,11 +2390,11 @@ impl CosmosDriver {
                 // changefeed reads: the cached routing map is still current.
                 if response.status().status_code() == azure_core::http::StatusCode::NotModified {
                     return (
-                        Some(PkRangeFetchResult {
+                        Ok(Some(PkRangeFetchResult {
                             ranges: vec![],
                             continuation,
                             not_modified: true,
-                        }),
+                        })),
                         serving_endpoint,
                     );
                 }
@@ -2404,16 +2406,16 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Partition key ranges response was a feed body, expected single payload"
                         );
-                        return (None, serving_endpoint);
+                        return (Ok(None), serving_endpoint);
                     }
                 };
                 match parse_pk_ranges_response(&body_bytes) {
                     Some(ranges) => (
-                        Some(PkRangeFetchResult {
+                        Ok(Some(PkRangeFetchResult {
                             ranges,
                             continuation: etag,
                             not_modified: false,
-                        }),
+                        })),
                         serving_endpoint,
                     ),
                     None => {
@@ -2421,7 +2423,7 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Failed to parse partition key ranges response body"
                         );
-                        (None, serving_endpoint)
+                        (Ok(None), serving_endpoint)
                     }
                 }
             }
@@ -2451,7 +2453,7 @@ impl CosmosDriver {
                             error = %e,
                             "Permanent error fetching partition key ranges — check account credentials and container existence"
                         );
-                        return (None, None);
+                        return (Err(e), None);
                     }
                 }
 
@@ -2460,7 +2462,7 @@ impl CosmosDriver {
                     error = %e,
                     "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
                 );
-                (None, None)
+                (Err(e), None)
             }
         }
     }
@@ -2518,7 +2520,10 @@ impl CosmosDriver {
         &'a self,
         options: OperationOptions,
         absolute_deadline: Option<Instant>,
-    ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
+    ) -> impl Fn(
+        ContainerReference,
+        Option<String>,
+    ) -> BoxFuture<'a, crate::error::Result<Option<PkRangeFetchResult>>>
            + Send
            + 'a {
         move |container, continuation| {
