@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use crate::cli::Request;
+use crate::cli::{OutputFormat, STATE_DIRECTORY_NAME};
 use sha2::{Digest, Sha256};
 use std::{
     fs::{self, File},
@@ -9,12 +9,16 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub(crate) fn output_path(request: &Request) -> PathBuf {
-    request.output_dir.join(request.format.default_file_name())
+pub(crate) fn output_path(output_dir: &Path, format: OutputFormat) -> PathBuf {
+    output_dir.join(format.default_file_name())
 }
 
-pub(crate) fn output_file_path(request: &Request, file_name: &str) -> PathBuf {
-    request.output_dir.join(file_name)
+pub(crate) fn output_file_path(output_dir: &Path, file_name: &str) -> PathBuf {
+    output_dir.join(file_name)
+}
+
+pub(crate) fn state_file_path(output_dir: &Path, file_name: &str) -> PathBuf {
+    output_dir.join(STATE_DIRECTORY_NAME).join(file_name)
 }
 
 pub(crate) fn render_markdown_metadata(

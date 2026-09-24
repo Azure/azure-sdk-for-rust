@@ -7,8 +7,9 @@
 1. `api.md` — one fenced `rust` block
 2. `api.metadata.yml` — YAML metadata for `api.md`
 3. `api.md.map` — an ECMA-426 source map for declaration lines in `api.md`
-4. `api.comments.patch` — a unified diff that adds doc comments back to `api.md`
+4. `api.documentation.patch` — a unified diff that adds doc comments back to `api.md`
 5. `apiview.json` — an APIView tree-style `CodeFile`
+6. `state/version.txt` and `state/package-relative-path.txt` — Markdown review package state
 
 ## Scope
 
@@ -24,17 +25,16 @@ The tool exposes:
 
 - `--manifest-path <path/to/Cargo.toml>`
 - `--format <markdown|apiview>` default `markdown`
-- `--no-docs` suppresses doc comments in `apiview` and skips `api.comments.patch`
-- `--no-map` skips `api.md.map`; it is a no-op for `apiview`
+- `--review` emits Markdown review sidecars and is valid only with `markdown`
 - `--check` compares generated content with existing files without writing; missing files pass
-- `--output <directory>`
+- `--output <directory>` defaults to the target crate directory
 
 Behavior:
 
-- default `markdown` writes `api.md`, `api.md.map`, and `api.comments.patch`
-- default `markdown` also writes `api.metadata.yml`
+- default `markdown` writes `api.md`
+- `markdown --review` also writes `api.md.map`, `api.documentation.patch`, and `api.metadata.yml`
+- `markdown --review` writes package state under `<output>/state`
 - `--format apiview` writes `apiview.json`
-- `--no-docs` suppresses APIView doc comment tokens and the Markdown comments patch
 - check comparisons ignore line-ending differences and mismatches exit `1`
 - progress goes to stdout
 - fatal errors go to stderr and exit `1`
@@ -185,7 +185,7 @@ Documentation handling:
 Package metadata rendering:
 
 - Markdown renders the crate name first; APIView uses only the top-level `PackageName`
-- Markdown also writes `api.metadata.yml` with `apiMdSha256`, `packageVersion`, `parserVersion`, and `rustVersion`
+- Markdown review output also writes `api.metadata.yml` with `apiMdSha256`, `packageVersion`, `parserVersion`, and `rustVersion`
 - missing description, edition, or rust-version values are omitted
 - multiline descriptions render with the `Description` label on its own line
 - features use `default` plus `package.metadata.docs.rs.features` when present

@@ -6,6 +6,8 @@
 use azure_core::http::StatusCode;
 #[cfg(feature = "fault_injection")]
 use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
+#[cfg(feature = "preview_patch")]
+use azure_data_cosmos_driver::options::PatchStrategy;
 #[cfg(feature = "__internal_testing")]
 use azure_data_cosmos_driver::CosmosDriver;
 use azure_data_cosmos_driver::{
@@ -18,7 +20,7 @@ use azure_data_cosmos_driver::{
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsBuilder,
-        PartitionFailoverOptions, PatchStrategy, Region, ServerCertificateValidation,
+        PartitionFailoverOptions, Region, ServerCertificateValidation,
     },
     SubStatusCode,
 };
@@ -1080,6 +1082,7 @@ impl DriverTestRunContext {
     ///
     /// If `max_attempts` is `None`, the handler uses
     /// `DEFAULT_PATCH_MAX_ATTEMPTS` (5).
+    #[cfg(feature = "preview_patch")]
     pub async fn patch_item(
         &self,
         container: &ContainerReference,

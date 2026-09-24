@@ -40,7 +40,6 @@ use crate::{
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
         PartitionTopologyCacheMode, PlanOptions, ResolvedThroughputControl,
-        ThroughputControlGroupSnapshot,
     },
     ActivityId, CosmosResponse, DiagnosticsContext,
 };
@@ -453,12 +452,6 @@ pub struct CosmosDriver {
     /// flag without re-checking the option.
     #[cfg(feature = "fault_injection")]
     fault_injection_enabled: bool,
-    /// Driver-level throughput-control group registry.
-    ///
-    /// Populated from `DriverOptions::throughput_control_groups()` once at
-    /// driver construction. The runtime no longer owns its own registry —
-    /// throughput-control groups are a driver-level concern.
-    throughput_control_groups: crate::options::ThroughputControlGroupRegistry,
     /// Native FFI query plan provider. Lazily loads the native library on
     /// first use; returns errors if unavailable.
     #[cfg(feature = "__internal_native_query_plan")]
@@ -1885,12 +1878,6 @@ impl CosmosDriver {
         #[cfg(feature = "tokio")]
         location_state_store.start_endpoint_probe_loop(endpoint_probe_fn);
 
-        // Driver-level throughput-control registry.
-        //
-        // The runtime no longer owns one — TCGs are a driver-level concern.
-        // Clone the per-driver registry as-is for the request hot path.
-        let throughput_control_groups = options.throughput_control_groups().clone();
-
         // Read the hedge ceiling once, here: it is fixed for the driver's
         // lifetime, and `options` is moved into `Self` below.
         let hedge_budget = HedgeBudget::new(options.hedging_options());
@@ -1916,7 +1903,6 @@ impl CosmosDriver {
             http_client_factory,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled,
-            throughput_control_groups,
             #[cfg(feature = "__internal_native_query_plan")]
             native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider::new(),
         })
@@ -2241,72 +2227,15 @@ impl CosmosDriver {
         )
     }
 
-    /// Computes the effective throughput-control header values for an operation.
-    ///
-    /// Resolves the per-request `x-ms-cosmos-throughput-bucket` and
-    /// `x-ms-cosmos-priority-level` headers using the public layering
-    /// contract:
-    ///
-    /// 1. If the layered
-    ///    [`ThroughputControlOptions`](crate::options::ThroughputControlOptions)
-    ///    sets the field directly, use it.
-    /// 2. Else, if [`group_name`](crate::options::ThroughputControlOptions::group_name)
-    ///    resolves to a group registered on this driver via
-    ///    [`DriverOptionsBuilder::register_throughput_control_group`](crate::options::DriverOptionsBuilder::register_throughput_control_group),
-    ///    use the group's value for the field.
-    /// 3. Else, omit the header.
-    ///
-    /// The two fields resolve independently — a layered
-    /// `throughput_bucket = Some(...)` does not suppress a `priority_level`
-    /// carried by the registered group, and vice versa.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if [`group_name`](crate::options::ThroughputControlOptions::group_name)
-    /// is set to a name that does not resolve to a registered group for the
-    /// operation's container.
+    /// Computes the layered throughput-control header values for an operation.
     pub(crate) fn effective_throughput_control(
-        &self,
         effective_options: &OperationOptionsView<'_>,
-        container: &ContainerReference,
-    ) -> crate::error::Result<ResolvedThroughputControl> {
+    ) -> ResolvedThroughputControl {
         let throughput_view = effective_options.throughput_control();
-        let mut bucket = throughput_view.throughput_bucket().copied();
-        let mut priority = throughput_view.priority_level().copied();
-
-        if bucket.is_some() && priority.is_some() {
-            return Ok(ResolvedThroughputControl {
-                throughput_bucket: bucket,
-                priority_level: priority,
-            });
+        ResolvedThroughputControl {
+            throughput_bucket: throughput_view.throughput_bucket().copied(),
+            priority_level: throughput_view.priority_level().copied(),
         }
-
-        if let Some(name) = throughput_view.group_name() {
-            let group = self
-                .throughput_control_groups
-                .get_by_container_and_name(container, name)
-                .ok_or_else(|| {
-                    crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED)
-                        .with_message(format!(
-                            "throughput control group '{}' not found in registry for container '{}'",
-                            name,
-                            container.name()
-                        ))
-                        .build()
-                })?;
-            let snapshot = ThroughputControlGroupSnapshot::from(group.as_ref());
-            if bucket.is_none() {
-                bucket = snapshot.throughput_bucket();
-            }
-            if priority.is_none() {
-                priority = snapshot.priority_level();
-            }
-        }
-
-        Ok(ResolvedThroughputControl {
-            throughput_bucket: bucket,
-            priority_level: priority,
-        })
     }
 
     /// Fetches partition key ranges from the service for the given container.
@@ -2327,12 +2256,11 @@ impl CosmosDriver {
     /// loop is needed here.
     ///
     /// Permanent errors (401 Unauthorized, 403 Forbidden, 404 NotFound) are
-    /// terminal: `None` is returned immediately so the caller can surface a
-    /// clear misconfiguration signal.
+    /// terminal and returned to the caller.
     ///
-    /// Returns `None` if the pipeline exhausts its cross-region failover
-    /// budget or the response cannot be parsed. The caller (the PK range
-    /// cache) falls back gracefully on `None`.
+    /// Returns `Ok(None)` if the response cannot be parsed. Pipeline errors are
+    /// preserved so topology planning can surface typed failures; cache-only
+    /// callers use the lossy wrapper and retain their existing fallback.
     async fn fetch_pk_ranges_from_service(
         &self,
         container: ContainerReference,
@@ -2340,7 +2268,10 @@ impl CosmosDriver {
         region_pin: Option<RegionPin>,
         options: OperationOptions,
         absolute_deadline: Option<Instant>,
-    ) -> (Option<PkRangeFetchResult>, Option<CosmosEndpoint>) {
+    ) -> (
+        crate::error::Result<Option<PkRangeFetchResult>>,
+        Option<CosmosEndpoint>,
+    ) {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone())
@@ -2388,11 +2319,11 @@ impl CosmosDriver {
                 // changefeed reads: the cached routing map is still current.
                 if response.status().status_code() == azure_core::http::StatusCode::NotModified {
                     return (
-                        Some(PkRangeFetchResult {
+                        Ok(Some(PkRangeFetchResult {
                             ranges: vec![],
                             continuation,
                             not_modified: true,
-                        }),
+                        })),
                         serving_endpoint,
                     );
                 }
@@ -2404,16 +2335,16 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Partition key ranges response was a feed body, expected single payload"
                         );
-                        return (None, serving_endpoint);
+                        return (Ok(None), serving_endpoint);
                     }
                 };
                 match parse_pk_ranges_response(&body_bytes) {
                     Some(ranges) => (
-                        Some(PkRangeFetchResult {
+                        Ok(Some(PkRangeFetchResult {
                             ranges,
                             continuation: etag,
                             not_modified: false,
-                        }),
+                        })),
                         serving_endpoint,
                     ),
                     None => {
@@ -2421,7 +2352,7 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Failed to parse partition key ranges response body"
                         );
-                        (None, serving_endpoint)
+                        (Ok(None), serving_endpoint)
                     }
                 }
             }
@@ -2451,7 +2382,7 @@ impl CosmosDriver {
                             error = %e,
                             "Permanent error fetching partition key ranges — check account credentials and container existence"
                         );
-                        return (None, None);
+                        return (Err(e), None);
                     }
                 }
 
@@ -2460,7 +2391,7 @@ impl CosmosDriver {
                     error = %e,
                     "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
                 );
-                (None, None)
+                (Err(e), None)
             }
         }
     }
@@ -2518,7 +2449,10 @@ impl CosmosDriver {
         &'a self,
         options: OperationOptions,
         absolute_deadline: Option<Instant>,
-    ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
+    ) -> impl Fn(
+        ContainerReference,
+        Option<String>,
+    ) -> BoxFuture<'a, crate::error::Result<Option<PkRangeFetchResult>>>
            + Send
            + 'a {
         move |container, continuation| {
@@ -2783,11 +2717,16 @@ impl CosmosDriver {
             )?;
         }
 
+        #[cfg(feature = "preview_patch")]
         let requested = self
             .operation_options_view(options)
             .patch_strategy()
             .copied()
             .unwrap_or_default();
+        #[cfg(not(feature = "preview_patch"))]
+        let _ = options;
+        #[cfg(not(feature = "preview_patch"))]
+        let requested = crate::options::PatchStrategy::Auto;
         let execution = resolve_patch_strategy(requested, instructions.as_ref())?;
         tracing::debug!(
             requested_patch_strategy = requested.as_str(),
@@ -3469,8 +3408,8 @@ impl CosmosDriver {
         }
 
         // Resolve effective throughput control headers.
-        let effective_throughput_control = if let Some(container) = operation.container() {
-            Some(self.effective_throughput_control(&effective_options, container)?)
+        let effective_throughput_control = if operation.container().is_some() {
+            Some(Self::effective_throughput_control(&effective_options))
         } else {
             // Throughput control doesn't apply to operations that don't target a container.
             // But it's not an error to specify the settings, they may have been inherited from
@@ -3617,8 +3556,7 @@ impl CosmosDriver {
         let prior_diagnostics = error.diagnostics();
         let retry_throughput_control = operation
             .container()
-            .map(|container| self.effective_throughput_control(&effective_options, container))
-            .transpose()?;
+            .map(|_| Self::effective_throughput_control(&effective_options));
         overrides.container_recreation_recovery_disabled = true;
         let (mut retry_diagnostics, retry_transport_security) = Self::new_diagnostics_envelope(
             &self.runtime,
@@ -4558,7 +4496,8 @@ mod tests {
         models::AccountReference,
         options::{
             ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
-            ThrottlingRetryOptionsBuilder, UserAgentSuffix, WorkloadId,
+            PriorityLevel, ThrottlingRetryOptionsBuilder, ThroughputControlOptions,
+            UserAgentSuffix, WorkloadId,
         },
     };
 
@@ -4599,6 +4538,33 @@ mod tests {
 
     fn signed_test_account(url: &str) -> AccountReference {
         AccountReference::with_master_key(Url::parse(url).unwrap(), "dGVzdA==")
+    }
+
+    #[test]
+    fn throughput_control_resolves_direct_values_across_layers() {
+        let runtime = Arc::new(OperationOptions {
+            throughput_control: Some(ThroughputControlOptions {
+                throughput_bucket: Some(7),
+                priority_level: Some(PriorityLevel::Low),
+            }),
+            ..Default::default()
+        });
+        let operation = OperationOptions {
+            throughput_control: Some(ThroughputControlOptions {
+                throughput_bucket: Some(99),
+                priority_level: None,
+            }),
+            ..Default::default()
+        };
+        let view = OperationOptionsView::new(None, Some(runtime), None, Some(&operation));
+
+        assert_eq!(
+            CosmosDriver::effective_throughput_control(&view),
+            ResolvedThroughputControl {
+                throughput_bucket: Some(99),
+                priority_level: Some(PriorityLevel::Low),
+            }
+        );
     }
 
     #[derive(Clone, Debug)]
