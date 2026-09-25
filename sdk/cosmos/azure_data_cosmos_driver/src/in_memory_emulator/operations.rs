@@ -6533,6 +6533,7 @@ fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawRe
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::in_memory_emulator::response::headers::ETAG;
 
     #[test]
     fn session_consistency_activation_matches_strategy_and_account_default() {

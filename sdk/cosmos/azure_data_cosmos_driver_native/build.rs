@@ -101,6 +101,17 @@ fn generate_c_header() {
     // Renames for types not currently emitted are harmless no-ops, so the
     // table can list the full naming policy in one place.
     let rename = HashMap::from([
+        ("CosmosCursorRequest".into(), "cursor_request_t".into()),
+        (
+            "CosmosCursorCompletion".into(),
+            "cursor_completion_t".into(),
+        ),
+        ("CosmosCursorBytes".into(), "cursor_bytes_t".into()),
+        ("CursorHandle".into(), "cursor_t".into()),
+        (
+            "CursorCompletionBacking".into(),
+            "cursor_completion_backing_t".into(),
+        ),
         ("RuntimeContext".into(), "runtime_t".into()),
         ("CosmosDriver".into(), "driver_t".into()),
         ("DriverHandle".into(), "driver_t".into()),
@@ -282,6 +293,7 @@ fn generate_c_header() {
             // double-prefixing it into `cosmos_COSMOS_STATUS_SUCCESS`.
             exclude: vec![
                 "__test_only_enqueue_ok_completion_with_all_value_kinds".into(),
+                "cosmos_test_cursor_fixture".into(),
                 "COSMOS_STATUS_SUCCESS".into(),
             ],
             rename,

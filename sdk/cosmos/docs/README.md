@@ -61,6 +61,7 @@ directly by Rust source remain with their crates.
 | 0026 | Session consistency (`specs/0026-session-consistency.md`) |
 | 0027 | Hosted emulator (`specs/0027-hosted-emulator.md`) |
 | 0028 | Functional E2E testing (`specs/0028-functional-e2e-testing.md`) |
+| 0029 | Generic native feed cursor (`specs/0029-native-feed-cursor.md`) |
 
 ## Architecture decision records
 

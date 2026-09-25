@@ -186,12 +186,28 @@ fn spawn_oneshot<Fut, R>(
                 SuccessKind::Response {
                     response,
                     next_continuation,
-                } => PendingCompletion::ok_response(
-                    user_data,
-                    ctx.op_inner.clone(),
-                    response.map(|b| *b),
-                    next_continuation,
-                ),
+                } => {
+                    if response.as_ref().is_some_and(|response| {
+                        matches!(
+                            response.body(),
+                            azure_data_cosmos_driver::models::ResponseBody::Items(_)
+                        )
+                    }) {
+                        PendingCompletion::error(
+                            user_data,
+                            ctx.op_inner.clone(),
+                            crate::cursor::legacy_representation_error(),
+                            ctx.include_error_details,
+                        )
+                    } else {
+                        PendingCompletion::ok_response(
+                            user_data,
+                            ctx.op_inner.clone(),
+                            response.map(|b| *b),
+                            next_continuation,
+                        )
+                    }
+                }
                 SuccessKind::Driver(driver) => {
                     PendingCompletion::ok_driver(user_data, ctx.op_inner.clone(), driver)
                 }
@@ -374,6 +390,15 @@ fn submit_operation_with_builder(
             // the continuation token through the planner and retains the
             // plan so we can mint the next-page token.
             let container = operation.container().cloned();
+            let is_feed = matches!(
+                operation.operation_type(),
+                azure_data_cosmos_driver::models::OperationType::Query
+                    | azure_data_cosmos_driver::models::OperationType::ReadFeed
+            );
+            let server_token_feed = operation.operation_type()
+                == azure_data_cosmos_driver::models::OperationType::ReadFeed
+                && operation.is_trivial()
+                && !operation.is_change_feed();
             let mut plan = Box::pin(driver_arc.plan_operation(
                 operation,
                 &options,
@@ -384,17 +409,20 @@ fn submit_operation_with_builder(
             let page = driver_arc
                 .execute_plan(&mut plan, container, options)
                 .await?;
-            // After a page, snapshot the next-page token from the plan.
-            // Token derivation is best-effort: a failure here (e.g. a
-            // non-query trivial op that doesn't support client tokens)
-            // simply yields no next token rather than failing the page.
-            let next = match page {
-                Some(_) => plan
-                    .to_continuation_token()
-                    .ok()
-                    .map(|t| t.as_str().to_owned()),
-                None => None,
+            let next = match &page {
+                Some(page) if server_token_feed => page.headers().continuation.clone(),
+                Some(_) if is_feed => Some(plan.to_continuation_token()?.as_str().to_owned()),
+                _ => None,
             };
+            // Legacy feeds must fail rather than silently drop multipart payloads.
+            if page.as_ref().is_some_and(|page| {
+                matches!(
+                    page.body(),
+                    azure_data_cosmos_driver::models::ResponseBody::Items(_)
+                )
+            }) {
+                return Err(crate::cursor::legacy_representation_error());
+            }
             Ok((page, next))
         },
         |(page, next): (Option<CosmosResponse>, Option<String>)| SuccessKind::Response {
@@ -432,6 +460,12 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
+    // SAFETY: caller guarantees a complete request or NULL.
+    if unsafe { request.as_ref() }
+        .is_some_and(|request| crate::cursor_request::is_feed_kind(request.kind))
+    {
+        return cosmos_submit_operation(driver, request, queue, user_data, out_pre_error);
+    }
     submit_singleton_operation_with_builder(driver, queue, user_data, out_pre_error, || {
         // SAFETY: caller guarantees the v1 request fields follow their contracts.
         unsafe { build_request(request) }
