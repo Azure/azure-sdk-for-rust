@@ -40,9 +40,7 @@
 //! cargo bench -p azure_data_cosmos_benchmarks --bench backtrace_capture
 //! ```
 
-use azure_data_cosmos_driver::error::{
-    backtrace_bench, CosmosError, CosmosErrorBuilder, CosmosStatus,
-};
+use azure_data_cosmos_driver::error::{backtrace_bench, CosmosError, CosmosErrorBuilder};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use std::{hint::black_box, sync::Arc};
 
@@ -99,7 +97,7 @@ fn bench_capture(c: &mut Criterion) {
     // stack walk. Measures the end-to-end builder cost on this path.
     let inner = Arc::new(
         CosmosError::builder()
-            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_status(azure_data_cosmos_driver::error::status_codes::TRANSPORT_GENERATED_503)
             .with_message("inner")
             .build(),
     );

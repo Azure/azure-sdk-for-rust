@@ -1595,7 +1595,7 @@ fn vector_distance_top_order_by_requires_gateway_plan() {
 
     assert_eq!(
         error.status(),
-        crate::error::CosmosStatus::CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED
+        crate::error::status_codes::CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED
     );
     assert!(error.to_string().contains("NEEDS_GATEWAY_FALLBACK"));
 }
@@ -1617,7 +1617,7 @@ fn parameterized_vector_distance_window_requires_gateway_plan() {
 
     assert_eq!(
         error.status(),
-        crate::error::CosmosStatus::CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED
+        crate::error::status_codes::CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED
     );
     assert!(error.to_string().contains("NEEDS_GATEWAY_FALLBACK"));
 }

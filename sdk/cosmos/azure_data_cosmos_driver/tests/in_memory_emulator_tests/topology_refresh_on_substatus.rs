@@ -21,7 +21,7 @@ use azure_data_cosmos_driver::in_memory_emulator::{
     VirtualRegion, WriteMode,
 };
 use azure_data_cosmos_driver::models::{
-    AccountReference, CosmosOperation, CosmosStatus, ItemReference, PartitionKey,
+    AccountReference, CosmosOperation, ItemReference, PartitionKey,
 };
 use azure_data_cosmos_driver::options::{DriverOptions, ExcludedRegions, OperationOptions, Region};
 
@@ -380,7 +380,7 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     let status = err.status();
     assert_eq!(
         status,
-        CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND,
+        azure_data_cosmos_driver::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND,
         "1008 exhausted-budget bubble-up must surface the original status unchanged; \
          observed status={status:?}",
     );
@@ -542,7 +542,7 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
     let status = err.status();
     assert_eq!(
         status,
-        CosmosStatus::WRITE_FORBIDDEN,
+        azure_data_cosmos_driver::error::status_codes::WRITE_FORBIDDEN,
         "403/3 exhausted-budget bubble-up must surface the original status unchanged; \
          observed status={status:?}",
     );

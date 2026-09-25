@@ -21,7 +21,6 @@ use crate::driver::transport::cosmos_transport_client::{
     TransportError,
 };
 use crate::driver::transport::http_client_factory::{HttpClientConfig, HttpClientFactory};
-use crate::models::CosmosStatus;
 use crate::options::ConnectionPoolOptions;
 
 /// An HTTP client that intercepts all requests and serves them from an in-memory store.
@@ -173,7 +172,7 @@ impl InMemoryEmulatorHttpClient {
                 // classifies this as `TRANSPORT_DNS_FAILED`, and that is the
                 // path a client actually takes against an offlined region.
                 return Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::TRANSPORT_DNS_FAILED)
+                    .with_status(crate::error::status_codes::TRANSPORT_DNS_FAILED)
                     .with_message(format!(
                         "in-memory emulator: region '{}' is offline; its endpoint \
                          does not resolve",
@@ -279,7 +278,7 @@ impl TransportClient for EmulatorTransportClient {
         // Collect the buffered response
         let raw = async_response.try_into_raw_response().await.map_err(|e| {
             let cosmos_err = crate::error::CosmosError::builder()
-                .with_status(CosmosStatus::TRANSPORT_BODY_READ_FAILED)
+                .with_status(crate::error::status_codes::TRANSPORT_BODY_READ_FAILED)
                 .with_message(e.to_string())
                 .with_source(e)
                 .build();

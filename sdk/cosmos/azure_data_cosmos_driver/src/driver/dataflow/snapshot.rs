@@ -274,7 +274,7 @@ impl PipelineNodeState {
             }),
             other => Err(crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
                 )
                 .with_message(format!(
                     "{parent} child {idx} of {total} produced an unsupported snapshot shape: {}",

@@ -106,7 +106,7 @@ async fn response_tokens_are_captured_before_switching_to_session() -> TestResul
             assert_eq!(error.status().status_code(), StatusCode::NotFound);
             assert_eq!(
                 error.status().sub_status(),
-                Some(azure_data_cosmos::SubStatusCode::READ_SESSION_NOT_AVAILABLE)
+                Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE)
             );
             Ok(())
         })
@@ -316,7 +316,7 @@ async fn disabled_capture_exposes_delayed_replica() -> TestResult {
             assert_eq!(unavailable.status().status_code(), StatusCode::NotFound);
             assert_eq!(
                 unavailable.status().sub_status(),
-                Some(azure_data_cosmos::SubStatusCode::READ_SESSION_NOT_AVAILABLE)
+                Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE)
             );
             Ok(())
         })

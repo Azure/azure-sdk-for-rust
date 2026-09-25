@@ -31,8 +31,6 @@ pub use azure_data_cosmos::clients::container_client::ContainerClient;
 pub use azure_data_cosmos::clients::cosmos_client::CosmosClient;
 #[doc(inline)]
 pub use azure_data_cosmos::clients::cosmos_client_builder::CosmosClientBuilder;
-pub use azure_data_cosmos::error::CosmosError;
-pub use azure_data_cosmos::error::CosmosStatus;
 #[doc(inline)]
 pub use azure_data_cosmos::clients::database_client::DatabaseClient;
 #[cfg(feature = "preview_dtx")]
@@ -43,7 +41,6 @@ pub use azure_data_cosmos::feed::query::FeedScope;
 pub use azure_data_cosmos::feed::query::Query;
 pub use azure_data_cosmos::error::Result;
 pub use azure_data_cosmos::options::routing_strategy::RoutingStrategy;
-pub use azure_data_cosmos::error::SubStatusCode;
 pub use azure_data_cosmos::models::transactional_batch::TransactionalBatch;
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AccountEndpoint(/* private fields */);
@@ -70,6 +67,38 @@ impl AccountReference {
     pub fn with_authentication_key<impl Into<Secret>: Into<Secret>>(endpoint: AccountEndpoint, key: impl Into<Secret>) -> Self;
     pub fn with_credential(endpoint: AccountEndpoint, credential: Arc<dyn TokenCredential>) -> Self;
 }
+#[derive(Clone)]
+pub struct CosmosError {
+}
+impl CosmosError {
+    pub fn backtrace(&self) -> Option<Arc<str>>;
+    pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>>;
+    pub fn is_from_wire(&self) -> bool;
+    pub fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
+    pub fn response(&self) -> Option<&CosmosResponse>;
+    pub fn status(&self) -> CosmosStatus;
+}
+impl CosmosError {
+    pub fn builder() -> CosmosErrorBuilder;
+}
+impl Debug for CosmosError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+}
+impl Display for CosmosError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+}
+impl Error for CosmosError {
+    fn source(&self) -> Option<&dyn StdError + 'static>;
+}
+impl From<CosmosError> for azure_core::Error {
+    fn from(error: CosmosError) -> Self;
+}
+impl From<Error> for CosmosError {
+    fn from(error: serde_json::Error) -> Self;
+}
+impl From<ParseError> for CosmosError {
+    fn from(error: url::ParseError) -> Self;
+}
 #[derive(Clone, Debug)]
 pub struct CosmosRuntime(/* private fields */);
 impl CosmosRuntime {
@@ -88,6 +117,55 @@ impl CosmosRuntimeBuilder {
 }
 impl From<CosmosDriverRuntimeBuilder> for CosmosRuntimeBuilder {
     fn from(value: CosmosDriverRuntimeBuilder) -> Self;
+}
+#[derive(Clone, Copy, Eq, Hash, PartialEq)]
+pub struct CosmosStatus {
+}
+impl CosmosStatus {
+    pub fn is_bad_request(&self) -> bool;
+    pub fn is_conflict(&self) -> bool;
+    pub fn is_database_account_not_found(&self) -> bool;
+    pub fn is_forbidden(&self) -> bool;
+    pub fn is_gone(&self) -> bool;
+    pub fn is_not_found(&self) -> bool;
+    pub fn is_partition_key_range_gone(&self) -> bool;
+    pub fn is_precondition_failed(&self) -> bool;
+    pub fn is_read_session_not_available(&self) -> bool;
+    pub fn is_retry_with(&self) -> bool;
+    pub fn is_service_unavailable(&self) -> bool;
+    pub fn is_success(&self) -> bool;
+    pub fn is_throttled(&self) -> bool;
+    pub fn is_timeout(&self) -> bool;
+    pub fn is_transient(&self) -> bool;
+    pub fn is_transport_generated_503(&self) -> bool;
+    pub fn is_unauthorized(&self) -> bool;
+    pub fn is_write_forbidden(&self) -> bool;
+    pub fn name(&self) -> Option<&'static str>;
+    pub fn new(status_code: StatusCode) -> Self;
+    pub fn status_code(&self) -> StatusCode;
+    pub fn sub_status(&self) -> Option<SubStatusCode>;
+    pub fn with_sub_status(self, sub_status_code: u16) -> Self;
+}
+impl Debug for CosmosStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+}
+impl Display for CosmosStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+}
+impl From<CosmosStatus> for azure_core::http::StatusCode {
+    fn from(s: CosmosStatus) -> Self;
+}
+impl From<CosmosStatus> for u16 {
+    fn from(s: CosmosStatus) -> Self;
+}
+impl PartialEq<CosmosStatus> for azure_core::http::StatusCode {
+    fn eq(&self, other: &CosmosStatus) -> bool;
+}
+impl PartialEq<StatusCode> for CosmosStatus {
+    fn eq(&self, other: &StatusCode) -> bool;
+}
+impl Serialize for CosmosStatus {
+    fn serialize<S>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error> where S: serde::Serializer;
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[non_exhaustive]
@@ -158,6 +236,30 @@ impl From<ResourceId> for ResourceIdentity {
 }
 impl From<String> for ResourceId {
     fn from(rid: String) -> Self;
+}
+#[derive(Clone, Copy, Eq, Hash, PartialEq, serde::Deserialize, serde::Serialize)]
+#[serde(transparent)]
+pub struct SubStatusCode(/* private fields */);
+impl SubStatusCode {
+    pub fn from_header_value(s: &str) -> Option<Self>;
+    pub fn name(&self, status_code: Option<StatusCode>) -> Option<&'static str>;
+    pub const fn new(code: u16) -> Self;
+    pub const fn value(&self) -> u16;
+}
+impl Debug for SubStatusCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+}
+impl Default for SubStatusCode {
+    fn default() -> Self;
+}
+impl Display for SubStatusCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+}
+impl From<SubStatusCode> for u16 {
+    fn from(code: SubStatusCode) -> Self;
+}
+impl From<u16> for SubStatusCode {
+    fn from(value: u16) -> Self;
 }
 #[derive(Clone, Debug)]
 #[non_exhaustive]
@@ -732,14 +834,18 @@ pub mod diagnostics {
 }
 pub mod error {
     #[derive(Clone)]
-    #[repr(transparent)]
-    pub struct CosmosError(/* private fields */);
+    pub struct CosmosError {
+    }
     impl CosmosError {
+        pub fn backtrace(&self) -> Option<Arc<str>>;
         pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>>;
-        #[cfg(feature = "preview_patch")]
+        pub fn is_from_wire(&self) -> bool;
         pub fn patch_tracking_id(&self) -> Option<PatchTrackingId>;
         pub fn response(&self) -> Option<&CosmosResponse>;
         pub fn status(&self) -> CosmosStatus;
+    }
+    impl CosmosError {
+        pub fn builder() -> CosmosErrorBuilder;
     }
     impl Debug for CosmosError {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
@@ -750,11 +856,8 @@ pub mod error {
     impl Error for CosmosError {
         fn source(&self) -> Option<&dyn StdError + 'static>;
     }
-    impl From<CosmosError> for CosmosError {
-        fn from(inner: DriverCosmosError) -> Self;
-    }
     impl From<CosmosError> for azure_core::Error {
-        fn from(err: CosmosError) -> Self;
+        fn from(error: CosmosError) -> Self;
     }
     impl From<Error> for CosmosError {
         fn from(error: serde_json::Error) -> Self;
@@ -762,9 +865,80 @@ pub mod error {
     impl From<ParseError> for CosmosError {
         fn from(error: url::ParseError) -> Self;
     }
-    pub type CosmosStatus = azure_data_cosmos_driver::error::CosmosStatus;
+    #[derive(Clone, Copy, Eq, Hash, PartialEq)]
+    pub struct CosmosStatus {
+    }
+    impl CosmosStatus {
+        pub fn is_bad_request(&self) -> bool;
+        pub fn is_conflict(&self) -> bool;
+        pub fn is_database_account_not_found(&self) -> bool;
+        pub fn is_forbidden(&self) -> bool;
+        pub fn is_gone(&self) -> bool;
+        pub fn is_not_found(&self) -> bool;
+        pub fn is_partition_key_range_gone(&self) -> bool;
+        pub fn is_precondition_failed(&self) -> bool;
+        pub fn is_read_session_not_available(&self) -> bool;
+        pub fn is_retry_with(&self) -> bool;
+        pub fn is_service_unavailable(&self) -> bool;
+        pub fn is_success(&self) -> bool;
+        pub fn is_throttled(&self) -> bool;
+        pub fn is_timeout(&self) -> bool;
+        pub fn is_transient(&self) -> bool;
+        pub fn is_transport_generated_503(&self) -> bool;
+        pub fn is_unauthorized(&self) -> bool;
+        pub fn is_write_forbidden(&self) -> bool;
+        pub fn name(&self) -> Option<&'static str>;
+        pub fn new(status_code: StatusCode) -> Self;
+        pub fn status_code(&self) -> StatusCode;
+        pub fn sub_status(&self) -> Option<SubStatusCode>;
+        pub fn with_sub_status(self, sub_status_code: u16) -> Self;
+    }
+    impl Debug for CosmosStatus {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+    }
+    impl Display for CosmosStatus {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+    }
+    impl From<CosmosStatus> for azure_core::http::StatusCode {
+        fn from(s: CosmosStatus) -> Self;
+    }
+    impl From<CosmosStatus> for u16 {
+        fn from(s: CosmosStatus) -> Self;
+    }
+    impl PartialEq<CosmosStatus> for azure_core::http::StatusCode {
+        fn eq(&self, other: &CosmosStatus) -> bool;
+    }
+    impl PartialEq<StatusCode> for CosmosStatus {
+        fn eq(&self, other: &StatusCode) -> bool;
+    }
+    impl Serialize for CosmosStatus {
+        fn serialize<S>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error> where S: serde::Serializer;
+    }
+    #[derive(Clone, Copy, Eq, Hash, PartialEq, serde::Deserialize, serde::Serialize)]
+    #[serde(transparent)]
+    pub struct SubStatusCode(/* private fields */);
+    impl SubStatusCode {
+        pub fn from_header_value(s: &str) -> Option<Self>;
+        pub fn name(&self, status_code: Option<StatusCode>) -> Option<&'static str>;
+        pub const fn new(code: u16) -> Self;
+        pub const fn value(&self) -> u16;
+    }
+    impl Debug for SubStatusCode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+    }
+    impl Default for SubStatusCode {
+        fn default() -> Self;
+    }
+    impl Display for SubStatusCode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+    }
+    impl From<SubStatusCode> for u16 {
+        fn from(code: SubStatusCode) -> Self;
+    }
+    impl From<u16> for SubStatusCode {
+        fn from(value: u16) -> Self;
+    }
     pub type Result<T> = std::result::Result<T, CosmosError>;
-    pub type SubStatusCode = azure_data_cosmos_driver::error::SubStatusCode;
 }
 #[cfg(feature = "fault_injection")]
 pub mod fault_injection {
@@ -1238,93 +1412,6 @@ pub mod models {
     }
     #[doc(inline)]
     impl CosmosStatus {
-        const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: CosmosStatus = _;
-        const CLIENT_BAD_REQUEST: CosmosStatus = _;
-        const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: CosmosStatus = _;
-        const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: CosmosStatus = _;
-        const CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE: CosmosStatus = _;
-        const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: CosmosStatus = _;
-        const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: CosmosStatus = _;
-        const CLIENT_CONNECTION_STRING_EMPTY: CosmosStatus = _;
-        const CLIENT_CONNECTION_STRING_MALFORMED_PART: CosmosStatus = _;
-        const CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_ENDPOINT: CosmosStatus = _;
-        const CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY: CosmosStatus = _;
-        const CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE: CosmosStatus = _;
-        const CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT: CosmosStatus = _;
-        const CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE: CosmosStatus = _;
-        const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: CosmosStatus = _;
-        const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: CosmosStatus = _;
-        const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: CosmosStatus = _;
-        const CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH: CosmosStatus = _;
-        const CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE: CosmosStatus = _;
-        const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: CosmosStatus = _;
-        const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: CosmosStatus = _;
-        const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = _;
-        const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
-        const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: CosmosStatus = _;
-        const CLIENT_DRIVER_NOT_INITIALIZED: CosmosStatus = _;
-        const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: CosmosStatus = _;
-        const CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE: CosmosStatus = _;
-        const CLIENT_GENERATED_401: CosmosStatus = _;
-        const CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED: CosmosStatus = _;
-        const CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED: CosmosStatus = _;
-        const CLIENT_IMDS_REQWEST_FEATURE_REQUIRED: CosmosStatus = _;
-        const CLIENT_INVALID_ACCOUNT_ENDPOINT_URL: CosmosStatus = _;
-        const CLIENT_INVALID_RESOURCE_ID: CosmosStatus = _;
-        const CLIENT_INVALID_URL: CosmosStatus = _;
-        const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = _;
-        const CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH: CosmosStatus = _;
-        const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
-        const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus = Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
-        const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: CosmosStatus = _;
-        const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: CosmosStatus = _;
-        const CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE: CosmosStatus = _;
-        const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: CosmosStatus = _;
-        const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = _;
-        const CLIENT_PARTITION_KEY_EMPTY: CosmosStatus = _;
-        const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: CosmosStatus = _;
-        const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: CosmosStatus = _;
-        const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: CosmosStatus = _;
-        const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: CosmosStatus = _;
-        const CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT: CosmosStatus = _;
-        const CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES: CosmosStatus = _;
-        const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: CosmosStatus = _;
-        const CLIENT_QUERY_REWRITE_BODY_INVALID: CosmosStatus = _;
-        const CLIENT_REQUEST_URL_MISSING_HOST: CosmosStatus = _;
-        const CLIENT_REQUEST_URL_MISSING_KNOWN_PORT: CosmosStatus = _;
-        const CLIENT_REQWEST_FEATURE_REQUIRED: CosmosStatus = _;
-        const CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT: CosmosStatus = _;
-        const CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE: CosmosStatus = _;
-        const CLIENT_SPLIT_RETRIES_EXHAUSTED: CosmosStatus = _;
-        const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = _;
-        const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: CosmosStatus = _;
-        const CLIENT_TOPOLOGY_PROVIDER_MISSING: CosmosStatus = _;
-        const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = _;
-        const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: CosmosStatus = _;
-        const CLIENT_UNKNOWN_PRIORITY_LEVEL: CosmosStatus = _;
-        const CLIENT_UNSUPPORTED_QUERY_FEATURE: CosmosStatus = _;
-        const CLIENT_USER_AGENT_SUFFIX_INVALID: CosmosStatus = _;
-        const COMPLETING_PARTITION_MIGRATION: CosmosStatus = _;
-        const COMPLETING_SPLIT: CosmosStatus = _;
-        const CROSS_PARTITION_QUERY_NOT_SERVABLE: CosmosStatus = _;
-        const DATABASE_ACCOUNT_NOT_FOUND: CosmosStatus = _;
-        const NAME_CACHE_STALE: CosmosStatus = _;
-        const PARTITION_KEY_RANGE_GONE: CosmosStatus = _;
-        const READ_SESSION_NOT_AVAILABLE: CosmosStatus = _;
-        const RU_BUDGET_EXCEEDED: CosmosStatus = _;
-        const SERIALIZATION_REQUEST_BODY_INVALID: CosmosStatus = _;
-        const SERIALIZATION_RESPONSE_BODY_INVALID: CosmosStatus = _;
-        const SERVICE_ORDER_BY_ENVELOPE_INVALID: CosmosStatus = _;
-        const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: CosmosStatus = _;
-        const SERVICE_RETURNED_OBJECT_WITHOUT_RID: CosmosStatus = _;
-        const SERVICE_RETURNED_OFFER_WITHOUT_ID: CosmosStatus = _;
-        const TRANSPORT_BODY_READ_FAILED: CosmosStatus = _;
-        const TRANSPORT_CONNECTION_FAILED: CosmosStatus = _;
-        const TRANSPORT_DNS_FAILED: CosmosStatus = _;
-        const TRANSPORT_GENERATED_503: CosmosStatus = _;
-        const TRANSPORT_HTTP2_INCOMPATIBLE: CosmosStatus = _;
-        const TRANSPORT_IO_FAILED: CosmosStatus = _;
-        const WRITE_FORBIDDEN: CosmosStatus = _;
         pub fn is_bad_request(&self) -> bool;
         pub fn is_conflict(&self) -> bool;
         pub fn is_database_account_not_found(&self) -> bool;
@@ -1766,7 +1853,7 @@ pub mod models {
     }
     #[cfg(feature = "preview_patch")]
     impl Display for PatchTrackingId {
-        fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
     }
     #[cfg(feature = "preview_patch")]
     impl From<Uuid> for PatchTrackingId {

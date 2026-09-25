@@ -205,8 +205,6 @@ async fn setup_with_query_recorder() -> (
 
 #[tokio::test]
 async fn buffered_admission_precedes_items_and_uses_per_plan_options() {
-    use azure_data_cosmos_driver::error::CosmosStatus;
-
     for partition_count in [1, 2] {
         for mode in [QueryPlanMode::LocalPreferred, QueryPlanMode::GatewayOnly] {
             let recorder = Arc::new(QueryRequestRecorder::default());
@@ -303,7 +301,7 @@ async fn buffered_admission_precedes_items_and_uses_per_plan_options() {
                                 .expect("query outside finite policy must be denied");
                             assert_eq!(
                                 error.status(),
-                                CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+                                azure_data_cosmos_driver::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
                             );
                             let message = error.to_string();
                             assert!(message.contains("unordered DISTINCT"));

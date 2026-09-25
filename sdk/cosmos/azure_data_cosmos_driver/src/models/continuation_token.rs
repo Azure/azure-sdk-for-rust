@@ -83,7 +83,7 @@ impl ContinuationToken {
 
         let json = serde_json::to_vec(&state).map_err(|e| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("failed to serialize continuation token state")
                 .with_source(e)
                 .build()
@@ -112,7 +112,7 @@ impl ContinuationToken {
                 })?;
             let state: TokenState = serde_json::from_slice(&json).map_err(|e| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("continuation token has invalid JSON payload")
                     .with_source(e)
                     .build()
@@ -159,7 +159,7 @@ impl TokenOperation {
         } else {
             Err(crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION,
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION,
                 )
                 .with_message(
                     "client-side continuation tokens are only supported for query and change \

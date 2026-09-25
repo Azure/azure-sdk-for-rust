@@ -583,1108 +583,11 @@ impl SubStatusCode {
             _ => None,
         }
     }
-
-    // =========================================================================
-    // Constants - organized by HTTP status code context
-    // =========================================================================
-    //
-    // Many of the constants below mirror sub-status codes emitted by the
-    // Cosmos DB service and are exposed primarily as a documented catalog
-    // for pattern matching on responses; the Rust SDK itself does not
-    // synthesize most of them. Constants in the `CLIENT_*` / `SERVICE_*`
-    // / `TRANSPORT_*` / `AUTHENTICATION_*` / `SERIALIZATION_*` ranges
-    // (20100-20402) are SDK-synthesized and are the ones the driver may
-    // emit directly.
-
-    // ----- General -----
-
-    /// Unknown sub-status code (0).
-    pub const UNKNOWN: SubStatusCode = SubStatusCode(0);
-
-    /// Operation is in progress (100).
-    pub const OPERATION_IN_PROGRESS: SubStatusCode = SubStatusCode(100);
-
-    // ----- 400: Bad Request -----
-
-    /// Partition key mismatch (1001).
-    pub const PARTITION_KEY_MISMATCH: SubStatusCode = SubStatusCode(1001);
-
-    /// Cross-partition query not servable (1004).
-    pub const CROSS_PARTITION_QUERY_NOT_SERVABLE: SubStatusCode = SubStatusCode(1004);
-
-    /// Another offer replace operation is in progress (3205).
-    pub const OFFER_REPLACE_IN_PROGRESS: SubStatusCode = SubStatusCode(3205);
-
-    /// Script compile error (65535 / 0xFFFF).
-    pub const SCRIPT_COMPILE_ERROR: SubStatusCode = SubStatusCode(0xFFFF);
-
-    /// HTTP listener exception (1101).
-    pub const HTTP_LISTENER_EXCEPTION: SubStatusCode = SubStatusCode(1101);
-
-    /// Schema owner ID mismatch (1016).
-    pub const SCHEMA_OWNER_ID_MISMATCH: SubStatusCode = SubStatusCode(1016);
-
-    /// Schema hash or ID mismatch (1017).
-    pub const SCHEMA_HASH_OR_ID_MISMATCH: SubStatusCode = SubStatusCode(1017);
-
-    /// Partition key definition missing for autopilot (1018).
-    pub const PARTITION_KEY_DEFINITION_MISSING_FOR_AUTOPILOT: SubStatusCode = SubStatusCode(1018);
-
-    /// Partition key definition not specified (1013).
-    /// Note: Same value as `COLLECTION_CREATE_IN_PROGRESS` for 404.
-    pub const PARTITION_KEY_DEFINITION_NOT_SPECIFIED: SubStatusCode = SubStatusCode(1013);
-
-    /// Collection RID mismatch (1024).
-    /// Note: Same value as `ARCHIVAL_PARTITION_NOT_PRESENT` for 410.
-    pub const COLLECTION_RID_MISMATCH: SubStatusCode = SubStatusCode(1024);
-
-    /// Transaction already active (1102).
-    pub const TRANSACTION_ALREADY_ACTIVE: SubStatusCode = SubStatusCode(1102);
-
-    /// Invalid transaction ID (1103).
-    pub const INVALID_TRANSACTION_ID: SubStatusCode = SubStatusCode(1103);
-
-    /// Cross-collection transaction not supported (1104).
-    pub const CROSS_COLLECTION_TRANSACTION_NOT_SUPPORTED: SubStatusCode = SubStatusCode(1104);
-
-    /// Invalid topology change request (1105).
-    pub const INVALID_TOPOLOGY_CHANGE_REQUEST: SubStatusCode = SubStatusCode(1105);
-
-    // ----- 403: Forbidden -----
-
-    /// Write operations forbidden (3).
-    pub const WRITE_FORBIDDEN: SubStatusCode = SubStatusCode(3);
-
-    /// Provision limit reached (1005).
-    pub const PROVISION_LIMIT_REACHED: SubStatusCode = SubStatusCode(1005);
-
-    /// Database account not found (1008).
-    /// Note: Same value as `COMPLETING_PARTITION_MIGRATION` for 410.
-    pub const DATABASE_ACCOUNT_NOT_FOUND: SubStatusCode = SubStatusCode(1008);
-
-    /// Shared throughput database quota exceeded (1010).
-    pub const DATABASE_QUOTA_EXCEEDED: SubStatusCode = SubStatusCode(1010);
-
-    /// Throughput cap quota exceeded (1028).
-    pub const THROUGHPUT_CAP_EXCEEDED: SubStatusCode = SubStatusCode(1028);
-
-    /// Invalid throughput cap value (1029).
-    pub const INVALID_THROUGHPUT_CAP_VALUE: SubStatusCode = SubStatusCode(1029);
-
-    /// Redundant collection PUT (1009).
-    pub const REDUNDANT_COLLECTION_PUT: SubStatusCode = SubStatusCode(1009);
-
-    /// Shared throughput offer grow not needed (1011).
-    pub const SHARED_THROUGHPUT_OFFER_GROW_NOT_NEEDED: SubStatusCode = SubStatusCode(1011);
-
-    /// Compute federation not found (1012).
-    /// Note: Also used for 503 Service Unavailable.
-    pub const COMPUTE_FEDERATION_NOT_FOUND: SubStatusCode = SubStatusCode(1012);
-
-    /// Partition key quota over limit (1014).
-    pub const PARTITION_KEY_QUOTA_OVER_LIMIT: SubStatusCode = SubStatusCode(1014);
-
-    /// Shared throughput database collection count exceeded (1019).
-    pub const SHARED_THROUGHPUT_DATABASE_COLLECTION_COUNT_EXCEEDED: SubStatusCode =
-        SubStatusCode(1019);
-
-    /// Shared throughput database count exceeded (1020).
-    pub const SHARED_THROUGHPUT_DATABASE_COUNT_EXCEEDED: SubStatusCode = SubStatusCode(1020);
-
-    /// Compute internal error (1021).
-    pub const COMPUTE_INTERNAL_ERROR: SubStatusCode = SubStatusCode(1021);
-
-    /// Offer replace disabled for auto-scale offer (1015).
-    pub const OFFER_REPLACE_DISABLED_AUTO_SCALE_OFFER: SubStatusCode = SubStatusCode(1015);
-
-    /// Unique index re-index in progress (1027).
-    pub const UNIQUE_INDEX_RE_INDEX_IN_PROGRESS: SubStatusCode = SubStatusCode(1027);
-
-    /// Partition key delete request limit exceeded (1032).
-    pub const PARTITION_KEY_DELETE_REQUEST_LIMIT_EXCEEDED: SubStatusCode = SubStatusCode(1032);
-
-    /// Leaked partition (1033).
-    pub const LEAKED_PARTITION: SubStatusCode = SubStatusCode(1033);
-
-    /// System partition key not allowed (1031).
-    /// Note: Same value as `PARTITION_MIGRATING_COLLECTION_DELETED` for 404.
-    pub const SYSTEM_PARTITION_KEY_NOT_ALLOWED: SubStatusCode = SubStatusCode(1031);
-
-    /// Resource soft deleted (1034).
-    /// Note: Same value as `PARTITION_MIGRATION_SOURCE_PARTITION_DELETED_IN_MASTER` for 404.
-    pub const RESOURCE_SOFT_DELETED: SubStatusCode = SubStatusCode(1034);
-
-    /// Patch condition not met (1110).
-    pub const PATCH_CONDITION_NOT_MET: SubStatusCode = SubStatusCode(1110);
-
-    // ----- 404: Not Found -----
-
-    /// Read session not available (1002).
-    /// Note: Same value as `PARTITION_KEY_RANGE_GONE` for 410.
-    pub const READ_SESSION_NOT_AVAILABLE: SubStatusCode = SubStatusCode(1002);
-
-    /// Owner resource not found (1003).
-    pub const OWNER_RESOURCE_NOT_FOUND: SubStatusCode = SubStatusCode(1003);
-
-    /// Collection create in progress (1013).
-    pub const COLLECTION_CREATE_IN_PROGRESS: SubStatusCode = SubStatusCode(1013);
-
-    /// Store not ready (1023).
-    pub const STORE_NOT_READY: SubStatusCode = SubStatusCode(1023);
-
-    /// Auth token not found in cache (1030).
-    pub const AUTH_TOKEN_NOT_FOUND_IN_CACHE: SubStatusCode = SubStatusCode(1030);
-
-    /// Archival partition not present (1024).
-    pub const ARCHIVAL_PARTITION_NOT_PRESENT: SubStatusCode = SubStatusCode(1024);
-
-    /// Partition migrating, collection deleted (1031).
-    pub const PARTITION_MIGRATING_COLLECTION_DELETED: SubStatusCode = SubStatusCode(1031);
-
-    /// Partition migration source partition deleted in master (1034).
-    pub const PARTITION_MIGRATION_SOURCE_PARTITION_DELETED_IN_MASTER: SubStatusCode =
-        SubStatusCode(1034);
-
-    /// Partition migration shared throughput database partition resource not found in master (1035).
-    pub const PARTITION_MIGRATION_SHARED_THROUGHPUT_DB_PARTITION_NOT_FOUND: SubStatusCode =
-        SubStatusCode(1035);
-
-    /// Partition migration partition resource not found in master (1036).
-    pub const PARTITION_MIGRATION_PARTITION_RESOURCE_NOT_FOUND: SubStatusCode = SubStatusCode(1036);
-
-    /// Partition migration failed to update DNS (1037).
-    pub const PARTITION_MIGRATION_FAILED_TO_UPDATE_DNS: SubStatusCode = SubStatusCode(1037);
-
-    // ----- 408: Request Timeout -----
-
-    /// Request preempted due to execution time limit (1900).
-    pub const REQUEST_PREEMPTED: SubStatusCode = SubStatusCode(1900);
-
-    // ----- 409: Conflict -----
-
-    /// Conflict with control plane (1006).
-    pub const CONFLICT_WITH_CONTROL_PLANE: SubStatusCode = SubStatusCode(1006);
-
-    /// Database name already exists (3206).
-    pub const DATABASE_NAME_EXISTS: SubStatusCode = SubStatusCode(3206);
-
-    /// Partition key hash collision for ID (3302).
-    pub const PARTITION_KEY_HASH_COLLISION: SubStatusCode = SubStatusCode(3302);
-
-    /// Partition migration document count mismatch between source and target (3050).
-    pub const PARTITION_MIGRATION_DOC_COUNT_MISMATCH_SOURCE_TARGET: SubStatusCode =
-        SubStatusCode(3050);
-
-    /// Partition migration document count mismatch between target partition replicas (3051).
-    pub const PARTITION_MIGRATION_DOC_COUNT_MISMATCH_TARGET_REPLICAS: SubStatusCode =
-        SubStatusCode(3051);
-
-    /// Unique index conflict (3301).
-    pub const UNIQUE_INDEX_CONFLICT: SubStatusCode = SubStatusCode(3301);
-
-    /// Azure Backup Vault incremental backup paused (3303).
-    pub const AZURE_BACKUP_VAULT_INCREMENTAL_BACKUP_PAUSED: SubStatusCode = SubStatusCode(3303);
-
-    /// Azure Backup Vault incremental backup restore disabled (3304).
-    pub const AZURE_BACKUP_VAULT_INCREMENTAL_BACKUP_RESTORE_DISABLED: SubStatusCode =
-        SubStatusCode(3304);
-
-    // ----- 410: Gone -----
-
-    /// Name cache is stale (1000).
-    pub const NAME_CACHE_STALE: SubStatusCode = SubStatusCode(1000);
-
-    /// Partition key range gone (1002).
-    /// Note: Same value as `READ_SESSION_NOT_AVAILABLE` for 404.
-    pub const PARTITION_KEY_RANGE_GONE: SubStatusCode = SubStatusCode(1002);
-
-    /// Completing split or merge (1007).
-    /// Note: Same value as `INSUFFICIENT_BINDABLE_PARTITIONS` for 503.
-    pub const COMPLETING_SPLIT: SubStatusCode = SubStatusCode(1007);
-
-    /// Completing partition migration (1008).
-    /// Note: Same value as `DATABASE_ACCOUNT_NOT_FOUND` for 403.
-    pub const COMPLETING_PARTITION_MIGRATION: SubStatusCode = SubStatusCode(1008);
-
-    /// Lease not found (1022).
-    pub const LEASE_NOT_FOUND: SubStatusCode = SubStatusCode(1022);
-
-    // ----- 412: Precondition Failed -----
-
-    /// Split is disabled (2001).
-    pub const SPLIT_DISABLED: SubStatusCode = SubStatusCode(2001);
-
-    /// Resource not found during precondition check (2004).
-    pub const RESOURCE_NOT_FOUND: SubStatusCode = SubStatusCode(2004);
-
-    /// Tombstone records not found (purged) (2015).
-    pub const TOMBSTONE_RECORDS_NOT_FOUND: SubStatusCode = SubStatusCode(2015);
-
-    /// Collections in partition got updated (2002).
-    pub const COLLECTIONS_IN_PARTITION_GOT_UPDATED: SubStatusCode = SubStatusCode(2002);
-
-    /// Cannot acquire partition key ranges lock (2003).
-    pub const CANNOT_ACQUIRE_PKRANGES_LOCK: SubStatusCode = SubStatusCode(2003);
-
-    /// Cannot acquire offer owner lock (2005).
-    pub const CANNOT_ACQUIRE_OFFER_OWNER_LOCK: SubStatusCode = SubStatusCode(2005);
-
-    /// Cannot acquire partition key range lock (2007).
-    pub const CANNOT_ACQUIRE_PKRANGE_LOCK: SubStatusCode = SubStatusCode(2007);
-
-    /// Cannot acquire partition lock (2008).
-    pub const CANNOT_ACQUIRE_PARTITION_LOCK: SubStatusCode = SubStatusCode(2008);
-
-    /// Storage split conflicting with n-way throughput split (2011).
-    pub const STORAGE_SPLIT_CONFLICTING_WITH_NWAY_THROUGHPUT_SPLIT: SubStatusCode =
-        SubStatusCode(2011);
-
-    /// Merge is disabled (2012).
-    pub const MERGE_DISABLED: SubStatusCode = SubStatusCode(2012);
-
-    /// Invalid account status (2016).
-    pub const INVALID_ACCOUNT_STATUS: SubStatusCode = SubStatusCode(2016);
-
-    /// Offer validation failed (2017).
-    pub const OFFER_VALIDATION_FAILED: SubStatusCode = SubStatusCode(2017);
-
-    /// Cannot acquire master partition access lock (2018).
-    pub const CANNOT_ACQUIRE_MASTER_PARTITION_ACCESS_LOCK: SubStatusCode = SubStatusCode(2018);
-
-    /// Cannot acquire in-account restore in progress lock (2019).
-    pub const CANNOT_ACQUIRE_IN_ACCOUNT_RESTORE_LOCK: SubStatusCode = SubStatusCode(2019);
-
-    /// Collection state changed (2020).
-    pub const COLLECTION_STATE_CHANGED: SubStatusCode = SubStatusCode(2020);
-
-    /// Offer scaled up by user (2021).
-    pub const OFFER_SCALED_UP_BY_USER: SubStatusCode = SubStatusCode(2021);
-
-    /// Cannot acquire log store storage account load balance lock (2101).
-    pub const CANNOT_ACQUIRE_LOG_STORE_LOAD_BALANCE_LOCK: SubStatusCode = SubStatusCode(2101);
-
-    // ----- 413: Request Entity Too Large -----
-
-    /// Transaction limit exceeded (3401).
-    pub const TRANSACTION_LIMIT_EXCEEDED: SubStatusCode = SubStatusCode(3401);
-
-    /// Batch response size exceeded (3402).
-    pub const BATCH_RESPONSE_SIZE_EXCEEDED: SubStatusCode = SubStatusCode(3402);
-
-    // ----- 429: Too Many Requests -----
-
-    /// RU budget exceeded (3200).
-    pub const RU_BUDGET_EXCEEDED: SubStatusCode = SubStatusCode(3200);
-
-    /// DTX coordinator race conflict (5352).
-    #[cfg(feature = "preview_dtx")]
-    pub const DTC_COORDINATOR_RACE_CONFLICT: SubStatusCode = SubStatusCode(5352);
-
-    /// DTX ledger failure (5411).
-    #[cfg(feature = "preview_dtx")]
-    pub const DTC_LEDGER_FAILURE: SubStatusCode = SubStatusCode(5411);
-
-    /// DTX account configuration failure (5412).
-    #[cfg(feature = "preview_dtx")]
-    pub const DTC_ACCOUNT_CONFIG_FAILURE: SubStatusCode = SubStatusCode(5412);
-
-    /// DTX backend dispatch infrastructure failure (5413).
-    #[cfg(feature = "preview_dtx")]
-    pub const DTC_DISPATCH_FAILURE: SubStatusCode = SubStatusCode(5413);
-
-    /// DTX prepared operation rolled back on abort (5415, DtcOperationRolledBack).
-    #[cfg(feature = "preview_dtx")]
-    pub const DTC_OPERATION_ROLLED_BACK: SubStatusCode = SubStatusCode(5415);
-
-    /// Gateway throttled (3201).
-    pub const GATEWAY_THROTTLED: SubStatusCode = SubStatusCode(3201);
-
-    /// Prepare time limit exceeded (3207).
-    pub const PREPARE_TIME_EXCEEDED: SubStatusCode = SubStatusCode(3207);
-
-    /// Stored procedure concurrency limit (3084).
-    pub const STORED_PROCEDURE_CONCURRENCY: SubStatusCode = SubStatusCode(3084);
-
-    /// Throttle due to split (3088).
-    pub const THROTTLE_DUE_TO_SPLIT: SubStatusCode = SubStatusCode(3088);
-
-    /// System resource unavailable (3092).
-    pub const SYSTEM_RESOURCE_UNAVAILABLE: SubStatusCode = SubStatusCode(3092);
-
-    /// BW term count limit exceeded (3209).
-    pub const BW_TERM_COUNT_LIMIT_EXCEEDED: SubStatusCode = SubStatusCode(3209);
-
-    /// BwTree IO rate limiter throttle (3073).
-    pub const BW_TREE_IO_RATE_LIMITER: SubStatusCode = SubStatusCode(3073);
-
-    /// Staleness exceeded bound throttle (3074).
-    pub const STALENESS_EXCEEDED_BOUND: SubStatusCode = SubStatusCode(3074);
-
-    /// Replication queue full throttle (3075).
-    pub const REPLICATION_QUEUE_FULL: SubStatusCode = SubStatusCode(3075);
-
-    /// BwTree log full backpressure throttle (3076).
-    pub const BW_TREE_LOG_FULL_BACKPRESSURE: SubStatusCode = SubStatusCode(3076);
-
-    /// Connection rate limiter throttle (3077).
-    pub const CONNECTION_RATE_LIMITER: SubStatusCode = SubStatusCode(3077);
-
-    /// XP composite replicator throttle (3078).
-    pub const XP_COMPOSITE_REPLICATOR: SubStatusCode = SubStatusCode(3078);
-
-    /// Unexpected throttle (3079).
-    pub const UNEXPECTED_THROTTLE: SubStatusCode = SubStatusCode(3079);
-
-    /// Async reader-writer lock throttle (3080).
-    pub const ASYNC_READER_WRITER_LOCK: SubStatusCode = SubStatusCode(3080);
-
-    /// Service module throttle (3081).
-    pub const SERVICE_MODULE: SubStatusCode = SubStatusCode(3081);
-
-    /// Value does not match expected bound (3082).
-    pub const VALUE_DOES_NOT_MATCH_EXPECTED_BOUND: SubStatusCode = SubStatusCode(3082);
-
-    /// Sink partition value does not match expected bound (3083).
-    pub const SINK_PARTITION_VALUE_DOES_NOT_MATCH_EXPECTED_BOUND: SubStatusCode =
-        SubStatusCode(3083);
-
-    /// RNTBD client channel throttle (3085).
-    pub const RNTBD_CLIENT_CHANNEL: SubStatusCode = SubStatusCode(3085);
-
-    /// Log flush queue depth backpressure throttle (3086).
-    pub const LOG_FLUSH_QUEUE_DEPTH_BACKPRESSURE: SubStatusCode = SubStatusCode(3086);
-
-    /// Checkpoint queue depth backpressure throttle (3087).
-    pub const CHECKPOINT_QUEUE_DEPTH_BACKPRESSURE: SubStatusCode = SubStatusCode(3087);
-
-    /// AE queue full throttle (3089).
-    pub const AE_QUEUE_FULL: SubStatusCode = SubStatusCode(3089);
-
-    /// Quota exceeded throttle (3090).
-    pub const QUOTA_EXCEEDED: SubStatusCode = SubStatusCode(3090);
-
-    /// Collection quota exceeded throttle (3091).
-    pub const COLLECTION_QUOTA_EXCEEDED: SubStatusCode = SubStatusCode(3091);
-
-    /// Partitioned resource quota exceeded (3093).
-    pub const PARTITIONED_RESOURCE_QUOTA_EXCEEDED: SubStatusCode = SubStatusCode(3093);
-
-    /// Throttle due to resource exhaustion (3094).
-    pub const THROTTLE_DUE_TO_RESOURCE_EXHAUSTION: SubStatusCode = SubStatusCode(3094);
-
-    /// Throttle due to staging index queue full (3095).
-    pub const THROTTLE_DUE_TO_STAGING_INDEX_QUEUE_FULL: SubStatusCode = SubStatusCode(3095);
-
-    /// Throttle due to replication backpressure (3096).
-    pub const THROTTLE_DUE_TO_REPLICATION_BACKPRESSURE: SubStatusCode = SubStatusCode(3096);
-
-    /// Collection quota exceeded for autopilot (3097).
-    pub const COLLECTION_QUOTA_EXCEEDED_AUTOPILOT: SubStatusCode = SubStatusCode(3097);
-
-    /// Log store no free segments (3098).
-    pub const LOG_STORE_NO_FREE_SEGMENTS: SubStatusCode = SubStatusCode(3098);
-
-    /// Throttled by blob read (3099).
-    pub const THROTTLED_BY_BLOB_READ: SubStatusCode = SubStatusCode(3099);
-
-    /// Operation log size too big (3100).
-    pub const OPERATION_LOG_SIZE_TOO_BIG: SubStatusCode = SubStatusCode(3100);
-
-    /// Archival partition pending catchup (3101).
-    pub const ARCHIVAL_PARTITION_PENDING_CATCHUP: SubStatusCode = SubStatusCode(3101);
-
-    /// Throttle due to traffic regulation (3102).
-    pub const THROTTLE_DUE_TO_TRAFFIC_REGULATION: SubStatusCode = SubStatusCode(3102);
-
-    /// Throttle due to transport buffer usage (3103).
-    pub const THROTTLE_DUE_TO_TRANSPORT_BUFFER_USAGE: SubStatusCode = SubStatusCode(3103);
-
-    /// RU per minute partition limit exceeded (3202).
-    pub const RUPM_PARTITION_LIMIT_EXCEEDED: SubStatusCode = SubStatusCode(3202);
-
-    /// RU per minute shared budget exceeded (3203).
-    pub const RUPM_SHARED_BUDGET_EXCEEDED: SubStatusCode = SubStatusCode(3203);
-
-    /// Throttled offer scale down (3204).
-    pub const THROTTLED_OFFER_SCALE_DOWN: SubStatusCode = SubStatusCode(3204);
-
-    /// RU budget exceeded for master (3210).
-    pub const RU_BUDGET_EXCEEDED_FOR_MASTER: SubStatusCode = SubStatusCode(3210);
-
-    /// Throttle due to encrypted revoked store log not empty (3211).
-    pub const THROTTLE_DUE_TO_ENCRYPTED_REVOKED_STORE_LOG_NOT_EMPTY: SubStatusCode =
-        SubStatusCode(3211);
-
-    /// Throughput bucket limit exhausted (3212).
-    pub const THROUGHPUT_BUCKET_LIMIT_EXHAUSTED: SubStatusCode = SubStatusCode(3212);
-
-    /// Too many throughput bucket updates (3213).
-    pub const TOO_MANY_THROUGHPUT_BUCKET_UPDATES: SubStatusCode = SubStatusCode(3213);
-
-    /// Hot partition key throttled (3214).
-    pub const HOT_PARTITION_KEY_THROTTLED: SubStatusCode = SubStatusCode(3214);
-
-    // ----- 500: Internal Server Error -----
-
-    /// Invalid account configuration (3003).
-    pub const INVALID_ACCOUNT_CONFIGURATION: SubStatusCode = SubStatusCode(3003);
-
-    /// Configuration name not empty (3001).
-    pub const CONFIGURATION_NAME_NOT_EMPTY: SubStatusCode = SubStatusCode(3001);
-
-    /// Configuration operation cancelled (3002).
-    pub const CONFIGURATION_OPERATION_CANCELLED: SubStatusCode = SubStatusCode(3002);
-
-    /// Federation does not exist or is locked (3004).
-    pub const FEDERATION_DOES_NOT_EXIST_OR_IS_LOCKED: SubStatusCode = SubStatusCode(3004);
-
-    /// Partition failover error code (3010).
-    pub const PARTITION_FAILOVER_ERROR_CODE: SubStatusCode = SubStatusCode(3010);
-
-    /// RBAC disabled due to ARM path (5360).
-    pub const RBAC_DISABLED_DUE_TO_ARM_PATH: SubStatusCode = SubStatusCode(5360);
-
-    // ----- 503: Service Unavailable -----
-
-    /// Operation paused (9001).
-    pub const OPERATION_PAUSED: SubStatusCode = SubStatusCode(9001);
-
-    /// Insufficient capacity (9003).
-    pub const INSUFFICIENT_CAPACITY: SubStatusCode = SubStatusCode(9003);
-
-    /// Insufficient bindable partitions (1007).
-    /// Note: Same value as `COMPLETING_SPLIT` for 410.
-    pub const INSUFFICIENT_BINDABLE_PARTITIONS: SubStatusCode = SubStatusCode(1007);
-
-    /// Service is offline (9002).
-    pub const SERVICE_IS_OFFLINE: SubStatusCode = SubStatusCode(9002);
-
-    /// Server received a Gone exception (1337).
-    pub const GONE_EXCEPTION: SubStatusCode = SubStatusCode(1337);
-
-    /// Quorum not met for service unavailable (1338).
-    pub const QUORUM_NOT_MET: SubStatusCode = SubStatusCode(1338);
-
-    /// Too many tentative writes to satellite region (1339).
-    pub const TOO_MANY_TENTATIVE_WRITES_TO_SATELLITE_REGION: SubStatusCode = SubStatusCode(1339);
-
-    // ----- SDK Client-side codes (10xxx, 2xxxx) -----
-    //
-    // Provenance: the `10001`-`10004` gateway codes and `CLIENT_OPERATION_TIMEOUT`
-    // (20008) match Java's `HttpConstants.SubStatusCodes` exactly. The remaining
-    // `2000x` / `20401` codes are sourced from .NET's client-side `SubStatusCodes`;
-    // Java only ported a subset of that range, so they have no Java equivalent.
-    // Note: Java models the HTTP/2-ping channel-closed case as
-    // `GATEWAY_HTTP2_PING_TIMEOUT_CHANNEL_CLOSED` (10006) — a local transport
-    // failure that skips endpoint mark-down — which is a narrower semantic than
-    // the generic `CHANNEL_CLOSED` (20006, aligned with .NET) defined below.
-
-    /// Gateway endpoint unavailable (10001).
-    pub const GATEWAY_ENDPOINT_UNAVAILABLE: SubStatusCode = SubStatusCode(10001);
-
-    /// Gateway endpoint read timeout (10002).
-    pub const GATEWAY_ENDPOINT_READ_TIMEOUT: SubStatusCode = SubStatusCode(10002);
-
-    /// Throughput control request rate too large (10003).
-    pub const THROUGHPUT_CONTROL_REQUEST_RATE_TOO_LARGE: SubStatusCode = SubStatusCode(10003);
-
-    /// Offer not configured (10004).
-    pub const OFFER_NOT_CONFIGURED: SubStatusCode = SubStatusCode(10004);
-
-    /// Transport generated 503 (20003).
-    pub const TRANSPORT_GENERATED_503: SubStatusCode = SubStatusCode(20003);
-
-    /// Client CPU overload (20004).
-    pub const CLIENT_CPU_OVERLOAD: SubStatusCode = SubStatusCode(20004);
-
-    /// Client thread starvation (20005).
-    pub const CLIENT_THREAD_STARVATION: SubStatusCode = SubStatusCode(20005);
-
-    /// Channel closed (20006).
-    pub const CHANNEL_CLOSED: SubStatusCode = SubStatusCode(20006);
-
-    /// Malformed continuation token (20007).
-    pub const MALFORMED_CONTINUATION_TOKEN: SubStatusCode = SubStatusCode(20007);
-
-    /// Client generated 401 — authorization/signing failure (20401).
-    pub const CLIENT_GENERATED_401: SubStatusCode = SubStatusCode(20401);
-
-    /// Client operation timeout (20008).
-    pub const CLIENT_OPERATION_TIMEOUT: SubStatusCode = SubStatusCode(20008);
-
-    /// Transit timeout (20911).
-    pub const TRANSIT_TIMEOUT: SubStatusCode = SubStatusCode(20911);
-
-    // ----- Transport sub-status codes (20010-20015) -----
-    // Used directly by typed transport-error constructors (see
-    // `crate::error::Error::transport`) so upstream code can discriminate on
-    // `CosmosStatus` instead of downcasting through the source chain. The
-    // wrapped third-party error (`reqwest`/`hyper`/`h2`/`io`) is always
-    // preserved as the Cosmos error's `source` for callers that still want
-    // low-level detail.
-
-    /// Transport connection failed — TCP connect refused / reset before the
-    /// request reached the wire (20010).
-    pub const TRANSPORT_CONNECTION_FAILED: SubStatusCode = SubStatusCode(20010);
-
-    /// Generic transport I/O failure with no more specific discriminator
-    /// available (20011).
-    pub const TRANSPORT_IO_FAILED: SubStatusCode = SubStatusCode(20011);
-
-    /// DNS resolution failed for the target endpoint (20012). Best-effort
-    /// detection via `io::Error` / reqwest error inspection.
-    pub const TRANSPORT_DNS_FAILED: SubStatusCode = SubStatusCode(20012);
-
-    /// Failure while streaming or reading the response body (20014). Distinct
-    /// from a serde / JSON parse failure on already-buffered bytes.
-    pub const TRANSPORT_BODY_READ_FAILED: SubStatusCode = SubStatusCode(20014);
-
-    /// HTTP/2 protocol incompatibility — e.g. `HTTP_1_1_REQUIRED`,
-    /// `PROTOCOL_ERROR`, `FRAME_SIZE_ERROR` (20015). Used by the HTTP/2 →
-    /// HTTP/1.1 downgrade path so call-sites can check `status()` instead of
-    /// downcasting through the source chain for `h2::Error`.
-    pub const TRANSPORT_HTTP2_INCOMPATIBLE: SubStatusCode = SubStatusCode(20015);
-
-    // ----- Serialization boundary mapping code (20020) -----
-
-    /// Response body failed to deserialize (20020). Used by
-    /// `crate::error::Error::serialization`.
-    pub const SERIALIZATION_RESPONSE_BODY_INVALID: SubStatusCode = SubStatusCode(20020);
-
-    /// Request body failed to serialize (20021).
-    pub const SERIALIZATION_REQUEST_BODY_INVALID: SubStatusCode = SubStatusCode(20021);
-
-    // ----- Authentication boundary mapping code (20402) -----
-
-    /// Credential / AAD token acquisition failed before the request was
-    /// signed (20402). Distinct from [`SubStatusCode::CLIENT_GENERATED_401`]
-    /// which means the SDK synthesized a 401 itself; this one means the
-    /// credential provider call failed.
-    pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: SubStatusCode = SubStatusCode(20402);
-
-    // ----- SDK Server-side codes (21xxx) -----
-
-    /// Server barrier throttled (21011).
-    pub const SERVER_BARRIER_THROTTLED: SubStatusCode = SubStatusCode(21011);
-
-    // ----- AAD/Auth codes (5xxx) -----
-
-    /// AAD token expired (5006).
-    pub const AAD_TOKEN_EXPIRED: SubStatusCode = SubStatusCode(5006);
-
-    /// Local auth disabled (5202).
-    pub const LOCAL_AUTH_DISABLED: SubStatusCode = SubStatusCode(5202);
-
-    /// RBAC request was not authorized (5400).
-    pub const RBAC_REQUEST_NOT_AUTHORIZED: SubStatusCode = SubStatusCode(5400);
-
-    // ----- Key Vault extended codes (4010-4019) -----
-
-    /// Invalid Key Vault certificate URI (4010).
-    pub const INVALID_KEY_VAULT_CERT_URI: SubStatusCode = SubStatusCode(4010);
-
-    /// Invalid Key Vault key and certificate URI (4011).
-    pub const INVALID_KEY_VAULT_KEY_AND_CERT_URI: SubStatusCode = SubStatusCode(4011);
-
-    /// Customer key rotated (4012).
-    pub const CUSTOMER_KEY_ROTATED: SubStatusCode = SubStatusCode(4012);
-
-    /// Missing request parameter (4013).
-    pub const MISSING_REQUEST_PARAMETER: SubStatusCode = SubStatusCode(4013);
-
-    /// Invalid Key Vault secret URI (4014).
-    pub const INVALID_KEY_VAULT_SECRET_URI: SubStatusCode = SubStatusCode(4014);
-
-    /// Undefined default identity (4015).
-    pub const UNDEFINED_DEFAULT_IDENTITY: SubStatusCode = SubStatusCode(4015);
-
-    /// Key Vault outbound denied by NSP (4016).
-    pub const KEY_VAULT_OUTBOUND_DENIED_BY_NSP: SubStatusCode = SubStatusCode(4016);
-
-    /// Key Vault not found (4017).
-    pub const KEY_VAULT_NOT_FOUND: SubStatusCode = SubStatusCode(4017);
-
-    /// Key disabled or expired (4018).
-    pub const KEY_DISABLED_OR_EXPIRED: SubStatusCode = SubStatusCode(4018);
-
-    /// Master service unavailable (4019).
-    pub const MASTER_SERVICE_UNAVAILABLE: SubStatusCode = SubStatusCode(4019);
-
-    // ----- 412: Precondition Failed (Migration) -----
-
-    /// Mismatching collection RIDs on migrate partition during migration (5325).
-    pub const MISMATCHING_COLLECTION_RIDS_ON_MIGRATE_PARTITION: SubStatusCode = SubStatusCode(5325);
-
-    /// Partition not in migrating status for migrate partition request (5326).
-    pub const PARTITION_NOT_IN_MIGRATING_STATUS: SubStatusCode = SubStatusCode(5326);
-
-    /// Missing partition resource on complete migration (5327).
-    pub const MISSING_PARTITION_RESOURCE_ON_COMPLETE_MIGRATION: SubStatusCode = SubStatusCode(5327);
-
-    /// Missing partition resource on abort migration (5328).
-    pub const MISSING_PARTITION_RESOURCE_ON_ABORT_MIGRATION: SubStatusCode = SubStatusCode(5328);
-
-    // ----- 449: Retry With -----
-
-    /// RBAC AAD group unavailable (5350).
-    pub const RBAC_AAD_GROUP_UNAVAILABLE: SubStatusCode = SubStatusCode(5350);
-
-    /// Azure RBAC access decision unavailable (5351).
-    pub const AZURE_RBAC_ACCESS_DECISION_UNAVAILABLE: SubStatusCode = SubStatusCode(5351);
-
-    // ----- Retriable writes (54xx) -----
-
-    /// Initial retriable write request completed (5401).
-    pub const INITIAL_RETRIABLE_WRITE_REQUEST_COMPLETED: SubStatusCode = SubStatusCode(5401);
-
-    /// Duplicate retriable write request (5402).
-    pub const DUPLICATE_RETRIABLE_WRITE_REQUEST: SubStatusCode = SubStatusCode(5402);
-
-    /// Conflict operation in user transaction (5403).
-    pub const CONFLICT_OPERATION_IN_USER_TRANSACTION: SubStatusCode = SubStatusCode(5403);
-
-    /// Retriable write request response expired in primary cache (5404).
-    pub const RETRIABLE_WRITE_RESPONSE_EXPIRED_IN_PRIMARY_CACHE: SubStatusCode =
-        SubStatusCode(5404);
-
-    // ----- Query execution (6xxx) -----
-
-    /// Query request initialized (6000).
-    pub const QUERY_REQUEST_INITIALIZED: SubStatusCode = SubStatusCode(6000);
-
-    /// Query waiting for sequential progress (6001).
-    pub const QUERY_WAIT_FOR_SEQUENTIAL_PROGRESS: SubStatusCode = SubStatusCode(6001);
-
-    /// Query execution in progress (6100).
-    pub const QUERY_EXECUTION_IN_PROGRESS: SubStatusCode = SubStatusCode(6100);
-
-    /// Query execution complete (6200).
-    pub const QUERY_EXECUTION_COMPLETE: SubStatusCode = SubStatusCode(6200);
-
-    /// Collection truncate not allowed during merge (6300).
-    pub const COLLECTION_TRUNCATE_NOT_ALLOWED_DURING_MERGE: SubStatusCode = SubStatusCode(6300);
-
-    // =========================================================================
-    // Client SDK–synthesized error codes (20100-20349)
-    // =========================================================================
-    //
-    // These sub-status codes are emitted **only** by the Rust SDK / driver
-    // when it detects a problem itself — never by the Cosmos DB service.
-    // Their presence on a `CosmosError` therefore unambiguously means
-    // "this error originated client-side". Each constant maps to a
-    // single, specific call site so an operator looking at a customer
-    // report can pinpoint exactly which code path produced the error.
-    //
-    // Ranges:
-    //   * 20100-20149 — SDK input validation (caller passed bad input)
-    //   * 20150-20199 — SDK configuration / setup errors
-    //   * 20200-20249 — SDK internal invariants ("this can't happen")
-    //   * 20300-20349 — SDK-detected service contract violations
-
-    // ----- 20100-20149: SDK input validation -----
-
-    /// Partition key was supplied with zero components (20100).
-    pub const CLIENT_PARTITION_KEY_EMPTY: SubStatusCode = SubStatusCode(20100);
-
-    /// Partition key has more components than the container definition's
-    /// partition-key paths (20101).
-    pub const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: SubStatusCode = SubStatusCode(20101);
-
-    /// Prefix partition key supplied for a non-MultiHash (non-hierarchical)
-    /// container (20102).
-    pub const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: SubStatusCode = SubStatusCode(20102);
-
-    /// Non-MultiHash partition key supplied with a component count that
-    /// doesn't equal the definition's path count (20103).
-    pub const CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH: SubStatusCode =
-        SubStatusCode(20103);
-
-    /// Connection string is empty (20104).
-    pub const CLIENT_CONNECTION_STRING_EMPTY: SubStatusCode = SubStatusCode(20104);
-
-    /// Connection string contains a malformed `k=v` segment (20105).
-    pub const CLIENT_CONNECTION_STRING_MALFORMED_PART: SubStatusCode = SubStatusCode(20105);
-
-    /// Connection string is missing the required `AccountEndpoint` field
-    /// (20106).
-    pub const CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_ENDPOINT: SubStatusCode =
-        SubStatusCode(20106);
-
-    /// Connection string is missing the required `AccountKey` field (20107).
-    pub const CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY: SubStatusCode = SubStatusCode(20107);
-
-    /// Account endpoint URL failed to parse via `url::ParseError` (20108).
-    pub const CLIENT_INVALID_ACCOUNT_ENDPOINT_URL: SubStatusCode = SubStatusCode(20108);
-
-    /// Generic `url::ParseError` surfaced through the SDK's
-    /// `From<url::ParseError>` impl (20109).
-    pub const CLIENT_INVALID_URL: SubStatusCode = SubStatusCode(20109);
-
-    /// Caller passed an unrecognized consistency-level string to
-    /// `FromStr` (20110).
-    pub const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: SubStatusCode = SubStatusCode(20110);
-
-    /// Caller passed an unrecognized priority-level string to `FromStr`
-    /// (20111).
-    pub const CLIENT_UNKNOWN_PRIORITY_LEVEL: SubStatusCode = SubStatusCode(20111);
-
-    /// A `FeedRange` was targeted at an operation that lacks the
-    /// cross-partition fan-out pipeline (20112).
-    pub const CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE: SubStatusCode = SubStatusCode(20112);
-
-    /// Query contains a feature the local query-plan generator does not
-    /// support (20113). Caller should fall back to the gateway query plan.
-    pub const CLIENT_UNSUPPORTED_QUERY_FEATURE: SubStatusCode = SubStatusCode(20113);
-
-    /// Query plan rejected an invalid `TOP` / `OFFSET` / `LIMIT` value
-    /// (20114).
-    pub const CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT: SubStatusCode = SubStatusCode(20114);
-
-    /// Query plan rejected a `GROUP BY` / `ORDER BY` expression that is
-    /// not a simple property path (20115). Caller should fall back to the
-    /// gateway query plan.
-    pub const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: SubStatusCode =
-        SubStatusCode(20115);
-
-    /// Opaque server continuation token was supplied to resume a
-    /// cross-partition query; the SDK requires its own structured token
-    /// (20116).
-    pub const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: SubStatusCode =
-        SubStatusCode(20116);
-
-    /// A continuation token was supplied for a non-query operation (or
-    /// the token itself targets a non-query operation) (20117).
-    /// Client-side continuation tokens are only valid for query
-    /// operations.
-    pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: SubStatusCode = SubStatusCode(20117);
-
-    /// A fresh cross-partition operation fanned out to more leaf request
-    /// nodes than the configured maximum (20118). The pipeline refuses to
-    /// plan an over-broad fan-out; the caller must raise `max_fan_out`
-    /// (via `FeedOptions`) to opt in. Paired with HTTP 400 because it is a
-    /// client-side input-validation rejection of the request.
-    pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: SubStatusCode = SubStatusCode(20118);
-
-    /// An `ORDER BY` query sorted on a value that evaluated to an array or
-    /// object (20119). Cross-partition `ORDER BY` on complex values is not
-    /// currently supported.
-    pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = SubStatusCode(20119);
-
-    /// A caller-supplied resource RID could not be parsed as a valid Cosmos DB
-    /// RID (20120). RIDs are Base64-encoded byte sequences; this is raised when
-    /// the bytes cannot be decoded or are too short to extract the expected
-    /// resource hierarchy.
-    pub const CLIENT_INVALID_RESOURCE_ID: SubStatusCode = SubStatusCode(20120);
-
-    /// Name-based and RID-based addressing were mixed across the
-    /// database/container hierarchy (20121). A RID-addressed database requires a
-    /// RID-addressed container and vice versa.
-    pub const CLIENT_MIXED_NAME_RID_ADDRESSING: SubStatusCode = SubStatusCode(20121);
-
-    /// The query plan's `rewrittenQuery` could not be substituted into the
-    /// per-partition request body because that body was not valid JSON
-    /// (20122). Cross-partition `OFFSET` / `LIMIT` / `TOP` requires rewriting
-    /// each partition's query text.
-    pub const CLIENT_QUERY_REWRITE_BODY_INVALID: SubStatusCode = SubStatusCode(20122);
-
-    /// A `DISTINCT` value nested deeper than the structural hasher's depth
-    /// limit (20123). Cosmos caps document nesting well below that limit, so
-    /// this indicates a hand-crafted or corrupt payload.
-    pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: SubStatusCode = SubStatusCode(20123);
-
-    /// A cross-partition client-buffered query cannot use continuation tokens
-    /// (20124); its buffered state must be drained in-process.
-    pub const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: SubStatusCode = SubStatusCode(20124);
-
-    /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`].
-    pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: SubStatusCode =
-        Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
-
-    /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`].
-    pub const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: SubStatusCode =
-        Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
-
-    /// A buffered query requires finite global TOP/LIMIT and OFFSET plus take
-    /// within its configured maximum (20125).
-    pub const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: SubStatusCode = SubStatusCode(20125);
-
-    /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW`].
-    pub const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: SubStatusCode =
-        Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
-
-    /// A non-streaming `ORDER BY` query's candidate storage cannot be represented
-    /// or allocated by the current process (20126).
-    pub const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: SubStatusCode = SubStatusCode(20126);
-
-    /// A partition key number is non-finite (20127).
-    pub const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: SubStatusCode = SubStatusCode(20127);
-
-    /// A user-agent suffix is too long or contains invalid characters (20128).
-    pub const CLIENT_USER_AGENT_SUFFIX_INVALID: SubStatusCode = SubStatusCode(20128);
-
-    // ----- 20150-20199: SDK configuration / setup errors -----
-
-    /// Two fault-injection rules registered with the same id (20150).
-    pub const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: SubStatusCode = SubStatusCode(20150);
-
-    /// HTTP client construction failed inside the driver's default
-    /// transport factory (20153). Inner reqwest / hyper error is
-    /// preserved as `StdError::source`.
-    pub const CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED: SubStatusCode = SubStatusCode(20153);
-
-    /// The default transport requires the `reqwest` cargo feature and it
-    /// was not enabled (20154).
-    pub const CLIENT_REQWEST_FEATURE_REQUIRED: SubStatusCode = SubStatusCode(20154);
-
-    /// Request URL had no host component (20155). Sharded transport
-    /// cannot key on host.
-    pub const CLIENT_REQUEST_URL_MISSING_HOST: SubStatusCode = SubStatusCode(20155);
-
-    /// Request URL had no recognizable port (default 443 / explicit port
-    /// missing or unsupported) (20156).
-    pub const CLIENT_REQUEST_URL_MISSING_KNOWN_PORT: SubStatusCode = SubStatusCode(20156);
-
-    /// IMDS HTTP client construction failed (20157). Inner error is
-    /// preserved as `StdError::source`.
-    pub const CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED: SubStatusCode = SubStatusCode(20157);
-
-    /// IMDS fetch requires the `reqwest` cargo feature and it was not
-    /// enabled (20158).
-    pub const CLIENT_IMDS_REQWEST_FEATURE_REQUIRED: SubStatusCode = SubStatusCode(20158);
-
-    // ----- 20200-20249: SDK internal invariants -----
-
-    /// `to_continuation_token` was called while a page fetch was
-    /// in-flight; the iterator's internal state could not be snapshotted
-    /// safely (20200).
-    pub const CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT: SubStatusCode = SubStatusCode(20200);
-
-    /// A pipeline asked for topology resolution but its plan was built
-    /// without a topology provider (20201).
-    pub const CLIENT_TOPOLOGY_PROVIDER_MISSING: SubStatusCode = SubStatusCode(20201);
-
-    /// An operation was issued on a `CosmosDriver` that had not been
-    /// initialized (20202).
-    pub const CLIENT_DRIVER_NOT_INITIALIZED: SubStatusCode = SubStatusCode(20202);
-
-    /// A trivial (single-partition) operation was resumed from a
-    /// continuation token whose shape doesn't match a trivial operation
-    /// (20203).
-    pub const CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH: SubStatusCode = SubStatusCode(20203);
-
-    /// `SequentialDrain` cannot honor a nested child (20204). Raised when
-    /// a continuation token nests an unsupported pipeline node under
-    /// `SequentialDrain` (token-shape failure), or when a live child node
-    /// has no `feed_range` at snapshot time (in-memory invariant failure).
-    pub const CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE: SubStatusCode =
-        SubStatusCode(20204);
-
-    /// A continuation token's `SequentialDrain` children list is
-    /// structurally invalid (20205). Raised for any of: an entry with
-    /// `min > max`, a zero-width entry (`min == max`), or entries that
-    /// are unsorted / overlap each other.
-    pub const CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE: SubStatusCode = SubStatusCode(20205);
-
-    /// `SequentialDrain` exhausted its split-retry budget without
-    /// converging on a stable topology (20206).
-    pub const CLIENT_SPLIT_RETRIES_EXHAUSTED: SubStatusCode = SubStatusCode(20206);
-
-    /// `build_cosmos_response` was invoked on a non-success operation
-    /// result (20207). Indicates a pipeline-stage routing bug.
-    pub const CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE: SubStatusCode = SubStatusCode(20207);
-
-    /// A pipeline root node requested `SplitRequired`; splits must be
-    /// handled by a parent node (20208).
-    pub const CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT: SubStatusCode = SubStatusCode(20208);
-
-    /// A `DISTINCT` node was asked to forward a partition split (20217).
-    /// `SplitRequired` replaces the node that emits it, which would discard the
-    /// deduplication map and resurrect already-suppressed values, so the split
-    /// is refused here instead of being passed to a parent. Unreachable today:
-    /// the wrapped fan-out node absorbs splits internally.
-    pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: SubStatusCode = SubStatusCode(20217);
-
-    /// A cross-partition query plan was attempted without a container
-    /// reference (20209).
-    pub const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: SubStatusCode =
-        SubStatusCode(20209);
-
-    /// A singleton operation returned an empty page (20210). The
-    /// singleton-execution path expects exactly one result page.
-    pub const CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE: SubStatusCode = SubStatusCode(20210);
-
-    /// `compute_range` was invoked with an empty partition-key value
-    /// list (20211).
-    pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: SubStatusCode =
-        SubStatusCode(20211);
-
-    /// A change feed pipeline reported that it was fully drained (20212).
-    /// The change feed is a conceptually infinite stream — "no changes" is
-    /// surfaced as an empty (304) page, never as a drained pipeline — so a
-    /// drained result indicates an internal invariant violation rather than
-    /// a clean end of stream. Surfacing it as an error keeps the failure
-    /// loud instead of silently terminating the caller's polling loop.
-    pub const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: SubStatusCode =
-        SubStatusCode(20212);
-
-    /// A continuation token's saved range could not be honored on resume
-    /// because the topology no longer covers it (20213). Surfacing this as
-    /// an error rather than silently dropping the range prevents duplicate
-    /// emission or data loss. Member of the continuation-token family —
-    /// see also 20200, 20203, 20204, 20205.
-    pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: SubStatusCode = SubStatusCode(20213);
-
-    /// A `StreamingOrderedMerge` continuation token is semantically invalid
-    /// (bad column/direction, hash, RID, or skip count) (20214).
-    pub const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: SubStatusCode =
-        SubStatusCode(20214);
-
-    /// `StreamingOrderedMerge` split replacement nodes are unusable (20215):
-    /// either their ranges do not exactly cover the prior range (a coverage
-    /// gap/overlap), or a replacement carries no continuation to resume a
-    /// mid-group boundary and cannot be safely repositioned.
-    pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: SubStatusCode =
-        SubStatusCode(20215);
-
-    /// A continuation token was requested after a page's body failed to
-    /// transcode back to text (20216). The pipeline had already advanced, so
-    /// any token minted afterwards would resume *past* the page the caller
-    /// never received.
-    pub const CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE: SubStatusCode =
-        SubStatusCode(20216);
-
-    // ----- 20300-20349: SDK-detected service contract violations -----
-
-    /// The supplied session-token feed ranges contain no overlap with
-    /// the target feed range, typically because the underlying partition
-    /// has split / merged (20300). Paired with HTTP 410 Gone.
-    pub const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: SubStatusCode =
-        SubStatusCode(20300);
-
-    /// The throughput-offers query returned no offer for the requested
-    /// resource (20301). Typically the resource doesn't support
-    /// throughput (serverless / shared throughput). Paired with HTTP 404.
-    pub const CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE: SubStatusCode = SubStatusCode(20301);
-
-    /// The query-plan / routing-map resolution produced an empty set of
-    /// partition ranges to query (20302). Paired with HTTP 500.
-    pub const CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES: SubStatusCode = SubStatusCode(20302);
-
-    /// The service returned a throughput offer with an empty `id` field
-    /// (20303). A broken server invariant — the SDK cannot issue a
-    /// follow-up replace without the offer id. Paired with HTTP 500.
-    pub const SERVICE_RETURNED_OFFER_WITHOUT_ID: SubStatusCode = SubStatusCode(20303);
-
-    /// The service returned a resource read response without the `_rid`
-    /// system property (20306). A broken server invariant — the SDK
-    /// relies on `_rid` to address downstream operations (e.g.
-    /// resolving a throughput offer for the resource). Paired with
-    /// HTTP 500.
-    pub const SERVICE_RETURNED_OBJECT_WITHOUT_RID: SubStatusCode = SubStatusCode(20306);
-
-    /// The async throughput-replace poller's underlying stream ended
-    /// without yielding any response (20304). Paired with HTTP 408
-    /// because the throughput-replace operation has no service SLA on
-    /// completion time — the most informative thing the SDK can
-    /// surface is "the operation didn't complete in the time you were
-    /// willing to wait", which `408 RequestTimeout` already conveys to
-    /// callers.
-    pub const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: SubStatusCode = SubStatusCode(20304);
-
-    /// The partition-key-range cache could not resolve any ranges for
-    /// the target feed range (20305). The underlying pk-range fetch
-    /// either returned no result or produced an empty set, so the SDK
-    /// has no routing information for the operation. Paired with HTTP
-    /// 503 — an internal client-side condition, not a transport failure.
-    pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode(20305);
-
-    /// A cross-partition streaming `ORDER BY` rewritten-query result item
-    /// did not match the expected envelope shape: missing `payload`,
-    /// missing/empty RID, or a mismatched `orderByItems` length (20308).
-    pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: SubStatusCode = SubStatusCode(20308);
-
-    /// The backend query plan reported `ORDER BY` columns but did not
-    /// supply a non-empty `rewrittenQuery` (20309).
-    pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: SubStatusCode =
-        SubStatusCode(20309);
-
-    /// A topology range resolved for a query-plan EPK range did not
-    /// overlap that range (20307). The query planner intersects each
-    /// resolved partition with the query-plan range it was resolved
-    /// for; an empty intersection means `resolve_ranges` violated its
-    /// contract of returning only overlapping ranges. Surfaced as an
-    /// error (paired with HTTP 500) instead of panicking the worker
-    /// thread, which would deadlock the caller. See issue #4574.
-    pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: SubStatusCode = SubStatusCode(20307);
-
-    // ----- 20350-20399: native FFI wrapper pre-flight / plumbing codes -----
-    //
-    // These are surfaced exclusively by the `azure_data_cosmos_driver_native`
-    // C ABI wrapper for failures that arise at the FFI boundary itself (bad
-    // pointer / encoding arguments, operation-lifecycle misuse, completion-queue
-    // back-pressure). They live here so the wrapper has a single canonical
-    // `(status, sub-status)` taxonomy shared with the driver instead of a
-    // parallel bespoke one. They are never produced by the driver's own
-    // request pipeline.
-
-    /// A required pointer argument to a wrapper C function was `NULL` (20350).
-    /// Paired with HTTP 400.
-    pub const CLIENT_FFI_NULL_ARGUMENT: SubStatusCode = SubStatusCode(20350);
-
-    /// A `*const c_char` argument to a wrapper C function was not valid
-    /// UTF-8 (20351). Paired with HTTP 400.
-    pub const CLIENT_FFI_INVALID_UTF8: SubStatusCode = SubStatusCode(20351);
-
-    /// A request header supplied to the wrapper had a non-ASCII / control
-    /// character name or value (20352). Paired with HTTP 400.
-    pub const CLIENT_FFI_INVALID_HEADER: SubStatusCode = SubStatusCode(20352);
-
-    /// A wrapper builder setter received a value outside its documented
-    /// range (20353). Paired with HTTP 400.
-    pub const CLIENT_FFI_INVALID_OPTION_VALUE: SubStatusCode = SubStatusCode(20353);
-
-    /// A mutator or second submit was attempted on a wrapper operation handle
-    /// already consumed by an earlier successful submit (20354). Paired with
-    /// HTTP 400.
-    pub const CLIENT_FFI_OPERATION_CONSUMED: SubStatusCode = SubStatusCode(20354);
-
-    /// A second precondition setter was called on a wrapper operation that
-    /// already had one (20355). Paired with HTTP 400.
-    pub const CLIENT_FFI_PRECONDITION_ALREADY_SET: SubStatusCode = SubStatusCode(20355);
-
-    /// A wrapper mutator only meaningful for a specific operation kind was
-    /// applied to an incompatible operation (20356). Paired with HTTP 400.
-    pub const CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR: SubStatusCode = SubStatusCode(20356);
-
-    /// A single-shot wrapper submit of a feed-style operation yielded no
-    /// further page (20357). Paired with HTTP 404.
-    pub const CLIENT_FFI_FEED_EXHAUSTED: SubStatusCode = SubStatusCode(20357);
-
-    /// A wrapper submit targeted a completion queue that had already been
-    /// shut down (20358). Paired with HTTP 503.
-    pub const CLIENT_FFI_QUEUE_SHUTDOWN: SubStatusCode = SubStatusCode(20358);
-
-    /// A wrapper submit targeted a completion queue already at its hard
-    /// capacity (20359). Paired with HTTP 503.
-    pub const CLIENT_FFI_QUEUE_FULL: SubStatusCode = SubStatusCode(20359);
-
-    /// A wrapper operation was cancelled before it completed, via an explicit
-    /// cancel or a queue shutdown (20360). Paired with HTTP 408.
-    pub const CLIENT_FFI_OPERATION_CANCELLED: SubStatusCode = SubStatusCode(20360);
-
-    /// The wrapper could not construct the underlying driver runtime (20361).
-    /// Paired with HTTP 500.
-    pub const CLIENT_FFI_RUNTIME_BUILD_FAILED: SubStatusCode = SubStatusCode(20361);
-
-    /// A driver future spawned by the wrapper panicked; the wrapper's panic
-    /// firewall synthesized a failure so the host continuation is released
-    /// rather than leaked (20362). Paired with HTTP 500.
-    pub const CLIENT_FFI_PANIC: SubStatusCode = SubStatusCode(20362);
 }
 
 impl Default for SubStatusCode {
     fn default() -> Self {
-        Self::UNKNOWN
+        Self::new(0)
     }
 }
 
@@ -1758,8 +661,8 @@ impl From<SubStatusCode> for u16 {
 /// ```
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
 pub struct CosmosStatus {
-    status_code: StatusCode,
-    sub_status: Option<SubStatusCode>,
+    pub(crate) status_code: StatusCode,
+    pub(crate) sub_status: Option<SubStatusCode>,
 }
 
 impl CosmosStatus {
@@ -1836,7 +739,9 @@ impl CosmosStatus {
     /// explicitly.
     pub fn is_not_found(&self) -> bool {
         u16::from(self.status_code) == 404
-            && self.sub_status.is_none_or(|s| s == SubStatusCode::UNKNOWN)
+            && self
+                .sub_status
+                .is_none_or(|s| s == crate::error::status_codes::substatus::UNKNOWN)
     }
 
     /// Returns `true` if this is an HTTP 409 Conflict response.
@@ -1898,7 +803,7 @@ impl CosmosStatus {
     /// Returns `true` if this is a write-forbidden error (HTTP 403, sub-status 3).
     pub fn is_write_forbidden(&self) -> bool {
         u16::from(self.status_code) == 403
-            && self.sub_status == Some(SubStatusCode::WRITE_FORBIDDEN)
+            && self.sub_status == Some(crate::error::status_codes::substatus::WRITE_FORBIDDEN)
     }
 
     /// Returns `true` for HTTP 403/sub-status 1008, where the region no longer owns the account.
@@ -1906,19 +811,22 @@ impl CosmosStatus {
     /// Note: sub-status 1008 is overloaded on HTTP 410 for partition migration.
     pub fn is_database_account_not_found(&self) -> bool {
         u16::from(self.status_code) == 403
-            && self.sub_status == Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND)
+            && self.sub_status
+                == Some(crate::error::status_codes::substatus::DATABASE_ACCOUNT_NOT_FOUND)
     }
 
     /// Returns `true` if this is a read-session-not-available error (HTTP 404, sub-status 1002).
     pub fn is_read_session_not_available(&self) -> bool {
         u16::from(self.status_code) == 404
-            && self.sub_status == Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
+            && self.sub_status
+                == Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE)
     }
 
     /// Returns `true` if this is a partition-key-range-gone error (HTTP 410, sub-status 1002).
     pub fn is_partition_key_range_gone(&self) -> bool {
         u16::from(self.status_code) == 410
-            && self.sub_status == Some(SubStatusCode::PARTITION_KEY_RANGE_GONE)
+            && self.sub_status
+                == Some(crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE)
     }
 
     /// Returns `true` if this is an HTTP 410 caused by partition topology changing.
@@ -1927,9 +835,9 @@ impl CosmosStatus {
             && matches!(
                 self.sub_status,
                 Some(
-                    SubStatusCode::PARTITION_KEY_RANGE_GONE
-                        | SubStatusCode::COMPLETING_SPLIT
-                        | SubStatusCode::COMPLETING_PARTITION_MIGRATION
+                    crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE
+                        | crate::error::status_codes::substatus::COMPLETING_SPLIT
+                        | crate::error::status_codes::substatus::COMPLETING_PARTITION_MIGRATION
                 )
             )
     }
@@ -1937,7 +845,8 @@ impl CosmosStatus {
     /// Returns `true` if this indicates a transport-generated 503 (client-side).
     pub fn is_transport_generated_503(&self) -> bool {
         u16::from(self.status_code) == 503
-            && self.sub_status == Some(SubStatusCode::TRANSPORT_GENERATED_503)
+            && self.sub_status
+                == Some(crate::error::status_codes::substatus::TRANSPORT_GENERATED_503)
     }
 
     /// Returns `true` when this status is a **final** (non-retriable) outcome
@@ -2029,644 +938,6 @@ impl CosmosStatus {
         let sub = self.sub_status?;
         sub.name(Some(self.status_code))
     }
-
-    // =========================================================================
-    // Well-Known CosmosStatus Constants
-    // =========================================================================
-
-    // ----- Transport / Client-Side -----
-
-    /// Transport-generated 503 Service Unavailable (sub-status 20003).
-    ///
-    /// Generated by the SDK when a transport-level error occurs (connection failure,
-    /// DNS error, TLS error, etc.) and no HTTP response was received.
-    pub const TRANSPORT_GENERATED_503: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::ServiceUnavailable,
-        sub_status: Some(SubStatusCode::TRANSPORT_GENERATED_503),
-    };
-
-    /// Client-generated 400 Bad Request, **no sub-status**.
-    ///
-    /// Generated by the SDK when a request could not be constructed for the
-    /// wire — most commonly when Gateway 2.0 request wrapping fails before
-    /// the request is sent. The HTTP status is set to 400 to mirror what
-    /// the service would return for malformed input, but no sub-status code
-    /// is attached: the failure originates in the client, and no entry in
-    /// the canonical [`SubStatusCode`] table (sourced from the C++ backend
-    /// `SubstatusCodeType` enum) covers client-side construction failures.
-    /// This matches the .NET SDK's `BadRequestException`, which carries
-    /// `HttpStatusCode.BadRequest` with the default (zero) sub-status.
-    pub const CLIENT_BAD_REQUEST: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: None,
-    };
-
-    /// Client-generated 401 Unauthorized (sub-status 20401).
-    ///
-    /// Generated by the SDK when request signing/authorization fails before
-    /// the request is sent (e.g., credential error, token acquisition
-    /// failure).
-    pub const CLIENT_GENERATED_401: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::Unauthorized,
-        sub_status: Some(SubStatusCode::CLIENT_GENERATED_401),
-    };
-
-    /// Transport connection failed (HTTP 503, sub-status 20010).
-    pub const TRANSPORT_CONNECTION_FAILED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::ServiceUnavailable,
-        sub_status: Some(SubStatusCode::TRANSPORT_CONNECTION_FAILED),
-    };
-
-    /// Generic transport I/O failure (HTTP 503, sub-status 20011).
-    pub const TRANSPORT_IO_FAILED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::ServiceUnavailable,
-        sub_status: Some(SubStatusCode::TRANSPORT_IO_FAILED),
-    };
-
-    /// DNS resolution failed (HTTP 503, sub-status 20012).
-    pub const TRANSPORT_DNS_FAILED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::ServiceUnavailable,
-        sub_status: Some(SubStatusCode::TRANSPORT_DNS_FAILED),
-    };
-
-    /// Response body read failure (HTTP 503, sub-status 20014).
-    pub const TRANSPORT_BODY_READ_FAILED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::ServiceUnavailable,
-        sub_status: Some(SubStatusCode::TRANSPORT_BODY_READ_FAILED),
-    };
-
-    /// HTTP/2 incompatibility — caller should downgrade to HTTP/1.1
-    /// (HTTP 503, sub-status 20015).
-    pub const TRANSPORT_HTTP2_INCOMPATIBLE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::ServiceUnavailable,
-        sub_status: Some(SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE),
-    };
-
-    /// Response body failed to deserialize (HTTP 500, sub-status 20020).
-    pub const SERIALIZATION_RESPONSE_BODY_INVALID: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID),
-    };
-
-    /// Request body failed to serialize (HTTP 400, sub-status 20021). The
-    /// caller supplied an item that could not be encoded.
-    pub const SERIALIZATION_REQUEST_BODY_INVALID: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID),
-    };
-
-    /// AAD / credential provider token acquisition failed
-    /// (HTTP 401, sub-status 20402).
-    pub const AUTHENTICATION_TOKEN_ACQUISITION_FAILED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::Unauthorized,
-        sub_status: Some(SubStatusCode::AUTHENTICATION_TOKEN_ACQUISITION_FAILED),
-    };
-
-    // ----- 400: Bad Request -----
-
-    /// Cross-partition query not servable by the client
-    /// (HTTP 400, sub-status 1004).
-    ///
-    /// The service rejected the query because it requires client-side
-    /// features the calling SDK does not support (e.g. cross-partition
-    /// `ORDER BY`, aggregates, or other features that need a query plan
-    /// the SDK cannot execute). Callers should upgrade the SDK to a
-    /// version that implements the requested features, or rewrite the
-    /// query.
-    pub const CROSS_PARTITION_QUERY_NOT_SERVABLE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CROSS_PARTITION_QUERY_NOT_SERVABLE),
-    };
-
-    // ----- 404: Not Found -----
-
-    /// Read session not available (HTTP 404, sub-status 1002).
-    ///
-    /// Session consistency read could not be satisfied because the target
-    /// replica has not yet received the required session token.
-    pub const READ_SESSION_NOT_AVAILABLE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::NotFound,
-        sub_status: Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
-    };
-
-    // ----- 403: Forbidden -----
-
-    /// Write forbidden (HTTP 403, sub-status 3).
-    ///
-    /// The region does not allow write operations (read-only region).
-    pub const WRITE_FORBIDDEN: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::Forbidden,
-        sub_status: Some(SubStatusCode::WRITE_FORBIDDEN),
-    };
-
-    /// Database account not found (HTTP 403, sub-status 1008).
-    ///
-    /// Region ownership changed; sub-status `1008` is overloaded on 410.
-    pub const DATABASE_ACCOUNT_NOT_FOUND: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::Forbidden,
-        sub_status: Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
-    };
-
-    // ----- 410: Gone -----
-
-    /// Partition key range gone (HTTP 410, sub-status 1002).
-    ///
-    /// The partition key range has been split or merged. The client must
-    /// refresh its partition key range cache and retry.
-    pub const PARTITION_KEY_RANGE_GONE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::Gone,
-        sub_status: Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
-    };
-
-    /// Name cache stale (HTTP 410, sub-status 1000).
-    pub const NAME_CACHE_STALE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::Gone,
-        sub_status: Some(SubStatusCode::NAME_CACHE_STALE),
-    };
-
-    /// Completing split or merge (HTTP 410, sub-status 1007).
-    pub const COMPLETING_SPLIT: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::Gone,
-        sub_status: Some(SubStatusCode::COMPLETING_SPLIT),
-    };
-
-    /// Completing partition migration (HTTP 410, sub-status 1008).
-    pub const COMPLETING_PARTITION_MIGRATION: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::Gone,
-        sub_status: Some(SubStatusCode::COMPLETING_PARTITION_MIGRATION),
-    };
-
-    // ----- 429: Too Many Requests -----
-
-    /// RU budget exceeded (HTTP 429, sub-status 3200).
-    pub const RU_BUDGET_EXCEEDED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::TooManyRequests,
-        sub_status: Some(SubStatusCode::RU_BUDGET_EXCEEDED),
-    };
-
-    // ----- Client SDK–synthesized statuses (20100-20349) -----
-    //
-    // Convenience constants pairing each `CLIENT_*` `SubStatusCode` with
-    // the canonical HTTP status code for that error. See the
-    // `SubStatusCode` constants for the per-code rationale and call site
-    // mapping.
-
-    // Input validation (HTTP 400, sub-status 20100-20149)
-
-    /// 400 / 20100 — partition key was supplied with zero components.
-    pub const CLIENT_PARTITION_KEY_EMPTY: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_PARTITION_KEY_EMPTY),
-    };
-
-    /// 400 / 20101 — partition key has more components than the container
-    /// definition's paths.
-    pub const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS),
-    };
-
-    /// 400 / 20102 — prefix partition key supplied for a non-MultiHash
-    /// container.
-    pub const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH),
-    };
-
-    /// 400 / 20103 — non-MultiHash partition key supplied with the wrong
-    /// number of components.
-    pub const CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH),
-    };
-
-    /// 400 / 20104 — connection string is empty.
-    pub const CLIENT_CONNECTION_STRING_EMPTY: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_CONNECTION_STRING_EMPTY),
-    };
-
-    /// 400 / 20105 — connection string contains a malformed `k=v` segment.
-    pub const CLIENT_CONNECTION_STRING_MALFORMED_PART: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_CONNECTION_STRING_MALFORMED_PART),
-    };
-
-    /// 400 / 20106 — connection string is missing `AccountEndpoint`.
-    pub const CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_ENDPOINT: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_ENDPOINT),
-    };
-
-    /// 400 / 20107 — connection string is missing `AccountKey`.
-    pub const CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_CONNECTION_STRING_MISSING_ACCOUNT_KEY),
-    };
-
-    /// 400 / 20108 — account endpoint URL failed to parse.
-    pub const CLIENT_INVALID_ACCOUNT_ENDPOINT_URL: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_INVALID_ACCOUNT_ENDPOINT_URL),
-    };
-
-    /// 400 / 20109 — generic `url::ParseError` surfaced through the SDK's
-    /// `From<url::ParseError>` impl.
-    pub const CLIENT_INVALID_URL: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_INVALID_URL),
-    };
-
-    /// 400 / 20110 — unrecognized consistency level string in `FromStr`.
-    pub const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_UNKNOWN_CONSISTENCY_LEVEL),
-    };
-
-    /// 400 / 20111 — unrecognized priority level string in `FromStr`.
-    pub const CLIENT_UNKNOWN_PRIORITY_LEVEL: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_UNKNOWN_PRIORITY_LEVEL),
-    };
-
-    /// 400 / 20112 — `FeedRange` targeting requires a fan-out pipeline.
-    pub const CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE),
-    };
-
-    /// 400 / 20113 — query contains an unsupported feature; fall back to
-    /// the gateway query plan.
-    pub const CLIENT_UNSUPPORTED_QUERY_FEATURE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_UNSUPPORTED_QUERY_FEATURE),
-    };
-
-    /// 400 / 20114 — invalid `TOP` / `OFFSET` / `LIMIT` clause value.
-    pub const CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT),
-    };
-
-    /// 400 / 20115 — `GROUP BY` / `ORDER BY` expression is not a simple
-    /// property path; fall back to the gateway query plan.
-    pub const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED),
-    };
-
-    /// 400 / 20116 — opaque server continuation token used to resume a
-    /// cross-partition query.
-    pub const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY),
-    };
-
-    /// 400 / 20117 — continuation token supplied for a non-query
-    /// operation. Client-side continuation tokens are only valid for
-    /// query operations.
-    pub const CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION),
-    };
-
-    /// 400 / 20118 — a fresh cross-partition operation fanned out to more
-    /// leaf request nodes than the configured `max_fan_out`. The caller
-    /// must explicitly raise the limit to run a broader query.
-    pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
-    };
-
-    /// 400 / 20119 — a cross-partition `ORDER BY` sorted on an array or
-    /// object value, which is not currently supported.
-    pub const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
-    };
-
-    /// 400 / 20120 — caller-supplied resource RID could not be parsed.
-    pub const CLIENT_INVALID_RESOURCE_ID: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_INVALID_RESOURCE_ID),
-    };
-
-    /// 400 / 20121 — name-based and RID-based addressing were mixed across the
-    /// database/container hierarchy.
-    pub const CLIENT_MIXED_NAME_RID_ADDRESSING: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_MIXED_NAME_RID_ADDRESSING),
-    };
-
-    /// 400 / 20122 — the query plan's `rewrittenQuery` could not be
-    /// substituted into a per-partition request body because that body was
-    /// not valid JSON.
-    pub const CLIENT_QUERY_REWRITE_BODY_INVALID: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_QUERY_REWRITE_BODY_INVALID),
-    };
-
-    /// 400 / 20123 — a `DISTINCT` value nested past the structural hasher's
-    /// depth limit.
-    pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED),
-    };
-
-    /// 400 / 20124 — continuation tokens are unsupported by the cross-partition
-    /// client-buffering stage.
-    pub const CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED),
-    };
-
-    /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`].
-    pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: CosmosStatus =
-        Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
-
-    /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`].
-    pub const CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED: CosmosStatus =
-        Self::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
-
-    /// 400 / 20125 — a buffered query requires finite global TOP/LIMIT and
-    /// OFFSET plus take within its configured maximum.
-    pub const CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW),
-    };
-
-    /// Compatibility alias for [`Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW`].
-    pub const CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW: CosmosStatus =
-        Self::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW;
-
-    /// 400 / 20126 — the non-streaming `ORDER BY` candidate window cannot be
-    /// represented or allocated by the current process.
-    pub const CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE),
-    };
-
-    /// 400 / 20127 — a partition key number is non-finite.
-    pub const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE),
-    };
-
-    /// 400 / 20128 — a user-agent suffix is too long or contains invalid characters.
-    pub const CLIENT_USER_AGENT_SUFFIX_INVALID: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_USER_AGENT_SUFFIX_INVALID),
-    };
-
-    /// 500 / 20217 — a `DISTINCT` node was asked to forward a partition split,
-    /// which would discard its deduplication state.
-    pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT),
-    };
-
-    // Configuration / setup (HTTP 400, sub-status 20150-20199)
-
-    /// 400 / 20150 — duplicate fault-injection rule id.
-    pub const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID),
-    };
-
-    /// 400 / 20153 — default HTTP client construction failed.
-    pub const CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED),
-    };
-
-    /// 400 / 20154 — `reqwest` cargo feature required but not enabled.
-    pub const CLIENT_REQWEST_FEATURE_REQUIRED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_REQWEST_FEATURE_REQUIRED),
-    };
-
-    /// 400 / 20155 — request URL has no host component.
-    pub const CLIENT_REQUEST_URL_MISSING_HOST: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_REQUEST_URL_MISSING_HOST),
-    };
-
-    /// 400 / 20156 — request URL has no recognizable port.
-    pub const CLIENT_REQUEST_URL_MISSING_KNOWN_PORT: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_REQUEST_URL_MISSING_KNOWN_PORT),
-    };
-
-    /// 400 / 20157 — IMDS HTTP client construction failed.
-    pub const CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED),
-    };
-
-    /// 400 / 20158 — IMDS fetch requires the `reqwest` cargo feature.
-    pub const CLIENT_IMDS_REQWEST_FEATURE_REQUIRED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_IMDS_REQWEST_FEATURE_REQUIRED),
-    };
-
-    // Internal invariants (HTTP 500, sub-status 20200-20249)
-
-    /// 500 / 20200 — `to_continuation_token` called while a page fetch
-    /// was in-flight.
-    pub const CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT),
-    };
-
-    /// 500 / 20201 — topology resolution requested without a topology
-    /// provider on the plan.
-    pub const CLIENT_TOPOLOGY_PROVIDER_MISSING: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_PROVIDER_MISSING),
-    };
-
-    /// 500 / 20202 — operation issued on an uninitialized driver.
-    pub const CLIENT_DRIVER_NOT_INITIALIZED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_DRIVER_NOT_INITIALIZED),
-    };
-
-    /// 500 / 20203 — trivial-operation resume from a non-trivial
-    /// continuation token shape.
-    pub const CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH),
-    };
-
-    /// 500 / 20204 — `SequentialDrain` cannot honor a nested child:
-    /// either the continuation token nests an unsupported pipeline node
-    /// type, or a live child has no `feed_range` at snapshot time.
-    pub const CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE),
-    };
-
-    /// 500 / 20205 — continuation token's `SequentialDrain` children
-    /// list is structurally invalid: `min > max`, zero-width entry, or
-    /// unsorted / overlapping entries.
-    pub const CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE),
-    };
-
-    /// 500 / 20206 — `SequentialDrain` exhausted its split-retry budget.
-    pub const CLIENT_SPLIT_RETRIES_EXHAUSTED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_SPLIT_RETRIES_EXHAUSTED),
-    };
-
-    /// 500 / 20207 — `build_cosmos_response` invoked on a non-success
-    /// operation result.
-    pub const CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE),
-    };
-
-    /// 500 / 20208 — root pipeline node requested a `SplitRequired`.
-    pub const CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT),
-    };
-
-    /// 500 / 20209 — cross-partition query plan attempted without a
-    /// container reference.
-    pub const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF),
-    };
-
-    /// 500 / 20210 — singleton operation returned an empty page.
-    pub const CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE),
-    };
-
-    /// 500 / 20211 — `compute_range` invoked with an empty partition-key
-    /// value list.
-    pub const CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY),
-    };
-
-    /// 500 / 20212 — a change feed pipeline reported that it was fully
-    /// drained, which violates the infinite-stream invariant.
-    pub const CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_CHANGE_FEED_PIPELINE_UNEXPECTEDLY_DRAINED),
-    };
-
-    /// 500 / 20213 — continuation token's saved range could not be
-    /// honored on resume because the topology no longer covers it.
-    pub const CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
-    };
-
-    /// 500 / 20214 — a `StreamingOrderedMerge` continuation token is
-    /// semantically invalid (bad column/direction, hash, RID, or count).
-    pub const CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
-    };
-
-    /// 500 / 20215 — `StreamingOrderedMerge` split replacement nodes are
-    /// unusable: their ranges do not exactly cover the prior range, or a
-    /// replacement carries no continuation to resume a mid-group boundary.
-    pub const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
-    };
-
-    /// 500 / 20216 — a continuation token was requested after a page's body
-    /// failed to transcode back to text, so no token minted now could resume
-    /// without skipping that page.
-    pub const CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
-    };
-
-    // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)
-
-    /// 410 / 20300 — the supplied session-token feed ranges contain no
-    /// overlap with the target feed range (partition has split / merged).
-    pub const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::Gone,
-        sub_status: Some(SubStatusCode::CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN),
-    };
-
-    /// 404 / 20301 — throughput-offers query returned no offer for the
-    /// requested resource.
-    pub const CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::NotFound,
-        sub_status: Some(SubStatusCode::CLIENT_NO_THROUGHPUT_OFFER_FOR_RESOURCE),
-    };
-
-    /// 500 / 20302 — query plan / routing-map resolution produced an
-    /// empty set of partition ranges.
-    pub const CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES),
-    };
-
-    /// 500 / 20303 — the service returned a throughput offer with an
-    /// empty `id` field, violating its own contract.
-    pub const SERVICE_RETURNED_OFFER_WITHOUT_ID: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::SERVICE_RETURNED_OFFER_WITHOUT_ID),
-    };
-
-    /// 408 / 20304 — the async throughput-replace poller's underlying
-    /// stream ended without yielding any response. Throughput replace
-    /// has no service SLA on completion time, so the SDK surfaces this
-    /// as a timeout-like condition rather than a transport failure.
-    pub const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::RequestTimeout,
-        sub_status: Some(SubStatusCode::CLIENT_THROUGHPUT_POLLER_INCOMPLETE),
-    };
-
-    /// 503 / 20305 — the partition-key-range cache could not resolve
-    /// any ranges for the target feed range. The pk-range fetch either
-    /// returned no result or produced an empty set, leaving the SDK
-    /// without routing information.
-    pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::ServiceUnavailable,
-        sub_status: Some(SubStatusCode::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
-    };
-
-    /// 500 / 20308 — a rewritten-query result item didn't match the
-    /// expected envelope shape.
-    pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::SERVICE_ORDER_BY_ENVELOPE_INVALID),
-    };
-
-    /// 500 / 20309 — the query plan reported `ORDER BY` columns but no
-    /// `rewrittenQuery`.
-    pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY),
-    };
-
-    /// 500 / 20307 — a topology range resolved for a query-plan EPK
-    /// range did not overlap that range, a `resolve_ranges` contract
-    /// violation. Returned instead of panicking the query worker (see
-    /// issue #4574).
-    pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY),
-    };
-
-    /// 500 / 20306 — the service returned a resource read response
-    /// without the `_rid` system property, violating its own contract.
-    pub const SERVICE_RETURNED_OBJECT_WITHOUT_RID: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::InternalServerError,
-        sub_status: Some(SubStatusCode::SERVICE_RETURNED_OBJECT_WITHOUT_RID),
-    };
 }
 
 impl fmt::Debug for CosmosStatus {
@@ -2751,11 +1022,11 @@ mod tests {
         // The 20120/20121 client statuses must resolve to searchable names so the
         // deterministic client-side errors are useful in diagnostics and logs.
         assert_eq!(
-            CosmosStatus::CLIENT_INVALID_RESOURCE_ID.name(),
+            crate::error::status_codes::CLIENT_INVALID_RESOURCE_ID.name(),
             Some("ClientInvalidResourceId")
         );
         assert_eq!(
-            CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING.name(),
+            crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING.name(),
             Some("ClientMixedNameRidAddressing")
         );
     }
@@ -2765,17 +1036,17 @@ mod tests {
         for (code, expected, name) in [
             (
                 20124,
-                CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
+                crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
                 "ClientBufferedQueryContinuationUnsupported",
             ),
             (
                 20125,
-                CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW,
+                crate::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW,
                 "ClientBufferedQueryRequiresFiniteWindow",
             ),
             (
                 20126,
-                CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE,
+                crate::error::status_codes::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE,
                 "ClientNonStreamingOrderByWindowTooLarge",
             ),
         ] {
@@ -2796,12 +1067,12 @@ mod tests {
         for (code, expected, name) in [
             (
                 20127,
-                CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE,
+                crate::error::status_codes::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE,
                 "ClientPartitionKeyNumberNonFinite",
             ),
             (
                 20128,
-                CosmosStatus::CLIENT_USER_AGENT_SUFFIX_INVALID,
+                crate::error::status_codes::CLIENT_USER_AGENT_SUFFIX_INVALID,
                 "ClientUserAgentSuffixInvalid",
             ),
         ] {
@@ -2813,23 +1084,17 @@ mod tests {
 
     #[test]
     fn buffered_query_continuation_aliases() {
-        let status = CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
+        let status = crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
         assert_eq!(
             status,
-            CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
+            crate::error::status_codes::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
         );
         assert_eq!(
             status,
-            CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
+            crate::error::status_codes::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED
         );
-        assert_eq!(
-            status.sub_status(),
-            Some(SubStatusCode::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED)
-        );
-        assert_eq!(
-            status.sub_status(),
-            Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_CONTINUATION_UNSUPPORTED)
-        );
+        assert_eq!(status.sub_status(), Some(SubStatusCode::new(20124)));
+        assert_eq!(status.sub_status(), Some(SubStatusCode::new(20124)));
     }
 
     #[test]
@@ -2837,16 +1102,13 @@ mod tests {
         let status = CosmosStatus::new(StatusCode::BadRequest).with_sub_status(20125);
         assert_eq!(
             status,
-            CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+            crate::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
         );
         assert_eq!(
             status,
-            CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW
+            crate::error::status_codes::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW
         );
-        assert_eq!(
-            status.sub_status(),
-            Some(SubStatusCode::CLIENT_NON_STREAMING_ORDER_BY_REQUIRES_FINITE_WINDOW)
-        );
+        assert_eq!(status.sub_status(), Some(SubStatusCode::new(20125)));
         assert_eq!(
             status.name(),
             Some("ClientBufferedQueryRequiresFiniteWindow")
@@ -2857,7 +1119,10 @@ mod tests {
     fn with_sub_status_unambiguous() {
         let status = CosmosStatus::new(StatusCode::TooManyRequests).with_sub_status(3200);
         assert_eq!(status.status_code(), StatusCode::TooManyRequests);
-        assert_eq!(status.sub_status(), Some(SubStatusCode::RU_BUDGET_EXCEEDED));
+        assert_eq!(
+            status.sub_status(),
+            Some(crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED)
+        );
         assert!(status.is_throttled());
         assert_eq!(status.name(), Some("RUBudgetExceeded"));
     }
@@ -2886,11 +1151,13 @@ mod tests {
 
     #[test]
     fn well_known_constants() {
-        assert!(CosmosStatus::TRANSPORT_GENERATED_503.is_transport_generated_503());
-        assert!(CosmosStatus::READ_SESSION_NOT_AVAILABLE.is_read_session_not_available());
-        assert!(CosmosStatus::PARTITION_KEY_RANGE_GONE.is_partition_key_range_gone());
-        assert!(CosmosStatus::WRITE_FORBIDDEN.is_write_forbidden());
-        assert!(CosmosStatus::RU_BUDGET_EXCEEDED.is_throttled());
+        assert!(crate::error::status_codes::TRANSPORT_GENERATED_503.is_transport_generated_503());
+        assert!(
+            crate::error::status_codes::READ_SESSION_NOT_AVAILABLE.is_read_session_not_available()
+        );
+        assert!(crate::error::status_codes::PARTITION_KEY_RANGE_GONE.is_partition_key_range_gone());
+        assert!(crate::error::status_codes::WRITE_FORBIDDEN.is_write_forbidden());
+        assert!(crate::error::status_codes::RU_BUDGET_EXCEEDED.is_throttled());
     }
 
     #[test]
@@ -2898,7 +1165,7 @@ mod tests {
         assert!(CosmosStatus::new(StatusCode::Ok).is_success());
         assert!(CosmosStatus::new(StatusCode::Created).is_success());
         assert!(!CosmosStatus::new(StatusCode::NotFound).is_success());
-        assert!(!CosmosStatus::RU_BUDGET_EXCEEDED.is_success());
+        assert!(!crate::error::status_codes::RU_BUDGET_EXCEEDED.is_success());
     }
 
     #[test]
@@ -2932,7 +1199,7 @@ mod tests {
     fn equality() {
         assert_eq!(
             CosmosStatus::new(StatusCode::NotFound).with_sub_status(1002),
-            CosmosStatus::READ_SESSION_NOT_AVAILABLE
+            crate::error::status_codes::READ_SESSION_NOT_AVAILABLE
         );
         assert_ne!(
             CosmosStatus::new(StatusCode::NotFound).with_sub_status(1002),
@@ -2994,18 +1261,21 @@ mod tests {
     #[test]
     fn from_u16() {
         let code = SubStatusCode::from(3200u16);
-        assert_eq!(code, SubStatusCode::RU_BUDGET_EXCEEDED);
+        assert_eq!(
+            code,
+            crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED
+        );
     }
 
     #[test]
     fn into_u16() {
-        let value: u16 = SubStatusCode::RU_BUDGET_EXCEEDED.into();
+        let value: u16 = crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED.into();
         assert_eq!(value, 3200);
     }
 
     #[test]
     fn display_known_code() {
-        let code = SubStatusCode::RU_BUDGET_EXCEEDED;
+        let code = crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED;
         assert_eq!(format!("{}", code), "RUBudgetExceeded (3200)");
     }
 
@@ -3025,7 +1295,7 @@ mod tests {
     #[test]
     fn debug_known_code() {
         // RU_BUDGET_EXCEEDED (3200) is unambiguous
-        let code = SubStatusCode::RU_BUDGET_EXCEEDED;
+        let code = crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED;
         assert_eq!(
             format!("{:?}", code),
             "SubStatusCode::RUBudgetExceeded(3200)"
@@ -3049,25 +1319,31 @@ mod tests {
     fn sub_status_code_equality() {
         assert_eq!(
             SubStatusCode::new(1002),
-            SubStatusCode::PARTITION_KEY_RANGE_GONE
+            crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE
         );
         assert_eq!(
             SubStatusCode::new(1002),
-            SubStatusCode::READ_SESSION_NOT_AVAILABLE
+            crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE
         );
-        assert_ne!(SubStatusCode::new(1002), SubStatusCode::NAME_CACHE_STALE);
+        assert_ne!(
+            SubStatusCode::new(1002),
+            crate::error::status_codes::substatus::NAME_CACHE_STALE
+        );
     }
 
     #[test]
     fn default_is_unknown() {
-        assert_eq!(SubStatusCode::default(), SubStatusCode::UNKNOWN);
+        assert_eq!(
+            SubStatusCode::default(),
+            crate::error::status_codes::substatus::UNKNOWN
+        );
         assert_eq!(SubStatusCode::default().value(), 0);
     }
 
     #[test]
     fn name_returns_some_for_unambiguous() {
         assert_eq!(
-            SubStatusCode::RU_BUDGET_EXCEEDED.name(None),
+            crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED.name(None),
             Some("RUBudgetExceeded")
         );
     }
@@ -3078,7 +1354,7 @@ mod tests {
         // the `CLIENT_GENERATED_401` constant so diagnostics keep rendering a
         // name instead of `None`.
         assert_eq!(
-            SubStatusCode::CLIENT_GENERATED_401.name(None),
+            crate::error::status_codes::substatus::CLIENT_GENERATED_401.name(None),
             Some("ClientGenerated401")
         );
     }
@@ -3094,11 +1370,11 @@ mod tests {
         // with the `SERIALIZATION_*_BODY_INVALID` constants so diagnostics render
         // a symbolic name instead of a bare number.
         assert_eq!(
-            SubStatusCode::SERIALIZATION_RESPONSE_BODY_INVALID.name(None),
+            crate::error::status_codes::substatus::SERIALIZATION_RESPONSE_BODY_INVALID.name(None),
             Some("SerializationResponseBodyInvalid")
         );
         assert_eq!(
-            SubStatusCode::SERIALIZATION_REQUEST_BODY_INVALID.name(None),
+            crate::error::status_codes::substatus::SERIALIZATION_REQUEST_BODY_INVALID.name(None),
             Some("SerializationRequestBodyInvalid")
         );
     }
@@ -3182,7 +1458,13 @@ mod tests {
     #[test]
     fn sdk_client_codes() {
         // Verify SDK client-side codes match Java/NET
-        assert_eq!(SubStatusCode::TRANSPORT_GENERATED_503.value(), 20003);
-        assert_eq!(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value(), 20008);
+        assert_eq!(
+            crate::error::status_codes::substatus::TRANSPORT_GENERATED_503.value(),
+            20003
+        );
+        assert_eq!(
+            crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT.value(),
+            20008
+        );
     }
 }

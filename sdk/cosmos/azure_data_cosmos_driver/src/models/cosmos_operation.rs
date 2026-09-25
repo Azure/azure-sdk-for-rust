@@ -371,7 +371,7 @@ impl CosmosOperation {
             .is_some_and(|target| target.partition_key().is_none() && target != &FeedRange::full())
         {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
                 .with_message(
                     "an explicit effective partition key range cannot be carried to a recreated \
                      container; obtain a new feed range from the replacement container",
@@ -1473,7 +1473,7 @@ mod tests {
 
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+            crate::error::status_codes::CLIENT_BAD_REQUEST
         );
         assert_eq!(operation.container().unwrap().rid(), "testcontainer_rid");
         assert_eq!(operation.target(), Some(&range));
@@ -1510,7 +1510,7 @@ mod tests {
             .expect_err("a name leaf under a RID parent must be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+            crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
     }
 

@@ -11,7 +11,7 @@ use super::{
     PageResult, PipelineContext, PipelineNode, PipelineNodeState,
 };
 use crate::{
-    error::{CosmosError, CosmosStatus},
+    error::CosmosError,
     models::{FeedRange, MaxItemCountHint, SessionToken},
 };
 use async_trait::async_trait;
@@ -92,7 +92,9 @@ impl NonStreamingOrderedMerge {
         let ordinal = self.next_ordinal;
         self.next_ordinal = self.next_ordinal.checked_add(1).ok_or_else(|| {
             CosmosError::builder()
-                .with_status(CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
+                .with_status(
+                    crate::error::status_codes::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE,
+                )
                 .with_message("non-streaming ORDER BY row ordinal overflowed")
                 .build()
         })?;
@@ -101,7 +103,9 @@ impl NonStreamingOrderedMerge {
         if self.retained.len() < self.retention_limit {
             self.retained.try_reserve(1).map_err(|_| {
                 CosmosError::builder()
-                    .with_status(CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
+                    .with_status(
+                        crate::error::status_codes::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE,
+                    )
                     .with_message("non-streaming ORDER BY candidate storage could not be allocated")
                     .build()
             })?;
@@ -205,7 +209,9 @@ impl PipelineNode for NonStreamingOrderedMerge {
                 PageResult::Drained => self.finish_buffering(),
                 PageResult::SplitRequired { .. } => {
                     return Err(CosmosError::builder()
-                        .with_status(CosmosStatus::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT)
+                        .with_status(
+                            crate::error::status_codes::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT,
+                        )
                         .with_message(
                             "non-streaming ORDER BY child unexpectedly requested split handling",
                         )
@@ -224,7 +230,7 @@ impl PipelineNode for NonStreamingOrderedMerge {
 
     fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
         Err(CosmosError::builder()
-            .with_status(CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
+            .with_status(crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
             .with_message(
                 "cross-partition non-streaming ORDER BY queries do not support continuation tokens",
             )
@@ -498,7 +504,7 @@ mod tests {
         let error = node.next_page(&mut context).await.unwrap_err();
         assert_eq!(
             error.status(),
-            CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID
+            crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
         );
         assert_eq!(node.results.len(), 1);
     }
@@ -508,7 +514,7 @@ mod tests {
         let node = merge(Vec::new(), 1, 0, 1, None);
         assert_eq!(
             node.snapshot_state().unwrap_err().status(),
-            CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+            crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
         );
     }
 
@@ -554,7 +560,7 @@ mod tests {
                 assert_eq!(node.retained.capacity(), 0);
                 assert_eq!(
                     node.snapshot_state().unwrap_err().status(),
-                    CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+                    crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
                 );
                 let mut executor = NoopRequestExecutor;
                 let mut topology = NoopTopologyProvider;
@@ -606,7 +612,7 @@ mod tests {
     async fn buffering_preserves_upstream_failure_without_partial_results() {
         for limit in [0, 2, 1000] {
             let error = CosmosError::builder()
-                .with_status(CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+                .with_status(crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE)
                 .with_message("upstream failure")
                 .build();
             let mut node = NonStreamingOrderedMerge::new(
@@ -627,7 +633,7 @@ mod tests {
             let error = node.next_page(&mut context).await.unwrap_err();
             assert_eq!(
                 error.status(),
-                CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+                crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE
             );
             assert!(error.to_string().contains("upstream failure"));
             assert!(node.results.is_empty());

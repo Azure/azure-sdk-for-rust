@@ -4,10 +4,7 @@
 
 //! Partition key types for Cosmos DB operations.
 
-use crate::{
-    error::{CosmosError, CosmosStatus},
-    models::FiniteF64,
-};
+use crate::{error::CosmosError, models::FiniteF64};
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use std::{borrow::Cow, hash::Hash};
 
@@ -230,7 +227,7 @@ impl From<Cow<'static, str>> for PartitionKeyValue {
 
 fn non_finite_partition_key_error() -> CosmosError {
     CosmosError::builder()
-        .with_status(CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE)
+        .with_status(crate::error::status_codes::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE)
         .with_message("partition key number must be finite")
         .build()
 }
@@ -486,7 +483,7 @@ impl TryFrom<Vec<PartitionKeyValue>> for PartitionKey {
     fn try_from(values: Vec<PartitionKeyValue>) -> Result<Self, Self::Error> {
         if values.len() > 3 {
             return Err(CosmosError::builder()
-                .with_status(CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+                .with_status(crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
                 .with_message(format!(
                     "Partition keys can have at most 3 levels, got {}",
                     values.len()
@@ -628,7 +625,7 @@ mod tests {
         let error = PartitionKey::try_from(values).unwrap_err();
         assert_eq!(
             error.status(),
-            CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS
+            crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS
         );
     }
 
@@ -637,22 +634,22 @@ mod tests {
         for value in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
             assert_eq!(
                 PartitionKeyValue::try_from(value).unwrap_err().status(),
-                CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+                crate::error::status_codes::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
             );
             assert_eq!(
                 PartitionKey::try_from(value).unwrap_err().status(),
-                CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+                crate::error::status_codes::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
             );
             assert_eq!(
                 PartitionKeyValue::try_from(Some(value))
                     .unwrap_err()
                     .status(),
-                CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+                crate::error::status_codes::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
             );
         }
         assert_eq!(
             PartitionKeyValue::try_from(f32::NAN).unwrap_err().status(),
-            CosmosStatus::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
+            crate::error::status_codes::CLIENT_PARTITION_KEY_NUMBER_NON_FINITE
         );
         assert_eq!(
             PartitionKeyValue::try_from(None::<f64>).unwrap(),

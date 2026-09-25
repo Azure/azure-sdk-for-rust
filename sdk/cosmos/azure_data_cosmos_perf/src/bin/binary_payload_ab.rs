@@ -85,7 +85,7 @@ use azure_data_cosmos::{
 };
 use azure_data_cosmos_driver::{
     diagnostics::RequestSentStatus,
-    error::{CosmosError, CosmosStatus},
+    error::CosmosError,
     models::ConnectionString,
     test::{
         ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
@@ -510,7 +510,7 @@ impl HttpClientFactory for MeasuringFactory {
             .build()
             .map_err(|err| {
                 CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_status(azure_data_cosmos_driver::error::status_codes::TRANSPORT_IO_FAILED)
                     .with_message(format!("failed to build measuring HTTP client: {err}"))
                     .build()
             })?;
@@ -554,7 +554,7 @@ impl TransportClient for MeasuringTransport {
         let response = builder.send().await.map_err(|err| {
             TransportError::new(
                 CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_status(azure_data_cosmos_driver::error::status_codes::TRANSPORT_IO_FAILED)
                     .with_message(format!("request failed: {err}"))
                     .build(),
                 RequestSentStatus::Unknown,
@@ -575,7 +575,7 @@ impl TransportClient for MeasuringTransport {
         let body = response.bytes().await.map_err(|err| {
             TransportError::new(
                 CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_status(azure_data_cosmos_driver::error::status_codes::TRANSPORT_IO_FAILED)
                     .with_message(format!("failed to read response body: {err}"))
                     .build(),
                 RequestSentStatus::Sent,

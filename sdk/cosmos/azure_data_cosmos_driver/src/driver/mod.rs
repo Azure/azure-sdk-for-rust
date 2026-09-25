@@ -48,7 +48,7 @@ pub(crate) fn error_chain_summary(error: &(dyn std::error::Error + 'static)) -> 
 mod tests {
     use super::error_chain_summary;
     use crate::error::CosmosError;
-    use crate::models::CosmosStatus;
+
     use std::error::Error as StdError;
     use std::sync::Arc;
 
@@ -72,7 +72,7 @@ mod tests {
         // source's `Display` by `": "`.
         let inner_io = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
         let error = CosmosError::builder()
-            .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+            .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
             .with_message("outer transport failure")
             .with_source(inner_io)
             .build();

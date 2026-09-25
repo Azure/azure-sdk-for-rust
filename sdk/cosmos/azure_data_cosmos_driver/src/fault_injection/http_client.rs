@@ -18,7 +18,7 @@ use crate::driver::transport::cosmos_transport_client::{
 use crate::models::cosmos_headers::fault_injection_header_names::{
     FAULT_INJECTION_OPERATION, FAULT_INJECTION_REGION,
 };
-use crate::models::{CosmosResponseHeaders, CosmosStatus, SubStatusCode};
+use crate::models::CosmosResponseHeaders;
 use async_trait::async_trait;
 use azure_core::http::headers::HeaderName;
 use azure_core::http::StatusCode;
@@ -281,7 +281,7 @@ impl FaultClient {
         let (status_code, sub_status, message) = match error_type {
             FaultInjectionErrorType::ConnectionError => {
                 let cosmos_err = crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_CONNECTION_FAILED)
+                    .with_status(crate::error::status_codes::TRANSPORT_CONNECTION_FAILED)
                     .with_message("Injected fault: connection error")
                     .build();
                 return ApplyResult::Injected(Err(TransportError::new(
@@ -291,7 +291,7 @@ impl FaultClient {
             }
             FaultInjectionErrorType::ResponseTimeout => {
                 let cosmos_err = crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
                     .with_message("Injected fault: response timeout")
                     .build();
                 return ApplyResult::Injected(Err(TransportError::new(
@@ -325,7 +325,7 @@ impl FaultClient {
             ),
             FaultInjectionErrorType::ReadSessionNotAvailable => (
                 StatusCode::NotFound,
-                Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+                Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
                 "Read Session Not Available - Injected fault",
             ),
             FaultInjectionErrorType::Timeout => (
@@ -340,17 +340,17 @@ impl FaultClient {
             ),
             FaultInjectionErrorType::PartitionIsGone => (
                 StatusCode::Gone,
-                Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+                Some(crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE),
                 "Partition Is Gone - Injected fault",
             ),
             FaultInjectionErrorType::WriteForbidden => (
                 StatusCode::Forbidden,
-                Some(SubStatusCode::WRITE_FORBIDDEN),
+                Some(crate::error::status_codes::substatus::WRITE_FORBIDDEN),
                 "Write Forbidden - Injected fault",
             ),
             FaultInjectionErrorType::DatabaseAccountNotFound => (
                 StatusCode::Forbidden,
-                Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
+                Some(crate::error::status_codes::substatus::DATABASE_ACCOUNT_NOT_FOUND),
                 "Database Account Not Found - Injected fault",
             ),
         };
@@ -490,7 +490,7 @@ impl TransportClient for FaultClient {
                     }
                 }
                 let error = crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
                     .with_message("Injected fault: response timeout after service execution")
                     .build();
                 Err(TransportError::new(error, RequestSentStatus::Unknown))
@@ -542,7 +542,7 @@ mod tests {
     use crate::models::cosmos_headers::fault_injection_header_names::{
         FAULT_INJECTION_OPERATION, FAULT_INJECTION_REGION,
     };
-    use crate::models::{CosmosStatus, SubStatusCode};
+
     use crate::options::Region;
     use async_trait::async_trait;
     use azure_core::http::{headers::Headers, Method, StatusCode, Url};
@@ -910,19 +910,19 @@ mod tests {
         let test_cases = vec![
             (
                 FaultInjectionErrorType::ReadSessionNotAvailable,
-                Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+                Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
             ),
             (
                 FaultInjectionErrorType::PartitionIsGone,
-                Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+                Some(crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE),
             ),
             (
                 FaultInjectionErrorType::WriteForbidden,
-                Some(SubStatusCode::WRITE_FORBIDDEN),
+                Some(crate::error::status_codes::substatus::WRITE_FORBIDDEN),
             ),
             (
                 FaultInjectionErrorType::DatabaseAccountNotFound,
-                Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND),
+                Some(crate::error::status_codes::substatus::DATABASE_ACCOUNT_NOT_FOUND),
             ),
             (FaultInjectionErrorType::InternalServerError, None),
             (FaultInjectionErrorType::ServiceUnavailable, None),
@@ -995,7 +995,7 @@ mod tests {
         // with `TRANSPORT_CONNECTION_FAILED` sub-status.
         assert_eq!(
             err.error.status().sub_status(),
-            Some(crate::models::SubStatusCode::TRANSPORT_CONNECTION_FAILED),
+            Some(crate::error::status_codes::substatus::TRANSPORT_CONNECTION_FAILED),
             "connection error should map to TRANSPORT_CONNECTION_FAILED"
         );
         assert_eq!(mock_client.call_count(), 0);
@@ -1021,7 +1021,7 @@ mod tests {
         // with `TRANSPORT_IO_FAILED` sub-status.
         assert_eq!(
             err.error.status().sub_status(),
-            Some(crate::models::SubStatusCode::TRANSPORT_IO_FAILED),
+            Some(crate::error::status_codes::substatus::TRANSPORT_IO_FAILED),
             "response timeout should map to TRANSPORT_IO_FAILED"
         );
         assert_eq!(mock_client.call_count(), 0);
@@ -1042,7 +1042,7 @@ mod tests {
         let err = fault_client.send(&request).await.unwrap_err();
         assert_eq!(
             err.error.status().sub_status(),
-            Some(crate::models::SubStatusCode::TRANSPORT_IO_FAILED)
+            Some(crate::error::status_codes::substatus::TRANSPORT_IO_FAILED)
         );
         assert_eq!(
             err.request_sent,
@@ -1158,7 +1158,10 @@ mod tests {
 
         let error = fault_client.send(&request).await.unwrap_err();
 
-        assert_eq!(error.error.status(), CosmosStatus::TRANSPORT_IO_FAILED);
+        assert_eq!(
+            error.error.status(),
+            crate::error::status_codes::TRANSPORT_IO_FAILED
+        );
         assert_eq!(error.request_sent, RequestSentStatus::Unknown);
     }
 

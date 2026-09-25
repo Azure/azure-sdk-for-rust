@@ -91,10 +91,7 @@ impl LiveState {
                 let container = this.container.clone();
                 let options = this.options.clone();
                 let fut: DriverPageFuture = Box::pin(async move {
-                    let result = driver
-                        .execute_plan(&mut plan, container, options)
-                        .await
-                        .map_err(Into::into);
+                    let result = driver.execute_plan(&mut plan, container, options).await;
                     (plan, result)
                 });
                 this.in_flight.insert(fut)
@@ -178,12 +175,12 @@ impl LiveState {
     /// Attempting to call this method while a page fetch is in-flight will result in an error, since the internal state is being mutated and cannot be safely snapshotted.
     fn to_continuation_token(&self) -> crate::Result<ContinuationToken> {
         let plan = self.plan.as_ref().ok_or_else(|| {
-            crate::DriverCosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT)
+            crate::CosmosError::builder()
+                .with_status(azure_data_cosmos_driver::error::status_codes::CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT)
                 .with_message("to_continuation_token called while a page fetch is in flight")
                 .build()
         })?;
-        plan.to_continuation_token().map_err(Into::into)
+        plan.to_continuation_token()
     }
 }
 
@@ -328,13 +325,12 @@ impl<T: Send + DeserializeOwned + 'static> QueryPageIterator<T> {
         match &self.source {
             PageSource::Live(state) => state.to_continuation_token(),
             #[cfg(test)]
-            PageSource::Synthetic(_) => Err(crate::DriverCosmosError::builder()
+            PageSource::Synthetic(_) => Err(crate::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
                     azure_core::http::StatusCode::BadRequest,
                 ))
                 .with_message("synthetic test iterator does not support to_continuation_token")
-                .build()
-                .into()),
+                .build()),
             #[cfg(not(test))]
             PageSource::_Phantom(_) => unreachable!(),
         }
@@ -419,13 +415,12 @@ mod tests {
     async fn item_iterator_propagates_errors() {
         let pages = vec![
             Ok(create_test_page(vec![1, 2])),
-            Err(crate::DriverCosmosError::builder()
+            Err(crate::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
                     azure_core::http::StatusCode::BadRequest,
                 ))
                 .with_message("test error")
-                .build()
-                .into()),
+                .build()),
         ];
 
         let mut item_iter = synthetic_item_iter(pages);

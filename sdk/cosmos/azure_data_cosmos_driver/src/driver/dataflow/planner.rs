@@ -78,7 +78,7 @@ pub(crate) async fn build_trivial_pipeline(
         }
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
                 .with_message(format!(
                     "continuation token shape {} does not match a trivial operation",
                     snapshot_kind(&other)
@@ -132,7 +132,7 @@ pub(crate) async fn build_trivial_pipeline(
             } else {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE,
+                        crate::error::status_codes::CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE,
                     )
                     .with_message(
                         "FeedRange targeting requires a fan-out pipeline; \
@@ -161,7 +161,7 @@ pub(crate) async fn build_trivial_pipeline(
 /// mid-execution may push the effective fan-out above the limit, and the
 /// operation keeps running rather than aborting.
 ///
-/// Returns a [`CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED`](crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
+/// Returns a [`crate::error::status_codes::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED`](crate::error::status_codes::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
 /// error when a fresh plan exceeds [`PlanOptions::max_fan_out`].
 pub(crate) fn finalize_plan(
     pipeline: Pipeline,
@@ -173,7 +173,7 @@ pub(crate) fn finalize_plan(
         let width = pipeline.fan_out_width();
         if width > plan_options.max_fan_out as usize {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
+                .with_status(crate::error::status_codes::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED)
                 .with_message(format!(
                     "operation fans out to {width} partitions, exceeding the maximum of {}; \
                      raise max_fan_out (via FeedOptions) to run a broader cross-partition query",
@@ -274,7 +274,7 @@ async fn build_sequential_drain_inner(
             if !plan_has_window {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
                     )
                     .with_message(
                         "continuation token carries a skip/take (OFFSET/LIMIT/TOP) window but \
@@ -317,7 +317,7 @@ async fn build_sequential_drain_inner(
         )?),
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
                 .with_message(format!(
                     "continuation token shape {} does not match a cross-partition operation",
                     snapshot_kind(&other)
@@ -345,7 +345,7 @@ async fn build_sequential_drain_inner(
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
             .with_message("query plan produced no partition ranges to query")
             .build());
     }
@@ -419,7 +419,7 @@ fn buffered_query_window(info: &QueryInfo, maximum: u64, shape: &str) -> crate::
         }
     }
     Err(crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW)
+        .with_status(crate::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW)
         .with_message(format!(
             "cross-partition {shape} requires a finite global TOP or LIMIT and OFFSET plus effective take at most max_buffered_query_window ({maximum})"
         ))
@@ -436,7 +436,7 @@ pub(crate) async fn build_non_streaming_ordered_merge(
     if resume.is_some() {
         return Err(crate::error::CosmosError::builder()
             .with_status(
-                crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
+                crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
             )
             .with_message(
                 "cross-partition non-streaming ORDER BY queries cannot be resumed from a continuation token",
@@ -452,7 +452,7 @@ pub(crate) async fn build_non_streaming_ordered_merge(
 
     let info = query_plan.query_info.as_ref().ok_or_else(|| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+            .with_status(crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE)
             .with_message(
                 "internal error: non-streaming ORDER BY path selected with no queryInfo present",
             )
@@ -490,7 +490,7 @@ pub(crate) async fn build_non_streaming_ordered_merge(
     {
         return Err(crate::error::CosmosError::builder()
             .with_status(
-                crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY,
+                crate::error::status_codes::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY,
             )
             .with_message(
                 "query plan reported non-streaming ORDER BY but did not supply a non-empty rewrittenQuery",
@@ -503,13 +503,13 @@ pub(crate) async fn build_non_streaming_ordered_merge(
     let window = buffered_query_window(info, u64::MAX, "non-streaming ORDER BY")?;
     let retention_limit = usize::try_from(window).map_err(|_| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
+            .with_status(crate::error::status_codes::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
             .with_message("non-streaming ORDER BY candidate window does not fit in memory")
             .build()
     })?;
     let skip = usize::try_from(skip).map_err(|_| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
+            .with_status(crate::error::status_codes::CLIENT_NON_STREAMING_ORDER_BY_WINDOW_TOO_LARGE)
             .with_message("non-streaming ORDER BY OFFSET does not fit in memory")
             .build()
     })?;
@@ -519,7 +519,7 @@ pub(crate) async fn build_non_streaming_ordered_merge(
     let request_nodes = plan_fresh(query_plan, topology_provider, &effective_operation).await?;
     if request_nodes.is_empty() {
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
             .with_message("query plan produced no partition ranges to query")
             .build());
     }
@@ -573,7 +573,7 @@ async fn build_streaming_ordered_merge_inner(
         .ok_or_else(|| {
             crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY,
+                    crate::error::status_codes::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY,
                 )
                 .with_message(
                     "query plan reported one or more ORDER BY columns but did not supply a \
@@ -607,7 +607,7 @@ async fn build_streaming_ordered_merge_inner(
             if !plan_has_window {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
                     )
                     .with_message(
                         "continuation token carries a skip/take (OFFSET/LIMIT/TOP) window but \
@@ -659,7 +659,7 @@ async fn build_streaming_ordered_merge_inner(
         )?),
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
                 .with_message(format!(
                     "continuation token shape {} does not match a streaming ORDER BY operation",
                     snapshot_kind(&other)
@@ -682,7 +682,7 @@ async fn build_streaming_ordered_merge_inner(
                 if !saved.range.is_subset_of(scope) {
                     return Err(crate::error::CosmosError::builder()
                         .with_status(
-                            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+                            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
                         )
                         .with_message(format!(
                             "continuation token covers {}-{}, which is not contained in the requested feed scope {}-{}",
@@ -741,7 +741,7 @@ async fn build_streaming_ordered_merge_inner(
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
             .with_message("query plan produced no partition ranges to query")
             .build());
     }
@@ -824,12 +824,12 @@ fn validate_streaming_order_by_snapshot(
     for entry in ranges {
         let min = parse_continuation_epk(
             &entry.min_epk,
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
             "StreamingOrderedMerge min_epk",
         )?;
         let max = parse_continuation_epk(
             &entry.max_epk,
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
             "StreamingOrderedMerge max_epk",
         )?;
         if min >= max {
@@ -899,7 +899,7 @@ fn order_by_state_invalid(
     message: impl Into<std::borrow::Cow<'static, str>>,
 ) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID)
+        .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID)
         .with_message(message)
         .build()
 }
@@ -958,7 +958,7 @@ pub(crate) async fn build_unordered_merge(
         ),
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
                 .with_message(format!(
                     "continuation token shape {} does not match a change feed operation",
                     snapshot_kind(&other)
@@ -1070,7 +1070,7 @@ pub(crate) async fn build_unordered_merge(
 
     if request_nodes.is_empty() {
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES)
             .with_message("change feed produced no partition ranges to query")
             .build());
     }
@@ -1331,7 +1331,7 @@ async fn plan_resume_from_saved_snapshot(
             };
             return Err(crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED,
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED,
                 )
                 .with_message(format!(
                     "continuation token active range [{}, {}) could not be fully covered \
@@ -1463,7 +1463,7 @@ fn validate_saved_snapshot(
 ) -> crate::error::Result<SavedSnapshot> {
     let cursor = parse_continuation_epk(
         &left_most_undrained_epk,
-        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
         "SequentialDrain left_most_undrained_epk",
     )?;
 
@@ -1471,18 +1471,18 @@ fn validate_saved_snapshot(
     for entry in active_tokens {
         let min = parse_continuation_epk(
             &entry.min_epk,
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
             "SequentialDrain active_tokens min_epk",
         )?;
         let max = parse_continuation_epk(
             &entry.max_epk,
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
             "SequentialDrain active_tokens max_epk",
         )?;
         if min > max {
             return Err(crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
                 )
                 .with_message(format!(
                     "continuation token has invalid active_tokens entry (min `{}` > max `{}`)",
@@ -1497,7 +1497,7 @@ fn validate_saved_snapshot(
             // a diagnostic message that points at the entry itself.
             return Err(crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
                 )
                 .with_message(format!(
                     "continuation token has zero-width active_tokens entry (min == max == `{}`); \
@@ -1511,7 +1511,7 @@ fn validate_saved_snapshot(
             if range.min_inclusive() < prev.range.max_exclusive() {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
                     )
                     .with_message(format!(
                         "continuation token active_tokens must be sorted and non-overlapping; \
@@ -1536,7 +1536,7 @@ fn validate_saved_snapshot(
     if let Some(first) = parsed.first() {
         if &cursor > first.range.min_inclusive() {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE)
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE)
                 .with_message(format!(
                     "continuation token cursor `{}` is past the first active_tokens entry [{}, {}); \
                      cursor must be at or before every active range",
@@ -1577,18 +1577,18 @@ fn validate_unordered_merge_tokens(
     for entry in active_tokens {
         let min = parse_continuation_epk(
             &entry.min_epk,
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
             "UnorderedMerge active_tokens min_epk",
         )?;
         let max = parse_continuation_epk(
             &entry.max_epk,
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
             "UnorderedMerge active_tokens max_epk",
         )?;
         if min >= max {
             return Err(crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
                 )
                 .with_message(format!(
                     "continuation token has invalid active_tokens entry \
@@ -1603,7 +1603,7 @@ fn validate_unordered_merge_tokens(
             if range.min_inclusive() < prev.range.max_exclusive() {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
                     )
                     .with_message(format!(
                         "continuation token active_tokens must be sorted and non-overlapping; \
@@ -1698,7 +1698,7 @@ fn peel_distinct_resume(
                 // checkpoint.
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
+                        crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
                     )
                     .with_message(
                         "continuation token carries unordered DISTINCT state, which cannot be \
@@ -1713,7 +1713,7 @@ fn peel_distinct_resume(
         Some(PipelineNodeState::Drained) => Ok((Some(PipelineNodeState::Drained), None)),
         Some(other) if distinct_type != DistinctType::None => {
             Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+                .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
                 .with_message(format!(
                     "continuation token shape {} does not match a DISTINCT query",
                     snapshot_kind(&other)
@@ -1729,7 +1729,7 @@ fn distinct_token_mismatch(
     expected: DistinctType,
 ) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+        .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
         .with_message(format!(
             "continuation token was minted for {saved:?} DISTINCT but the query plan reports \
              {expected:?}"
@@ -1803,7 +1803,7 @@ fn rewritten_operation(
     let mut body: serde_json::Value = match operation.body() {
         Some(bytes) if !bytes.is_empty() => serde_json::from_slice(bytes).map_err(|e| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_QUERY_REWRITE_BODY_INVALID)
+                .with_status(crate::error::status_codes::CLIENT_QUERY_REWRITE_BODY_INVALID)
                 .with_message(
                     "cross-partition query request body is not valid JSON; \
                      cannot apply the plan's rewritten query",
@@ -1816,7 +1816,7 @@ fn rewritten_operation(
 
     let serde_json::Value::Object(map) = &mut body else {
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_REWRITE_BODY_INVALID)
+            .with_status(crate::error::status_codes::CLIENT_QUERY_REWRITE_BODY_INVALID)
             .with_message(
                 "cross-partition query request body must be a JSON object; \
                  cannot apply the plan's rewritten query",
@@ -1827,7 +1827,7 @@ fn rewritten_operation(
 
     let new_body = serde_json::to_vec(&body).map_err(|e| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_REWRITE_BODY_INVALID)
+            .with_status(crate::error::status_codes::CLIENT_QUERY_REWRITE_BODY_INVALID)
             .with_message("failed to serialize rewritten cross-partition query body")
             .with_source(e)
             .build()
@@ -1847,7 +1847,7 @@ fn validate_query_plan_for_streaming_order_by(plan: &QueryPlan) -> crate::error:
     let info = plan.query_info.as_ref().ok_or_else(|| {
         // Precondition of `is_streaming_order_by`; an internal planner bug if violated.
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+            .with_status(crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE)
             .with_message(
                 "internal error: streaming ORDER BY path selected with no queryInfo present",
             )
@@ -1876,7 +1876,7 @@ fn validate_query_plan_for_streaming_order_by(plan: &QueryPlan) -> crate::error:
 
 fn unsupported_feature(feature: &str) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE)
+        .with_status(crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE)
         .with_message(format!("unsupported query feature: {feature}"))
         .build()
 }
@@ -1894,7 +1894,7 @@ fn topology_range_not_overlapping_error(
     query: &FeedRange,
 ) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY)
+        .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY)
         .with_message(format!(
             "resolved topology range {} does not overlap query plan EPK {}",
             render_feed_range_for_error(resolved),
@@ -2435,7 +2435,7 @@ mod tests {
         };
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
+            Some(crate::error::status_codes::substatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED),
             "unexpected error: {err}",
         );
     }
@@ -2975,7 +2975,7 @@ mod tests {
             .expect_err("a skip/take token must not resume a query with no skip/take window");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
             "expected SHAPE_MISMATCH for a window token against a windowless query; got {err:?}",
         );
     }
@@ -3505,7 +3505,9 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE),
+            Some(
+                crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+            ),
             "expected invalid-children sub-status, got: {err}",
         );
     }
@@ -3528,7 +3530,9 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE),
+            Some(
+                crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+            ),
             "expected invalid-children sub-status, got: {err}",
         );
     }
@@ -3549,7 +3553,7 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED),
             "expected saved-range-unhonored sub-status, got: {err}",
         );
     }
@@ -3803,7 +3807,7 @@ mod tests {
         let err = result.expect_err("bare top-level Request shape must be rejected on resume");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
             "expected SHAPE_MISMATCH for top-level bare Request shape; got {err:?}",
         );
     }
@@ -3832,7 +3836,7 @@ mod tests {
             .expect_err("zero-width active_tokens entry must be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
         );
         let rendered = err.to_string();
         assert!(
@@ -3867,7 +3871,7 @@ mod tests {
             .expect_err("malformed min>max entry must be rejected by the validator");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
             "malformed min>max entry must trip the EPK-range validator path",
         );
     }
@@ -3904,7 +3908,7 @@ mod tests {
             .expect_err("appended malformed min>max entry must still be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
         );
     }
 
@@ -4074,7 +4078,7 @@ mod tests {
         let err = validate_buffered_query(&plan, u64::MAX).unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+            crate::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
         );
     }
 
@@ -4135,7 +4139,7 @@ mod tests {
                             }));
                             assert_eq!(
                                     error.status(),
-                                    crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+                                    crate::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
                                 );
                         }
                     }
@@ -4284,7 +4288,7 @@ mod tests {
                     assert!(pipeline.next_page(&mut context).await.unwrap().is_none());
                     assert_eq!(
                         pipeline.snapshot_state().unwrap_err().status(),
-                        crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+                        crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
                     );
                     assert_eq!(
                         executor.continuation_calls,
@@ -4325,7 +4329,7 @@ mod tests {
         .unwrap_err();
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+            crate::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
         );
     }
 
@@ -4364,7 +4368,7 @@ mod tests {
         .unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+            crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
         );
 
         let mut streaming_plan = non_streaming_order_by_plan();
@@ -4379,7 +4383,7 @@ mod tests {
                 .unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+            crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE
         );
     }
 
@@ -4395,7 +4399,7 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+            crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE
         );
     }
 
@@ -4412,7 +4416,7 @@ mod tests {
         let err = validate_query_plan_for_streaming_order_by(&plan).unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_UNSUPPORTED_QUERY_FEATURE
+            crate::error::status_codes::CLIENT_UNSUPPORTED_QUERY_FEATURE
         );
     }
 
@@ -4506,7 +4510,7 @@ mod tests {
         .expect_err("an ordered token must not resume an unordered plan");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
         );
         assert!(err.to_string().contains("minted for"));
     }
@@ -4523,7 +4527,7 @@ mod tests {
         .expect_err("an unordered DISTINCT token is never resumable");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
+            Some(crate::error::status_codes::substatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
         );
         assert!(err.to_string().contains("ORDER BY"));
     }
@@ -4543,7 +4547,7 @@ mod tests {
         .expect_err("a non-DISTINCT token must not resume a DISTINCT plan");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
         );
         assert!(err.to_string().contains("does not match a DISTINCT query"));
     }
@@ -4559,7 +4563,7 @@ mod tests {
         .expect_err("a DISTINCT token cannot resume a plain plan");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
         );
     }
 
@@ -4614,7 +4618,7 @@ mod tests {
             .expect_err("a malformed inner state must not resume");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
         );
     }
 
@@ -4643,7 +4647,7 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY
+            crate::error::status_codes::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY
         );
     }
 
@@ -4657,7 +4661,7 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY
+            crate::error::status_codes::SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY
         );
     }
 
@@ -4804,7 +4808,7 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH
         );
     }
 
@@ -4819,7 +4823,7 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES
+            crate::error::status_codes::CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES
         );
     }
 
@@ -4902,7 +4906,7 @@ mod tests {
         .expect("a token minted by a different query must be rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "got: {err}"
         );
     }
@@ -4925,7 +4929,7 @@ mod tests {
         .expect("streaming ORDER BY must reject non-hex EPK bounds");
         assert_eq!(
             streaming_error.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID
         );
         assert!(streaming_error.to_string().contains("malformed EPK"));
 
@@ -4933,7 +4937,7 @@ mod tests {
             .expect_err("SequentialDrain must reject odd-length cursor EPKs");
         assert_eq!(
             sequential_error.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
         );
         assert!(sequential_error.to_string().contains("malformed EPK"));
 
@@ -4945,7 +4949,7 @@ mod tests {
         .expect_err("UnorderedMerge must reject odd-length range EPKs");
         assert_eq!(
             unordered_error.status(),
-            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
         );
         assert!(unordered_error.to_string().contains("malformed EPK"));
     }
@@ -5014,7 +5018,7 @@ mod tests {
             .expect("a token minted under a different feed scope must be rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "got: {err}"
         );
     }
@@ -5072,7 +5076,7 @@ mod tests {
             .expect_err("the `80..FF` saved range lies outside the operation's scope");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "got: {err}"
         );
     }
@@ -5129,7 +5133,7 @@ mod tests {
         .expect("an undecodable boundary RID must be rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "got: {err}"
         );
     }
@@ -5173,7 +5177,7 @@ mod tests {
         .expect("a non-document boundary RID must be rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "got: {err}"
         );
     }
@@ -5248,7 +5252,7 @@ mod tests {
         .expect("a boundary skip_count of 0 must be rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
             "a boundary skip_count of 0 must be rejected, got: {err}"
         );
     }

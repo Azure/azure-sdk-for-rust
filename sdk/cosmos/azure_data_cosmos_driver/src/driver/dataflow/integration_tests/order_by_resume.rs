@@ -1356,7 +1356,7 @@ async fn complex_order_by_values_are_rejected() {
         .expect_err("an array ORDER BY value must fail the query");
     assert_eq!(
         error.status().sub_status(),
-        Some(crate::error::SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
+        Some(crate::error::status_codes::substatus::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
     );
     assert!(
         error.to_string().contains("not currently supported"),
@@ -1426,7 +1426,7 @@ async fn resume_rejects_wrong_node_shape() {
         .unwrap_err();
     assert_eq!(
         err.status(),
-        CosmosStatus::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH
+        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH
     );
 }
 
@@ -2100,7 +2100,9 @@ async fn resume_against_a_different_query_is_rejected() {
     .expect("a token minted by a different query must be rejected");
     assert_eq!(
         err.status().sub_status(),
-        Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID),
+        Some(
+            crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID
+        ),
         "got: {err}"
     );
 }
