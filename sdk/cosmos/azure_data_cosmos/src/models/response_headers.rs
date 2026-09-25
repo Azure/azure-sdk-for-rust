@@ -13,23 +13,10 @@ use azure_data_cosmos_driver::models::{
 
 /// Cosmos DB response headers parsed from the wire.
 ///
-/// This is the SDK-owned view of the per-response headers. Callers reach the
-/// individual values through dedicated accessor methods (`etag()`,
-/// `request_charge()`, `session_token()`, …) instead of touching the driver
-/// header struct directly, so the driver remains free to evolve its internal
-/// header representation without breaking SDK consumers.
-///
-/// Note that the *value* types returned by the accessors
-/// (`Etag`, `RequestCharge`, `SessionToken`, `SubStatusCode`, `ActivityId`)
-/// are intentionally narrow primitives sourced from their canonical Azure SDK
-/// homes (`azure_core::http::Etag` for `Etag`; the driver crate for the
-/// Cosmos-specific types). They have no SDK-specific behavior, so the SDK
-/// does not maintain parallel wrappers for them.
-///
-/// Construction from the driver type is `From`-based for the bridge layer; the
-/// reverse direction is intentionally `pub(crate)`-scoped (the crate-internal
-/// `into_driver_headers` helper) so the driver representation is not part of
-/// the SDK's public surface.
+/// Access metadata such as [`etag()`](Self::etag),
+/// [`request_charge()`](Self::request_charge), and
+/// [`session_token()`](Self::session_token). Each accessor returns `None`
+/// when its value is unavailable.
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct ResponseHeaders(DriverCosmosResponseHeaders);
@@ -80,9 +67,9 @@ impl ResponseHeaders {
         self.0.offer_replace_pending
     }
 
-    /// Server-side request processing time
-    /// (`x-ms-request-duration-ms`). Non-finite / negative values are filtered
-    /// to `None` during parsing.
+    /// Returns server-side processing time (`x-ms-request-duration-ms`).
+    ///
+    /// Returns `None` for an absent, negative, non-finite, or unrepresentable value.
     pub fn server_duration(&self) -> Option<std::time::Duration> {
         self.0
             .server_duration_ms

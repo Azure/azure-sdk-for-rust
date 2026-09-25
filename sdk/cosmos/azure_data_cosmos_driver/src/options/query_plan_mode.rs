@@ -10,8 +10,7 @@ pub enum QueryPlanMode {
     LocalPreferred,
     /// Always request query plans from the Gateway.
     ///
-    /// Use this as a compatibility or livesite fallback to temporarily bypass
-    /// local planning while diagnosing or mitigating a local-planner issue.
+    /// Use this to bypass local planning if it causes a compatibility issue.
     GatewayOnly,
 }
 

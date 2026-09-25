@@ -281,7 +281,8 @@ impl CosmosError {
     ///
     /// Backtrace capture is **opt-in** (matching idiomatic Rust): off by
     /// default, on whenever the stdlib `RUST_BACKTRACE` environment
-    /// variable is set, and always overridable via the runtime builder.
+    /// variable enables it (or `RUST_LIB_BACKTRACE` overrides it), and
+    /// configurable through the runtime builder or [`set_backtrace_options()`].
     /// When enabled, capture is bounded by two production-safety gates
     /// (resolution-rate limiter + per-second capture throttle, both
     /// rolling 1-second windows). Cache hits do **not** consume budget,
@@ -289,8 +290,8 @@ impl CosmosError {
     /// fidelity regardless of limiter state.
     ///
     /// Returns `None` when:
-    /// * Capture was disabled at construction time (`RUST_BACKTRACE`
-    ///   unset and no explicit capacity, or either limiter set to `0`),
+    /// * Capture was disabled at construction time (no environment setting or
+    ///   explicit capacity, or the capture limit set to `0`),
     /// * the capture throttle was exhausted at construction time, or
     /// * the resolution limiter denied fresh resolution for at least one
     ///   cache-missed frame.
@@ -549,40 +550,20 @@ impl CosmosError {
     }
 }
 
-/// Fluent builder for [`CosmosError`]. The only way to construct or
-/// re-decorate a Cosmos [`CosmosError`].
+/// Creates or updates a [`CosmosError`].
 ///
-/// Obtain one via [`CosmosError::builder()`](CosmosError::builder) to
-/// start fresh, or [`CosmosErrorBuilder::from_error`] to patch an existing
-/// error (add context, swap status, attach diagnostics, etc.). Finalize
-/// with [`build()`](Self::build).
+/// Start with [`CosmosError::builder()`] or [`from_error()`](Self::from_error),
+/// then call [`build()`](Self::build).
 ///
-/// # Invariants enforced at `build()`
+/// # Response precedence
 ///
-/// When [`with_response`](Self::with_response) was called on the builder,
-/// the resulting [`CosmosError`] is reconciled so that the [`CosmosResponse`]
-/// is the source of truth ("**CosmosResponse wins**"):
+/// A response supplied with [`with_response()`](Self::with_response) takes
+/// precedence over separately supplied status and diagnostics:
 ///
-/// * The error's [`CosmosError::status`] is overwritten with
-///   `response.status()`.
-/// * The error's [`CosmosError::diagnostics`] is sourced from
-///   `response.diagnostics()`. Any value supplied via
-///   [`with_diagnostics`](Self::with_diagnostics) in the same chain is
-///   silently discarded.
+/// * [`CosmosError::status()`] returns `response.status()`.
+/// * [`CosmosError::diagnostics()`] returns `response.diagnostics()`.
 ///
-/// When the builder carries `WirePending`
-/// staging (via `with_response_parts`, an
-/// internal-only setter) and a [`with_diagnostics`](Self::with_diagnostics)
-/// is supplied — typically via the operation pipeline's
-/// `from_error(err).with_diagnostics(d).build()` finalization — the
-/// builder **promotes** the error to a fully assembled
-/// `Wire` variant by constructing a
-/// [`CosmosResponse`] from the staged body + headers + status + the
-/// supplied diagnostics.
-///
-/// These overrides are silent (no panic) by design — they let pipeline
-/// code attach a wire response unconditionally without first having to
-/// reset other builder fields.
+/// A separately supplied status or diagnostics is ignored in this case.
 ///
 /// ```
 /// use std::sync::Arc;
@@ -647,13 +628,11 @@ impl CosmosErrorBuilder {
         }
     }
 
-    /// Starts a builder pre-populated from an existing [`CosmosError`]. Any
-    /// subsequent setter overrides the corresponding field; unset fields
-    /// are carried forward from `err`. Useful for re-decorating an error
-    /// returned from a deeper layer — attaching operation context,
-    /// swapping status, or — most importantly — finalizing a
-    /// `WirePending` error into a `Wire` one
-    /// via [`with_diagnostics`](Self::with_diagnostics).
+    /// Starts a builder from an existing [`CosmosError`].
+    ///
+    /// Unchanged fields retain their existing values; setters replace the
+    /// corresponding values. Use this to add context or diagnostics without
+    /// discarding the original error.
     pub fn from_error(err: CosmosError) -> Self {
         Self {
             base: Some(err),

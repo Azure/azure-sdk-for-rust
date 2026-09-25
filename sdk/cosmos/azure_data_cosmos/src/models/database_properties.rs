@@ -15,12 +15,7 @@ use crate::models::SystemProperties;
 #[derive(Clone, Default, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 pub struct DatabaseProperties {
-    /// The ID of the database.
-    ///
-    /// Modeled as `Option<String>` per the Azure SDK for Rust guidelines:
-    /// even fields the service contract marks "required" should be optional
-    /// in the wire model, so an unexpectedly absent value cannot fail
-    /// deserialization of an otherwise-valid response.
+    /// The database ID, if included in the service response.
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,

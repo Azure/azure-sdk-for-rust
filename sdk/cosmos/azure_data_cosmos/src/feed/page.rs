@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! [`FeedPage`] — a single page of results from a Cosmos DB feed.
+//! A page of results from a Cosmos DB feed.
 
 use std::sync::Arc;
 
@@ -43,12 +43,12 @@ impl<T> FeedPage<T> {
         }
     }
 
-    /// Gets the items in this page of results.
+    /// Returns the items in this page of results.
     pub fn items(&self) -> &[T] {
         &self.items
     }
 
-    /// Consumes the page and returns a vector of the items.
+    /// Consumes the page and returns its items.
     pub fn into_items(self) -> Vec<T> {
         self.items
     }

@@ -20,7 +20,7 @@ pub const PATCH_TRACKING_RETENTION: std::time::Duration = std::time::Duration::f
 pub const DEFAULT_PATCH_TRACKING_CAPACITY: NonZeroU16 =
     NonZeroU16::new(1024).expect("default PATCH tracking capacity is non-zero");
 
-/// Stable identity for an unsafe PATCH operation.
+/// Stable identity for a tracked PATCH operation.
 ///
 /// Persist and reuse this value when retrying the same logical operation. A
 /// newly generated ID identifies a new operation and may apply it again.
@@ -33,7 +33,7 @@ impl PatchTrackingId {
         Self(Uuid::new_v4())
     }
 
-    /// Returns the underlying UUID.
+    /// Returns the underlying [`Uuid`].
     pub fn as_uuid(&self) -> Uuid {
         self.0
     }

@@ -37,18 +37,6 @@ static CPU_MEMORY_MONITOR: OnceLock<Arc<CpuMemoryMonitorInner>> = OnceLock::new(
 ///
 /// Valid values range from `0.0` to `100.0`.
 ///
-/// # Examples
-///
-/// ```rust,ignore
-/// use azure_data_cosmos_driver::system::CpuUsage;
-///
-/// let usage = CpuUsage::new(42.5);
-/// assert_eq!(usage.value(), 42.5);
-///
-/// // NaN normalises to 0.0
-/// let nan = CpuUsage::new(f64::NAN);
-/// assert_eq!(nan.value(), 0.0);
-/// ```
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub(crate) struct CpuUsage(f64);
 

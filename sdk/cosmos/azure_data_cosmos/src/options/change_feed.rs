@@ -24,7 +24,7 @@ pub use azure_data_cosmos_driver::models::ChangeFeedStartFrom;
 /// Selects which change feed mode to read.
 ///
 /// * [`LatestVersion`](Self::LatestVersion) (default) returns the latest
-///   version of each created or replaced item.
+///   version of changed items.
 /// * [`AllVersionsAndDeletes`](Self::AllVersionsAndDeletes) returns every
 ///   intermediate version plus deletes. In this mode
 ///   `query_change_feed::<YourDoc>()` still yields the

@@ -3,7 +3,7 @@
 
 // cspell:ignore dlopen
 
-//! Backtrace capture for [`Error`](super::Error).
+//! Backtrace capture for [`CosmosError`](super::CosmosError).
 //!
 //! Backtraces are invaluable for debugging — especially when the Rust
 //! driver is consumed as a black box by the Java / .NET SDKs. Following
@@ -34,11 +34,9 @@
 //!   essentially free and proceeds even when the budget is exhausted. The
 //!   budget only protects against the cost of *new* symbol-resolution
 //!   work during an error storm.
-//! * **Degraded rendering** — when the budget is exhausted but the
-//!   backtrace contains unresolved frames, those frames render as
-//!   `<unresolved> @ 0xIP` instead of being resolved. The backtrace is still
-//!   useful for correlating with later, fully-resolved captures from the
-//!   same code paths.
+//! * **Rendering** — when the resolution budget is exhausted and the
+//!   backtrace contains uncached frames, rendering returns `None`. A fully
+//!   cached backtrace can still render without using resolution budget.
 
 use std::{
     collections::HashMap,
@@ -66,8 +64,8 @@ use std::{
 /// * `max_resolutions_per_second` bounds *fresh* symbol-resolution work.
 ///   Cache hits do not consume budget; only render attempts that hit at
 ///   least one unseen instruction pointer charge it. `0` disables fresh
-///   resolution — already-captured backtraces still render to
-///   `<unresolved> @ 0xIP` placeholders for cache-missed frames.
+///   resolution — backtraces with cache-missed frames return `None` when
+///   rendered.
 ///
 /// Construct via [`BacktraceOptions::default`], which consults the
 /// stdlib `RUST_LIB_BACKTRACE` / `RUST_BACKTRACE` environment variables

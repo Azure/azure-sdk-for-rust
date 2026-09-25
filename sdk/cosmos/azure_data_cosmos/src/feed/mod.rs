@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Types related to Cosmos DB feed operations, including query and change feed
-//! iteration, pagination and related models.
+//! Types for querying and paging through Cosmos DB feeds, including change feeds.
 
 use azure_core::http::Context;
 

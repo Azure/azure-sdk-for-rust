@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Data models for Cosmos DB management and metadata operations.
+//! Cosmos DB request, response, and resource models.
 //!
-//! This module contains types representing Cosmos DB resources (accounts, databases, containers)
-//! and their supporting structures. These are for **metadata/management operations only**.
-//!
-//! **Important**: This module does NOT contain data plane item/document types.
-//! The driver is schema-agnostic - data plane operations work with raw bytes (`&[u8]`).
+//! Includes resource references, partition keys, request headers, operation
+//! descriptions, and response metadata. Item bodies remain raw bytes rather
+//! than application-defined document types.
 
 mod account_reference;
 mod activity_id;
@@ -39,6 +37,7 @@ mod feed_range;
 // Used by `driver::dataflow::order_by` to hash complex resume values into
 // a bounded 128-bit representation (mirrors .NET's complex-key encoding).
 pub(crate) mod murmur_hash;
+/// Partition key range metadata returned by Cosmos DB.
 #[allow(dead_code)]
 pub mod partition_key_range;
 #[allow(dead_code)]

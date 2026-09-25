@@ -1,19 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Centralized metric- and attribute-name string literals for Cosmos DB OTel
-//! metrics.
+//! Metric and attribute names emitted by the Cosmos DB metrics handler.
 //!
-//! The OpenTelemetry semantic conventions for database clients define the exact
-//! metric and attribute names emitted here. Metric names and instrument units are
-//! metrics-specific and defined here; the shared **attribute** names are re-exported
-//! from the crate-internal `diagnostics::attributes` module so metrics and tracing
-//! can't drift.
-//!
-//! Two tiers, matching the semantic conventions:
-//! - **Stable** names — emitted unconditionally (operation-scope, low cardinality).
-//! - **Optional** names — emitted only when the matching
-//!   [`MetricsOptions`](super::MetricsOptions) toggle is opted into.
+//! The operation-duration metric is emitted when a
+//! [`CosmosMetricsHandler`](super::CosmosMetricsHandler) is registered.
+//! Other metrics and extended attributes require opt-in through
+//! [`MetricsOptions`](super::MetricsOptions).
 
 use crate::diagnostics::attributes;
 
@@ -21,9 +14,7 @@ use crate::diagnostics::attributes;
 // Metric names
 // =========================================================================
 
-/// Stable histogram (seconds): total client-observed duration of an operation.
-///
-/// This is the primary Cosmos metric — the one to graph for latency SLOs.
+/// Histogram of client-observed operation duration, in seconds.
 pub const METRIC_OPERATION_DURATION: &str = "db.client.operation.duration";
 
 /// Optional histogram (request units): request charge (RU) for an operation.
@@ -32,9 +23,7 @@ pub const METRIC_OPERATION_REQUEST_CHARGE: &str = "azure.cosmosdb.client.operati
 /// Optional histogram (rows): number of rows/items returned by an operation.
 pub const METRIC_RESPONSE_RETURNED_ROWS: &str = "db.client.response.returned_rows";
 
-/// Optional up-down counter (instances): number of live
-/// [`CosmosMetricsHandler`](super::CosmosMetricsHandler) instances (one per
-/// instrumented client, under the intended one-handler-per-client registration).
+/// Optional up-down counter of live clients registered with a metrics handler.
 pub const METRIC_ACTIVE_INSTANCE_COUNT: &str = "azure.cosmosdb.client.active_instance.count";
 
 /// Optional counter (operations): number of operations that dispatched a
@@ -87,25 +76,20 @@ pub const UNIT_OPERATION: &str = "{operation}";
 
 /// Bucket boundaries for [`METRIC_OPERATION_DURATION`], in seconds.
 ///
-/// Semconv advice for `db.client.operation.duration`. Spans sub-millisecond
-/// (cache/emulator) through 10 s (a badly degraded or retried request).
+/// Spans 1 millisecond through 10 seconds.
 pub const BUCKETS_OPERATION_DURATION_SECONDS: &[f64] =
     &[0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0];
 
 /// Bucket boundaries for [`METRIC_OPERATION_REQUEST_CHARGE`], in request units.
 ///
-/// Cosmos-specific, so there is no semconv advice to follow. Chosen to give
-/// resolution where Cosmos operations actually sit: a point read is ~1 RU and a
-/// small write ~5-10 RU, so the low end is finely divided, while cross-partition
-/// queries reaching into the thousands still land in a meaningful bucket rather
-/// than overflowing.
+/// Spans 1 through 5,000 request units.
 pub const BUCKETS_REQUEST_CHARGE_RU: &[f64] = &[
     1.0, 2.5, 5.0, 10.0, 25.0, 50.0, 100.0, 250.0, 500.0, 1000.0, 2500.0, 5000.0,
 ];
 
 /// Bucket boundaries for [`METRIC_RESPONSE_RETURNED_ROWS`], in rows.
 ///
-/// Semconv advice for `db.client.response.returned_rows`.
+/// Spans 1 through 10 million rows.
 pub const BUCKETS_RETURNED_ROWS: &[f64] = &[
     1.0,
     10.0,

@@ -43,11 +43,12 @@ impl BatchOptions {
 
 /// Options for batch upsert operations.
 ///
-/// Upsert supports both conditional options for optimistic concurrency control.
+/// Supports [`Precondition::IfMatch`] and [`Precondition::IfNoneMatch`] for
+/// conditional upserts.
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct BatchUpsertOptions {
-    /// Conditional ETag check for optimistic concurrency control.
+    /// Optional `If-Match` or `If-None-Match` ETag condition.
     pub precondition: Option<Precondition>,
 }
 
@@ -61,12 +62,11 @@ impl BatchUpsertOptions {
 
 /// Options for batch replace operations.
 ///
-/// Replace only supports `if_match` for optimistic concurrency control,
-/// since the item must exist to be replaced.
+/// Only [`Precondition::IfMatch`] is applied; other preconditions are ignored.
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct BatchReplaceOptions {
-    /// Conditional ETag check for optimistic concurrency control.
+    /// Optional `If-Match` ETag condition; other preconditions are ignored.
     pub precondition: Option<Precondition>,
 }
 
@@ -80,11 +80,12 @@ impl BatchReplaceOptions {
 
 /// Options for batch read operations.
 ///
-/// Read supports both conditional options, commonly used for cache validation.
+/// Supports [`Precondition::IfMatch`] and [`Precondition::IfNoneMatch`]
+/// for conditional reads.
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct BatchReadOptions {
-    /// Conditional ETag check, commonly used for cache validation.
+    /// Optional `If-Match` or `If-None-Match` ETag condition.
     pub precondition: Option<Precondition>,
 }
 
@@ -98,12 +99,11 @@ impl BatchReadOptions {
 
 /// Options for batch delete operations.
 ///
-/// Delete only supports `if_match` for optimistic concurrency control,
-/// since the item must exist to be deleted.
+/// Only [`Precondition::IfMatch`] is applied; other preconditions are ignored.
 #[derive(Clone, Debug, Default)]
 #[non_exhaustive]
 pub struct BatchDeleteOptions {
-    /// Conditional ETag check for optimistic concurrency control.
+    /// Optional `If-Match` ETag condition; other preconditions are ignored.
     pub precondition: Option<Precondition>,
 }
 

@@ -1082,30 +1082,37 @@ impl TransportShardDiagnostics {
         }
     }
 
+    /// Returns the identifier of the HTTP/2 connection shard.
     pub fn shard_id(&self) -> u64 {
         self.shard_id
     }
 
+    /// Returns the approximate number of requests in flight when captured.
     pub fn estimated_inflight(&self) -> u32 {
         self.estimated_inflight
     }
 
+    /// Returns the consecutive failure count when captured.
     pub fn consecutive_failures(&self) -> u32 {
         self.consecutive_failures
     }
 
+    /// Returns the number of requests started on this shard.
     pub fn total_requests(&self) -> u64 {
         self.total_requests
     }
 
+    /// Returns the number of failed requests on this shard.
     pub fn total_failures(&self) -> u64 {
         self.total_failures
     }
 
+    /// Returns the number of requests started but not completed, including cancellations.
     pub fn total_cancellations(&self) -> u64 {
         self.total_cancellations
     }
 
+    /// Returns whether the shard was marked for eviction when captured.
     pub fn marked_for_eviction(&self) -> bool {
         self.marked_for_eviction
     }
@@ -1134,14 +1141,17 @@ impl FailedTransportShardDiagnostics {
         }
     }
 
+    /// Returns the state of the shard before the local retry.
     pub fn transport_shard(&self) -> &TransportShardDiagnostics {
         &self.transport_shard
     }
 
+    /// Returns whether the failed request reached the transport.
     pub fn request_sent(&self) -> RequestSentStatus {
         self.request_sent
     }
 
+    /// Returns the error reported by the failed shard request.
     pub fn error(&self) -> &str {
         &self.error
     }
@@ -3013,14 +3023,21 @@ impl DiagnosticsContext {
     /// sharing without cloning the entire vector. Cloning the `Arc` is
     /// a cheap atomic increment (~5 CPU cycles).
     ///
-    /// # Example
+    /// # Examples
     ///
-    /// ```ignore
-    /// let requests = diagnostics.requests();
-    /// for req in requests.iter() {
-    ///     println!("Request to {} took {}ms", req.endpoint, req.duration_ms);
+    /// ```
+    /// use azure_data_cosmos_driver::DiagnosticsContext;
+    ///
+    /// fn print_request_timings(diagnostics: &DiagnosticsContext) {
+    ///     let requests = diagnostics.requests();
+    ///     for request in requests.iter() {
+    ///         println!(
+    ///             "Request to {} took {} ms",
+    ///             request.endpoint(),
+    ///             request.duration_ms()
+    ///         );
+    ///     }
     /// }
-    /// // requests can be stored or passed elsewhere cheaply
     /// ```
     pub fn requests(&self) -> Arc<Vec<RequestDiagnostics>> {
         Arc::clone(&self.requests)

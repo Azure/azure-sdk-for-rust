@@ -15,7 +15,9 @@ use crate::feed::FeedBody;
 /// [`ResourceResponse::into_body`](crate::models::ResourceResponse::into_body), and
 /// [`BatchResponse::into_body`](crate::models::BatchResponse::into_body). Internally
 /// the body may be a single payload (point reads/writes, batches) or a list of
-/// per-document slices (feed responses); use the helpers below to consume it.
+/// per-document slices (feed responses); use [`single()`](Self::single),
+/// [`items()`](Self::items), or [`into_single()`](Self::into_single)
+/// to consume it.
 #[derive(Clone, Default, SafeDebug)]
 #[non_exhaustive]
 pub struct ResponseBody(DriverResponseBody);
@@ -29,7 +31,11 @@ impl ResponseBody {
         self.0.is_empty()
     }
 
-    /// Returns the single payload, or an error if the body is a feed response.
+    /// Returns the single payload, or empty bytes if the body has no payload.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the body contains feed items rather than a single payload.
     pub fn single(self) -> crate::Result<Bytes> {
         self.0.single().map_err(Into::into)
     }
@@ -41,7 +47,12 @@ impl ResponseBody {
         self.0.items().map_err(Into::into)
     }
 
-    /// Deserializes a single-payload body as JSON of type `T`.
+    /// Deserializes a single payload as `T` from UTF-8 or Cosmos binary JSON.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the body contains feed items or its bytes (including
+    /// an empty body) cannot be deserialized as `T`.
     pub fn into_single<T: DeserializeOwned>(self) -> crate::Result<T> {
         self.0.into_single().map_err(Into::into)
     }

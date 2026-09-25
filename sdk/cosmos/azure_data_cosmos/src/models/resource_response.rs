@@ -13,13 +13,8 @@ use serde::de::DeserializeOwned;
 
 /// A response from a resource management operation (databases, containers, throughput).
 ///
-/// Carries common Cosmos response metadata plus a type parameter `T` that names
-/// the model the body deserializes into. Unlike [`ItemResponse`](crate::models::ItemResponse)
-/// — where the payload type is user-defined and the SDK never knows it — every
-/// `ResourceResponse`-returning client method statically knows its model
-/// (`DatabaseProperties`, `ContainerProperties`, `ThroughputProperties`, …), so
-/// keeping `T` on the response type lets callers write `.into_model()?` without
-/// a turbofish.
+/// Use [`into_model()`](Self::into_model) to deserialize the body as `T`,
+/// or [`into_body()`](Self::into_body) to inspect the raw payload.
 #[derive(SafeDebug)]
 #[safe(true)]
 #[non_exhaustive]
@@ -53,17 +48,20 @@ impl<T> ResourceResponse<T> {
 
     /// Returns the diagnostics for this operation.
     ///
-    /// The returned [`DiagnosticsContext`] surfaces the full per-operation
-    /// diagnostics produced by the driver pipeline (request tracking, retries,
-    /// regions contacted, RU charges, status, etc.).
+    /// The [`DiagnosticsContext`] includes attempts, regions contacted,
+    /// request charges, and status.
     pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         self.response.diagnostics()
     }
 }
 
 impl<T: DeserializeOwned> ResourceResponse<T> {
-    /// Deserializes the response body into the model type `T` named by this
-    /// response.
+    /// Deserializes the response body as `T`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the body is not a single payload or cannot be
+    /// deserialized as `T`.
     pub fn into_model(self) -> crate::Result<T> {
         self.response.into_model::<T>()
     }

@@ -21,10 +21,11 @@
 //! - Write a typed value to binary bytes with [`to_vec`], or a
 //!   [`serde_json::Value`] with [`encode`].
 //!
-//! The decoder accepts every wire form the service can emit. The encoder emits
-//! a valid subset of those forms rather than the most compact encoding; because
-//! the service accepts the verbose form, an encode/decode round-trip preserves
-//! the original value.
+//! The decoder handles service wire forms except user-dictionary strings
+//! (whose dictionary is unavailable) and unsupported `Float16` values. The
+//! encoder emits a valid subset of the forms rather than the most compact
+//! encoding. An encode/decode round-trip preserves supported JSON values,
+//! though integral floating-point numbers may decode as integers.
 //!
 //! The wire constants in [`markers`] match the service byte-for-byte.
 
@@ -59,12 +60,10 @@ pub const PREAMBLE: u8 = 0x80;
 
 /// Returns `true` if `buffer` appears to be Cosmos binary JSON.
 ///
-/// Detection is the single-byte test described in the spec: a buffer is binary
-/// iff its first byte is the [`PREAMBLE`]. An empty buffer is not binary.
+/// Detection checks only whether the first byte is [`PREAMBLE`]. An empty
+/// buffer is not binary. This check does not validate the remaining bytes.
 ///
-/// This is intentionally independent of any HTTP content negotiation so the
-/// response path can decode binary bodies even when headers are absent or
-/// unexpected.
+/// Detection does not depend on HTTP content negotiation.
 ///
 /// # Examples
 ///
@@ -81,10 +80,7 @@ pub fn is_binary(buffer: &[u8]) -> bool {
 
 /// Transcodes a Cosmos binary JSON buffer to UTF-8 **text** JSON.
 ///
-/// This is the driver-side conversion used when an upstream SDK/app wants to
-/// deal only with text JSON while still keeping the wire binary (efficient RUs
-/// and network bandwidth): the request and the service response stay binary,
-/// and the driver converts the binary response to text before handing it back.
+/// Use this when a caller needs text JSON from a binary response.
 ///
 /// Behavior:
 ///
@@ -188,11 +184,8 @@ pub(crate) fn normalize_integral_floats(value: &mut serde_json::Value) {
 
 /// Transcodes a UTF-8 **text** JSON buffer to Cosmos **binary** JSON.
 ///
-/// This is the mirror of [`transcode_to_text`] for the **request** path: when a
-/// schema-agnostic caller (for example an FFI host) deals only in text JSON but
-/// the driver negotiates a binary wire, the driver converts the text request
-/// body to binary before sending it. No item schema is required — the buffer is
-/// parsed to a [`serde_json::Value`] and re-encoded.
+/// Use this to encode a text JSON request body for a binary wire without
+/// knowing the item's schema. This is the inverse of [`transcode_to_text()`].
 ///
 /// Behavior:
 ///

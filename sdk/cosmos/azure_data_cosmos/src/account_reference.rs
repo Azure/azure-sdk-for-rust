@@ -10,15 +10,16 @@ use azure_core::credentials::Secret;
 use azure_core::credentials::TokenCredential;
 use std::sync::Arc;
 
-/// A reference to a Cosmos DB account, combining an endpoint with a credential.
+/// An account endpoint and credential used to connect to Cosmos DB.
 ///
 /// This type bundles together the account endpoint and the credential needed to
-/// authenticate with it. Use convenience constructors [`with_credential()`](Self::with_credential)
-/// or [`with_authentication_key()`](Self::with_authentication_key) (requires the `key_auth` feature) to create instances.
+/// authenticate with it. Use [`with_credential()`](Self::with_credential)
+/// for Microsoft Entra ID, or enable `key_auth` and use
+/// [`with_authentication_key()`](Self::with_authentication_key) for an account key.
 ///
 /// # Examples
 ///
-/// Using Entra ID authentication:
+/// Using Microsoft Entra ID authentication:
 ///
 /// ```rust,no_run
 /// use azure_data_cosmos::{AccountReference, AccountEndpoint};
@@ -30,14 +31,20 @@ use std::sync::Arc;
 /// let account = AccountReference::with_credential(endpoint, credential);
 /// ```
 ///
-/// Using key authentication (requires `key_auth` feature):
+/// Using key authentication (requires the `key_auth` feature):
 ///
-/// ```rust,ignore
+/// ```rust
+/// # #[cfg(feature = "key_auth")]
+/// # fn main() {
 /// use azure_data_cosmos::{AccountReference, AccountEndpoint};
 /// use azure_core::credentials::Secret;
 ///
 /// let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
 /// let account = AccountReference::with_authentication_key(endpoint, Secret::from("my_account_key"));
+/// # let _ = account;
+/// # }
+/// # #[cfg(not(feature = "key_auth"))]
+/// # fn main() {}
 /// ```
 #[derive(Clone, Debug)]
 #[non_exhaustive]
@@ -47,7 +54,7 @@ pub struct AccountReference {
 }
 
 impl AccountReference {
-    /// Creates a new account reference with an Entra ID (Azure AD) token credential.
+    /// Creates an account reference with a Microsoft Entra ID token credential.
     ///
     /// # Arguments
     ///

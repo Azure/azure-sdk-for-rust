@@ -20,6 +20,10 @@ pub(crate) enum HttpVersionPolicy {
     Http2Only,
 }
 
+/// Driver-supplied HTTP client configuration.
+///
+/// Passed to [`HttpClientFactory::build()`] when creating a transport client.
+/// Its fields are private to the driver.
 #[derive(Clone, Copy, Debug)]
 pub struct HttpClientConfig {
     pub(crate) version_policy: HttpVersionPolicy,
@@ -167,7 +171,17 @@ mod tests {
     }
 }
 
+/// Creates HTTP transport clients for the driver.
+///
+/// Available through the unsupported `__internal_mocking` feature for test
+/// harnesses that replace the default network transport.
 pub trait HttpClientFactory: fmt::Debug + Send + Sync {
+    /// Creates a client using the driver's connection pool and transport configuration.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the client cannot be created from the supplied
+    /// configuration.
     fn build(
         &self,
         connection_pool: &ConnectionPoolOptions,

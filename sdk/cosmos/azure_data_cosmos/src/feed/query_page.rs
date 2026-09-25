@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! [`QueryFeedPage`] — a single page of query results with query-specific metadata.
+//! A page of query results with query-specific metadata.
 
 use std::sync::Arc;
 
@@ -45,12 +45,12 @@ impl<T> QueryFeedPage<T> {
         &self.page
     }
 
-    /// Gets the items in this page of results.
+    /// Returns the items in this page of results.
     pub fn items(&self) -> &[T] {
         self.page.items()
     }
 
-    /// Consumes the page and returns a vector of the items.
+    /// Consumes the page and returns its items.
     pub fn into_items(self) -> Vec<T> {
         self.page.into_items()
     }

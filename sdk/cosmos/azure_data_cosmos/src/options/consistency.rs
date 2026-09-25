@@ -14,10 +14,15 @@ use std::fmt::{self, Display};
 /// Learn more at [Consistency Levels](https://learn.microsoft.com/azure/cosmos-db/consistency-levels).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum ConsistencyLevel {
+    /// Reads preserve the order of writes but may lag behind the latest write.
     ConsistentPrefix,
+    /// Reads may return older values without preserving write order.
     Eventual,
+    /// Reads within a session observe that session's writes.
     Session,
+    /// Reads may lag behind writes within a configured time or version bound.
     BoundedStaleness,
+    /// Reads return the latest committed version.
     Strong,
 }
 

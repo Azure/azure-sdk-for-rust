@@ -37,13 +37,25 @@ require disabling binary encoding.
 
 For now, you must disable Binary Encoding explicitly when building the client:
 
-```rust,ignore
-use azure_data_cosmos::{options::BinaryEncodingOptions, CosmosClient};
+```rust,no_run
+use azure_core::credentials::TokenCredential;
+use azure_data_cosmos::{
+    options::BinaryEncodingOptions, AccountEndpoint, AccountReference, CosmosClient,
+    RoutingStrategy,
+};
+use azure_identity::DeveloperToolsCredential;
+use std::sync::Arc;
 
-let client = CosmosClient::builder()
-    .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(false))
-    .build(account, routing_strategy)
-    .await?;
+async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/".parse()?;
+    let credential: Arc<dyn TokenCredential> = DeveloperToolsCredential::new(None)?;
+    let account = AccountReference::with_credential(endpoint, credential);
+    let _client = CosmosClient::builder()
+        .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(false))
+        .build(account, RoutingStrategy::ProximityTo("East US".into()))
+        .await?;
+    Ok(())
+}
 ```
 
 Alternatively, disable binary encoding through the environment before starting
@@ -188,16 +200,23 @@ gated behind the `preview_patch` feature and is **not production-ready**:
 cargo add azure_data_cosmos --features preview_patch
 ```
 
-```rust,ignore
+```rust,no_run
+# #[cfg(feature = "preview_patch")]
+use azure_data_cosmos::clients::ContainerClient;
+# #[cfg(feature = "preview_patch")]
 use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
 
-let patch = PatchInstructions::from(vec![
-    PatchOperation::set("/value", serde_json::json!("4")),
-]);
-let patched: Item = container
-    .patch_item("partition1", "1", patch, None)
-    .await?
-    .into_model()?;
+# #[cfg(feature = "preview_patch")]
+async fn example(container: &ContainerClient) -> azure_data_cosmos::Result<()> {
+    let patch = PatchInstructions::from(vec![
+        PatchOperation::set("/value", serde_json::json!("4")),
+    ]);
+    let _patched: serde_json::Value = container
+        .patch_item("partition1", "1", patch, None)
+        .await?
+        .into_model()?;
+    Ok(())
+}
 ```
 
 The default `PatchStrategy::Auto` uses one server-side request for retry-safe

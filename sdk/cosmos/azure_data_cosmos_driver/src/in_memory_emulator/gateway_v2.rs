@@ -24,18 +24,30 @@ use crate::{
 
 use super::{ConsistencyLevel, InMemoryEmulatorHttpClient};
 
-/// Binary-wire observations for one hosted Gateway V2 request.
+/// Observations about one hosted Gateway V2 request.
+///
+/// Available only with the internal emulator feature; these values describe
+/// the encoded request and response, not the decoded item contents.
 #[doc(hidden)]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct GatewayV2PayloadAudit {
+    /// Whether the request advertised support for binary serialization.
     pub binary_negotiated: bool,
+    /// Whether the request body was encoded as binary JSON.
     pub binary_request_payload: bool,
+    /// Whether the response body was encoded as binary JSON.
     pub binary_response_payload: bool,
+    /// The read consistency strategy carried by the request, if present.
     pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
 }
 
 impl InMemoryEmulatorHttpClient {
     /// Executes a hosted Gateway V2 request and returns an RNTBD-framed response.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the response cannot be encoded. Invalid request
+    /// frames are instead returned as framed bad-request responses.
     #[doc(hidden)]
     pub async fn execute_gateway_v2_request(
         &self,
@@ -44,7 +56,12 @@ impl InMemoryEmulatorHttpClient {
         Ok(self.execute_gateway_v2_request_audited(request).await?.0)
     }
 
-    /// Executes a hosted Gateway V2 request and reports binary wire evidence.
+    /// Executes a hosted Gateway V2 request and reports wire-format observations.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the response cannot be encoded. Invalid request
+    /// frames are instead returned as framed bad-request responses.
     #[doc(hidden)]
     pub async fn execute_gateway_v2_request_audited(
         &self,

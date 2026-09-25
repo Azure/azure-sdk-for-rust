@@ -87,8 +87,6 @@ impl DatabaseClient {
     /// # Arguments
     /// * `container` - The name or RID of the container.
     ///
-    /// # Errors
-    ///
     /// * `options` - Optional parameters for creating the client.
     ///
     /// # Errors
@@ -140,8 +138,14 @@ impl DatabaseClient {
     /// let response = database_client.read(None)
     ///     .await?
     ///     .into_model()?;
+    /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database cannot be read. Deserializing the
+    /// response model can also fail.
     #[cfg(feature = "control_plane")]
     pub async fn read(
         &self,
@@ -179,12 +183,19 @@ impl DatabaseClient {
     /// # use azure_data_cosmos::clients::DatabaseClient;
     /// # let db_client: DatabaseClient = panic!("this is a non-running example");
     /// let containers = db_client
-    ///     .query_containers("SELECT * FROM dbs", None)
+    ///     .query_containers("SELECT * FROM c", None)
     ///     .await?;
+    /// # Ok(())
     /// # }
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the query cannot be serialized or its execution
+    /// plan cannot be created. Subsequent fetch and deserialization errors
+    /// appear as items in the returned stream.
     #[cfg(feature = "control_plane")]
     pub async fn query_containers(
         &self,
@@ -224,6 +235,11 @@ impl DatabaseClient {
     /// # Arguments
     /// * `properties` - A [`ContainerProperties`] describing the new container.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `properties` cannot be serialized or the create
+    /// request fails.
     #[cfg(feature = "control_plane")]
     pub async fn create_container(
         &self,
@@ -268,6 +284,10 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database cannot be deleted.
     #[cfg(feature = "control_plane")]
     pub async fn delete(
         &self,
@@ -322,6 +342,11 @@ impl DatabaseClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database RID or its throughput offer cannot
+    /// be resolved or the offer cannot be read.
     #[cfg(feature = "control_plane")]
     pub async fn read_throughput(
         &self,
@@ -365,6 +390,11 @@ impl DatabaseClient {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the database RID or its throughput offer cannot
+    /// be resolved or the replace request fails. Polling can also yield an error.
     #[cfg(feature = "control_plane")]
     pub async fn begin_replace_throughput(
         &self,

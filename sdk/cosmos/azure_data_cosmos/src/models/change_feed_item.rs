@@ -15,7 +15,7 @@
 //! which yields [`ChangeFeedItem<D>`] envelopes.
 //!
 //! For [`ChangeFeedMode::LatestVersion`](crate::options::ChangeFeedMode::LatestVersion)
-//! reads the service surfaces the latest version of each created or replaced
+//! reads the service surfaces the latest version of changed
 //! item, so `current` is populated, `previous` is absent, and `metadata`
 //! (when present) is partial — it may carry positional fields such as
 //! `lsn`/`crts` but no operation type. The envelope also models `previous` and
@@ -48,7 +48,7 @@ where
 pub struct LogicalSequenceNumber(i64);
 
 impl LogicalSequenceNumber {
-    /// The underlying logical sequence number value.
+    /// Returns the underlying logical sequence number.
     pub fn value(&self) -> i64 {
         self.0
     }
@@ -124,8 +124,8 @@ pub struct ChangeFeedMetadata {
     #[serde(rename = "lsn", default)]
     lsn: Option<LogicalSequenceNumber>,
 
-    /// The conflict resolution timestamp (`crts`) of the change, measured since
-    /// the Unix epoch.
+    /// The conflict resolution timestamp (`crts`) in seconds since the Unix epoch.
+    /// Negative values are reported as zero.
     #[serde(
         rename = "crts",
         default,
@@ -177,8 +177,8 @@ impl ChangeFeedMetadata {
         self.lsn
     }
 
-    /// The conflict resolution timestamp (`crts`) of the change, measured since
-    /// the Unix epoch, when reported by the service.
+    /// Returns the conflict resolution timestamp (`crts`) as a duration since
+    /// the Unix epoch, when reported. Negative values are reported as zero.
     pub fn conflict_resolution_timestamp(&self) -> Option<Duration> {
         self.conflict_resolution_timestamp
     }
@@ -222,8 +222,8 @@ impl ChangeFeedMetadata {
 /// it yields `ChangeFeedItem<T>` and does not strip the envelope.
 ///
 /// For [`ChangeFeedMode::LatestVersion`](crate::options::ChangeFeedMode::LatestVersion)
-/// reads [`current`](Self::current) holds the latest version of each created or
-/// replaced document; [`previous`](Self::previous) is absent and
+/// reads [`current`](Self::current) holds the latest version of each changed
+/// document; [`previous`](Self::previous) is absent and
 /// [`metadata`](Self::metadata) is either absent or partial (no operation
 /// type). Full-fidelity (all versions and deletes) reads additionally populate
 /// [`metadata`](Self::metadata) and, for
@@ -373,12 +373,12 @@ impl<T> ChangeFeedItem<T> {
         self.metadata.as_ref()
     }
 
-    /// The type of change (create, replace, or delete), when metadata is
-    /// present.
+    /// Returns the change type (create, replace, or delete), when reported.
     ///
     /// Convenience accessor that delegates to
     /// [`metadata().operation_type()`](ChangeFeedMetadata::operation_type).
-    /// Returns `None` when no metadata is reported (e.g. LatestVersion reads).
+    /// Returns `None` when metadata or its operation type is absent, including
+    /// some LatestVersion reads.
     pub fn operation_type(&self) -> Option<ChangeFeedOperationType> {
         self.metadata
             .as_ref()

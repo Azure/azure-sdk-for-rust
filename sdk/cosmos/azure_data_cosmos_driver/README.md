@@ -71,7 +71,7 @@ When the resolution budget is exhausted but the cache covers every frame, backtr
 
 **Tuning programmatically.**
 
-```rust,ignore
+```rust
 use azure_data_cosmos_driver::error::{set_backtrace_options, BacktraceOptions};
 
 // Start from the env-var-derived default (`RUST_LIB_BACKTRACE` /
@@ -82,22 +82,15 @@ opts.max_resolutions_per_second = 50;   // richer rendering budget
 set_backtrace_options(opts);
 
 // Or fully disable, overriding any env var that asked for backtraces:
-set_backtrace_options(BacktraceOptions {
-    max_captures_per_second: 0,
-    max_resolutions_per_second: 0,
-    ..BacktraceOptions::default()
-});
+opts.max_captures_per_second = 0;
+opts.max_resolutions_per_second = 0;
+set_backtrace_options(opts);
 ```
 
 **Reading a backtrace.**
 
-```rust,ignore
-if let Err(err) = driver.execute_operation(op, options).await {
-    if let Some(bt) = err.backtrace() {
-        eprintln!("{bt}");
-    }
-}
-```
+On an operation error, call `err.backtrace()` and display the returned
+backtrace, if present. Capture may be disabled or throttled.
 
 ## Architecture
 

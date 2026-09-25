@@ -28,8 +28,7 @@ use std::borrow::Cow;
 ///     name: String,
 /// }
 ///
-/// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
-/// # let container_client: azure_data_cosmos::clients::ContainerClient = panic!("this is a non-running example");
+/// # async fn doc(container_client: &azure_data_cosmos::clients::ContainerClient) -> Result<(), Box<dyn std::error::Error>> {
 /// let product1 = Product {
 ///     id: "product1".to_string(),
 ///     category: "category1".to_string(),
@@ -40,6 +39,8 @@ use std::borrow::Cow;
 ///     .create_item(product1)?;
 ///
 /// let response = container_client.execute_transactional_batch(batch, None).await?;
+/// let results = response.into_model()?.results().to_vec();
+/// assert_eq!(results.len(), 1);
 /// # Ok(())
 /// # }
 /// ```
@@ -52,9 +53,6 @@ pub struct TransactionalBatch {
 
 impl TransactionalBatch {
     /// Creates a new transactional batch for the specified partition key.
-    ///
-    /// # Arguments
-    /// * `partition_key` - The partition key for all operations in this batch.
     ///
     /// # Examples
     ///
@@ -82,8 +80,12 @@ impl TransactionalBatch {
 
     /// Adds a create operation to the batch.
     ///
-    /// # Arguments
-    /// * `item` - The item to create. Must implement [`Serialize`].
+    /// Serializes `item` as the operation body. Its partition key must match
+    /// the batch's [`partition_key()`](Self::partition_key).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `item` cannot be serialized to JSON.
     ///
     /// # Examples
     ///
@@ -119,9 +121,13 @@ impl TransactionalBatch {
 
     /// Adds an upsert operation to the batch.
     ///
-    /// # Arguments
-    /// * `item` - The item to upsert. Must implement [`Serialize`].
-    /// * `options` - Optional conditional options for the operation.
+    /// Serializes `item` as the operation body. Its partition key must match
+    /// the batch's [`partition_key()`](Self::partition_key). Supports both
+    /// `If-Match` and `If-None-Match` ETag conditions in `options`.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `item` cannot be serialized to JSON.
     pub fn upsert_item<T: Serialize>(
         mut self,
         item: T,
@@ -145,10 +151,13 @@ impl TransactionalBatch {
 
     /// Adds a replace operation to the batch.
     ///
-    /// # Arguments
-    /// * `item_id` - The id of the item to replace.
-    /// * `item` - The new item data. Must implement [`Serialize`].
-    /// * `options` - Optional conditional options for the operation (e.g., `if_match` for optimistic concurrency).
+    /// `item_id` identifies an item in the batch's partition.
+    /// Only an `If-Match` precondition in `options` is applied;
+    /// other preconditions are ignored.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `item` cannot be serialized to JSON.
     pub fn replace_item<T: Serialize>(
         mut self,
         item_id: impl Into<Cow<'static, str>>,
@@ -170,9 +179,8 @@ impl TransactionalBatch {
 
     /// Adds a read operation to the batch.
     ///
-    /// # Arguments
-    /// * `item_id` - The id of the item to read.
-    /// * `options` - Optional conditional options for the operation.
+    /// `item_id` identifies an item in the batch's partition.
+    /// Supports `If-Match` and `If-None-Match` ETag conditions in `options`.
     pub fn read_item(
         mut self,
         item_id: impl Into<Cow<'static, str>>,
@@ -194,9 +202,9 @@ impl TransactionalBatch {
 
     /// Adds a delete operation to the batch.
     ///
-    /// # Arguments
-    /// * `item_id` - The id of the item to delete.
-    /// * `options` - Optional conditional options for the operation (e.g., `if_match` to only delete if ETag matches).
+    /// `item_id` identifies an item in the batch's partition.
+    /// Only an `If-Match` precondition in `options` is applied;
+    /// other preconditions are ignored.
     pub fn delete_item(
         mut self,
         item_id: impl Into<Cow<'static, str>>,
@@ -284,8 +292,8 @@ pub(crate) enum TransactionalBatchOperation {
 
 /// Response from executing a transactional batch.
 ///
-/// The Cosmos DB batch API returns a raw JSON array of operation results,
-/// so we implement a custom deserializer to handle this format.
+/// Call [`results()`](Self::results) to inspect each operation's status and
+/// optional resource body in batch order.
 #[derive(Clone, SafeDebug)]
 #[safe(true)]
 #[non_exhaustive]
@@ -320,20 +328,12 @@ impl<'de> Deserialize<'de> for TransactionalBatchResponse {
 pub struct TransactionalBatchOperationResult {
     /// HTTP status code for this operation.
     ///
-    /// This is exposed as a raw `u16` because the per-operation status comes
-    /// directly from the JSON body of the batch response. We deliberately do
-    /// not deserialize into [`azure_core::http::StatusCode`]: that enum is
-    /// closed and would fail deserialization for any non-canonical status
-    /// code returned by the service. Failing the entire batch deserialization
-    /// because the service introduced a new status value would be a much
-    /// worse caller experience than surfacing the integer as-is.
+    /// Returned as `u16`, including codes not modeled by
+    /// [`azure_core::http::StatusCode`].
     status_code: u16,
 
-    /// The resource body returned by the operation, if any. Stored as
-    /// [`RawValue`](serde_json::value::RawValue) so the JSON bytes are kept
-    /// exactly as the service produced them — callers decide whether (and how)
-    /// to parse them via [`into_model::<T>`](Self::into_model) or
-    /// inspect the raw JSON via [`resource_body`](Self::resource_body).
+    /// The resource body, if returned, retains the service's raw JSON.
+    /// Use [`into_model::<T>()`](Self::into_model) to deserialize it.
     #[serde(default)]
     resource_body: Option<Box<serde_json::value::RawValue>>,
 

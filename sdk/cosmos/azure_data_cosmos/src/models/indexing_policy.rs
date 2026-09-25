@@ -67,31 +67,37 @@ pub struct IndexingPolicy {
 }
 
 impl IndexingPolicy {
+    /// Sets the indexing mode for this policy.
     pub fn with_indexing_mode(mut self, indexing_mode: IndexingMode) -> Self {
         self.indexing_mode = Some(indexing_mode);
         self
     }
 
+    /// Appends an included path to this policy.
     pub fn with_included_path(mut self, included_path: impl Into<PropertyPath>) -> Self {
         self.included_paths.push(included_path.into());
         self
     }
 
+    /// Appends an excluded path to this policy.
     pub fn with_excluded_path(mut self, excluded_path: impl Into<PropertyPath>) -> Self {
         self.excluded_paths.push(excluded_path.into());
         self
     }
 
+    /// Appends a spatial index to this policy.
     pub fn with_spatial_index(mut self, spatial_index: SpatialIndex) -> Self {
         self.spatial_indexes.push(spatial_index);
         self
     }
 
+    /// Appends a composite index to this policy.
     pub fn with_composite_index(mut self, composite_index: CompositeIndex) -> Self {
         self.composite_indexes.push(composite_index);
         self
     }
 
+    /// Appends a vector index to this policy.
     pub fn with_vector_index(mut self, vector_index: VectorIndex) -> Self {
         self.vector_indexes.push(vector_index);
         self
@@ -110,7 +116,9 @@ impl IndexingPolicy {
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub enum IndexingMode {
+    /// Keeps indexes updated as items are written.
     Consistent,
+    /// Disables indexing.
     None,
 }
 
@@ -120,7 +128,7 @@ pub enum IndexingMode {
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub struct PropertyPath {
-    // The path to the property referenced in this index.
+    /// The JSON path referenced by this index.
     pub path: String,
 }
 
@@ -147,7 +155,7 @@ pub struct SpatialIndex {
     /// The path to the property referenced in this index.
     pub path: String,
 
-    /// The spatial types used in this index
+    /// The spatial types used in this index.
     pub types: Vec<SpatialType>,
 }
 
@@ -173,9 +181,13 @@ impl SpatialIndex {
 #[serde(rename_all = "PascalCase")]
 #[non_exhaustive]
 pub enum SpatialType {
+    /// A GeoJSON point.
     Point,
+    /// A GeoJSON polygon.
     Polygon,
+    /// A GeoJSON line string.
     LineString,
+    /// A GeoJSON multipolygon.
     MultiPolygon,
 }
 
@@ -185,7 +197,7 @@ pub enum SpatialType {
 #[serde(transparent)]
 #[non_exhaustive]
 pub struct CompositeIndex {
-    /// The properties in this composite index
+    /// The properties in this composite index.
     pub properties: Vec<CompositeIndexProperty>,
 }
 
@@ -206,10 +218,10 @@ pub struct CompositeIndexProperty {
     /// The path to the property referenced in this index.
     pub path: String,
 
-    /// The order of the composite index.
+    /// The sort order for this property in the composite index.
     ///
-    /// For example, if you want to run the query "SELECT * FROM c ORDER BY c.age asc, c.height desc",
-    /// then you'd specify the order for "/asc" to be *ascending* and the order for "/height" to be *descending*.
+    /// For `ORDER BY c.age ASC, c.height DESC`, use `Ascending` for
+    /// `/age` and `Descending` for `/height`.
     pub order: CompositeIndexOrder,
 }
 
@@ -241,7 +253,9 @@ impl CompositeIndexProperty {
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub enum CompositeIndexOrder {
+    /// Sorts values in ascending order.
     Ascending,
+    /// Sorts values in descending order.
     Descending,
 }
 

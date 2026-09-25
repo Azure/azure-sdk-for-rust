@@ -7,11 +7,9 @@
 /// [`CosmosMetricsHandler`](super::CosmosMetricsHandler) emits.
 ///
 /// The options are per-signal: each optional metric and the extended attribute
-/// set is toggled on its own, focused on *what* is emitted rather than on a
-/// "preview/development" tier. Everything optional is **off by default** — only
-/// the stable, low-cardinality operation-duration metric is emitted — so enabling
-/// metrics never silently multiplies a backend's time-series count (design
-/// decision **D7**); each additional signal is an explicit opt-in.
+/// set is toggled independently. All optional signals are off by default.
+/// The operation-duration metric is emitted when a
+/// [`CosmosMetricsHandler`](super::CosmosMetricsHandler) is registered.
 ///
 /// # Examples
 ///

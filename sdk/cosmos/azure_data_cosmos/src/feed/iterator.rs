@@ -217,9 +217,11 @@ impl<T: Send + DeserializeOwned + 'static> PageSource<T> {
     }
 }
 
-/// Represents a stream of items from a Cosmos DB query.
+/// Streams deserialized items from a Cosmos DB query across pages.
 ///
-/// See [`QueryFeedPage`] for more details on Cosmos DB feeds.
+/// An empty page is skipped. A fetch or deserialization error is yielded once,
+/// then the stream ends. Convert to [`QueryPageIterator`] with
+/// [`into_pages()`](Self::into_pages) to inspect per-page headers and diagnostics.
 #[pin_project::pin_project]
 pub struct QueryItemIterator<T: Send> {
     #[pin]
@@ -255,9 +257,8 @@ impl<T: Send + DeserializeOwned + 'static> QueryItemIterator<T> {
     /// Converts this item iterator into a page iterator, yielding full pages
     /// instead of individual items.
     ///
-    /// IMPORTANT: This will DISCARD any items from the current page that have
-    /// not yet been yielded by the item iterator. Use this method before
-    /// consuming any items to cleanly switch to page-based iteration.
+    /// Discards any items remaining in the current page. Call this before
+    /// consuming items if you need every result.
     pub fn into_pages(self) -> QueryPageIterator<T> {
         QueryPageIterator {
             source: self.source,
@@ -295,12 +296,13 @@ impl<T: Send + DeserializeOwned + 'static> Stream for QueryItemIterator<T> {
     }
 }
 
-/// A stream of pages from a Cosmos DB feed operation.
+/// Streams pages from a Cosmos DB query.
 ///
-/// In addition to yielding [`QueryFeedPage`]s like a regular `Stream`, this
+/// In addition to yielding [`QueryFeedPage`]s as a [`Stream`], this
 /// iterator can be snapshotted into a [`ContinuationToken`] for later
 /// resumption via
-/// [`to_continuation_token`](Self::to_continuation_token).
+/// [`to_continuation_token()`](Self::to_continuation_token). A fetch or
+/// deserialization error is yielded once, then the stream ends.
 #[pin_project::pin_project]
 pub struct QueryPageIterator<T: Send> {
     #[pin]
@@ -322,8 +324,8 @@ impl<T: Send + DeserializeOwned + 'static> QueryPageIterator<T> {
     ///
     /// # Errors
     ///
-    /// Returns an error if a page fetch is currently in flight (the plan
-    /// state is being mutated and cannot be safely snapshotted).
+    /// Returns an error if a page fetch is currently in flight or the
+    /// current position cannot be encoded as a token.
     pub fn to_continuation_token(&self) -> crate::Result<ContinuationToken> {
         match &self.source {
             PageSource::Live(state) => state.to_continuation_token(),

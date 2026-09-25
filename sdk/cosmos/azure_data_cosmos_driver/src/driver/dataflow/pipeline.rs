@@ -87,7 +87,10 @@ impl Pipeline {
 
 /// A plan for executing a Cosmos DB operation.
 ///
-/// Produced by [`CosmosDriver::plan_operation`](crate::driver::CosmosDriver::plan_operation).
+/// Produced by [`CosmosDriver::plan_operation()`](crate::driver::CosmosDriver::plan_operation).
+/// Pass it to [`CosmosDriver::execute_plan()`](crate::driver::CosmosDriver::execute_plan)
+/// to retrieve pages, then call [`to_continuation_token()`](Self::to_continuation_token)
+/// to resume later.
 pub struct OperationPlan {
     pub(crate) pipeline: Pipeline,
     pub(crate) operation: Arc<CosmosOperation>,
@@ -182,37 +185,19 @@ impl OperationPlan {
             .build()
     }
 
-    /// Snapshots this plan into a [`ContinuationToken`] suitable for cross-process
-    /// resumption.
+    /// Returns a [`ContinuationToken`] for resuming this plan later.
     ///
-    /// Snapshotting walks the pipeline tree and serializes a minimal record of
-    /// each node's progress. The result can be passed back to
-    /// [`CosmosDriver::plan_operation`](crate::driver::CosmosDriver::plan_operation)
-    /// (with the same operation) to resume where this plan left off.
+    /// Pass the token and the same operation to
+    /// [`CosmosDriver::plan_operation()`](crate::driver::CosmosDriver::plan_operation).
     ///
     /// # Errors
     ///
-    /// Returns an error if a live pipeline node violates a snapshot-time
-    /// invariant — for example, a child inside a `SequentialDrain` whose
-    /// `feed_range` cannot be determined. These errors indicate an internal
-    /// pipeline bug rather than user input, and surface as a Cosmos client
-    /// error rather than silently producing a lossy continuation token.
-    ///
-    /// Also returns an error when an earlier page failed in a way that left a
-    /// node's progress and its child's resume position disagreeing — a skip/take
-    /// node whose page could not be encoded, for instance. That is neither an
-    /// invariant violation nor an internal bug: it is a genuine failure on the
-    /// data path, reported here because no token minted afterwards could resume
-    /// correctly.
-    ///
-    /// The same applies when a page was produced but could not be delivered to
-    /// the caller — a binary response body that failed to transcode to text.
-    /// Reported as
+    /// Returns an error for operations other than container queries or change
+    /// feeds, if the plan's state cannot be serialized, or if an earlier
+    /// failed page left its resume position unusable. If a page advanced the
+    /// plan but could not be returned, this returns
     /// [`CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE`](crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE).
-    /// That failure also stops the plan being executed again — see
-    /// [`CosmosDriver::execute_plan`](crate::driver::CosmosDriver::execute_plan)
-    /// — so a caller cannot step over the lost page by simply pulling the next
-    /// one instead of minting a token.
+    /// Re-run the operation from the last token captured successfully.
     pub fn to_continuation_token(&self) -> crate::error::Result<ContinuationToken> {
         if self.continuation_poisoned {
             return Err(crate::error::CosmosError::builder()

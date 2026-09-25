@@ -6,11 +6,11 @@
 //! This module contains types for configuring driver instances and individual operations.
 //! Options follow a four-level hierarchy with layered resolution:
 //!
-//! **Environment → Runtime → Account (Driver) → Operation** (lowest to highest priority)
+//! **Environment → Runtime → Account (Driver) → Operation** (lowest to highest priority).
 //!
 //! [`OperationOptions`] is the single option group for all layered configuration.
-//! It uses `#[derive(CosmosOptions)]` to generate an [`OperationOptionsView`],
-//! [`OperationOptionsBuilder`], `Default`, and `from_env()` constructors.
+//! Its builder ([`OperationOptionsBuilder`]) and resolved view
+//! ([`OperationOptionsView`]) support configuring and inspecting those layers.
 //!
 //! [`ConnectionPoolOptions`] and [`DiagnosticsOptions`] are captured once at
 //! initialization time and do not participate in per-operation layered resolution.

@@ -19,7 +19,7 @@ use super::reader::{ContainerHeader, Frame, Reader, ScalarToken};
 use super::{is_binary, BinaryError, Result};
 
 /// Maximum container nesting depth, mirroring the reference decoder's
-/// [`MAX_DEPTH`](super::reader) so both paths reject the same
+/// [`super::reader::MAX_DEPTH`] so both paths reject the same
 /// nesting.
 const MAX_DEPTH: usize = 256;
 
@@ -36,9 +36,9 @@ const MAX_DEPTH: usize = 256;
 ///
 /// # Errors
 ///
-/// Returns a [`BinaryError`] if the buffer is not binary (missing preamble), is
-/// truncated, contains an invalid marker, has trailing bytes, or if `T`'s
-/// `Deserialize` implementation rejects the decoded shape.
+/// Returns a [`BinaryError`] if the preamble is missing, the buffer is
+/// truncated, a marker is invalid or unsupported, the nesting limit is
+/// exceeded, trailing bytes remain, or `T` rejects the decoded value.
 ///
 /// # Examples
 ///

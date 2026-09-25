@@ -12,23 +12,16 @@ use crate::{feed::ContinuationToken, options::QueryPlanMode};
 
 /// Options that apply to feed-style operations (paged reads, queries, etc.).
 ///
-/// These settings control paging behavior — how many items the service should
-/// return per page and where to resume from. They are surfaced as a separate
-/// struct so other feed-style APIs can adopt them without re-declaring the
-/// same fields.
-///
-/// Today, `FeedOptions` is composed into [`QueryOptions`] via its
-/// [`feed`](QueryOptions::feed) field; [`QueryOptions`] also exposes
-/// [`with_max_item_count`](QueryOptions::with_max_item_count) and
-/// [`with_continuation_token`](QueryOptions::with_continuation_token)
-/// shortcuts that delegate to the inner [`FeedOptions`].
+/// Controls page-size hints, continuation, and initial cross-partition fan-out
+/// for queries and change feed reads. Configure it through
+/// [`QueryOptions::feed`] or [`ChangeFeedOptions::feed`](crate::options::ChangeFeedOptions::feed).
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct FeedOptions {
     /// Maximum number of items the service should return per page
     /// (`x-ms-max-item-count`).
     ///
-    /// `None` omits the header so the SDK / service defaults apply. See
+    /// `None` omits the header so SDK and service defaults apply. See
     /// [`MaxItemCountHint`] for the two explicit values.
     ///
     /// This is a _hint_ to the server, not a client-side guarantee of the

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Clients used to communicate with Azure Cosmos DB
+//! Clients for accessing Azure Cosmos DB accounts, databases, containers, and throughput.
 
 // =========================================================================
 // Public API

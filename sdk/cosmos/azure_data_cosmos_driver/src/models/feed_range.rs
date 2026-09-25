@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Feed range type for the Cosmos DB driver.
+//! Feed ranges for Cosmos DB operations.
 //!
 //! A [`FeedRange`] represents a contiguous range of the effective partition key (EPK) space.
-//! It is used by the dataflow pipeline to target operations at one or more physical partitions.
+//! Use it to target operations at one or more physical partitions.
 //!
-//! Feed ranges can also be serialized to base64-encoded JSON for cross-SDK storage and transport.
+//! Feed ranges can be serialized to base64-encoded JSON for storage or transport.
 
 use azure_core::fmt::SafeDebug;
 use base64::Engine;
@@ -74,7 +74,13 @@ struct RangeJson {
 }
 
 impl FeedRange {
-    /// Creates a feed range from explicit EPK bounds.
+    /// Creates a feed range from inclusive and exclusive effective partition key bounds.
+    ///
+    /// Equal bounds represent a single effective partition key.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `min_inclusive` exceeds `max_exclusive`.
     pub fn new(
         min_inclusive: EffectivePartitionKey,
         max_exclusive: EffectivePartitionKey,
@@ -117,12 +123,9 @@ impl FeedRange {
     /// Because the version of the partition hashing scheme must be known to compute the effective partition key,
     /// the caller must provide a reference to the partition key definition.
     ///
-    /// For full keys (component count == path count) and non-MultiHash containers
-    /// this yields a point range (`min == max`); for partial HPK keys (component
-    /// count < path count on a MultiHash container) it yields a real prefix range
-    /// (`min < max`) so the thin-client proxy can scope the per-pkrange request
-    /// down to just the prefix subrange instead of returning every row in the
-    /// pkrange.
+    /// Full keys produce a point range (`min == max`). A prefix of a
+    /// hierarchical partition key produces a range (`min < max`) covering
+    /// all logical partitions sharing that prefix.
     pub fn for_partition(partition_key: PartitionKey, definition: &PartitionKeyDefinition) -> Self {
         // `compute_range` returns the right shape for both full and partial keys.
         // Fall back to a point range built from `compute` if the inputs are
@@ -180,8 +183,7 @@ impl FeedRange {
 
     /// Returns the exclusive upper bound of this range.
     ///
-    /// NOTE: The [`min_inclusive`](FeedRange::min_inclusive) value overrides this limit. Thus, a range with
-    /// `min_inclusive == max_exclusive` is valid and represents exactly one EPK value, not an empty range.
+    /// Equal bounds represent a single effective partition key, not an empty range.
     pub fn max_exclusive(&self) -> &EffectivePartitionKey {
         match &self.0 {
             FeedRangeRepr::LogicalPartition { max_exclusive, .. } => max_exclusive,

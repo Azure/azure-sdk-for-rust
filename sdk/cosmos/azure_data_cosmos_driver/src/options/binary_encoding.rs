@@ -1,23 +1,20 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! [`BinaryEncodingOptions`] — driver-level Cosmos binary JSON encoding options.
+//! Options for Cosmos binary JSON request and response encoding.
 
 /// Options controlling Cosmos **binary JSON** on the wire for an operation.
 ///
-/// These options are **schema-agnostic**, so they live in the driver. They are
-/// set on
+/// Set these options on
 /// [`OperationOptions::binary_encoding`](crate::options::OperationOptions::binary_encoding)
-/// and participate in the standard runtime → account → operation layered
-/// resolution.
+/// at the runtime, account, or operation level.
 ///
-/// The driver performs the byte-level transcoding both ways when needed, so a
-/// caller can deal purely in text JSON and still get an efficient binary wire:
+/// The driver transcodes between text and binary JSON when needed:
 ///
 /// - [`enabled`](Self::enabled) — put **binary on the wire**. On the request
-///   path, a text-JSON body is transcoded to binary before it is sent (an
-///   already-binary body is passed through). The client also advertises
-///   `CosmosBinary`, so the service response comes back binary.
+///   path, a text-JSON item body is transcoded to binary before it is sent
+///   (an already-binary body is passed through). The driver also requests
+///   binary responses from the service.
 /// - [`request_text_response`](Self::request_text_response) — hand the caller
 ///   **text JSON back**. The wire still stays binary; the driver transcodes the
 ///   binary response to text before returning it. Has no effect unless
@@ -29,9 +26,7 @@
 /// spec rather than a document, so it stays text either way while its *response*
 /// still comes back binary.
 ///
-/// A typed consumer may pre-encode its request body straight from
-/// `T: Serialize` as an optimization; the driver's request-side transcoding then
-/// sees an already-binary body and passes it through unchanged.
+/// An already-binary item body is sent without transcoding.
 ///
 /// # Examples
 ///

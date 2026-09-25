@@ -4,8 +4,8 @@
 //! Response body container for Cosmos DB operations.
 //!
 //! Provides [`ResponseBody`], a typed response body that distinguishes between
-//! single-payload responses (point reads/writes, batches) and feed-style
-//! responses (Query / ChangeFeed) that carry one element per document.
+//! single-payload responses (point reads, writes, and batches) and feed-style
+//! responses (queries and change feeds) that carry one element per document.
 
 use azure_core::{fmt::SafeDebug, Bytes};
 use serde::de::DeserializeOwned;
@@ -23,7 +23,7 @@ use serde::de::DeserializeOwned;
 /// * [`ResponseBody::Items`] — a list of pre-sliced per-document buffers. Used
 ///   for feed responses (Query / ChangeFeed) where the driver pipeline splits
 ///   the `Documents` array once via zero-copy [`Bytes::slice`](bytes::Bytes::slice)
-///   so the SDK never needs to re-parse the envelope.
+///   so callers can process items without re-parsing the feed envelope.
 ///
 /// The payload variants carry shared ownership via reference-counted
 /// [`bytes::Bytes`].
@@ -84,11 +84,11 @@ impl ResponseBody {
         }
     }
 
-    /// Returns the single payload, or an error if the body is a feed
-    /// [`Items`](Self::Items) response. A [`NoPayload`](Self::NoPayload) body
-    /// yields an empty [`Bytes`].
+    /// Returns the single payload, or empty [`Bytes`] for [`NoPayload`](Self::NoPayload).
     ///
-    /// Used by single-document response paths (point reads/writes, batch, etc.).
+    /// # Errors
+    ///
+    /// Returns an error if the body contains [`Items`](Self::Items).
     pub fn single(self) -> crate::error::Result<Bytes> {
         match self {
             Self::NoPayload => Ok(Bytes::new()),
@@ -110,7 +110,7 @@ impl ResponseBody {
     /// [`NoPayload`](Self::NoPayload) body yields an empty `Vec`.
     ///
     /// This is the raw-bytes counterpart to
-    /// [`into_items`](Self::into_items); use it when callers want to decode
+    /// [`into_items()`](Self::into_items); use it to decode
     /// each item themselves instead of going through JSON.
     pub fn items(self) -> crate::error::Result<Vec<Bytes>> {
         match self {
@@ -124,8 +124,10 @@ impl ResponseBody {
     /// either Cosmos binary JSON or UTF-8 text JSON (auto-detected by the
     /// `0x80` preamble).
     ///
-    /// Returns an error if the body is a feed [`Items`](Self::Items) response
-    /// or if the body is [`NoPayload`](Self::NoPayload) (nothing to parse).
+    /// # Errors
+    ///
+    /// Returns an error if the body contains [`Items`](Self::Items) or
+    /// [`NoPayload`](Self::NoPayload), or if decoding fails.
     pub fn into_single<T: DeserializeOwned>(self) -> crate::error::Result<T> {
         let bytes = self.single()?;
         deserialize_response(&bytes, "failed to deserialize response body")
@@ -136,6 +138,10 @@ impl ResponseBody {
     ///
     /// Each buffer is decoded transparently as either Cosmos binary JSON or
     /// UTF-8 text JSON (auto-detected by the `0x80` preamble).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if any payload cannot be decoded.
     pub fn into_items<T: DeserializeOwned>(self) -> crate::error::Result<Vec<T>> {
         match self {
             Self::NoPayload => Ok(Vec::new()),

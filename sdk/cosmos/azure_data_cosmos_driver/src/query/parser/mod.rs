@@ -36,12 +36,8 @@ impl std::error::Error for ParseError {}
 
 /// Parse a SQL string into an AST.
 ///
-/// # Examples
-/// ```ignore
-/// let program = azure_data_cosmos_driver::query::parse("SELECT * FROM c WHERE c.id = '1'").unwrap();
-/// // The returned SqlProgram contains the parsed AST.
-/// // Use plan::generate_query_plan() or eval::matches_query() to work with it.
-/// ```
+/// Returns a [`SqlProgram`] or a [`ParseError`] with the byte offset of
+/// invalid SQL.
 pub fn parse(sql: &str) -> Result<SqlProgram, ParseError> {
     let mut parser = Parser::new(sql);
     let program = parser.parse_program()?;

@@ -62,7 +62,7 @@ pub enum BinaryError {
         target: usize,
     },
 
-    /// A user string ([`UserString1ByteLengthMin`](crate::binary_json::markers::USER_STRING_1BYTE_MIN)–`0x67`)
+    /// A user string ([`USER_STRING_1BYTE_MIN`](crate::binary_json::markers::USER_STRING_1BYTE_MIN)–`0x67`)
     /// was encountered. User strings are encoded against an external string
     /// dictionary that the Cosmos data plane does not provide, so the string
     /// cannot be resolved.

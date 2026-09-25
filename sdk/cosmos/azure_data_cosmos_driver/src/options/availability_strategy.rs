@@ -1,21 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Availability strategy types for cross-region hedging.
-//!
-//! These types model **what** the SDK should do when a primary request is slow
-//! to respond; they do **not** by themselves trigger any behavior. The hedging
-//! pipeline stage consumes a resolved [`AvailabilityStrategy`] to decide
-//! whether to issue a hedged request to a secondary region.
+//! Cross-region hedging configuration for eligible requests.
 
 use std::time::Duration;
 
-/// Minimum time the SDK waits for the primary request before issuing a hedged
-/// request to a secondary region.
+/// Minimum time to wait before sending a hedged request to another region.
 ///
-/// Wrapping [`Duration`] in a newtype lets us enforce the invariant that the
-/// threshold is strictly positive (zero would mean "hedge immediately", which
-/// is never useful and is treated as a configuration error).
+/// The threshold must be greater than zero.
 ///
 /// # Examples
 ///
@@ -33,11 +25,7 @@ use std::time::Duration;
 pub struct HedgeThreshold(Duration);
 
 impl HedgeThreshold {
-    /// Creates a new [`HedgeThreshold`] from a [`Duration`].
-    ///
-    /// Returns `None` if `duration` is zero, since a zero threshold has no
-    /// meaningful semantics (it would mean "hedge before the primary request
-    /// has had any time to complete").
+    /// Creates a threshold, or returns `None` if `duration` is zero.
     pub const fn new(duration: Duration) -> Option<Self> {
         if duration.is_zero() {
             None
@@ -52,11 +40,7 @@ impl HedgeThreshold {
     }
 }
 
-/// Configuration for the parallel hedging strategy.
-///
-/// Currently the only knob is the threshold; additional fields (e.g. retry
-/// caps, hedged-request limits) may be added in future revisions. Construct
-/// via [`HedgingStrategy::new`].
+/// Threshold for sending a hedged request when the primary request is slow.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct HedgingStrategy {

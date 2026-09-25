@@ -12,9 +12,8 @@ use std::ops::Add;
 
 /// Request charge measured in Request Units (RU).
 ///
-/// All Cosmos DB operations consume Request Units (RU), which represent
-/// the compute, memory, and I/O resources consumed by the operation.
-/// This newtype wraps `f64` to provide type safety and clarity.
+/// Request Units measure the resources consumed by an operation.
+/// Non-finite values are normalized to zero.
 ///
 /// # Examples
 ///
@@ -38,10 +37,9 @@ use std::ops::Add;
 pub struct RequestCharge(FiniteF64);
 
 impl RequestCharge {
-    /// Creates a new `RequestCharge` from a raw `f64` value.
+    /// Creates a request charge from a value in Request Units.
     ///
-    /// NaN is normalized to `0.0` and negative zero is normalized to positive
-    /// zero so that `RequestCharge` can implement [`Eq`] and [`Hash`].
+    /// NaN and infinity become `0.0`; negative zero becomes positive zero.
     pub fn new(value: f64) -> Self {
         Self(FiniteF64::new_lossy(value))
     }

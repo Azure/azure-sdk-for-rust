@@ -722,7 +722,12 @@ pub(crate) fn try_local_plan(
     })))
 }
 
-/// Generates the exact production local-plan shape for live parity tests.
+/// Generates the locally planned query shape as JSON for comparison tests.
+///
+/// Available only with `__internal_testing`; not a supported production API.
+/// Returns `{"empty": true}` for a query known to match no partitions and an
+/// error string when local planning cannot handle the query or the result
+/// cannot be serialized.
 #[cfg(any(test, feature = "__internal_testing"))]
 #[doc(hidden)]
 pub fn __test_only_generate_production_query_plan(
