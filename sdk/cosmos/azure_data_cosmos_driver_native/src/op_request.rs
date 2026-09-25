@@ -43,13 +43,12 @@ use azure_core::http::Etag;
 use azure_data_cosmos_driver::options::{
     BinaryEncodingOptions, ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
     OperationOptions, PatchStrategy, QueryPlanMode, ReadConsistencyStrategy, Region,
-    ThroughputControlOptions,
 };
 use azure_data_cosmos_driver::{
     models::{
         ActivityId, ContainerReference, ContinuationToken, CosmosOperation, ItemReference,
         MaxItemCountHint, OperationType, PartitionKey, PatchInstructions, PatchTrackingId,
-        Precondition, SessionToken, ThroughputControlGroupName,
+        Precondition, SessionToken,
     },
     options::PlanOptions,
 };
@@ -75,8 +74,8 @@ use crate::partition_key::{CosmosPartitionKeyComponent, PartitionKeyHandle};
 /// - **i32 numeric fields** (retry counters): `< 0` = unset,
 ///   `>= 0` = the value.
 /// - **i64 duration fields** (`*_ms`): `< 0` = unset, `>= 0` = milliseconds.
-/// - **string / array fields** (`throughput_control_group`,
-///   `excluded_regions`, `custom_headers`): NULL / length `0` = unset.
+/// - **string / array fields** (`excluded_regions`, `custom_headers`):
+///   NULL / length `0` = unset.
 ///
 /// It is a documentation marker only — the fields are plain integers /
 /// pointers so the struct stays `#[repr(C)]`.
@@ -423,8 +422,6 @@ pub struct CosmosOperationOptions {
     pub end_to_end_timeout_ms: i64,
     /// Endpoint unavailability TTL (milliseconds). `< 0` = unset.
     pub endpoint_unavailability_ttl_ms: i64,
-    /// Throughput control group name (counted UTF-8). NULL/0 = unset.
-    pub throughput_control_group: CosmosStringView,
     /// Excluded regions — array of counted UTF-8 region ids.
     /// NULL / `0` length = unset; non-NULL with `0` length is rejected.
     pub excluded_regions: *const CosmosStringView,
@@ -522,18 +519,6 @@ impl CosmosOperationOptions {
             ));
         }
 
-        // SAFETY: view remains readable throughout the call.
-        if let Some(name) = unsafe {
-            optional_text(
-                self.throughput_control_group,
-                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue,
-            )
-        }? {
-            let mut throughput_control = ThroughputControlOptions::default();
-            throughput_control.group_name = Some(ThroughputControlGroupName::from(name));
-            opts.throughput_control = Some(throughput_control);
-        }
-
         // SAFETY: caller contract on the array pointer + length.
         if let Some(regions) =
             unsafe { decode_regions(self.excluded_regions, self.excluded_regions_len)? }
@@ -617,7 +602,6 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
         max_session_retry_count: -1,
         end_to_end_timeout_ms: -1,
         endpoint_unavailability_ttl_ms: -1,
-        throughput_control_group: CosmosStringView::default(),
         excluded_regions: std::ptr::null(),
         excluded_regions_len: 0,
         custom_headers: std::ptr::null(),
@@ -1776,7 +1760,6 @@ mod tests {
         assert_eq!(o.max_session_retry_count, -1);
         assert_eq!(o.end_to_end_timeout_ms, -1);
         assert_eq!(o.endpoint_unavailability_ttl_ms, -1);
-        assert!(o.throughput_control_group.is_unset());
         assert!(o.excluded_regions.is_null());
         assert_eq!(o.excluded_regions_len, 0);
         assert!(o.custom_headers.is_null());
@@ -1813,7 +1796,7 @@ mod tests {
     fn operation_options_abi_layout_is_stable() {
         use std::mem::{offset_of, size_of};
 
-        assert_eq!(size_of::<CosmosOperationOptions>(), 96);
+        assert_eq!(size_of::<CosmosOperationOptions>(), 80);
         assert_eq!(
             offset_of!(CosmosOperationOptions, read_consistency_strategy),
             0
@@ -1829,16 +1812,16 @@ mod tests {
         );
         assert_eq!(
             offset_of!(CosmosOperationOptions, binary_encoding_enabled),
-            88
+            72
         );
         assert_eq!(
             offset_of!(
                 CosmosOperationOptions,
                 binary_encoding_request_text_response
             ),
-            89
+            73
         );
-        assert_eq!(offset_of!(CosmosOperationOptions, query_plan_mode), 92);
+        assert_eq!(offset_of!(CosmosOperationOptions, query_plan_mode), 76);
     }
 
     #[test]
@@ -2019,11 +2002,9 @@ mod tests {
             };
             let session = b"session-value".to_vec();
             let continuation = "é-continuation".as_bytes().to_vec();
-            let group = b"throughput-group".to_vec();
             let region = b"East US".to_vec();
             let regions = [view(&region)];
             let mut options = cosmos_operation_options_default();
-            options.throughput_control_group = view(&group);
             options.excluded_regions = regions.as_ptr();
             options.excluded_regions_len = 1;
             // SAFETY: all-zero representation is valid for this integer-and-pointer request.
@@ -2049,15 +2030,7 @@ mod tests {
                     .as_str(),
                 "session-value"
             );
-            assert_eq!(
-                built
-                    .options
-                    .throughput_control
-                    .unwrap()
-                    .group_name
-                    .unwrap(),
-                ThroughputControlGroupName::from("throughput-group")
-            );
+            assert!(built.options.throughput_control.is_none());
             assert_eq!(
                 built.options.excluded_regions.unwrap().0,
                 vec![Region::from("East US")]

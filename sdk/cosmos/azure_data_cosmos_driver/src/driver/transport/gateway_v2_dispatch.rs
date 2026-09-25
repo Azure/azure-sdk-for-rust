@@ -2018,7 +2018,7 @@ mod tests {
         let auth_context =
             AuthorizationContext::new(Method::Get, ResourceType::Document, "dbs/db1/colls/coll1");
         let partition_key =
-            PartitionKey::from(vec![PartitionKeyValue::from("tenant1".to_string())]);
+            PartitionKey::try_from(vec![PartitionKeyValue::from("tenant1".to_string())]).unwrap();
         let partition_key_definition =
             PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
         let expected = effective_partition_key_multi_hash_v2_binary(partition_key.values());
@@ -2070,11 +2070,12 @@ mod tests {
             ResourceType::Document,
             "dbs/db1/colls/coll1/docs/doc1",
         );
-        let partition_key = PartitionKey::from(vec![
+        let partition_key = PartitionKey::try_from(vec![
             PartitionKeyValue::from("tenant1".to_string()),
             PartitionKeyValue::from("user1".to_string()),
             PartitionKeyValue::from("session1".to_string()),
-        ]);
+        ])
+        .unwrap();
         let partition_key_definition =
             PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
 

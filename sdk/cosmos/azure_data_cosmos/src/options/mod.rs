@@ -8,9 +8,7 @@
 // =========================================================================
 
 #[doc(inline)]
-pub use azure_data_cosmos_driver::models::{
-    MaxItemCountHint, Precondition, SessionToken, ThroughputControlGroupName,
-};
+pub use azure_data_cosmos_driver::models::{MaxItemCountHint, Precondition, SessionToken};
 #[cfg(feature = "preview_patch")]
 #[doc(inline)]
 pub use azure_data_cosmos_driver::options::PatchStrategy;
@@ -20,10 +18,10 @@ pub use azure_data_cosmos_driver::options::{
     ConnectionPoolOptionsBuilder, ContentResponseOnWrite, DiagnosticsOptions,
     DiagnosticsOptionsBuilder, DiagnosticsVerbosity, EndToEndOperationLatencyPolicy,
     ExcludedRegions, HedgeThreshold, HedgingStrategy, OperationOptions, OperationOptionsBuilder,
-    OperationOptionsView, PartitionFailoverOptions, PartitionFailoverOptionsBuilder, PriorityLevel,
-    QueryPlanMode, ReadConsistencyStrategy, Region, ServerCertificateValidation,
-    ThrottlingRetryOptions, ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView,
-    ThroughputControlGroupOptions, ThroughputControlOptions, ThroughputControlOptionsBuilder,
+    OperationOptionsView, PartitionFailoverOptions, PartitionFailoverOptionsBuilder,
+    PartitionTopologyCacheMode, PriorityLevel, QueryPlanMode, ReadConsistencyStrategy, Region,
+    ServerCertificateValidation, ThrottlingRetryOptions, ThrottlingRetryOptionsBuilder,
+    ThrottlingRetryOptionsView, ThroughputControlOptions, ThroughputControlOptionsBuilder,
     ThroughputControlOptionsView, TlsBackend, UserAgentSuffix,
 };
 pub use batch::{

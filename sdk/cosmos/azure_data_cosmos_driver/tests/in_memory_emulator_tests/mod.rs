@@ -29,9 +29,14 @@ pub mod multi_region;
 pub mod offers;
 pub mod order_by;
 pub mod partition_key_range_cache_lifecycle;
+pub mod partition_topology_cache;
+pub mod patch_default;
 #[cfg(feature = "fault_injection")]
+#[cfg(feature = "preview_patch")]
 pub mod patch_retry_faults;
+#[cfg(feature = "preview_patch")]
 pub mod patch_strategy;
+#[cfg(feature = "preview_patch")]
 pub mod patch_verification_routing;
 pub mod point_operations;
 pub mod ppaf_dynamic_enablement;

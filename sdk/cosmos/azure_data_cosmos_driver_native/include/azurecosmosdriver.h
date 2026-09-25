@@ -667,10 +667,6 @@ enum cosmos_sub_status_t
    */
   COSMOS_SUB_STATUS_CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID = 20150,
   /**
-   * `CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED` (20152).
-   */
-  COSMOS_SUB_STATUS_CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED = 20152,
-  /**
    * `CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED` (20153).
    */
   COSMOS_SUB_STATUS_CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED = 20153,
@@ -694,10 +690,6 @@ enum cosmos_sub_status_t
    * `CLIENT_IMDS_REQWEST_FEATURE_REQUIRED` (20158).
    */
   COSMOS_SUB_STATUS_CLIENT_IMDS_REQWEST_FEATURE_REQUIRED = 20158,
-  /**
-   * `CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED` (20159).
-   */
-  COSMOS_SUB_STATUS_CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED = 20159,
   /**
    * `CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT` (20200).
    */
@@ -1507,10 +1499,6 @@ typedef struct cosmos_operation_options_t {
    */
   int64_t endpoint_unavailability_ttl_ms;
   /**
-   * Throughput control group name (counted UTF-8). NULL/0 = unset.
-   */
-  struct cosmos_string_view_t throughput_control_group;
-  /**
    * Excluded regions — array of counted UTF-8 region ids.
    * NULL / `0` length = unset; non-NULL with `0` length is rejected.
    */
@@ -2191,8 +2179,11 @@ void cosmos_container_ref_free(struct cosmos_container_ref_t *container);
  * [`azure_data_cosmos_driver::driver::CosmosDriver::resolve_container_by_name`]
  * through the wrapper's Tokio runtime via `block_on`.
  *
- * Touches the network on cache miss (reads container metadata from
- * the gateway). On cache hit returns immediately without I/O.
+ * May read container metadata and partition topology from the gateway. In the
+ * default eager topology mode, a container-metadata cache hit can still issue
+ * `/pkranges` requests because topology is cached per driver. Resolution
+ * returns without I/O only when every required cache entry is warm; lazy
+ * topology mode skips the topology load during resolution.
  *
  * # Parameters
  *

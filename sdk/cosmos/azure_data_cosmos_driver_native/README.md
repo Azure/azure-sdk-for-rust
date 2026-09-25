@@ -70,6 +70,13 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+The Cosmos Azure DevOps CI pipeline runs the Rust unit tests and C ABI suite
+on dedicated Linux, macOS, and Windows matrix legs whenever Cosmos CI runs,
+including pull requests changing this crate. These legs enable the driver's
+test-setup hook with `AZURE_COSMOS_NATIVE_TESTS=true`; other legs are unchanged.
+C ABI results appear in the pipeline's Tests tab. These tests need no Cosmos
+account credentials; supply-chain publishing remains manual-only.
+
 The resulting shared library lands at:
 
 - Linux:   `target/release/libazurecosmosdriver.so`

@@ -680,7 +680,7 @@ pub mod error {
         const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: CosmosStatus = _;
         const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_EMPTY: CosmosStatus = _;
-        const CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED: CosmosStatus = _;
+        const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: CosmosStatus = _;
         const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: CosmosStatus = _;
         const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: CosmosStatus = _;
@@ -695,14 +695,13 @@ pub mod error {
         const CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE: CosmosStatus = _;
         const CLIENT_SPLIT_RETRIES_EXHAUSTED: CosmosStatus = _;
         const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = _;
-        const CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED: CosmosStatus = _;
-        const CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED: CosmosStatus = _;
         const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: CosmosStatus = _;
         const CLIENT_TOPOLOGY_PROVIDER_MISSING: CosmosStatus = _;
         const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = _;
         const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: CosmosStatus = _;
         const CLIENT_UNKNOWN_PRIORITY_LEVEL: CosmosStatus = _;
         const CLIENT_UNSUPPORTED_QUERY_FEATURE: CosmosStatus = _;
+        const CLIENT_USER_AGENT_SUFFIX_INVALID: CosmosStatus = _;
         const COMPLETING_PARTITION_MIGRATION: CosmosStatus = _;
         const COMPLETING_SPLIT: CosmosStatus = _;
         const CROSS_PARTITION_QUERY_NOT_SERVABLE: CosmosStatus = _;
@@ -853,7 +852,7 @@ pub mod error {
         const CLIENT_OPERATION_TIMEOUT: SubStatusCode = _;
         const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = _;
         const CLIENT_PARTITION_KEY_EMPTY: SubStatusCode = _;
-        const CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED: SubStatusCode = _;
+        const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: SubStatusCode = _;
         const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: SubStatusCode = _;
         const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: SubStatusCode = _;
         const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: SubStatusCode = _;
@@ -869,14 +868,13 @@ pub mod error {
         const CLIENT_SPLIT_RETRIES_EXHAUSTED: SubStatusCode = _;
         const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: SubStatusCode = _;
         const CLIENT_THREAD_STARVATION: SubStatusCode = _;
-        const CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED: SubStatusCode = _;
-        const CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED: SubStatusCode = _;
         const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: SubStatusCode = _;
         const CLIENT_TOPOLOGY_PROVIDER_MISSING: SubStatusCode = _;
         const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = _;
         const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: SubStatusCode = _;
         const CLIENT_UNKNOWN_PRIORITY_LEVEL: SubStatusCode = _;
         const CLIENT_UNSUPPORTED_QUERY_FEATURE: SubStatusCode = _;
+        const CLIENT_USER_AGENT_SUFFIX_INVALID: SubStatusCode = _;
         const COLLECTIONS_IN_PARTITION_GOT_UPDATED: SubStatusCode = _;
         const COLLECTION_CREATE_IN_PROGRESS: SubStatusCode = _;
         const COLLECTION_QUOTA_EXCEEDED: SubStatusCode = _;
@@ -1844,7 +1842,7 @@ pub mod models {
         const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: CosmosStatus = _;
         const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_EMPTY: CosmosStatus = _;
-        const CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED: CosmosStatus = _;
+        const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: CosmosStatus = _;
         const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: CosmosStatus = _;
         const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: CosmosStatus = _;
@@ -1859,14 +1857,13 @@ pub mod models {
         const CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE: CosmosStatus = _;
         const CLIENT_SPLIT_RETRIES_EXHAUSTED: CosmosStatus = _;
         const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = _;
-        const CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED: CosmosStatus = _;
-        const CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED: CosmosStatus = _;
         const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: CosmosStatus = _;
         const CLIENT_TOPOLOGY_PROVIDER_MISSING: CosmosStatus = _;
         const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = _;
         const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: CosmosStatus = _;
         const CLIENT_UNKNOWN_PRIORITY_LEVEL: CosmosStatus = _;
         const CLIENT_UNSUPPORTED_QUERY_FEATURE: CosmosStatus = _;
+        const CLIENT_USER_AGENT_SUFFIX_INVALID: CosmosStatus = _;
         const COMPLETING_PARTITION_MIGRATION: CosmosStatus = _;
         const COMPLETING_SPLIT: CosmosStatus = _;
         const CROSS_PARTITION_QUERY_NOT_SERVABLE: CosmosStatus = _;
@@ -2106,8 +2103,25 @@ pub mod models {
         type Iter = IntoIter<(HeaderName, HeaderValue)>;
         fn as_headers(&self) -> Result<<Self as >::Iter, <Self as >::Error>;
     }
-    impl From<Vec<PartitionKeyValue>> for PartitionKey {
-        fn from(values: Vec<PartitionKeyValue>) -> Self;
+    impl TryFrom<Option<f32>> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: Option<f32>) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<Option<f64>> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: Option<f64>) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<Vec<PartitionKeyValue>> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(values: Vec<PartitionKeyValue>) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<f32> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: f32) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<f64> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: f64) -> Result<Self, <Self as >::Error>;
     }
     impl<T1, T2, T3> From<(T1, T2, T3)> for PartitionKey where T1: Into<PartitionKeyValue>, T2: Into<PartitionKeyValue>, T3: Into<PartitionKeyValue> {
         fn from((v1, v2, v3): (T1, T2, T3)) -> Self;
@@ -2179,12 +2193,6 @@ pub mod models {
     impl From<bool> for PartitionKeyValue {
         fn from(value: bool) -> Self;
     }
-    impl From<f32> for PartitionKeyValue {
-        fn from(value: f32) -> Self;
-    }
-    impl From<f64> for PartitionKeyValue {
-        fn from(value: f64) -> Self;
-    }
     impl From<i16> for PartitionKeyValue {
         fn from(value: i16) -> Self;
     }
@@ -2214,6 +2222,22 @@ pub mod models {
     }
     impl From<usize> for PartitionKeyValue {
         fn from(value: usize) -> Self;
+    }
+    impl TryFrom<Option<f32>> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: Option<f32>) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<Option<f64>> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: Option<f64>) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<f32> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: f32) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<f64> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: f64) -> Result<Self, <Self as >::Error>;
     }
     impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
         fn from(value: Option<T>) -> Self;
@@ -2418,7 +2442,7 @@ pub mod models {
         const CLIENT_OPERATION_TIMEOUT: SubStatusCode = _;
         const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: SubStatusCode = _;
         const CLIENT_PARTITION_KEY_EMPTY: SubStatusCode = _;
-        const CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED: SubStatusCode = _;
+        const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: SubStatusCode = _;
         const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: SubStatusCode = _;
         const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: SubStatusCode = _;
         const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: SubStatusCode = _;
@@ -2434,14 +2458,13 @@ pub mod models {
         const CLIENT_SPLIT_RETRIES_EXHAUSTED: SubStatusCode = _;
         const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: SubStatusCode = _;
         const CLIENT_THREAD_STARVATION: SubStatusCode = _;
-        const CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED: SubStatusCode = _;
-        const CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED: SubStatusCode = _;
         const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: SubStatusCode = _;
         const CLIENT_TOPOLOGY_PROVIDER_MISSING: SubStatusCode = _;
         const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = _;
         const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: SubStatusCode = _;
         const CLIENT_UNKNOWN_PRIORITY_LEVEL: SubStatusCode = _;
         const CLIENT_UNSUPPORTED_QUERY_FEATURE: SubStatusCode = _;
+        const CLIENT_USER_AGENT_SUFFIX_INVALID: SubStatusCode = _;
         const COLLECTIONS_IN_PARTITION_GOT_UPDATED: SubStatusCode = _;
         const COLLECTION_CREATE_IN_PROGRESS: SubStatusCode = _;
         const COLLECTION_QUOTA_EXCEEDED: SubStatusCode = _;
@@ -2633,27 +2656,6 @@ pub mod models {
     }
     impl From<u16> for SubStatusCode {
         fn from(value: u16) -> Self;
-    }
-    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-    pub struct ThroughputControlGroupName(pub std::borrow::Cow<'static, str>);
-    impl ThroughputControlGroupName {
-        pub fn as_str(&self) -> &str;
-        pub fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(name: impl Into<Cow<'static, str>>) -> Self;
-    }
-    impl AsRef<str> for ThroughputControlGroupName {
-        fn as_ref(&self) -> &str;
-    }
-    impl Display for ThroughputControlGroupName {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
-    }
-    impl From<&'static str> for ThroughputControlGroupName {
-        fn from(name: &'static str) -> Self;
-    }
-    impl From<Cow<'static, str>> for ThroughputControlGroupName {
-        fn from(name: Cow<'static, str>) -> Self;
-    }
-    impl From<String> for ThroughputControlGroupName {
-        fn from(name: String) -> Self;
     }
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
     #[non_exhaustive]
@@ -3190,7 +3192,6 @@ pub mod options {
         pub fn hedging_options(&self) -> &HedgingOptions;
         pub fn operation_options(&self) -> &Arc<OperationOptions>;
         pub fn partition_failover_options(&self) -> &PartitionFailoverOptions;
-        pub fn partition_key_range_cache_enabled(&self) -> bool;
         pub fn preferred_regions(&self) -> &[Region];
         pub fn user_agent_suffix(&self) -> Option<&UserAgentSuffix>;
     }
@@ -3201,13 +3202,11 @@ pub mod options {
     impl DriverOptionsBuilder {
         pub fn build(self) -> DriverOptions;
         pub fn new(account: AccountReference) -> Self;
-        pub fn register_throughput_control_group(self, group: ThroughputControlGroupOptions) -> crate::error::Result<Self>;
         #[cfg(feature = "fault_injection")]
         pub fn with_fault_injection_rules(self, rules: Vec<Arc<FaultInjectionRule>>) -> crate::error::Result<Self>;
         pub fn with_hedging_options(self, options: HedgingOptions) -> Self;
         pub fn with_operation_options(self, options: OperationOptions) -> Self;
         pub fn with_partition_failover_options(self, options: PartitionFailoverOptions) -> Self;
-        pub fn with_partition_key_range_cache_enabled(self, enabled: bool) -> Self;
         pub fn with_preferred_regions(self, regions: Vec<Region>) -> Self;
         pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
     }
@@ -3271,6 +3270,7 @@ pub mod options {
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct OperationOptions {
+        #[cfg(feature = "preview_patch")]
         pub patch_strategy: Option<crate::options::PatchStrategy>,
         pub read_consistency_strategy: Option<crate::options::ReadConsistencyStrategy>,
         pub excluded_regions: Option<crate::options::ExcludedRegions>,
@@ -3310,6 +3310,7 @@ pub mod options {
         pub fn with_hedging_enabled(self, value: bool) -> Self;
         pub fn with_max_failover_retry_count(self, value: u32) -> Self;
         pub fn with_max_session_retry_count(self, value: u32) -> Self;
+        #[cfg(feature = "preview_patch")]
         pub fn with_patch_strategy(self, value: PatchStrategy) -> Self;
         pub fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
@@ -3333,6 +3334,7 @@ pub mod options {
         pub fn max_session_retry_count(&self) -> Option<&u32>;
         pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
+        #[cfg(feature = "preview_patch")]
         pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
         pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
         pub fn session_capturing_disabled(&self) -> Option<&bool>;
@@ -3349,6 +3351,7 @@ pub mod options {
         pub fn consecutive_hedge_win_threshold(&self) -> u32;
         pub fn counter_reset_window(&self) -> Duration;
         pub fn failback_sweep_interval(&self) -> Duration;
+        pub fn partition_topology_cache_mode(&self) -> PartitionTopologyCacheMode;
         pub fn partition_unavailability_duration(&self) -> Duration;
         pub fn read_failure_threshold(&self) -> u32;
         pub fn write_failure_threshold(&self) -> u32;
@@ -3367,6 +3370,7 @@ pub mod options {
         pub fn with_consecutive_hedge_win_threshold(self, value: u32) -> Self;
         pub fn with_counter_reset_window(self, value: Duration) -> Self;
         pub fn with_failback_sweep_interval(self, value: Duration) -> Self;
+        pub fn with_partition_topology_cache_mode(self, value: PartitionTopologyCacheMode) -> Self;
         pub fn with_partition_unavailability_duration(self, value: Duration) -> Self;
         pub fn with_read_failure_threshold(self, value: u32) -> Self;
         pub fn with_write_failure_threshold(self, value: u32) -> Self;
@@ -3553,26 +3557,9 @@ pub mod options {
         pub fn max_retry_wait_time(&self) -> Option<&Duration>;
         pub fn new(env: Option<::std::sync::Arc<ThrottlingRetryOptions>>, runtime: Option<::std::sync::Arc<ThrottlingRetryOptions>>, account: Option<::std::sync::Arc<ThrottlingRetryOptions>>, operation: Option<&'a ThrottlingRetryOptions>) -> Self;
     }
-    #[derive(Clone, Debug)]
-    #[non_exhaustive]
-    pub struct ThroughputControlGroupOptions {
-    }
-    impl ThroughputControlGroupOptions {
-        pub fn container(&self) -> &ContainerReference;
-        pub fn is_default(&self) -> bool;
-        pub fn name(&self) -> &ThroughputControlGroupName;
-        pub fn new<impl Into<ThroughputControlGroupName>: Into<ThroughputControlGroupName>>(name: impl Into<ThroughputControlGroupName>, container: ContainerReference, is_default: bool) -> Self;
-        pub fn priority_level(&self) -> Option<PriorityLevel>;
-        pub fn set_priority_level(&self, level: PriorityLevel);
-        pub fn set_throughput_bucket(&self, bucket: u32);
-        pub fn throughput_bucket(&self) -> Option<u32>;
-        pub fn with_priority_level(self, level: PriorityLevel) -> Self;
-        pub fn with_throughput_bucket(self, bucket: u32) -> Self;
-    }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct ThroughputControlOptions {
-        pub group_name: Option<crate::models::ThroughputControlGroupName>,
         pub throughput_bucket: Option<u32>,
         pub priority_level: Option<crate::options::PriorityLevel>,
     }
@@ -3584,7 +3571,6 @@ pub mod options {
         #[must_use]
         pub fn build(self) -> ThroughputControlOptions;
         pub fn new() -> Self;
-        pub fn with_group_name(self, value: ThroughputControlGroupName) -> Self;
         pub fn with_priority_level(self, value: PriorityLevel) -> Self;
         pub fn with_throughput_bucket(self, value: u32) -> Self;
     }
@@ -3593,7 +3579,6 @@ pub mod options {
     }
     #[automatically_derived]
     impl<'a> ThroughputControlOptionsView<'a> {
-        pub fn group_name(&self) -> Option<&ThroughputControlGroupName>;
         pub fn new(env: Option<::std::sync::Arc<ThroughputControlOptions>>, runtime: Option<::std::sync::Arc<ThroughputControlOptions>>, account: Option<::std::sync::Arc<ThroughputControlOptions>>, operation: Option<&'a ThroughputControlOptions>) -> Self;
         pub fn priority_level(&self) -> Option<&PriorityLevel>;
         pub fn throughput_bucket(&self) -> Option<&u32>;
@@ -3603,7 +3588,6 @@ pub mod options {
     impl UserAgentSuffix {
         const MAX_LENGTH: usize = 25;
         pub fn as_str(&self) -> &str;
-        pub fn new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Self;
         pub fn try_new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Option<Self>;
     }
     impl AsRef<str> for UserAgentSuffix {
@@ -3611,6 +3595,14 @@ pub mod options {
     }
     impl Display for UserAgentSuffix {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+    }
+    impl TryFrom<&str> for UserAgentSuffix {
+        type Error = CosmosError;
+        fn try_from(value: &str) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<String> for UserAgentSuffix {
+        type Error = CosmosError;
+        fn try_from(value: String) -> Result<Self, <Self as >::Error>;
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub struct WorkloadId(/* private fields */);
@@ -3673,6 +3665,17 @@ pub mod options {
     impl FromStr for DiagnosticsVerbosity {
         type Err = String;
         fn from_str(s: &str) -> Result<Self, <Self as >::Err>;
+    }
+    #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
+    #[non_exhaustive]
+    pub enum PartitionTopologyCacheMode {
+        #[default]
+        Eager,
+        Lazy,
+    }
+    impl FromStr for PartitionTopologyCacheMode {
+        type Err = String;
+        fn from_str(value: &str) -> Result<Self, <Self as >::Err>;
     }
     #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
     #[non_exhaustive]

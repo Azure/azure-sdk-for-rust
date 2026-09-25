@@ -156,8 +156,6 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientContinuationTokenNonQueryOperation = 20117,
     /// `CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID` (20150).
     CosmosSubStatusClientDuplicateFaultInjectionRuleId = 20150,
-    /// `CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED` (20152).
-    CosmosSubStatusClientThroughputControlGroupNotRegistered = 20152,
     /// `CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED` (20153).
     CosmosSubStatusClientHttpClientConstructionFailed = 20153,
     /// `CLIENT_REQWEST_FEATURE_REQUIRED` (20154).
@@ -170,8 +168,6 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientImdsHttpClientConstructionFailed = 20157,
     /// `CLIENT_IMDS_REQWEST_FEATURE_REQUIRED` (20158).
     CosmosSubStatusClientImdsReqwestFeatureRequired = 20158,
-    /// `CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED` (20159).
-    CosmosSubStatusClientPartitionKeyRangeCacheRequired = 20159,
     /// `CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT` (20200).
     CosmosSubStatusClientContinuationTokenFetchInFlight = 20200,
     /// `CLIENT_TOPOLOGY_PROVIDER_MISSING` (20201).
@@ -314,14 +310,12 @@ const _: () = {
         CosmosSubStatusClientQueryPlanInvalidTopOffsetLimit => CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT,
         CosmosSubStatusClientContinuationTokenNonQueryOperation => CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION,
         CosmosSubStatusClientDuplicateFaultInjectionRuleId => CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID,
-        CosmosSubStatusClientThroughputControlGroupNotRegistered => CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED,
         CosmosSubStatusClientHttpClientConstructionFailed => CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED,
         CosmosSubStatusClientReqwestFeatureRequired => CLIENT_REQWEST_FEATURE_REQUIRED,
         CosmosSubStatusClientRequestUrlMissingHost => CLIENT_REQUEST_URL_MISSING_HOST,
         CosmosSubStatusClientRequestUrlMissingKnownPort => CLIENT_REQUEST_URL_MISSING_KNOWN_PORT,
         CosmosSubStatusClientImdsHttpClientConstructionFailed => CLIENT_IMDS_HTTP_CLIENT_CONSTRUCTION_FAILED,
         CosmosSubStatusClientImdsReqwestFeatureRequired => CLIENT_IMDS_REQWEST_FEATURE_REQUIRED,
-        CosmosSubStatusClientPartitionKeyRangeCacheRequired => CLIENT_PARTITION_KEY_RANGE_CACHE_REQUIRED,
         CosmosSubStatusClientContinuationTokenFetchInFlight => CLIENT_CONTINUATION_TOKEN_FETCH_IN_FLIGHT,
         CosmosSubStatusClientTopologyProviderMissing => CLIENT_TOPOLOGY_PROVIDER_MISSING,
         CosmosSubStatusClientDriverNotInitialized => CLIENT_DRIVER_NOT_INITIALIZED,

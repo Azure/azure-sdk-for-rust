@@ -218,17 +218,7 @@ fn json_to_pk_component(value: &serde_json::Value) -> crate::error::Result<Parti
                     .with_message("partition key number is not representable as f64")
                     .build()
             })?;
-            if !f.is_finite() {
-                return Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::new(
-                        azure_core::http::StatusCode::BadRequest,
-                    ))
-                    .with_message(
-                        "partition key numbers must be finite (NaN and Infinity are not allowed)",
-                    )
-                    .build());
-            }
-            Ok(PartitionKeyValue::from(f))
+            PartitionKeyValue::try_from(f)
         }
         serde_json::Value::Object(object) if object.is_empty() => Ok(PartitionKeyValue::UNDEFINED),
         serde_json::Value::Object(_) | serde_json::Value::Array(_) => {
@@ -260,7 +250,10 @@ mod tests {
     #[test]
     fn parse_pk_header_number() {
         let components = parse_partition_key_header("[42]").unwrap();
-        assert_eq!(components, vec![PartitionKeyValue::from(42.0_f64)]);
+        assert_eq!(
+            components,
+            vec![PartitionKeyValue::try_from(42.0_f64).unwrap()]
+        );
     }
 
     #[test]
@@ -320,7 +313,10 @@ mod tests {
     fn extract_pk_nested() {
         let body = serde_json::json!({"id": "doc1", "nested": {"key": 42}});
         let components = extract_pk_from_body(&body, &["/nested/key"]).unwrap();
-        assert_eq!(components, vec![PartitionKeyValue::from(42.0_f64)]);
+        assert_eq!(
+            components,
+            vec![PartitionKeyValue::try_from(42.0_f64).unwrap()]
+        );
     }
 
     #[test]

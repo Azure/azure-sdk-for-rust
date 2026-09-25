@@ -54,7 +54,9 @@ pub use operation_options::{
     ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView, ThroughputControlOptions,
     ThroughputControlOptionsBuilder, ThroughputControlOptionsView,
 };
-pub use partition_failover::{PartitionFailoverOptions, PartitionFailoverOptionsBuilder};
+pub use partition_failover::{
+    PartitionFailoverOptions, PartitionFailoverOptionsBuilder, PartitionTopologyCacheMode,
+};
 pub use patch_strategy::PatchStrategy;
 pub use plan_options::{PlanOptions, DEFAULT_MAX_BUFFERED_QUERY_WINDOW, DEFAULT_MAX_FAN_OUT};
 pub use policies::{
@@ -66,7 +68,4 @@ pub use query_plan_mode::QueryPlanMode;
 pub(crate) use read_consistency::resolve_effective_consistency;
 pub use read_consistency::ReadConsistencyStrategy;
 pub use region::Region;
-pub use throughput_control::ThroughputControlGroupOptions;
-pub(crate) use throughput_control::{
-    ResolvedThroughputControl, ThroughputControlGroupRegistry, ThroughputControlGroupSnapshot,
-};
+pub(crate) use throughput_control::ResolvedThroughputControl;

@@ -46,6 +46,8 @@ type Result<T> = ::std::result::Result<T, syn::Error>;
 ///   custom `fn(&str) -> Option<T>` (where `T` is the field's inner type)
 ///   instead of `FromStr`, supporting types like `Duration` read from a
 ///   millisecond count. A `None` result is logged and ignored. Requires `env`.
+/// - `#[cfg(feature = "...")]` on a field also gates its generated builder
+///   setter, view accessor, default value, and environment-variable loading.
 ///
 /// # Example
 ///
@@ -115,8 +117,9 @@ fn generate_default(input: &OptionsInput) -> Result<proc_macro2::TokenStream> {
     let name = &input.name;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     let fields = input.fields.iter().map(|f| {
+        let cfg_attrs = &f.cfg_attrs;
         let field_name = &f.ident;
-        quote::quote! { #field_name: None }
+        quote::quote! { #(#cfg_attrs)* #field_name: None }
     });
 
     Ok(quote::quote! {
@@ -129,4 +132,28 @@ fn generate_default(input: &OptionsInput) -> Result<proc_macro2::TokenStream> {
             }
         }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn conditional_field_gates_every_generated_member() {
+        let ast: DeriveInput = syn::parse_quote! {
+            #[options(layers(runtime, account, operation))]
+            struct TestOptions {
+                #[cfg(feature = "preview")]
+                #[option(env = "TEST_PREVIEW", overridable)]
+                preview: Option<u32>,
+            }
+        };
+        let generated = derive_cosmos_options_impl(ast).unwrap().to_string();
+        let cfg = quote::quote!(#[cfg(feature = "preview")]).to_string();
+        assert_eq!(
+            generated.matches(&cfg).count(),
+            8,
+            "builder field, setter, build, new, view, env, override env, and Default must all be gated"
+        );
+    }
 }

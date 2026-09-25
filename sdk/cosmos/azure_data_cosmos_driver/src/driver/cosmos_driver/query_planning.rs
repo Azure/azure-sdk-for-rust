@@ -31,26 +31,6 @@ impl From<crate::query::local_plan_adapter::ProviderResolution> for ResolvedQuer
     }
 }
 
-/// Returns an empty resolution when local planning proves topology is unnecessary.
-pub(super) fn try_resolve_without_topology(
-    container: &ContainerReference,
-    operation: &CosmosOperation,
-    plan_options: &PlanOptions,
-) -> Option<ResolvedQueryPlan> {
-    if plan_options.query_plan_mode == QueryPlanMode::GatewayOnly {
-        return None;
-    }
-
-    matches!(
-        crate::query::local_plan_adapter::try_local_plan(
-            operation.body(),
-            container.partition_key_definition(),
-        ),
-        Ok(crate::query::local_plan_adapter::ProviderResolution::Empty)
-    )
-    .then_some(ResolvedQueryPlan::Empty)
-}
-
 /// Resolves a query plan through the enabled providers in precedence order.
 pub(super) async fn resolve_query_plan(
     driver: &CosmosDriver,
@@ -197,11 +177,7 @@ async fn gateway_query_plan(
     operation: &CosmosOperation,
     options: &OperationOptions,
 ) -> crate::error::Result<QueryPlan> {
-    let query_plan_operation = CosmosOperation::query_plan(
-        container.clone(),
-        std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),
-    )
-    .with_body(operation.body().unwrap_or_default().to_vec());
+    let query_plan_operation = build_gateway_query_plan_operation(container, operation);
 
     let response = driver
         .execute_operation_direct(
@@ -229,4 +205,56 @@ async fn gateway_query_plan(
             .build()
     })?;
     raw_plan.resolve(container.partition_key_definition())
+}
+
+fn build_gateway_query_plan_operation(
+    container: &ContainerReference,
+    operation: &CosmosOperation,
+) -> CosmosOperation {
+    CosmosOperation::query_plan(
+        container.clone(),
+        std::borrow::Cow::Borrowed(crate::query::SUPPORTED_QUERY_FEATURES),
+    )
+    .with_body(operation.body().unwrap_or_default().to_vec())
+    .with_absolute_deadline(operation.absolute_deadline())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::{Duration, Instant};
+
+    use super::*;
+    use crate::models::{
+        AccountReference, ContainerProperties, PartitionKeyDefinition, SystemProperties,
+    };
+
+    fn test_container() -> ContainerReference {
+        let account = AccountReference::with_master_key(
+            url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
+            "dGVzdA==",
+        );
+        let properties = ContainerProperties {
+            id: "coll".into(),
+            partition_key: serde_json::from_str::<PartitionKeyDefinition>(
+                r#"{"paths":["/pk"],"version":2}"#,
+            )
+            .unwrap(),
+            system_properties: SystemProperties::default(),
+        };
+        ContainerReference::new(account, "db", "db_rid", "coll", "coll_rid", &properties)
+    }
+
+    #[test]
+    fn gateway_query_plan_inherits_outer_deadline() {
+        let container = test_container();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let operation =
+            CosmosOperation::query_items(container.clone(), Some(crate::models::FeedRange::full()))
+                .with_body(br#"{"query":"SELECT * FROM c"}"#.to_vec())
+                .with_absolute_deadline(Some(deadline));
+
+        let query_plan_operation = build_gateway_query_plan_operation(&container, &operation);
+
+        assert_eq!(query_plan_operation.absolute_deadline(), Some(deadline));
+    }
 }

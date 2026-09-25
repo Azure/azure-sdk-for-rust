@@ -56,8 +56,18 @@ pub(crate) trait TopologyProvider: Send {
 pub(crate) struct ResolvedRange {
     /// The partition key range ID for this physical partition.
     pub partition_key_range_id: String,
+    /// Ancestor range IDs whose session vectors remain valid after a split.
+    pub parents: Vec<String>,
     /// The EPK sub-range within this physical partition.
     pub range: FeedRange,
+}
+
+/// Returns the physical partition when resolution produced exactly one range.
+pub(crate) fn single_resolved_range(ranges: &[ResolvedRange]) -> Option<&ResolvedRange> {
+    match ranges {
+        [range] => Some(range),
+        _ => None,
+    }
 }
 
 /// Context passed through dataflow node execution.
@@ -104,5 +114,20 @@ impl<'a> PipelineContext<'a> {
             crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_TOPOLOGY_PROVIDER_MISSING).with_message("topology resolution requested for a plan that was not given a topology provider").build()
         })?;
         provider.resolve_ranges(range, refresh).await
+    }
+
+    /// Resolves a range when this plan has a topology provider.
+    ///
+    /// Logical-partition operations can execute without physical topology, so a
+    /// missing provider is represented as `Ok(None)` instead of an error.
+    pub(crate) async fn resolve_ranges_if_available(
+        &mut self,
+        range: &FeedRange,
+        refresh: PartitionRoutingRefresh,
+    ) -> crate::error::Result<Option<Vec<ResolvedRange>>> {
+        let Some(provider) = self.topology_provider.as_deref_mut() else {
+            return Ok(None);
+        };
+        provider.resolve_ranges(range, refresh).await.map(Some)
     }
 }
