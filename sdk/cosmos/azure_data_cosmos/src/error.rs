@@ -50,7 +50,7 @@ pub(crate) fn with_patch_tracking_id(
     tracking_id: PatchTrackingId,
 ) -> CosmosError {
     CosmosErrorBuilder::from_error(error)
-        .with_patch_tracking_id(tracking_id.into_driver())
+        .with_patch_tracking_id(tracking_id)
         .build()
 }
 
@@ -65,17 +65,14 @@ mod tests {
 
     #[cfg(feature = "preview_patch")]
     #[test]
-    fn patch_tracking_id_converts_to_sdk_model() {
+    fn patch_tracking_id_uses_sdk_exported_model() {
         let id = crate::models::PatchTrackingId::from(uuid::Uuid::from_u128(42));
         let cosmos: CosmosError = CosmosError::builder()
             .with_status(azure_data_cosmos_driver::error::status_codes::TRANSPORT_IO_FAILED)
-            .with_patch_tracking_id(id.into_driver())
+            .with_patch_tracking_id(id)
             .build();
 
-        assert_eq!(
-            cosmos.patch_tracking_id().map(PatchTrackingId::from_driver),
-            Some(id)
-        );
+        assert_eq!(cosmos.patch_tracking_id(), Some(id));
     }
 
     #[cfg(feature = "preview_patch")]
@@ -88,10 +85,7 @@ mod tests {
 
         let error = with_patch_tracking_id(error, id);
 
-        assert_eq!(
-            error.patch_tracking_id().map(PatchTrackingId::from_driver),
-            Some(id)
-        );
+        assert_eq!(error.patch_tracking_id(), Some(id));
         assert!(error.source().is_some());
     }
 

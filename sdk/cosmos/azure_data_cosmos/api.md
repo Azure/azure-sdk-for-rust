@@ -1853,7 +1853,7 @@ pub mod models {
     }
     #[cfg(feature = "preview_patch")]
     impl Display for PatchTrackingId {
-        fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
     }
     #[cfg(feature = "preview_patch")]
     impl From<Uuid> for PatchTrackingId {

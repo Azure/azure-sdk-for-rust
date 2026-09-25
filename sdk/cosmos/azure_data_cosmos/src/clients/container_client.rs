@@ -1573,7 +1573,7 @@ fn apply_patch_options(
         operation = operation.with_patch_max_attempts(max_attempts);
     }
     if let Some(tracking_id) = options.tracking_id {
-        operation = operation.with_patch_tracking_id(tracking_id.into_driver());
+        operation = operation.with_patch_tracking_id(tracking_id);
     }
     if let Some(capacity) = options.tracking_capacity {
         operation = operation.with_patch_tracking_capacity(capacity);

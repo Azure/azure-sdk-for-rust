@@ -86,9 +86,7 @@ impl CosmosResponse {
     /// Returns the effective duplicate-suppression identity for a tracked PATCH.
     #[cfg(feature = "preview_patch")]
     pub(crate) fn patch_tracking_id(&self) -> Option<PatchTrackingId> {
-        self.diagnostics
-            .patch_tracking_id()
-            .map(PatchTrackingId::from_driver)
+        self.diagnostics.patch_tracking_id()
     }
 
     /// Deserializes the response body into a model type.

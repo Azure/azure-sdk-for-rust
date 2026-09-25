@@ -342,7 +342,6 @@ pub(crate) async fn commit_distributed_write(
             Ok(response)
         }
         Err(err) => {
-            let err = err;
             context.dispatch_error(&err, || transaction_op_context("commit_distributed_write"));
             Err(err)
         }
@@ -370,7 +369,6 @@ pub(crate) async fn execute_distributed_read(
             Ok(response)
         }
         Err(err) => {
-            let err = err;
             context.dispatch_error(&err, || transaction_op_context("execute_distributed_read"));
             Err(err)
         }
