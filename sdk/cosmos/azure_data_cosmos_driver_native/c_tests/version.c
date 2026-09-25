@@ -27,25 +27,16 @@ static int test_string_free_handles_null(void) {
     return result;
 }
 
-static int test_bytes_free_handles_null(void) {
+static int test_bytes_free_handles_empty(void) {
     int result = TEST_PASS;
-    cosmos_bytes_t bytes = {0};
+    cosmos_bytes_t bytes = {NULL, 0};
     cosmos_bytes_free(bytes);
     ASSERT(1, "cosmos_bytes_free(empty) returned without crashing");
-    return result;
-}
-
-static int test_bytes_accessors_handle_null(void) {
-    int result = TEST_PASS;
-    cosmos_bytes_t bytes = {0};
-    ASSERT(bytes.ptr == NULL, "empty bytes pointer is NULL");
-    ASSERT(bytes.len == 0, "empty bytes length is zero");
     return result;
 }
 
 TEST_SUITE_BEGIN("Version & Scaffolding")
 TEST_REGISTER(version_matches_header)
 TEST_REGISTER(string_free_handles_null)
-TEST_REGISTER(bytes_free_handles_null)
-TEST_REGISTER(bytes_accessors_handle_null)
+TEST_REGISTER(bytes_free_handles_empty)
 TEST_SUITE_END("Version & Scaffolding")

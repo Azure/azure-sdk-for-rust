@@ -104,8 +104,25 @@ impl AsHeaders for PartitionKey {
     type Iter = IntoIter<(HeaderName, HeaderValue)>;
     fn as_headers(&self) -> Result<<Self as >::Iter, <Self as >::Error>;
 }
-impl From<Vec<PartitionKeyValue>> for PartitionKey {
-    fn from(values: Vec<PartitionKeyValue>) -> Self;
+impl TryFrom<Option<f32>> for PartitionKey {
+    type Error = CosmosError;
+    fn try_from(value: Option<f32>) -> Result<Self, <Self as >::Error>;
+}
+impl TryFrom<Option<f64>> for PartitionKey {
+    type Error = CosmosError;
+    fn try_from(value: Option<f64>) -> Result<Self, <Self as >::Error>;
+}
+impl TryFrom<Vec<PartitionKeyValue>> for PartitionKey {
+    type Error = CosmosError;
+    fn try_from(values: Vec<PartitionKeyValue>) -> Result<Self, <Self as >::Error>;
+}
+impl TryFrom<f32> for PartitionKey {
+    type Error = CosmosError;
+    fn try_from(value: f32) -> Result<Self, <Self as >::Error>;
+}
+impl TryFrom<f64> for PartitionKey {
+    type Error = CosmosError;
+    fn try_from(value: f64) -> Result<Self, <Self as >::Error>;
 }
 impl<T1, T2, T3> From<(T1, T2, T3)> for PartitionKey where T1: Into<PartitionKeyValue>, T2: Into<PartitionKeyValue>, T3: Into<PartitionKeyValue> {
     fn from((v1, v2, v3): (T1, T2, T3)) -> Self;
@@ -227,7 +244,6 @@ pub mod clients {
     impl CosmosClientBuilder {
         pub async fn build(self, account: AccountReference, routing_strategy: RoutingStrategy) -> crate::Result<CosmosClient>;
         pub fn new() -> Self;
-        pub fn register_throughput_control_group(self, group: ThroughputControlGroupOptions) -> crate::Result<Self>;
         pub fn with_backup_endpoints(self, endpoints: Vec<crate::AccountEndpoint>) -> Self;
         pub fn with_binary_encoding_options(self, options: BinaryEncodingOptions) -> Self;
         pub fn with_default_operation_options(self, options: OperationOptions) -> Self;
@@ -300,15 +316,17 @@ pub mod clients {
         pub fn status_code(&self) -> azure_core::http::StatusCode;
         pub fn sub_status_code(&self) -> Option<crate::SubStatusCode>;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(all(feature = "preview_dtx", feature = "preview_patch"))]
     #[derive(Clone, Default)]
+    #[cfg(feature = "preview_patch")]
     #[non_exhaustive]
     pub struct DistributedTransactionPatchOperationOptions {
         pub session_token: Option<crate::options::SessionToken>,
         pub precondition: Option<crate::options::Precondition>,
         pub filter_predicate: Option<std::borrow::Cow<'static, str>>,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(all(feature = "preview_dtx", feature = "preview_patch"))]
+    #[cfg(feature = "preview_patch")]
     impl DistributedTransactionPatchOperationOptions {
         pub fn with_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
         pub fn with_precondition(self, precondition: Precondition) -> Self;
@@ -345,6 +363,7 @@ pub mod clients {
         pub fn create_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
         pub fn delete_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, options: Option<DistributedTransactionOperationOptions>) -> Self;
         pub fn new() -> Self;
+        #[cfg(feature = "preview_patch")]
         pub fn patch_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, patch: PatchInstructions, options: Option<DistributedTransactionPatchOperationOptions>) -> crate::Result<Self>;
         pub fn replace_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
         pub fn upsert_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
@@ -1263,6 +1282,7 @@ pub mod models {
         const CLIENT_OPAQUE_TOKEN_INVALID_FOR_CROSS_PARTITION_QUERY: CosmosStatus = _;
         const CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_EMPTY: CosmosStatus = _;
+        const CLIENT_PARTITION_KEY_NUMBER_NON_FINITE: CosmosStatus = _;
         const CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS: CosmosStatus = _;
         const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: CosmosStatus = _;
         const CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED: CosmosStatus = _;
@@ -1277,14 +1297,13 @@ pub mod models {
         const CLIENT_SINGLETON_OPERATION_RETURNED_EMPTY_PAGE: CosmosStatus = _;
         const CLIENT_SPLIT_RETRIES_EXHAUSTED: CosmosStatus = _;
         const CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID: CosmosStatus = _;
-        const CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED: CosmosStatus = _;
-        const CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED: CosmosStatus = _;
         const CLIENT_THROUGHPUT_POLLER_INCOMPLETE: CosmosStatus = _;
         const CLIENT_TOPOLOGY_PROVIDER_MISSING: CosmosStatus = _;
         const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = _;
         const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: CosmosStatus = _;
         const CLIENT_UNKNOWN_PRIORITY_LEVEL: CosmosStatus = _;
         const CLIENT_UNSUPPORTED_QUERY_FEATURE: CosmosStatus = _;
+        const CLIENT_USER_AGENT_SUFFIX_INVALID: CosmosStatus = _;
         const COMPLETING_PARTITION_MIGRATION: CosmosStatus = _;
         const COMPLETING_SPLIT: CosmosStatus = _;
         const CROSS_PARTITION_QUERY_NOT_SERVABLE: CosmosStatus = _;
@@ -1548,8 +1567,29 @@ pub mod models {
         fn as_headers(&self) -> Result<<Self as >::Iter, <Self as >::Error>;
     }
     #[doc(inline)]
-    impl From<Vec<PartitionKeyValue>> for PartitionKey {
-        fn from(values: Vec<PartitionKeyValue>) -> Self;
+    impl TryFrom<Option<f32>> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: Option<f32>) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<Option<f64>> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: Option<f64>) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<Vec<PartitionKeyValue>> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(values: Vec<PartitionKeyValue>) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<f32> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: f32) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<f64> for PartitionKey {
+        type Error = CosmosError;
+        fn try_from(value: f64) -> Result<Self, <Self as >::Error>;
     }
     #[doc(inline)]
     impl<T1, T2, T3> From<(T1, T2, T3)> for PartitionKey where T1: Into<PartitionKeyValue>, T2: Into<PartitionKeyValue>, T3: Into<PartitionKeyValue> {
@@ -1630,14 +1670,6 @@ pub mod models {
         fn from(value: bool) -> Self;
     }
     #[doc(inline)]
-    impl From<f32> for PartitionKeyValue {
-        fn from(value: f32) -> Self;
-    }
-    #[doc(inline)]
-    impl From<f64> for PartitionKeyValue {
-        fn from(value: f64) -> Self;
-    }
-    #[doc(inline)]
     impl From<i16> for PartitionKeyValue {
         fn from(value: i16) -> Self;
     }
@@ -1678,21 +1710,44 @@ pub mod models {
         fn from(value: usize) -> Self;
     }
     #[doc(inline)]
+    impl TryFrom<Option<f32>> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: Option<f32>) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<Option<f64>> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: Option<f64>) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<f32> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: f32) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<f64> for PartitionKeyValue {
+        type Error = CosmosError;
+        fn try_from(value: f64) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
     impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
         fn from(value: Option<T>) -> Self;
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub struct PatchInstructions {
         pub operations: Vec<PatchOperation>,
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl PatchInstructions {
         pub fn is_retry_safe(&self) -> bool;
         pub fn new() -> Self;
         pub fn with_operation(self, operation: PatchOperation) -> Self;
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl From<Vec<PatchOperation>> for PatchInstructions {
         fn from(operations: Vec<PatchOperation>) -> Self;
@@ -1980,6 +2035,7 @@ pub mod models {
         LastWriterWins,
         Custom,
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     #[derive(Clone, Copy, Debug, PartialEq)]
     #[non_exhaustive]
@@ -1987,18 +2043,22 @@ pub mod models {
         Int(i64),
         Float(f64),
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl From<f64> for CosmosNumber {
         fn from(v: f64) -> Self;
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl From<i64> for CosmosNumber {
         fn from(v: i64) -> Self;
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl Serialize for CosmosNumber {
         fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error>;
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl<'de> Deserialize<'de> for CosmosNumber {
         fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, <D as >::Error>;
@@ -2040,6 +2100,7 @@ pub mod models {
         type Error = &'static str;
         fn try_from(value: u32) -> Result<Self, <Self as >::Error>;
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -2053,6 +2114,7 @@ pub mod models {
         Increment { path: String, value: CosmosNumber },
         Move { from: String, path: String },
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl PatchOperation {
         pub fn add<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
@@ -2470,6 +2532,7 @@ pub mod options {
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct OperationOptions {
+        #[cfg(feature = "preview_patch")]
         pub patch_strategy: Option<crate::options::PatchStrategy>,
         pub read_consistency_strategy: Option<crate::options::ReadConsistencyStrategy>,
         pub excluded_regions: Option<crate::options::ExcludedRegions>,
@@ -2512,6 +2575,7 @@ pub mod options {
         pub fn with_hedging_enabled(self, value: bool) -> Self;
         pub fn with_max_failover_retry_count(self, value: u32) -> Self;
         pub fn with_max_session_retry_count(self, value: u32) -> Self;
+        #[cfg(feature = "preview_patch")]
         pub fn with_patch_strategy(self, value: PatchStrategy) -> Self;
         pub fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
@@ -2537,6 +2601,7 @@ pub mod options {
         pub fn max_session_retry_count(&self) -> Option<&u32>;
         pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
+        #[cfg(feature = "preview_patch")]
         pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
         pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
         pub fn session_capturing_disabled(&self) -> Option<&bool>;
@@ -2890,56 +2955,9 @@ pub mod options {
         pub fn new(env: Option<::std::sync::Arc<ThrottlingRetryOptions>>, runtime: Option<::std::sync::Arc<ThrottlingRetryOptions>>, account: Option<::std::sync::Arc<ThrottlingRetryOptions>>, operation: Option<&'a ThrottlingRetryOptions>) -> Self;
     }
     #[doc(inline)]
-    #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-    pub struct ThroughputControlGroupName(pub std::borrow::Cow<'static, str>);
-    #[doc(inline)]
-    impl ThroughputControlGroupName {
-        pub fn as_str(&self) -> &str;
-        pub fn new<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(name: impl Into<Cow<'static, str>>) -> Self;
-    }
-    #[doc(inline)]
-    impl AsRef<str> for ThroughputControlGroupName {
-        fn as_ref(&self) -> &str;
-    }
-    #[doc(inline)]
-    impl Display for ThroughputControlGroupName {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
-    }
-    #[doc(inline)]
-    impl From<&'static str> for ThroughputControlGroupName {
-        fn from(name: &'static str) -> Self;
-    }
-    #[doc(inline)]
-    impl From<Cow<'static, str>> for ThroughputControlGroupName {
-        fn from(name: Cow<'static, str>) -> Self;
-    }
-    #[doc(inline)]
-    impl From<String> for ThroughputControlGroupName {
-        fn from(name: String) -> Self;
-    }
-    #[doc(inline)]
-    #[derive(Clone, Debug)]
-    #[non_exhaustive]
-    pub struct ThroughputControlGroupOptions {
-    }
-    #[doc(inline)]
-    impl ThroughputControlGroupOptions {
-        pub fn container(&self) -> &ContainerReference;
-        pub fn is_default(&self) -> bool;
-        pub fn name(&self) -> &ThroughputControlGroupName;
-        pub fn new<impl Into<ThroughputControlGroupName>: Into<ThroughputControlGroupName>>(name: impl Into<ThroughputControlGroupName>, container: ContainerReference, is_default: bool) -> Self;
-        pub fn priority_level(&self) -> Option<PriorityLevel>;
-        pub fn set_priority_level(&self, level: PriorityLevel);
-        pub fn set_throughput_bucket(&self, bucket: u32);
-        pub fn throughput_bucket(&self) -> Option<u32>;
-        pub fn with_priority_level(self, level: PriorityLevel) -> Self;
-        pub fn with_throughput_bucket(self, bucket: u32) -> Self;
-    }
-    #[doc(inline)]
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct ThroughputControlOptions {
-        pub group_name: Option<crate::models::ThroughputControlGroupName>,
         pub throughput_bucket: Option<u32>,
         pub priority_level: Option<crate::options::PriorityLevel>,
     }
@@ -2953,7 +2971,6 @@ pub mod options {
         #[must_use]
         pub fn build(self) -> ThroughputControlOptions;
         pub fn new() -> Self;
-        pub fn with_group_name(self, value: ThroughputControlGroupName) -> Self;
         pub fn with_priority_level(self, value: PriorityLevel) -> Self;
         pub fn with_throughput_bucket(self, value: u32) -> Self;
     }
@@ -2964,7 +2981,6 @@ pub mod options {
     #[doc(inline)]
     #[automatically_derived]
     impl<'a> ThroughputControlOptionsView<'a> {
-        pub fn group_name(&self) -> Option<&ThroughputControlGroupName>;
         pub fn new(env: Option<::std::sync::Arc<ThroughputControlOptions>>, runtime: Option<::std::sync::Arc<ThroughputControlOptions>>, account: Option<::std::sync::Arc<ThroughputControlOptions>>, operation: Option<&'a ThroughputControlOptions>) -> Self;
         pub fn priority_level(&self) -> Option<&PriorityLevel>;
         pub fn throughput_bucket(&self) -> Option<&u32>;
@@ -2986,7 +3002,6 @@ pub mod options {
     impl UserAgentSuffix {
         const MAX_LENGTH: usize = 25;
         pub fn as_str(&self) -> &str;
-        pub fn new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Self;
         pub fn try_new<impl Into<String>: Into<String>>(value: impl Into<String>) -> Option<Self>;
     }
     #[doc(inline)]
@@ -2996,6 +3011,16 @@ pub mod options {
     #[doc(inline)]
     impl Display for UserAgentSuffix {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
+    }
+    #[doc(inline)]
+    impl TryFrom<&str> for UserAgentSuffix {
+        type Error = CosmosError;
+        fn try_from(value: &str) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<String> for UserAgentSuffix {
+        type Error = CosmosError;
+        fn try_from(value: String) -> Result<Self, <Self as >::Error>;
     }
     #[doc(inline)]
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

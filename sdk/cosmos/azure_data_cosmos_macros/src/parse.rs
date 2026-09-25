@@ -78,6 +78,8 @@ impl Layer {
 pub struct OptionField {
     /// The field name.
     pub ident: Ident,
+    /// Conditional compilation attributes to copy onto generated members.
+    pub cfg_attrs: Vec<syn::Attribute>,
     /// The inner type (unwrapped from `Option<T>`).
     pub inner_type: Type,
     /// The full `Option<T>` type.
@@ -254,6 +256,12 @@ fn parse_fields(data: &DataStruct) -> Result<Vec<OptionField>> {
 
         result.push(OptionField {
             ident,
+            cfg_attrs: field
+                .attrs
+                .iter()
+                .filter(|attr| attr.path().is_ident("cfg"))
+                .cloned()
+                .collect(),
             inner_type,
             full_type: field.ty.clone(),
             env_var,

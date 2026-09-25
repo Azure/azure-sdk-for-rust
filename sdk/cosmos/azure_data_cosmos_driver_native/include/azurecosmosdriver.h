@@ -664,10 +664,6 @@ enum cosmos_sub_status_t
    */
   COSMOS_SUB_STATUS_CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID = 20150,
   /**
-   * `CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED` (20152).
-   */
-  COSMOS_SUB_STATUS_CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED = 20152,
-  /**
    * `CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED` (20153).
    */
   COSMOS_SUB_STATUS_CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED = 20153,
@@ -1481,10 +1477,6 @@ typedef struct cosmos_operation_options_t {
    * Endpoint unavailability TTL (milliseconds). `< 0` = unset.
    */
   int64_t endpoint_unavailability_ttl_ms;
-  /**
-   * Throughput control group name (counted UTF-8). NULL/0 = unset.
-   */
-  struct cosmos_string_view_t throughput_control_group;
   /**
    * Excluded regions — array of counted UTF-8 region ids.
    * NULL / `0` length = unset; non-NULL with `0` length is rejected.

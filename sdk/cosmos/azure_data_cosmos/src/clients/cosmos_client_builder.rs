@@ -10,7 +10,7 @@ use crate::{
     diagnostics::{CosmosClientInfo, DiagnosticsHandler},
     options::{
         BinaryEncodingOptions, CosmosClientOptions, OperationOptions, PartitionFailoverOptions,
-        ThroughputControlGroupOptions, UserAgentSuffix,
+        UserAgentSuffix,
     },
     AccountReference, CosmosClient, CosmosCredential, CosmosRuntime, RoutingStrategy,
 };
@@ -87,8 +87,6 @@ pub struct CosmosClientBuilder {
     /// Pre-built runtime to attach. If `None`, the client falls back to
     /// a default global runtime.
     runtime: Option<CosmosRuntime>,
-    /// Throughput control groups to register on this client's driver options.
-    throughput_control_groups: Vec<ThroughputControlGroupOptions>,
     /// Fault-injection rules to apply on this client's driver.
     ///
     /// Evaluated by the driver's transport-layer fault-injection client.
@@ -160,12 +158,9 @@ impl CosmosClientBuilder {
     /// Sets a per-client suffix to append to the User-Agent header for
     /// telemetry, overriding any runtime-wide default suffix.
     ///
-    /// Construct the suffix explicitly via
-    /// [`UserAgentSuffix::new`](crate::options::UserAgentSuffix::new) for trusted
-    /// values, or [`UserAgentSuffix::try_new`](crate::options::UserAgentSuffix::try_new)
-    /// for untrusted input. Validation rules (max 25 characters,
-    /// HTTP-header-safe) are enforced at the construction site rather than
-    /// here, which keeps any panic local to the caller's input handling.
+    /// Construct the suffix with [`UserAgentSuffix::try_from`] and handle
+    /// invalid input before passing it to this builder. Validation (max 25
+    /// characters, HTTP-header-safe) occurs at construction.
     ///
     /// # Arguments
     ///
@@ -233,20 +228,6 @@ impl CosmosClientBuilder {
         // Storing the vec here keeps build() lazy and lets us detect duplicates at the
         // single concatenation point in DriverOptionsInput::build.
         self.fault_injection_rules = rules;
-        Ok(self)
-    }
-
-    /// Throughput-control groups are scoped to this client's driver — the
-    /// per-runtime registry has been removed, so every client owns its own
-    /// set of groups. Duplicate group names supplied to the same builder are
-    /// surfaced as an error at `build()` time.
-    pub fn register_throughput_control_group(
-        mut self,
-        group: ThroughputControlGroupOptions,
-    ) -> crate::Result<Self> {
-        // Defer cross-layer validation to DriverOptionsInput::build where the
-        // full registry is composed; here we only collect.
-        self.throughput_control_groups.push(group);
         Ok(self)
     }
 
@@ -325,7 +306,6 @@ impl CosmosClientBuilder {
             partition_failover_options: self.partition_failover_options,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: self.fault_injection_rules,
-            throughput_control_groups: self.throughput_control_groups,
         }
         .build()?;
         let driver = runtime.into_inner().create_driver(driver_options).await?;
@@ -359,7 +339,6 @@ struct DriverOptionsInput {
     partition_failover_options: Option<PartitionFailoverOptions>,
     #[cfg(feature = "fault_injection")]
     fault_injection_rules: Vec<Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>>,
-    throughput_control_groups: Vec<ThroughputControlGroupOptions>,
 }
 
 impl DriverOptionsInput {
@@ -390,11 +369,6 @@ impl DriverOptionsInput {
         if !self.fault_injection_rules.is_empty() {
             builder = builder
                 .with_fault_injection_rules(self.fault_injection_rules)
-                .map_err(crate::CosmosError::from)?;
-        }
-        for group in self.throughput_control_groups {
-            builder = builder
-                .register_throughput_control_group(group)
                 .map_err(crate::CosmosError::from)?;
         }
         Ok(builder.build())
@@ -439,7 +413,7 @@ mod tests {
     /// onto `CosmosDriverRuntimeBuilder::with_user_agent_suffix`.
     #[tokio::test]
     async fn user_agent_suffix_is_forwarded_to_driver_runtime() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
 
         let options = CosmosClientOptions {
             user_agent_suffix: Some(suffix.clone()),
@@ -476,7 +450,7 @@ mod tests {
 
     #[test]
     fn user_agent_suffix_setter_records_value() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
         let builder = CosmosClientBuilder::new().with_user_agent_suffix(suffix.clone());
         assert_eq!(builder.options.user_agent_suffix.as_ref(), Some(&suffix));
     }
@@ -497,7 +471,6 @@ mod tests {
             partition_failover_options: None,
             #[cfg(feature = "fault_injection")]
             fault_injection_rules: Vec::new(),
-            throughput_control_groups: Vec::new(),
         }
     }
 
@@ -566,7 +539,7 @@ mod tests {
     /// the driver builds a User-Agent that overrides the runtime default.
     #[test]
     fn user_agent_suffix_flows_to_driver_options() {
-        let suffix = UserAgentSuffix::new("myapp-westus2");
+        let suffix = UserAgentSuffix::try_from("myapp-westus2").unwrap();
         let opts = DriverOptionsInput {
             user_agent_suffix: Some(suffix.clone()),
             ..test_driver_options_input(RoutingStrategy::PreferredRegions(Vec::new()))

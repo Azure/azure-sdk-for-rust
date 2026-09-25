@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
 # cSpell:ignore endforeach pkgconfig libdir includedir TOUPPER MSVC COPYONLY CFLAGS DTEST DCMAKE DLIBRARY azurecosmosdriver corrosion
 
 cmake_minimum_required(VERSION 3.20)
@@ -77,6 +80,7 @@ set(TEST_TARGETS "")
 foreach(test_file ${TEST_FILES})
     get_filename_component(test_name ${test_file} NAME_WE)
     add_executable(${test_name} ${test_file})
+    target_compile_features(${test_name} PRIVATE c_std_11)
     target_link_libraries(${test_name} PRIVATE azurecosmosdriver)
     list(APPEND TEST_TARGETS ${test_name})
 endforeach()

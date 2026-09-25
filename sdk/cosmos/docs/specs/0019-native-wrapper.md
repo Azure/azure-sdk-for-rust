@@ -1081,7 +1081,7 @@ cosmos_driver_options_t *cosmos_driver_options_builder_build(
 void cosmos_driver_options_free(cosmos_driver_options_t *opts);
 ```
 
-That is the **entire** `DriverOptions` surface. The settings frequently associated with "per-driver" defaults in older Cosmos SDKs — `excluded_regions`, `read_consistency_strategy`, `content_response_on_write`, throughput-control group, priority, end-to-end timeout, per-partition circuit-breaker tuning (8 knobs), retry counts (`max_failover_retry_count`, `max_session_retry_count`), `session_capturing_disabled`, `endpoint_unavailability_ttl`, and custom headers — all live on `OperationOptions` in this driver (`src/options/operation_options.rs:41-188`, 17 public fields), not `DriverOptions`. They are exposed under `cosmos_operation_options_*` (per-call) and can be set as driver-wide defaults by stashing them in the `DriverOptions` via `cosmos_driver_options_builder_with_operation_options`. **`max_item_count` is the exception**: it lives directly on `CosmosOperation::with_max_item_count` (not on `OperationOptions`) and is exposed through the §4.6.2 mutators rather than `cosmos_operation_options_*`. See Phase 5 in §8 for the full enumeration of `OperationOptions` setters the wrapper ships.
+That is the **entire** `DriverOptions` surface. The settings frequently associated with "per-driver" defaults in older Cosmos SDKs — `excluded_regions`, `read_consistency_strategy`, `content_response_on_write`, priority, end-to-end timeout, per-partition circuit-breaker tuning (8 knobs), retry counts (`max_failover_retry_count`, `max_session_retry_count`), `session_capturing_disabled`, `endpoint_unavailability_ttl`, and custom headers — live on `OperationOptions` in this driver, not `DriverOptions`. They are exposed under `cosmos_operation_options_*` (per-call) and can be set as driver-wide defaults by stashing them in the `DriverOptions` via `cosmos_driver_options_builder_with_operation_options`. **`max_item_count` is the exception**: it lives directly on `CosmosOperation::with_max_item_count` (not on `OperationOptions`) and is exposed through the §4.6.2 mutators rather than `cosmos_operation_options_*`. See Phase 5 in §8 for the full enumeration of `OperationOptions` setters the wrapper ships.
 
 Likewise, transport-side knobs (connection pool sizing, user-agent suffix, workload id, correlation id, emulator-certificate trust) live on `CosmosDriverRuntimeBuilder` and are exposed under `cosmos_runtime_builder_*`, **not** `cosmos_driver_options_*`. There is no `cosmos_driver_options_builder_with_allow_emulator_invalid_certs` — that knob lives on the runtime.
 
@@ -1413,8 +1413,8 @@ distinguish "inherit from a lower layer" from an explicit value:
   `per_partition_circuit_breaker_enabled`): `0` unset / `1` false / `2` true.
 - **`int32` numeric fields** (retry / circuit-breaker counters): `< 0` = unset.
 - **`int64` duration fields** (`*_ms`): `< 0` = unset, else milliseconds.
-- **string / array fields** (`throughput_control_group`, `excluded_regions`,
-  `custom_headers`): NULL / length `0` = unset.
+- **string / array fields** (`excluded_regions`, `custom_headers`):
+  NULL / length `0` = unset.
 
 ```c
 typedef struct cosmos_operation_options {
@@ -1431,7 +1431,6 @@ typedef struct cosmos_operation_options {
     int32_t ppcb_stale_partition_unavailability_refresh_interval_in_seconds; /* < 0 = unset */
     int64_t end_to_end_timeout_ms;                      /* < 0 = unset */
     int64_t endpoint_unavailability_ttl_ms;             /* < 0 = unset */
-    const char        *throughput_control_group;        /* NULL = unset */
     const char *const *excluded_regions;                /* NULL / len 0 = unset */
     size_t             excluded_regions_len;
     const cosmos_header_kv_t *custom_headers;           /* NULL / len 0 = none */
@@ -1447,9 +1446,8 @@ The wrapper validates every field at the boundary when translating the struct
 into the driver's `OperationOptions` (out-of-range enum / tri-state
 discriminants return a `400 + COSMOS_SUB_STATUS_CLIENT_FFI_INVALID_OPTION_VALUE` packed status; a non-NULL
 `excluded_regions` with length `0` is rejected as ambiguous). Driver setters
-without a dedicated field above (e.g. consistency level, throughput-control
-group name) are expressed through the corresponding option field rather than a
-per-operation mutator.
+without a dedicated field above (e.g. consistency level) are expressed
+through the corresponding option field rather than a per-operation mutator.
 
 #### 4.6.3 Submission and completion lifecycle — *normative*
 
@@ -2150,9 +2148,6 @@ Each item below is independent; ship as feature-gated when ready.
         bool content_response_on_write;                  /* flag bit 3 = present */
         cosmos_priority_level_t priority_level;          /* flag bit 4 = present */
         uint64_t end_to_end_timeout_millis;              /* flag bit 5 = present */
-
-        /* Throughput control & QoS */
-        const char *throughput_control_group_name;       /* flag bit 6 = present */
 
         /* Per-partition circuit-breaker (8 knobs) */
         bool partition_level_circuit_breaker_enabled;    /* flag bit 7 = present */

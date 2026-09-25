@@ -9,13 +9,11 @@ use std::time::Duration;
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_data_cosmos_macros::CosmosOptions;
 
-use crate::{
-    models::ThroughputControlGroupName,
-    options::{
-        AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
-        EndToEndOperationLatencyPolicy, ExcludedRegions, PatchStrategy, PriorityLevel,
-        ReadConsistencyStrategy,
-    },
+#[cfg(feature = "preview_patch")]
+use crate::options::PatchStrategy;
+use crate::options::{
+    AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
+    EndToEndOperationLatencyPolicy, ExcludedRegions, PriorityLevel, ReadConsistencyStrategy,
 };
 
 /// Options that apply to individual Cosmos DB requests.
@@ -48,6 +46,7 @@ pub struct OperationOptions {
     /// it. Unsafe server-side PATCH does not persist a tracking marker and is
     /// not retried after an ambiguous outcome; client-side-only settings are
     /// ignored whenever the resolved strategy uses the server path.
+    #[cfg(feature = "preview_patch")]
     #[option(env = "AZURE_COSMOS_PATCH_STRATEGY")]
     pub patch_strategy: Option<PatchStrategy>,
 
@@ -226,63 +225,27 @@ pub struct ThrottlingRetryOptions {
 
 /// Throughput-control tuning for an individual request (or layer default).
 ///
-/// Mirrors the [`ThrottlingRetryOptions`] pattern: three independently
+/// Mirrors the [`ThrottlingRetryOptions`] pattern: two independently
 /// layered knobs grouped under a single nested option group on
 /// [`OperationOptions`]. None of these fields read from environment
 /// variables — throughput control is a per-application policy.
 ///
-/// # Resolution
-///
-/// Each inner field participates independently in the standard runtime →
-/// account → operation layered resolution. Once resolved, the driver
-/// computes the wire headers (`x-ms-cosmos-priority-level`,
-/// `x-ms-cosmos-throughput-bucket`) using a two-step rule per field:
-///
-/// 1. If the layered value for the field is `Some`, use it directly.
-/// 2. Else, if [`group_name`](Self::group_name) resolves to a group
-///    registered on the driver via
-///    [`DriverOptionsBuilder::register_throughput_control_group`](crate::options::DriverOptionsBuilder::register_throughput_control_group),
-///    use the group's value for the field (if the group sets it).
-/// 3. Else, the header is omitted.
-///
-/// The two fields resolve independently, so a layered
-/// `throughput_bucket = Some(...)` does not suppress a
-/// `priority_level` carried by the registered group, and vice versa.
-///
-/// # Why direct overrides exist
-///
-/// The direct [`throughput_bucket`](Self::throughput_bucket) /
-/// [`priority_level`](Self::priority_level) overrides let callers set the
-/// per-operation headers without having to register a
-/// [`ThroughputControlGroupOptions`](super::ThroughputControlGroupOptions)
-/// on the driver. Use a registered group when you want shared, mutable
-/// values to apply to a family of operations; use the direct fields for
-/// one-off overrides.
+/// Each inner field resolves independently across the runtime → account →
+/// operation layers. When set, the driver sends it in the corresponding
+/// `x-ms-cosmos-throughput-bucket` or `x-ms-cosmos-priority-level` header;
+/// otherwise that header is omitted.
 #[derive(CosmosOptions, Clone, Debug)]
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct ThroughputControlOptions {
-    /// Name of a previously-registered throughput-control group.
-    ///
-    /// Used as the fallback source for
-    /// [`throughput_bucket`](Self::throughput_bucket) and
-    /// [`priority_level`](Self::priority_level) when those fields are not
-    /// set at any layer. A name that does not resolve to a registered group
-    /// produces an error at request time.
-    pub group_name: Option<ThroughputControlGroupName>,
-
     /// Direct override for the `x-ms-cosmos-throughput-bucket` header.
     ///
-    /// Takes precedence over the bucket carried by the resolved
-    /// [`group_name`](Self::group_name) (if any). `None` falls back to the
-    /// resolved group's bucket, then to no header.
+    /// `None` inherits from a lower layer, then omits the header if unset.
     pub throughput_bucket: Option<u32>,
 
     /// Direct override for the `x-ms-cosmos-priority-level` header.
     ///
-    /// Takes precedence over the priority carried by the resolved
-    /// [`group_name`](Self::group_name) (if any). `None` falls back to the
-    /// resolved group's priority level, then to no header.
+    /// `None` inherits from a lower layer, then omits the header if unset.
     pub priority_level: Option<PriorityLevel>,
 }
 
@@ -293,6 +256,7 @@ mod tests {
     #[test]
     fn default_operation_options() {
         let options = OperationOptions::default();
+        #[cfg(feature = "preview_patch")]
         assert!(options.patch_strategy.is_none());
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.excluded_regions.is_none());
@@ -308,8 +272,10 @@ mod tests {
             .with_max_retry_count(4)
             .with_max_retry_wait_time(Duration::from_secs(12))
             .build();
-        let options = OperationOptionsBuilder::new()
-            .with_patch_strategy(PatchStrategy::ClientSide)
+        let builder = OperationOptionsBuilder::new();
+        #[cfg(feature = "preview_patch")]
+        let builder = builder.with_patch_strategy(PatchStrategy::ClientSide);
+        let options = builder
             .with_content_response_on_write(ContentResponseOnWrite::Disabled)
             .with_read_consistency_strategy(ReadConsistencyStrategy::Session)
             .with_max_failover_retry_count(5)
@@ -317,6 +283,7 @@ mod tests {
             .with_throttling_retry_options(throttling)
             .build();
 
+        #[cfg(feature = "preview_patch")]
         assert_eq!(options.patch_strategy, Some(PatchStrategy::ClientSide));
         assert_eq!(
             options.content_response_on_write,
@@ -343,6 +310,7 @@ mod tests {
         use std::sync::Arc;
 
         let env = Arc::new(OperationOptions {
+            #[cfg(feature = "preview_patch")]
             patch_strategy: Some(PatchStrategy::ServerSide),
             read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
             max_failover_retry_count: Some(3),
@@ -361,6 +329,7 @@ mod tests {
         });
 
         let operation = OperationOptions {
+            #[cfg(feature = "preview_patch")]
             patch_strategy: Some(PatchStrategy::ClientSide),
             read_consistency_strategy: Some(ReadConsistencyStrategy::Session),
             ..Default::default()
@@ -370,6 +339,7 @@ mod tests {
             OperationOptionsView::new(Some(env), Some(runtime), Some(account), Some(&operation));
 
         // Operation overrides env
+        #[cfg(feature = "preview_patch")]
         assert_eq!(view.patch_strategy(), Some(&PatchStrategy::ClientSide));
         // Operation overrides env
         assert_eq!(
@@ -426,6 +396,7 @@ mod tests {
             _ => Err(std::env::VarError::NotPresent),
         });
 
+        #[cfg(feature = "preview_patch")]
         assert_eq!(options.patch_strategy, Some(PatchStrategy::ServerSide));
         assert_eq!(
             options.read_consistency_strategy,
@@ -463,6 +434,7 @@ mod tests {
     fn from_env_vars_returns_none_for_missing_vars() {
         let options = OperationOptions::from_env_vars(|_| Err(std::env::VarError::NotPresent));
 
+        #[cfg(feature = "preview_patch")]
         assert!(options.patch_strategy.is_none());
         assert!(options.read_consistency_strategy.is_none());
         assert!(options.content_response_on_write.is_none());
@@ -471,6 +443,15 @@ mod tests {
         assert!(options.max_session_retry_count.is_none());
         assert!(options.availability_strategy.is_none());
         assert!(options.hedging_enabled.is_none());
+    }
+
+    #[cfg(not(feature = "preview_patch"))]
+    #[test]
+    fn from_env_does_not_read_preview_patch_strategy() {
+        OperationOptions::from_env_vars(|key| {
+            assert_ne!(key, "AZURE_COSMOS_PATCH_STRATEGY");
+            Err(std::env::VarError::NotPresent)
+        });
     }
 
     #[test]
@@ -753,7 +734,6 @@ mod tests {
 
         let runtime = Arc::new(OperationOptions {
             throughput_control: Some(ThroughputControlOptions {
-                group_name: Some(ThroughputControlGroupName::new("runtime-group")),
                 throughput_bucket: Some(7),
                 priority_level: Some(PriorityLevel::Low),
             }),
@@ -762,7 +742,6 @@ mod tests {
 
         let operation = OperationOptions {
             throughput_control: Some(ThroughputControlOptions {
-                group_name: None,
                 throughput_bucket: Some(99),
                 priority_level: None,
             }),
@@ -772,11 +751,6 @@ mod tests {
         let view = OperationOptionsView::new(None, Some(runtime), None, Some(&operation));
         let throughput = view.throughput_control();
 
-        assert_eq!(
-            throughput.group_name(),
-            Some(&ThroughputControlGroupName::new("runtime-group")),
-            "missing inner field on the operation layer must fall through to runtime",
-        );
         assert_eq!(
             throughput.throughput_bucket(),
             Some(&99),
@@ -798,7 +772,6 @@ mod tests {
         let view = OperationOptionsView::new(None, None, None, Some(&op));
         let throughput = view.throughput_control();
 
-        assert!(throughput.group_name().is_none());
         assert!(throughput.throughput_bucket().is_none());
         assert!(throughput.priority_level().is_none());
     }
@@ -823,6 +796,7 @@ mod real_env_tests {
         // With no variables set, the env layer contributes nothing.
         with_scoped_env(OPERATION_ENV_VARS, &[], || {
             let o = OperationOptions::from_env();
+            #[cfg(feature = "preview_patch")]
             assert!(o.patch_strategy.is_none());
             assert!(o.read_consistency_strategy.is_none());
             assert!(o.content_response_on_write.is_none());
@@ -844,6 +818,7 @@ mod real_env_tests {
             ],
             || {
                 let o = OperationOptions::from_env();
+                #[cfg(feature = "preview_patch")]
                 assert_eq!(o.patch_strategy, Some(PatchStrategy::ClientSide));
                 assert_eq!(
                     o.read_consistency_strategy,

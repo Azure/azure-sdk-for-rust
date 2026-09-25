@@ -24,14 +24,11 @@ use crate::{
             },
             hedge_budget::HedgeBudget,
             operation_pipeline::{
-                ContainerRecreationRecoveryOutcome, ContainerRecreationRecoveryTracker,
-                OperationOverrides, RegionPin,
+                deadline_signal, ContainerRecreationRecoveryOutcome,
+                ContainerRecreationRecoveryTracker, OperationOverrides, RegionPin,
             },
         },
-        routing::{
-            partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
-            CosmosEndpoint, LocationStateStore,
-        },
+        routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
         transport::uses_dataplane_pipeline,
     },
     models::{
@@ -43,12 +40,11 @@ use crate::{
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
         PartitionTopologyCacheMode, PlanOptions, ResolvedThroughputControl,
-        ThroughputControlGroupSnapshot,
     },
     ActivityId, CosmosResponse, DiagnosticsContext,
 };
 use arc_swap::ArcSwap;
-use futures::future::BoxFuture;
+use futures::future::{select, BoxFuture, Either};
 use query_planning::ResolvedQueryPlan;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -64,6 +60,50 @@ const GATEWAY_V2_DISCOVERY_OPT_IN: azure_core::http::headers::HeaderName =
     azure_core::http::headers::HeaderName::from_static(
         crate::models::cosmos_headers::request_header_names::USE_THINCLIENT,
     );
+
+fn await_planning_or_deadline<F, T>(
+    planning: F,
+    deadline: Option<Instant>,
+) -> impl std::future::Future<Output = Option<T>> + Send
+where
+    F: std::future::Future<Output = T> + Send,
+    T: Send,
+{
+    // This must be a regular function, not an `async fn`: function arguments
+    // are stored in an async state machine before its body first runs, so
+    // boxing inside an async body would still retain the full size of `F`.
+    let planning = Box::pin(planning);
+    async move {
+        let Some(deadline) = deadline else {
+            return Some(planning.await);
+        };
+        if Instant::now() >= deadline {
+            return None;
+        }
+        match select(planning, deadline_signal(Some(deadline))).await {
+            Either::Left((result, _deadline)) => Some(result),
+            Either::Right(((), _planning)) => None,
+        }
+    }
+}
+
+fn planning_timeout_error(
+    timeout: Duration,
+    mut diagnostics: DiagnosticsContextBuilder,
+) -> crate::error::CosmosError {
+    let status = crate::models::CosmosStatus::from_parts(
+        azure_core::http::StatusCode::RequestTimeout,
+        Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+    );
+    diagnostics.set_operation_status(status.status_code(), status.sub_status());
+    crate::error::CosmosError::builder()
+        .with_status(status)
+        .with_message(format!(
+            "end-to-end operation timeout exceeded during planning ({timeout:?})"
+        ))
+        .with_diagnostics(Arc::new(diagnostics.complete()))
+        .build()
+}
 
 #[cfg(feature = "preview_dtx")]
 const DTX_OUTER_MAX_RETRIES: u32 = 10;
@@ -174,17 +214,26 @@ fn request_target_overrides(
     continuation: Option<String>,
 ) -> OperationOverrides {
     match target {
-        RequestTarget::LogicalPartitionKey(pk) => OperationOverrides {
-            partition_key: Some(pk),
+        RequestTarget::LogicalPartitionKey {
+            partition_key,
+            resolved_partition_key_range_id,
+            resolved_partition_key_range_parents,
+        } => OperationOverrides {
+            partition_key: Some(partition_key),
+            logical_partition_key_target: true,
+            resolved_partition_key_range_id,
+            resolved_partition_key_range_parents,
             continuation,
             ..Default::default()
         },
         RequestTarget::EffectivePartitionKeyRange {
             partition_key_range_id,
+            partition_key_range_parents,
             range,
             partition_key_range,
         } => OperationOverrides {
             partition_key_range_id: Some(partition_key_range_id),
+            resolved_partition_key_range_parents: partition_key_range_parents,
             // Only emit `x-ms-start-epk`/`x-ms-end-epk` for the narrowed case
             // (range < partition_key_range). The public EPK headers paired with
             // `partitionkeyrangeid` are accepted by Gateway 2.0 but rejected by
@@ -266,9 +315,7 @@ fn hedged_container_recreation_recovery_eligible(
         || !container_recreation_recovery_eligible(operation, options)
         || overrides.container_recreation_recovery_disabled
         || overrides.continuation.is_some()
-        || overrides.partition_key_range_id.is_some()
-        || overrides.feed_range.is_some()
-        || overrides.pkrange_bounds.is_some()
+        || overrides.requires_plan_rebuild_after_container_recreation()
         || overrides.region_pin.is_some()
     {
         return false;
@@ -297,7 +344,7 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
                 .clone()
                 .with_absolute_deadline(self.absolute_deadline);
             let result = driver
-                .execute_operation_direct(&operation, overrides, self.options)
+                .execute_planned_operation_direct(&operation, overrides, self.options)
                 .await;
             if result.is_ok() {
                 self.successful_requests += 1;
@@ -405,12 +452,6 @@ pub struct CosmosDriver {
     /// flag without re-checking the option.
     #[cfg(feature = "fault_injection")]
     fault_injection_enabled: bool,
-    /// Driver-level throughput-control group registry.
-    ///
-    /// Populated from `DriverOptions::throughput_control_groups()` once at
-    /// driver construction. The runtime no longer owns its own registry —
-    /// throughput-control groups are a driver-level concern.
-    throughput_control_groups: crate::options::ThroughputControlGroupRegistry,
     /// Native FFI query plan provider. Lazily loads the native library on
     /// first use; returns errors if unavailable.
     #[cfg(feature = "__internal_native_query_plan")]
@@ -756,6 +797,36 @@ impl CosmosDriver {
             TransportSecurity::Secure
         };
         (diagnostics, transport_security)
+    }
+
+    /// Builds the diagnostics envelope surfaced when the outer planning
+    /// deadline cancels nested query-plan or topology work.
+    fn new_planning_diagnostics(
+        &self,
+        account: &AccountReference,
+        operation_name: Option<&'static str>,
+    ) -> DiagnosticsContextBuilder {
+        let endpoint = AccountEndpoint::from(account);
+        let fault_injection_enabled = {
+            #[cfg(feature = "fault_injection")]
+            {
+                self.fault_injection_enabled
+            }
+            #[cfg(not(feature = "fault_injection"))]
+            {
+                false
+            }
+        };
+        let (mut diagnostics, _) = Self::new_diagnostics_envelope(
+            &self.runtime,
+            ActivityId::new_uuid(),
+            &endpoint,
+            fault_injection_enabled,
+        );
+        if let Some(operation_name) = operation_name {
+            diagnostics.set_operation_name(operation_name);
+        }
+        diagnostics
     }
 
     /// Fetches account properties using a specific adaptive transport. Off-pipeline by
@@ -1807,12 +1878,6 @@ impl CosmosDriver {
         #[cfg(feature = "tokio")]
         location_state_store.start_endpoint_probe_loop(endpoint_probe_fn);
 
-        // Driver-level throughput-control registry.
-        //
-        // The runtime no longer owns one — TCGs are a driver-level concern.
-        // Clone the per-driver registry as-is for the request hot path.
-        let throughput_control_groups = options.throughput_control_groups().clone();
-
         // Read the hedge ceiling once, here: it is fixed for the driver's
         // lifetime, and `options` is moved into `Self` below.
         let hedge_budget = HedgeBudget::new(options.hedging_options());
@@ -1838,7 +1903,6 @@ impl CosmosDriver {
             http_client_factory,
             #[cfg(feature = "fault_injection")]
             fault_injection_enabled,
-            throughput_control_groups,
             #[cfg(feature = "__internal_native_query_plan")]
             native_query_plan_provider: crate::query_plan_native::NativeQueryPlanProvider::new(),
         })
@@ -2163,72 +2227,15 @@ impl CosmosDriver {
         )
     }
 
-    /// Computes the effective throughput-control header values for an operation.
-    ///
-    /// Resolves the per-request `x-ms-cosmos-throughput-bucket` and
-    /// `x-ms-cosmos-priority-level` headers using the public layering
-    /// contract:
-    ///
-    /// 1. If the layered
-    ///    [`ThroughputControlOptions`](crate::options::ThroughputControlOptions)
-    ///    sets the field directly, use it.
-    /// 2. Else, if [`group_name`](crate::options::ThroughputControlOptions::group_name)
-    ///    resolves to a group registered on this driver via
-    ///    [`DriverOptionsBuilder::register_throughput_control_group`](crate::options::DriverOptionsBuilder::register_throughput_control_group),
-    ///    use the group's value for the field.
-    /// 3. Else, omit the header.
-    ///
-    /// The two fields resolve independently — a layered
-    /// `throughput_bucket = Some(...)` does not suppress a `priority_level`
-    /// carried by the registered group, and vice versa.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if [`group_name`](crate::options::ThroughputControlOptions::group_name)
-    /// is set to a name that does not resolve to a registered group for the
-    /// operation's container.
+    /// Computes the layered throughput-control header values for an operation.
     pub(crate) fn effective_throughput_control(
-        &self,
         effective_options: &OperationOptionsView<'_>,
-        container: &ContainerReference,
-    ) -> crate::error::Result<ResolvedThroughputControl> {
+    ) -> ResolvedThroughputControl {
         let throughput_view = effective_options.throughput_control();
-        let mut bucket = throughput_view.throughput_bucket().copied();
-        let mut priority = throughput_view.priority_level().copied();
-
-        if bucket.is_some() && priority.is_some() {
-            return Ok(ResolvedThroughputControl {
-                throughput_bucket: bucket,
-                priority_level: priority,
-            });
+        ResolvedThroughputControl {
+            throughput_bucket: throughput_view.throughput_bucket().copied(),
+            priority_level: throughput_view.priority_level().copied(),
         }
-
-        if let Some(name) = throughput_view.group_name() {
-            let group = self
-                .throughput_control_groups
-                .get_by_container_and_name(container, name)
-                .ok_or_else(|| {
-                    crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED)
-                        .with_message(format!(
-                            "throughput control group '{}' not found in registry for container '{}'",
-                            name,
-                            container.name()
-                        ))
-                        .build()
-                })?;
-            let snapshot = ThroughputControlGroupSnapshot::from(group.as_ref());
-            if bucket.is_none() {
-                bucket = snapshot.throughput_bucket();
-            }
-            if priority.is_none() {
-                priority = snapshot.priority_level();
-            }
-        }
-
-        Ok(ResolvedThroughputControl {
-            throughput_bucket: bucket,
-            priority_level: priority,
-        })
     }
 
     /// Fetches partition key ranges from the service for the given container.
@@ -2249,12 +2256,11 @@ impl CosmosDriver {
     /// loop is needed here.
     ///
     /// Permanent errors (401 Unauthorized, 403 Forbidden, 404 NotFound) are
-    /// terminal: `None` is returned immediately so the caller can surface a
-    /// clear misconfiguration signal.
+    /// terminal and returned to the caller.
     ///
-    /// Returns `None` if the pipeline exhausts its cross-region failover
-    /// budget or the response cannot be parsed. The caller (the PK range
-    /// cache) falls back gracefully on `None`.
+    /// Returns `Ok(None)` if the response cannot be parsed. Pipeline errors are
+    /// preserved so topology planning can surface typed failures; cache-only
+    /// callers use the lossy wrapper and retain their existing fallback.
     async fn fetch_pk_ranges_from_service(
         &self,
         container: ContainerReference,
@@ -2262,7 +2268,10 @@ impl CosmosDriver {
         region_pin: Option<RegionPin>,
         options: OperationOptions,
         absolute_deadline: Option<Instant>,
-    ) -> (Option<PkRangeFetchResult>, Option<CosmosEndpoint>) {
+    ) -> (
+        crate::error::Result<Option<PkRangeFetchResult>>,
+        Option<CosmosEndpoint>,
+    ) {
         // Build the operation through the standard pipeline to get correct
         // URL construction, signing, and cross-region retry behavior.
         let mut operation = CosmosOperation::read_all_partition_key_ranges(container.clone())
@@ -2310,11 +2319,11 @@ impl CosmosDriver {
                 // changefeed reads: the cached routing map is still current.
                 if response.status().status_code() == azure_core::http::StatusCode::NotModified {
                     return (
-                        Some(PkRangeFetchResult {
+                        Ok(Some(PkRangeFetchResult {
                             ranges: vec![],
                             continuation,
                             not_modified: true,
-                        }),
+                        })),
                         serving_endpoint,
                     );
                 }
@@ -2326,16 +2335,16 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Partition key ranges response was a feed body, expected single payload"
                         );
-                        return (None, serving_endpoint);
+                        return (Ok(None), serving_endpoint);
                     }
                 };
                 match parse_pk_ranges_response(&body_bytes) {
                     Some(ranges) => (
-                        Some(PkRangeFetchResult {
+                        Ok(Some(PkRangeFetchResult {
                             ranges,
                             continuation: etag,
                             not_modified: false,
-                        }),
+                        })),
                         serving_endpoint,
                     ),
                     None => {
@@ -2343,7 +2352,7 @@ impl CosmosDriver {
                             container = %container.name(),
                             "Failed to parse partition key ranges response body"
                         );
-                        (None, serving_endpoint)
+                        (Ok(None), serving_endpoint)
                     }
                 }
             }
@@ -2373,7 +2382,7 @@ impl CosmosDriver {
                             error = %e,
                             "Permanent error fetching partition key ranges — check account credentials and container existence"
                         );
-                        return (None, None);
+                        return (Err(e), None);
                     }
                 }
 
@@ -2382,7 +2391,7 @@ impl CosmosDriver {
                     error = %e,
                     "Transient error fetching partition key ranges from service after exhausting pipeline cross-region retries"
                 );
-                (None, None)
+                (Err(e), None)
             }
         }
     }
@@ -2440,7 +2449,10 @@ impl CosmosDriver {
         &'a self,
         options: OperationOptions,
         absolute_deadline: Option<Instant>,
-    ) -> impl Fn(ContainerReference, Option<String>) -> BoxFuture<'a, Option<PkRangeFetchResult>>
+    ) -> impl Fn(
+        ContainerReference,
+        Option<String>,
+    ) -> BoxFuture<'a, crate::error::Result<Option<PkRangeFetchResult>>>
            + Send
            + 'a {
         move |container, continuation| {
@@ -2485,139 +2497,6 @@ impl CosmosDriver {
                 result
             })
         }
-    }
-
-    /// Pre-resolves the partition key range ID for a data plane operation.
-    ///
-    /// When PPAF/PPCB is enabled, seeds the partition key range ID before the
-    /// first attempt so partition-level failover overrides can take effect from
-    /// the very first request instead of only after a retry captures the ID
-    /// from response headers.
-    ///
-    /// Resolution is **`OperationOverrides`-aware**. The dataflow pipeline
-    /// fans a query out into per-physical-partition sub-operations and stamps
-    /// the owning `partition_key_range_id` (plus the narrowed feed range and/or
-    /// partition key) onto [`OperationOverrides`] rather than mutating the
-    /// shared [`CosmosOperation`]. The overrides therefore carry the most
-    /// specific routing information and are consulted first:
-    ///
-    /// 1. If the overrides already carry a `partition_key_range_id` (the common
-    ///    case for dataflow-planned queries), use it directly — no cache lookup
-    ///    and no risk of a multi-range collapse.
-    /// 2. Otherwise resolve a logical partition key (from the overrides, then
-    ///    the operation) through the point-lookup path.
-    /// 3. Otherwise resolve an EPK-range feed range (from the overrides, then
-    ///    the operation), seeding only when it maps to exactly one physical
-    ///    partition.
-    ///
-    /// Returns `None` if:
-    /// - PPAF/PPCB is disabled **and** the client cannot route over Gateway 2.0
-    ///   (an authoritative stamped range id on the overrides is still honored)
-    /// - The operation does not target a partitioned resource
-    /// - No container reference or routing target is available
-    /// - The cache lookup or fetch fails
-    pub(crate) async fn pre_resolve_partition_key_range_id(
-        &self,
-        operation: &CosmosOperation,
-        overrides: &OperationOverrides,
-        automatic_session_management_active: bool,
-        options: &OperationOptions,
-    ) -> Option<PartitionKeyRangeId> {
-        let cache = &self.pk_range_cache;
-        // Only pre-resolve for partitioned data plane operations.
-        if !operation
-            .resource_type()
-            .is_partitioned(operation.operation_type())
-        {
-            return None;
-        }
-
-        // The dataflow pipeline resolves each query into per-partition
-        // sub-operations and stamps the owning physical partition's range ID
-        // onto the overrides. When present it is authoritative — use it as-is,
-        // skipping any cache lookup (and the multi-range collapse that would
-        // otherwise silently drop the seed).
-        //
-        // This is checked BEFORE the PPAF/PPCB gate below: the resolved range
-        // ID is also required to scope the outgoing session token to a single
-        // partition. The thin-client/RNTBD backend rejects a multi-range
-        // composite session token on a partition-scoped request ("Session token
-        // specified is invalid."), so a stamped range id must always be honored
-        // even when PPAF/PPCB are both disabled.
-        if let Some(pk_range_id) = overrides.partition_key_range_id.as_deref() {
-            return Some(PartitionKeyRangeId::from(pk_range_id.to_owned()));
-        }
-
-        // A cache-resolved partition key range ID (below) scopes the outgoing
-        // session token to a single partition and feeds PPAF/PPCB routing.
-        // Resolve it whenever any consumer needs it:
-        //   * PPAF or PPCB is enabled (for failure attribution / routing), OR
-        //   * automatic session token management is active and the client may
-        //     route over Gateway 2.0 (thin-client), whose
-        //     backend rejects a multi-range composite session token on a
-        //     partition-scoped request ("Session token specified is invalid.").
-        //
-        // The Gateway 2.0 clause mirrors .NET's
-        // `ThinClientStoreModel::ShouldResolvePartitionKeyRange() => true`:
-        // thin-client-capable clients resolve the range unconditionally, while
-        // pure classic-gateway clients keep the PPAF/PPCB-gated behavior. When
-        // none of these apply, skip the cache work.
-        let snapshot = self.location_state_store.snapshot();
-        let partition_state = snapshot.partitions.as_ref();
-        if !(partition_state.per_partition_automatic_failover_enabled
-            || partition_state.per_partition_circuit_breaker_enabled
-            || automatic_session_management_active
-                && operation.request_headers().session_token.is_none()
-                && self.location_state_store.gateway_v2_enabled())
-        {
-            return None;
-        }
-
-        // Need a container reference for any cache-backed resolution below.
-        let container = operation.container()?;
-
-        // Logical-partition-key targets resolve directly from the partition key.
-        // Prefer the override (set by the dataflow pipeline) over the operation.
-        let partition_key = overrides
-            .partition_key
-            .as_ref()
-            .or_else(|| operation.target().and_then(|t| t.partition_key()));
-        if let Some(partition_key) = partition_key {
-            return cache
-                .resolve_partition_key_range_id(
-                    container,
-                    partition_key,
-                    false,
-                    self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
-                )
-                .await
-                .map(PartitionKeyRangeId::from);
-        }
-
-        // EPK-range feed ranges (e.g. `SELECT * FROM c` scoped to a single physical
-        // partition) carry no logical partition key. Resolve the owning physical
-        // partition by EPK range so PPCB/PPAF can attribute failures from the first
-        // attempt. Seed only when the range maps to exactly one physical partition:
-        // a range that fans out across multiple partitions (or matches none) has no
-        // single owner to attribute to, so the pipeline instead captures the range
-        // ID from the response headers on a later attempt. `resolve_single_overlapping_range_id`
-        // answers this without cloning every overlapping range.
-        //
-        // Prefer the override feed range (set by the dataflow pipeline) over the
-        // operation's own target.
-        let target = overrides
-            .feed_range
-            .as_ref()
-            .or_else(|| operation.target())?;
-        cache
-            .resolve_single_overlapping_range_id(
-                container,
-                target.min_inclusive()..target.max_exclusive(),
-                false,
-                self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
-            )
-            .await
-            .map(PartitionKeyRangeId::from)
     }
 
     /// Executes a Cosmos DB operation.
@@ -2838,11 +2717,16 @@ impl CosmosDriver {
             )?;
         }
 
+        #[cfg(feature = "preview_patch")]
         let requested = self
             .operation_options_view(options)
             .patch_strategy()
             .copied()
             .unwrap_or_default();
+        #[cfg(not(feature = "preview_patch"))]
+        let _ = options;
+        #[cfg(not(feature = "preview_patch"))]
+        let requested = crate::options::PatchStrategy::Auto;
         let execution = resolve_patch_strategy(requested, instructions.as_ref())?;
         tracing::debug!(
             requested_patch_strategy = requested.as_str(),
@@ -3273,11 +3157,14 @@ impl CosmosDriver {
             }
             tracing::debug!("plan execution started");
 
-            let absolute_deadline = plan.operation.absolute_deadline().or_else(|| {
-                self.operation_options_view(&options)
-                    .end_to_end_latency_policy()
-                    .map(|policy| Instant::now() + policy.timeout())
-            });
+            let absolute_deadline = plan
+                .take_initial_execution_deadline()
+                .or_else(|| plan.operation.absolute_deadline())
+                .or_else(|| {
+                    self.operation_options_view(&options)
+                        .end_to_end_latency_policy()
+                        .map(|policy| Instant::now() + policy.timeout())
+                });
             let recovery_allowed = !plan.is_resumed
                 && !plan.has_progressed
                 && !plan.container_recreation_recovery_attempted;
@@ -3322,9 +3209,11 @@ impl CosmosDriver {
             let prior_diagnostics = error.diagnostics();
             let replacement_container = operation.container().cloned();
             let plan_options = plan.plan_options.clone();
+            let operation = operation.with_absolute_deadline(absolute_deadline);
             *plan = self
                 .plan_operation(operation, &options, None, &plan_options)
                 .await?;
+            plan.clear_execution_deadlines();
             plan.container_recreation_recovery_attempted = true;
             let (retry_result, retry_successes, _) = self
                 .execute_plan_once(plan, replacement_container, &options, absolute_deadline)
@@ -3429,13 +3318,43 @@ impl CosmosDriver {
     async fn execute_operation_direct(
         &self,
         operation: &CosmosOperation,
-        mut overrides: OperationOverrides,
+        overrides: OperationOverrides,
         options: &OperationOptions,
     ) -> crate::error::Result<CosmosResponse> {
+        Box::pin(self.execute_operation_direct_inner(operation, overrides, options, true)).await
+    }
+
+    /// Executes an operation already canonicalized while its dataflow plan was
+    /// built.
+    ///
+    /// Logical-plan topology resolution can refresh the shared container cache.
+    /// Re-canonicalizing after that lookup would retarget only the operation,
+    /// leaving the immutable plan built for the prior generation. Preserve the
+    /// plan's coherent snapshot and let the normal recreation response rebuild
+    /// or retry it instead.
+    async fn execute_planned_operation_direct(
+        &self,
+        operation: &CosmosOperation,
+        overrides: OperationOverrides,
+        options: &OperationOptions,
+    ) -> crate::error::Result<CosmosResponse> {
+        Box::pin(self.execute_operation_direct_inner(operation, overrides, options, false)).await
+    }
+
+    async fn execute_operation_direct_inner(
+        &self,
+        operation: &CosmosOperation,
+        mut overrides: OperationOverrides,
+        options: &OperationOptions,
+        canonicalize_container: bool,
+    ) -> crate::error::Result<CosmosResponse> {
         let mut operation = operation.clone();
-        let retargeted = self
-            .canonicalize_operation_container(&mut operation)
-            .await?;
+        let retargeted = if canonicalize_container {
+            self.canonicalize_operation_container(&mut operation)
+                .await?
+        } else {
+            false
+        };
         if retargeted {
             let explicit_session_token = operation.request_headers().session_token.is_some()
                 || options.custom_headers.as_ref().is_some_and(|headers| {
@@ -3452,9 +3371,7 @@ impl CosmosDriver {
                     )
                     .build());
             }
-            if overrides.partition_key_range_id.is_some()
-                || overrides.feed_range.is_some()
-                || overrides.pkrange_bounds.is_some()
+            if overrides.requires_plan_rebuild_after_container_recreation()
                 || overrides.region_pin.is_some()
             {
                 return Err(crate::error::CosmosError::builder()
@@ -3469,6 +3386,9 @@ impl CosmosDriver {
                     )
                     .build());
             }
+            // This metadata belongs to the prior container generation. It does
+            // not affect wire routing, so clear it and continue by logical key.
+            overrides.clear_resolved_partition_key_range();
         }
         tracing::debug!(
             operation_type = ?operation.operation_type(),
@@ -3478,7 +3398,7 @@ impl CosmosDriver {
             body_length = operation.body().map(|b| b.len()),
             "executing operation");
 
-        // Step 1: Build the single OperationOptionsView for layered resolution.
+        // Build the single OperationOptionsView for layered resolution.
         let effective_options = self.operation_options_view(options);
         if operation.absolute_deadline().is_none() {
             let deadline = effective_options
@@ -3487,9 +3407,9 @@ impl CosmosDriver {
             operation = operation.with_absolute_deadline(deadline);
         }
 
-        // Step 2: Resolve effective throughput control headers.
-        let effective_throughput_control = if let Some(container) = operation.container() {
-            Some(self.effective_throughput_control(&effective_options, container)?)
+        // Resolve effective throughput control headers.
+        let effective_throughput_control = if operation.container().is_some() {
+            Some(Self::effective_throughput_control(&effective_options))
         } else {
             // Throughput control doesn't apply to operations that don't target a container.
             // But it's not an error to specify the settings, they may have been inherited from
@@ -3497,14 +3417,14 @@ impl CosmosDriver {
             None
         };
 
-        // Step 3: Initialize operation activity id
+        // Initialize the operation activity ID.
         let activity_id = ActivityId::new_uuid();
 
-        // Step 4: Get authentication (guaranteed to be present by AccountReference)
+        // Get authentication, guaranteed to be present by AccountReference.
         let account = operation.resource_reference().account().clone();
         let auth = account.auth().clone();
 
-        // Step 4.1: Resolve account metadata and select write-region endpoint.
+        // Resolve account metadata and select the write-region endpoint.
         // Uses `get_or_fetch` (cheap, no staleness check) because the
         // background account-metadata refresh loop spawned in
         // `CosmosDriver::new` keeps this cache fresh on a periodic timer.
@@ -3529,41 +3449,12 @@ impl CosmosDriver {
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(&account, write_region);
 
-        let automatic_session_management_active = !effective_options
-            .session_capturing_disabled()
-            .copied()
-            .unwrap_or(false)
-            && effective_options
-                .read_consistency_strategy()
-                .copied()
-                .unwrap_or(crate::options::ReadConsistencyStrategy::Default)
-                .is_session_effective(
-                    account_properties
-                        .user_consistency_policy
-                        .default_consistency_level,
-                );
-
-        // Step 5: Pre-resolve partition key range ID for PPAF/PPCB.
-        // When partition-level failover is enabled, resolving the range ID
-        // before the first attempt lets the pipeline apply partition overrides
-        // from the very first request instead of only after the first retry.
-        // Pass the overrides so dataflow-stamped routing (PK range ID, partition
-        // key, EPK range) is honored ahead of the operation's own target.
-        let pre_resolved_pk_range_id = self
-            .pre_resolve_partition_key_range_id(
-                &operation,
-                &overrides,
-                automatic_session_management_active,
-                options,
-            )
-            .await;
-
-        // Step 6: Select the adaptive transport context for the chosen pipeline
+        // Select the adaptive transport context for the chosen pipeline.
         let transport = self.transport();
         let operation_type = operation.operation_type();
         let resource_type = operation.resource_type();
         let is_dataplane = uses_dataplane_pipeline(resource_type, operation_type);
-        // Step 7: Initialize diagnostics (shared envelope shape with the bootstrap fetch).
+        // Initialize diagnostics using the bootstrap fetch's shared envelope shape.
         let fault_injection_enabled = {
             #[cfg(feature = "fault_injection")]
             {
@@ -3599,7 +3490,7 @@ impl CosmosDriver {
         let user_agent =
             azure_core::http::headers::HeaderValue::from(self.user_agent.as_str().to_owned());
 
-        // Step 8: Execute via the new operation pipeline
+        // Execute via the operation pipeline.
         let result = super::pipeline::operation_pipeline::execute_operation_pipeline(
             self,
             &mut operation,
@@ -3622,7 +3513,6 @@ impl CosmosDriver {
                 .user_consistency_policy
                 .default_consistency_level,
             effective_throughput_control,
-            pre_resolved_pk_range_id,
             &self.hedge_budget,
         )
         .await;
@@ -3633,8 +3523,18 @@ impl CosmosDriver {
         let hedged = error
             .diagnostics()
             .is_some_and(|diagnostics| diagnostics.hedge_diagnostics().is_some());
+        let recreation_signal = is_container_recreation_status(&error.status());
+        if hedged
+            && recreation_signal
+            && overrides.requires_plan_rebuild_after_container_recreation()
+        {
+            if let Some(tracker) = &overrides.container_recreation_recovery_tracker {
+                tracker.mark_plan_rebuild_required();
+            }
+            return Err(error);
+        }
         if !hedged
-            || !is_container_recreation_status(&error.status())
+            || !recreation_signal
             || !hedged_container_recreation_recovery_eligible(&operation, &overrides, options)
         {
             return Err(error);
@@ -3648,20 +3548,15 @@ impl CosmosDriver {
         {
             return Err(error);
         }
+        // Hedged recovery retries in place after retargeting the operation.
+        // Drop the old generation's internal identity; logical-key routing is
+        // still authoritative and response capture can learn the replacement.
+        overrides.clear_resolved_partition_key_range();
 
         let prior_diagnostics = error.diagnostics();
         let retry_throughput_control = operation
             .container()
-            .map(|container| self.effective_throughput_control(&effective_options, container))
-            .transpose()?;
-        let retry_pk_range_id = self
-            .pre_resolve_partition_key_range_id(
-                &operation,
-                &overrides,
-                automatic_session_management_active,
-                options,
-            )
-            .await;
+            .map(|_| Self::effective_throughput_control(&effective_options));
         overrides.container_recreation_recovery_disabled = true;
         let (mut retry_diagnostics, retry_transport_security) = Self::new_diagnostics_envelope(
             &self.runtime,
@@ -3695,7 +3590,6 @@ impl CosmosDriver {
                 .user_consistency_policy
                 .default_consistency_level,
             retry_throughput_control,
-            retry_pk_range_id,
             &self.hedge_budget,
         )
         .await;
@@ -4092,6 +3986,28 @@ impl CosmosDriver {
         plan_options: &PlanOptions,
         resolved_binary: Option<crate::options::BinaryEncodingOptions>,
     ) -> crate::error::Result<OperationPlan> {
+        // Start the end-to-end deadline before dataflow planning for both the
+        // one-shot execute path and direct plan_operation callers. Query-plan
+        // and partition-topology requests are part of the caller-visible
+        // operation rather than a separate unbounded phase.
+        let configured_timeout = self
+            .operation_options_view(options)
+            .end_to_end_latency_policy()
+            .map(|policy| policy.timeout());
+        let derived_deadline = if operation.absolute_deadline().is_none() {
+            configured_timeout.map(|timeout| Instant::now() + timeout)
+        } else {
+            None
+        };
+        let effective_deadline = operation.absolute_deadline().or(derived_deadline);
+        let planning_timeout = effective_deadline
+            .map(|deadline| deadline.saturating_duration_since(Instant::now()))
+            .unwrap_or_default();
+        let planning_account =
+            effective_deadline.map(|_| operation.resource_reference().account().clone());
+        let planning_operation_name = operation.db_operation_name();
+        let operation = operation.with_absolute_deadline(effective_deadline);
+
         // Reject mixed name/RID addressing before any IO work is done. The
         // service classifies a request as name-based or RID-based from its `dbs`
         // segment alone, so a reference that mixes a name-addressed parent with
@@ -4114,17 +4030,31 @@ impl CosmosDriver {
         // here so every caller awaits a pointer-sized future instead of having
         // to pin at its own call site and rediscover this each time the state
         // grows.
-        Box::pin(async move {
-            self.plan_operation_inner(
-                operation,
-                options,
-                continuation,
-                plan_options,
-                resolved_binary,
-            )
-            .await
-        })
-        .await
+        let planning = self.plan_operation_inner(
+            operation,
+            options,
+            continuation,
+            plan_options,
+            resolved_binary,
+        );
+        let mut plan = match await_planning_or_deadline(planning, effective_deadline).await {
+            Some(result) => result?,
+            None => {
+                return Err(planning_timeout_error(
+                    planning_timeout,
+                    self.new_planning_diagnostics(
+                        planning_account
+                            .as_ref()
+                            .expect("a planning deadline always captures an account"),
+                        planning_operation_name,
+                    ),
+                ));
+            }
+        };
+        if let Some(deadline) = derived_deadline {
+            plan.set_initial_execution_deadline(deadline);
+        }
+        Ok(plan)
     }
 
     async fn plan_operation_inner(
@@ -4235,7 +4165,21 @@ impl CosmosDriver {
         //    operations (targeting a single logical partition) are sent directly
         //    to the gateway without query planning.
         if operation.is_trivial() {
-            let pipeline = planner::build_trivial_pipeline(operation.clone(), resume_state)?;
+            let mut topology = operation.container().cloned().map(|container| {
+                CachedTopologyProvider::new(
+                    &self.pk_range_cache,
+                    container,
+                    self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
+                )
+            });
+            let pipeline = planner::build_trivial_pipeline(
+                operation.clone(),
+                topology
+                    .as_mut()
+                    .map(|topology| topology as &mut dyn TopologyProvider),
+                resume_state,
+            )
+            .await?;
             return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
         }
 
@@ -4552,7 +4496,8 @@ mod tests {
         models::AccountReference,
         options::{
             ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
-            ThrottlingRetryOptionsBuilder, UserAgentSuffix, WorkloadId,
+            PriorityLevel, ThrottlingRetryOptionsBuilder, ThroughputControlOptions,
+            UserAgentSuffix, WorkloadId,
         },
     };
 
@@ -4593,6 +4538,33 @@ mod tests {
 
     fn signed_test_account(url: &str) -> AccountReference {
         AccountReference::with_master_key(Url::parse(url).unwrap(), "dGVzdA==")
+    }
+
+    #[test]
+    fn throughput_control_resolves_direct_values_across_layers() {
+        let runtime = Arc::new(OperationOptions {
+            throughput_control: Some(ThroughputControlOptions {
+                throughput_bucket: Some(7),
+                priority_level: Some(PriorityLevel::Low),
+            }),
+            ..Default::default()
+        });
+        let operation = OperationOptions {
+            throughput_control: Some(ThroughputControlOptions {
+                throughput_bucket: Some(99),
+                priority_level: None,
+            }),
+            ..Default::default()
+        };
+        let view = OperationOptionsView::new(None, Some(runtime), None, Some(&operation));
+
+        assert_eq!(
+            CosmosDriver::effective_throughput_control(&view),
+            ResolvedThroughputControl {
+                throughput_bucket: Some(99),
+                priority_level: Some(PriorityLevel::Low),
+            }
+        );
     }
 
     #[derive(Clone, Debug)]
@@ -4890,6 +4862,111 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn plan_operation_starts_end_to_end_deadline_before_planning() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver = CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build())
+            .expect("CosmosDriver::new should succeed in tests");
+        driver.initialized.store(true, Ordering::Release);
+        let mut options = OperationOptions::default();
+        options.end_to_end_latency_policy = Some(
+            crate::options::EndToEndOperationLatencyPolicy::new(Duration::from_secs(5)),
+        );
+        let started = Instant::now();
+
+        let mut plan = driver
+            .plan_operation(
+                CosmosOperation::read_database(DatabaseReference::from_name(
+                    test_account(),
+                    "testdb",
+                )),
+                &options,
+                None,
+                &PlanOptions::default(),
+            )
+            .await
+            .unwrap();
+        let finished = Instant::now();
+
+        assert!(
+            plan.operation.absolute_deadline().is_none(),
+            "policy-derived planning deadlines must not remain on reusable plans"
+        );
+        let deadline = plan
+            .take_initial_execution_deadline()
+            .expect("planning should preserve the first-page deadline");
+        assert!(deadline >= started + Duration::from_secs(5));
+        assert!(deadline <= finished + Duration::from_secs(5));
+        assert!(
+            plan.take_initial_execution_deadline().is_none(),
+            "the planning deadline must be consumed only once"
+        );
+    }
+
+    #[tokio::test]
+    async fn planning_future_is_cancelled_when_deadline_elapses() {
+        let deadline = Instant::now() + Duration::from_millis(20);
+
+        let result =
+            super::await_planning_or_deadline(futures::future::pending::<()>(), Some(deadline))
+                .await;
+
+        assert!(result.is_none());
+        assert!(Instant::now() >= deadline);
+    }
+
+    #[test]
+    fn planning_deadline_wrapper_stays_pointer_sized() {
+        let state = [0_u8; 16 * 1024];
+        let planning = async move {
+            futures::future::pending::<()>().await;
+            std::hint::black_box(state);
+        };
+
+        let wrapped = super::await_planning_or_deadline(planning, None);
+
+        assert!(
+            std::mem::size_of_val(&wrapped) <= 128,
+            "deadline wrapper unexpectedly retained the unboxed planning future: {} bytes",
+            std::mem::size_of_val(&wrapped)
+        );
+    }
+
+    #[tokio::test]
+    async fn expired_planning_deadline_wins_over_ready_future() {
+        let deadline = Instant::now() - Duration::from_millis(1);
+
+        let result =
+            super::await_planning_or_deadline(futures::future::ready("completed"), Some(deadline))
+                .await;
+
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn planning_timeout_uses_typed_operation_timeout_status() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver =
+            CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build()).unwrap();
+        let operation =
+            CosmosOperation::read_database(DatabaseReference::from_name(test_account(), "testdb"));
+        let diagnostics = driver.new_planning_diagnostics(
+            operation.resource_reference().account(),
+            operation.db_operation_name(),
+        );
+        let error = super::planning_timeout_error(Duration::from_secs(1), diagnostics);
+
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::RequestTimeout
+        );
+        assert_eq!(
+            error.status().sub_status(),
+            Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+        );
+        assert!(error.diagnostics().is_some());
+    }
+
+    #[tokio::test]
     async fn plan_operation_rejects_unresolved_patch() {
         let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
         let driver_options = DriverOptions::builder(test_account()).build();
@@ -4996,7 +5073,7 @@ mod tests {
         let runtime = CosmosDriverRuntimeBuilder::new()
             .with_workload_id(WorkloadId::new(25))
             .with_correlation_id(CorrelationId::new("aks-prod-eastus"))
-            .with_user_agent_suffix(UserAgentSuffix::new("myapp-westus2"))
+            .with_user_agent_suffix(UserAgentSuffix::try_from("myapp-westus2").unwrap())
             .build()
             .await
             .unwrap();
@@ -5018,7 +5095,7 @@ mod tests {
     #[tokio::test]
     async fn user_agent_computed_from_suffix() {
         let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_user_agent_suffix(UserAgentSuffix::new("my-suffix"))
+            .with_user_agent_suffix(UserAgentSuffix::try_from("my-suffix").unwrap())
             .build()
             .await
             .unwrap();
@@ -5064,7 +5141,7 @@ mod tests {
     #[tokio::test]
     async fn user_agent_suffix_takes_priority_over_workload_id() {
         let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_user_agent_suffix(UserAgentSuffix::new("suffix"))
+            .with_user_agent_suffix(UserAgentSuffix::try_from("suffix").unwrap())
             .with_workload_id(WorkloadId::new(25))
             .with_correlation_id(CorrelationId::new("correlation"))
             .build()
@@ -5095,7 +5172,7 @@ mod tests {
     async fn effective_correlation_prefers_correlation_id() {
         let runtime = CosmosDriverRuntimeBuilder::new()
             .with_correlation_id(CorrelationId::new("correlation"))
-            .with_user_agent_suffix(UserAgentSuffix::new("suffix"))
+            .with_user_agent_suffix(UserAgentSuffix::try_from("suffix").unwrap())
             .build()
             .await
             .unwrap();
@@ -5106,7 +5183,7 @@ mod tests {
     #[tokio::test]
     async fn effective_correlation_falls_back_to_suffix() {
         let runtime = CosmosDriverRuntimeBuilder::new()
-            .with_user_agent_suffix(UserAgentSuffix::new("suffix"))
+            .with_user_agent_suffix(UserAgentSuffix::try_from("suffix").unwrap())
             .build()
             .await
             .unwrap();
@@ -5675,6 +5752,32 @@ mod tests {
     }
 
     #[test]
+    fn logical_partition_override_keeps_physical_identity_internal() {
+        let pk = PartitionKey::from("pk");
+        let overrides = request_target_overrides(
+            None,
+            RequestTarget::logical_partition_key_with_parents(
+                pk.clone(),
+                "7".to_string(),
+                vec!["6".to_string()],
+            ),
+            None,
+        );
+
+        assert_eq!(overrides.partition_key.as_ref(), Some(&pk));
+        assert_eq!(
+            overrides.resolved_partition_key_range_id.as_deref(),
+            Some("7")
+        );
+        assert_eq!(
+            overrides.resolved_partition_key_range_parents,
+            vec!["6".to_string()]
+        );
+        assert_eq!(overrides.partition_key_range_id, None);
+        assert_eq!(overrides.effective_partition_key_range_id(), Some("7"));
+    }
+
+    #[test]
     fn effective_partition_key_range_override_sets_feed_range() {
         let range = crate::models::FeedRange::new(
             EffectivePartitionKey::from("10"),
@@ -5688,9 +5791,10 @@ mod tests {
         .unwrap();
         let overrides = request_target_overrides(
             None,
-            RequestTarget::effective_partition_key_range(
+            RequestTarget::effective_partition_key_range_with_parents(
                 range.clone(),
                 "merged".to_string(),
+                vec!["parent".to_string()],
                 pkrange.clone(),
             ),
             Some("ct".to_string()),
@@ -5700,6 +5804,10 @@ mod tests {
         assert_eq!(overrides.continuation.as_deref(), Some("ct"));
         assert_eq!(overrides.feed_range, Some(range));
         assert_eq!(overrides.pkrange_bounds, Some(pkrange));
+        assert_eq!(
+            overrides.effective_partition_key_range_parents("merged"),
+            &["parent".to_string()]
+        );
     }
 
     #[test]
@@ -6955,7 +7063,7 @@ mod tests {
         let runtime = Arc::new(
             CosmosDriverRuntimeBuilder::new()
                 .with_http_client_factory(factory)
-                .with_user_agent_suffix(UserAgentSuffix::new("runtime-default"))
+                .with_user_agent_suffix(UserAgentSuffix::try_from("runtime-default").unwrap())
                 .build()
                 .await
                 .unwrap(),
@@ -6966,7 +7074,7 @@ mod tests {
             DriverOptionsBuilder::new(signed_test_account(
                 "https://account.documents.azure.com:443/",
             ))
-            .with_user_agent_suffix(UserAgentSuffix::new("driver-override"))
+            .with_user_agent_suffix(UserAgentSuffix::try_from("driver-override").unwrap())
             .build(),
         )
         .expect("CosmosDriver::new should succeed in tests");
@@ -7040,17 +7148,6 @@ mod tests {
         );
     }
 
-    // =========================================================================
-    // pre_resolve_partition_key_range_id — EPK-range seeding (#4611 fix)
-    //
-    // The single→Some / multi→(warn + debug_assert, then None) classification
-    // lives in `ContainerRoutingMap::single_overlapping_range_id` (unit-tested
-    // there). These cache-backed tests drive the *real*
-    // `PartitionKeyRangeCache::resolve_single_overlapping_range_id` (mocked
-    // fetch, per the existing `resolve_overlapping_ranges_*` tests), exercising
-    // the exact path `pre_resolve_partition_key_range_id` takes.
-    // =========================================================================
-
     /// Builds a `ContainerReference` from a partition-key-definition JSON blob.
     fn epk_test_container(pk_json: &str) -> ContainerReference {
         epk_test_container_with_rid(pk_json, "testcontainer_rid")
@@ -7070,51 +7167,6 @@ mod tests {
             rid.to_owned(),
             &container_props,
         )
-    }
-
-    /// Single-page fetch returning one range that owns the whole EPK space.
-    async fn whole_space_single_range_fetch(
-        _container: ContainerReference,
-        continuation: Option<String>,
-    ) -> Option<crate::driver::cache::PkRangeFetchResult> {
-        use crate::models::partition_key_range::PartitionKeyRange as PkRange;
-        if continuation.is_some() {
-            Some(crate::driver::cache::PkRangeFetchResult {
-                ranges: vec![],
-                continuation,
-                not_modified: true,
-            })
-        } else {
-            Some(crate::driver::cache::PkRangeFetchResult {
-                ranges: vec![PkRange::new("0".into(), "", "FF")],
-                continuation: Some("etag".to_string()),
-                not_modified: false,
-            })
-        }
-    }
-
-    /// Single-page fetch returning two ranges split at "80".
-    async fn whole_space_two_range_fetch(
-        _container: ContainerReference,
-        continuation: Option<String>,
-    ) -> Option<crate::driver::cache::PkRangeFetchResult> {
-        use crate::models::partition_key_range::PartitionKeyRange as PkRange;
-        if continuation.is_some() {
-            Some(crate::driver::cache::PkRangeFetchResult {
-                ranges: vec![],
-                continuation,
-                not_modified: true,
-            })
-        } else {
-            Some(crate::driver::cache::PkRangeFetchResult {
-                ranges: vec![
-                    PkRange::new("0".into(), "", "80"),
-                    PkRange::new("1".into(), "80", "FF"),
-                ],
-                continuation: Some("etag".to_string()),
-                not_modified: false,
-            })
-        }
     }
 
     #[tokio::test]
@@ -7142,78 +7194,6 @@ mod tests {
             error.status(),
             crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
                 .with_sub_status(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH.value(),),
-        );
-    }
-
-    #[tokio::test]
-    async fn epk_range_owned_by_single_partition_resolves_to_that_range() {
-        use crate::driver::cache::PartitionKeyRangeCache;
-        use crate::models::effective_partition_key::EffectivePartitionKey;
-
-        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
-        let cache = PartitionKeyRangeCache::new();
-
-        // An EPK-range feed range spanning the whole space, resolved against a
-        // container with a single physical partition, is owned by exactly one
-        // range — so pre-resolution seeds that range's ID (single → Some).
-        let resolved = cache
-            .resolve_single_overlapping_range_id(
-                &container,
-                &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX,
-                false,
-                whole_space_single_range_fetch,
-            )
-            .await
-            .map(PartitionKeyRangeId::from);
-
-        assert_eq!(resolved.as_ref().map(|id| id.as_str()), Some("0"));
-    }
-
-    #[tokio::test]
-    #[should_panic(expected = "physical partitions")]
-    async fn epk_range_spanning_multiple_partitions_panics_in_debug() {
-        use crate::driver::cache::PartitionKeyRangeCache;
-        use crate::models::effective_partition_key::EffectivePartitionKey;
-
-        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
-        let cache = PartitionKeyRangeCache::new();
-
-        // A whole-space feed range overlapping both physical partitions is an
-        // invariant violation at this layer (the dataflow pipeline should have
-        // split it first), so single-owner resolution trips the `debug_assert!`.
-        // In release builds it returns `None` and the caller degrades gracefully.
-        let _ = cache
-            .resolve_single_overlapping_range_id(
-                &container,
-                &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX,
-                false,
-                whole_space_two_range_fetch,
-            )
-            .await;
-    }
-
-    #[tokio::test]
-    async fn logical_partition_key_resolves_to_owning_range_unchanged() {
-        use crate::driver::cache::PartitionKeyRangeCache;
-
-        // The logical-partition-key path is unchanged by the EPK-range fix: a
-        // concrete partition key still resolves through the point-lookup path to
-        // exactly its owning physical partition's ID (mapped to a
-        // `PartitionKeyRangeId`, as `pre_resolve_partition_key_range_id` does).
-        let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
-        let cache = PartitionKeyRangeCache::new();
-        let pk = PartitionKey::from("hello");
-
-        let resolved = cache
-            .resolve_partition_key_range_id(&container, &pk, false, whole_space_two_range_fetch)
-            .await
-            .map(PartitionKeyRangeId::from);
-
-        // "hello" hashes into one of the two ranges — exactly one, never both.
-        let id = resolved.expect("logical PK resolves to its owning range");
-        assert!(
-            id.as_str() == "0" || id.as_str() == "1",
-            "logical PK must resolve to a single owning range, got {id}",
         );
     }
 
