@@ -174,6 +174,31 @@ pub extern "C" fn cosmos_driver_options_config_default() -> CosmosDriverOptionsC
     }
 }
 
+/// Writes an all-unset driver options config to `out_config`.
+///
+/// This pointer-oriented form avoids aggregate return-value marshalling across
+/// foreign ABIs.
+///
+/// # Returns
+///
+/// `COSMOS_STATUS_SUCCESS` on success, or `400` /
+/// `CLIENT_FFI_NULL_ARGUMENT` when `out_config` is NULL.
+#[no_mangle]
+pub extern "C" fn cosmos_driver_options_config_default_init(
+    out_config: *mut CosmosDriverOptionsConfig,
+) -> CosmosStatusCode {
+    crate::safety::ffi_guard(CosmosErrorCode::panic_status_code(), || {
+        if out_config.is_null() {
+            return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
+        }
+        // SAFETY: the caller provides writable storage for one config value.
+        unsafe {
+            out_config.write(cosmos_driver_options_config_default());
+        }
+        CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+    })
+}
+
 /// Builds a `cosmos_driver_options_t *` from an account reference and a flat
 /// [`CosmosDriverOptionsConfig`] in a single call.
 ///
@@ -318,6 +343,22 @@ mod tests {
         assert!(c.preferred_regions.is_null());
         assert_eq!(c.preferred_regions_len, 0);
         assert!(c.operation_options.is_null());
+    }
+
+    #[test]
+    fn config_default_init_writes_output_and_rejects_null() {
+        let mut config = std::mem::MaybeUninit::<CosmosDriverOptionsConfig>::uninit();
+        assert_eq!(
+            cosmos_driver_options_config_default_init(config.as_mut_ptr()),
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+        );
+        // SAFETY: the successful initializer wrote the complete value.
+        let config = unsafe { config.assume_init() };
+        assert!(config.preferred_regions.is_null());
+        assert_eq!(
+            cosmos_driver_options_config_default_init(std::ptr::null_mut()),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
     }
 
     #[test]

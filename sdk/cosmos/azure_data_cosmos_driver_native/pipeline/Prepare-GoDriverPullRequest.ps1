@@ -94,13 +94,14 @@ $requiredEvidenceFiles = @(
 $generatedRootPath = (Resolve-Path $GeneratedRoot).Path
 $checkoutRootPath = (Resolve-Path $CheckoutRoot).Path
 $matrix = Get-Content -Raw $MatrixPath | ConvertFrom-Json
+$staticTargets = @($matrix.targets | Where-Object publication_kind -EQ 'static-go-module')
 
 if (-not (Test-Path (Join-Path $checkoutRootPath '.git'))) {
     throw "CheckoutRoot is not a Git checkout: $checkoutRootPath"
 }
 
 $modulePaths = @(
-    $matrix.targets.module_path |
+    $staticTargets.module_path |
         Sort-Object -Unique |
         ForEach-Object { $_.Replace('\', '/') }
 )
@@ -120,7 +121,7 @@ foreach ($modulePath in $modulePaths) {
     [void]$expectedFiles.Add("$modulePath/$($matrix.header_filename)")
 }
 
-foreach ($target in $matrix.targets) {
+foreach ($target in $staticTargets) {
     $modulePath = $target.module_path.Replace('\', '/')
     $nativeSubdir = [string]$target.native_subdir
     $linkSuffix = if ($nativeSubdir) { "_$nativeSubdir" } else { '' }
@@ -177,7 +178,7 @@ foreach ($entry in $requiredLinkerFlags.GetEnumerator()) {
     if (-not $linkFileContents.Contains($entry.Value)) {
         throw "Generated linker file '$($entry.Key)' is missing required static runtime flags: $($entry.Value)"
     }
-    foreach ($target in $matrix.targets) {
+    foreach ($target in $staticTargets) {
         $modulePath = $target.module_path.Replace('\', '/')
         $nativeSubdir = [string]$target.native_subdir
         $linkSuffix = if ($nativeSubdir) { "_$nativeSubdir" } else { '' }

@@ -5,6 +5,8 @@
   "rust_driver_crate": "azure_data_cosmos_driver",
   "lib_basename": "azurecosmosdriver",
   "static_lib_filename": "libazurecosmosdriver.a",
+  "windows_dll_filename": "azurecosmosdriver.dll",
+  "windows_pdb_filename": "azurecosmosdriver.pdb",
   "header_filename": "azurecosmosdriver.h",
   "rust_driver_features": ["tokio", "rustls"],
   "go_version": "1.25.0",
@@ -15,6 +17,7 @@
   "targets": [
     {
       "id": "linux-amd64-glibc",
+      "publication_kind": "static-go-module",
       "goos": "linux",
       "goarch": "amd64",
       "libc": "glibc",
@@ -27,6 +30,7 @@
     },
     {
       "id": "linux-arm64-glibc",
+      "publication_kind": "static-go-module",
       "goos": "linux",
       "goarch": "arm64",
       "libc": "glibc",
@@ -39,6 +43,7 @@
     },
     {
       "id": "darwin-arm64",
+      "publication_kind": "static-go-module",
       "goos": "darwin",
       "goarch": "arm64",
       "libc": null,
@@ -51,6 +56,7 @@
     },
     {
       "id": "linux-amd64-musl",
+      "publication_kind": "static-go-module",
       "goos": "linux",
       "goarch": "amd64",
       "libc": "musl",
@@ -70,6 +76,7 @@
     },
     {
       "id": "linux-arm64-musl",
+      "publication_kind": "static-go-module",
       "goos": "linux",
       "goarch": "arm64",
       "libc": "musl",
@@ -86,6 +93,19 @@
         }
       ],
       "risk": null
+    },
+    {
+      "id": "windows-arm64-msvc",
+      "publication_kind": "windows-dll",
+      "goos": "windows",
+      "goarch": "arm64",
+      "libc": null,
+      "triple": "aarch64-pc-windows-msvc",
+      "c_compiler": "link.exe",
+      "module_path": null,
+      "native_subdir": null,
+      "build_tag_extra": null,
+      "risk": "Requires physical Windows ARM64 validation before production release."
     }
   ],
   "reference_syslibs": {

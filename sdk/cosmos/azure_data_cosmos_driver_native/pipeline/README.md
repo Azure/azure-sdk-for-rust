@@ -6,10 +6,8 @@ Licensed under the MIT License.
 
 # Go native driver build pipeline
 
-This folder contains the scripts and Azure DevOps pipeline definition that build
-the Cosmos Rust native driver for Go. The output is a static Rust library named
-`libazurecosmosdriver.a`, together with the C header and release evidence needed
-to review where the library came from.
+This folder builds the static Cosmos Rust native driver and the separate signed
+Windows ARM64 MSVC DLL payload.
 
 The production pipeline extends the repository's official 1ES wrapper and is
 registered for manual internal runs rather than automatic CI. A successful
@@ -29,9 +27,8 @@ operating systems.
 
 ## Configured release matrix
 
-The Microsoft Rust policy applies to the five targets that the `ms-prod-1.95`
-channel can build today. Windows AMD64 (GNU) is deferred and is not part of
-the active release matrix (see [Deferred targets](#deferred-targets)).
+The Microsoft Rust policy applies to five static targets and one DLL target.
+Windows AMD64 (GNU) remains deferred.
 
 | OS and architecture | Rust target | Observed `ms-prod-1.95` status |
 | --- | --- | --- |
@@ -40,6 +37,7 @@ the active release matrix (see [Deferred targets](#deferred-targets)).
 | Linux AMD64 (musl) | `x86_64-unknown-linux-musl` | Available: installation reached build validation |
 | Linux ARM64 (musl) | `aarch64-unknown-linux-musl` | Available: installation reached build validation |
 | macOS ARM64 | `aarch64-apple-darwin` | Available: installation reached build validation |
+| Windows ARM64 DLL | `aarch64-pc-windows-msvc` | Build/sign pipeline configured; physical ARM64 validation required |
 
 These observations come from internal pipeline runs with RustInstaller 1.0.92
 and Microsoft Rust package `1.95.0-ms-20260618.5`. The five available targets
@@ -65,10 +63,9 @@ it can be restored verbatim once a path is agreed. Restoring it requires one of:
 3. Moving the Windows target to MSVC and absorbing the additional
    DLL/runtime-loading complexity in the downstream Go layer.
 
-Windows ARM64 MSVC (`aarch64-pc-windows-msvc`) is separate work tracked by
-[#5235](https://github.com/Azure/azure-sdk-for-rust/issues/5235). It does not
-replace or establish support for Windows AMD64 GNU. Intel macOS and dynamic
-libraries for .NET, Java, and Python remain outside the release matrix.
+Windows ARM64 does not replace or establish support for Windows AMD64 GNU.
+Intel macOS and dynamic libraries for other language bindings remain outside
+the release matrix.
 
 ## Files
 
@@ -79,6 +76,7 @@ libraries for .NET, Java, and Python remain outside the release matrix.
 | `../../../../eng/pipelines/templates/steps/use-ms-rust.yml` | Provides the opt-in internal Microsoft Rust installer path without changing ordinary Rust jobs. |
 | `New-NativeJobMatrix.ps1` | Converts the canonical target list into the standard Azure Pipelines matrix-generator format. |
 | `Build-NativeMatrix.ps1` | Verifies Microsoft Rust, builds each static library, and writes schema 4 release metadata. |
+| `Finalize-WindowsArm64Artifact.ps1` | Verifies the signed ARM64 PE, exports, imports, timestamp, and final hashes. |
 | `Test-NativeLink.ps1` | Cross-links a minimal Go/cgo program against each target archive before publication. |
 | `New-GoModules.ps1` | Creates the `Azure/azure-cosmos-driver` directory layout, Go module files, cgo linker files, headers, and static libraries. |
 | `Test-GoModuleConsumer.ps1` | Builds direct and vendored Go consumers that call `cosmos_version()` from a generated host module. |
@@ -124,6 +122,28 @@ Open a draft pull request in Azure/azure-cosmos-driver
     v
 GitHub code-owner review and approval
 ```
+
+The Windows ARM64 row branches after build: MSVC produces
+`azurecosmosdriver.dll` and `azurecosmosdriver.pdb`; ESRP signs and verifies the
+DLL; finalization validates PE machine `0xAA64`, imports and exports, then hashes
+the signed bytes; 1ES publishes the payload with signed SPDX evidence. It skips
+Go/cgo linking, module generation, and downstream source staging.
+
+The signing task requires the repository's approved Cosmos native signing
+service connection, client/tenant, Key Vault, and certificate pipeline
+variables. Missing onboarding fails the job rather than producing an unsigned
+artifact. Signing diagnostics remain pipeline-only and are never copied by
+`Prepare-GoDriverPullRequest.ps1`, which retains the exact six-file signed
+evidence allowlist.
+
+The Windows payload is staged under
+`windows-arm64-msvc/v<native-interface-version>/` and contains
+`azurecosmosdriver.dll`,
+`azurecosmosdriver.pdb`, `azurecosmosdriver.h`,
+`rust-driver-native-interface-metadata.json`, and `SHA256SUMS`. The PDB is
+published for diagnostics but is not required to load the DLL. See
+`../docs/NATIVE_SUPPLY_CHAIN.md` for the distribution/security tradeoffs and
+the Go-team handoff.
 
 The official 1ES template is the governed build and provenance boundary. The
 pipeline uses the repository's standard `1ES.PublishPipelineArtifact@1` wrapper
@@ -254,6 +274,13 @@ package selects the appropriate driver module, so users do not need a custom
 musl build tag.
 
 ## Work still required before release
+
+- Run the signed pipeline with the production ESRP onboarding and verify the
+  timestamp chain on the published bytes.
+- Exercise the DLL on physical Windows ARM64 hardware, including lifecycle,
+  completion queue, transport-error, unload, Application Verifier, and
+  antivirus/enterprise policy scenarios. Cross-building on AMD64 is not a
+  production-readiness substitute.
 
 - Confirm with the central security owners that the official 1ES template is the
   approved trust boundary for these static libraries.

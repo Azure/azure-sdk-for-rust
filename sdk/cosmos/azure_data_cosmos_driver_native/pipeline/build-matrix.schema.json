@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cosmos native driver build matrix",
+  "type": "object",
+  "required": [
+    "native_interface_crate",
+    "rust_driver_crate",
+    "lib_basename",
+    "static_lib_filename",
+    "windows_dll_filename",
+    "windows_pdb_filename",
+    "header_filename",
+    "targets"
+  ],
+  "properties": {
+    "native_interface_crate": { "type": "string", "minLength": 1 },
+    "rust_driver_crate": { "type": "string", "minLength": 1 },
+    "lib_basename": { "type": "string", "minLength": 1 },
+    "static_lib_filename": { "type": "string", "minLength": 1 },
+    "windows_dll_filename": { "const": "azurecosmosdriver.dll" },
+    "windows_pdb_filename": { "const": "azurecosmosdriver.pdb" },
+    "header_filename": { "const": "azurecosmosdriver.h" },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "publication_kind",
+          "goos",
+          "goarch",
+          "triple",
+          "c_compiler"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "publication_kind": {
+            "enum": ["static-go-module", "windows-dll"]
+          },
+          "goos": { "enum": ["linux", "darwin", "windows"] },
+          "goarch": { "enum": ["amd64", "arm64"] },
+          "triple": { "type": "string", "minLength": 1 },
+          "c_compiler": { "type": "string", "minLength": 1 },
+          "module_path": {
+            "type": ["string", "null"]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "publication_kind": { "const": "windows-dll" }
+              }
+            },
+            "then": {
+              "properties": {
+                "goos": { "const": "windows" },
+                "goarch": { "const": "arm64" },
+                "triple": { "const": "aarch64-pc-windows-msvc" },
+                "module_path": { "type": "null" }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "publication_kind": { "const": "static-go-module" }
+              }
+            },
+            "then": {
+              "required": ["module_path"],
+              "properties": {
+                "module_path": { "type": "string", "minLength": 1 }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
