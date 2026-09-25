@@ -1,154 +1,203 @@
-# Azure Cosmos DB Driver
+# Azure Cosmos DB Driver for Rust
 
-Core implementation layer for Azure Cosmos DB, providing transport, routing, and protocol handling.
+This crate provides transport, routing, and protocol handling for Azure Cosmos
+DB SDKs. It accepts raw item bytes and returns buffered responses; the
+consuming SDK handles application-defined item serialization.
 
-See the [Cosmos SDK project documentation] for project, architecture,
-specification, and decision records.
+**The driver is intended as an internal SDK component. Direct use of its public
+APIs isn't officially supported.** For Rust applications, use the
+[`azure_data_cosmos` SDK], which is fully supported. This includes use of
+driver symbols re-exported through the SDK's public APIs; using the same
+symbols directly through this crate isn't officially supported.
 
-## Purpose
+[Source code] | [Package (crates.io)] | [API reference documentation] | [`azure_data_cosmos` SDK]
 
-The Azure Cosmos DB Driver is a foundational library that implements the core transport, routing, and protocol handling for Azure Cosmos DB. It is designed to be used by language-specific SDKs (e.g., `azure_data_cosmos`) which provide type-safe, idiomatic APIs and handle serialization/deserialization of Cosmos DB resources.
+## Getting started
 
-## Support Model
+### Install the package
 
-**Applications which use an SDK built on the driver** (e.g., `azure_data_cosmos`) are **fully covered** by Microsoft Support SLAs,
-even when issues are ultimately traced to the driver layer. The driver is an implementation detail of the SDK and is supported as part of the overall SDK support.
+SDK implementers can add the driver with Cargo:
 
-The Cosmos DB Driver is an internal component shared across several SDKs and is not intended for direct use by most developers.
-Applications which use the driver **directly** are **not covered by Microsoft Support SLAs** and receive only community support through GitHub issues and pull requests.
-Any driver APIs which are re-exported through the public SDK (e.g., `azure_data_cosmos`) are considered part of the supported public API and are covered by Microsoft Support SLAs when used through the SDK. However, direct usage of the driver APIs that are not re-exported by the SDK is not supported.
-
-## Key Features
-
-### Schema-Agnostic Data Plane
-
-The driver is intentionally ignorant of document/item schemas. Data plane operations:
-
-- Accept raw bytes (`&[u8]`) for request bodies
-- Return buffered responses (`Vec<u8>`) for items (≤16MB payload limit)
-- Support both UTF-8 JSON and Cosmos DB binary encoding (detected automatically)
-
-**Serialization is handled by the consuming SDK** using native language APIs.
-
-### Independent Versioning
-
-This crate follows **strict semantic versioning** but can move to new major versions more frequently than `azure_data_cosmos`. Breaking changes in the driver do not force SDK version bumps because the SDK uses adapter patterns to maintain backward compatibility.
-
-### Error Backtraces
-
-`CosmosError` can carry a stack backtrace captured at construction. Capture is **opt-in** (matching idiomatic Rust): off by default, on whenever the stdlib `RUST_LIB_BACKTRACE` / `RUST_BACKTRACE` environment variables ask for it, and always overridable programmatically. When enabled, two independent rolling-1-second limiters keep the cost predictable under error storms — so unlike `RUST_BACKTRACE=1` (process-wide, unconditional, all-or-nothing) the driver can be left with backtraces *on* in production without paying the cost on every error.
-
-**Two-tier cost model.**
-
-- **Capture** runs on every `CosmosError` constructed while the capture throttle has budget, and is microseconds — only the call-stack instruction pointers are recorded. Symbols are not resolved at this point. When capture is disabled (no env var asking for it and no programmatic override), the stack is never walked and no IP vector is allocated.
-- **Symbol resolution** (turning an IP into `module::function (file:line)`) is deferred until the first call to `error.backtrace()` → `Display`. Resolved frames are cached process-wide by IP, so repeat captures of the same call site only pay the resolution cost once per process lifetime.
-
-**Two production-safety knobs (independent rolling-1-second limiters).**
-
-| Knob              | `BacktraceOptions` field     | Env var                                         | Default when backtraces enabled | Default when disabled | What it bounds                                                                                              |
-| ----------------- | ---------------------------- | ----------------------------------------------- | ------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Capture throttle  | `max_captures_per_second`    | `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND`    | `1_000`                         | `0` (disabled)        | Hard ceiling on stack walks per second, regardless of cache state.                                          |
-| Resolution budget | `max_resolutions_per_second` | `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` | `5`                             | `0` (disabled)        | How many backtraces may perform *fresh* symbol resolution per second. Cache hits do **not** consume budget. |
-
-Both fields take `u32`. Setting either to `0` fully disables that limiter; setting both to `0` fully disables backtrace capture.
-
-**Configuration precedence (highest priority first).**
-
-For each of the two knobs the active value is resolved from the first source below that provides a value:
-
-1. **Programmatic** — the most recent call to `azure_data_cosmos_driver::error::set_backtrace_options(BacktraceOptions { … })`. Last-writer-wins; later calls replace earlier ones. **This always wins, including over an env var that explicitly disables backtraces** — e.g. `RUST_BACKTRACE=0` plus a non-zero programmatic call gives you backtraces, and a non-zero `RUST_BACKTRACE` plus a programmatic call with `max_captures_per_second: 0` disables them.
-2. **Cosmos-specific env var** — `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND` / `AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND`. **Trumps `RUST_BACKTRACE` / `RUST_LIB_BACKTRACE` in both directions** — set them when the stdlib env vars do not match what you want for the Cosmos SDK specifically (e.g. `RUST_BACKTRACE=0` but `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND=1000` → you get Cosmos backtraces capped at 1000/s).
-3. **Stdlib `RUST_LIB_BACKTRACE` / `RUST_BACKTRACE`-keyed default** — when neither of the above is supplied, the SDK consults the stdlib env vars using stdlib precedence (`RUST_LIB_BACKTRACE` takes priority over `RUST_BACKTRACE`; for each, anything other than unset / empty / `"0"` enables). When enabled, the defaults from the "enabled" column above apply; otherwise both caps are `0`.
-
-The env-var-derived default is computed lazily on the first error construction and is suppressed once any programmatic call to `set_backtrace_options` has run.
-
-**When to adjust which.**
-
-- **Resolution budget** — raise when you want richer backtraces in development or when investigating a specific recurring failure (resolved frames are cached forever, so a one-time spike costs nothing long-term). Lower (or set to `0`) when symbol resolution is dominating CPU during incident debugging; backtraces will still capture and can be resolved later once the budget is restored.
-- **Capture throttle** — lower (or set to `0`) when profiling shows raw stack-walk cost is dominating during a same-call-site error storm (e.g. a sustained 429 storm where every backtrace is a cache hit and the resolution limiter is never consulted). Raise (or leave at the generous default) when you want maximum diagnostic coverage and capture cost is not a concern.
-
-When the resolution budget is exhausted but the cache covers every frame, backtraces render at full fidelity for free. When the budget is exhausted *and* there is a cache-missed frame, the render returns `None` — partial / `<unresolved> @ 0xIP` renders are never produced.
-
-**Tuning programmatically.**
-
-```rust
-use azure_data_cosmos_driver::error::{set_backtrace_options, BacktraceOptions};
-
-// Start from the env-var-derived default (`RUST_LIB_BACKTRACE` /
-// `RUST_BACKTRACE`-keyed) and only override the fields you care about.
-let mut opts = BacktraceOptions::default();
-opts.max_captures_per_second = 500;     // cap raw captures
-opts.max_resolutions_per_second = 50;   // richer rendering budget
-set_backtrace_options(opts);
-
-// Or fully disable, overriding any env var that asked for backtraces:
-opts.max_captures_per_second = 0;
-opts.max_resolutions_per_second = 0;
-set_backtrace_options(opts);
+```sh
+cargo add azure_data_cosmos_driver
 ```
 
-**Reading a backtrace.**
+Applications should install [`azure_data_cosmos` SDK] instead.
 
-On an operation error, call `err.backtrace()` and display the returned
-backtrace, if present. Capture may be disabled or throttled.
+### Prerequisites
 
-## Architecture
+- An [Azure subscription] with an Azure Cosmos DB for NoSQL account.
+- An identity with access to the account. The example uses
+  `DeveloperToolsCredential`; run `az login` for local development.
 
-```mermaid
-flowchart TD
-    SDK["Language-Specific SDKs<br/>(azure_data_cosmos, Java, .NET)<br/>• Type-safe APIs<br/>• Native serialization"]
-    Driver["azure_data_cosmos_driver<br/>• Transport &amp; routing<br/>• Protocol handling<br/>• Retry logic<br/>• Schema-agnostic (raw bytes)"]
-    Service["Azure Cosmos DB Service"]
-    SDK --> Driver --> Service
-```
+### Connect to an account
 
-## Usage
+Build a driver runtime and create a driver for the account. The example uses
+the default Tokio runtime and Reqwest transport. Add `azure_identity` for the
+credential and `url` for the account endpoint.
 
 ```rust,no_run
-use azure_data_cosmos_driver::{CosmosDriverRuntime, options::DriverOptions};
-use azure_data_cosmos_driver::models::AccountReference;
+use azure_data_cosmos_driver::{
+    models::AccountReference, options::DriverOptions, CosmosDriverRuntime,
+};
 use azure_identity::DeveloperToolsCredential;
 use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Use logged-in developer credentials (Azure CLI, azd, etc.)
+    let endpoint = Url::parse("https://myaccount.documents.azure.com/")?;
     let credential = DeveloperToolsCredential::new(None)?;
-
-    let account = AccountReference::with_credential(
-        Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
-        credential,
-    );
-
-    // Create the runtime
+    let account = AccountReference::with_credential(endpoint, credential);
     let runtime = CosmosDriverRuntime::builder().build().await?;
-
-    // Get or create a driver for the account (singleton per endpoint)
-    let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
-
-    // Driver operations work with raw bytes
-    // let response = driver.execute_operation(operation, options).await?;
-
+    let _driver = runtime
+        .create_driver(DriverOptions::builder(account).build())
+        .await?;
     Ok(())
 }
 ```
 
-## Module Organization
+## Features
 
-- **`diagnostics`**: Operational telemetry (RU consumption, retry counts, timing information)
-- **`driver`**: Core transport, routing, and protocol handling
-- **`models`**: Resource types, partition keys, status codes, and request metadata
-- **`options`**: Configuration types (driver options, connection pool settings, diagnostics)
-- **`system`**: System-level utilities (CPU/memory monitoring, VM metadata)
+Direct use of driver public APIs isn't officially supported, regardless of
+feature selection. Driver symbols used through the supported SDK's public APIs
+retain SDK support. Preview features may have breaking API or behavior changes
+in future releases.
 
-Internal modules (pipeline, routing, handlers) have `pub(crate)` visibility.
+| Feature flag | Support level | Enabled by default | Description |
+| --- | --- | --- | --- |
+| `tokio` | Internal SDK use | Yes | Enables the Tokio runtime integration. |
+| `reqwest` | Internal SDK use | Yes | Enables the Reqwest HTTP transport. |
+| `rustls` | Internal SDK use | Yes | Enables Rustls TLS for Reqwest. |
+| `native_tls` | Internal SDK use | No | Enables native TLS for Reqwest. |
+| `fault_injection` | Internal SDK testing | No | Enables fault-injection rules for testing. |
+| `preview_dtx` | Preview | No | Enables distributed transactions. |
+| `preview_patch` | Preview | No | Enables PATCH strategy configuration. Core PATCH operations don't require this feature. |
+
+Features beginning with `__` are reserved for SDK development and testing
+and aren't listed here.
+
+## Examples
+
+These examples show how an SDK integrates with the driver. They require an
+account with a `myDatabase` database and a `myContainer` container partitioned
+on `/category`. Applications should use [`azure_data_cosmos` SDK] instead.
+
+### Point write and read
+
+Resolve the container before constructing an item reference. The partition
+key must match the item body's `/category` value. The driver returns response
+bodies without deserializing them into application types.
+
+```rust,no_run
+use azure_data_cosmos_driver::{
+    models::{CosmosOperation, ItemReference, PartitionKey},
+    options::OperationOptions, CosmosDriver,
+};
+
+async fn example(driver: &CosmosDriver) -> Result<(), Box<dyn std::error::Error>> {
+    let container = driver
+        .resolve_container_by_name("myDatabase", "myContainer", OperationOptions::default())
+        .await?;
+    let item = ItemReference::from_name(&container, PartitionKey::from("books"), "item1");
+    let body = serde_json::to_vec(&serde_json::json!({
+        "id": "item1", "category": "books"
+    }))?;
+    driver
+        .execute_operation(
+            CosmosOperation::create_item(item.clone()).with_body(body),
+            OperationOptions::default(),
+        )
+        .await?;
+    let response = driver
+        .execute_operation(CosmosOperation::read_item(item), OperationOptions::default())
+        .await?;
+    if let Some(response) = response {
+        println!("{:?}", response.body());
+    }
+    Ok(())
+}
+```
+
+### Query items
+
+Plan a feed query, then request pages until `execute_plan()` returns `None`.
+Query results are raw response bodies; the consuming SDK deserializes items.
+
+```rust,no_run
+use azure_data_cosmos_driver::{
+    models::{CosmosOperation, FeedRange},
+    options::{OperationOptions, PlanOptions}, CosmosDriver,
+};
+
+async fn example(driver: &CosmosDriver) -> Result<(), Box<dyn std::error::Error>> {
+    let options = OperationOptions::default();
+    let container = driver
+        .resolve_container_by_name("myDatabase", "myContainer", options.clone())
+        .await?;
+    let query = serde_json::to_vec(&serde_json::json!({
+        "query": "SELECT * FROM c WHERE c.category = @category",
+        "parameters": [{"name": "@category", "value": "books"}]
+    }))?;
+    let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
+        .with_body(query);
+    let mut plan = driver
+        .plan_operation(operation, &options, None, &PlanOptions::default())
+        .await?;
+    while let Some(page) = driver
+        .execute_plan(&mut plan, Some(container.clone()), options.clone())
+        .await?
+    {
+        println!("{:?}", page.body());
+    }
+    Ok(())
+}
+```
+
+## Remarks
+
+### Error backtraces
+
+`CosmosError` can capture a backtrace when `RUST_LIB_BACKTRACE` or
+`RUST_BACKTRACE` enables it. Capture is disabled by default. Two independent
+per-second limits control stack capture and symbol resolution: 1,000 captures
+and five resolutions by default when enabled. Cached symbols don't consume
+the resolution budget.
+
+Set `AZURE_COSMOS_BACKTRACE_CAPTURES_PER_SECOND` and
+`AZURE_COSMOS_BACKTRACE_RESOLUTIONS_PER_SECOND` to override the corresponding
+defaults. Programmatic `set_backtrace_options()` overrides the environment.
+Setting both limits to zero disables capture.
+
+```rust
+use azure_data_cosmos_driver::error::{set_backtrace_options, BacktraceOptions};
+
+let mut options = BacktraceOptions::default();
+options.max_captures_per_second = 500;
+options.max_resolutions_per_second = 50;
+set_backtrace_options(options);
+```
+
+The `backtrace()` method on `CosmosError` returns `None` when capture is
+disabled or throttled, or when uncached symbols cannot be resolved within
+the current budget.
+
+## Next steps
+
+- See the [`azure_data_cosmos` SDK] for supported application APIs.
+- See the [API reference documentation] for driver types and options.
+- [Open an issue] to report a bug.
 
 ## Contributing
 
-This project welcomes contributions and suggestions. Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us the rights to use your contribution. For details, visit [https://cla.microsoft.com](https://cla.microsoft.com).
+Contributions require agreement to the [Contributor License Agreement].
+This project follows the [Microsoft Open Source Code of Conduct].
 
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions provided by the bot. You'll only need to do this once across all repos using our CLA.
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information, see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-[Cosmos SDK project documentation]: https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/README.md
+<!-- LINKS -->
+[API reference documentation]: https://docs.rs/azure_data_cosmos_driver/latest/azure_data_cosmos_driver/
+[Azure subscription]: https://azure.microsoft.com/free/
+[Contributor License Agreement]: https://cla.microsoft.com
+[Microsoft Open Source Code of Conduct]: https://opensource.microsoft.com/codeofconduct/
+[Open an issue]: https://github.com/Azure/azure-sdk-for-rust/issues
+[Package (crates.io)]: https://crates.io/crates/azure_data_cosmos_driver
+[Source code]: https://github.com/Azure/azure-sdk-for-rust/tree/main/sdk/cosmos/azure_data_cosmos_driver
+[`azure_data_cosmos` SDK]: https://docs.rs/azure_data_cosmos/latest/azure_data_cosmos/
