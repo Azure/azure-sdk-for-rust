@@ -129,6 +129,8 @@ pub fn assert_region_not_contacted(
 
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
+/// Default timeout for live AAD tests whose resource lifecycle uses ARM.
+const DEFAULT_ARM_TEST_TIMEOUT: Duration = Duration::from_secs(180);
 const CONTAINER_READINESS_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(5);
 const CONTAINER_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
 const CHANGE_FEED_READINESS_RESPONSE_TIMEOUT: Duration = Duration::from_secs(2);
@@ -141,11 +143,19 @@ const SATELLITE_READINESS_INITIAL_BACKOFF: Duration = Duration::from_millis(500)
 const SATELLITE_READINESS_MAX_BACKOFF: Duration = Duration::from_secs(5);
 /// Wall-clock budget shared by both satellite readiness phases.
 ///
-/// Readiness runs inside the per-test [`DEFAULT_TEST_TIMEOUT`], so letting each
-/// phase spend its full ladder independently could consume the whole budget and
-/// report a generic test timeout instead of the readiness error explaining it.
+/// Readiness runs inside the selected per-test timeout, so letting each phase
+/// spend its full ladder independently could consume the whole budget and report
+/// a generic test timeout instead of the readiness error explaining it.
 #[cfg(test_category = "multi_write")]
 const SATELLITE_READINESS_BUDGET: Duration = Duration::from_secs(45);
+
+fn resolve_test_timeout(configured: Option<Duration>, uses_arm_lifecycle: bool) -> Duration {
+    configured.unwrap_or(if uses_arm_lifecycle {
+        DEFAULT_ARM_TEST_TIMEOUT
+    } else {
+        DEFAULT_TEST_TIMEOUT
+    })
+}
 
 async fn retry_container_readiness<T, E, F, Fut, TimeoutError, ShouldRetry>(
     region: &str,
@@ -457,7 +467,10 @@ pub struct TestOptions {
     /// Application region for the fault injection client.
     /// Used in combination with `fault_injection_rules`.
     pub fault_client_application_region: Option<Region>,
-    /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
+    /// Timeout for the test.
+    ///
+    /// If `None`, uses [`DEFAULT_TEST_TIMEOUT`], or 180 seconds for live AAD
+    /// tests whose resource lifecycle uses ARM.
     pub timeout: Option<Duration>,
     /// When `true`, builds the underlying [`CosmosClient`]s with a
     /// [`CosmosRuntime`] configured for
@@ -883,7 +896,8 @@ impl TestClient {
     /// Runs a test function with a new [`TestClient`] and custom test options.
     ///
     /// This method supports:
-    /// - Timeouts (defaults to DEFAULT_TEST_TIMEOUT)
+    /// - Timeouts (defaults to 180 seconds for ARM-backed live AAD tests and
+    ///   [`DEFAULT_TEST_TIMEOUT`] otherwise)
     /// - Custom CosmosClient options for the normal client
     /// - Preferred regions for the fault injection client
     ///
@@ -1022,8 +1036,9 @@ impl TestClient {
                 options.gateway_v2_disabled,
             );
 
-            // Apply timeout around entire test including retries on 429s
-            let timeout = options.timeout.unwrap_or(DEFAULT_TEST_TIMEOUT);
+            // ARM lifecycle operations can include service-side LRO polling and
+            // transient transport retries before the data-plane test starts.
+            let timeout = resolve_test_timeout(options.timeout, run.arm_client().is_some());
 
             let result = tokio::time::timeout(timeout, async {
                 let mut backoff = Duration::from_millis(500);
@@ -2308,9 +2323,10 @@ pub async fn build_aad_client_from_env(
 mod tests {
     use super::{
         aad_token_invalid_issuer, effective_binary_encoding, from_arm_throughput, item_not_found,
-        rbac_name_based_data_not_ready, retry_container_readiness, satellite_probe_should_retry,
-        to_arm_container_resource, transient_data_plane_readiness_error,
-        transient_satellite_readiness_error, ArmThroughput, AuthMode, BinaryEncodingOptions,
+        rbac_name_based_data_not_ready, resolve_test_timeout, retry_container_readiness,
+        satellite_probe_should_retry, to_arm_container_resource,
+        transient_data_plane_readiness_error, transient_satellite_readiness_error, ArmThroughput,
+        AuthMode, BinaryEncodingOptions, DEFAULT_ARM_TEST_TIMEOUT, DEFAULT_TEST_TIMEOUT,
     };
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{
@@ -2324,6 +2340,16 @@ mod tests {
         },
         time::Duration,
     };
+
+    #[test]
+    fn arm_lifecycle_uses_longer_default_timeout() {
+        assert_eq!(resolve_test_timeout(None, false), DEFAULT_TEST_TIMEOUT);
+        assert_eq!(resolve_test_timeout(None, true), DEFAULT_ARM_TEST_TIMEOUT);
+
+        let configured = Duration::from_secs(42);
+        assert_eq!(resolve_test_timeout(Some(configured), false), configured);
+        assert_eq!(resolve_test_timeout(Some(configured), true), configured);
+    }
 
     #[test]
     fn arm_autoscale_throughput_preserves_service_values() {
