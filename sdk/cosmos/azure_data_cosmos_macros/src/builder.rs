@@ -15,17 +15,20 @@ pub fn generate_builder(input: &OptionsInput) -> Result<TokenStream> {
 
     // Builder struct fields mirror the original struct (all Option<T>).
     let struct_fields = input.fields.iter().map(|field| {
+        let cfg_attrs = &field.cfg_attrs;
         let field_name = &field.ident;
         let full_type = &field.full_type;
-        quote! { #field_name: #full_type }
+        quote! { #(#cfg_attrs)* #field_name: #full_type }
     });
 
     // Setter methods: each takes the inner type and wraps in Some.
     let setters = input.fields.iter().map(|field| {
+        let cfg_attrs = &field.cfg_attrs;
         let field_name = &field.ident;
         let setter_name = format_ident!("with_{}", field_name);
         let inner_type = &field.inner_type;
         quote! {
+            #(#cfg_attrs)*
             /// Sets this field on the builder.
             #vis fn #setter_name(mut self, value: #inner_type) -> Self {
                 self.#field_name = Some(value);
@@ -36,14 +39,16 @@ pub fn generate_builder(input: &OptionsInput) -> Result<TokenStream> {
 
     // Build method: constructs the original struct.
     let build_fields = input.fields.iter().map(|field| {
+        let cfg_attrs = &field.cfg_attrs;
         let field_name = &field.ident;
-        quote! { #field_name: self.#field_name }
+        quote! { #(#cfg_attrs)* #field_name: self.#field_name }
     });
 
     // Default fields for new().
     let default_fields = input.fields.iter().map(|field| {
+        let cfg_attrs = &field.cfg_attrs;
         let field_name = &field.ident;
-        quote! { #field_name: None }
+        quote! { #(#cfg_attrs)* #field_name: None }
     });
 
     Ok(quote! {

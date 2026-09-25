@@ -9,6 +9,13 @@ The core driver always includes PATCH. Consuming SDKs decide whether and how
 to expose it as preview using conventions appropriate to each language. The
 Rust SDK, `azure_data_cosmos`, gates its public PATCH API behind the
 **`preview_patch`** Cargo feature, which is off by default.
+This includes its PATCH instruction and increment number models, tracking
+types, PATCH item options and methods, and the
+`OperationOptions::patch_strategy` setting.
+PATCH inside a distributed write transaction additionally requires
+`preview_dtx`; non-PATCH transactions need only `preview_dtx`. The driver's
+`preview_patch` feature gates the strategy configuration API, not its core
+PATCH execution, which remains available without the feature and uses `Auto`.
 
 For instruction lists that are not safe to reapply, the handler persists a
 tracking entry in the item as part of the same ETag-guarded Replace as the

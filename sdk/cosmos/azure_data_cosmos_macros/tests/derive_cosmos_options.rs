@@ -7,6 +7,39 @@ use azure_data_cosmos_macros::CosmosOptions;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+#[derive(CosmosOptions, Clone)]
+#[options(layers(runtime, account, operation))]
+pub struct ConditionalOptions {
+    #[cfg(any())]
+    #[option(env = "AZURE_COSMOS_DISABLED_FIELD", overridable)]
+    pub disabled: Option<UndefinedWhenDisabled>,
+
+    #[cfg(not(any()))]
+    #[option(env = "AZURE_COSMOS_ENABLED_FIELD", overridable)]
+    pub enabled: Option<u32>,
+}
+
+#[test]
+fn conditional_fields_gate_all_generated_members() {
+    let env = ConditionalOptions::from_env_vars(|key| match key {
+        "AZURE_COSMOS_ENABLED_FIELD" => Ok("3".to_string()),
+        _ => panic!("unexpected environment variable: {key}"),
+    });
+    assert_eq!(env.enabled, Some(3));
+    let override_options = ConditionalOptions::from_env_override_vars(|key| {
+        assert_eq!(key, "AZURE_COSMOS_ENABLED_FIELD_OVERRIDE");
+        Ok("4".to_string())
+    });
+    assert_eq!(override_options.enabled, Some(4));
+
+    let runtime = Arc::new(ConditionalOptionsBuilder::new().with_enabled(5).build());
+    let operation = ConditionalOptions::default();
+    assert!(operation.enabled.is_none());
+    let view =
+        ConditionalOptionsView::new(Some(Arc::new(env)), Some(runtime), None, Some(&operation));
+    assert_eq!(view.enabled(), Some(&5));
+}
+
 // --- Basic three-layer option group ---
 
 #[derive(CosmosOptions, Clone)]

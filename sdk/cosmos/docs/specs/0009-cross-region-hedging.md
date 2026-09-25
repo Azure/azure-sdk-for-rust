@@ -1444,44 +1444,13 @@ flushes). This invariant must be covered by the unit tests listed in §15.1.
 
 ### 9.3 Throughput Control
 
-Each hedged request independently checks the throughput control group
-budget. Hedging **does** increase RU consumption when the alternate
-hedge actually executes transport. With the single-alternate model
-(§6), the maximum RU multiplier introduced by hedging is **2×** — one
-primary + one alternate.
-
-The throughput control snapshot is acquired per-attempt in the
-operation pipeline (STAGE 3), so the alternate sees the latest budget.
-
-**Pathological interaction under TC saturation.** When the throughput
-control group is saturated, both the primary and the alternate will be
-throttled to 429 by the local TC gate before reaching the network.
-`execute_hedged()` classifies 429 as transient (see §7.2), drains both
-responses, and returns the most recent 429 — i.e., under TC saturation
-hedging is at best a no-op and at worst adds 2× TC pressure plus the
-threshold-timer latency on top.
-
-Because hedging is on by default (§5.2), operators on TC-saturated
-accounts should explicitly opt out via `AvailabilityStrategy::Disabled`
-on the driver.
-
-**Mitigations the implementation must adopt:**
-
-1. **Sizing guidance (operator-facing docs).** State explicitly that
-   the maximum RU multiplier introduced by hedging is **2×**, and TC
-   group budgets should be sized with that headroom in mind.
-2. **Short-circuit on local TC 429.** If the primary returns a
-   TC-gate 429 *before* reaching transport (i.e., the throttle is
-   local rather than service-side), `execute_hedged()` SHOULD treat
-   that as a "do not fan out" signal — the alternate will hit the
-   same gate. Distinguish this from a service-side 429 (which is
-   genuinely region-local and benefits from hedging) via the response
-   source field.
-3. **Optional: exempt the alternate from TC accounting.**
-   Speculative-hedge RU is not user-attributable; a losing alternate's
-   RU is wasted by definition. A future option MAY skip TC accounting
-   for the alternate hedge. Out of scope for Phase 1; tracked as a
-   follow-up.
+Throughput control values (`priority_level` and `throughput_bucket`) are
+resolved once per logical operation. The primary and alternate share those
+values; the driver does not enforce a local throughput budget. Hedging
+**does** increase RU consumption when the alternate reaches the service.
+With the single-alternate model (§6), the maximum RU multiplier is **2×**.
+The service may throttle either request under contention. Operators can
+disable hedging for these operations with `AvailabilityStrategy::Disabled`.
 
 ### 9.4 End-to-End Deadline
 

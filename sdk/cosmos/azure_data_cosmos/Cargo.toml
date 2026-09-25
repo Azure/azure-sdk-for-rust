@@ -110,7 +110,10 @@ metrics = [
 preview_dtx = [
   "azure_data_cosmos_driver/preview_dtx",
 ] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
-preview_patch = ["dep:uuid"] # Enables the preview PATCH API with bounded duplicate suppression. Disabled by default.
+preview_patch = [
+  "dep:uuid",
+  "azure_data_cosmos_driver/preview_patch",
+] # Enables the preview PATCH API with bounded duplicate suppression. Disabled by default.
 __internal_in_memory_emulator = [
   "azure_data_cosmos_driver/__internal_in_memory_emulator",
   "key_auth",

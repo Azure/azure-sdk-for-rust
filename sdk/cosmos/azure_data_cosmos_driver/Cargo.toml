@@ -21,7 +21,7 @@ async-trait.workspace = true
 azure_core = { workspace = true, default-features = false, features = [
   "hmac_rust",
 ] }
-azure_data_cosmos_macros = "0.2.0"
+azure_data_cosmos_macros = { path = "../azure_data_cosmos_macros", version = "0.3.0" }
 backtrace.workspace = true
 base64.workspace = true
 bytes.workspace = true
@@ -98,6 +98,7 @@ rustls = ["reqwest", "reqwest/rustls", "__tls"]
 native_tls = ["reqwest", "reqwest/native-tls", "__tls"]
 fault_injection = []
 preview_dtx = [] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
+preview_patch = [] # Enables preview PATCH strategy configuration; core PATCH remains available without it.
 # `__internal_in_memory_emulator` exposes the in-memory query evaluator
 # (`crate::query::eval`, `crate::query::value`) used by the in-memory Cosmos DB
 # emulator. The evaluator intentionally trades full Cosmos parity for emulator

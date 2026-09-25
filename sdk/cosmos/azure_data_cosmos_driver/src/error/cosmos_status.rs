@@ -507,8 +507,6 @@ impl SubStatusCode {
             20127 => Some("ClientPartitionKeyNumberNonFinite"),
             20128 => Some("ClientUserAgentSuffixInvalid"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
-            20151 => Some("ClientThroughputControlGroupRegistrationFailed"),
-            20152 => Some("ClientThroughputControlGroupNotRegistered"),
             20153 => Some("ClientHttpClientConstructionFailed"),
             20154 => Some("ClientReqwestFeatureRequired"),
             20155 => Some("ClientRequestUrlMissingHost"),
@@ -1428,16 +1426,6 @@ impl SubStatusCode {
 
     /// Two fault-injection rules registered with the same id (20150).
     pub const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: SubStatusCode = SubStatusCode(20150);
-
-    /// Throughput-control-group registration failed at runtime
-    /// initialization (20151). Inner error is preserved as
-    /// `StdError::source`.
-    pub const CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED: SubStatusCode =
-        SubStatusCode(20151);
-
-    /// A throughput-control-group name was referenced from an operation
-    /// but is not present in the runtime registry (20152).
-    pub const CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED: SubStatusCode = SubStatusCode(20152);
 
     /// HTTP client construction failed inside the driver's default
     /// transport factory (20153). Inner reqwest / hyper error is
@@ -2443,18 +2431,6 @@ impl CosmosStatus {
     pub const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: CosmosStatus = CosmosStatus {
         status_code: StatusCode::BadRequest,
         sub_status: Some(SubStatusCode::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID),
-    };
-
-    /// 400 / 20151 — throughput-control-group registration failed.
-    pub const CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_THROUGHPUT_CONTROL_GROUP_REGISTRATION_FAILED),
-    };
-
-    /// 400 / 20152 — throughput-control-group name not registered.
-    pub const CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED: CosmosStatus = CosmosStatus {
-        status_code: StatusCode::BadRequest,
-        sub_status: Some(SubStatusCode::CLIENT_THROUGHPUT_CONTROL_GROUP_NOT_REGISTERED),
     };
 
     /// 400 / 20153 — default HTTP client construction failed.

@@ -8,28 +8,26 @@ Run from the repository root:
 
 ```sh
 cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
-  --manifest-path sdk/core/azure_core/Cargo.toml \
-  --output target/generate_api/azure_core
+  --manifest-path sdk/core/azure_core/Cargo.toml
 ```
 
-To write only `api.md` and `api.metadata.yml` under a crate's `api/` directory:
+By default, output is written to the crate directory. The command above writes
+`sdk/core/azure_core/api.md`.
+
+To write Markdown API review artifacts to a different directory:
 
 ```sh
 cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
   --manifest-path sdk/core/azure_core/Cargo.toml \
-  --output sdk/core/azure_core/api \
-  --no-docs \
-  --no-map
+  --output target/generate_api/azure_core \
+  --review
 ```
 
-To verify those two files without writing them:
+To verify the default output without writing it:
 
 ```sh
 cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
   --manifest-path sdk/core/azure_core/Cargo.toml \
-  --output sdk/core/azure_core/api \
-  --no-docs \
-  --no-map \
   --check
 ```
 
@@ -37,19 +35,18 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 
 - `--manifest-path <path>`: path to the target crate's `Cargo.toml`
 - `--format <markdown|apiview>`: optional output format to generate; defaults to `markdown`
-- `--no-docs`: omit documentation comments: APIView doc tokens, or the Markdown comments patch
-- `--no-map`: omit the Markdown source map; accepted as a no-op for APIView output
+- `--review`: emit Markdown review sidecars; valid only with `--format markdown`
 - `--check`: compare generated content with existing output files without writing them
-- `--output <dir>`: directory where generated files are written
+- `--output <dir>`: directory where generated files are written; defaults to the crate directory
 
 ### Outputs
 
-- default `markdown` output writes `api.md`, `api.metadata.yml`, `api.md.map`, and
- `api.comments.patch`
-- `--no-docs` skips `api.comments.patch`
-- `--no-map` skips `api.md.map`
+- default `markdown` output writes `api.md`
+- `--format markdown --review` also writes `api.metadata.yml`, `api.md.map`, and
+  `api.documentation.patch`
+- `--format markdown --review` writes `state/version.txt` and
+  `state/package-relative-path.txt`
 - `--format apiview` writes `apiview.json`
-- `--format apiview --no-docs` writes `apiview.json` without doc comment tokens
 - `--check` succeeds when output files are absent or match after normalizing line endings; a mismatch
   writes an error to stderr and exits with code `1`
 
@@ -61,12 +58,12 @@ contains
 documentation comments.
 `api.metadata.yml` is written next to `api.md` and records the normalized SHA-256 of `api.md`, the
 crate version, the `generate_api` version, and the rustc version used for generation.
-`api.comments.patch` is a unified diff that adds them back, so it can be applied to toggle
+`api.documentation.patch` is a unified diff that adds them back, so it can be applied to toggle
 documentation comments on. Each comment hunk uses all attributes and the first declaration line as
 context:
 
 ```sh
-patch -p1 < api.comments.patch
+patch -p1 < api.documentation.patch
 ```
 
 `api.md.map` is an ECMA-426 source map that maps declaration lines in the fenced Rust API block
@@ -82,6 +79,9 @@ Alternatively, keep the generated relative `sourceRoot` and the source map at th
 location within an unchanged repository directory structure; the source paths will then continue
 to resolve relative to `api.md.map` or a custom map path. Keep the `sources` entries unchanged in
 all cases.
+
+For Markdown review output, the `state` directory contains the crate version in `version.txt` and
+the repository-relative crate directory in `package-relative-path.txt`.
 
 ## Workflow
 
@@ -100,8 +100,9 @@ From that path:
   `<package>/<package>.rust.json`.
 - The shared `create-apireview` pipeline step consumes that staged JSON artifact.
 
-For local testing, `Pack-Crates.ps1 -APIReview` temporarily switches to markdown generation and
-writes `api.md` into each crate root directory. Pipelines do not set `-APIReview` today.
+For local testing, `Pack-Crates.ps1 -APIReview` temporarily switches to Markdown review generation
+and writes the review artifacts into each crate root directory. Pipelines do not set `-APIReview`
+today.
 
 ## Toolchain
 

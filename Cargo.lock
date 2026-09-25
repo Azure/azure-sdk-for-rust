@@ -631,7 +631,7 @@ dependencies = [
  "async-trait",
  "azure_core 1.1.0",
  "azure_core_test 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "azure_data_cosmos_macros 0.2.0",
+ "azure_data_cosmos_macros",
  "azure_data_cosmos_test",
  "azure_identity 1.0.0",
  "backtrace",
@@ -686,17 +686,6 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "url",
-]
-
-[[package]]
-name = "azure_data_cosmos_macros"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7171e936ab196e5889af4cbee33f775a8a7548c03be8076207e560776d7b87ba"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
 ]
 
 [[package]]
