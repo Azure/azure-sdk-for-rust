@@ -217,31 +217,14 @@ pub(crate) struct HedgeUpgrade {
 /// it). `request_timeout` is plumbed through to
 /// [`resolve_availability_strategy`] so the driver default
 /// (`min(1000ms, request_timeout / 2)`) can be computed.
+/// `cross_region_hedging_disabled` is the current account-level service
+/// suppression signal.
 ///
 /// Returns `None` when hedging is disabled, the operation is ineligible,
 /// or no applicable region distinct from `primary` exists — in all cases
 /// the caller falls back to its non-hedged decision (typically
 /// `FailoverRetry`).
-#[cfg(test)]
 pub(crate) fn evaluate_hedge_eligibility(
-    operation: &CosmosOperation,
-    options: &OperationOptionsView<'_>,
-    account_state: &AccountEndpointState,
-    primary: &RoutingDecision,
-    request_timeout: Option<Duration>,
-) -> Option<HedgeUpgrade> {
-    evaluate_hedge_eligibility_for_account(
-        operation,
-        options,
-        account_state,
-        primary,
-        request_timeout,
-        false,
-    )
-}
-
-/// Evaluates hedge eligibility with the current account-level service signal.
-pub(crate) fn evaluate_hedge_eligibility_for_account(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
     account_state: &AccountEndpointState,
@@ -955,7 +938,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
             .expect("eligible multi-region read");
 
         // Secondary pinned to applicable[1] = WEST_US_2.
@@ -982,7 +965,7 @@ mod tests {
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
         for op in [read_container_operation(), read_pk_ranges_operation()] {
-            let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+            let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
                 .expect("eligible metadata read");
             assert_eq!(
                 upgrade.threshold.get(),
@@ -998,9 +981,15 @@ mod tests {
         // A data-plane point read still gets the driver default (1000ms), even
         // with a request_timeout supplied, so the metadata override is scoped.
         let dp = read_item_operation();
-        let dp_upgrade =
-            evaluate_hedge_eligibility(&dp, &view, &state, &primary, Some(Duration::from_secs(10)))
-                .expect("eligible data-plane read");
+        let dp_upgrade = evaluate_hedge_eligibility(
+            &dp,
+            &view,
+            &state,
+            &primary,
+            Some(Duration::from_secs(10)),
+            false,
+        )
+        .expect("eligible data-plane read");
         assert_eq!(dp_upgrade.threshold.get(), Duration::from_millis(1000));
     }
 
@@ -1013,7 +1002,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none());
     }
 
     #[test]
@@ -1025,7 +1014,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none());
     }
 
     #[test]
@@ -1039,7 +1028,7 @@ mod tests {
             .build();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none());
     }
 
     #[test]
@@ -1059,14 +1048,14 @@ mod tests {
             read_container_operation(),
             read_pk_ranges_operation(),
         ] {
-            assert!(evaluate_hedge_eligibility_for_account(
-                &operation, &view, &state, &primary, None, true,
-            )
-            .is_none());
-            assert!(evaluate_hedge_eligibility_for_account(
-                &operation, &view, &state, &primary, None, false,
-            )
-            .is_some());
+            assert!(
+                evaluate_hedge_eligibility(&operation, &view, &state, &primary, None, true,)
+                    .is_none()
+            );
+            assert!(
+                evaluate_hedge_eligibility(&operation, &view, &state, &primary, None, false,)
+                    .is_some()
+            );
         }
     }
 
@@ -1080,10 +1069,9 @@ mod tests {
             .build();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility_for_account(
-            &operation, &view, &state, &primary, None, false,
-        )
-        .is_none());
+        assert!(
+            evaluate_hedge_eligibility(&operation, &view, &state, &primary, None, false,).is_none()
+        );
     }
 
     #[test]
@@ -1096,7 +1084,7 @@ mod tests {
         op_opts.excluded_regions = Some([Region::WEST_US_2].into_iter().collect());
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none());
+        assert!(evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none());
     }
 
     #[test]
@@ -1112,7 +1100,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
             .expect("eligible three-region read");
 
         let url_str = upgrade.secondary_routing.selected_url.as_str();
@@ -1179,7 +1167,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
             .expect("eligible multi-region GatewayV2 read");
         let secondary = &upgrade.secondary_routing;
 
@@ -1221,11 +1209,13 @@ mod tests {
         // Configured timeout = 800ms → expected threshold = 400ms (cap = 1s).
         let configured_timeout = Some(Duration::from_millis(800));
 
-        let first = evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout)
-            .expect("first call eligible");
+        let first =
+            evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout, false)
+                .expect("first call eligible");
         std::thread::sleep(Duration::from_millis(10));
-        let second = evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout)
-            .expect("second call eligible");
+        let second =
+            evaluate_hedge_eligibility(&op, &view, &state, &primary, configured_timeout, false)
+                .expect("second call eligible");
 
         assert_eq!(
             first.threshold.get(),
@@ -1264,7 +1254,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None)
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false)
             .expect("eligible three-region read");
 
         let secondary_region = upgrade.secondary_routing.endpoint.region().cloned();
@@ -1302,7 +1292,7 @@ mod tests {
         let op_opts = OperationOptions::default();
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
-        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None).expect(
+        let upgrade = evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).expect(
             "request must still be hedged when the primary is not \
              preferred_read_endpoints[0]",
         );
@@ -1346,7 +1336,7 @@ mod tests {
         let view = OperationOptionsView::new(None, None, None, Some(&op_opts));
 
         assert!(
-            evaluate_hedge_eligibility(&op, &view, &state, &primary, None).is_none(),
+            evaluate_hedge_eligibility(&op, &view, &state, &primary, None, false).is_none(),
             "no distinct alternate exists — must fall back to non-hedged decision",
         );
     }

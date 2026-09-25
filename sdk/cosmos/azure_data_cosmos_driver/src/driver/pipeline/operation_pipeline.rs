@@ -49,7 +49,7 @@ use super::{
     },
     hedge_budget::{HedgeBudget, HedgePermit},
     hedging_diagnostics::{HedgeDiagnostics, HedgingStrategyConfig},
-    hedging_eligibility::evaluate_hedge_eligibility_for_account,
+    hedging_eligibility::evaluate_hedge_eligibility,
     retry_evaluation::{
         build_service_error, evaluate_hedge_leg_effects, evaluate_transport_result,
         is_region_confirming_status, partition_effects_for_deferral,
@@ -736,7 +736,7 @@ pub(crate) async fn execute_operation_pipeline(
             && retry_state.session_token_retry_count == 0
             && !hedging_suppressed_for_attempt(operation, &overrides)
         {
-            let admitted = evaluate_hedge_eligibility_for_account(
+            let admitted = evaluate_hedge_eligibility(
                 operation,
                 options,
                 &location.account,
@@ -1341,7 +1341,7 @@ pub(crate) async fn execute_operation_pipeline(
                 // no distinct alternate remains, fall back to non-hedged
                 // dispatch via `continue` — we intentionally do NOT set
                 // `hedge_already_fired` since no race actually started.
-                let secondary_routing = match evaluate_hedge_eligibility_for_account(
+                let secondary_routing = match evaluate_hedge_eligibility(
                     operation,
                     options,
                     &location.account,
@@ -3323,7 +3323,7 @@ fn maybe_upgrade_to_hedge<'a>(
         _ => return (action, None),
     };
 
-    match evaluate_hedge_eligibility_for_account(
+    match evaluate_hedge_eligibility(
         operation,
         options,
         account_state,
