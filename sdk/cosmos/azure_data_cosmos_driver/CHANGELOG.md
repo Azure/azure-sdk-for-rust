@@ -28,6 +28,7 @@
 
 ### Bugs Fixed
 
+- Fixed `serde_json::value::RawValue` deserialization on the Cosmos binary JSON path: `binary_json::from_slice` and `ResponseBody::into_single`/`into_items` now render the value's JSON text for a `RawValue` target instead of failing with a misclassified serialization error, so `RawValue` callers keep working now that binary encoding is on by default. ([#5338](https://github.com/Azure/azure-sdk-for-rust/pull/5338))
 - Reconciled dataflow partition-range identity resolution across logical, EPK, sequential, and hedged requests, preserving split-parent session tokens on Gateway 2.0 while keeping logical partition-key wire routing unchanged, and enforcing the end-to-end timeout across planning and first-page execution. ([#5315](https://github.com/Azure/azure-sdk-for-rust/pull/5315))
 - Container recreation now preserves collection RID mismatch errors during cold partition routing and rejects incompatible stale partition keys with a dedicated client substatus. ([#5324](https://github.com/Azure/azure-sdk-for-rust/pull/5324))
 - Gateway 2.0 change feed requests now forward incremental-mode and wire-format-version metadata, so change feeds work over the thin-client transport. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))

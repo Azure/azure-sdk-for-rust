@@ -28,6 +28,7 @@
 
 ### Bugs Fixed
 
+- Fixed `serde_json::value::RawValue` deserialization for binary-encoded responses: `ResponseBody::into_single` (and the `into_model` helpers built on it) now yield the document's JSON text for a `RawValue` target instead of failing, restoring raw passthrough now that binary encoding is on by default. ([#5338](https://github.com/Azure/azure-sdk-for-rust/pull/5338))
 - Container recreation now preserves collection RID mismatch errors during cold partition routing and rejects incompatible stale partition keys with a dedicated client substatus. ([#5324](https://github.com/Azure/azure-sdk-for-rust/pull/5324))
 - Change feed reads now work over Gateway 2.0 by forwarding incremental-mode and wire-format-version request metadata. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Cosmos root spans now use the last retained request endpoint for their fallback `server.address`, matching the operation-duration metric when no SDK operation context supplies an address. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
