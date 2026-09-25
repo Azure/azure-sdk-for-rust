@@ -483,6 +483,11 @@ impl CosmosErrorCode {
                     .with_sub_status(SubStatusCode::CLIENT_FFI_PANIC.value())
             })
     }
+
+    /// Packed status returned when a synchronous FFI panic is contained.
+    pub(crate) fn panic_status_code() -> CosmosStatusCode {
+        CosmosStatusCode::from_status(Self::panic_status())
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

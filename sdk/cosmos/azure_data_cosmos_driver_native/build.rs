@@ -47,6 +47,13 @@ fn generate_c_header() {
          // This should match the version of libazurecosmosdriver you are linking against.\n\
          #define AZURECOSMOSDRIVER_H_VERSION \"{}\"\n\
          \n\
+         // Native ABI compatibility version. Consumers require an equal major\n\
+         // version and a minor version at least as new as the APIs they use.\n\
+         #define AZURECOSMOSDRIVER_ABI_VERSION_MAJOR 1\n\
+         #define AZURECOSMOSDRIVER_ABI_VERSION_MINOR 1\n\
+         #define AZURECOSMOSDRIVER_ABI_VERSION \\\n\
+           ((AZURECOSMOSDRIVER_ABI_VERSION_MAJOR << 16) | AZURECOSMOSDRIVER_ABI_VERSION_MINOR)\n\
+         \n\
          // Packed-status helpers (see cosmos_status_code_t). Emitted as macros so\n\
          // they keep the SCREAMING_SNAKE_CASE spelling shared with the\n\
          // COSMOS_SUB_STATUS_* constants instead of being double-prefixed by the\n\
