@@ -44,10 +44,13 @@ pub async fn account_metadata_503_surfaces_as_status_error() -> Result<(), Box<d
 
         // First op on the driver triggers the lazy account-properties fetch via
         // create_driver. Under a persistent 503 it must surface upstream HTTP status.
-        let err = context.create_database(&db_name).await.expect_err(
-            "create_database must fail when GET / is faulted with a persistent 503; \
+        let err = context
+            .create_database_data_plane(&db_name)
+            .await
+            .expect_err(
+                "create_database must fail when GET / is faulted with a persistent 503; \
                  the account-metadata fetch is the first network call and cannot succeed",
-        );
+            );
 
         // Harness wraps the typed error in Box<dyn Error>; inspect Display/Debug for the bug
         // signature (the scripted-transport unit test asserts on the typed error directly).

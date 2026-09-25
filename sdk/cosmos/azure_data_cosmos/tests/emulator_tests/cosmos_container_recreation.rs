@@ -112,7 +112,7 @@ pub async fn changed_definition_recovers_supported_operations() -> Result<(), Bo
                 .create_container(
                     db_client,
                     container_properties("/pk".into()),
-                    Some(create_options(400)),
+                    Some(ThroughputProperties::manual(400)),
                 )
                 .await?;
             let original = stale.read(None).await?.into_model()?;
@@ -228,7 +228,7 @@ pub async fn explicit_tokens_do_not_cross_recreation() -> Result<(), Box<dyn Err
                 .create_container(
                     db_client,
                     container_properties("/pk".into()),
-                    Some(create_options(400)),
+                    Some(ThroughputProperties::manual(400)),
                 )
                 .await?;
             let first = item_for_path("old-1", "pk", 1);
@@ -321,7 +321,7 @@ pub async fn stale_range_and_partition_shape_do_not_cross_recreation() -> Result
                 .create_container(
                     db_client,
                     container_properties(old_definition.clone()),
-                    Some(create_options(400)),
+                    Some(ThroughputProperties::manual(400)),
                 )
                 .await?;
             let old_logical_range = FeedRange::for_partition(

@@ -3,21 +3,23 @@
 
 // cspell:ignore: TEAMPROJECTID
 
+use super::{ArmThroughput, CosmosArmClient};
 use azure_core::{http::StatusCode, Uuid};
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
     fault_injection::FaultInjectionRule,
     feed::FeedScope,
-    models::{ItemResponse, ThroughputProperties},
+    models::{ItemResponse, PartitionKeyValue, ThroughputProperties},
     options::{
-        BinaryEncodingOptions, ConnectionPoolOptions, CreateContainerOptions, ItemReadOptions,
-        ItemWriteOptions, Region, ServerCertificateValidation,
+        BinaryEncodingOptions, ChangeFeedStartFrom, ConnectionPoolOptions, CreateContainerOptions,
+        ItemReadOptions, ItemWriteOptions, Region, ServerCertificateValidation,
     },
     CosmosClient, CosmosError, CosmosRuntime, CosmosStatus, PartitionKey, Query, RoutingStrategy,
     SubStatusCode,
 };
 use azure_data_cosmos_driver::models::ConnectionString;
-use futures::TryStreamExt;
+use futures::{StreamExt, TryStreamExt};
+use std::error::Error;
 use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration;
@@ -55,6 +57,9 @@ pub const HUB_REGION: Region = Region::EAST_US_2;
 pub const SATELLITE_REGION: Region = Region::WEST_US_3;
 pub const DATABASE_NAME_ENV_VAR: &str = "DATABASE_NAME";
 pub const EMULATOR_HOST: &str = "127.0.0.1";
+type BoxError = Box<dyn Error>;
+type ContainerFuture<'a> =
+    Pin<Box<dyn Future<Output = Result<ContainerClient, BoxError>> + Send + 'a>>;
 /// Asserts that the operation contacted `expected_region` at least once and
 /// that more than one request was tracked (i.e. some form of retry or
 /// failover happened). Does **not** require the *final* request to land on
@@ -124,8 +129,11 @@ pub fn assert_region_not_contacted(
 
 /// Default timeout for tests (80 seconds).
 pub const DEFAULT_TEST_TIMEOUT: Duration = Duration::from_secs(80);
+/// Default timeout for live AAD tests whose resource lifecycle uses ARM.
+const DEFAULT_ARM_TEST_TIMEOUT: Duration = Duration::from_secs(180);
 const CONTAINER_READINESS_ATTEMPT_TIMEOUT: Duration = Duration::from_secs(5);
 const CONTAINER_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
+const CHANGE_FEED_READINESS_RESPONSE_TIMEOUT: Duration = Duration::from_secs(2);
 const FAULT_INJECTION_READINESS_MAX_ATTEMPTS: usize = 20;
 #[cfg(test_category = "multi_write")]
 const SATELLITE_READINESS_MAX_ATTEMPTS: usize = 8;
@@ -135,11 +143,19 @@ const SATELLITE_READINESS_INITIAL_BACKOFF: Duration = Duration::from_millis(500)
 const SATELLITE_READINESS_MAX_BACKOFF: Duration = Duration::from_secs(5);
 /// Wall-clock budget shared by both satellite readiness phases.
 ///
-/// Readiness runs inside the per-test [`DEFAULT_TEST_TIMEOUT`], so letting each
-/// phase spend its full ladder independently could consume the whole budget and
-/// report a generic test timeout instead of the readiness error explaining it.
+/// Readiness runs inside the selected per-test timeout, so letting each phase
+/// spend its full ladder independently could consume the whole budget and report
+/// a generic test timeout instead of the readiness error explaining it.
 #[cfg(test_category = "multi_write")]
 const SATELLITE_READINESS_BUDGET: Duration = Duration::from_secs(45);
+
+fn resolve_test_timeout(configured: Option<Duration>, uses_arm_lifecycle: bool) -> Duration {
+    configured.unwrap_or(if uses_arm_lifecycle {
+        DEFAULT_ARM_TEST_TIMEOUT
+    } else {
+        DEFAULT_TEST_TIMEOUT
+    })
+}
 
 async fn retry_container_readiness<T, E, F, Fut, TimeoutError, ShouldRetry>(
     region: &str,
@@ -194,7 +210,7 @@ fn owner_resource_not_found(error: &CosmosError) -> bool {
         && error.status().sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND)
 }
 
-fn aad_token_invalid_issuer(error: &CosmosError) -> bool {
+pub(crate) fn aad_token_invalid_issuer(error: &CosmosError) -> bool {
     error.status().status_code() == StatusCode::Unauthorized
         && error.status().sub_status() == Some(SubStatusCode::new(5007))
 }
@@ -217,6 +233,13 @@ fn transient_satellite_readiness_error(error: &CosmosError, auth_mode: AuthMode)
         || owner_resource_not_found(error)
         || (auth_mode == AuthMode::Aad
             && (aad_token_invalid_issuer(error) || rbac_name_based_data_not_ready(error)))
+}
+
+fn transient_data_plane_readiness_error(error: &CosmosError) -> bool {
+    collection_create_in_progress(error)
+        || owner_resource_not_found(error)
+        || aad_token_invalid_issuer(error)
+        || rbac_name_based_data_not_ready(error)
 }
 
 /// A plain "that item does not exist" 404 — the success signal for the
@@ -267,29 +290,26 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
 /// connection. Under key auth this is invisible because the master key bypasses
 /// RBAC entirely.
 ///
-/// The probe deletes an id that cannot exist: it mutates nothing on success
-/// (the delete answers a bare 404), reuses the same `items/*` grant tests need,
-/// and returns as soon as the data path answers with a normal not-found. It
-/// tolerates `5302` and `collection_create_in_progress` as retryable while the
-/// name registers on this client. Read-path races that leak past this probe
-/// are absorbed by `TestClient::read_item`'s 5302 retry loop; probing reads
-/// here as well would spuriously trip fault-injection assertions that count
-/// retries on the fault client.
+/// The probe verifies item, query, and change-feed authorization because Cosmos
+/// can propagate those RBAC actions independently. It tolerates expected AAD
+/// and collection metadata propagation errors while the resource registers.
 pub async fn probe_data_plane_ready(
     label: &str,
     container: &ContainerClient,
+    partition_key_component_count: usize,
 ) -> azure_data_cosmos::Result<()> {
     const MAX_ATTEMPTS: usize = 20;
     const RETRY_DELAY: Duration = Duration::from_millis(500);
 
     let probe_id = format!("data-plane-readiness-probe-{}", Uuid::new_v4());
+    let partition_key = PartitionKey::try_from(
+        (0..partition_key_component_count)
+            .map(|_| PartitionKeyValue::from(probe_id.clone()))
+            .collect::<Vec<_>>(),
+    )?;
     for attempt in 1..=MAX_ATTEMPTS {
         let outcome = container
-            .delete_item(
-                PartitionKey::from(probe_id.clone()),
-                probe_id.as_str(),
-                None,
-            )
+            .delete_item(partition_key.clone(), probe_id.as_str(), None)
             .await;
 
         let error = match outcome {
@@ -306,11 +326,10 @@ pub async fn probe_data_plane_ready(
         };
 
         if item_not_found(&error) {
-            return Ok(());
+            break;
         }
 
-        let retryable =
-            rbac_name_based_data_not_ready(&error) || collection_create_in_progress(&error);
+        let retryable = transient_data_plane_readiness_error(&error);
         if !retryable || attempt == MAX_ATTEMPTS {
             return Err(error);
         }
@@ -319,7 +338,68 @@ pub async fn probe_data_plane_ready(
         tokio::time::sleep(RETRY_DELAY).await;
     }
 
-    unreachable!("loop should be exited by 'return' when attempts are exhausted")
+    for attempt in 1..=MAX_ATTEMPTS {
+        let outcome = async {
+            container
+                .query_items::<serde_json::Value>(
+                    "SELECT * FROM c",
+                    FeedScope::partition(partition_key.clone()),
+                    None,
+                )
+                .await?
+                .try_collect::<Vec<_>>()
+                .await
+        }
+        .await;
+        match outcome {
+            Ok(_) => break,
+            Err(error) if transient_data_plane_readiness_error(&error) => {
+                if attempt == MAX_ATTEMPTS {
+                    return Err(error);
+                }
+                println!("waiting for query readiness on {label}: {error}");
+                tokio::time::sleep(RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    for attempt in 1..=MAX_ATTEMPTS {
+        let outcome = async {
+            let mut pages = container
+                .query_change_feed::<serde_json::Value>(
+                    FeedScope::full_container(),
+                    ChangeFeedStartFrom::Now,
+                    None,
+                )
+                .await?;
+            match tokio::time::timeout(CHANGE_FEED_READINESS_RESPONSE_TIMEOUT, pages.next()).await {
+                Ok(Some(result)) => result.map(|_| ()),
+                Ok(None) => Err(azure_data_cosmos_driver::error::CosmosError::builder()
+                    .with_status(CosmosStatus::new(StatusCode::InternalServerError))
+                    .with_message("change-feed readiness probe returned no page")
+                    .build()
+                    .into()),
+                // Empty feeds are long-polled; after item and query probes pass,
+                // reaching this bound means RBAC accepted the request.
+                Err(_) => Ok(()),
+            }
+        }
+        .await;
+        match outcome {
+            Ok(()) => return Ok(()),
+            Err(error) if transient_data_plane_readiness_error(&error) => {
+                if attempt == MAX_ATTEMPTS {
+                    return Err(error);
+                }
+                println!("waiting for change-feed readiness on {label}: {error}");
+                tokio::time::sleep(RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+
+    unreachable!("the final change-feed readiness attempt returns above")
 }
 
 /// Reads an item while retrying the transient propagation states expected on
@@ -387,7 +467,10 @@ pub struct TestOptions {
     /// Application region for the fault injection client.
     /// Used in combination with `fault_injection_rules`.
     pub fault_client_application_region: Option<Region>,
-    /// Timeout for the test. If None, uses DEFAULT_TEST_TIMEOUT.
+    /// Timeout for the test.
+    ///
+    /// If `None`, uses [`DEFAULT_TEST_TIMEOUT`], or 180 seconds for live AAD
+    /// tests whose resource lifecycle uses ARM.
     pub timeout: Option<Duration>,
     /// When `true`, builds the underlying [`CosmosClient`]s with a
     /// [`CosmosRuntime`] configured for
@@ -524,9 +607,8 @@ pub enum AuthMode {
     /// Authenticate every operation with the account key (default).
     #[default]
     Key,
-    /// Authenticate data-plane operations with an Entra ID (AAD) token. Database
-    /// management (create/delete) still uses the account key, because it is not
-    /// expressible as a Cosmos data-plane RBAC action.
+    /// Authenticate data-plane operations with an Entra ID (AAD) token and use
+    /// Azure Resource Manager for database, container, and throughput lifecycle.
     Aad,
 }
 
@@ -557,6 +639,9 @@ const DEFAULT_EMULATOR_DATABASE_NAME: &str = "emulator-test-db";
 /// Resolves the connection string from the environment, handling the `"emulator"` shorthand.
 pub fn resolve_connection_string() -> Option<ConnectionString> {
     let env_var = std::env::var(CONNECTION_STRING_ENV_VAR).ok()?;
+    if env_var.trim().is_empty() {
+        return None;
+    }
     let raw = if env_var == "emulator" {
         EMULATOR_CONNECTION_STRING
     } else {
@@ -811,7 +896,8 @@ impl TestClient {
     /// Runs a test function with a new [`TestClient`] and custom test options.
     ///
     /// This method supports:
-    /// - Timeouts (defaults to DEFAULT_TEST_TIMEOUT)
+    /// - Timeouts (defaults to 180 seconds for ARM-backed live AAD tests and
+    ///   [`DEFAULT_TEST_TIMEOUT`] otherwise)
     /// - Custom CosmosClient options for the normal client
     /// - Preferred regions for the fault injection client
     ///
@@ -850,14 +936,6 @@ impl TestClient {
             .with_env_filter(test_env_filter())
             .try_init();
 
-        let test_client = Self::from_env(
-            options.client_application_region.clone(),
-            options.allow_invalid_certificates,
-            options.binary_encoding.clone(),
-            options.gateway_v2_disabled,
-        )
-        .await?;
-
         // Decide whether a fault-injection client is needed, and with which rules.
         // Rules should be passed in for emulator tests to ensure the FaultClient
         // wraps the HTTP client with invalid cert acceptance,
@@ -874,30 +952,38 @@ impl TestClient {
             (None, false) => None,
         };
 
-        // CosmosClient is designed to be cloned cheaply, so we can clone it here.
-        if let Some(key_client) = test_client.cosmos_client.clone() {
-            // In AAD mode the primary (data-plane) client authenticates with an
-            // Entra ID token, while the key client is retained for database
-            // management (create/delete), which is not a data-plane RBAC action.
-            let auth_mode = AuthMode::from_env();
-            let (primary_client, management_client) = match auth_mode {
-                AuthMode::Aad => {
-                    let region = options
-                        .client_application_region
-                        .clone()
-                        .unwrap_or(HUB_REGION);
-                    let (aad_client, _recorder) = build_aad_client_from_env(
+        let auth_mode = AuthMode::from_env();
+        let primary_client = match auth_mode {
+            AuthMode::Aad => {
+                let region = options
+                    .client_application_region
+                    .clone()
+                    .unwrap_or(HUB_REGION);
+                Some(
+                    build_aad_client_from_env(
                         region,
                         Vec::new(),
                         options.binary_encoding.clone(),
                         options.gateway_v2_disabled,
                     )
-                    .await?;
-                    (aad_client, Some(key_client))
-                }
-                AuthMode::Key => (key_client, None),
-            };
+                    .await?
+                    .0,
+                )
+            }
+            AuthMode::Key => {
+                Self::from_env(
+                    options.client_application_region.clone(),
+                    options.allow_invalid_certificates,
+                    options.binary_encoding.clone(),
+                    options.gateway_v2_disabled,
+                )
+                .await?
+                .cosmos_client
+            }
+        };
 
+        if let Some(primary_client) = primary_client {
+            let fault_injection_rules = fault_rules.clone().unwrap_or_default();
             // The fault client must authenticate the same way as the primary client.
             // Building it from the connection string unconditionally left the
             // `aad_auth` legs running every fault-injection test under key auth, and
@@ -935,15 +1021,24 @@ impl TestClient {
                 },
             };
 
+            let arm_client = if auth_mode == AuthMode::Aad && !targets_emulator() {
+                Some(CosmosArmClient::from_env(
+                    azure_core_test::credentials::from_env(None)?,
+                )?)
+            } else {
+                None
+            };
             let run = TestRunContext::new(
                 primary_client,
                 fault_cosmos_client,
-                management_client,
+                arm_client,
+                fault_injection_rules,
                 options.gateway_v2_disabled,
             );
 
-            // Apply timeout around entire test including retries on 429s
-            let timeout = options.timeout.unwrap_or(DEFAULT_TEST_TIMEOUT);
+            // ARM lifecycle operations can include service-side LRO polling and
+            // transient transport retries before the data-plane test starts.
+            let timeout = resolve_test_timeout(options.timeout, run.arm_client().is_some());
 
             let result = tokio::time::timeout(timeout, async {
                 let mut backoff = Duration::from_millis(500);
@@ -993,10 +1088,15 @@ impl TestClient {
                 Err(_) => Err(format!("Test timed out after {} seconds", timeout.as_secs()).into()),
             }
         } else if test_mode == CosmosTestMode::Required {
-            panic!("Cosmos Test Mode is 'required' but no connection string was provided in the AZURE_COSMOS_CONNECTION_STRING environment variable.");
+            panic!(
+                "Cosmos Test Mode is 'required' but no account endpoint was provided in {} or {}.",
+                CONNECTION_STRING_ENV_VAR, ACCOUNT_HOST_ENV_VAR
+            );
         } else {
-            // Test mode is 'allowed' but no connection string was provided, so we skip the test.
-            eprintln!("Skipping emulator/live tests because no connection string was provided in the AZURE_COSMOS_CONNECTION_STRING environment variable.");
+            eprintln!(
+                "Skipping emulator/live tests because no account endpoint was provided in {} or {}.",
+                CONNECTION_STRING_ENV_VAR, ACCOUNT_HOST_ENV_VAR
+            );
             Ok(())
         }
     }
@@ -1027,18 +1127,8 @@ impl TestClient {
     {
         Self::run_with_options(
             async |run_context| {
-                // Ensure the shared database exists (create if needed, ignore conflict).
                 let db_id = get_shared_database_id();
-                // Emulator is always strong consistency, so we can skip the read check in that case
-                match run_context
-                    .management_client()
-                    .create_database(db_id, None)
-                    .await
-                {
-                    Ok(_) => {}
-                    Err(e) if e.status().status_code() == StatusCode::Conflict => {}
-                    Err(e) => return Err(e.into()),
-                }
+                run_context.create_database(db_id).await?;
                 let db_client = run_context.shared_db_client();
                 db_client.read(None).await?;
                 Box::pin(test(run_context, &db_client)).await
@@ -1061,17 +1151,44 @@ pub struct TestRunContext {
     client: CosmosClient,
     /// The fault injection Cosmos client (if configured).
     fault_client: Option<CosmosClient>,
-    /// The key-authenticated client used for database management in AAD mode.
-    /// `None` in key mode (management uses `client`).
-    management_client: Option<CosmosClient>,
+    /// The ARM client used for resource lifecycle in live AAD mode.
+    arm_client: Option<CosmosArmClient>,
+    fault_injection_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
     gateway_v2_disabled: bool,
+}
+
+struct DisabledFaultInjectionRules(Vec<(std::sync::Arc<FaultInjectionRule>, bool)>);
+
+impl DisabledFaultInjectionRules {
+    fn new(rules: &[std::sync::Arc<FaultInjectionRule>]) -> Self {
+        let states = rules
+            .iter()
+            .map(|rule| {
+                let enabled = rule.is_enabled();
+                rule.disable();
+                (rule.clone(), enabled)
+            })
+            .collect();
+        Self(states)
+    }
+}
+
+impl Drop for DisabledFaultInjectionRules {
+    fn drop(&mut self) {
+        for (rule, was_enabled) in &self.0 {
+            if *was_enabled {
+                rule.enable();
+            }
+        }
+    }
 }
 
 impl TestRunContext {
     pub fn new(
         client: CosmosClient,
         fault_client: Option<CosmosClient>,
-        management_client: Option<CosmosClient>,
+        arm_client: Option<CosmosArmClient>,
+        fault_injection_rules: Vec<std::sync::Arc<FaultInjectionRule>>,
         gateway_v2_disabled: bool,
     ) -> Self {
         let run_id = azure_core::Uuid::new_v4().simple().to_string();
@@ -1079,7 +1196,8 @@ impl TestRunContext {
             run_id,
             client,
             fault_client,
-            management_client,
+            arm_client,
+            fault_injection_rules,
             gateway_v2_disabled,
         }
     }
@@ -1096,42 +1214,75 @@ impl TestRunContext {
         &self.client
     }
 
-    /// Gets the client used for database management (create/delete databases).
-    ///
-    /// In AAD mode this is a key-authenticated client, because database
-    /// management is not expressible as a Cosmos data-plane RBAC action. In key
-    /// mode it is the same client returned by [`TestRunContext::client`].
-    pub fn management_client(&self) -> &CosmosClient {
-        self.management_client.as_ref().unwrap_or(&self.client)
+    /// Gets the ARM client used for live AAD resource management.
+    pub fn arm_client(&self) -> Option<&CosmosArmClient> {
+        self.arm_client.as_ref()
     }
 
-    /// Gets a container client derived from the management (key) client, for
-    /// operations that are not permitted by the data-plane RBAC role used in
-    /// AAD mode.
-    ///
-    /// Throughput/offer operations (`read_throughput`, `begin_replace_throughput`)
-    /// are control-plane and are rejected by the data-plane role granted in
-    /// `test-resources.bicep`, so they must go through the key client. In key
-    /// mode this is equivalent to deriving a container client from
-    /// [`TestRunContext::client`].
-    pub async fn management_container_client(
+    pub async fn read_container_throughput(
         &self,
         db_client: &DatabaseClient,
         container_id: &str,
-    ) -> azure_data_cosmos::Result<ContainerClient> {
-        self.management_client()
-            .database_client(db_client.id())
+    ) -> Result<Option<ThroughputProperties>, Box<dyn std::error::Error>> {
+        if let Some(arm_client) = self.arm_client() {
+            return Ok(Some(from_arm_throughput(
+                arm_client
+                    .read_container_throughput(database_name(db_client)?, container_id)
+                    .await?,
+            )?));
+        }
+        Ok(db_client
             .container_client(container_id, None)
-            .await
+            .await?
+            .read_throughput(None)
+            .await?)
     }
 
-    /// Creates a key-authenticated management client with an independent runtime.
+    pub async fn read_database_throughput(
+        &self,
+        db_client: &DatabaseClient,
+    ) -> Result<Option<ThroughputProperties>, Box<dyn std::error::Error>> {
+        if let Some(arm_client) = self.arm_client() {
+            return Ok(arm_client
+                .read_database_throughput(database_name(db_client)?)
+                .await?
+                .map(from_arm_throughput)
+                .transpose()?);
+        }
+        Ok(db_client.read_throughput(None).await?)
+    }
+
+    pub async fn replace_container_throughput(
+        &self,
+        db_client: &DatabaseClient,
+        container_id: &str,
+        throughput: ThroughputProperties,
+    ) -> Result<ThroughputProperties, Box<dyn std::error::Error>> {
+        if let Some(arm_client) = self.arm_client() {
+            return Ok(from_arm_throughput(
+                arm_client
+                    .replace_container_throughput(
+                        database_name(db_client)?,
+                        container_id,
+                        to_arm_throughput(&throughput)?,
+                    )
+                    .await?,
+            )?);
+        }
+        Ok(db_client
+            .container_client(container_id, None)
+            .await?
+            .begin_replace_throughput(throughput, None)
+            .await?
+            .await?
+            .into_model()?)
+    }
+
+    /// Creates a client with an independent runtime using the configured authentication mode.
     ///
     /// Use this when a test must mutate service state without advancing the
     /// primary client's metadata caches.
-    pub async fn fresh_management_client(
-        &self,
-    ) -> Result<CosmosClient, azure_data_cosmos::CosmosError> {
+    pub async fn fresh_management_client(&self) -> Result<CosmosClient, BoxError> {
         Self::create_client_with_preferred_region(HUB_REGION, self.gateway_v2_disabled).await
     }
 
@@ -1161,44 +1312,58 @@ impl TestRunContext {
 
     /// Creates a new, empty, database for this test run with default throughput options.
     pub async fn create_db(&self) -> azure_data_cosmos::Result<DatabaseClient> {
-        // Database creation/deletion is management-plane and is not expressible
-        // as a Cosmos data-plane RBAC action, so it always goes through the
-        // management (key) client. The returned handle is derived from the
-        // primary client so downstream container/item operations exercise the
-        // primary credential (AAD in AAD mode).
         let db_name = self.db_name();
-        let response = match self
-            .management_client()
-            .create_database(&db_name, None)
-            .await
-        {
-            // The database creation was successful.
-            Ok(props) => props,
-            Err(e) if e.status().status_code() == StatusCode::Conflict => {
-                // The database already exists, from a previous test run.
-                // Delete it and re-create it.
-                let db_client = self.management_client().database_client(&db_name);
-                db_client.delete(None).await?;
-
-                // Re-create the database.
-                self.management_client()
-                    .create_database(&db_name, None)
-                    .await?
+        if let Some(arm_client) = self.arm_client() {
+            arm_client
+                .delete_database(&db_name)
+                .await
+                .map_err(arm_error)?;
+            arm_client
+                .create_database(&db_name)
+                .await
+                .map_err(arm_error)?;
+        } else {
+            match self.client().create_database(&db_name, None).await {
+                Ok(_) => {}
+                Err(error) if error.status().status_code() == StatusCode::Conflict => {
+                    self.client().database_client(&db_name).delete(None).await?;
+                    self.client().create_database(&db_name, None).await?;
+                }
+                Err(error) => return Err(error),
             }
-            Err(e) => {
-                // Some other error occurred.
-                return Err(e);
+        }
+        Ok(self.client().database_client(db_name))
+    }
+
+    pub async fn create_database(&self, database_name: &str) -> azure_data_cosmos::Result<()> {
+        if let Some(arm_client) = self.arm_client() {
+            arm_client
+                .create_database(database_name)
+                .await
+                .map_err(arm_error)?;
+        } else {
+            match self.client().create_database(database_name, None).await {
+                Ok(_) => {}
+                Err(error) if error.status().status_code() == StatusCode::Conflict => {}
+                Err(error) => return Err(error),
             }
-        };
+        }
+        Ok(())
+    }
 
-        let props = response.into_model()?;
-
-        let id = props
-            .id
-            .as_deref()
-            .expect("Cosmos DB should always return a database id on create");
-        let db_client = self.client().database_client(id);
-        Ok(db_client)
+    pub async fn delete_database(&self, database_name: &str) -> azure_data_cosmos::Result<()> {
+        if let Some(arm_client) = self.arm_client() {
+            arm_client
+                .delete_database(database_name)
+                .await
+                .map_err(arm_error)?;
+        } else {
+            self.client()
+                .database_client(database_name)
+                .delete(None)
+                .await?;
+        }
+        Ok(())
     }
 
     /// Reads an item from the specified container with exponential backoff retries on 404 errors.
@@ -1273,8 +1438,38 @@ impl TestRunContext {
         &self,
         db_client: &DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
-        options: Option<azure_data_cosmos::options::CreateContainerOptions>,
+        throughput: Option<ThroughputProperties>,
     ) -> azure_data_cosmos::Result<ContainerClient> {
+        if let Some(arm_client) = self.arm_client() {
+            let partition_key_component_count = properties.partition_key.paths().len();
+            let database_name = database_name(db_client)?;
+            arm_client
+                .delete_container(database_name, properties.id.as_ref())
+                .await
+                .map_err(arm_error)?;
+            let resource = to_arm_container_resource(&properties)?;
+            arm_client
+                .create_or_update_container(
+                    database_name,
+                    properties.id.as_ref(),
+                    &resource,
+                    throughput.as_ref().map(to_arm_throughput).transpose()?,
+                )
+                .await
+                .map_err(arm_error)?;
+            let container =
+                Self::wait_for_container_ready(db_client, properties.id.as_ref()).await?;
+            probe_data_plane_ready(
+                "TestRunContext::create_container",
+                &container,
+                partition_key_component_count,
+            )
+            .await?;
+            return Ok(container);
+        }
+
+        let options = throughput
+            .map(|throughput| CreateContainerOptions::default().with_throughput(throughput));
         let mut backoff = Duration::from_millis(100);
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
@@ -1314,6 +1509,52 @@ impl TestRunContext {
         }
     }
 
+    pub async fn replace_container(
+        &self,
+        db_client: &DatabaseClient,
+        properties: azure_data_cosmos::models::ContainerProperties,
+    ) -> azure_data_cosmos::Result<ContainerClient> {
+        if let Some(arm_client) = self.arm_client() {
+            let resource = to_arm_container_resource(&properties)?;
+            arm_client
+                .create_or_update_container(
+                    database_name(db_client)?,
+                    properties.id.as_ref(),
+                    &resource,
+                    None,
+                )
+                .await
+                .map_err(arm_error)?;
+        } else {
+            db_client
+                .container_client(properties.id.as_ref(), None)
+                .await?
+                .replace(properties.clone(), None)
+                .await?;
+        }
+        Self::wait_for_container_ready(db_client, properties.id.as_ref()).await
+    }
+
+    pub async fn delete_container(
+        &self,
+        db_client: &DatabaseClient,
+        container_id: &str,
+    ) -> azure_data_cosmos::Result<()> {
+        if let Some(arm_client) = self.arm_client() {
+            arm_client
+                .delete_container(database_name(db_client)?, container_id)
+                .await
+                .map_err(arm_error)?;
+        } else {
+            db_client
+                .container_client(container_id, None)
+                .await?
+                .delete(None)
+                .await?;
+        }
+        Ok(())
+    }
+
     /// Waits until a newly created container is usable through the current
     /// test client's metadata and data-plane paths.
     ///
@@ -1336,10 +1577,9 @@ impl TestRunContext {
                 Err(error) => error,
             };
 
-            let is_create_in_progress = error.status().status_code() == StatusCode::NotFound
-                && error.status().sub_status()
-                    == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
-            if !is_create_in_progress || attempt + 1 == MAX_ATTEMPTS {
+            let is_propagating =
+                collection_create_in_progress(&error) || owner_resource_not_found(&error);
+            if !is_propagating || attempt + 1 == MAX_ATTEMPTS {
                 return Err(error);
             }
 
@@ -1361,23 +1601,17 @@ impl TestRunContext {
         db_client: &'a DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
         throughput: ThroughputProperties,
-    ) -> Pin<Box<dyn Future<Output = azure_data_cosmos::Result<ContainerClient>> + Send + 'a>> {
+    ) -> ContainerFuture<'a> {
         let fault_client = self
             .fault_client
             .clone()
             .expect("fault-injection client must be configured");
 
         Box::pin(async move {
-            let created = db_client
-                .create_container(
-                    properties,
-                    Some(CreateContainerOptions::default().with_throughput(throughput)),
-                )
-                .await?
-                .into_model()?;
-            let container_id = created.id;
-            let probe_container_id = container_id.clone();
-            let probe_db_id = db_client.id().clone();
+            let container_id = properties.id.clone();
+            let partition_key_component_count = properties.partition_key.paths().len();
+            self.create_container(db_client, properties, Some(throughput))
+                .await?;
 
             let original_db_client = db_client;
             let original_container_id = container_id.clone();
@@ -1423,31 +1657,17 @@ impl TestRunContext {
                 },
             );
 
-            let (container, _) = tokio::try_join!(original_readiness, fault_readiness)?;
+            let (container, fault_container) =
+                tokio::try_join!(original_readiness, fault_readiness)?;
 
-            // Metadata (5301) and name-based data (5302) authorize through
-            // separate RBAC paths, so a `container.read(...)` succeeding on
-            // the primary client does not guarantee the next item request is
-            // authorized on that connection. Under AAD this races and shows
-            // up as `403/5302 RbacUnauthorizedNameBasedDataRequest` on the
-            // first data-plane call. Probe the primary client's data path
-            // once to warm it up.
-            //
-            // Deliberately do NOT probe the fault-injection client: the
-            // probe issues a DELETE, which would trip fault-injection rules
-            // targeting DeleteItem (or consume fault-injection budget) and
-            // cause false-positive failures in fault-injection retry tests.
-            // The residual 5302 race on the fault client is absorbed by
-            // `TestClient::read_item`'s 5302 retry loop for tests that go
-            // through the framework helper.
-            let auth_mode = AuthMode::from_env();
-            if auth_mode == AuthMode::Aad {
-                let primary_client_for_probe = self.client().clone();
-                let primary_container = primary_client_for_probe
-                    .database_client(probe_db_id.clone())
-                    .container_client(&*probe_container_id, None)
-                    .await?;
-                probe_data_plane_ready("original client", &primary_container).await?;
+            if AuthMode::from_env() == AuthMode::Aad {
+                let _disabled_rules = DisabledFaultInjectionRules::new(&self.fault_injection_rules);
+                probe_data_plane_ready(
+                    "fault-injection client",
+                    &fault_container,
+                    partition_key_component_count,
+                )
+                .await?;
             }
 
             Ok(container)
@@ -1471,15 +1691,11 @@ impl TestRunContext {
         db_client: &'a DatabaseClient,
         properties: azure_data_cosmos::models::ContainerProperties,
         throughput: ThroughputProperties,
-    ) -> Pin<Box<dyn Future<Output = azure_data_cosmos::Result<ContainerClient>> + Send + 'a>> {
+    ) -> ContainerFuture<'a> {
         Box::pin(async move {
-            let created_properties = db_client
-                .create_container(
-                    properties,
-                    Some(CreateContainerOptions::default().with_throughput(throughput)),
-                )
-                .await?
-                .into_model()?;
+            let container_id = properties.id.clone();
+            self.create_container(db_client, properties, Some(throughput))
+                .await?;
 
             // Create two clients with different preferred regions to ensure container is available in both
             let hub_client =
@@ -1491,7 +1707,7 @@ impl TestRunContext {
             )
             .await?;
 
-            let container_id = created_properties.id.to_string();
+            let container_id = container_id.to_string();
 
             let db_id = db_client.id().to_owned();
 
@@ -1571,26 +1787,6 @@ impl TestRunContext {
             #[cfg(test_category = "multi_write")]
             self.wait_for_satellite_data_plane_readiness(&db_id, &container_id)
                 .await?;
-
-            // Under AAD, RBAC authorizes metadata (5301) and name-based data
-            // (5302) on separate paths, so `container.read(...)` succeeding
-            // does not guarantee the next data-plane call is authorized. Probe
-            // the data path once here so tests that immediately create/read
-            // items after container creation don't race with `403/5302
-            // RbacUnauthorizedNameBasedDataRequest` and burn their per-test
-            // budget on driver retries.
-            //
-            // Deliberately do NOT probe the fault-injection client here: the
-            // probe issues a DELETE, which would trip
-            // fault-injection rules targeting DeleteItem (or otherwise
-            // consume fault-injection budget) and cause false-positive
-            // failures in emulator/multi-write fault-injection tests. The
-            // residual read-path 5302 race on the fault client is absorbed by
-            // `TestClient::read_item`'s 5302 retry loop for tests that go
-            // through the framework helper.
-            if !targets_emulator() && AuthMode::from_env() == AuthMode::Aad {
-                probe_data_plane_ready("original client", &container).await?;
-            }
 
             Ok(container)
         })
@@ -1772,7 +1968,15 @@ impl TestRunContext {
     async fn create_client_with_preferred_region(
         region: Region,
         gateway_v2_disabled: bool,
-    ) -> Result<CosmosClient, azure_data_cosmos::CosmosError> {
+    ) -> Result<CosmosClient, BoxError> {
+        if AuthMode::from_env() == AuthMode::Aad {
+            return Ok(
+                build_aad_client_from_env(region, Vec::new(), None, gateway_v2_disabled)
+                    .await?
+                    .0,
+            );
+        }
+
         let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)
             .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
 
@@ -1803,7 +2007,7 @@ impl TestRunContext {
             builder = builder.with_binary_encoding_options(options);
         }
 
-        builder
+        Ok(builder
             .build(
                 azure_data_cosmos::AccountReference::with_authentication_key(
                     endpoint,
@@ -1811,23 +2015,21 @@ impl TestRunContext {
                 ),
                 RoutingStrategy::ProximityTo(region),
             )
-            .await
+            .await?)
     }
 
     /// Builds a [`CosmosClient`] authenticated with an Entra ID (AAD) token
-    /// credential, targeting the same account the key client uses.
+    /// credential, targeting the configured account endpoint.
     ///
     /// This is the entry point for AAD integration tests. The returned client
-    /// performs data-plane operations under AAD; database/container management
-    /// must still go through the key client (`client()`), because the
-    /// data-plane RBAC role granted in `test-resources.bicep` does not permit
-    /// management-plane operations.
+    /// performs data-plane operations under AAD; live resource lifecycle uses
+    /// the ARM client exposed by [`TestRunContext::arm_client`].
     ///
     /// See [`build_aad_client_from_env`] for credential-selection details.
     pub async fn aad_client(
         &self,
     ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
-        build_aad_client_from_env(HUB_REGION, Vec::new(), None, false).await
+        build_aad_client_from_env(HUB_REGION, Vec::new(), None, self.gateway_v2_disabled).await
     }
 
     /// Cleans up test resources.
@@ -1835,14 +2037,16 @@ impl TestRunContext {
     /// This should be called at the end of a test run to delete any databases created during the test.
     /// If using [`TestClient::run`], this will be called automatically.
     pub async fn cleanup(&self) -> Result<(), Box<dyn std::error::Error>> {
+        if self.arm_client().is_some() {
+            self.delete_database(&self.db_name()).await?;
+            return Ok(());
+        }
+
         let query = Query::from(format!(
             "SELECT * FROM root r WHERE r.id LIKE 'auto-test-{}'",
             self.run_id
         ));
-        let mut pager = self
-            .management_client()
-            .query_databases(query, None)
-            .await?;
+        let mut pager = self.client().query_databases(query, None).await?;
         let mut ids = Vec::new();
         while let Some(db) = pager.try_next().await? {
             if let Some(id) = db.id {
@@ -1854,13 +2058,123 @@ impl TestRunContext {
         // We COULD choose not to delete them and instead validate that they were deleted, but this is what I've gone with for now.
         for id in ids {
             println!("Deleting left-over database: {}", id);
-            self.management_client()
-                .database_client(&id)
-                .delete(None)
-                .await?;
+            self.delete_database(&id).await?;
         }
         Ok(())
     }
+}
+
+fn database_name(db_client: &DatabaseClient) -> azure_data_cosmos::Result<&str> {
+    db_client.name().ok_or_else(|| {
+        azure_data_cosmos_driver::error::CosmosError::builder()
+            .with_status(CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+            .with_message("ARM-backed test resource management requires a name-addressed database")
+            .build()
+            .into()
+    })
+}
+
+fn to_arm_container_resource(
+    properties: &azure_data_cosmos::models::ContainerProperties,
+) -> azure_data_cosmos::Result<serde_json::Value> {
+    const READ_ONLY_FIELDS: &[&str] = &[
+        "_rid",
+        "_self",
+        "_etag",
+        "_ts",
+        "_docs",
+        "_sprocs",
+        "_triggers",
+        "_udfs",
+        "_conflicts",
+    ];
+
+    let mut resource = serde_json::to_value(properties).map_err(|error| {
+        azure_data_cosmos_driver::error::CosmosError::builder()
+            .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message("failed to serialize Cosmos container properties for ARM")
+            .with_source(error)
+            .build()
+    })?;
+    let resource = resource.as_object_mut().ok_or_else(|| {
+        azure_data_cosmos_driver::error::CosmosError::builder()
+            .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message("serialized Cosmos container properties were not an object")
+            .build()
+    })?;
+    for field in READ_ONLY_FIELDS {
+        resource.remove(*field);
+    }
+    Ok(serde_json::Value::Object(resource.clone()))
+}
+
+fn to_arm_throughput(
+    throughput: &ThroughputProperties,
+) -> azure_data_cosmos::Result<ArmThroughput> {
+    match throughput.autoscale_maximum() {
+        Some(maximum) => Ok(ArmThroughput::Autoscale {
+            maximum,
+            current: throughput.throughput(),
+            increment_percent: throughput.autoscale_increment(),
+        }),
+        None => throughput
+            .throughput()
+            .map(ArmThroughput::Manual)
+            .ok_or_else(|| {
+                azure_data_cosmos_driver::error::CosmosError::builder()
+                    .with_status(CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                    .with_message("throughput must specify either manual or autoscale RU/s")
+                    .build()
+                    .into()
+            }),
+    }
+}
+
+fn from_arm_throughput(
+    throughput: ArmThroughput,
+) -> azure_data_cosmos::Result<ThroughputProperties> {
+    match throughput {
+        ArmThroughput::Manual(value) => Ok(ThroughputProperties::manual(value)),
+        ArmThroughput::Autoscale {
+            maximum,
+            current,
+            increment_percent,
+        } => serde_json::from_value(serde_json::json!({
+            "resource": "",
+            "content": {
+                "offerThroughput": current,
+                "offerAutopilotSettings": {
+                    "maxThroughput": maximum,
+                    "autoUpgradePolicy": increment_percent.map(|increment_percent| serde_json::json!({
+                        "throughputPolicy": {
+                            "incrementPercent": increment_percent
+                        }
+                    }))
+                }
+            },
+            "id": "",
+            "offerResourceId": "",
+            "offerType": "",
+            "offerVersion": "V2"
+        }))
+        .map_err(|error| {
+            azure_data_cosmos_driver::error::CosmosError::builder()
+                .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("failed to convert ARM throughput response")
+                .with_source(error)
+                .build()
+                .into()
+        }),
+    }
+}
+
+fn arm_error(error: azure_core::Error) -> CosmosError {
+    azure_data_cosmos_driver::error::CosmosError::builder()
+        .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+        .with_message("Azure Resource Manager operation failed")
+        .with_source(error)
+        .build()
+        .into()
 }
 
 /// Returns `true` if `endpoint`'s host is a loopback/local host, indicating the
@@ -1888,21 +2202,27 @@ fn host_is_local(endpoint: &str) -> bool {
 /// Defaults to `true` when no connection string is configured, matching the
 /// rest of the harness (which falls back to the emulator).
 pub fn targets_emulator() -> bool {
-    let Ok(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR) else {
-        return true;
-    };
-    if env_var == "emulator" {
-        return true;
+    if let Some(env_var) = std::env::var(CONNECTION_STRING_ENV_VAR)
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+    {
+        if env_var == "emulator" {
+            return true;
+        }
+        return match env_var.parse::<ConnectionString>() {
+            Ok(parsed) => host_is_local(parsed.account_endpoint()),
+            Err(_) => false,
+        };
     }
-    match env_var.parse::<ConnectionString>() {
-        Ok(parsed) => host_is_local(parsed.account_endpoint()),
-        Err(_) => false,
+    match std::env::var(ACCOUNT_HOST_ENV_VAR) {
+        Ok(endpoint) => host_is_local(&endpoint),
+        Err(_) => true,
     }
 }
 
 /// Builds a [`CosmosClient`] authenticated with an Entra ID (AAD) token
-/// credential, reading the target account from the same environment the
-/// key-auth client uses (`AZURE_COSMOS_CONNECTION_STRING`).
+/// credential, reading the target account from `ACCOUNT_HOST` for live tests
+/// and `AZURE_COSMOS_CONNECTION_STRING` for the emulator.
 ///
 /// Credential selection is based on the target host:
 /// - **Emulator** (`AZURE_COSMOS_CONNECTION_STRING=emulator`, or an endpoint
@@ -1925,16 +2245,27 @@ pub async fn build_aad_client_from_env(
 ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
     use super::CosmosEmulatorCredential;
 
-    let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)?;
-    let is_emulator_shorthand = env_var == "emulator";
-    let connection_string_str = if is_emulator_shorthand {
-        EMULATOR_CONNECTION_STRING
-    } else {
-        env_var.as_str()
+    let connection_string = std::env::var(CONNECTION_STRING_ENV_VAR)
+        .ok()
+        .filter(|value| !value.trim().is_empty());
+    let is_emulator_shorthand = connection_string.as_deref() == Some("emulator");
+    let parsed = match connection_string.as_deref() {
+        Some("emulator") => Some(EMULATOR_CONNECTION_STRING.parse::<ConnectionString>()?),
+        Some(value) => Some(value.parse::<ConnectionString>()?),
+        None => None,
     };
-
-    let parsed: ConnectionString = connection_string_str.parse()?;
-    let endpoint_str = parsed.account_endpoint().to_string();
+    let endpoint_str = match std::env::var(ACCOUNT_HOST_ENV_VAR) {
+        Ok(endpoint) if !endpoint.trim().is_empty() => endpoint,
+        _ => parsed
+            .as_ref()
+            .map(|connection| connection.account_endpoint().to_string())
+            .ok_or_else(|| {
+                format!(
+                    "{} or {} must be set for AAD Cosmos tests",
+                    ACCOUNT_HOST_ENV_VAR, CONNECTION_STRING_ENV_VAR
+                )
+            })?,
+    };
     let endpoint: azure_data_cosmos::AccountEndpoint = endpoint_str.parse()?;
 
     let is_emulator = is_emulator_shorthand || host_is_local(&endpoint_str);
@@ -1965,7 +2296,12 @@ pub async fn build_aad_client_from_env(
         Option<super::CredentialRecorder>,
     ) = if is_emulator {
         // Sign the fake JWT with the same master key the emulator validates against.
-        let master_key = parsed.account_key().secret().to_string();
+        let master_key = parsed
+            .as_ref()
+            .ok_or("emulator AAD authentication requires a connection string")?
+            .account_key()
+            .secret()
+            .to_string();
         let credential = std::sync::Arc::new(CosmosEmulatorCredential::with_master_key(master_key));
         let recorder = credential.recorder();
         (credential, Some(recorder))
@@ -1986,12 +2322,16 @@ pub async fn build_aad_client_from_env(
 #[cfg(test)]
 mod tests {
     use super::{
-        aad_token_invalid_issuer, effective_binary_encoding, item_not_found,
-        rbac_name_based_data_not_ready, retry_container_readiness, satellite_probe_should_retry,
-        transient_satellite_readiness_error, AuthMode, BinaryEncodingOptions,
+        aad_token_invalid_issuer, effective_binary_encoding, from_arm_throughput, item_not_found,
+        rbac_name_based_data_not_ready, resolve_test_timeout, retry_container_readiness,
+        satellite_probe_should_retry, to_arm_container_resource,
+        transient_data_plane_readiness_error, transient_satellite_readiness_error, ArmThroughput,
+        AuthMode, BinaryEncodingOptions, DEFAULT_ARM_TEST_TIMEOUT, DEFAULT_TEST_TIMEOUT,
     };
     use azure_core::http::StatusCode;
-    use azure_data_cosmos::{CosmosError, CosmosStatus, SubStatusCode};
+    use azure_data_cosmos::{
+        models::ContainerProperties, CosmosError, CosmosStatus, SubStatusCode,
+    };
     use std::{
         future::pending,
         sync::{
@@ -2000,6 +2340,52 @@ mod tests {
         },
         time::Duration,
     };
+
+    #[test]
+    fn arm_lifecycle_uses_longer_default_timeout() {
+        assert_eq!(resolve_test_timeout(None, false), DEFAULT_TEST_TIMEOUT);
+        assert_eq!(resolve_test_timeout(None, true), DEFAULT_ARM_TEST_TIMEOUT);
+
+        let configured = Duration::from_secs(42);
+        assert_eq!(resolve_test_timeout(Some(configured), false), configured);
+        assert_eq!(resolve_test_timeout(Some(configured), true), configured);
+    }
+
+    #[test]
+    fn arm_autoscale_throughput_preserves_service_values() {
+        let throughput = from_arm_throughput(ArmThroughput::Autoscale {
+            maximum: 5000,
+            current: Some(500),
+            increment_percent: Some(42),
+        })
+        .unwrap();
+
+        assert_eq!(throughput.throughput(), Some(500));
+        assert_eq!(throughput.autoscale_maximum(), Some(5000));
+        assert_eq!(throughput.autoscale_increment(), Some(42));
+    }
+
+    #[test]
+    fn arm_container_resource_omits_service_metadata() {
+        let properties: ContainerProperties = serde_json::from_value(serde_json::json!({
+            "id": "container",
+            "partitionKey": {"paths": ["/pk"], "kind": "Hash", "version": 2},
+            "_rid": "rid",
+            "_docs": "docs/",
+            "geospatialConfig": {"type": "Geography"},
+            "clientEncryptionPolicy": {"policyFormatVersion": 2}
+        }))
+        .unwrap();
+
+        let resource = to_arm_container_resource(&properties).unwrap();
+
+        assert_eq!(resource["id"], "container");
+        assert_eq!(resource["partitionKey"]["paths"][0], "/pk");
+        assert!(resource.get("_rid").is_none());
+        assert!(resource.get("_docs").is_none());
+        assert_eq!(resource["geospatialConfig"]["type"], "Geography");
+        assert_eq!(resource["clientEncryptionPolicy"]["policyFormatVersion"], 2);
+    }
 
     #[test]
     #[cfg(test_category = "emulator_vnext")]
@@ -2052,6 +2438,22 @@ mod tests {
         assert!(!rbac_name_based_data_not_ready(&error_with_status(
             StatusCode::Unauthorized,
             SubStatusCode::new(5302),
+        )));
+    }
+
+    #[test]
+    fn data_plane_readiness_retries_aad_propagation_without_global_auth_mode() {
+        assert!(transient_data_plane_readiness_error(&error_with_status(
+            StatusCode::Unauthorized,
+            SubStatusCode::new(5007),
+        )));
+        assert!(transient_data_plane_readiness_error(&error_with_status(
+            StatusCode::Forbidden,
+            SubStatusCode::new(5302),
+        )));
+        assert!(!transient_data_plane_readiness_error(&error_with_status(
+            StatusCode::Forbidden,
+            SubStatusCode::new(5301),
         )));
     }
 

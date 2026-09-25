@@ -27,6 +27,7 @@ azure_data_cosmos_emulator
 azure_data_cosmos_macros
 azure_data_cosmos_observability_harness
 azure_data_cosmos_perf
+azure_data_cosmos_test
 azure_identity
 azure_messaging_eventhubs
 azure_messaging_eventhubs_checkpointstore_blob
