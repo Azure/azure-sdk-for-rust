@@ -3435,16 +3435,32 @@ impl CosmosDriver {
         let account_properties = self
             .runtime
             .account_metadata_cache()
-            .get_or_fetch(account_endpoint, || self.fetch_account_properties(&account))
+            .get_or_fetch(account_endpoint.clone(), || {
+                self.fetch_account_properties(&account)
+            })
             .await?;
 
-        // Keep the operation routing snapshot in sync with current account metadata.
-        // Uses CAS to preserve unavailable_endpoints marks set by concurrent operations.
-        // Skips the CAS loop when the etag matches (same server version).
-        self.location_state_store.sync_account_properties(
-            Arc::clone(&account_properties),
-            self.location_state_store.default_endpoint(),
-        );
+        // Publish only while this operation's observed cache value is still
+        // current. Holding the cache read lock across the synchronous sync
+        // prevents a refresh replacement from landing between validation and
+        // publication, so stale properties cannot overwrite newer account
+        // kill switches or routing state.
+        let account_state_synced = self
+            .runtime
+            .account_metadata_cache()
+            .apply_if_current(&account_endpoint, &account_properties, || {
+                self.location_state_store.sync_account_properties(
+                    Arc::clone(&account_properties),
+                    self.location_state_store.default_endpoint(),
+                );
+            })
+            .await;
+        if !account_state_synced {
+            tracing::debug!(
+                endpoint = %account_endpoint,
+                "skipped stale cached account properties during operation routing sync"
+            );
+        }
 
         let write_region = account_properties.write_account_region();
         let endpoint = Self::endpoint_for_write_region(&account, write_region);

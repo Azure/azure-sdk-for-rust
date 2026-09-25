@@ -1408,6 +1408,7 @@ pub mod in_memory_emulator {
         pub fn active_region_names(&self) -> Vec<String>;
         pub fn active_regions(&self) -> Vec<VirtualRegion>;
         pub fn consistency(&self) -> ConsistencyLevel;
+        pub fn cross_region_hedging_disabled(&self) -> Option<bool>;
         pub fn is_write_region(&self, region_name: &str) -> bool;
         pub fn new(regions: Vec<VirtualRegion>) -> crate::error::Result<Self>;
         pub fn per_partition_failover_enabled(&self) -> bool;
@@ -1416,10 +1417,12 @@ pub mod in_memory_emulator {
         pub fn replication(&self) -> &ReplicationConfig;
         pub fn replication_for(&self, source: &str, target: &str) -> &ReplicationConfig;
         pub fn ru_model(&self) -> &RequestUnitChargingModel;
+        pub fn set_cross_region_hedging_disabled(&self, disabled: Option<bool>);
         pub fn set_per_partition_failover(&self, enabled: bool);
         pub fn throttling_enabled(&self) -> bool;
         pub fn topology_snapshot(&self) -> TopologySnapshot;
         pub fn with_consistency(self, level: ConsistencyLevel) -> Self;
+        pub fn with_cross_region_hedging_disabled(self, disabled: bool) -> Self;
         pub fn with_per_partition_failover(self, enabled: bool) -> Self;
         pub fn with_replication_config(self, config: ReplicationConfig) -> Self;
         pub fn with_replication_override(self, source: &str, target: &str, config: ReplicationConfig) -> crate::error::Result<Self>;

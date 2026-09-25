@@ -179,7 +179,7 @@ const COLL_NAME: &str = "testcoll";
 /// use. The in-memory emulator's `ReplicationConfig::immediate()` replicates
 /// the write synchronously across regions, so a read against either region's
 /// gateway returns the same item.
-async fn seed_item(ctx: &MultiRegionTestContext, item_id: &str, pk: &str) {
+pub(super) async fn seed_item(ctx: &MultiRegionTestContext, item_id: &str, pk: &str) {
     let body = serde_json::json!({
         "id": item_id,
         "pk": pk,
@@ -201,7 +201,7 @@ async fn seed_item(ctx: &MultiRegionTestContext, item_id: &str, pk: &str) {
 
 /// Builds a driver wired to the multi-region emulator with the supplied
 /// fault-injection rules and a hedging strategy at `threshold`.
-async fn make_hedging_driver(
+pub(super) async fn make_hedging_driver(
     ctx: &MultiRegionTestContext,
     threshold: Duration,
     rules: Vec<Arc<FaultInjectionRule>>,
@@ -249,7 +249,7 @@ async fn make_hedging_driver(
 /// `OperationOptions`. Returns the response's optional `HedgeDiagnostics` —
 /// callers assert on whether it should be `Some(_)` (hedge race ran) or
 /// `None` (primary completed without hedging being entered).
-async fn read_item_hedge_diagnostics(
+pub(super) async fn read_item_hedge_diagnostics(
     driver: &Arc<CosmosDriver>,
     op_options: OperationOptions,
     item_id: &str,
@@ -366,6 +366,27 @@ async fn hedging_read_primary_fast() {
         &Region::EAST_US,
         "primary_region must record East US on the zero-overhead happy \
          path; diag={hedge_diag:?}",
+    );
+}
+
+#[tokio::test]
+async fn account_suppression_prevents_data_plane_hedging_when_locally_enabled() {
+    let ctx = setup_multi_region(WriteMode::Single).await;
+    ctx.emulator
+        .store()
+        .config()
+        .set_cross_region_hedging_disabled(Some(true));
+    seed_item(&ctx, "account-suppressed-item", "pk1").await;
+
+    let (driver, mut op_options) =
+        make_hedging_driver(&ctx, Duration::from_millis(500), Vec::new()).await;
+    op_options.hedging_enabled = Some(true);
+
+    let hedge_diag =
+        read_item_hedge_diagnostics(&driver, op_options, "account-suppressed-item", "pk1").await;
+    assert!(
+        hedge_diag.is_none(),
+        "the account signal must prevent entering the data-plane hedge path"
     );
 }
 
