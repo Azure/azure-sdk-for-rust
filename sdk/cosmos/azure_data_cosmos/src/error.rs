@@ -61,7 +61,6 @@ pub type Result<T> = std::result::Result<T, CosmosError>;
 mod tests {
     use super::*;
     use azure_core::error::ErrorKind as CoreErrorKind;
-    use std::error::Error as _;
 
     #[cfg(feature = "preview_patch")]
     #[test]
@@ -86,7 +85,7 @@ mod tests {
         let error = with_patch_tracking_id(error, id);
 
         assert_eq!(error.patch_tracking_id(), Some(id));
-        assert!(error.source().is_some());
+        assert!(std::error::Error::source(&error).is_some());
     }
 
     #[test]
