@@ -19,17 +19,16 @@
 //!
 //! - **Stable (always on):** `db.client.operation.duration` (histogram, seconds).
 //! - **Optional (each opt-in via [`MetricsOptions`]):**
-//!   `azure.cosmosdb.client.operation.request_charge` and
-//!   `db.client.response.returned_rows`.
+//!   `azure.cosmosdb.client.operation.request_charge`,
+//!   `db.client.response.returned_rows`,
+//!   `azure.cosmosdb.client.active_instance.count`, and
+//!   `azure.cosmosdb.client.operation.hedged`.
 //!
 //! # Operation-scope identity
 //!
-//! `db.operation.name`, `db.collection.name`, and `db.namespace` are not carried
-//! on the driver's [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext);
-//! they are supplied by the SDK through a
-//! [`CosmosOperationContext`](crate::diagnostics::CosmosOperationContext) stored on the pipeline
-//! [`Context`](azure_core::http::Context). The handler reads whichever fields are
-//! present and omits the rest, so it degrades gracefully.
+//! The handler reads operation name, container, and database metadata from
+//! [`CosmosOperationContext`](crate::diagnostics::CosmosOperationContext) when
+//! available and omits absent attributes.
 
 pub mod attributes;
 

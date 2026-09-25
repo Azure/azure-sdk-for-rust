@@ -1688,6 +1688,7 @@ impl RegionStoreRef {
         containers
     }
 
+    /// Returns the region's offers, sorted by offer ID.
     pub fn list_offers(&self) -> Vec<OfferMetadata> {
         let mut offers: Vec<_> = self
             .region
@@ -1701,6 +1702,7 @@ impl RegionStoreRef {
         offers
     }
 
+    /// Returns a copy of the offer with `offer_id`, if it exists.
     pub fn get_offer(&self, offer_id: &str) -> Option<OfferMetadata> {
         self.region.offers.read().unwrap().get(offer_id).cloned()
     }

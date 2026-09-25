@@ -49,14 +49,18 @@ impl BatchResponse {
 
     /// Returns the diagnostics for this operation.
     ///
-    /// The returned [`DiagnosticsContext`] surfaces the full per-operation
-    /// diagnostics produced by the driver pipeline (request tracking, retries,
-    /// regions contacted, RU charges, status, etc.).
+    /// The [`DiagnosticsContext`] includes attempts, regions contacted,
+    /// request charges, and status.
     pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         self.response.diagnostics()
     }
 
     /// Deserializes the response body into the batch response model.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the body is not a single payload or cannot be
+    /// deserialized as a [`TransactionalBatchResponse`].
     pub fn into_model(self) -> crate::Result<TransactionalBatchResponse> {
         self.response.into_model()
     }

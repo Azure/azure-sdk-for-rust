@@ -1,38 +1,27 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Fault injection framework for testing Cosmos DB client behavior under error conditions.
+//! Fault injection for testing Cosmos DB client error handling.
 //!
-//! Provides types that allow injecting simulated faults into the Cosmos DB client transport layer.
-//! This enables testing of application resilience, retry logic, and failover handling without
-//! needing to induce real faults in the service.
-//! This module is a pure re-export facade over the driver's fault-injection
-//! primitives — every type is re-exported directly from
-//! [`azure_data_cosmos_driver::fault_injection`]. Build
+//! Inject simulated transport faults to test retry and failover behavior
+//! without changing the service. Build
 //! [`FaultInjectionRule`]s with [`FaultInjectionRuleBuilder`] and pass the
 //! `Vec<Arc<FaultInjectionRule>>` to
-//! [`CosmosClientBuilder::with_fault_injection_rules`](crate::CosmosClientBuilder::with_fault_injection_rules),
-//! which threads them through to the per-driver options; the driver's own
-//! fault-injection transport client evaluates the rules on every in-flight
-//! request.
+//! [`CosmosClientBuilder::with_fault_injection_rules()`](crate::CosmosClientBuilder::with_fault_injection_rules).
+//! The types in this module are re-exported from
+//! [`azure_data_cosmos_driver::fault_injection`].
 //!
-//! The fault injection framework enables testing of:
+//! # Enable fault injection
 //!
-//! - Error handling for various HTTP status codes (503, 500, 429, 408, etc.)
-//! - Retry logic and backoff behavior
-//! - Regional failover scenarios
-//! - Operation-specific error handling
-//!
-//! # Enabling Fault Injection
-//!
-//! Fault injection requires the `fault_injection` feature flag:
+//! Enable the `fault_injection` Cargo feature. The example below also requires
+//! `key_auth` to authenticate with an account key:
 //!
 //! ```toml
 //! [dependencies]
-//! azure_data_cosmos = { version = "...", features = ["fault_injection"] }
+//! azure_data_cosmos = { version = "0.39", features = ["fault_injection", "key_auth"] }
 //! ```
 //!
-//! # Core Components
+//! # Core components
 //!
 //! - [`FaultInjectionRule`] — Combines a condition with a result and
 //!   additional controls like duration, start delay, and hit limit. Build
@@ -43,9 +32,11 @@
 //! - [`FaultInjectionResult`] — Defines what error to inject, including
 //!   error type, delay, and probability.
 //!
-//! # Usage
+//! # Examples
 //!
 //! ```rust,no_run
+//! # #[cfg(feature = "key_auth")]
+//! # async fn example() {
 //! use azure_data_cosmos::fault_injection::{
 //!     FaultInjectionConditionBuilder, FaultInjectionErrorType,
 //!     FaultInjectionResultBuilder, FaultInjectionRuleBuilder, FaultOperationType,
@@ -56,7 +47,6 @@
 //! use std::sync::Arc;
 //! use std::time::{Duration, Instant};
 //!
-//! # async fn doc() {
 //! // 1. Define what error to inject
 //! let result = FaultInjectionResultBuilder::new()
 //!     .with_error(FaultInjectionErrorType::ServiceUnavailable)
@@ -77,8 +67,7 @@
 //!     .with_end_time(Instant::now() + Duration::from_secs(30))
 //!     .build());
 //!
-//! // 4. Create the client with fault injection — pass the rules directly,
-//! //    no SDK-side wrapper builder.
+//! // 4. Create the client with fault injection.
 //! let client = CosmosClientBuilder::new()
 //!     .with_fault_injection_rules(vec![rule])
 //!     .unwrap()
@@ -91,10 +80,12 @@
 //!     )
 //!     .await
 //!     .unwrap();
+//! # let _ = client;
 //! # }
+//! # fn main() {}
 //! ```
 //!
-//! # Rule Evaluation
+//! # Rule evaluation
 //!
 //! Rules are evaluated in the order they were added. The first matching rule is applied.
 //! All specified conditions in a [`FaultInjectionCondition`] must match (AND logic):
@@ -107,7 +98,6 @@ pub use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionRuleBuilder, FaultOperationType,
 };
 
-/// Re-export of the driver's [`TransportKind`] enum so SDK consumers can
-/// scope fault-injection rules to a specific transport (Gateway 1.x vs
-/// Gateway 2.0) without depending on the driver crate directly.
+/// Transport kind used to scope fault-injection rules to Gateway 1.x or
+/// Gateway 2.0 without depending directly on the driver crate.
 pub use azure_data_cosmos_driver::diagnostics::TransportKind;

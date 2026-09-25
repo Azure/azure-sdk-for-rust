@@ -85,16 +85,15 @@ impl<'de> Deserialize<'de> for TimeToLive {
 
 /// Properties of a Cosmos DB container.
 ///
-/// # Constructing
+/// Supply an ID and partition key when creating a container; the service
+/// requires both.
 ///
-/// When constructing this type, use [`ContainerProperties::new()`] with the required values, for example:
+/// # Examples
 ///
 /// ```rust
 /// # use azure_data_cosmos::models::ContainerProperties;
 /// let properties = ContainerProperties::new("NewContainer", "/partitionKey".into());
 /// ```
-///
-/// Also, note that the `id` and `partition_key` values are **required** by the server. You will get an error from the server if you omit them.
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
@@ -170,6 +169,7 @@ pub struct ContainerProperties {
 }
 
 impl ContainerProperties {
+    /// Creates container properties with the required ID and partition key.
     pub fn new(id: impl Into<Cow<'static, str>>, partition_key: PartitionKeyDefinition) -> Self {
         Self {
             id: id.into(),
@@ -187,16 +187,19 @@ impl ContainerProperties {
         }
     }
 
+    /// Sets the container's indexing policy.
     pub fn with_indexing_policy(mut self, indexing_policy: IndexingPolicy) -> Self {
         self.indexing_policy = Some(indexing_policy);
         self
     }
 
+    /// Sets the container's unique key policy.
     pub fn with_unique_key_policy(mut self, unique_key_policy: UniqueKeyPolicy) -> Self {
         self.unique_key_policy = Some(unique_key_policy);
         self
     }
 
+    /// Sets the container's conflict resolution policy.
     pub fn with_conflict_resolution_policy(
         mut self,
         conflict_resolution_policy: ConflictResolutionPolicy,
@@ -205,6 +208,7 @@ impl ContainerProperties {
         self
     }
 
+    /// Sets the container's vector embedding policy.
     pub fn with_vector_embedding_policy(
         mut self,
         vector_embedding_policy: VectorEmbeddingPolicy,
@@ -229,11 +233,13 @@ impl ContainerProperties {
         self
     }
 
+    /// Sets the default time-to-live for items in this container.
     pub fn with_default_ttl(mut self, default_ttl: impl Into<TimeToLive>) -> Self {
         self.default_ttl = default_ttl.into();
         self
     }
 
+    /// Sets the time-to-live for the container's analytical store.
     pub fn with_analytical_storage_ttl(
         mut self,
         analytical_storage_ttl: impl Into<TimeToLive>,
@@ -531,7 +537,7 @@ impl UniqueKey {
     }
 }
 
-/// Represents a conflict resolution policy for a container
+/// Defines how a container resolves conflicts between writes.
 ///
 /// For more information, see <https://learn.microsoft.com/en-us/azure/cosmos-db/conflict-resolution-policies>
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
@@ -578,16 +584,16 @@ impl ConflictResolutionPolicy {
     }
 }
 
-/// Defines conflict resolution types available in Azure Cosmos DB
+/// Selects how the container resolves conflicting writes.
 #[derive(Clone, SafeDebug, Deserialize, Serialize, PartialEq, Eq)]
 #[safe(true)]
 #[serde(rename_all = "PascalCase")]
 #[non_exhaustive]
 pub enum ConflictResolutionMode {
-    /// Conflict resolution will be performed by using the highest value of the property specified by [`ConflictResolutionPolicy::resolution_path`].
+    /// Uses the highest value at [`ConflictResolutionPolicy::resolution_path`].
     LastWriterWins,
 
-    /// Conflict resolution will be performed by executing the stored procedure specified by [`ConflictResolutionPolicy::resolution_procedure`].
+    /// Executes the stored procedure at [`ConflictResolutionPolicy::resolution_procedure`].
     Custom,
 }
 
@@ -613,10 +619,10 @@ pub enum ConflictResolutionMode {
 pub struct ChangeFeedPolicy {
     /// The all versions and deletes retention window.
     ///
-    /// `None` (the default) disables all versions and deletes, leaving only
-    /// `LatestVersion` reads available. On the wire this maps to a whole number
-    /// of minutes, where `0` means "no retention"; that conversion happens in
-    /// [`serialize_retention_minutes`] and [`deserialize_retention_minutes`].
+    /// `None` (the default) leaves only
+    /// [`LatestVersion`](crate::options::ChangeFeedMode::LatestVersion) reads
+    /// available. The service expresses this window in whole minutes; `None`
+    /// serializes as zero.
     #[serde(
         rename = "retentionDuration",
         default,

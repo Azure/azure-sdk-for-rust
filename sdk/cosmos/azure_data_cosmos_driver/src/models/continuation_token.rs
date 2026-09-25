@@ -34,9 +34,10 @@ const SDK_V1_PREFIX: &str = "c1.";
 
 /// Opaque continuation token for resuming a paginated Cosmos DB operation.
 ///
-/// Construct one from a string returned by an earlier query (either the
-/// SDK's `to_continuation_token()` output, or — for trivial operations — a
-/// raw server-side continuation string).
+/// Construct one from a continuation string returned by an earlier operation,
+/// such as [`OperationPlan::to_continuation_token()`](crate::OperationPlan::to_continuation_token).
+/// Server-issued strings are supported only for operations that can pass them
+/// through without client-side state.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContinuationToken(String);
 

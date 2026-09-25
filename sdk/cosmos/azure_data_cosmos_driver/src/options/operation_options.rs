@@ -20,10 +20,10 @@ use crate::options::{
 ///
 /// `OperationOptions` controls cross-cutting concerns such as consistency, routing,
 /// retry behavior, and custom headers. These settings can be specified at multiple
-/// levels — each per-operation options type (e.g., `ItemReadOptions`)
-/// has an `operation` field of this type.
+/// levels. A per-operation options type can include an `operation` field of
+/// this type.
 ///
-/// # Layered Resolution
+/// # Layered resolution
 ///
 /// When the same option is set at multiple levels, the most specific value wins:
 ///
@@ -101,14 +101,12 @@ pub struct OperationOptions {
     /// Retry behavior for requests throttled by the service (HTTP 429,
     /// rate-limited).
     ///
-    /// Groups the throttle-retry knobs into a single option group, mirroring
-    /// the .NET SDK's `ThrottlingRetryOptions` and the Java SDK's
-    /// `ThrottlingRetryOptions`. See [`ThrottlingRetryOptions`] for the
+    /// See [`ThrottlingRetryOptions`] for the
     /// individual settings ([`max_retry_count`](ThrottlingRetryOptions::max_retry_count)
     /// and [`max_retry_wait_time`](ThrottlingRetryOptions::max_retry_wait_time)).
     ///
-    /// Each inner setting resolves independently across the runtime → account
-    /// → operation → environment layers. To bound the **total** time an
+    /// Each inner setting resolves independently across the environment →
+    /// runtime → account → operation layers. To bound the **total** time an
     /// operation can spend on retries (across throttling, failover, hedging,
     /// etc.), configure [`end_to_end_latency_policy`](Self::end_to_end_latency_policy).
     #[option(nested)]
@@ -154,6 +152,9 @@ pub struct OperationOptions {
 
     // Additional headers beyond those natively supported by the driver.
     // May be removed in the future as we analyze exactly what options are needed.
+    /// Additional request headers to send alongside driver-managed headers.
+    ///
+    /// `None` inherits from a lower configuration layer.
     pub custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
 
     /// Cosmos binary JSON encoding for this operation.
@@ -169,10 +170,8 @@ pub struct OperationOptions {
 /// Retry behavior for requests throttled by the service (HTTP 429,
 /// rate-limited).
 ///
-/// Mirrors the .NET and Java SDKs' `ThrottlingRetryOptions`, grouping the two
-/// throttle-retry knobs into a single option group instead of exposing them as
-/// flat fields. Each setting participates independently in the standard
-/// runtime → account → operation → environment layered resolution.
+/// Each setting resolves independently across the environment → runtime →
+/// account → operation layers.
 ///
 /// These limits bound the transport-level 429 retry loop, which honors the
 /// service `x-ms-retry-after-ms` header (or an exponential-backoff fallback
@@ -193,10 +192,6 @@ pub struct ThrottlingRetryOptions {
     /// Maximum number of retries when a request is throttled by the service
     /// (HTTP 429, rate-limited).
     ///
-    /// This is the analog of the .NET SDK's
-    /// `MaxRetryAttemptsOnRateLimitedRequests` (and Java's
-    /// `maxRetryAttemptsOnThrottledRequests`).
-    ///
     /// **Default**: `9`. A value of `0` disables retrying throttled requests
     /// (the first 429 is surfaced to the caller).
     ///
@@ -204,7 +199,7 @@ pub struct ThrottlingRetryOptions {
     /// produces up to `N + 1` total HTTP requests on the wire (1 initial
     /// + up to N retries). The driver's one-shot forced-final-retry
     /// safety net is suppressed once the count budget is exhausted, so the
-    /// count is the hard cap — matching .NET / Java parity. (The
+    /// count is the hard cap. (The
     /// forced-final retry only fires when the cumulative-wait budget
     /// — see [`max_retry_wait_time`](Self::max_retry_wait_time) — is the
     /// limiter rather than the count.)
@@ -214,8 +209,6 @@ pub struct ThrottlingRetryOptions {
     /// Maximum cumulative time to spend waiting across throttle (HTTP 429)
     /// retries before giving up and surfacing the 429 to the caller.
     ///
-    /// This is the analog of the .NET SDK's
-    /// `MaxRetryWaitTimeOnRateLimitedRequests` (and Java's `maxRetryWaitTime`).
     /// Once the accumulated retry delay would exceed this budget, no further
     /// throttle retry is attempted.
     ///
@@ -225,12 +218,11 @@ pub struct ThrottlingRetryOptions {
 
 /// Throughput-control tuning for an individual request (or layer default).
 ///
-/// Mirrors the [`ThrottlingRetryOptions`] pattern: two independently
-/// layered knobs grouped under a single nested option group on
-/// [`OperationOptions`]. None of these fields read from environment
+/// Groups two independently layered settings under [`OperationOptions`].
+/// Neither field reads from environment
 /// variables — throughput control is a per-application policy.
 ///
-/// Each inner field resolves independently across the runtime → account →
+/// Each field resolves independently across the runtime → account →
 /// operation layers. When set, the driver sends it in the corresponding
 /// `x-ms-cosmos-throughput-bucket` or `x-ms-cosmos-priority-level` header;
 /// otherwise that header is omitted.

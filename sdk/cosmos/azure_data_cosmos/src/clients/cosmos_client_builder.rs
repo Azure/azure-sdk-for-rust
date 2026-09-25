@@ -67,11 +67,12 @@ use crate::{
 ///
 /// Using key authentication (requires `key_auth` feature):
 ///
-/// ```rust,no_run,ignore
+/// ```rust,no_run
 /// use azure_data_cosmos::{CosmosClientBuilder, AccountReference, AccountEndpoint, RoutingStrategy};
 /// use azure_data_cosmos::options::Region;
 /// use azure_core::credentials::Secret;
 ///
+/// # #[cfg(feature = "key_auth")]
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
 /// let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/".parse().unwrap();
 /// let account = AccountReference::with_authentication_key(endpoint, Secret::from("my_account_key"));
@@ -211,9 +212,9 @@ impl CosmosClientBuilder {
     /// values (the driver type re-exported through
     /// [`fault_injection`](crate::fault_injection)). Build each rule with
     /// [`FaultInjectionRuleBuilder`](crate::fault_injection::FaultInjectionRuleBuilder).
-    /// The rules are forwarded to the driver runtime at
-    /// [`build()`](Self::build) time and evaluated by the driver's
-    /// transport-layer fault-injection client.
+    /// The rules are forwarded at [`build()`](Self::build) time and evaluated
+    /// by the driver's transport-layer fault-injection client. Duplicate rule
+    /// IDs are rejected by `build()`, not by this setter.
     ///
     /// Calling this multiple times replaces the previously-configured rule
     /// set; pass the complete final set on the last call.
@@ -237,8 +238,8 @@ impl CosmosClientBuilder {
     /// # When to use
     ///
     /// Configure backup endpoints when you want the client to survive a
-    /// global endpoint outage during startup. Provide at least two regional
-    /// endpoints (e.g., `https://myaccount-eastus.documents.azure.com/`).
+    /// global endpoint outage during startup. Provide regional endpoints
+    /// (for example, `https://myaccount-eastus.documents.azure.com/`).
     ///
     /// This is especially important in **non-public clouds** (sovereign,
     /// government) where the SDK cannot infer regional endpoints from the
@@ -273,9 +274,10 @@ impl CosmosClientBuilder {
     ///
     /// # Errors
     ///
-    /// Returns an error if the client cannot be constructed. In particular, an
-    /// endpoint that uses `http://` (non-HTTPS) is rejected unless its host is a
-    /// known Cosmos DB emulator host; production accounts must use `https://`.
+    /// Returns an error if the runtime or driver cannot be initialized or
+    /// fault-injection rules have duplicate IDs. An endpoint that uses `http://`
+    /// is rejected unless its host is a known Cosmos DB emulator host;
+    /// production accounts must use `https://`.
     pub async fn build(
         self,
         account: AccountReference,

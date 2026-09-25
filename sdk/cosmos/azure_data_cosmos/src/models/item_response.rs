@@ -53,9 +53,8 @@ impl ItemResponse {
 
     /// Returns the diagnostics for this operation.
     ///
-    /// The returned [`DiagnosticsContext`] surfaces the full per-operation
-    /// diagnostics produced by the driver pipeline (request tracking, retries,
-    /// regions contacted, RU charges, status, etc.).
+    /// The [`DiagnosticsContext`] includes attempts, regions contacted,
+    /// request charges, and status.
     pub fn diagnostics(&self) -> Arc<DiagnosticsContext> {
         self.response.diagnostics()
     }
@@ -73,9 +72,10 @@ impl ItemResponse {
 
     /// Deserializes the response body into a model type.
     ///
-    /// The target type `T` is supplied at the call site (turbofish) because
-    /// `ItemResponse` no longer carries a type parameter; this lets callers
-    /// inspect status / headers / diagnostics without committing to a `T`.
+    /// # Errors
+    ///
+    /// Returns an error if the body is not a single payload or cannot be
+    /// deserialized as `T`.
     pub fn into_model<T: DeserializeOwned>(self) -> crate::Result<T> {
         self.response.into_model::<T>()
     }

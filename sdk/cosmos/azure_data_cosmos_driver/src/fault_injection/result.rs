@@ -14,9 +14,8 @@ use super::FaultInjectionErrorType;
 
 /// A synthetic response to return when a fault injection rule matches.
 ///
-/// Instead of injecting an error, this returns a successful response with
-/// the specified status code, headers, and body. Useful for mocking service
-/// responses such as `GetDatabaseAccount` in tests.
+/// Returns the specified status code, headers, and body instead of forwarding
+/// the request. The status code may represent success or failure.
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct CustomResponse {
@@ -123,7 +122,7 @@ impl FaultInjectionResult {
     }
 }
 
-/// Builder for creating a FaultInjectionResult.
+/// Builds a [`FaultInjectionResult`] for a matching rule.
 #[non_exhaustive]
 pub struct FaultInjectionResultBuilder {
     error_type: Option<FaultInjectionErrorType>,
@@ -133,7 +132,7 @@ pub struct FaultInjectionResultBuilder {
 }
 
 impl FaultInjectionResultBuilder {
-    /// Creates a new FaultInjectionResultBuilder with default values.
+    /// Creates a builder with no fault and a probability of `1.0`.
     pub fn new() -> Self {
         Self {
             error_type: None,
@@ -159,13 +158,15 @@ impl FaultInjectionResultBuilder {
         self
     }
 
-    /// Sets the delay before injecting the error.
+    /// Sets the delay before applying the result.
     pub fn with_delay(mut self, delay: Duration) -> Self {
         self.delay = Some(delay);
         self
     }
 
-    /// Sets the probability of injecting the error (0.0 to 1.0).
+    /// Sets the probability of applying the result.
+    ///
+    /// Values outside `0.0..=1.0` are clamped; non-finite values become `0.0`.
     pub fn with_probability(mut self, probability: f32) -> Self {
         self.probability = if probability.is_finite() {
             probability.clamp(0.0, 1.0)
@@ -175,11 +176,10 @@ impl FaultInjectionResultBuilder {
         self
     }
 
-    /// Builds the FaultInjectionResult.
+    /// Builds the [`FaultInjectionResult`].
     ///
-    /// **Note**: A result with no `error_type`, no `custom_response`, and no
-    /// `delay` will match requests but produce no observable effect — silently
-    /// consuming any configured `hit_limit`. Ensure at least one of these is set.
+    /// A result with no error type, custom response, or delay still matches
+    /// requests and consumes any configured hit limit, but has no visible effect.
     pub fn build(self) -> FaultInjectionResult {
         FaultInjectionResult {
             error_type: self.error_type,

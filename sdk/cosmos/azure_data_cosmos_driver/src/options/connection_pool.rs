@@ -372,6 +372,9 @@ fn resolve_gateway_v2_disabled(
 #[non_exhaustive]
 #[derive(Clone, Debug, Default, CosmosOptions)]
 #[options(env_only)]
+/// Builds connection pool options from explicit settings and environment defaults.
+///
+/// Use [`ConnectionPoolOptions::builder()`] to create the builder.
 pub struct ConnectionPoolOptionsBuilder {
     #[option(env = "AZURE_COSMOS_CONNECTION_POOL_IS_PROXY_ALLOWED")]
     proxy_allowed: Option<bool>,

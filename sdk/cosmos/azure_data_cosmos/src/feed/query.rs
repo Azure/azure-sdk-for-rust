@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Models and components used to represents and execute queries.
+//! Query text, parameters, and partition scope for Cosmos DB feeds.
 
 use azure_data_cosmos_driver::models::{FeedRange, PartitionKey, PartitionKeyDefinition};
 use serde::Serialize;
@@ -15,7 +15,9 @@ use serde::Serialize;
 #[derive(Clone)]
 #[non_exhaustive]
 pub enum FeedScope {
+    /// Targets a logical partition or a prefix of a hierarchical partition key.
     Partition(PartitionKey),
+    /// Targets the partitions covered by a feed range.
     Range(FeedRange),
 }
 
@@ -33,14 +35,14 @@ impl FeedScope {
         Self::Partition(pk.into())
     }
 
-    /// Returns a [`FeedScope`] that represents the given feed range, which can be used for partition-specific or cross-partition queries depending on the feed range provided.
+    /// Targets the partitions covered by the given [`FeedRange`].
     ///
     /// WARNING: Using a feed range that covers multiple partitions may result in a full scan of those partitions, which can be expensive and slow for large datasets. Use with caution.
     pub fn range(fr: impl Into<FeedRange>) -> Self {
         Self::Range(fr.into())
     }
 
-    /// Returns a [`FeedScope`] that represents the full container, which is used for cross-partition queries.
+    /// Targets the full container for a cross-partition query.
     ///
     /// WARNING: Using this query scope may result in a full scan of the container, which can be expensive and slow for large datasets. Use with caution.
     pub fn full_container() -> Self {
@@ -59,7 +61,7 @@ impl FeedScope {
     }
 }
 
-/// Represents a Cosmos DB Query, with optional parameters.
+/// Holds Cosmos DB query text and optional JSON parameters.
 ///
 /// # Examples
 ///
@@ -87,7 +89,7 @@ impl FeedScope {
 /// # assert!(serialized.contains("WHERE c.time >= @low_time AND c.time <= @high_time"));
 /// ```
 ///
-/// # Specifying Parameters
+/// # Specifying parameters
 ///
 /// Any JSON-serializable value, including an empty tuple (`()`), which indicates `null`, can be used as a parameter.
 /// The [`Query::with_parameter()`] method accepts any type that implements [`serde::Serialize`] as a value.
@@ -153,7 +155,9 @@ pub struct Query {
 impl Query {
     /// Consumes this [`Query`] instance, adds a new parameter to it, and returns it.
     ///
-    /// Returns an error if the value cannot be serialized to JSON.
+    /// # Errors
+    ///
+    /// Returns an error if `value` cannot be serialized to JSON.
     pub fn with_parameter(
         mut self,
         name: impl Into<String>,

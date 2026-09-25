@@ -11,9 +11,10 @@ use crate::diagnostics::{DiagnosticsHandler, DiagnosticsHandlerChain};
 
 /// Options used when creating a [`CosmosClient`](crate::CosmosClient).
 ///
-/// This struct is used internally by [`CosmosClientBuilder`](crate::CosmosClientBuilder).
-/// Use the builder pattern via [`CosmosClient::builder()`](crate::CosmosClient::builder())
-/// to configure client options.
+/// Stores per-client request defaults and diagnostics handlers.
+///
+/// Configure a client through [`CosmosClient::builder()`](crate::CosmosClient::builder());
+/// its builder exposes corresponding setters for these options.
 #[derive(Clone, Default, Debug)]
 #[non_exhaustive]
 pub struct CosmosClientOptions {
@@ -28,11 +29,13 @@ pub struct CosmosClientOptions {
 }
 
 impl CosmosClientOptions {
+    /// Sets the suffix appended to the client's user-agent string.
     pub fn with_user_agent_suffix(mut self, suffix: UserAgentSuffix) -> Self {
         self.user_agent_suffix = Some(suffix);
         self
     }
 
+    /// Sets default [`OperationOptions`] for requests made by this client.
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
         self

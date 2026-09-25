@@ -11,6 +11,9 @@ use super::condition::FaultInjectionCondition;
 use super::result::FaultInjectionResult;
 
 /// A fault injection rule that defines when and how to inject faults.
+///
+/// A rule is enabled when first built. Use [`disable()`](Self::disable) to
+/// suspend it without removing it from the driver.
 #[derive(Debug)]
 #[non_exhaustive]
 pub struct FaultInjectionRule {
@@ -57,7 +60,7 @@ impl FaultInjectionRule {
         &self.result
     }
 
-    /// Returns the unique identifier for the fault injection scenario.
+    /// Returns the identifier supplied to [`FaultInjectionRuleBuilder::new()`].
     pub fn id(&self) -> &str {
         &self.id
     }
@@ -115,7 +118,7 @@ impl FaultInjectionRule {
     }
 }
 
-/// Builder for creating a fault injection rule.
+/// Builds a fault injection rule from an ID, a result, and optional filters.
 #[non_exhaustive]
 pub struct FaultInjectionRuleBuilder {
     condition: FaultInjectionCondition,
@@ -129,9 +132,26 @@ pub struct FaultInjectionRuleBuilder {
 }
 
 impl FaultInjectionRuleBuilder {
-    /// Creates a new FaultInjectionRuleBuilder with default values.
+    /// Creates a builder with the given rule ID and injection result.
     ///
-    /// By default the rule starts immediately and never expires.
+    /// By default the rule is enabled, starts immediately, and never expires.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use azure_data_cosmos_driver::fault_injection::{
+    ///     FaultInjectionErrorType, FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
+    /// };
+    ///
+    /// let result = FaultInjectionResultBuilder::new()
+    ///     .with_error(FaultInjectionErrorType::TooManyRequests)
+    ///     .build();
+    /// let rule = FaultInjectionRuleBuilder::new("throttle-read", result)
+    ///     .with_hit_limit(1)
+    ///     .build();
+    /// assert!(rule.is_enabled());
+    /// assert_eq!(rule.hit_limit(), Some(1));
+    /// ```
     pub fn new(id: impl Into<String>, result: FaultInjectionResult) -> Self {
         Self {
             condition: FaultInjectionCondition::default(),
@@ -187,7 +207,7 @@ impl FaultInjectionRuleBuilder {
         self
     }
 
-    /// Builds the FaultInjectionRule.
+    /// Builds the [`FaultInjectionRule`].
     pub fn build(self) -> FaultInjectionRule {
         FaultInjectionRule {
             condition: self.condition,

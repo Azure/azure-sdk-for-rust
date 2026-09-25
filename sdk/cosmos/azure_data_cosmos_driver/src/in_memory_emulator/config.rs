@@ -372,11 +372,22 @@ impl VirtualAccountConfig {
     /// configs from one clone therefore does **not** give them independent
     /// write modes — both observe the last value set:
     ///
-    /// ```ignore
-    /// let base = VirtualAccountConfig::new(regions)?;
+    /// ```
+    /// use azure_data_cosmos_driver::in_memory_emulator::{
+    ///     VirtualAccountConfig, VirtualRegion, WriteMode,
+    /// };
+    /// use url::Url;
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let base = VirtualAccountConfig::new(vec![
+    ///     VirtualRegion::new("East US", Url::parse("https://eastus.emulator.local")?),
+    /// ])?;
     /// let single = base.clone().with_write_mode(WriteMode::Single);
     /// let multi = base.clone().with_write_mode(WriteMode::Multi);
-    /// // `single` is Multi too — same underlying topology.
+    /// assert_eq!(single.write_mode(), WriteMode::Multi);
+    /// assert_eq!(multi.write_mode(), WriteMode::Multi);
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// Construct each config with [`Self::new`] instead of cloning a base.
@@ -532,18 +543,22 @@ impl VirtualAccountConfig {
             .collect()
     }
 
+    /// Returns the current write mode from the account topology.
     pub fn write_mode(&self) -> WriteMode {
         self.topology.read().unwrap().write_mode
     }
 
+    /// Returns the account's configured default consistency level.
     pub fn consistency(&self) -> ConsistencyLevel {
         self.consistency
     }
 
+    /// Returns the default replication configuration.
     pub fn replication(&self) -> &ReplicationConfig {
         &self.replication
     }
 
+    /// Returns the request-unit charging model for this account.
     pub fn ru_model(&self) -> &RequestUnitChargingModel {
         &self.ru_model
     }
@@ -1314,10 +1329,12 @@ impl VirtualRegion {
         self
     }
 
+    /// Returns the region name.
     pub fn name(&self) -> &str {
         &self.name
     }
 
+    /// Returns the gateway endpoint for this region.
     pub fn gateway_url(&self) -> &Url {
         &self.gateway_url
     }
@@ -1329,6 +1346,11 @@ impl VirtualRegion {
         self.gateway_v2_url.as_ref()
     }
 
+    /// Returns the region ID assigned by [`VirtualAccountConfig`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if the region wasn't assigned an ID by a [`VirtualAccountConfig`].
     pub fn region_id(&self) -> u64 {
         self.region_id
             .expect("VirtualAccountConfig assigns every region an ID")
@@ -1347,10 +1369,16 @@ pub enum WriteMode {
 /// Consistency level for the emulated account.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ConsistencyLevel {
+    /// Advertises strong consistency: reads see the latest committed write.
     Strong,
+    /// Advertises bounded staleness: reads may lag within a configured bound.
     BoundedStaleness,
+    /// Advertises session consistency: reads in a session observe its writes.
     Session,
+    /// Advertises consistent prefix: reads preserve write order without
+    /// requiring the latest write.
     ConsistentPrefix,
+    /// Advertises eventual consistency: replicas may lag without a freshness bound.
     Eventual,
 }
 
@@ -1505,10 +1533,12 @@ impl ReplicationConfig {
         self.min_delay + range.mul_f64(frac)
     }
 
+    /// Returns the configured minimum replication delay.
     pub fn min_delay(&self) -> Duration {
         self.min_delay
     }
 
+    /// Returns the configured maximum replication delay.
     pub fn max_delay(&self) -> Duration {
         self.max_delay
     }
@@ -1594,6 +1624,7 @@ pub struct ContainerConfig {
 pub const MAX_PARTITION_COUNT: u32 = 100_000;
 
 impl ContainerConfig {
+    /// Creates a container configuration with the [`Default`] values.
     pub fn new() -> Self {
         Self::default()
     }
@@ -1667,14 +1698,17 @@ impl ContainerConfig {
         Ok(self)
     }
 
+    /// Returns the configured number of physical partitions.
     pub fn partition_count(&self) -> u32 {
         self.partition_count
     }
 
+    /// Returns the partition key ranges per page, or `None` for an unpaged response.
     pub fn partition_key_range_page_size(&self) -> Option<u32> {
         self.partition_key_range_page_size
     }
 
+    /// Returns the provisioned throughput in RU/s, if configured.
     pub fn provisioned_throughput_ru(&self) -> Option<u64> {
         self.provisioned_throughput_ru
     }

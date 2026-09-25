@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! [`ChangeFeedPageIterator`] — async page-level stream for change feed operations.
+//! Async page stream for change feed operations.
 
 use std::{marker::PhantomData, pin::Pin, sync::Arc, task};
 
@@ -216,6 +216,7 @@ fn deserialize_change_feed_items<T: DeserializeOwned>(
 /// The stream is conceptually infinite: when a partition has no new changes
 /// (304 Not Modified), an empty page is returned instead of terminating the
 /// stream. The consumer decides when to stop polling.
+/// A fetch or deserialization error is yielded once, then the stream ends.
 ///
 /// Use [`to_continuation_token()`](Self::to_continuation_token) to capture
 /// the current position for later resumption.
@@ -300,7 +301,8 @@ impl<T: Send + DeserializeOwned + 'static> ChangeFeedPageIterator<T> {
     ///
     /// # Errors
     ///
-    /// Returns an error if a page fetch is currently in flight.
+    /// Returns an error if a page fetch is currently in flight or the
+    /// current position cannot be encoded as a token.
     pub fn to_continuation_token(&self) -> crate::Result<ContinuationToken> {
         self.state.to_continuation_token()
     }

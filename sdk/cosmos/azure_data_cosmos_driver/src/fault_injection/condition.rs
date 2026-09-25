@@ -43,7 +43,7 @@ impl FaultInjectionCondition {
     }
 }
 
-/// Builder for creating a FaultInjectionCondition.
+/// Builds a [`FaultInjectionCondition`] that filters matching requests.
 #[derive(Default)]
 #[non_exhaustive]
 pub struct FaultInjectionConditionBuilder {
@@ -54,7 +54,7 @@ pub struct FaultInjectionConditionBuilder {
 }
 
 impl FaultInjectionConditionBuilder {
-    /// Creates a new FaultInjectionConditionBuilder with default values.
+    /// Creates a builder with no filters, matching all requests.
     pub fn new() -> Self {
         Self {
             operation_type: None,
@@ -93,7 +93,7 @@ impl FaultInjectionConditionBuilder {
         self
     }
 
-    /// Builds the FaultInjectionCondition.
+    /// Builds the [`FaultInjectionCondition`].
     pub fn build(self) -> FaultInjectionCondition {
         FaultInjectionCondition {
             operation_type: self.operation_type,

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Preview Distributed Transaction builders.
+//! Preview distributed transaction builders and results.
 //!
 //! **Preview / work in progress.** These APIs are gated behind the
 //! disabled-by-default `preview_dtx` feature, depend on a service-side feature
@@ -82,7 +82,11 @@ impl DistributedTransactionPatchOperationOptions {
     }
 }
 
-/// Preview distributed write transaction builder.
+/// Builds a preview distributed write transaction.
+///
+/// Add item operations, then pass the transaction to
+/// [`CosmosClient::commit_distributed_write()`](crate::CosmosClient::commit_distributed_write).
+/// Operations must target containers in the committing client's account.
 #[derive(Clone, SafeDebug)]
 #[safe(true)]
 pub struct DistributedWriteTransaction {
@@ -102,7 +106,11 @@ impl DistributedWriteTransaction {
         self.operations
     }
 
-    /// Adds a create item operation.
+    /// Adds a create operation for an item in the given container and partition.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `item` cannot be serialized to JSON.
     pub fn create_item<T: Serialize>(
         mut self,
         container: &ContainerClient,
@@ -123,7 +131,11 @@ impl DistributedWriteTransaction {
         Ok(self)
     }
 
-    /// Adds a replace item operation.
+    /// Adds a replace operation for an item in the given container and partition.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `item` cannot be serialized to JSON.
     pub fn replace_item<T: Serialize>(
         mut self,
         container: &ContainerClient,
@@ -144,7 +156,11 @@ impl DistributedWriteTransaction {
         Ok(self)
     }
 
-    /// Adds an upsert item operation.
+    /// Adds an upsert operation for an item in the given container and partition.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `item` cannot be serialized to JSON.
     pub fn upsert_item<T: Serialize>(
         mut self,
         container: &ContainerClient,
@@ -184,7 +200,11 @@ impl DistributedWriteTransaction {
         self
     }
 
-    /// Adds a patch item operation.
+    /// Adds a patch operation for an item in the given container and partition.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the patch cannot be serialized to JSON.
     #[cfg(feature = "preview_patch")]
     pub fn patch_item(
         mut self,
@@ -212,7 +232,11 @@ impl Default for DistributedWriteTransaction {
     }
 }
 
-/// Preview distributed read transaction builder.
+/// Builds a preview distributed read transaction.
+///
+/// Add reads, then pass the transaction to
+/// [`CosmosClient::execute_distributed_read()`](crate::CosmosClient::execute_distributed_read).
+/// Operations must target containers in the executing client's account.
 #[derive(Clone, SafeDebug)]
 #[safe(true)]
 pub struct DistributedReadTransaction {
@@ -590,7 +614,11 @@ impl DistributedTransactionOperationResult<'_> {
         self.inner.request_charge.map(|charge| charge.value())
     }
 
-    /// Deserializes the operation resource body, when present.
+    /// Deserializes the operation resource body, if present.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the body cannot be deserialized as `T`.
     pub fn resource<T: DeserializeOwned>(&self) -> crate::Result<Option<T>> {
         match &self.inner.resource_body {
             driver_models::DistributedTransactionResultBody::None => Ok(None),

@@ -180,14 +180,12 @@ impl<'de> Deserialize<'de> for CosmosNumber {
 
 /// A single operation in a Cosmos DB PATCH document.
 ///
-/// PATCH operations follow the JSON Pointer (RFC 6901) path syntax. Mutation
-/// semantics are evaluated locally by the driver's PATCH handler against the
-/// item read from the service.
+/// Paths follow JSON Pointer (RFC 6901) syntax. Depending on the selected
+/// [`PatchStrategy`](crate::options::PatchStrategy), operations run on the
+/// service or against an item read by the driver.
 ///
-/// Both the enum variants and the equivalent factory functions (`PatchOperation::add`,
-/// `PatchOperation::set`, ...) are part of the public API. The factories mirror the
-/// .NET SDK's `PatchOperation.Add` / `.Set` / etc. methods and are the
-/// recommended way to construct ops.
+/// Use the variants or factory methods such as [`add()`](Self::add) and
+/// [`set()`](Self::set) to construct an operation.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "op", rename_all = "lowercase")]
 #[non_exhaustive]
@@ -204,8 +202,7 @@ pub enum PatchOperation {
         /// JSON value to add.
         value: Value,
     },
-    /// Set `value` at `path`, creating intermediate parents only when the
-    /// parent path already exists. This is Cosmos-specific (Add-or-Replace).
+    /// Set `value` at `path`, adding or replacing a value under an existing parent.
     Set {
         /// JSON Pointer path (RFC 6901).
         path: String,

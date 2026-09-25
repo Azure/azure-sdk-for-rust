@@ -54,11 +54,12 @@ pub use super::cosmos_client_builder::CosmosClientBuilder;
 ///
 /// Using key authentication (requires `key_auth` feature):
 ///
-/// ```rust,no_run,ignore
+/// ```rust,no_run
 /// use azure_data_cosmos::{CosmosClient, AccountReference, AccountEndpoint, RoutingStrategy};
 /// use azure_data_cosmos::options::{Region};
 /// use azure_core::credentials::Secret;
 ///
+/// # #[cfg(feature = "key_auth")]
 /// # async fn doc() -> Result<(), Box<dyn std::error::Error>> {
 /// let endpoint: AccountEndpoint = "https://myaccount.documents.azure.com/"
 ///     .parse()
@@ -150,6 +151,13 @@ impl CosmosClient {
     /// **Preview / work in progress.** Requires the disabled-by-default
     /// `preview_dtx` feature and a service account with the DTX feature enabled.
     /// Not supported for production use; the API may change without notice.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if an operation targets another account or the
+    /// transaction request fails. Inspect the returned
+    /// [`DistributedTransactionResponse`](crate::clients::DistributedTransactionResponse)
+    /// for individual operation failures.
     #[cfg(feature = "preview_dtx")]
     pub async fn commit_distributed_write(
         &self,
@@ -167,6 +175,13 @@ impl CosmosClient {
     /// **Preview / work in progress.** Requires the disabled-by-default
     /// `preview_dtx` feature and a service account with the DTX feature enabled.
     /// Not supported for production use; the API may change without notice.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if an operation targets another account or the
+    /// transaction request fails. Inspect the returned
+    /// [`DistributedTransactionResponse`](crate::clients::DistributedTransactionResponse)
+    /// for individual operation failures.
     #[cfg(feature = "preview_dtx")]
     pub async fn execute_distributed_read(
         &self,
@@ -203,10 +218,17 @@ impl CosmosClient {
     /// let dbs = client
     ///     .query_databases("SELECT * FROM dbs", None)
     ///     .await?;
+    /// # Ok(())
     /// # }
     /// ```
     ///
     /// See [`Query`] for more information on how to specify a query.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the query cannot be serialized or its execution
+    /// plan cannot be created. Subsequent fetch and deserialization errors
+    /// appear as items in the returned stream.
     #[cfg(feature = "control_plane")]
     pub async fn query_databases(
         &self,
@@ -247,6 +269,11 @@ impl CosmosClient {
     /// # Arguments
     /// * `id` - The ID of the new database.
     /// * `options` - Optional parameters for the request.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the create request fails, including when a database
+    /// with the same ID already exists.
     #[cfg(feature = "control_plane")]
     pub async fn create_database(
         &self,

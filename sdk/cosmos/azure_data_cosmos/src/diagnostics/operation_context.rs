@@ -1,18 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! SDK-supplied, operation-scope identity carried to diagnostics handlers.
-//!
-//! The driver's [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)
-//! records what happened on the wire, but the caller-facing identity of an
-//! operation — its name, database, and container — is known only to the SDK.
-//! [`CosmosOperationContext`] carries that identity to the handler chain through
-//! the pipeline [`Context`](azure_core::http::Context), so both the metrics and
-//! tracing handlers can emit correct operation-scope attributes.
-//!
-//! This type is always compiled (independent of the `metrics` /
-//! `distributed_tracing` features) because the SDK populates it on every completed
-//! operation; the feature-gated handlers simply read whichever fields are set.
+//! Operation metadata supplied to diagnostics handlers.
 
 use std::borrow::Cow;
 
@@ -20,12 +9,8 @@ use azure_core::fmt::SafeDebug;
 
 /// SDK-supplied, operation-scope identity for a single Cosmos operation.
 ///
-/// The driver's [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)
-/// captures what happened on the wire (status, duration, regions, request
-/// charge) but not the caller-facing identity of the operation — the operation
-/// name, database, and container are known only to the SDK. This type carries
-/// that identity to the diagnostics handlers via the pipeline
-/// [`Context`](azure_core::http::Context):
+/// Carries optional operation name, database, container, and other attributes
+/// to diagnostics handlers in a [`Context`](azure_core::http::Context):
 ///
 /// ```
 /// use azure_core::http::Context;

@@ -31,8 +31,7 @@ const SUPPRESSED_TARGET: &str = "azure_data_cosmos::diagnostics::tracing_suppres
 /// free of tracing overhead.
 ///
 /// When it does emit, it reconstructs the operation as a root span with one child
-/// span per retained attempt, each backdated to the time the work actually
-/// happened (see the module docs).
+/// span per retained attempt, each backdated to the time the work happened.
 ///
 /// Register it with
 /// [`CosmosClientBuilder::with_diagnostics_handler`](crate::CosmosClientBuilder::with_diagnostics_handler).
@@ -55,10 +54,7 @@ const SUPPRESSED_TARGET: &str = "azure_data_cosmos::diagnostics::tracing_suppres
 /// use azure_data_cosmos::diagnostics::CosmosTracingHandler;
 ///
 /// let handler = Arc::new(CosmosTracingHandler::builder().build());
-/// // let client = CosmosClient::builder(endpoint, credential)
-/// //     .with_diagnostics_handler(handler)
-/// //     .build()?;
-/// # let _ = handler;
+/// assert_eq!(Arc::strong_count(&handler), 1);
 /// ```
 pub struct CosmosTracingHandler {
     thresholds: DiagnosticsThresholds,

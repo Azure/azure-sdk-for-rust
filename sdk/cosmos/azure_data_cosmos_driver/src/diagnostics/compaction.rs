@@ -41,16 +41,15 @@ use super::diagnostics_context::{percentile_sorted, ExecutionContext, RequestDia
 use crate::models::{CosmosStatus, RequestCharge};
 use crate::options::Region;
 
-/// Metadata describing how an operation's per-attempt diagnostics were compacted
-/// under a retry storm.
+/// Summarizes attempts removed from an operation's diagnostics.
 ///
 /// Present on a [`DiagnosticsContext`](super::DiagnosticsContext) only when the
 /// number of attempts exceeded the configured
 /// [`max_request_diagnostics`](crate::options::DiagnosticsOptions::max_request_diagnostics)
-/// cap. It records the true attempt count, how many records were retained, and a
-/// per-run rollup so the storm's shape (which region/endpoint/status repeated,
-/// and how many times) is preserved even though the middle of each run was
-/// dropped.
+/// cap. Compare [`original_request_count`](Self::original_request_count) with
+/// [`retained_request_count`](Self::retained_request_count) to see how many
+/// attempt records were removed. Some run summaries may also be omitted when
+/// there are too many distinct retries; see [`omitted_runs`](Self::omitted_runs).
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct CompactionInfo {
@@ -58,34 +57,25 @@ pub struct CompactionInfo {
     pub original_request_count: usize,
     /// Number of per-attempt records retained after compaction.
     pub retained_request_count: usize,
-    /// Number of runs whose middle records were dropped (run length > 2).
+    /// Number of consecutive runs whose middle records were dropped.
     pub collapsed_runs: usize,
-    /// Total number of distinct runs detected. Equal to `runs.len()` unless the
-    /// per-run rollup was itself bounded under a high-cardinality storm, in
-    /// which case `runs` holds only the largest ones and `omitted_runs` the rest.
+    /// Total number of runs detected, including those omitted from [`runs`](Self::runs).
     pub total_runs: usize,
-    /// `true` when the retained per-attempt list hit the configured cap and
-    /// later records were dropped (the global-bucket fallback under an
-    /// order-ping-pong storm with more than `cap / 2` distinct keys). The
-    /// dropped attempts are still counted in `original_request_count` and the
-    /// aggregate rollup; this flag makes that truncation **explicit**, never
-    /// silent.
+    /// Whether the retained attempt records were truncated to the configured
+    /// cap. Dropped attempts still contribute to [`original_request_count`](Self::original_request_count).
     #[serde(default, skip_serializing_if = "bool_is_false")]
     pub retained_truncated: bool,
-    /// Number of runs omitted from `runs` because the per-run rollup was bounded
-    /// to keep the serialized artifact size independent of storm *cardinality*
-    /// (e.g. a `410` fan-out across thousands of physical-partition endpoints).
-    /// `0` when every run is present.
+    /// Number of runs omitted from [`runs`](Self::runs) to keep diagnostics
+    /// within the configured cap. `0` means every run is present.
     #[serde(default, skip_serializing_if = "usize_is_zero")]
     pub omitted_runs: usize,
-    /// Total attempt count represented by the omitted runs (see `omitted_runs`).
-    /// These attempts remain reflected in `original_request_count`; only their
-    /// per-run rollup rows were elided.
+    /// Number of attempts in omitted runs. These attempts remain included in
+    /// [`original_request_count`](Self::original_request_count).
     #[serde(default, skip_serializing_if = "usize_is_zero")]
     pub omitted_request_count: usize,
-    /// Per-run rollup, in operation order (or first-seen order under the
-    /// global-bucket fallback). Bounded to the largest runs by attempt count
-    /// under a high-cardinality storm; see `omitted_runs` for the remainder.
+    /// Run summaries in operation order, or first-seen order when retries
+    /// are grouped across the operation. The largest groups are retained if
+    /// the list exceeds the cap.
     pub runs: Vec<CompactedRun>,
 }
 
@@ -93,7 +83,7 @@ pub struct CompactionInfo {
 ///
 /// Groups attempts that share the same region, endpoint, status (including
 /// sub-status) and execution context. The first and last attempt of each run
-/// are retained in full in
+/// may be retained in full in
 /// [`DiagnosticsContext::requests`](super::DiagnosticsContext::requests); this
 /// rollup carries the count and duration/charge statistics for the run so the
 /// elided middle is still accounted for.

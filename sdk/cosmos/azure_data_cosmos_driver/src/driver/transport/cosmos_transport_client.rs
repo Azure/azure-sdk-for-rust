@@ -37,9 +37,13 @@ use crate::fault_injection::EvaluationCollector;
 /// client-level default.
 #[derive(Clone, Debug)]
 pub struct HttpRequest {
+    /// Absolute URL of the request.
     pub url: Url,
+    /// HTTP method to send.
     pub method: Method,
+    /// Request headers.
     pub headers: Headers,
+    /// Optional request body bytes.
     pub body: Option<bytes::Bytes>,
 
     /// Per-request timeout. When set, overrides the client-level timeout.
@@ -66,8 +70,11 @@ pub struct HttpRequest {
 /// downstream processing.
 #[derive(Clone, Debug)]
 pub struct HttpResponse {
+    /// HTTP response status code.
     pub status: u16,
+    /// Response headers.
     pub headers: Headers,
+    /// Buffered response body bytes.
     pub body: Vec<u8>,
 }
 

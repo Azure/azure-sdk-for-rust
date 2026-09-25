@@ -1,13 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! SDK-owned region-request types for the Hedging Detection API.
-//!
-//! These types mirror the cross-SDK Hedging Detection API's `RequestedRegion`
-//! and `RequestedRegionReason` while remaining wholly owned by
-//! `azure_data_cosmos`. They are projected from the driver equivalents at
-//! diagnostics-context finalization, which lets the driver evolve its internal
-//! model without forcing an SDK major-version bump.
+//! Regions contacted by a Cosmos DB operation and the reasons for dispatch.
 
 use crate::options::Region;
 
@@ -19,9 +13,9 @@ use crate::options::Region;
 /// The enum is `#[non_exhaustive]`; always include a wildcard arm in `match`
 /// expressions.
 ///
-/// # Example
+/// # Examples
 ///
-/// ```rust,no_run
+/// ```rust
 /// # use azure_data_cosmos::diagnostics::{RequestedRegion, RequestedRegionReason};
 /// fn describe(r: &RequestedRegion) -> &'static str {
 ///     match r.reason {
@@ -82,15 +76,13 @@ impl From<azure_data_cosmos_driver::diagnostics::ExecutionContext> for Requested
     }
 }
 
-/// A single region the SDK dispatched a request to, tagged with the reason the
-/// orchestrator chose to send it.
+/// A region contacted by an operation and the reason for the dispatch.
 ///
-/// Realizes the cross-SDK Hedging Detection API's `RequestedRegion` value type.
 /// Returned by
 /// [`DiagnosticsContext::requested_regions`](crate::diagnostics::DiagnosticsContext::requested_regions).
 ///
-/// The struct is `#[non_exhaustive]`; construct via the public fields only in
-/// owned contexts, and pattern-match with `..` to remain forward-compatible.
+/// The struct is `#[non_exhaustive]`; pattern-match with `..` to allow
+/// additional fields in future versions.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
 pub struct RequestedRegion {

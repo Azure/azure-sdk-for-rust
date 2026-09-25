@@ -7,7 +7,7 @@
 //! panicking, so a malformed or truncated buffer fails gracefully. Multi-byte
 //! integers and length prefixes are little-endian, matching the service.
 //!
-//! The decoder handles every value form the service can emit:
+//! The decoder handles supported value forms the service can emit:
 //! [`null`](serde_json::Value::Null), booleans, all literal, fixed-width, and
 //! extended numbers, every string form (system, user, reference, encoded-length,
 //! length-prefixed, GUID, base64, and compressed), the GUID value, binary blobs,
@@ -118,7 +118,8 @@ enum FieldWidth {
 ///
 /// Returns a [`BinaryError`] if the buffer is not binary (missing preamble),
 /// is truncated, contains an invalid or not-yet-supported type marker, holds a
-/// malformed length, carries invalid UTF-8, or has trailing bytes.
+/// malformed length, carries invalid UTF-8, exceeds the nesting limit,
+/// contains an unresolvable user-dictionary string, or has trailing bytes.
 ///
 /// # Examples
 ///

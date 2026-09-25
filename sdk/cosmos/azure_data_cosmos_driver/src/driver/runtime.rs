@@ -34,25 +34,22 @@ use super::{
 /// The Cosmos DB driver runtime environment.
 ///
 /// A runtime represents the global configuration shared across all drivers
-/// and connections. It includes connection pool settings, default operation options,
-/// and manages singleton driver instances per account.
+/// and connections, including connection pool settings and default operation options.
 ///
-/// # Thread Safety
+/// # Thread safety
 ///
 /// The runtime is thread-safe and can be shared across threads. Each call to
 /// [`create_driver`](Self::create_driver) produces a fresh [`CosmosDriver`];
 /// drivers built from the same runtime share its long-lived resources
 /// (bootstrap transport, metadata caches, CPU monitor, etc.).
 ///
-/// # Example
+/// # Examples
 ///
-/// ```no_run
+/// ```rust,no_run
 /// use azure_data_cosmos_driver::driver::{
 ///     CosmosDriverRuntime, CosmosDriverRuntimeBuilder,
 /// };
-/// use azure_data_cosmos_driver::options::{
-///     DriverOptions, OperationOptions, OperationOptionsBuilder,
-/// };
+/// use azure_data_cosmos_driver::options::{DriverOptions, OperationOptionsBuilder};
 /// use azure_data_cosmos_driver::models::AccountReference;
 /// use url::Url;
 ///
@@ -66,18 +63,15 @@ use super::{
 ///     .build()
 ///     .await?;
 ///
-/// // Create a driver for an account
 /// let account = AccountReference::with_master_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-key",
 /// );
 ///
-/// let driver = cosmos_runtime
+/// let _driver = cosmos_runtime
 ///     .create_driver(DriverOptions::builder(account).build())
 ///     .await?;
 ///
-/// // Later, replace runtime defaults atomically
-/// // cosmos_runtime.set_default_operation_options(new_options);
 /// # Ok(())
 /// # }
 /// ```
@@ -303,13 +297,8 @@ impl CosmosDriverRuntime {
 
     /// Returns the computed user agent string.
     ///
-    /// The user agent is automatically computed with a static prefix containing
-    /// SDK version and platform info, plus an optional suffix derived from
-    /// `user_agent_suffix`, `workload_id`, or `correlation_id` (in priority order).
-    ///
-    /// Stored as an `Arc` so [`CosmosDriver`](super::CosmosDriver) instances
-    /// without a per-driver suffix override can clone this shared value
-    /// instead of recomputing the User-Agent.
+    /// The prefix contains the driver version and platform. The suffix uses the
+    /// user agent suffix, workload ID, or correlation ID, in that order.
     pub fn user_agent(&self) -> &Arc<UserAgent> {
         &self.user_agent
     }
@@ -371,7 +360,7 @@ impl CosmosDriverRuntime {
             .or_else(|| self.user_agent_suffix.as_ref().map(|s| s.as_str()))
     }
 
-    /// Creates a fresh driver bound to this runtime.
+    /// Creates a driver for the account in `driver_options`.
     ///
     /// Each call returns a new [`CosmosDriver`] — the runtime no longer caches
     /// drivers by account endpoint. Callers that want a single driver per
@@ -379,13 +368,14 @@ impl CosmosDriverRuntime {
     /// the same runtime share runtime-owned resources (bootstrap transport,
     /// account-metadata cache, container cache, CPU monitor, etc.).
     ///
-    /// # Parameters
+    /// # Errors
     ///
-    /// - `driver_options`: Driver-level options, including the account reference.
+    /// Returns an error if the transport cannot be created or account metadata
+    /// cannot be fetched during initialization.
     ///
-    /// # Example
+    /// # Examples
     ///
-    /// ```no_run
+    /// ```rust,no_run
     /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
     /// use azure_data_cosmos_driver::options::DriverOptions;
     /// use azure_data_cosmos_driver::models::AccountReference;
@@ -399,7 +389,7 @@ impl CosmosDriverRuntime {
     ///     "my-key",
     /// );
     ///
-    /// let driver = runtime
+    /// let _driver = runtime
     ///     .create_driver(DriverOptions::builder(account).build())
     ///     .await?;
     /// # Ok(())
@@ -418,10 +408,10 @@ impl CosmosDriverRuntime {
 
 /// Builder for creating [`CosmosDriverRuntime`].
 ///
-/// Use `OperationOptionsBuilder` to create operation options, then pass them
+/// Use [`OperationOptionsBuilder`](crate::options::OperationOptionsBuilder) to create operation options, then pass them
 /// to this builder via [`with_default_operation_options()`](Self::with_default_operation_options).
 ///
-/// # User Agent
+/// # User agent
 ///
 /// The user agent string is automatically computed with a static prefix containing
 /// SDK version and platform info. The suffix is derived from (in priority order):
@@ -486,8 +476,8 @@ impl CosmosDriverRuntimeBuilder {
     /// Sets the default operation options at the runtime layer.
     ///
     /// These act as the lowest-priority layer in the option-resolution
-    /// hierarchy (per-op → per-driver → runtime → env → built-in default).
-    /// Use `OperationOptionsBuilder` to create the operation options.
+    /// hierarchy (operation → driver → runtime → environment → built-in default).
+    /// Use [`OperationOptionsBuilder`](crate::options::OperationOptionsBuilder) to create the operation options.
     pub fn with_default_operation_options(mut self, options: OperationOptions) -> Self {
         self.operation_options = Some(options);
         self
@@ -508,7 +498,7 @@ impl CosmosDriverRuntimeBuilder {
     /// if neither [`with_user_agent_suffix()`](Self::with_user_agent_suffix) nor
     /// [`with_workload_id()`](Self::with_workload_id) is set.
     ///
-    /// # Cardinality Warning
+    /// # Cardinality
     ///
     /// If the cardinality of correlation IDs is too high, metrics aggregation
     /// may ignore this dimension. Choose values with moderate cardinality
@@ -523,7 +513,7 @@ impl CosmosDriverRuntimeBuilder {
     /// If `correlation_id` is not set, this suffix is used as the correlation
     /// dimension for client-side metrics.
     ///
-    /// # Server-Side Enforcement
+    /// # Cardinality
     ///
     /// The Cosmos DB service enforces cardinality limits more strictly for
     /// user agent suffixes. High-cardinality suffixes may be rejected.
@@ -554,12 +544,12 @@ impl CosmosDriverRuntimeBuilder {
 
     /// Sets the CPU/memory monitoring refresh interval.
     ///
-    /// Controls how frequently the background CPU and memory sampling thread
-    /// collects new data points. If not set, the value is read from the
+    /// Controls how often CPU and memory diagnostics are sampled. If not set,
+    /// the value is read from the
     /// `AZURE_COSMOS_CPU_REFRESH_INTERVAL_MS` environment variable. If the
     /// environment variable is also absent, the default of 5000 ms is used.
     ///
-    /// Valid range: 1000–60000 ms (1–60 seconds).
+    /// Valid range: 1–60 seconds.
     pub fn with_cpu_refresh_interval(mut self, interval: Duration) -> Self {
         self.cpu_refresh_interval = Some(interval);
         self
@@ -589,17 +579,10 @@ impl CosmosDriverRuntimeBuilder {
 
     /// Builds the [`CosmosDriverRuntime`].
     ///
-    /// The user agent is computed from (in priority order):
-    /// 1. `user_agent_suffix` if set
-    /// 2. `workload_id` if set (formatted as `w{id}`)
-    /// 3. `correlation_id` if set
-    /// 4. No suffix (base user agent only)
-    ///
     /// # Errors
     ///
-    /// Returns an error if the HTTP transport cannot be created (e.g., TLS
-    /// configuration failure).
-    ///
+    /// Returns an error if the HTTP transport cannot be created or the
+    /// configured CPU refresh interval is outside 1–60 seconds.
     pub async fn build(self) -> crate::error::Result<Arc<CosmosDriverRuntime>> {
         let connection_pool = self.connection_pool.unwrap_or_default();
         let diagnostics_options = Arc::new(self.diagnostics_options.unwrap_or_default());

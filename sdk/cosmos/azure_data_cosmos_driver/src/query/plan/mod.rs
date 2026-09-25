@@ -263,19 +263,10 @@ impl std::hash::Hash for PartitionKeyValue {
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
-/// Generate a complete query plan from parsed SQL and partition key paths.
+/// Generates a query plan from parsed SQL and partition key paths.
 ///
 /// `pk_paths` is a list of partition key paths (e.g., `["/pk"]` or `["/tenant", "/userId"]`).
-///
-/// # Examples
-///
-/// ```ignore
-/// use azure_data_cosmos_driver::query::{parse, plan};
-/// let program = parse("SELECT * FROM c WHERE c.pk = 'hello'").unwrap();
-/// let qp = plan::generate_query_plan(&program.query, &["/pk"]);
-/// assert!(matches!(qp.pk_filters, plan::PartitionKeyFilter::Equality(_)));
-/// assert_eq!(qp.query_info.distinct_type, plan::DistinctType::None);
-/// ```
+/// The result includes partition key filters and query shape information.
 pub(crate) fn generate_query_plan(
     query: &SqlQuery,
     pk_paths: &[&str],
@@ -1271,22 +1262,21 @@ fn resolve_pk_parameter(name: &str, parameters: &Params) -> PartitionKeyValue {
         },
     }
 }
-/// Generate a query plan as a JSON value from SQL text, partition key paths, and
-/// query parameters.
+/// Generates a query plan as JSON from SQL text and partition key paths.
 ///
-/// Substitutes parameter values into parameterized `TOP` / `OFFSET` / `LIMIT` clauses.
-/// Returns an error if the query references a parameter in one of those clauses and
-/// no matching integer value is supplied. Pass an empty slice for queries that do not
-/// use parameters in those clauses.
+/// Substitutes values into parameterized `TOP`, `OFFSET`, and `LIMIT` clauses.
+/// Pass an empty slice when those clauses don't use parameters.
 ///
-/// **This function is intentionally not part of the supported public API.** It is
-/// gated on the `__internal_testing` feature flag and exists solely so that
-/// cross-crate gateway-comparison tests can exercise the local plan generator
-/// without taking a dependency on internal types. Production callers must not use it.
+/// Available only with `__internal_testing`; not a supported production API.
+///
+/// # Errors
+///
+/// Returns an error if the SQL cannot be parsed, a referenced clause parameter
+/// has no matching integer value, or the plan cannot be serialized.
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust
 /// # #[cfg(feature = "__internal_testing")]
 /// # fn main() {
 /// use azure_data_cosmos_driver::query::__test_only_generate_query_plan_for_pk_paths;

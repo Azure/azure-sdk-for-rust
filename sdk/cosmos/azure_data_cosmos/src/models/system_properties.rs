@@ -52,7 +52,8 @@ pub struct SystemProperties {
     #[serde(rename = "_rid")]
     pub resource_id: Option<String>,
 
-    /// A [`OffsetDateTime`] representing the last modified time of the resource.
+    /// The resource's last modification time, if returned, as an
+    /// [`OffsetDateTime`] in UTC.
     #[serde(default)]
     #[serde(rename = "_ts")]
     #[serde(skip_serializing)]

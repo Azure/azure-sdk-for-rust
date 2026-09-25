@@ -33,7 +33,7 @@ use crate::{
 
 /// A client for working with a specific container in a Cosmos DB account.
 ///
-/// You can get a `Container` by calling [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client()).
+/// Obtain a [`ContainerClient`] with [`DatabaseClient::container_client()`](crate::clients::DatabaseClient::container_client).
 #[derive(Clone)]
 pub struct ContainerClient {
     container_ref: ContainerReference,
@@ -131,8 +131,14 @@ impl ContainerClient {
     /// let response = container_client.read(None)
     ///     .await?
     ///     .into_model()?;
+    /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the container cannot be read. Deserializing the
+    /// response model can also fail.
     pub async fn read(
         &self,
         options: Option<ReadContainerOptions>,
@@ -178,6 +184,11 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `properties` cannot be serialized or the replace
+    /// request fails.
     #[cfg(feature = "control_plane")]
     pub async fn replace(
         &self,
@@ -210,10 +221,15 @@ impl ContainerClient {
 
     /// Reads container throughput properties, if any.
     ///
-    /// This will return `None` if the database does not have a throughput offer configured.
+    /// Returns `None` if this container does not have dedicated throughput;
+    /// shared database throughput is not returned.
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the throughput offer cannot be resolved or read.
     #[cfg(feature = "control_plane")]
     pub async fn read_throughput(
         &self,
@@ -254,6 +270,11 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the throughput offer cannot be resolved or the
+    /// replace request fails. Polling can also yield an error.
     #[cfg(feature = "control_plane")]
     pub async fn begin_replace_throughput(
         &self,
@@ -278,6 +299,10 @@ impl ContainerClient {
     ///
     /// # Arguments
     /// * `options` - Optional parameters for the request.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the container cannot be deleted.
     #[cfg(feature = "control_plane")]
     pub async fn delete(
         &self,
@@ -303,7 +328,7 @@ impl ContainerClient {
     /// # Arguments
     /// * `partition_key` - The partition key of the new item.
     /// * `item_id` - The id of the new item.
-    /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`](serde::Deserialize)
+    /// * `item` - The item to create. The type must implement [`Serialize`].
     /// * `options` - Optional parameters for the request
     ///
     /// # Examples
@@ -363,6 +388,11 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `item` cannot be serialized or the create request fails
+    /// (including when an item with the same ID and partition key already exists).
     pub async fn create_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -406,7 +436,7 @@ impl ContainerClient {
     /// # Arguments
     /// * `partition_key` - The partition key of the item to replace.
     /// * `item_id` - The id of the item to replace.
-    /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`](serde::Deserialize)
+    /// * `item` - The replacement item. The type must implement [`Serialize`].
     /// * `options` - Optional parameters for the request
     ///
     /// # Examples
@@ -472,6 +502,11 @@ impl ContainerClient {
     /// replacement must preserve `_azsdkPatchTracking` and its array order.
     /// Models that do not explicitly represent the property should capture
     /// unknown fields with `#[serde(flatten)]` and round-trip them unchanged.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `item` cannot be serialized or the replace request fails,
+    /// including when the item does not exist or its precondition is not met.
     pub async fn replace_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -613,6 +648,12 @@ impl ContainerClient {
     /// and returned JSON and counts toward item size and indexing costs.
     /// Model-deserialization errors retain the response diagnostics and effective
     /// tracking ID so callers can safely reconcile a committed PATCH.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the patch cannot be serialized, its paths overlap
+    /// partition-key paths, its strategy rejects the instruction list, or the
+    /// request or client-side read-modify-write fails.
     #[cfg(feature = "preview_patch")]
     pub async fn patch_item(
         &self,
@@ -660,7 +701,7 @@ impl ContainerClient {
     /// # Arguments
     /// * `partition_key` - The partition key of the item to create or replace.
     /// * `item_id` - The id of the item to create or replace.
-    /// * `item` - The item to create. The type must implement [`Serialize`] and [`Deserialize`](serde::Deserialize)
+    /// * `item` - The item to create or replace. The type must implement [`Serialize`].
     /// * `options` - Optional parameters for the request
     ///
     /// # Examples
@@ -728,6 +769,11 @@ impl ContainerClient {
     /// PATCH, it must preserve `_azsdkPatchTracking` and its array order.
     /// Models that do not explicitly represent the property should capture
     /// unknown fields with `#[serde(flatten)]` and round-trip them unchanged.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `item` cannot be serialized or the upsert request fails,
+    /// including when its precondition is not met.
     pub async fn upsert_item<T: Serialize>(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -794,6 +840,11 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the item cannot be read, including when the ID and
+    /// partition key do not identify an item or its precondition is not met.
     pub async fn read_item(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -837,7 +888,8 @@ impl ContainerClient {
     /// * `item_id` - The id of the item to delete.
     /// * `options` - Optional parameters for the request
     ///
-    /// NOTE: The deleted item is never returned by the Cosmos API, so any content response option is ignored.
+    /// The deleted item is never returned by the service, so the content response
+    /// option is ignored.
     ///
     /// # Examples
     ///
@@ -850,6 +902,11 @@ impl ContainerClient {
     ///     .await?;
     /// # }
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the delete request fails, including when the item
+    /// does not exist or its precondition is not met.
     pub async fn delete_item(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -946,7 +1003,7 @@ impl ContainerClient {
     ///     id: u64,
     ///     name: String,
     /// }
-    /// let query = Query::from("SELECT COUNT(*) FROM c WHERE c.customer_id = @customer_id")
+    /// let query = Query::from("SELECT * FROM c WHERE c.customer_id = @customer_id")
     ///     .with_parameter("@customer_id", 42)?;
     /// let items = container_client
     ///     .query_items::<Customer>(query, FeedScope::partition("some_partition_key"), None).await?;
@@ -986,6 +1043,12 @@ impl ContainerClient {
     /// ```
     ///
     /// See [`PartitionKey`](crate::PartitionKey) for more information on how to specify a partition key, and [`Query`] for more information on how to specify a query.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the query cannot be serialized or its execution
+    /// plan cannot be created. Subsequent fetch and deserialization errors
+    /// appear as items in the returned stream.
     pub async fn query_items<T: DeserializeOwned + Send + 'static>(
         &self,
         query: impl Into<Query>,
@@ -1165,6 +1228,11 @@ impl ContainerClient {
     /// # Ok(())
     /// # }
     /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the change feed plan cannot be created. Subsequent
+    /// fetch and deserialization errors appear as pages in the returned stream.
     pub async fn query_change_feed<T: DeserializeOwned + Send + 'static>(
         &self,
         scope: FeedScope,
@@ -1271,6 +1339,11 @@ impl ContainerClient {
     /// * Maximum 100 operations per batch
     /// * Maximum payload size is 2 MB
     /// * All operations must target the same partition key
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if batch operations cannot be serialized or the batch
+    /// request fails. Inspect [`BatchResponse`] for individual operation outcomes.
     pub async fn execute_transactional_batch(
         &self,
         batch: TransactionalBatch,
@@ -1296,7 +1369,15 @@ impl ContainerClient {
         ))
     }
 
-    /// Gets the feed ranges for this container.
+    /// Returns the feed ranges for this container's physical partitions.
+    ///
+    /// Set [`ReadFeedRangesOptions::with_force_refresh()`](crate::options::ReadFeedRangesOptions::with_force_refresh)
+    /// to refresh the cached routing map.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the routing map cannot be resolved or a range cannot
+    /// be converted into a [`FeedRange`].
     pub async fn read_feed_ranges(
         &self,
         options: Option<ReadFeedRangesOptions>,
@@ -1341,6 +1422,12 @@ impl ContainerClient {
     ///
     /// Full keys return a single-element `Vec`. Prefix keys on MultiHash
     /// containers return one or more feed ranges.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the key has no components, has more components
+    /// than the container's partition key definition, specifies a prefix for
+    /// a non-hierarchical key, or its ranges cannot be resolved.
     pub async fn feed_range_from_partition_key(
         &self,
         partition_key: impl Into<PartitionKey>,

@@ -1,33 +1,27 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Conditional request types built on top of [`Etag`].
+//! ETag-based request conditions.
 
 use azure_core::http::Etag;
 
 /// Conditional request options based on ETag values.
 ///
 /// Used for optimistic concurrency control on write operations.
-/// Exactly one condition must be specified - either `IfMatch` or `IfNoneMatch`.
+/// Select [`IfMatch`](Self::IfMatch) or [`IfNoneMatch`](Self::IfNoneMatch)
+/// when constructing a conditional operation.
 ///
-/// # Variants
-///
-/// - [`IfMatch`](Self::IfMatch): Operation succeeds only if the resource's current ETag matches.
-///   Used for "update if unchanged" semantics (optimistic concurrency).
-/// - [`IfNoneMatch`](Self::IfNoneMatch): Operation succeeds only if the resource's current ETag
-///   does NOT match. Use `Etag::from("*")` for "create if not exists" semantics.
-///
-/// # Example
+/// # Examples
 ///
 /// ```
 /// use azure_core::http::Etag;
 /// use azure_data_cosmos_driver::models::Precondition;
 ///
 /// // Update only if the resource hasn't changed (optimistic concurrency)
-/// let condition = Precondition::if_match(Etag::from("\"abc123\""));
+/// let update_condition = Precondition::if_match(Etag::from("\"abc123\""));
 ///
 /// // Create only if the resource doesn't exist
-/// let condition = Precondition::if_none_match(Etag::from("*"));
+/// let create_condition = Precondition::if_none_match(Etag::from("*"));
 /// ```
 #[non_exhaustive]
 #[derive(Clone, Debug, PartialEq, Eq)]

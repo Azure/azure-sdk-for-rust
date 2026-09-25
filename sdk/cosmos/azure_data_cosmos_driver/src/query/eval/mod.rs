@@ -55,18 +55,9 @@ use crate::query::common::{
     Params,
 };
 
-/// Check if a JSON document matches a query's WHERE clause.
+/// Checks whether a JSON document matches a query's WHERE clause.
 ///
-/// # Examples
-///
-/// ```ignore
-/// use azure_data_cosmos_driver::query::{parse, eval};
-/// let p = parse("SELECT * FROM c WHERE c.age > 21").unwrap();
-/// let doc = serde_json::json!({"age": 30});
-/// assert!(eval::matches_query(&doc, &p.query, &[]).unwrap());
-/// let doc2 = serde_json::json!({"age": 18});
-/// assert!(!eval::matches_query(&doc2, &p.query, &[]).unwrap());
-/// ```
+/// A query without a WHERE clause matches every document.
 pub fn matches_query(
     document: &serde_json::Value,
     query: &SqlQuery,
@@ -743,22 +734,8 @@ fn eval_where(
 /// Supports WHERE filtering, SELECT projection, TOP/OFFSET/LIMIT,
 /// ORDER BY, GROUP BY with aggregates, and intra-document JOINs.
 ///
-/// # Examples
-///
-/// ```ignore
-/// use azure_data_cosmos_driver::query::eval;
-/// let docs = vec![
-///     serde_json::json!({"name": "Alice", "age": 30}),
-///     serde_json::json!({"name": "Bob", "age": 20}),
-/// ];
-/// let results = eval::query_documents(
-///     "SELECT c.name FROM c WHERE c.age > 21",
-///     &[],
-///     &docs,
-/// ).unwrap();
-/// assert_eq!(results.len(), 1);
-/// assert_eq!(results[0]["name"], "Alice");
-/// ```
+/// Returns the resulting documents in query order. Query parameters are
+/// supplied as `(name, value)` pairs without the leading `@`.
 pub fn query_documents(
     sql: &str,
     parameters: &Params,

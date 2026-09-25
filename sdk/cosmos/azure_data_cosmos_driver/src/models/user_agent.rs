@@ -25,13 +25,8 @@ const MAX_USER_AGENT_LENGTH: usize = 255;
 /// (.NET `UserAgentFeatureFlags`, Java `UserAgentFeatureFlags`). Do not
 /// renumber existing bits — only append new ones.
 ///
-/// # Example
-///
-/// ```ignore
-/// let flags = UserAgentFeatureFlags::PER_PARTITION_CIRCUIT_BREAKER
-///     | UserAgentFeatureFlags::HTTP2;
-/// assert_eq!(flags.to_string(), "|F12"); // 0x2 | 0x10 == 0x12
-/// ```
+/// For example, the circuit-breaker (`0x2`) and HTTP/2 (`0x10`) flags
+/// together produce `|F12`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub(crate) struct UserAgentFeatureFlags(u32);
 

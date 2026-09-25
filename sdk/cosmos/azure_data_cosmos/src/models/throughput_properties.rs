@@ -10,6 +10,10 @@ use crate::models::SystemProperties;
 
 const OFFER_VERSION_2: &str = "V2";
 
+/// Throughput configuration returned for a database or container offer.
+///
+/// Use [`manual()`](Self::manual) or [`autoscale()`](Self::autoscale)
+/// to configure throughput when creating a resource.
 #[derive(Clone, SafeDebug, Deserialize, Serialize)]
 #[safe(true)]
 #[serde(rename_all = "camelCase")]
@@ -28,6 +32,7 @@ pub struct ThroughputProperties {
 }
 
 impl ThroughputProperties {
+    /// Configures provisioned manual throughput in request units per second (RU/s).
     pub fn manual(throughput: u64) -> ThroughputProperties {
         ThroughputProperties {
             resource: String::new(),
@@ -43,6 +48,10 @@ impl ThroughputProperties {
         }
     }
 
+    /// Configures autoscale throughput with a starting maximum in RU/s.
+    ///
+    /// `increment_percent` sets an optional automatic maximum-throughput
+    /// increase percentage.
     pub fn autoscale(
         starting_maximum_throughput: u64,
         increment_percent: Option<u32>,
@@ -68,14 +77,17 @@ impl ThroughputProperties {
         }
     }
 
+    /// Returns manual provisioned throughput in RU/s, if configured.
     pub fn throughput(&self) -> Option<u64> {
         self.offer.offer_throughput
     }
 
+    /// Returns the autoscale maximum throughput in RU/s, if configured.
     pub fn autoscale_maximum(&self) -> Option<u64> {
         Some(self.offer.offer_autopilot_settings.as_ref()?.max_throughput)
     }
 
+    /// Returns the automatic maximum-throughput increase percentage, if configured.
     pub fn autoscale_increment(&self) -> Option<u32> {
         Some(
             self.offer

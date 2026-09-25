@@ -26,9 +26,9 @@ use crate::options::ConnectionPoolOptions;
 
 /// An HTTP client that intercepts all requests and serves them from an in-memory store.
 ///
-/// Implements [`azure_core::http::HttpClient`], replacing the real HTTP transport
-/// at the bottom of the pipeline stack. The full operation pipeline (endpoint resolution,
-/// session routing, retry, failover, diagnostics) executes normally above this layer.
+/// Use [`runtime_builder()`](Self::runtime_builder) to replace HTTP transport
+/// in the driver pipeline. Endpoint resolution, session routing, retries,
+/// failover, and diagnostics still run.
 ///
 /// # Tokio runtime requirement
 ///
@@ -71,18 +71,21 @@ impl InMemoryEmulatorHttpClient {
         self
     }
 
-    /// Creates a `CosmosDriverRuntimeBuilder` pre-configured to use this emulator
+    /// Creates a [`CosmosDriverRuntimeBuilder`](crate::driver::CosmosDriverRuntimeBuilder)
+    /// configured to use this emulator
     /// as the HTTP transport for all requests.
     ///
     /// This enables end-to-end testing through the full driver pipeline
     /// (endpoint resolution, session routing, retry, failover, diagnostics)
     /// with all HTTP I/O replaced by the in-memory store.
     ///
-    /// # Example
+    /// # Examples
     ///
-    /// ```no_run
+    /// ```rust,no_run
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
-    /// use azure_data_cosmos_driver::in_memory_emulator::*;
+    /// use azure_data_cosmos_driver::in_memory_emulator::{
+    ///     InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
+    /// };
     /// use azure_data_cosmos_driver::models::AccountReference;
     /// use azure_data_cosmos_driver::options::DriverOptions;
     /// use url::Url;
@@ -98,7 +101,7 @@ impl InMemoryEmulatorHttpClient {
     ///     Url::parse("https://eastus.emulator.local").unwrap(),
     ///     "emulator-key",
     /// );
-    /// let driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
+    /// let _driver = runtime.create_driver(DriverOptions::builder(account).build()).await?;
     /// # Ok(())
     /// # }
     /// ```
@@ -109,15 +112,11 @@ impl InMemoryEmulatorHttpClient {
         crate::driver::CosmosDriverRuntimeBuilder::new().with_http_client_factory(factory)
     }
 
-    /// Like [`Self::runtime_builder`] but composes the emulator factory with
-    /// a `FaultInjectingHttpClientFactory` so the supplied
+    /// Creates a runtime builder that evaluates the supplied
     /// [`FaultInjectionRule`](crate::fault_injection::FaultInjectionRule)s
-    /// evaluate on every outbound request before reaching the emulator.
+    /// before requests reach the emulator.
     ///
-    /// Used by hedging integration tests to inject region-targeted delays
-    /// and error statuses without standing up a real network harness.
-    /// Rules are evaluated lowest-index first; see
-    /// [`crate::fault_injection`] for the rule-construction surface.
+    /// Rules are evaluated in vector order, starting at index zero.
     #[cfg(feature = "fault_injection")]
     pub fn runtime_builder_with_fault_rules(
         self: &Arc<Self>,
@@ -144,10 +143,16 @@ impl std::fmt::Debug for InMemoryEmulatorHttpClient {
 }
 
 impl InMemoryEmulatorHttpClient {
-    /// Dispatches a request against the in-memory store and returns the
-    /// emulated response. Inherent method (no longer implements
-    /// `azure_core::HttpClient`) so the entire emulator pipeline can
-    /// surface typed [`crate::error::CosmosError`] values directly.
+    /// Dispatches a request against the in-memory store and returns its response.
+    ///
+    /// An attached [`RequestObserver`] sees the request before dispatch.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`CosmosError`](crate::error::CosmosError) when the request
+    /// cannot reach its target, such as an offline region, or when response
+    /// construction fails. Service-level failures are represented by HTTP
+    /// error responses.
     pub async fn execute_request(
         &self,
         request: &Request,

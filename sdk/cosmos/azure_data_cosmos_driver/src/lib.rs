@@ -5,23 +5,6 @@
 // Nightly sanitizer builds need deeper trait evaluation for container-recreation futures.
 #![cfg_attr(fuzzing, recursion_limit = "256")]
 
-//! Azure Cosmos DB Driver - Core Implementation Layer
-//!
-//! This crate provides the core transport, routing, and protocol handling for Azure Cosmos DB.
-//! It is designed to be reused across multiple language SDKs.
-//!
-//! # Support Model
-//!
-//! This crate has a **public API** but receives **community/GitHub support only** (no 24x7 Microsoft Support).
-//! For production Rust applications, use [`azure_data_cosmos`](https://docs.rs/azure_data_cosmos) instead,
-//! which provides full Microsoft support.
-//!
-//! # Schema-Agnostic Design
-//!
-//! The driver is intentionally ignorant of document/item schemas. Data plane operations accept
-//! raw bytes (`&[u8]`) and return buffered responses (`Vec<u8>`). Serialization is handled by
-//! the consuming SDK in its native language.
-
 pub mod binary_json;
 pub mod diagnostics;
 pub mod driver;

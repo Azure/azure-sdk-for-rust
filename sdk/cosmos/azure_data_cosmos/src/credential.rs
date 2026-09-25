@@ -12,14 +12,14 @@ use azure_core::credentials::Secret;
 
 /// Authentication credential for connecting to a Cosmos DB account.
 ///
-/// Either key-based authentication using a master key, or token-based
-/// authentication using an Azure credential (e.g., managed identity, service principal).
+/// Use an Azure token credential (for example, managed identity or a service
+/// principal), or enable `key_auth` to authenticate with an account key.
 ///
 /// # Examples
 ///
-/// Using Entra ID (Azure AD) authentication:
+/// Using Microsoft Entra ID authentication:
 ///
-/// ```rust,no_run
+/// ```rust
 /// use azure_data_cosmos::CosmosCredential;
 /// use std::sync::Arc;
 ///
@@ -28,13 +28,19 @@ use azure_core::credentials::Secret;
 /// let credential: CosmosCredential = credential.into();
 /// ```
 ///
-/// Using key authentication (requires `key_auth` feature):
+/// Using key authentication (requires the `key_auth` feature):
 ///
-/// ```rust,no_run,ignore
+/// ```rust
+/// # #[cfg(feature = "key_auth")]
+/// # fn main() {
 /// use azure_data_cosmos::CosmosCredential;
 /// use azure_core::credentials::Secret;
 ///
 /// let credential: CosmosCredential = Secret::from("my_account_key").into();
+/// # let _ = credential;
+/// # }
+/// # #[cfg(not(feature = "key_auth"))]
+/// # fn main() {}
 /// ```
 #[derive(Clone, SafeDebug)]
 #[non_exhaustive]

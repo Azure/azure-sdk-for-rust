@@ -5,7 +5,7 @@
 
 use azure_data_cosmos_driver::options::OperationOptions;
 
-/// Options to be passed to operations related to Throughput offers.
+/// Options for reading or replacing throughput offers.
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct ThroughputOptions {

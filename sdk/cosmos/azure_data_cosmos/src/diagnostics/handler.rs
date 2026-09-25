@@ -10,9 +10,7 @@
 //! [`DiagnosticsHandler`]s, and the SDK invokes them — in registration order —
 //! exactly once per operation at completion.
 //!
-//! The surface is deliberately small, additive, and swappable (Cosmos-local for
-//! now; a candidate for promotion into `azure_core` later). Built-in handlers
-//! (metrics, tracing, sampled logging) are layered on top in separate modules.
+//! Built-in handlers provide metrics, tracing, and sampled logging.
 
 use std::fmt;
 use std::sync::Arc;
@@ -25,8 +23,8 @@ use crate::diagnostics::DiagnosticsContext;
 /// [`DiagnosticsHandler::on_client_created`] when a
 /// [`CosmosClient`](crate::CosmosClient) is constructed.
 ///
-/// Carries only the account-level coordinates a handler needs to key
-/// client-scoped telemetry; it deliberately exposes no credential material.
+/// Contains the account endpoint's host and optional non-default port, but no
+/// credential material.
 #[derive(Clone, Debug)]
 pub struct CosmosClientInfo {
     server_address: Option<String>,
@@ -70,10 +68,8 @@ impl CosmosClientInfo {
 /// client's shared state, so it is dropped once the [`CosmosClient`](crate::CosmosClient)
 /// and every client derived from it (database, container) have been dropped.
 ///
-/// Handlers use this to keep client-scoped state — such as the
-/// `azure.cosmosdb.client.active_instance.count` up-down counter — balanced
-/// without tying that state to the handler object's own lifetime (a single
-/// handler may be registered on many clients, or on none).
+/// Use the token to track client-scoped state independently of the handler's
+/// lifetime; a handler may be shared across clients.
 pub struct ClientLifetimeToken {
     on_drop: Option<Box<dyn FnOnce() + Send + Sync>>,
 }
@@ -109,9 +105,8 @@ impl fmt::Debug for ClientLifetimeToken {
 /// A sink that consumes a completed [`DiagnosticsContext`] for a single Cosmos
 /// operation.
 ///
-/// Handlers are the SDK's emission extension point: the driver produces the
-/// context and the handler decides what telemetry (metrics, spans, logs, …) to
-/// emit from it. [`handle`](DiagnosticsHandler::handle) is called once per
+/// A handler decides what telemetry (metrics, spans, or logs) to emit from the
+/// context. [`handle()`](DiagnosticsHandler::handle) is called once per
 /// operation, after the operation has completed, with the finalized context.
 ///
 /// Implementations must be cheap and non-blocking — they run on the operation's
@@ -162,9 +157,8 @@ pub trait DiagnosticsHandler: Send + Sync {
     /// database/container client derived from it — has been dropped; return
     /// `None` (the default) when the handler does not track client lifetimes.
     ///
-    /// This is the seam for client-scoped telemetry. A handler object may be
-    /// shared across several clients or registered on none, so its own lifetime
-    /// is not a proxy for a live client; this hook and the returned token are.
+    /// A handler object can be shared across several clients, so use the
+    /// returned token rather than the handler's lifetime to track a client.
     ///
     /// * `client` - Account-level identity of the newly created client.
     fn on_client_created(&self, client: &CosmosClientInfo) -> Option<ClientLifetimeToken> {

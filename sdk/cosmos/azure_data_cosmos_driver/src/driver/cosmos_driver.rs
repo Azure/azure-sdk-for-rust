@@ -1960,11 +1960,7 @@ impl CosmosDriver {
 
     /// Returns the User-Agent stamped on every request this driver issues.
     ///
-    /// When the driver was constructed with no
-    /// [`DriverOptions::user_agent_suffix()`] override, this returns a clone of
-    /// the runtime's `Arc<UserAgent>` — drivers built from the same runtime
-    /// without an override share one `UserAgent` allocation. Otherwise this
-    /// returns the driver's freshly-computed `UserAgent`.
+    /// The value reflects any driver-level suffix or feature overrides.
     pub fn user_agent(&self) -> &Arc<UserAgent> {
         &self.user_agent
     }
@@ -2125,6 +2121,11 @@ impl CosmosDriver {
     /// [`CosmosDriverRuntime::create_driver`](crate::CosmosDriverRuntime::create_driver).
     /// Callers may invoke it again to retry if the initial attempt failed
     /// (the result is idempotent).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if account metadata cannot be fetched or the transport
+    /// cannot be created.
     pub async fn initialize(&self) -> crate::error::Result<()> {
         let account = self.options.account();
         let account_endpoint = AccountEndpoint::from(account);
@@ -2193,6 +2194,8 @@ impl CosmosDriver {
     /// and caches them. When partition topology mode is
     /// [`Eager`](PartitionTopologyCacheMode::Eager), this also loads the complete
     /// partition key range map.
+    ///
+    /// # Errors
     ///
     /// Returns an error if the container or its eagerly loaded topology cannot
     /// be resolved.
@@ -2501,40 +2504,28 @@ impl CosmosDriver {
 
     /// Executes a Cosmos DB operation.
     ///
-    /// This method executes an operation by planning it first and then immediately
-    /// executing one page. This is sufficient for operations with trivial plans,
-    /// such as point operations and single-partition queries.
-    /// However, if planning is complicated and multiple pages are going to be requested,
-    /// in that case, the caller should use the [`plan_operation`](Self::plan_operation)
-    /// method to build a [`OperationPlan`] and then call [`execute_plan`](Self::execute_plan)
-    /// for each page of the plan.
-    /// Retaining the [`OperationPlan`] allows the caller to resume execution from a
-    /// previous page, maintaining all state, and avoiding unnecessary replanning
-    /// and continuation token management.
+    /// Plans and executes one page. For multi-page operations, use
+    /// [`plan_operation()`](Self::plan_operation) and retain its [`OperationPlan`]
+    /// across calls to [`execute_plan()`](Self::execute_plan).
     ///
-    /// # Parameters
+    /// `options` override driver and runtime defaults.
     ///
-    /// - `operation`: The operation to execute.
-    /// - `options`: Operation-specific options that override driver and runtime defaults.
-    ///
-    /// # Returns
+    /// # Return value
     ///
     /// Returns `Ok(Some(response))` when a page of results is produced, or
     /// `Ok(None)` when the pipeline is fully drained (no more pages).
     ///
     /// # Errors
     ///
-    /// Returns an error if:
-    /// - The driver has not been initialized
-    /// - Planning fails (e.g. invalid operation target, backend query plan error)
-    /// - The HTTP request fails
+    /// Returns an error if the driver is uninitialized, planning fails, or the
+    /// request fails.
     ///
-    /// # Example
+    /// # Examples
     ///
-    /// ```no_run
+    /// ```rust,no_run
     /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
-    /// use azure_data_cosmos_driver::options::{OperationOptions, OperationOptionsBuilder, ContentResponseOnWrite};
-    /// use azure_data_cosmos_driver::models::AccountReference;
+    /// use azure_data_cosmos_driver::options::OperationOptions;
+    /// use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation, DatabaseReference};
     /// use url::Url;
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
@@ -2549,12 +2540,12 @@ impl CosmosDriver {
     ///     .create_driver(azure_data_cosmos_driver::options::DriverOptions::builder(account).build())
     ///     .await?;
     ///
-    /// // Point operation: plan and execute in one call.
-    /// let options = OperationOptionsBuilder::new()
-    ///     .with_content_response_on_write(ContentResponseOnWrite::Disabled)
-    ///     .build();
-    ///
-    /// // let result = driver.execute_operation(operation, options, None).await?;
+    /// let database = DatabaseReference::from_name(driver.account().clone(), "mydb");
+    /// let response = driver.execute_operation(
+    ///     CosmosOperation::read_database(database),
+    ///     OperationOptions::default(),
+    /// ).await?;
+    /// assert!(response.is_some());
     /// # Ok(())
     /// # }
     /// ```
@@ -2888,8 +2879,18 @@ impl CosmosDriver {
 
     /// Executes a singleton operation (operations which return only a single result).
     ///
-    /// This is a convenience method around [`execute_operation`](CosmosDriver::execute_operation) that asserts at debug-time that the operation
-    /// does not return an empty page.
+    /// Use this for non-feed operations that must return one response. It
+    /// delegates to [`execute_operation()`](Self::execute_operation).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if execution fails. In release builds, an empty page
+    /// also returns an error.
+    ///
+    /// # Panics
+    ///
+    /// In debug builds, passing a feed operation or receiving an empty page
+    /// causes a panic.
     pub async fn execute_singleton_operation(
         &self,
         operation: CosmosOperation,
@@ -2919,6 +2920,13 @@ impl CosmosDriver {
     }
 
     /// Executes a preview distributed transaction through the Gateway coordinator.
+    ///
+    /// Requires the `preview_dtx` feature.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for an empty transaction, invalid request body, or
+    /// failed coordinator request.
     #[cfg(feature = "preview_dtx")]
     pub async fn execute_distributed_transaction(
         &self,
@@ -3102,35 +3110,22 @@ impl CosmosDriver {
 
     /// Executes a single page of a pre-planned operation using the given plan and options.
     ///
-    /// This function mutates the plan in place to account for any changes that occur during execution
-    /// (e.g. topology repairs, advancing page state, etc.).
-    /// After this returns, the plan may be executed again to fetch the next page of results, if any.
-    /// Once this returns `None`, there are no more pages to fetch, and the operation is complete.
+    /// Advances `plan` in place. Call again for the next page until it returns
+    /// `Ok(None)`. A successful page returns `Ok(Some(response))`.
     ///
     /// # Binary encoding
     ///
-    /// This is the single choke point for
-    /// [`BinaryEncodingOptions::request_text_response`](crate::options::BinaryEncodingOptions):
-    /// every operation the driver runs — point ops, queries, and change feed
-    /// alike — funnels through here, so the "binary wire, text payload" contract
-    /// holds uniformly rather than per operation type. Transcoding a body that
-    /// is already text is a refcount clone, so plans that never negotiated
-    /// binary (change feed, or binary disabled) pay nothing.
-    ///
-    /// The decision comes from the **plan**, not from `options`. Binary
-    /// encoding is fixed when the plan is built, so changing
-    /// `request_text_response` in the `options` passed to a later page has no
-    /// effect: the request header is already sent and the pipeline nodes are
-    /// already built to emit one encoding. To switch, build a new plan.
+    /// The plan fixes the response encoding. Changing
+    /// [`BinaryEncodingOptions::request_text_response`](crate::options::BinaryEncodingOptions)
+    /// in `options` on a later page doesn't change the returned encoding;
+    /// build a new plan to change it.
     ///
     /// # Errors
     ///
-    /// Once a page has advanced the plan without reaching the caller — a
-    /// response body that failed to transcode to text — the plan is spent, and
-    /// every later call fails with
+    /// Returns an error if the driver is uninitialized or a request fails.
+    /// If a page cannot be delivered after the plan advances (for example, if
+    /// response transcoding fails), every later call fails with
     /// [`SERIALIZATION_RESPONSE_BODY_INVALID`](crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID).
-    /// Returning the following page instead would hand back the page *after*
-    /// the one that was lost, with nothing to signal the gap.
     pub async fn execute_plan(
         &self,
         plan: &mut OperationPlan,
@@ -3762,14 +3757,14 @@ impl CosmosDriver {
     /// [`PartitionTopologyCacheMode::Lazy`] only as a compatibility escape
     /// hatch when container-resolution I/O cannot yet be tolerated.
     ///
-    /// # Parameters
+    /// # Errors
     ///
-    /// - `db_name`:  Name of the database.
-    /// - `container_name`: Name of the container.
+    /// Returns an error if the container metadata or, in eager mode, its
+    /// partition topology cannot be loaded.
     ///
-    /// # Example
+    /// # Examples
     ///
-    /// ```no_run
+    /// ```rust,no_run
     /// use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
     /// use azure_data_cosmos_driver::models::{
     ///     AccountReference, CosmosOperation, ItemReference, PartitionKey,
@@ -3787,12 +3782,10 @@ impl CosmosDriver {
     ///     .create_driver(azure_data_cosmos_driver::options::DriverOptions::builder(account).build())
     ///     .await?;
     ///
-    /// // Resolve the container and eagerly load its partition topology.
     /// let container = driver.resolve_container("mydb", "mycontainer", OperationOptions::default()).await?;
     ///
-    /// // Use the resolved container for item operations
     /// let item = ItemReference::from_name(&container, PartitionKey::from("pk1"), "doc1");
-    /// let result = driver
+    /// let _response = driver
     ///     .execute_singleton_operation(CosmosOperation::read_item(item), OperationOptions::default())
     ///     .await?;
     /// # Ok(())
@@ -3810,10 +3803,13 @@ impl CosmosDriver {
 
     /// Resolves a container by database name and container name.
     ///
-    /// Attempts to resolve from `ContainerCache` first. On cache miss, fetches
-    /// metadata from the service and populates the cache. In eager topology
-    /// mode, resolution also primes this driver's partition topology cache and
-    /// fails if no valid routing map can be loaded.
+    /// Uses cached metadata when available; otherwise fetches it from the
+    /// service. In eager topology mode, also loads the partition key ranges.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if container metadata or eager partition topology
+    /// cannot be loaded.
     pub async fn resolve_container_by_name(
         &self,
         db_name: &str,
@@ -3854,12 +3850,14 @@ impl CosmosDriver {
 
     /// Resolves a container by its RID.
     ///
-    /// Attempts to resolve from `ContainerCache` (by-RID index) first. On a cache
-    /// miss, fetches metadata from the service addressing the container by RID and
-    /// populates the cache. In eager topology mode, resolution also primes this
-    /// driver's partition topology cache and fails if no valid routing map can be
-    /// loaded. The returned [`ContainerReference`] is RID-addressed (it carries no
-    /// database name).
+    /// Uses cached metadata when available; otherwise fetches it from the
+    /// service. The returned [`ContainerReference`] is RID-addressed and has no
+    /// database name. In eager topology mode, also loads partition key ranges.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if container metadata or eager partition topology
+    /// cannot be loaded.
     pub async fn resolve_container_by_rid(
         &self,
         container_rid: &str,
@@ -3930,25 +3928,30 @@ impl CosmosDriver {
 
     /// Plans the execution of a Cosmos DB operation.
     ///
-    /// For trivial operations (non-query or single-partition), returns a
-    /// singleton pipeline immediately. For cross-partition queries, fetches a
-    /// query plan from the backend and builds a fan-out pipeline.
+    /// For point operations and single-partition queries, builds a single-request
+    /// plan. For cross-partition queries, obtains a query plan and builds a
+    /// partitioned pipeline.
     ///
     /// `continuation` optionally provides resume state from a prior call. Two
     /// kinds of tokens are accepted:
     ///
-    /// - SDK-issued tokens (`c1.…`) carry a serialized snapshot of the
-    ///   previous pipeline's state and can resume any operation.
-    /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
-    ///   for trivial operations; passing one to a cross-partition query
-    ///   returns a `Client`-shaped error.
+    /// - SDK-issued tokens (`c1.…`) resume queries or change feeds from a
+    ///   previous [`OperationPlan::to_continuation_token()`].
+    /// - Opaque server-issued tokens (no `c<N>.` prefix) work only for
+    ///   single-request plans, not cross-partition queries.
     ///
-    /// `plan_options` shapes the plan itself — today, the maximum fan-out a
-    /// *fresh* cross-partition operation may produce. A fresh plan exceeding
+    /// `plan_options` limits the maximum fan-out of a new cross-partition plan.
+    /// A new plan exceeding
     /// [`PlanOptions::max_fan_out`] is rejected with
     /// [`CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED`](crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED).
-    /// Resuming from a `continuation` skips the check — the caller already
-    /// opted in when the operation was first planned.
+    /// Resuming from `continuation` skips the fan-out check.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation is invalid, a continuation token
+    /// cannot be resumed, query planning fails, or the fresh plan exceeds the
+    /// configured fan-out limit. Unresolved PATCH operations must instead use
+    /// [`execute_operation()`](Self::execute_operation).
     pub async fn plan_operation(
         &self,
         operation: CosmosOperation,

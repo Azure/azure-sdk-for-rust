@@ -4,7 +4,7 @@
 #![doc = include_str!("../README.md")]
 #![warn(missing_docs)]
 
-//! Procedural macros for the Azure Cosmos DB SDK hierarchical configuration model.
+//! Derive support for layered Azure Cosmos DB SDK configuration options.
 
 mod builder;
 mod env;
@@ -18,51 +18,55 @@ type Result<T> = ::std::result::Result<T, syn::Error>;
 
 /// Derives layered configuration boilerplate for Cosmos DB option group structs.
 ///
-/// Generates a View struct, a Builder type, a `Default` implementation, and,
-/// if any fields have `#[option(env = "...")]`, `from_env()`/`from_env_vars()`
-/// constructors for loading from environment variables.
+/// Derive this macro on a struct with named `Option<T>` fields. It generates
+/// `{Name}View` for resolving values across layers, `{Name}Builder` for
+/// constructing the struct, and `Default` with every field set to `None`.
+/// Fields with `#[option(env = "...")]` also enable `from_env()` and
+/// `from_env_vars()` constructors. Explicit layers override environment values
+/// in the order given below; the last layer has the highest priority.
 ///
-/// # Struct-Level Attributes
+/// # Struct-level attributes
 ///
 /// - `#[options(layers(runtime, account, operation))]` — declares which layers
-///   this option group participates in.
-/// - `#[options(env_only)]` — generates only the `from_env()`/`from_env_vars()`
-///   constructors (no View, Builder, or `Default`), so an existing type — such
-///   as a hand-written builder — can double as its own environment-variable
-///   source. Mutually exclusive with `layers(...)`; requires at least one
+///   this option group participates in, in increasing priority. Use any
+///   nonempty subset in this order.
+/// - `#[options(env_only)]` — generates only `from_env()` and `from_env_vars()`
+///   on an existing struct; it does not generate a view, builder, or `Default`.
+///   It cannot be combined with `layers(...)` and requires at least one
 ///   `#[option(env = "...")]` field.
 ///
-/// # Field-Level Attributes
+/// # Field-level attributes
 ///
 /// - `#[option(env = "AZURE_COSMOS_...")]` — enables environment variable loading.
 /// - `#[option(env = "AZURE_COSMOS_...", overridable)]` — additionally recognizes a
-///   `{ENV}_OVERRIDE` kill-switch variable that takes precedence over **every**
-///   layer (including operation). Generates `from_env_override()` and a
-///   top-priority `env_override` layer on the View (constructed via
-///   `new_with_override`). Requires `env`.
-/// - `#[option(merge = "extend")]` — uses additive merge instead of shadow semantics.
+///   `{ENV}_OVERRIDE` environment variable that takes precedence over every
+///   layer, including operation. Generates `from_env_override()` and
+///   `new_with_override()` on the view. Requires `env`.
+/// - `#[option(merge = "extend")]` — combines values from all layers rather
+///   than taking the highest-priority value.
 /// - `#[option(nested)]` — delegates resolution to a child View.
 /// - `#[option(env = "...", parser = path::to::fn)]` — parses the env var with a
 ///   custom `fn(&str) -> Option<T>` (where `T` is the field's inner type)
-///   instead of `FromStr`, supporting types like `Duration` read from a
-///   millisecond count. A `None` result is logged and ignored. Requires `env`.
+///   instead of `FromStr`. A `None` result is logged and ignored. Requires `env`.
 /// - `#[cfg(feature = "...")]` on a field also gates its generated builder
 ///   setter, view accessor, default value, and environment-variable loading.
 ///
-/// # Example
+/// # Examples
 ///
-/// ```ignore
+/// ```
+/// use azure_data_cosmos_macros::CosmosOptions;
+/// use std::sync::Arc;
+///
 /// #[derive(CosmosOptions)]
 /// #[options(layers(runtime, account, operation))]
 /// pub struct RequestOptions {
-///     #[option(env = "AZURE_COSMOS_CONSISTENCY_LEVEL")]
-///     pub consistency_level: Option<ConsistencyLevel>,
-///
-///     pub throughput_bucket: Option<usize>,
-///
-///     #[option(merge = "extend")]
-///     pub custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
+///     pub max_items: Option<u32>,
 /// }
+///
+/// let runtime = Arc::new(RequestOptionsBuilder::new().with_max_items(10).build());
+/// let operation = RequestOptionsBuilder::new().with_max_items(5).build();
+/// let view = RequestOptionsView::new(None, Some(runtime), None, Some(&operation));
+/// assert_eq!(view.max_items(), Some(&5));
 /// ```
 #[proc_macro_derive(CosmosOptions, attributes(options, option))]
 pub fn derive_cosmos_options(input: proc_macro::TokenStream) -> proc_macro::TokenStream {

@@ -5,9 +5,9 @@
 
 /// A Cosmos DB resource identifier (RID).
 ///
-/// RIDs are stable, Base64-encoded identifiers assigned by Cosmos DB. Unlike a
-/// user-provided name, a RID does not change when a resource is renamed, so it
-/// can be used to address a database or container regardless of its current name.
+/// Cosmos DB assigns this identifier to a resource. Unlike a user-provided
+/// name, it can be used to address a database or container by its RID.
+/// Constructing a [`ResourceId`] from a string does not validate the RID.
 ///
 /// Use [`ResourceId`] together with [`ResourceIdentity`] to obtain RID-addressed
 /// clients via [`CosmosClient::database_client`](crate::CosmosClient::database_client)
@@ -72,9 +72,7 @@ impl std::fmt::Display for ResourceId {
 /// hierarchy: a RID-addressed database yields only RID-addressed containers, and
 /// a name-addressed database yields only name-addressed containers.
 ///
-/// This type does not carry a lifetime parameter (per the repository's guidance
-/// against lifetimes in public types); converting from a borrowed `&str`
-/// allocates an owned copy.
+/// Converting from a borrowed `&str` copies the name into an owned string.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum ResourceIdentity {
