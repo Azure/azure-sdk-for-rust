@@ -410,6 +410,9 @@ impl CosmosFaultInjectionResult {
         if !self.probability.is_finite() || !(0.0..=1.0).contains(&self.probability) {
             return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
         }
+        if self.delay_ms < -1 || self.custom_sub_status < -1 || self.retry_after_ms < -1 {
+            return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
+        }
         let mut builder = FaultInjectionResultBuilder::new().with_probability(self.probability);
         if let Some(error_type) =
             CosmosFaultInjectionErrorType::from_i32(self.error_type)?.to_driver()
@@ -669,6 +672,33 @@ mod tests {
         // SAFETY: all pointer fields are valid for this call.
         assert_eq!(
             unsafe { rule.to_driver() }.unwrap_err(),
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
+        );
+    }
+
+    #[test]
+    fn result_signed_fields_reject_values_below_unset_sentinel() {
+        let mut result = cosmos_fault_injection_result_default();
+        result.delay_ms = -2;
+        // SAFETY: the default result contains no borrowed pointers.
+        assert_eq!(
+            unsafe { result.to_driver() }.unwrap_err(),
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
+        );
+
+        let mut result = cosmos_fault_injection_result_default();
+        result.custom_sub_status = -2;
+        // SAFETY: the default result contains no borrowed pointers.
+        assert_eq!(
+            unsafe { result.to_driver() }.unwrap_err(),
+            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
+        );
+
+        let mut result = cosmos_fault_injection_result_default();
+        result.retry_after_ms = -2;
+        // SAFETY: the default result contains no borrowed pointers.
+        assert_eq!(
+            unsafe { result.to_driver() }.unwrap_err(),
             CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
         );
     }
