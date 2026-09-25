@@ -28,6 +28,10 @@ use azure_data_cosmos_driver::options::{DriverOptions, DriverOptionsBuilder, Reg
 
 use crate::account_ref::AccountRefHandle;
 use crate::error::{CosmosErrorCode, CosmosStatusCode};
+use crate::fault_injection::{
+    decode_rules, CosmosFaultInjectionRecordHeader, CosmosFaultInjectionRule,
+    COSMOS_FAULT_INJECTION_ABI_VERSION_1,
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Built options handle
@@ -162,6 +166,30 @@ pub struct CosmosDriverOptionsConfig {
     pub operation_options: *const crate::op_request::CosmosOperationOptions,
 }
 
+/// Versioned driver-options record with native fault-injection rules.
+///
+/// The caller owns every pointer reachable from this record. The build call
+/// validates and copies all regions, operation options, rules, headers, and
+/// body bytes before returning; none of those input buffers need to outlive
+/// [`cosmos_driver_options_build_v2`].
+///
+/// `fault_injection_rules` is a strided array. For v1 records set
+/// `fault_injection_rule_stride` to `sizeof(cosmos_fault_injection_rule_t)`.
+/// A future larger rule record can be passed without changing this layout by
+/// increasing its own `struct_size` and the stride while retaining ABI version
+/// 1. A new ABI version is rejected until the native wrapper supports it.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct CosmosDriverOptionsConfigV2 {
+    pub header: CosmosFaultInjectionRecordHeader,
+    pub preferred_regions: *const CosmosStringView,
+    pub preferred_regions_len: usize,
+    pub operation_options: *const crate::op_request::CosmosOperationOptions,
+    pub fault_injection_rules: *const CosmosFaultInjectionRule,
+    pub fault_injection_rules_len: usize,
+    pub fault_injection_rule_stride: usize,
+}
+
 /// Returns an all-unset [`CosmosDriverOptionsConfig`] by value. The host
 /// mutates the fields it cares about and leaves the rest at their default
 /// sentinels.
@@ -171,6 +199,23 @@ pub extern "C" fn cosmos_driver_options_config_default() -> CosmosDriverOptionsC
         preferred_regions: std::ptr::null(),
         preferred_regions_len: 0,
         operation_options: std::ptr::null(),
+    }
+}
+
+/// Returns an all-unset versioned driver-options record.
+#[no_mangle]
+pub extern "C" fn cosmos_driver_options_config_v2_default() -> CosmosDriverOptionsConfigV2 {
+    CosmosDriverOptionsConfigV2 {
+        header: CosmosFaultInjectionRecordHeader {
+            struct_size: std::mem::size_of::<CosmosDriverOptionsConfigV2>(),
+            version: COSMOS_FAULT_INJECTION_ABI_VERSION_1,
+        },
+        preferred_regions: std::ptr::null(),
+        preferred_regions_len: 0,
+        operation_options: std::ptr::null(),
+        fault_injection_rules: std::ptr::null(),
+        fault_injection_rules_len: 0,
+        fault_injection_rule_stride: std::mem::size_of::<CosmosFaultInjectionRule>(),
     }
 }
 
@@ -250,6 +295,83 @@ pub extern "C" fn cosmos_driver_options_build(
     CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
 }
 
+/// Builds driver options from the versioned v2 record.
+///
+/// On success the returned handle owns Rust copies of every configured rule.
+/// The handle may be freed immediately after driver construction because the
+/// driver clones the rules' `Arc` ownership.
+#[no_mangle]
+pub extern "C" fn cosmos_driver_options_build_v2(
+    account: *const AccountRefHandle,
+    config: *const CosmosDriverOptionsConfigV2,
+    out_options: *mut *mut DriverOptionsHandle,
+) -> CosmosStatusCode {
+    if account.is_null()
+        || config.is_null()
+        || out_options.is_null()
+        || !config.is_aligned()
+        || !out_options.is_aligned()
+    {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
+    }
+    let Some(account_inner) = AccountRefHandle::from_ptr(account) else {
+        return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
+    };
+    // SAFETY: the caller supplies at least the size/version prefix.
+    let header = unsafe { (*config).header };
+    if header.version != COSMOS_FAULT_INJECTION_ABI_VERSION_1
+        || header.struct_size < std::mem::size_of::<CosmosDriverOptionsConfigV2>()
+    {
+        return CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code();
+    }
+    // SAFETY: the validated record size covers every v1 field.
+    let cfg = unsafe { &*config };
+    // SAFETY: caller contract on the region array pointer + length.
+    let regions =
+        match unsafe { decode_preferred_regions(cfg.preferred_regions, cfg.preferred_regions_len) }
+        {
+            Ok(regions) => regions,
+            Err(code) => return code.as_status_code(),
+        };
+    // SAFETY: caller contract on the strided rules and nested borrowed inputs.
+    let rules = match unsafe {
+        decode_rules(
+            cfg.fault_injection_rules,
+            cfg.fault_injection_rules_len,
+            cfg.fault_injection_rule_stride,
+        )
+    } {
+        Ok(rules) => rules,
+        Err(status) => return status,
+    };
+
+    let mut builder = DriverOptionsBuilder::new(account_inner.inner.clone());
+    if !regions.is_empty() {
+        builder = builder.with_preferred_regions(regions);
+    }
+    if !cfg.operation_options.is_null() {
+        // SAFETY: caller guarantees a valid operation-options record.
+        let operation_options = match unsafe { (*cfg.operation_options).to_driver() } {
+            Ok(options) => options,
+            Err(code) => return code.as_status_code(),
+        };
+        builder = builder.with_operation_options(operation_options);
+    }
+    if !rules.is_empty() {
+        builder = match builder.with_fault_injection_rules(rules) {
+            Ok(builder) => builder,
+            Err(error) => return CosmosStatusCode::from_driver_error(&error),
+        };
+    }
+
+    let handle = DriverOptionsHandle::into_raw(builder.build());
+    // SAFETY: caller guarantees one writable output pointer.
+    unsafe {
+        *out_options = handle;
+    }
+    CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -308,6 +430,102 @@ mod tests {
     #[test]
     fn lifecycle_null_safe() {
         cosmos_driver_options_free(ptr::null_mut());
+    }
+
+    #[test]
+    fn v2_build_copies_fault_rule_inputs() {
+        use crate::fault_injection::{
+            cosmos_fault_injection_condition_default, cosmos_fault_injection_result_default,
+            cosmos_fault_injection_rule_default, CosmosFaultInjectionOperationType,
+        };
+
+        let account = make_account();
+        let mut id = b"owned-rule".to_vec();
+        let mut container = b"items".to_vec();
+        let mut body = br#"{"code":"TooManyRequests"}"#.to_vec();
+        let mut condition = cosmos_fault_injection_condition_default();
+        condition.operation_type =
+            CosmosFaultInjectionOperationType::CosmosFaultInjectionOperationTypeReadItem as i32;
+        condition.container_id = view(&container);
+        let mut result = cosmos_fault_injection_result_default();
+        result.custom_status_code = 429;
+        result.custom_sub_status = 3200;
+        result.body = body.as_ptr();
+        result.body_len = body.len();
+        let mut rule = cosmos_fault_injection_rule_default();
+        rule.id = view(&id);
+        rule.condition = &condition;
+        rule.result = &result;
+        rule.hit_limit = 0;
+        let mut config = cosmos_driver_options_config_v2_default();
+        config.fault_injection_rules = &rule;
+        config.fault_injection_rules_len = 1;
+        let mut options = ptr::null_mut();
+        assert_eq!(
+            cosmos_driver_options_build_v2(account, &config, &mut options),
+            crate::error::COSMOS_STATUS_SUCCESS
+        );
+        assert!(!options.is_null());
+
+        id.fill(0);
+        container.fill(0);
+        body.fill(0);
+        drop(id);
+        drop(container);
+        drop(body);
+        let handle = DriverOptionsHandle::inner_arc(options).unwrap();
+        let rules = handle.inner.fault_injection_rules().unwrap();
+        assert_eq!(rules.len(), 1);
+        assert_eq!(rules[0].id(), "owned-rule");
+        assert_eq!(rules[0].condition().container_id(), Some("items"));
+        assert_eq!(rules[0].hit_limit(), Some(0));
+        assert_eq!(
+            rules[0].result().custom_response().unwrap().body(),
+            br#"{"code":"TooManyRequests"}"#
+        );
+
+        drop(handle);
+        cosmos_driver_options_free(options);
+        crate::account_ref::cosmos_account_ref_free(account);
+    }
+
+    #[test]
+    fn v2_build_rejects_duplicate_rule_ids_and_invalid_stride() {
+        use crate::fault_injection::{
+            cosmos_fault_injection_condition_default, cosmos_fault_injection_result_default,
+            cosmos_fault_injection_rule_default,
+        };
+
+        let account = make_account();
+        let id = b"duplicate";
+        let condition = cosmos_fault_injection_condition_default();
+        let mut result = cosmos_fault_injection_result_default();
+        result.error_type =
+            crate::fault_injection::CosmosFaultInjectionErrorType::CosmosFaultInjectionErrorTypeTimeout
+                as i32;
+        let mut rule = cosmos_fault_injection_rule_default();
+        rule.id = view(id);
+        rule.condition = &condition;
+        rule.result = &result;
+        let rules = [rule, rule];
+        let mut config = cosmos_driver_options_config_v2_default();
+        config.fault_injection_rules = rules.as_ptr();
+        config.fault_injection_rules_len = rules.len();
+        let mut options = ptr::null_mut();
+        assert_ne!(
+            cosmos_driver_options_build_v2(account, &config, &mut options),
+            crate::error::COSMOS_STATUS_SUCCESS
+        );
+        assert!(options.is_null());
+
+        config.fault_injection_rules_len = 1;
+        config.fault_injection_rule_stride = 1;
+        assert_eq!(
+            cosmos_driver_options_build_v2(account, &config, &mut options),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+        assert!(options.is_null());
+        crate::account_ref::cosmos_account_ref_free(account);
     }
 
     // ── Flat single-call construction (cosmos_driver_options_build) ──

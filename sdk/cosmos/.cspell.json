@@ -433,6 +433,7 @@
     "ssize",
     "staticlib",
     "stdlib",
+    "strided",
     "streamable",
     "subnormals",
     "subpartition",

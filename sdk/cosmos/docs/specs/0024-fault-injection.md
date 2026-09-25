@@ -7,7 +7,8 @@ Licensed under the MIT License.
 
 **Status:** Implemented — this document describes the framework as it exists in
 `azure_data_cosmos_driver` and `azure_data_cosmos` today.
-**Crates:** `azure_data_cosmos_driver` (canonical), `azure_data_cosmos` (facade)
+**Crates:** `azure_data_cosmos_driver` (canonical), `azure_data_cosmos` (facade),
+`azure_data_cosmos_driver_native` (flat C ABI)
 **Feature gate:** `fault_injection` (off by default in both crates)
 
 ---
@@ -67,9 +68,14 @@ and created a dual-state problem, because SDK and driver rules shared mutable
 state through `Arc` accessors. The rule for future work: **new fault-injection
 capability lands in the driver; the SDK only re-exports it.**
 
-The C ABI wrapper (`azure_data_cosmos_driver_native`) does not surface fault
-injection today — `with_fault_injection_rules` needs its own flat `#[repr(C)]`
-options struct, which has not been designed.
+**The native wrapper is a translation layer.**
+`azure_data_cosmos_driver_native` exposes additive, size/version-prefixed
+condition, result, and rule records through
+`cosmos_driver_options_config_v2_t` and `cosmos_driver_options_build_v2`.
+The v1 options layout remains unchanged. Native inputs are borrowed only for
+the build call and copied into canonical driver-owned rules; no Rust layout is
+exposed. The rule array is explicitly strided so future larger records can be
+added without changing the options record.
 
 [#4426]: https://github.com/Azure/azure-sdk-for-rust/pull/4426
 
@@ -341,4 +347,8 @@ Stated explicitly so the framework is not mistaken for something broader.
 - **Immutable after build**, except `enable`/`disable` and shared state (§7).
 - **Rule ordering is registration order**, with no explicit priority field;
   `Superseded` records exist so ordering mistakes are visible.
-- **No native (C ABI) surface** (§2).
+- **The native surface is construction-only.** It supports the driver's
+  operation/resource, region, container, and transport matchers and all
+  existing result/timing controls, but does not expose post-build rule handles
+  for `enable`/`disable`, shared activation state, hit-count inspection, or
+  diagnostics evaluation records.
