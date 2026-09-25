@@ -42,14 +42,11 @@ tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 uuid = { workspace = true, features = ["v4"] }
 
 [features]
-# The metrics and distributed_tracing handlers are feature-gated in
-# `azure_data_cosmos`; mirror those names here so the harness enables the exact
-# same code path it is validating. `fault_injection` exercises the "rich on
-# error" behavior. Those three are on by default so a bare `cargo run` registers
-# every built-in handler. `otlp` is opt-in because it pulls the gRPC stack.
-default = ["metrics", "distributed_tracing", "fault_injection", "otlp_rustls"]
-metrics = ["azure_data_cosmos/metrics"]
-distributed_tracing = ["azure_data_cosmos/distributed_tracing"]
+# Mirror the SDK's OpenTelemetry feature so the harness validates both handlers.
+# Fault injection exercises the "rich on error" behavior. Both are on by default
+# so a bare `cargo run` registers every built-in handler. `otlp` is opt-in.
+default = ["preview_opentelemetry", "fault_injection", "otlp_rustls"]
+preview_opentelemetry = ["azure_data_cosmos/preview_opentelemetry"]
 fault_injection = ["azure_data_cosmos/fault_injection"]
 otlp = [
   "opentelemetry-otlp/grpc-tonic",

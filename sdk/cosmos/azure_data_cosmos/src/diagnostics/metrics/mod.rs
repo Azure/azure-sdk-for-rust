@@ -1,19 +1,19 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! OpenTelemetry metrics for Cosmos DB operations (feature `metrics`).
+//! Metrics configuration and optional OpenTelemetry emission for Cosmos DB operations.
 //!
-//! This module provides [`CosmosMetricsHandler`], a
+//! With the `preview_opentelemetry` feature, this module provides
+//! `CosmosMetricsHandler`, a
 //! [`DiagnosticsHandler`](crate::diagnostics::DiagnosticsHandler) that maps each
 //! completed operation's [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)
 //! to OpenTelemetry metrics following the database-client semantic conventions.
 //!
-//! The whole module is compiled only when the `metrics` Cargo feature is
-//! enabled, so with the feature off there is no metrics code at all. With the
-//! feature on but no meter provider registered, OpenTelemetry's global meter is a
-//! no-op.
+//! The metrics options and attribute names remain available without the feature.
+//! With the feature on but no meter provider registered, OpenTelemetry's global
+//! meter is a no-op.
 //!
-//! Metrics are emitted through the [`opentelemetry`] metrics API.
+//! Metrics are emitted through the OpenTelemetry metrics API.
 //!
 //! # Emitted metrics
 //!
@@ -33,9 +33,12 @@
 
 pub mod attributes;
 
+#[cfg(feature = "preview_opentelemetry")]
 mod handler;
+#[cfg(feature = "preview_opentelemetry")]
 mod instruments;
 mod options;
 
+#[cfg(feature = "preview_opentelemetry")]
 pub use handler::CosmosMetricsHandler;
 pub use options::MetricsOptions;
