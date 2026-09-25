@@ -46,7 +46,7 @@ impl FeedScope {
     /// WARNING: Using a feed range that covers multiple partitions may result in a full scan of those partitions, which can be expensive and slow for large datasets. Use with caution.
     ///
     /// If the range originated from a logical partition, serializing or
-    /// stringifying it retains only effective bounds. Parsing it does not
+    /// converting it to a string retains only effective bounds. Parsing it does not
     /// restore the partition-key identity or logical routing semantics.
     pub fn range(fr: impl Into<FeedRange>) -> Self {
         Self::Range(fr.into())

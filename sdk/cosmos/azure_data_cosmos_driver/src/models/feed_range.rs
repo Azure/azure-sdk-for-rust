@@ -24,7 +24,7 @@ use crate::models::{partition_key_range::PartitionKeyRange, PartitionKeyDefiniti
 ///
 /// Use [`FeedRange::full()`] for the entire key space (`""..FF`).
 ///
-/// Serializing or stringifying a logical-partition range retains only its
+/// Serializing or converting a logical-partition range to a string retains only its
 /// effective bounds. Parsing or deserializing it does not restore the
 /// partition-key identity or logical routing semantics. Do not persist a
 /// single-partition feed range to recreate logical scope later; preserve the
