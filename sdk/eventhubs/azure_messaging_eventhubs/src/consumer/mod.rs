@@ -46,6 +46,7 @@ struct ConsumerClientOptions {
     custom_endpoint: Option<Url>,
     cbs_token_type: Option<&'static str>,
     transport: AmqpTransport,
+    idle_timeout: Option<Duration>,
 }
 
 impl ConsumerClient {
@@ -100,6 +101,7 @@ impl ConsumerClient {
                 options.application_id,
                 options.custom_endpoint,
                 options.transport,
+                options.idle_timeout,
                 credential,
                 retry_options,
                 options.cbs_token_type,
@@ -198,6 +200,7 @@ impl ConsumerClient {
                 custom_endpoint: None,
                 cbs_token_type: None,
                 transport: AmqpTransport::default(),
+                idle_timeout: None,
             },
         )
     }
@@ -642,6 +645,7 @@ pub mod builders {
         retry_options: Option<RetryOptions>,
         custom_endpoint: Option<String>,
         transport: Option<AmqpTransport>,
+        idle_timeout: Option<Duration>,
     }
 
     impl ConsumerClientBuilder {
@@ -726,10 +730,26 @@ pub mod builders {
             self
         }
 
+        /// Sets the AMQP connection idle timeout.
+        ///
+        /// The connection reports an idle timeout when it receives no AMQP frames
+        /// within this duration. Setting the timeout also advertises it to the
+        /// service so that the peers can negotiate heartbeats.
+        pub fn with_idle_timeout(mut self, idle_timeout: Duration) -> Self {
+            self.idle_timeout = Some(idle_timeout);
+            self
+        }
+
         /// Returns the AMQP transport this builder opens the connection with.
         /// Shared by every `open` path so they cannot drift apart.
         pub(crate) fn transport(&self) -> AmqpTransport {
             self.transport.unwrap_or_default()
+        }
+
+        /// Returns the AMQP connection idle timeout configured on this builder.
+        #[cfg(test)]
+        pub(crate) fn idle_timeout(&self) -> Option<Duration> {
+            self.idle_timeout
         }
 
         /// Opens a connection to the Event Hub.
@@ -791,6 +811,7 @@ pub mod builders {
                     custom_endpoint,
                     cbs_token_type: None,
                     transport,
+                    idle_timeout: self.idle_timeout,
                 },
             )?;
             consumer.ensure_connection().await?;
@@ -864,6 +885,7 @@ pub mod builders {
                     custom_endpoint,
                     cbs_token_type: Some(SAS_TOKEN_TYPE),
                     transport,
+                    idle_timeout: self.idle_timeout,
                 },
             )?;
             consumer.ensure_connection().await?;
@@ -895,6 +917,17 @@ pub(crate) mod tests {
                 .with_transport(AmqpTransport::Tcp)
                 .transport(),
             AmqpTransport::Tcp
+        );
+    }
+
+    #[test]
+    fn builder_sets_idle_timeout() {
+        let idle_timeout = Duration::seconds(60);
+        assert_eq!(
+            ConsumerClient::builder()
+                .with_idle_timeout(idle_timeout)
+                .idle_timeout(),
+            Some(idle_timeout)
         );
     }
     use tracing::info;
