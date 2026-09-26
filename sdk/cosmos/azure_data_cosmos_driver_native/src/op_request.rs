@@ -582,7 +582,7 @@ unsafe fn decode_regions(
         let s = unsafe { required_text(p, CosmosErrorCode::CosmosErrorCodeInvalidOptionValue) }?;
         out.push(Region::from(s));
     }
-    Ok(Some(ExcludedRegions(out)))
+    Ok(Some(out.into_iter().collect()))
 }
 
 /// Returns an all-unset [`CosmosOperationOptions`] by value. The host
@@ -2032,7 +2032,13 @@ mod tests {
             );
             assert!(built.options.throughput_control.is_none());
             assert_eq!(
-                built.options.excluded_regions.unwrap().0,
+                built
+                    .options
+                    .excluded_regions
+                    .unwrap()
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>(),
                 vec![Region::from("East US")]
             );
         })

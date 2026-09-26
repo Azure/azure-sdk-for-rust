@@ -4253,7 +4253,7 @@ mod tests {
                         let response = response_with_continuation(&body, continuation);
                         let mut headers = response.headers().clone();
                         headers.request_charge = Some(RequestCharge::new(1.25));
-                        headers.session_token = Some(crate::models::SessionToken(session.into()));
+                        headers.session_token = Some(crate::models::SessionToken::new(session));
                         Ok(CosmosResponse::new(body, headers, response.status(), response.diagnostics()))
                     }).collect();
                     let mut executor = MockRequestExecutor::new(responses);
