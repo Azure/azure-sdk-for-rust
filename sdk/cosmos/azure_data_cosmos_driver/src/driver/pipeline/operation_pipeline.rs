@@ -139,6 +139,48 @@ fn is_container_recreation_signal(
         || (status.is_read_session_not_available() && !retry_state.can_retry_session())
 }
 
+fn partition_key_range_id_from_overrides(
+    overrides: &OperationOverrides,
+) -> Option<PartitionKeyRangeId> {
+    overrides
+        .effective_partition_key_range_id()
+        .map(|id| PartitionKeyRangeId::from(id.to_owned()))
+}
+
+fn resolve_session_token_for_attempt(
+    session_manager: &SessionManager,
+    operation: &CosmosOperation,
+    transport_mode: TransportMode,
+    partition_key_range_id: Option<&PartitionKeyRangeId>,
+    overrides: &OperationOverrides,
+) -> Option<SessionToken> {
+    let user_token = operation.request_headers().session_token.as_ref();
+    if !matches!(transport_mode, TransportMode::GatewayV2) {
+        return session_manager.resolve_session_token(operation, user_token, None);
+    }
+
+    let Some(partition_key_range_id) = partition_key_range_id else {
+        // A logical request whose optional topology lookup failed must not send
+        // a multi-range composite token to RNTBD. Explicit user tokens remain
+        // authoritative; otherwise omit the token until a range ID is known.
+        return if overrides.logical_partition_key_target {
+            user_token.cloned()
+        } else {
+            // Today an id-less non-logical target is non-partitioned, so this
+            // resolves to `None`. A future partitioned target must provide an
+            // ID or its own no-composite signal before reaching Gateway 2.0.
+            session_manager.resolve_session_token(operation, user_token, None)
+        };
+    };
+    let partition_key_range_id = partition_key_range_id.as_str();
+    session_manager.resolve_session_token_with_parents(
+        operation,
+        user_token,
+        Some(partition_key_range_id),
+        overrides.effective_partition_key_range_parents(partition_key_range_id),
+    )
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ContainerRecreationRecoveryOutcome {
     NotAttempted = 0,
@@ -230,8 +272,24 @@ pub(crate) struct OperationOverrides {
     /// Physical partition key range ID (emits `x-ms-documentdb-partitionkeyrangeid`).
     pub partition_key_range_id: Option<String>,
 
+    /// Physical partition identity resolved for a logical-partition request.
+    ///
+    /// This seeds PPCB/PPAF and thin-client session-token scoping but is never
+    /// emitted as a request header; the logical partition key remains the
+    /// authoritative wire-routing target.
+    pub resolved_partition_key_range_id: Option<String>,
+
+    /// Ancestors whose session vectors remain valid for the resolved child.
+    pub resolved_partition_key_range_parents: Vec<String>,
+
     /// Logical partition key (emits `x-ms-documentdb-partitionkey`).
     pub partition_key: Option<crate::models::PartitionKey>,
+
+    /// Whether this request routes by one logical partition key.
+    ///
+    /// Used to suppress invalid composite session-token fallback on Gateway 2.0
+    /// when optional physical identity resolution is unavailable.
+    pub logical_partition_key_target: bool,
 
     /// Continuation token for pagination (emits `x-ms-continuation`).
     pub continuation: Option<String>,
@@ -262,6 +320,43 @@ pub(crate) struct OperationOverrides {
 }
 
 impl OperationOverrides {
+    /// Returns the physical partition identity available to pipeline consumers.
+    pub(crate) fn effective_partition_key_range_id(&self) -> Option<&str> {
+        self.partition_key_range_id
+            .as_deref()
+            .or(self.resolved_partition_key_range_id.as_deref())
+    }
+
+    /// Parent range IDs for the effective internal logical identity.
+    pub(crate) fn effective_partition_key_range_parents(
+        &self,
+        partition_key_range_id: &str,
+    ) -> &[String] {
+        if self.effective_partition_key_range_id() == Some(partition_key_range_id) {
+            &self.resolved_partition_key_range_parents
+        } else {
+            &[]
+        }
+    }
+
+    /// Clears generation-specific logical identity while preserving wire routing.
+    pub(crate) fn clear_resolved_partition_key_range(&mut self) {
+        self.resolved_partition_key_range_id = None;
+        self.resolved_partition_key_range_parents.clear();
+    }
+
+    /// Whether this request carries wire-routing constraints tied to one
+    /// container generation and therefore needs its dataflow plan rebuilt after
+    /// recreation.
+    ///
+    /// The internal logical-partition identity is intentionally excluded: it is
+    /// not emitted on the wire and can be cleared for an in-place retry.
+    pub(crate) fn requires_plan_rebuild_after_container_recreation(&self) -> bool {
+        self.partition_key_range_id.is_some()
+            || self.feed_range.is_some()
+            || self.pkrange_bounds.is_some()
+    }
+
     /// The endpoint this attempt is pinned to, if any.
     ///
     /// `None` either because there is no pin at all, or because the pin only
@@ -368,9 +463,9 @@ impl OperationOverrides {
 /// This is the entry point called by `CosmosDriver::execute_operation`.
 /// It orchestrates the 7-stage operation loop.
 ///
-/// When `pre_resolved_pk_range_id` is `Some`, it is used to seed the
-/// `OperationRetryState` so that partition-level failover overrides (PPAF/PPCB)
-/// can take effect from the very first attempt.
+/// Physical partition identity supplied by the dataflow request target seeds
+/// `OperationRetryState` so partition-level failover overrides (PPAF/PPCB) can
+/// take effect from the first attempt.
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn execute_operation_pipeline(
     driver: &CosmosDriver,
@@ -392,7 +487,6 @@ pub(crate) async fn execute_operation_pipeline(
     session_manager: &SessionManager,
     account_default_consistency: DefaultConsistencyLevel,
     throughput_control: Option<ResolvedThroughputControl>,
-    pre_resolved_pk_range_id: Option<PartitionKeyRangeId>,
     hedge_budget: &HedgeBudget,
 ) -> crate::error::Result<CosmosResponse> {
     let mut diagnostics = diagnostics;
@@ -494,10 +588,9 @@ pub(crate) async fn execute_operation_pipeline(
         max_failover_retries,
         max_session_retries,
     );
-    // Seed the partition key range ID from pre-resolution (PK range cache).
-    // This enables PPAF/PPCB partition-level overrides from the very first attempt
-    // instead of only after the first retry captures it from response headers.
-    retry_state.partition_key_range_id = pre_resolved_pk_range_id;
+    // Dataflow resolves physical identity before execution. EPK targets carry
+    // their wire-routing range ID; logical targets carry internal-only metadata.
+    retry_state.partition_key_range_id = partition_key_range_id_from_overrides(&overrides);
 
     // PPAF write-retry: on single-master accounts with per-partition automatic
     // failover enabled, only PPAF-eligible operations (partitioned writes) may
@@ -795,25 +888,12 @@ pub(crate) async fn execute_operation_pipeline(
             },
             resolved_session_token: attempt_session_token_resolution_active
                 .then(|| {
-                    // Scope the session token to the target partition-key-range
-                    // only for thin-client (Gateway 2.0) requests: the RNTBD
-                    // backend rejects a composite multi-range token on a
-                    // single-partition request. Classic gateway accepts the
-                    // composite (and maps parent->child across splits), so keep
-                    // sending it there to stay read-your-writes safe.
-                    let scoped_pk_range_id =
-                        if matches!(routing.transport_mode, TransportMode::GatewayV2) {
-                            retry_state
-                                .partition_key_range_id
-                                .as_ref()
-                                .map(|id| id.as_str())
-                        } else {
-                            None
-                        };
-                    session_manager.resolve_session_token(
+                    resolve_session_token_for_attempt(
+                        session_manager,
                         operation,
-                        operation.request_headers().session_token.as_ref(),
-                        scoped_pk_range_id,
+                        routing.transport_mode,
+                        retry_state.partition_key_range_id.as_ref(),
+                        &overrides,
                     )
                 })
                 .flatten(),
@@ -957,18 +1037,14 @@ pub(crate) async fn execute_operation_pipeline(
                             .build());
                     }
                     retry_state.pending_write_effects.clear();
-                    retry_state.partition_key_range_id =
-                        Box::pin(driver.pre_resolve_partition_key_range_id(
-                            operation,
-                            &overrides,
-                            session_token_resolution_active,
-                            operation_options,
-                        ))
-                        .await;
+                    // The container generation changed, so any identity learned
+                    // before recovery is stale. Logical-key routing remains
+                    // valid without it; response-header capture can repopulate
+                    // the new generation's ID.
+                    retry_state.partition_key_range_id = None;
                     throughput_control = operation
                         .container()
-                        .map(|container| driver.effective_throughput_control(options, container))
-                        .transpose()?;
+                        .map(|_| CosmosDriver::effective_throughput_control(options));
                     diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
                     tracing::info!(
                         activity_id = %activity_id,
@@ -2432,7 +2508,7 @@ fn effective_partition_key_for_request(
     let partition_key_definition = container.partition_key_definition();
     if partition_key.values().len() > partition_key_definition.paths().len() {
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+            .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
             .with_message(
                 "Partition key supplies more components than the container's \
                  partition-key definition declares",
@@ -3329,15 +3405,12 @@ async fn perform_single_attempt(
     let resolved_session_token = ctx
         .session_token_resolution_active
         .then(|| {
-            let scoped_pk_range_id = if matches!(routing.transport_mode, TransportMode::GatewayV2) {
-                ctx.partition_key_range_id.as_ref().map(|id| id.as_str())
-            } else {
-                None
-            };
-            ctx.session_manager.resolve_session_token(
+            resolve_session_token_for_attempt(
+                ctx.session_manager,
                 ctx.operation,
-                ctx.operation.request_headers().session_token.as_ref(),
-                scoped_pk_range_id,
+                routing.transport_mode,
+                ctx.partition_key_range_id.as_ref(),
+                ctx.overrides,
             )
         })
         .flatten();
@@ -3487,10 +3560,12 @@ enum TimerEvent {
 }
 
 /// Builds a future that resolves when the supplied `deadline` elapses,
-/// or never resolves when `deadline` is `None`. Used by [`execute_hedged`]
-/// to layer end-to-end-deadline observation onto its `select`-based
-/// races without changing those races' shapes when no deadline is set.
-fn deadline_signal(deadline: Option<Instant>) -> Pin<Box<dyn Future<Output = ()> + Send>> {
+/// or never resolves when `deadline` is `None`. Used by operation planning and
+/// [`execute_hedged`] to layer end-to-end-deadline observation onto
+/// `select`-based races without changing their shapes when no deadline is set.
+pub(crate) fn deadline_signal(
+    deadline: Option<Instant>,
+) -> Pin<Box<dyn Future<Output = ()> + Send>> {
     let Some(d) = deadline else {
         return Box::pin(pending::<()>());
     };
@@ -4741,11 +4816,13 @@ mod tests {
     use azure_core::http::headers::HeaderName;
     use url::Url;
 
-    use super::build_transport_request;
     #[cfg(feature = "fault_injection")]
     use super::build_transport_request_with_fault_injection;
-    use super::OperationOverrides;
-    use super::TransportRequestContext;
+    use super::{
+        build_transport_request, container_recreation_retry_eligible,
+        partition_key_range_id_from_overrides, resolve_session_token_for_attempt,
+        OperationOverrides, TransportRequestContext,
+    };
     #[cfg(feature = "fault_injection")]
     use crate::options::Region;
     use crate::{
@@ -4753,6 +4830,7 @@ mod tests {
         driver::{
             pipeline::components::{RoutingDecision, TransportMode},
             routing::{
+                partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
                 AccountEndpointState, CosmosEndpoint, LocationEffect, LocationIndex,
                 LocationSnapshot,
             },
@@ -4760,9 +4838,9 @@ mod tests {
         },
         models::{
             request_header_names, AccountReference, ActivityId, ContainerProperties,
-            ContainerReference, CosmosOperation, DatabaseReference, DefaultConsistencyLevel,
-            EffectivePartitionKey, FeedRange, ItemReference, PartitionKey, PartitionKeyDefinition,
-            PartitionKeyValue, SystemProperties,
+            ContainerReference, CosmosOperation, CosmosResponseHeaders, DatabaseReference,
+            DefaultConsistencyLevel, EffectivePartitionKey, FeedRange, ItemReference, PartitionKey,
+            PartitionKeyDefinition, PartitionKeyValue, SessionToken, SystemProperties,
         },
         options::{PriorityLevel, ResolvedThroughputControl},
     };
@@ -4795,6 +4873,18 @@ mod tests {
             "testcontainer_rid",
             &test_container_props(),
         )
+    }
+
+    fn capture_session_token(manager: &SessionManager, operation: &CosmosOperation, token: &str) {
+        manager.capture_session_token(
+            operation,
+            &CosmosResponseHeaders {
+                session_token: Some(SessionToken::new(token.to_string())),
+                owner_id: Some("testcontainer_rid".to_string()),
+                owner_full_name: Some("dbs/testdb/colls/testcontainer".to_string()),
+                ..Default::default()
+            },
+        );
     }
 
     #[test]
@@ -4915,16 +5005,17 @@ mod tests {
     }
 
     /// Supplying more partition-key components than the container's single-path
-    /// definition declares must surface as a `BadRequest` from the EPK
-    /// precomputation, never silently hash the extras into a broken EPK. This
-    /// validation runs in the operation pipeline (before the transport
+    /// definition declares must surface as a typed client `BadRequest` from the
+    /// EPK precomputation, never silently hash the extras into a broken EPK.
+    /// This validation runs in the operation pipeline (before the transport
     /// pipeline) so wire layers receive a ready-to-encode EPK.
     #[test]
     fn effective_partition_key_rejects_too_many_components() {
-        let partition_key = PartitionKey::from(vec![
+        let partition_key = PartitionKey::try_from(vec![
             PartitionKeyValue::from("tenant1".to_string()),
             PartitionKeyValue::from("extra".to_string()),
-        ]);
+        ])
+        .unwrap();
         let item = ItemReference::from_name(&test_container(), partition_key, "doc1");
         let operation = CosmosOperation::create_item(item).with_body(b"{}".to_vec());
 
@@ -4932,8 +5023,12 @@ mod tests {
             .expect_err("too many components must error");
 
         assert_eq!(
-            error.status(),
-            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+            error.status().status_code(),
+            azure_core::http::StatusCode::BadRequest
+        );
+        assert_eq!(
+            error.status().sub_status(),
+            Some(crate::models::SubStatusCode::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
         );
     }
 
@@ -4961,6 +5056,156 @@ mod tests {
             transport_mode: TransportMode::Gateway,
             routing_fallback: None,
         }
+    }
+
+    #[test]
+    fn resolved_logical_partition_identity_is_not_emitted_as_range_header() {
+        let overrides = OperationOverrides {
+            resolved_partition_key_range_id: Some("7".to_string()),
+            resolved_partition_key_range_parents: vec!["6".to_string()],
+            partition_key: Some(PartitionKey::from("pk")),
+            ..Default::default()
+        };
+        let mut headers = azure_core::http::headers::Headers::new();
+
+        overrides
+            .apply_headers(&mut headers, false)
+            .expect("apply_headers should succeed");
+
+        assert_eq!(overrides.effective_partition_key_range_id(), Some("7"));
+        assert_eq!(
+            overrides.effective_partition_key_range_parents("7"),
+            &["6".to_string()]
+        );
+        assert!(headers
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::PARTITION_KEY_RANGE_ID
+            ))
+            .is_none());
+        assert!(headers
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::PARTITION_KEY
+            ))
+            .is_some());
+    }
+
+    #[test]
+    fn operation_pipeline_seeds_resolved_logical_partition_identity() {
+        let overrides = OperationOverrides {
+            resolved_partition_key_range_id: Some("7".to_string()),
+            ..Default::default()
+        };
+
+        let resolved = partition_key_range_id_from_overrides(&overrides);
+
+        assert_eq!(resolved.as_ref().map(|id| id.as_str()), Some("7"));
+    }
+
+    #[test]
+    fn routed_physical_identity_takes_precedence_over_internal_identity() {
+        let overrides = OperationOverrides {
+            partition_key_range_id: Some("routed".to_string()),
+            resolved_partition_key_range_id: Some("internal".to_string()),
+            ..Default::default()
+        };
+
+        let resolved = partition_key_range_id_from_overrides(&overrides);
+
+        assert_eq!(resolved.as_ref().map(|id| id.as_str()), Some("routed"));
+    }
+
+    #[test]
+    fn gateway_v2_unresolved_logical_target_omits_cached_composite_token() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let manager = SessionManager::new();
+        capture_session_token(&manager, &operation, "0:1#100#1=10,1:1#200#1=20");
+        let overrides = OperationOverrides {
+            logical_partition_key_target: true,
+            ..Default::default()
+        };
+
+        assert!(resolve_session_token_for_attempt(
+            &manager,
+            &operation,
+            TransportMode::GatewayV2,
+            None,
+            &overrides,
+        )
+        .is_none());
+        assert!(resolve_session_token_for_attempt(
+            &manager,
+            &operation,
+            TransportMode::Gateway,
+            None,
+            &overrides,
+        )
+        .is_some());
+
+        let explicit = operation
+            .clone()
+            .with_session_token(SessionToken::new("explicit"));
+        assert_eq!(
+            resolve_session_token_for_attempt(
+                &manager,
+                &explicit,
+                TransportMode::GatewayV2,
+                None,
+                &overrides,
+            )
+            .unwrap()
+            .as_str(),
+            "explicit"
+        );
+    }
+
+    #[test]
+    fn shared_attempt_resolver_rekeys_parent_token_for_split_child() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let manager = SessionManager::new();
+        capture_session_token(&manager, &operation, "parent:1#100#1=10");
+        let overrides = OperationOverrides {
+            partition_key_range_id: Some("child".to_string()),
+            resolved_partition_key_range_parents: vec!["parent".to_string()],
+            ..Default::default()
+        };
+        let child = PartitionKeyRangeId::from("child".to_string());
+
+        let token = resolve_session_token_for_attempt(
+            &manager,
+            &operation,
+            TransportMode::GatewayV2,
+            Some(&child),
+            &overrides,
+        )
+        .unwrap();
+
+        assert_eq!(token.as_str(), "child:1#100#1=10");
+    }
+
+    #[test]
+    fn internal_identity_allows_container_recreation_retry_in_place() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let overrides = OperationOverrides {
+            resolved_partition_key_range_id: Some("old-generation".to_string()),
+            ..Default::default()
+        };
+
+        assert!(container_recreation_retry_eligible(
+            &operation, &overrides, None, false
+        ));
+        assert!(!overrides.requires_plan_rebuild_after_container_recreation());
     }
 
     #[test]

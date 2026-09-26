@@ -198,7 +198,7 @@ fn pki_component_to_pk_value(value: &serde_json::Value) -> Result<PartitionKeyVa
                     ))
                     .build()
             })?;
-            Ok(PartitionKeyValue::from(f))
+            PartitionKeyValue::try_from(f)
         }
         Value::String(s) => Ok(PartitionKeyValue::from(s.clone())),
         Value::Object(obj) => {

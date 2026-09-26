@@ -660,22 +660,6 @@ impl LocationStateStore {
         self.sync_account_properties(properties, default_endpoint);
     }
 
-    /// Returns the operator-configured Gateway 2.0 (thin-client) toggle,
-    /// independent of the transient connectivity-probe block.
-    ///
-    /// Used to decide whether to always resolve the partition key range id
-    /// (to scope the session token to a single partition), mirroring .NET's
-    /// `ThinClientStoreModel::ShouldResolvePartitionKeyRange() => true`: the
-    /// thin-client backend rejects a multi-range composite session token, so
-    /// any client that may route over it must resolve the target range even
-    /// when per-partition failover/circuit-breaker are both disabled. The
-    /// static flag (not `effective_gateway_v2_enabled`) is deliberate: a
-    /// transient probe block can lift at any time, and resolving on the
-    /// classic path meanwhile is harmless.
-    pub(crate) fn gateway_v2_enabled(&self) -> bool {
-        self.gateway_v2_enabled
-    }
-
     /// Returns `gateway_v2_enabled && !gateway_v2_runtime_blocked`. The
     /// snapshot builder uses this in place of the static configured flag so
     /// a failed connectivity probe transparently disables Gateway 2.0

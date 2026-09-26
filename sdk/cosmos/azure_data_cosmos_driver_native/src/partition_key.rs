@@ -14,13 +14,8 @@
 //! `partition_key_components` field. The flat shape exists because C callers
 //! can't construct the driver's Rust `From<T>` / `From<(T1, T2)>` tuples.
 //!
-//! The driver's `From<Vec<PartitionKeyValue>>` impl panics if the
-//! vector contains more than 3 elements (Cosmos DB supports at most
-//! 3 hierarchical levels); the FFI surface pre-validates the component
-//! count so callers see a deterministic `INVALID_PARTITION_KEY` (4004)
-//! instead of an abort. Likewise, `From<f64>` for `PartitionKeyValue` panics
-//! on non-finite values — a numeric component with NaN / ±∞ is rejected
-//! up-front with `INVALID_OPTION_VALUE` (4014).
+//! The driver's fallible conversions validate component count and numeric
+//! values; the FFI surface maps these failures to its existing status codes.
 
 use azure_data_cosmos_driver::models::{PartitionKey as DriverPartitionKey, PartitionKeyValue};
 
@@ -134,8 +129,8 @@ pub(crate) unsafe fn partition_key_from_components(
         return Err(CosmosErrorCode::CosmosErrorCodeInvalidPartitionKey);
     }
     if len > MAX_COMPONENTS {
-        // Cosmos DB caps hierarchical keys at 3 levels; reject before
-        // `From<Vec<...>>` (which panics above 3 levels) is reached.
+        // Reject oversized keys at the FFI boundary with the native error
+        // code before reading or allocating the component array.
         return Err(CosmosErrorCode::CosmosErrorCodeTooManyPartitionKeyComponents);
     }
     // SAFETY: caller guarantees `components` points to `len` initialized values.
@@ -156,11 +151,8 @@ pub(crate) unsafe fn partition_key_from_components(
                 // SAFETY: kind == Number → caller populated `value.number_value`
                 // with an f64 payload; every bit pattern is a valid f64.
                 let n = unsafe { component.value.number_value };
-                if !n.is_finite() {
-                    // The driver's `From<f64>` panics on NaN / ±∞; reject early.
-                    return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
-                }
-                PartitionKeyValue::from(n)
+                PartitionKeyValue::try_from(n)
+                    .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)?
             }
             CosmosPartitionKeyComponentKind::BOOL => {
                 // SAFETY: kind == Bool → caller populated `value.bool_value`
@@ -181,9 +173,8 @@ pub(crate) unsafe fn partition_key_from_components(
         };
         values.push(value);
     }
-    // Length is capped at <= MAX_COMPONENTS above, so `From<Vec<...>>` will not
-    // panic here.
-    Ok(DriverPartitionKey::from(values))
+    DriverPartitionKey::try_from(values)
+        .map_err(|_| CosmosErrorCode::CosmosErrorCodeTooManyPartitionKeyComponents)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -304,7 +295,10 @@ pub extern "C" fn cosmos_partition_key_create(
 /// `400` / `CLIENT_PARTITION_KEY_EMPTY` to catch accidental misuse.
 #[no_mangle]
 pub extern "C" fn cosmos_partition_key_empty() -> *mut PartitionKeyHandle {
-    PartitionKeyHandle::into_raw(DriverPartitionKey::from(Vec::<PartitionKeyValue>::new()))
+    PartitionKeyHandle::into_raw(
+        DriverPartitionKey::try_from(Vec::<PartitionKeyValue>::new())
+            .expect("an empty key has no excess components"),
+    )
 }
 
 /// Frees a partition-key handle. NULL is a no-op.
@@ -419,7 +413,11 @@ mod tests {
         // SAFETY: `comps` is a live, fully-initialized array.
         let built = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) }
             .expect("inline build succeeds");
-        let expected = DriverPartitionKey::from(("tenant-42", 7.0, true));
+        let expected = DriverPartitionKey::from((
+            "tenant-42",
+            PartitionKeyValue::try_from(7.0).unwrap(),
+            true,
+        ));
         assert_eq!(built, expected);
     }
 
@@ -432,8 +430,11 @@ mod tests {
         // SAFETY: live array.
         let built = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) }
             .expect("inline build succeeds");
-        let expected =
-            DriverPartitionKey::from(vec![PartitionKeyValue::NULL, PartitionKeyValue::UNDEFINED]);
+        let expected = DriverPartitionKey::try_from(vec![
+            PartitionKeyValue::NULL,
+            PartitionKeyValue::UNDEFINED,
+        ])
+        .unwrap();
         assert_eq!(built, expected);
     }
 
@@ -513,7 +514,7 @@ mod tests {
             .expect("bool build succeeds");
         assert_eq!(
             built,
-            DriverPartitionKey::from(vec![PartitionKeyValue::from(true)])
+            DriverPartitionKey::try_from(vec![PartitionKeyValue::from(true)]).unwrap()
         );
     }
 
@@ -539,7 +540,10 @@ mod tests {
         assert!(!cosmos_partition_key_is_empty(out));
 
         let built = PartitionKeyHandle::from_ptr(out).unwrap();
-        assert_eq!(built.inner, DriverPartitionKey::from(("tenant-42", 7.0)));
+        assert_eq!(
+            built.inner,
+            DriverPartitionKey::from(("tenant-42", PartitionKeyValue::try_from(7.0).unwrap()))
+        );
         cosmos_partition_key_free(out);
     }
 
@@ -619,11 +623,12 @@ mod tests {
         let built = unsafe { partition_key_from_components(comps.as_ptr(), comps.len()) }.unwrap();
         assert_eq!(
             built,
-            DriverPartitionKey::from(vec![
+            DriverPartitionKey::try_from(vec![
                 PartitionKeyValue::from("region\0east".to_owned()),
                 PartitionKeyValue::from("\0tenant".to_owned()),
                 PartitionKeyValue::from("user\0".to_owned()),
             ])
+            .unwrap()
         );
     }
 

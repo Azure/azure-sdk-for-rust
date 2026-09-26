@@ -5,6 +5,20 @@ use super::*;
 use std::io::Cursor;
 
 #[test]
+fn builds_primary_and_state_output_paths() {
+    let output_dir = Path::new("sdk/keyvault/azure_security_keyvault_keys");
+
+    assert_eq!(
+        output_path(output_dir, OutputFormat::Markdown),
+        output_dir.join("api.md")
+    );
+    assert_eq!(
+        state_file_path(output_dir, "version.txt"),
+        output_dir.join("state/version.txt")
+    );
+}
+
+#[test]
 fn sha256_matches_sha256sum() {
     assert_eq!(
         sha256(Cursor::new(b"one\ntwo\n")).unwrap(),

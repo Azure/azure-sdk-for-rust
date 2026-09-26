@@ -87,6 +87,10 @@ extends:
     VariableGroups:
     - 'Test Secrets for Cosmos Live Tests - user administered'
     MatrixConfigs:
+      - Name: Cosmos_native
+        Path: sdk/cosmos/native-test-matrix.json
+        Selection: all
+        GenerateVMJobs: true
       - Name: Cosmos_release
         Path: sdk/cosmos/release-platform-matrix.json
         Selection: sparse

@@ -11,7 +11,7 @@
 //! driver-side build through the wrapper's own Tokio runtime, and returns a
 //! fresh `cosmos_runtime_t *`. Complex nested config (`with_client_options` /
 //! `with_connection_pool` / `with_operation_options` /
-//! `register_throughput_control_group` / `with_fault_injection_rules`) is
+//! `with_fault_injection_rules`) is
 //! deliberately not surfaced yet — each requires its own flat options struct.
 //!
 use crate::string::{optional_text, CosmosStringView};

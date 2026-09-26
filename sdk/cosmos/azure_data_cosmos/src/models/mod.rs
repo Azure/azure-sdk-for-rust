@@ -9,10 +9,12 @@
 
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{
-    ContainerReference, CosmosNumber, CosmosStatus, EffectivePartitionKey, PartitionKey,
-    PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
-    PatchInstructions, PatchOperation,
+    ContainerReference, CosmosStatus, EffectivePartitionKey, PartitionKey, PartitionKeyDefinition,
+    PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
 };
+#[cfg(feature = "preview_patch")]
+#[doc(inline)]
+pub use azure_data_cosmos_driver::models::{CosmosNumber, PatchInstructions, PatchOperation};
 pub use batch_response::BatchResponse;
 pub use change_feed_item::{
     ChangeFeedItem, ChangeFeedMetadata, ChangeFeedOperationType, LogicalSequenceNumber,
