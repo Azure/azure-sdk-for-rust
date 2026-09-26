@@ -63,11 +63,11 @@ replication delay. Operation defaults, fault rules, retry budgets, hedging
 thresholds, diagnostics assertions, and telemetry exporters remain in the Rust
 implementations rather than expanding the profile schema into a behavior DSL.
 
-The `dynamicTopology` profile selects PR4 region lifecycle, write failover,
-replication, partition-transition, PPAF/PPCB, hedging, and continuation contracts.
-It runs a three-region single-write account with per-partition failover enabled.
-External management calls control transition phases; all product operations and
-state assertions continue to use the public Rust SDK.
+The `dynamicTopology` profile selects region lifecycle, write failover,
+replication, partition-transition, PPAF/PPCB, hedging, and continuation
+contracts. It runs a three-region single-write account with per-partition
+failover enabled. External management calls control transition phases; all
+product operations and state assertions continue to use the public Rust SDK.
 
 Operation-level `ReadConsistencyStrategy` cases, session-token choices,
 acceptable transient statuses, retry deadlines, and assertions are defined in

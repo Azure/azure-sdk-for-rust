@@ -21,7 +21,7 @@ use crate::e2e_test_cases::catalog::{ClientDefinition, RuntimeDefinition};
 pub type TestResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
 
 /// Serializes tests that share hosted-emulator account state, including
-/// replication controls, wire counters, and PR4 topology transitions.
+/// replication controls, wire counters, and dynamic topology transitions.
 pub(super) fn fixture_test_lock() -> &'static tokio::sync::Mutex<()> {
     static LOCK: OnceLock<tokio::sync::Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| tokio::sync::Mutex::new(()))

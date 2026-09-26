@@ -328,12 +328,12 @@ five account consistency levels. Key authentication is exercised by these
 hosted runs; Entra ID cannot be faithfully validated by the unauthenticated
 hosted emulator and remains covered by the live AAD pipeline.
 
-### PR4 — Dynamic topology and availability
+### Dynamic topology and availability
 
 **Status:** Implemented for deterministic hosted-emulator validation through
 Gateway V1 and Gateway V2. Dynamic Azure Live execution remains deferred to
-PR5 because account and partition transitions cannot be safely synchronized in
-the shared live pipelines.
+future live-test work because account and partition transitions cannot be safely
+synchronized in the shared live pipelines.
 
 Scope:
 

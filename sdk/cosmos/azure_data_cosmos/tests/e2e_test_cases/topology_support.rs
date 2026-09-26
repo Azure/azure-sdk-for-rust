@@ -47,7 +47,7 @@ impl TopologyManager {
         let regions: Vec<_> = account.region_names().collect();
         if account.write_mode() != "single" || regions != REGIONS {
             return Err(format!(
-                "unsupported topology profile: PR4 topology scenarios require writeMode='single' and regions {REGIONS:?} in priority order; profile '{}' declares writeMode='{}' and regions {regions:?}",
+                "unsupported topology profile: dynamic topology scenarios require writeMode='single' and regions {REGIONS:?} in priority order; profile '{}' declares writeMode='{}' and regions {regions:?}",
                 account.id,
                 account.write_mode()
             )
