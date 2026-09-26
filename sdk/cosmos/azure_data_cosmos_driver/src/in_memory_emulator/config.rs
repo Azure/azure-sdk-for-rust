@@ -540,6 +540,20 @@ impl VirtualAccountConfig {
         self.consistency
     }
 
+    pub(crate) fn validate(&self) -> crate::error::Result<()> {
+        if self.write_mode() == WriteMode::Multi && self.consistency == ConsistencyLevel::Strong {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(
+                    "multi-write accounts do not support Strong consistency; use single-write mode or a weaker consistency level",
+                )
+                .build());
+        }
+        Ok(())
+    }
+
     pub fn replication(&self) -> &ReplicationConfig {
         &self.replication
     }

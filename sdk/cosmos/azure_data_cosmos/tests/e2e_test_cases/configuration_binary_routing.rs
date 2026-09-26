@@ -37,7 +37,7 @@ async fn binary_text_and_routing_options_preserve_behavior() -> TestResult {
     .await?;
     run_binary_routing_case(preferred, "preferred-regions", Region::WEST_US, true).await?;
 
-    let account_order = build_binary_client(ClientSetup::from_profile(
+    let account_order = build_binary_client(ClientSetup::from_profile_with_routing_override(
         runtime,
         profile_client,
         RoutingStrategy::PreferredRegions(Vec::new()),

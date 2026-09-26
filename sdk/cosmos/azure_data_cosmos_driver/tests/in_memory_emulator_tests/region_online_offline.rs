@@ -1101,89 +1101,17 @@ async fn failover_to_an_offline_region_is_refused() {
 
 // --- Service implementation parity -----------------------------------------
 
-/// Strong consistency is a second, independent gate on multi-write routing.
-///
-/// The service's `DatabaseAccountHandler.GetDatabaseAccountAsync` emits
-/// `enableMultipleWriteLocations: true` from account configuration but sets its
-/// internal `allowMultipleWriteLocations` only when consistency is not Strong.
-/// The resulting payload looks contradictory on purpose: the flag is true,
-/// while `writableLocations` contains only the hub.
-#[tokio::test]
-async fn strong_consistency_gates_multi_write_locations_without_clearing_the_flag() {
-    let recorder = HostRecorder::new();
-    let emulator = build_emulator_with_consistency(
-        vec![east(), west(), central()],
-        WriteMode::Multi,
-        ConsistencyLevel::Strong,
-        recorder,
-    );
-
-    let payload = account_payload(&emulator).await;
-    assert_eq!(payload["enableMultipleWriteLocations"], true);
-    assert_eq!(
-        names(&payload, "writableLocations"),
-        vec!["East US".to_string()],
-        "Strong consistency must keep writableLocations hub-only even when the multi-write flag is true"
-    );
-    assert_eq!(
-        names(&payload, "readableLocations").len(),
-        3,
-        "Strong consistency does not hide readable regions"
-    );
-}
-
-/// Strong + multi-write is hub-only in enforcement as well as advertisement.
-#[tokio::test]
-async fn strong_consistency_rejects_satellite_writes_under_multi_write_mode() {
-    let recorder = HostRecorder::new();
-    let emulator = build_emulator_with_consistency(
-        vec![east(), west()],
-        WriteMode::Multi,
-        ConsistencyLevel::Strong,
-        recorder,
-    );
-
-    let mut req = Request::new(
-        Url::parse(&format!("{WEST_URL}/dbs/testdb/colls/testcoll/docs")).unwrap(),
-        Method::Post,
-    );
-    req.set_body(serde_json::json!({"id": "strong-west", "pk": "pk1"}).to_string());
-    req.headers_mut().insert(
-        super::PARTITION_KEY.clone(),
-        azure_core::http::headers::HeaderValue::from_static("[\"pk1\"]"),
-    );
-
-    let (status, headers, _) =
-        collect_response(emulator.execute_request(&req).await.unwrap()).await;
-    assert_eq!(status, StatusCode::Forbidden);
-    assert_eq!(headers.get_optional_str(&super::SUBSTATUS), Some("3"));
-}
-
-/// Failover transition slots cannot bypass Strong's hub-only gateway gate.
-#[tokio::test]
-async fn strong_multi_write_stays_hub_only_during_failover_transitions() {
-    let recorder = HostRecorder::new();
-    let emulator = build_emulator_with_consistency(
-        vec![east(), west()],
-        WriteMode::Multi,
-        ConsistencyLevel::Strong,
-        recorder,
-    );
-    let store = emulator.store();
-
-    store.announce_failover("West US").unwrap();
-    assert_eq!(
-        names(&account_payload(&emulator).await, "writableLocations"),
-        vec!["East US".to_string()],
-        "NextWriteRegion must not bypass Strong's hub-only gate"
-    );
-
-    store.begin_failover("West US").unwrap();
-    assert_eq!(
-        names(&account_payload(&emulator).await, "writableLocations"),
-        vec!["West US".to_string()],
-        "PreviousWriteRegion must not bypass Strong's hub-only gate"
-    );
+/// Multi-write Strong is not a valid Cosmos DB account configuration.
+#[test]
+fn multi_write_strong_configuration_is_rejected() {
+    let config = VirtualAccountConfig::new(vec![east(), west()])
+        .unwrap()
+        .with_write_mode(WriteMode::Multi)
+        .with_consistency(ConsistencyLevel::Strong);
+    let error = InMemoryEmulatorHttpClient::try_new(config)
+        .err()
+        .expect("multi-write Strong must be rejected");
+    assert_eq!(error.status().status_code(), StatusCode::BadRequest);
 }
 
 /// A revoked satellite remains advertised writable but rejects writes.
@@ -1928,28 +1856,6 @@ async fn offline_online_cancels_stale_failover_slots() {
 }
 
 // --- CosmosDriver end-to-end coverage --------------------------------------
-
-/// The driver honors Strong's hub-only writable list even when the account flag
-/// says multi-write and West is the first preferred region.
-#[tokio::test(start_paused = true)]
-async fn driver_routes_strong_multi_write_to_the_hub() {
-    let recorder = HostRecorder::new();
-    let emulator = build_emulator_with_consistency(
-        vec![east(), west()],
-        WriteMode::Multi,
-        ConsistencyLevel::Strong,
-        recorder.clone(),
-    );
-    // Bootstrap through West (not the expected destination) so the test cannot
-    // pass via an implementation that always writes to the account endpoint.
-    let driver = build_driver_at(&emulator, WEST_URL, vec![Region::WEST_US, Region::EAST_US]).await;
-
-    let hosts = write_and_capture_hosts(&driver, &recorder, "strong-driver-write").await;
-    assert!(
-        !hosts.is_empty() && hosts.iter().all(|host| host == EAST_HOST),
-        "Strong must route writes to the hub despite West being preferred; observed {hosts:?}"
-    );
-}
 
 /// A revoked preferred satellite returns `403/3`; the driver refreshes and
 /// retries the write against another writable region.
