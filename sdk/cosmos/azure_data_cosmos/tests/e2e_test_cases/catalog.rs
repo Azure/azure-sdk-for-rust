@@ -322,6 +322,10 @@ impl Profile {
 }
 
 impl AccountDefinition {
+    pub fn write_mode(&self) -> &str {
+        &self.write_mode
+    }
+
     pub fn region_names(&self) -> impl Iterator<Item = &str> {
         self.regions.iter().map(|region| region.name.as_str())
     }

@@ -1755,7 +1755,9 @@ impl CosmosDriver {
         // lookups in `execute_operation` use the cheap `get_or_fetch` fast
         // path because freshness is owned by this loop.
         #[cfg(feature = "tokio")]
-        location_state_store.start_account_refresh_loop();
+        location_state_store.start_account_refresh_loop(
+            super::routing::background_refresh_interval(&|name| std::env::var(name).ok()),
+        );
 
         // Spawn the background endpoint-probe loop. This makes account-level
         // endpoint failback probe-gated: an endpoint marked unavailable (e.g.

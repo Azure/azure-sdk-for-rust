@@ -93,6 +93,14 @@ pub(crate) const ENDPOINT_PROBE_INTERVAL: Duration = Duration::from_secs(60);
 #[cfg(feature = "tokio")]
 pub(crate) const BACKGROUND_REFRESH_INTERVAL: Duration = Duration::from_secs(300);
 
+pub(crate) fn background_refresh_interval(get_env: &dyn Fn(&str) -> Option<String>) -> Duration {
+    get_env("AZURE_COSMOS_E2E_BACKGROUND_ACCOUNT_REFRESH_INTERVAL_MS")
+        .and_then(|value| value.parse::<u64>().ok())
+        .filter(|milliseconds| *milliseconds > 0)
+        .map(Duration::from_millis)
+        .unwrap_or(BACKGROUND_REFRESH_INTERVAL)
+}
+
 /// Unified location state store with lock-free reads and CAS-loop writes.
 pub(crate) struct LocationStateStore {
     account: Atomic<AccountEndpointState>,
@@ -944,10 +952,10 @@ impl LocationStateStore {
     /// (the timer interval IS the rate limit, so the event-driven
     /// `refresh_interval` check is bypassed).
     #[cfg(feature = "tokio")]
-    pub fn start_account_refresh_loop(self: &Arc<Self>) {
+    pub fn start_account_refresh_loop(self: &Arc<Self>, interval: Duration) {
         let weak_store: Weak<LocationStateStore> = Arc::downgrade(self);
         self.background_task_manager.spawn(async move {
-            account_refresh_loop(weak_store, BACKGROUND_REFRESH_INTERVAL).await;
+            account_refresh_loop(weak_store, interval).await;
         });
     }
 
@@ -1228,6 +1236,26 @@ mod tests {
     };
 
     use super::*;
+
+    #[test]
+    fn e2e_background_refresh_interval_override_is_bounded_and_optional() {
+        assert_eq!(
+            background_refresh_interval(&|_| None),
+            BACKGROUND_REFRESH_INTERVAL
+        );
+        assert_eq!(
+            background_refresh_interval(&|_| Some("1000".to_owned())),
+            Duration::from_secs(1)
+        );
+        assert_eq!(
+            background_refresh_interval(&|_| Some("0".to_owned())),
+            BACKGROUND_REFRESH_INTERVAL
+        );
+        assert_eq!(
+            background_refresh_interval(&|_| Some("invalid".to_owned())),
+            BACKGROUND_REFRESH_INTERVAL
+        );
+    }
 
     fn test_endpoint() -> AccountEndpoint {
         AccountEndpoint::from(url::Url::parse("https://test.documents.azure.com:443/").unwrap())

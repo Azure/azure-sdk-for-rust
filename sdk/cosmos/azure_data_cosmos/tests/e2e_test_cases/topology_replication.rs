@@ -38,7 +38,7 @@ async fn paused_replica_converges_without_loss_or_duplication() -> TestResult {
         ]),
     )?)
     .await?;
-    let manager = TopologyManager::from_env()?;
+    let manager = TopologyManager::from_env(profile.selected_account()?)?;
 
     E2eTest::builder()
         .with_client(client)

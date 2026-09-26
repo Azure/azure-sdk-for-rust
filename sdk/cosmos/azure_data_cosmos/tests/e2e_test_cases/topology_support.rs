@@ -7,7 +7,7 @@ use futures::FutureExt;
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use crate::e2e_test_cases::fixture::TestResult;
+use crate::e2e_test_cases::{catalog::AccountDefinition, fixture::TestResult};
 
 const REGIONS: [&str; 3] = ["East US", "West US", "North Europe"];
 
@@ -43,7 +43,16 @@ pub(super) struct ManagementOperation {
 }
 
 impl TopologyManager {
-    pub(super) fn from_env() -> TestResult<Self> {
+    pub(super) fn from_env(account: &AccountDefinition) -> TestResult<Self> {
+        let regions: Vec<_> = account.region_names().collect();
+        if account.write_mode() != "single" || regions != REGIONS {
+            return Err(format!(
+                "unsupported topology profile: PR4 topology scenarios require writeMode='single' and regions {REGIONS:?} in priority order; profile '{}' declares writeMode='{}' and regions {regions:?}",
+                account.id,
+                account.write_mode()
+            )
+            .into());
+        }
         let endpoint = std::env::var("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT")?;
         Ok(Self {
             endpoint: url::Url::parse(&endpoint)?,
@@ -389,6 +398,29 @@ where
             std::panic::resume_unwind(panic)
         }
     }
+}
+
+#[test]
+fn unsupported_topology_is_rejected_before_manager_setup() {
+    let account: AccountDefinition = serde_json::from_value(json!({
+        "id": "fourRegions",
+        "writeMode": "single",
+        "consistency": "session",
+        "regions": [
+            { "name": "East US" },
+            { "name": "West US" },
+            { "name": "North Europe" },
+            { "name": "South Central US" }
+        ],
+        "replication": { "minDelayMs": 0, "maxDelayMs": 0 },
+        "perPartitionFailover": true
+    }))
+    .unwrap();
+
+    let error = TopologyManager::from_env(&account)
+        .err()
+        .expect("unsupported topology must fail before reading the management endpoint");
+    assert!(error.to_string().contains("unsupported topology profile"));
 }
 
 fn management_client() -> &'static reqwest::Client {

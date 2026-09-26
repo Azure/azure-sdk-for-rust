@@ -20,7 +20,7 @@ async fn manual_split_and_merge_preserve_point_state() -> TestResult {
         return Ok(());
     };
     let client = topology_client(&profile).await?;
-    let manager = TopologyManager::from_env()?;
+    let manager = TopologyManager::from_env(profile.selected_account()?)?;
 
     E2eTest::builder()
         .with_client(client)

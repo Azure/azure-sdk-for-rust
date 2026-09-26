@@ -42,7 +42,7 @@ async fn preferred_region_recovers_across_offline_remove_and_readd() -> TestResu
         RoutingStrategy::PreferredRegions(preferred),
     )?)
     .await?;
-    let manager = TopologyManager::from_env()?;
+    let manager = TopologyManager::from_env(profile.selected_account()?)?;
 
     E2eTest::builder()
         .with_client(client)

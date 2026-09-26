@@ -2886,12 +2886,13 @@ impl EmulatorStore {
         };
         let track_in_test_registry = completion.is_none();
         let handle = tokio::spawn(async move {
-            let _guard = match transition_guard {
+            let guard = match transition_guard {
                 Some(guard) => guard,
                 None => lock.lock_arc().await,
             };
             if !progression.wait().await {
                 store.unlock_partitions(&(db.clone(), coll.clone()), &[partition_id]);
+                drop(guard);
                 if let Some(completion) = completion {
                     let _ = completion.send(None);
                 }
@@ -2900,6 +2901,7 @@ impl EmulatorStore {
             // execute_split does the actual doc redistribution under the lock,
             // then unlocks partitions when done
             let children = store.execute_split(&db, &coll, partition_id, split_epk);
+            drop(guard);
             if let Some(completion) = completion {
                 let _ = completion.send(children.map(ManualControlPlaneResult::Split));
             }
@@ -3301,7 +3303,7 @@ impl EmulatorStore {
         };
         let track_in_test_registry = completion.is_none();
         let handle = tokio::spawn(async move {
-            let _guard = match transition_guard {
+            let guard = match transition_guard {
                 Some(guard) => guard,
                 None => lock.lock_arc().await,
             };
@@ -3310,12 +3312,14 @@ impl EmulatorStore {
                     &(db.clone(), coll.clone()),
                     &[partition_id_a, partition_id_b],
                 );
+                drop(guard);
                 if let Some(completion) = completion {
                     let _ = completion.send(None);
                 }
                 return;
             }
             let child = store.execute_merge(&db, &coll, partition_id_a, partition_id_b);
+            drop(guard);
             if let Some(completion) = completion {
                 let _ = completion.send(child.map(ManualControlPlaneResult::Merge));
             }

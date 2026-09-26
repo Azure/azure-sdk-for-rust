@@ -41,7 +41,6 @@ async fn partition_breaker_avoids_then_probes_recovered_region() -> TestResult {
     let rule = Arc::new(
         FaultInjectionRuleBuilder::new("e2e-ppcb-east", fault)
             .with_condition(condition)
-            .with_hit_limit(2)
             .build(),
     );
     rule.disable();
@@ -116,7 +115,6 @@ async fn partition_breaker_avoids_then_probes_recovered_region() -> TestResult {
                 .await?;
             assert_eq!(second.into_model::<Item>()?, expected);
             assert_eq!(rule.hit_count(), 2);
-            rule.disable();
 
             let avoided = fixture
                 .container
@@ -133,6 +131,29 @@ async fn partition_breaker_avoids_then_probes_recovered_region() -> TestResult {
                 Some(&Region::new("West US")),
                 "tripped partition must avoid East US"
             );
+
+            tokio::time::sleep(Duration::from_secs(2)).await;
+            let failing_probe = fixture
+                .container
+                .read_item(
+                    "A",
+                    &expected.id,
+                    Some(ItemReadOptions::default().with_operation_options(operation.clone())),
+                )
+                .await?;
+            let failing_diagnostics = failing_probe.diagnostics();
+            assert_eq!(failing_probe.into_model::<Item>()?, expected);
+            assert_eq!(rule.hit_count(), 3);
+            assert!(
+                failing_diagnostics.request_count() > 1,
+                "fallback success must not count as preferred-region recovery"
+            );
+            assert_eq!(
+                failing_diagnostics.requests()[0].region(),
+                Some(&Region::new("East US")),
+                "the negative probe must attempt East US before falling back"
+            );
+            rule.disable();
 
             let deadline = tokio::time::Instant::now() + Duration::from_secs(6);
             tokio::time::sleep(Duration::from_secs(2)).await;
@@ -196,7 +217,7 @@ async fn hedge_completes_while_preferred_region_transitions_offline() -> TestRes
         Ok(builder.with_fault_injection_rules(vec![Arc::clone(&rule)])?)
     })
     .await?;
-    let manager = TopologyManager::from_env()?;
+    let manager = TopologyManager::from_env(profile.selected_account()?)?;
 
     E2eTest::builder()
         .with_client(client)

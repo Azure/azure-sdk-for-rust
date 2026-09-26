@@ -29,7 +29,7 @@ async fn writes_follow_phased_failover_and_failback() -> TestResult {
         ]),
     )?)
     .await?;
-    let manager = TopologyManager::from_env()?;
+    let manager = TopologyManager::from_env(profile.selected_account()?)?;
 
     E2eTest::builder()
         .with_client(client)

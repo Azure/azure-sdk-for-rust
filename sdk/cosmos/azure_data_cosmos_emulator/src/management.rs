@@ -820,15 +820,37 @@ async fn cancel_operation(
             ))
         })?
     };
-    if let OperationAction::Active(_, manual_operation) = action {
-        manual_operation.cancel().await?;
-    }
-    let mut operations = state.operations.records.lock().await;
-    let operation = operations
-        .get_mut(&operation_id)
-        .expect("operation remains registered while cancellation completes");
-    operation.fail("operation cancelled");
-    Ok(Json(operation_response(&operation_id, operation)))
+    let cancellation =
+        spawn_operation_cancellation(state.operations.clone(), operation_id.clone(), action);
+    let response = cancellation.await.map_err(|error| {
+        ApiError::internal_server_error(format!(
+            "operation '{operation_id}' cancellation task failed: {error}"
+        ))
+    })??;
+    Ok(Json(response))
+}
+
+fn spawn_operation_cancellation(
+    operations: Arc<OperationRegistry>,
+    operation_id: String,
+    action: OperationAction,
+) -> tokio::task::JoinHandle<ApiResult<serde_json::Value>> {
+    tokio::spawn(async move {
+        let cancellation_error = match action {
+            OperationAction::Active(_, manual_operation) => manual_operation.cancel().await.err(),
+            OperationAction::Pending(_) => None,
+        };
+        let mut records = operations.records.lock().await;
+        let operation = records
+            .get_mut(&operation_id)
+            .expect("operation remains registered while cancellation completes");
+        if let Some(error) = cancellation_error {
+            operation.fail(format!("operation cancellation failed: {error}"));
+            return Err(error.into());
+        }
+        operation.fail("operation cancelled");
+        Ok(operation_response(&operation_id, operation))
+    })
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -1044,6 +1066,13 @@ impl ApiError {
     fn conflict(message: impl Into<String>) -> Self {
         Self {
             status: StatusCode::CONFLICT,
+            message: message.into(),
+        }
+    }
+
+    fn internal_server_error(message: impl Into<String>) -> Self {
+        Self {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
             message: message.into(),
         }
     }
@@ -1481,7 +1510,7 @@ mod tests {
         server.abort();
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn split_conflicts_and_cancellation_releases_transition_lock() {
         let gateway_url = Url::parse("http://127.0.0.1:18081/").unwrap();
         let account =
@@ -1591,6 +1620,92 @@ mod tests {
             .unwrap_err();
         assert_eq!(too_late.status, StatusCode::CONFLICT);
         wait_for_phase(&state, &replacement_id, "Succeeded").await;
+    }
+
+    #[tokio::test]
+    async fn cancellation_finalizer_outlives_its_waiter() {
+        let gateway_url = Url::parse("http://127.0.0.1:18081/").unwrap();
+        let account =
+            VirtualAccountConfig::new(vec![VirtualRegion::new("East US", gateway_url)]).unwrap();
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(account));
+        emulator.store().create_database("testdb");
+        let partition_key: PartitionKeyDefinition = serde_json::from_value(serde_json::json!({
+            "paths": ["/pk"], "kind": "Hash", "version": 2
+        }))
+        .unwrap();
+        emulator.store().create_container_with_config(
+            "testdb",
+            "testcoll",
+            partition_key,
+            ContainerConfig::new()
+                .with_partition_count(1)
+                .build()
+                .unwrap(),
+        );
+        let state = ManagementState {
+            emulator,
+            account_id: "test-account".into(),
+            bindings: Vec::<GatewayBinding>::new().into(),
+            metrics: Arc::new(HostMetrics::default()),
+            operations: Arc::new(OperationRegistry::default()),
+        };
+        let operation = split_partition_inner(
+            state.clone(),
+            "testdb".to_owned(),
+            "testcoll".to_owned(),
+            0,
+            SplitRequest {
+                mode: SplitMode::Midpoint,
+                epk: None,
+                progression_mode: ProgressionMode::Manual,
+                lock_duration_ms: None,
+            },
+        )
+        .await
+        .unwrap();
+        let operation_id = operation.1["operationId"].as_str().unwrap().to_owned();
+        assert_eq!(
+            advance_operation(State(state.clone()), ApiPath(operation_id.clone()))
+                .await
+                .unwrap()["phase"],
+            "Swapping"
+        );
+        let action = state
+            .operations
+            .records
+            .lock()
+            .await
+            .get_mut(&operation_id)
+            .unwrap()
+            .action
+            .take()
+            .unwrap();
+        let waiter =
+            spawn_operation_cancellation(state.operations.clone(), operation_id.clone(), action);
+        drop(waiter);
+
+        wait_for_phase(&state, &operation_id, "Failed").await;
+        let replacement = split_partition_inner(
+            state.clone(),
+            "testdb".to_owned(),
+            "testcoll".to_owned(),
+            0,
+            SplitRequest {
+                mode: SplitMode::Midpoint,
+                epk: None,
+                progression_mode: ProgressionMode::Manual,
+                lock_duration_ms: None,
+            },
+        )
+        .await
+        .unwrap();
+        let replacement_id = replacement.1["operationId"].as_str().unwrap().to_owned();
+        assert_eq!(
+            advance_operation(State(state), ApiPath(replacement_id))
+                .await
+                .unwrap()["phase"],
+            "Swapping"
+        );
     }
 
     #[tokio::test]
