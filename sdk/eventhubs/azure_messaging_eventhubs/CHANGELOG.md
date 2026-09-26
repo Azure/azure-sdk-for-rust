@@ -1,5 +1,11 @@
 # Release History
 
+## 0.18.0 (Unreleased)
+
+### Features Added
+
+- Added `ConsumerClientBuilder::with_idle_timeout` and `ProducerClientBuilder::with_idle_timeout` to configure the AMQP connection idle timeout and enable peer heartbeat negotiation.
+
 ## 0.17.0 (2026-09-14)
 
 ### Breaking Changes
