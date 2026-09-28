@@ -64,9 +64,7 @@ pub enum CosmosCompletionOutcome {
     /// message, …) are populated (message/detail only when the queue opted in
     /// via `include_error_details`).
     CosmosCompletionOutcomeError = 1,
-    /// Reserved and unused. On-demand cancellation is not supported, so no
-    /// operation produces this outcome. The value is kept fixed so it can be
-    /// reused if cancellation is added in the future.
+    /// Cancellation won before a terminal driver result was available.
     CosmosCompletionOutcomeCancelled = 2,
     /// Reserved sentinel for any non-zero outcome introduced after this spec.
     CosmosCompletionOutcomeUnknown = 255,
@@ -86,9 +84,7 @@ pub enum CosmosOperationHandleState {
     CosmosOperationHandleStateCompleted = 1,
     /// Completion was posted with `outcome == CosmosCompletionOutcomeError`.
     CosmosOperationHandleStateFailed = 2,
-    /// Reserved and unused. No completion drives a handle into this state.
-    /// The value is kept fixed so it can be reused if cancellation is added
-    /// in the future.
+    /// A cancelled completion was posted after the pending future was dropped.
     CosmosOperationHandleStateCancelled = 3,
 }
 
@@ -146,6 +142,7 @@ pub(crate) struct OperationInner {
     /// Lifecycle state — encoded as one of [`CosmosOperationHandleState`].
     state: AtomicU8,
     patch_tracking_id: OnceLock<CString>,
+    cancellation: tokio::sync::Notify,
 }
 
 impl OperationInner {
@@ -155,6 +152,7 @@ impl OperationInner {
                 CosmosOperationHandleState::CosmosOperationHandleStateInFlight as u8,
             ),
             patch_tracking_id: OnceLock::new(),
+            cancellation: tokio::sync::Notify::new(),
         }
     }
 
@@ -166,6 +164,21 @@ impl OperationInner {
 
     fn patch_tracking_id(&self) -> Option<CString> {
         self.patch_tracking_id.get().cloned()
+    }
+
+    pub(crate) async fn cancelled(&self) {
+        self.cancellation.notified().await;
+    }
+}
+
+/// Requests cancellation without consuming the operation handle.
+///
+/// NULL is a no-op. Keep the handle and host cookie alive until the terminal
+/// completion is drained; an already-ready driver result wins over cancellation.
+#[no_mangle]
+pub extern "C" fn cosmos_operation_handle_cancel(handle: *const OperationHandle) {
+    if let Some(inner) = OperationHandle::inner_arc(handle) {
+        inner.cancellation.notify_one();
     }
 }
 
@@ -566,6 +579,15 @@ impl PendingCompletion {
             }
         }
         p
+    }
+
+    pub(crate) fn cancelled(user_data: isize, op_inner: Arc<OperationInner>) -> Self {
+        Self::base(
+            CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled,
+            CosmosErrorCode::CosmosErrorCodeOperationCancelled.as_status_code(),
+            user_data,
+            op_inner,
+        )
     }
 
     /// Moves the owned allocations into a heap-stable backing box and returns
@@ -989,7 +1011,7 @@ pub extern "C" fn cosmos_completion_queue_create(
 /// Does **not** block or wait for in-flight operations — it drops the
 /// producer-side handle immediately. In-flight submissions keep the shared
 /// queue state alive through their own `Arc`s and still run to completion
-/// (there is no cancellation), but once the handle is freed their completions,
+/// unless explicitly cancelled, but once the handle is freed their completions,
 /// and the diagnostics they carry, can no longer be observed and are dropped
 /// with any pending allocations. Hosts that must observe every completion first
 /// call `cosmos_completion_queue_shutdown` and drain via

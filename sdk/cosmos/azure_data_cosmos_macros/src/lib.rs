@@ -34,6 +34,8 @@ type Result<T> = ::std::result::Result<T, syn::Error>;
 ///
 /// # Field-Level Attributes
 ///
+/// - `#[option(skip)]` — initializes internal `Option<T>` state to `None`
+///   without generating a builder setter or a layered accessor.
 /// - `#[option(env = "AZURE_COSMOS_...")]` — enables environment variable loading.
 /// - `#[option(env = "AZURE_COSMOS_...", overridable)]` — additionally recognizes a
 ///   `{ENV}_OVERRIDE` kill-switch variable that takes precedence over **every**
@@ -46,6 +48,8 @@ type Result<T> = ::std::result::Result<T, syn::Error>;
 ///   custom `fn(&str) -> Option<T>` (where `T` is the field's inner type)
 ///   instead of `FromStr`, supporting types like `Duration` read from a
 ///   millisecond count. A `None` result is logged and ignored. Requires `env`.
+/// - `#[cfg(feature = "...")]` on a field also gates its generated builder
+///   setter, view accessor, default value, and environment-variable loading.
 ///
 /// # Example
 ///
@@ -115,8 +119,9 @@ fn generate_default(input: &OptionsInput) -> Result<proc_macro2::TokenStream> {
     let name = &input.name;
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
     let fields = input.fields.iter().map(|f| {
+        let cfg_attrs = &f.cfg_attrs;
         let field_name = &f.ident;
-        quote::quote! { #field_name: None }
+        quote::quote! { #(#cfg_attrs)* #field_name: None }
     });
 
     Ok(quote::quote! {
@@ -126,7 +131,67 @@ fn generate_default(input: &OptionsInput) -> Result<proc_macro2::TokenStream> {
                 Self {
                     #(#fields),*
                 }
+
             }
         }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::derive_cosmos_options_impl;
+    use syn::DeriveInput;
+
+    #[test]
+    fn conditional_field_gates_every_generated_member() {
+        let ast: DeriveInput = syn::parse_quote! {
+            #[options(layers(runtime, account, operation))]
+            struct TestOptions {
+                #[cfg(feature = "preview")]
+                #[option(env = "TEST_PREVIEW", overridable)]
+                preview: Option<u32>,
+            }
+        };
+        let generated = derive_cosmos_options_impl(ast).unwrap().to_string();
+        let cfg = quote::quote!(#[cfg(feature = "preview")]).to_string();
+        assert_eq!(
+            generated.matches(&cfg).count(),
+            8,
+            "builder field, setter, build, new, view, env, override env, and Default must all be gated"
+        );
+    }
+
+    #[test]
+    fn skipped_state_has_no_configuration_accessors() {
+        let tokens = derive_cosmos_options_impl(syn::parse_quote! {
+            #[options(layers(runtime, account, operation))]
+            pub struct Options {
+                #[option(skip)]
+                state: Option<String>,
+                #[option(env = "TEST_LIMIT")]
+                pub limit: Option<u32>,
+            }
+        })
+        .unwrap()
+        .to_string();
+        assert!(!tokens.contains("fn with_state"));
+        assert!(!tokens.contains("fn state"));
+        assert!(tokens.contains("state : None"));
+        assert!(tokens.contains("fn with_limit"));
+    }
+
+    #[test]
+    fn skip_rejects_configuration_attributes() {
+        for attribute in [
+            quote::quote!(#[option(skip, env = "TEST_LIMIT")]),
+            quote::quote!(#[option(skip, nested)]),
+            quote::quote!(#[option(skip, merge = "extend")]),
+        ] {
+            let input = syn::parse_quote! {
+                #[options(layers(runtime, operation))]
+                struct Options { #attribute state: Option<String> }
+            };
+            assert!(derive_cosmos_options_impl(input).is_err());
+        }
+    }
 }

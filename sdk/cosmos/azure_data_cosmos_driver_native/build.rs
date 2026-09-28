@@ -102,6 +102,10 @@ fn generate_c_header() {
     // table can list the full naming policy in one place.
     let rename = HashMap::from([
         ("RuntimeContext".into(), "runtime_t".into()),
+        (
+            "OperationOptionsSnapshot".into(),
+            "operation_options_snapshot_t".into(),
+        ),
         ("CosmosDriver".into(), "driver_t".into()),
         ("DriverHandle".into(), "driver_t".into()),
         ("AccountReference".into(), "account_ref_t".into()),

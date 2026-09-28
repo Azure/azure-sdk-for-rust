@@ -7,34 +7,22 @@
 [CmdletBinding(DefaultParameterSetName = 'PackageInfo')]
 param(
   [Parameter(ParameterSetName = 'PackageInfo')]
-  [Parameter(Mandatory, ParameterSetName = 'CheckPackageInfo')]
   [string] $PackageInfoDirectory,
 
   [Parameter(Position = 0, ParameterSetName = 'PackageName')]
-  [Parameter(Mandatory, Position = 0, ParameterSetName = 'CheckPackageName')]
   [ValidateNotNullOrEmpty()]
   [Alias('PackageNames')]
   [string[]] $PackageName,
 
   [Parameter(ParameterSetName = 'ManifestDir')]
-  [Parameter(Mandatory, ParameterSetName = 'CheckManifestDir')]
   [string[]] $ManifestDir,
 
-  [Parameter(Mandatory, ParameterSetName = 'CheckWorkspace')]
-  [Parameter(Mandatory, ParameterSetName = 'CheckPackageInfo')]
-  [Parameter(Mandatory, ParameterSetName = 'CheckPackageName')]
-  [Parameter(Mandatory, ParameterSetName = 'CheckManifestDir')]
   [switch] $Check,
 
-  [Parameter(ParameterSetName = 'PackageInfo')]
   [Parameter(ParameterSetName = 'PackageName')]
   [Parameter(ParameterSetName = 'ManifestDir')]
-  [switch] $IncludeComments,
-
-  [Parameter(ParameterSetName = 'PackageInfo')]
-  [Parameter(ParameterSetName = 'PackageName')]
-  [Parameter(ParameterSetName = 'ManifestDir')]
-  [switch] $IncludeSourceMap
+  [ValidateNotNullOrEmpty()]
+  [string] $OutputPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -46,6 +34,16 @@ Set-StrictMode -Version 2.0
 function Get-PackagesToExport(
   [string] $SelectedPackageInfoDirectory
 ) {
+  if ($OutputPath -and @($PackageName).Count -gt 1) {
+    LogError '-OutputPath can only be used with a single -PackageName value.'
+    exit 1
+  }
+
+  if ($OutputPath -and @($ManifestDir).Count -gt 1) {
+    LogError '-OutputPath can only be used with a single -ManifestDir value.'
+    exit 1
+  }
+
   return Get-CargoSelectedPackages `
     -PackageName $PackageName `
     -ManifestDir $ManifestDir `
@@ -55,8 +53,15 @@ function Get-PackagesToExport(
 function Get-OutputDirectory(
   $Package
 ) {
-  $packageDirectory = Split-Path -Path $Package.manifest_path -Parent
-  return [System.IO.Path]::Combine($packageDirectory, 'api')
+  if ($OutputPath) {
+    if ([System.IO.Path]::IsPathRooted($OutputPath)) {
+      return $OutputPath
+    }
+
+    return [System.IO.Path]::Combine($PWD.Path, $OutputPath)
+  }
+
+  return Split-Path -Path $Package.manifest_path -Parent
 }
 
 function Get-RepoRelativePath(
@@ -68,7 +73,7 @@ function Get-RepoRelativePath(
 function Get-MissingRequiredApiFiles(
   [string] $OutputDirectory
 ) {
-  $requiredFiles = @('api.md', 'api.metadata.yml')
+  $requiredFiles = @('api.md')
   return @(
     foreach ($fileName in $requiredFiles) {
       $path = [System.IO.Path]::Combine($OutputDirectory, $fileName)
@@ -82,28 +87,21 @@ function Get-MissingRequiredApiFiles(
 function Get-GenerateApiArguments(
   $Package
 ) {
-  $outputDirectory = Get-OutputDirectory -Package $Package
   $arguments = @(
     'run',
     '--manifest-path',
     ([System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'generate_api', 'Cargo.toml')),
     '--',
     '--manifest-path',
-    $Package.manifest_path,
-    '--output',
-    $outputDirectory
+    $Package.manifest_path
   )
 
   if ($Check) {
-    return $arguments + @('--no-docs', '--no-map', '--check')
+    $arguments += '--check'
   }
 
-  if (!$IncludeComments) {
-    $arguments += '--no-docs'
-  }
-
-  if (!$IncludeSourceMap) {
-    $arguments += '--no-map'
+  if ($OutputPath) {
+    $arguments += @('--output', (Get-OutputDirectory -Package $Package))
   }
 
   return $arguments
@@ -112,12 +110,15 @@ function Get-GenerateApiArguments(
 function Get-RegenerateCommand(
   $Package
 ) {
-  $outputDirectory = Get-OutputDirectory -Package $Package
   $generateApiManifestPath = [System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'generate_api', 'Cargo.toml')
-  return 'cargo run --manifest-path "{0}" -- --manifest-path "{1}" --output "{2}" --no-docs --no-map' -f `
+  $command = 'cargo run --manifest-path "{0}" -- --manifest-path "{1}"' -f `
     (Get-RepoRelativePath -Path $generateApiManifestPath),
-    (Get-RepoRelativePath -Path $Package.manifest_path),
-    (Get-RepoRelativePath -Path $outputDirectory)
+    (Get-RepoRelativePath -Path $Package.manifest_path)
+  if ($OutputPath) {
+    $command += ' --output "{0}"' -f (Get-OutputDirectory -Package $Package)
+  }
+
+  return $command
 }
 
 $packageInfoPath = $PackageInfoDirectory
@@ -144,7 +145,7 @@ API files are missing for '$($package.name)': $($missingFiles -join ', ').
 Regenerate them locally with:
     $(Get-RegenerateCommand -Package $package)
 
-Then add api/api.md and api/api.metadata.yml in a new commit to this pull request.
+Then add api.md in a new commit to this pull request.
 "@
       exit 1
     }
@@ -164,7 +165,7 @@ API files are out of date for '$($package.name)'.
 Regenerate them locally with:
     $(Get-RegenerateCommand -Package $package)
 
-Then add api/api.md and api/api.metadata.yml in a new commit to this pull request.
+Then add api.md in a new commit to this pull request.
 "@
     }
 

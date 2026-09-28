@@ -24,7 +24,7 @@ use crate::{
         transport::connectivity_probe::{ConnectivityProbe, ProbeOutcome, ProbeRole},
     },
     models::AccountEndpoint,
-    options::{PartitionFailoverOptions, Region},
+    options::{OperationOptionsView, PartitionFailoverOptions, Region, ThrottlingRetryOptions},
 };
 
 use super::{
@@ -65,6 +65,7 @@ impl LocationSnapshot {
 type AccountRefreshFn = Arc<
     dyn Fn(
             Option<Arc<AccountProperties>>,
+            Option<ThrottlingRetryOptions>,
         ) -> BoxFuture<'static, crate::error::Result<AccountProperties>>
         + Send
         + Sync,
@@ -325,11 +326,6 @@ impl LocationStateStore {
         snapshot
     }
 
-    /// Returns the configured endpoint unavailability TTL.
-    pub fn endpoint_unavailability_ttl(&self) -> Duration {
-        self.endpoint_unavailability_ttl
-    }
-
     /// Returns the latest account snapshot.
     #[allow(dead_code)]
     pub fn account_snapshot(&self) -> Arc<AccountEndpointState> {
@@ -373,6 +369,15 @@ impl LocationStateStore {
 
     /// Applies location effects (endpoint unavailability and account refresh).
     pub async fn apply(&self, effects: &[LocationEffect]) {
+        self.apply_with_options(effects, None).await;
+    }
+
+    /// Applies operation-triggered effects with the caller's pinned configuration.
+    pub(crate) async fn apply_with_options(
+        &self,
+        effects: &[LocationEffect],
+        options: Option<&OperationOptionsView<'_>>,
+    ) {
         for effect in effects {
             match effect {
                 LocationEffect::MarkEndpointUnavailable { endpoint, reason } => {
@@ -400,7 +405,14 @@ impl LocationStateStore {
                     });
                 }
                 LocationEffect::RefreshAccountProperties => {
-                    self.refresh_account_properties_if_due().await;
+                    let throttling = options.map(|options| {
+                        let view = options.throttling_retry_options();
+                        ThrottlingRetryOptions {
+                            max_retry_count: view.max_retry_count().copied(),
+                            max_retry_wait_time: view.max_retry_wait_time().copied(),
+                        }
+                    });
+                    self.refresh_account_properties_if_due(throttling).await;
                 }
                 LocationEffect::CacheHubRegion {
                     partition_key_range_id,
@@ -494,7 +506,7 @@ impl LocationStateStore {
         }
     }
 
-    async fn refresh_account_properties_if_due(&self) {
+    async fn refresh_account_properties_if_due(&self, throttling: Option<ThrottlingRetryOptions>) {
         let now_ms = epoch_millis();
         let refresh_after_ms = self.refresh_interval.as_millis() as u64;
         let last = self.last_refresh_epoch_ms.load(Ordering::Acquire);
@@ -529,7 +541,7 @@ impl LocationStateStore {
             committed: false,
         };
 
-        if self.refresh_account_properties_inner().await {
+        if self.refresh_account_properties_inner(throttling).await {
             claim.commit();
         }
     }
@@ -548,7 +560,7 @@ impl LocationStateStore {
     /// [`RefreshClaimGuard`] when its own fetch fails or is cancelled, so the
     /// same guarantee holds there.
     async fn force_refresh_account_properties(&self) {
-        let _ = self.refresh_account_properties_inner().await;
+        let _ = self.refresh_account_properties_inner(None).await;
     }
 
     /// Shared implementation of both `refresh_account_properties_if_due`
@@ -568,7 +580,10 @@ impl LocationStateStore {
     ///
     /// Returns `true` only when a fresh snapshot was actually applied, so
     /// callers that pre-claimed the rate-limit clock can roll it back.
-    async fn refresh_account_properties_inner(&self) -> bool {
+    async fn refresh_account_properties_inner(
+        &self,
+        throttling: Option<ThrottlingRetryOptions>,
+    ) -> bool {
         // Capture the previous properties so the refresh callback can use
         // them for regional fallback if the primary endpoint fails. We
         // intentionally do NOT invalidate the cache here — concurrent
@@ -581,7 +596,7 @@ impl LocationStateStore {
             .await;
 
         let refresh_fn = Arc::clone(&self.account_refresh_fn);
-        let fetched = (refresh_fn)(previous_props).await;
+        let fetched = (refresh_fn)(previous_props, throttling).await;
 
         let new_properties = match fetched {
             Ok(props) => props,
@@ -1296,12 +1311,15 @@ mod tests {
     #[tokio::test]
     async fn apply_marks_endpoint_unavailable() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1329,12 +1347,15 @@ mod tests {
     #[test]
     fn global_database_account_name_prefers_metadata_id() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1383,12 +1404,15 @@ mod tests {
     #[tokio::test]
     async fn unavailable_endpoint_fails_back_only_after_successful_probe() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1441,12 +1465,15 @@ mod tests {
     #[tokio::test]
     async fn failed_probe_resets_cooldown_keeping_endpoint_out_of_rotation() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let make_store = || {
             LocationStateStore::new(
@@ -1539,12 +1566,15 @@ mod tests {
     #[tokio::test]
     async fn endpoint_unavailability_lifecycle_mark_cooldown_probe_restore() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         // Non-zero cooldown so the "not yet due" gate is observable.
         let cooldown = Duration::from_secs(60);
@@ -1640,12 +1670,15 @@ mod tests {
     #[test]
     fn account_sync_preserves_unavailable_marks_for_probe_loop() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1703,12 +1736,15 @@ mod tests {
     #[tokio::test]
     async fn probe_skips_endpoints_the_account_no_longer_advertises() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1794,12 +1830,15 @@ mod tests {
     #[tokio::test]
     async fn probe_does_not_fail_back_an_endpoint_removed_while_probing() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = Arc::new(LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1871,16 +1910,19 @@ mod tests {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
         let refresh_calls = Arc::new(AtomicUsize::new(0));
         let refresh_calls_clone = Arc::clone(&refresh_calls);
-        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
-            let refresh_calls = Arc::clone(&refresh_calls_clone);
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move {
-                    refresh_calls.fetch_add(1, Ordering::SeqCst);
-                    Ok(payload)
-                });
-            fut
-        });
+        let refresh = Arc::new(
+            move |_previous: Option<Arc<AccountProperties>>,
+                  _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let refresh_calls = Arc::clone(&refresh_calls_clone);
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move {
+                        refresh_calls.fetch_add(1, Ordering::SeqCst);
+                        Ok(payload)
+                    });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1917,27 +1959,30 @@ mod tests {
         let success_refreshes_clone = Arc::clone(&success_refreshes);
         let total_refreshes_clone = Arc::clone(&total_refreshes);
         // First call fails; subsequent calls succeed.
-        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
-            let total = Arc::clone(&total_refreshes_clone);
-            let success = Arc::clone(&success_refreshes_clone);
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move {
-                    let n = total.fetch_add(1, Ordering::SeqCst);
-                    if n == 0 {
-                        Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::new(
-                                azure_core::http::StatusCode::BadRequest,
-                            ))
-                            .with_message("simulated network failure")
-                            .build())
-                    } else {
-                        success.fetch_add(1, Ordering::SeqCst);
-                        Ok(payload)
-                    }
-                });
-            fut
-        });
+        let refresh = Arc::new(
+            move |_previous: Option<Arc<AccountProperties>>,
+                  _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let total = Arc::clone(&total_refreshes_clone);
+                let success = Arc::clone(&success_refreshes_clone);
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move {
+                        let n = total.fetch_add(1, Ordering::SeqCst);
+                        if n == 0 {
+                            Err(crate::error::CosmosError::builder()
+                                .with_status(crate::error::CosmosStatus::new(
+                                    azure_core::http::StatusCode::BadRequest,
+                                ))
+                                .with_message("simulated network failure")
+                                .build())
+                        } else {
+                            success.fetch_add(1, Ordering::SeqCst);
+                            Ok(payload)
+                        }
+                    });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -1984,27 +2029,30 @@ mod tests {
         let success_refreshes_clone = Arc::clone(&success_refreshes);
         let total_refreshes_clone = Arc::clone(&total_refreshes);
         // First call fails; subsequent calls succeed.
-        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
-            let total = Arc::clone(&total_refreshes_clone);
-            let success = Arc::clone(&success_refreshes_clone);
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move {
-                    let n = total.fetch_add(1, Ordering::SeqCst);
-                    if n == 0 {
-                        Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::new(
-                                azure_core::http::StatusCode::BadRequest,
-                            ))
-                            .with_message("simulated network failure")
-                            .build())
-                    } else {
-                        success.fetch_add(1, Ordering::SeqCst);
-                        Ok(payload)
-                    }
-                });
-            fut
-        });
+        let refresh = Arc::new(
+            move |_previous: Option<Arc<AccountProperties>>,
+                  _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let total = Arc::clone(&total_refreshes_clone);
+                let success = Arc::clone(&success_refreshes_clone);
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move {
+                        let n = total.fetch_add(1, Ordering::SeqCst);
+                        if n == 0 {
+                            Err(crate::error::CosmosError::builder()
+                                .with_status(crate::error::CosmosStatus::new(
+                                    azure_core::http::StatusCode::BadRequest,
+                                ))
+                                .with_message("simulated network failure")
+                                .build())
+                        } else {
+                            success.fetch_add(1, Ordering::SeqCst);
+                            Ok(payload)
+                        }
+                    });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -2076,16 +2124,19 @@ mod tests {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
         let refreshes = Arc::new(AtomicUsize::new(0));
         let refreshes_clone = Arc::clone(&refreshes);
-        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
-            let count = Arc::clone(&refreshes_clone);
-            let payload = refresh_payload_with_g2();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move {
-                    count.fetch_add(1, Ordering::SeqCst);
-                    Ok(payload)
-                });
-            fut
-        });
+        let refresh = Arc::new(
+            move |_previous: Option<Arc<AccountProperties>>,
+                  _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let count = Arc::clone(&refreshes_clone);
+                let payload = refresh_payload_with_g2();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move {
+                        count.fetch_add(1, Ordering::SeqCst);
+                        Ok(payload)
+                    });
+                fut
+            },
+        );
 
         let probe = Arc::new(BlockingProbe::default());
         let store = Arc::new(LocationStateStore::new(
@@ -2137,25 +2188,28 @@ mod tests {
         // Call 1 succeeds (bootstrap seeds the cache); calls 2+ surface a
         // typed 503 mirroring what `fetch_account_properties_with_transport`
         // now produces on a 5xx account-metadata response.
-        let refresh = Arc::new(move |_previous: Option<Arc<AccountProperties>>| {
-            let total = Arc::clone(&total_refreshes_clone);
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move {
-                    let n = total.fetch_add(1, Ordering::SeqCst);
-                    if n == 0 {
-                        Ok(payload)
-                    } else {
-                        Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::new(
-                                azure_core::http::StatusCode::ServiceUnavailable,
-                            ))
-                            .with_message("simulated 5xx on periodic account-metadata refresh")
-                            .build())
-                    }
-                });
-            fut
-        });
+        let refresh = Arc::new(
+            move |_previous: Option<Arc<AccountProperties>>,
+                  _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let total = Arc::clone(&total_refreshes_clone);
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move {
+                        let n = total.fetch_add(1, Ordering::SeqCst);
+                        if n == 0 {
+                            Ok(payload)
+                        } else {
+                            Err(crate::error::CosmosError::builder()
+                                .with_status(crate::error::CosmosStatus::new(
+                                    azure_core::http::StatusCode::ServiceUnavailable,
+                                ))
+                                .with_message("simulated 5xx on periodic account-metadata refresh")
+                                .build())
+                        }
+                    });
+                fut
+            },
+        );
 
         let cache = Arc::new(AccountMetadataCache::new());
         let store = LocationStateStore::new(
@@ -2225,12 +2279,15 @@ mod tests {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
         // The refresh fn is unused in this test — sync_account_properties
         // is called directly with explicit payloads.
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -2365,12 +2422,15 @@ mod tests {
     #[test]
     fn sync_account_properties_adopts_gateway_v2_when_thin_client_locations_appear() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -2493,12 +2553,15 @@ mod tests {
         // fix, the strong ref stays alive until the store itself is dropped.
 
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -2669,12 +2732,15 @@ mod tests {
     async fn connectivity_probe_failure_suppresses_gateway_v2_then_recovers() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
 
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = refresh_payload_with_g2();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = refresh_payload_with_g2();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let probe = Arc::new(MockProbe::new(ProbeOutcome::Failed {
             failures: vec![(
@@ -2743,12 +2809,15 @@ mod tests {
     async fn connectivity_probe_success_is_sticky_and_not_reprobed() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
 
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = refresh_payload_with_g2();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = refresh_payload_with_g2();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let probe = Arc::new(MockProbe::new(ProbeOutcome::AllHealthy));
 
@@ -2802,12 +2871,15 @@ mod tests {
     fn no_probe_wired_preserves_existing_gateway_v2_behavior() {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
 
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = refresh_payload_with_g2();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = refresh_payload_with_g2();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -2834,12 +2906,15 @@ mod tests {
 
     fn build_store_with_two_regions() -> LocationStateStore {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_multi_region_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_multi_region_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         let store = LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),
@@ -2916,12 +2991,15 @@ mod tests {
 
     fn build_store_for_ppaf_tests() -> LocationStateStore {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
-        let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
-            let payload = test_refresh_payload();
-            let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
-                Box::pin(async move { Ok(payload) });
-            fut
-        });
+        let refresh = Arc::new(
+            |_previous: Option<Arc<AccountProperties>>,
+             _throttling: Option<crate::options::ThrottlingRetryOptions>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            },
+        );
 
         LocationStateStore::new(
             Arc::new(AccountMetadataCache::new()),

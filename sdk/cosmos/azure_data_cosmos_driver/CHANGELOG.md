@@ -24,8 +24,12 @@
 - `error::cosmos_status` is no longer a public module; `CosmosStatus` and `SubStatusCode` remain available as re-exports from `error`. The internal-only `query` module (gated behind the `__internal_testing` feature) is now `#[doc(hidden)]` so it no longer appears as an empty public module in generated API surfaces. ([#5205](https://github.com/Azure/azure-sdk-for-rust/pull/5205))
 - `CosmosRequestHeaders::offer_throughput`, `OfferAutoscaleSettings::max_throughput`, `OfferAutoscaleSettings::new`, `OfferAutoscaleSettings::with_increment_percent`, and `AutoscaleThroughputPolicy::increment_percent` now use `u32` instead of the platform-dependent `usize`, matching the RU/s values Cosmos DB actually returns. ([#5204](https://github.com/Azure/azure-sdk-for-rust/pull/5204))
 - Renamed several types for naming consistency: `diagnostics::PipelineType` is now `diagnostics::PipelineKind` (following the `Kind`-over-`Type` convention), `diagnostics::ProxyConfiguration` is now `diagnostics::ProxyConfig` (matching the `Config` naming used elsewhere), and `in_memory_emulator::RuChargingModel` is now `in_memory_emulator::RequestUnitChargingModel` (expanding the `RU` acronym). The unstable `testing` module (`__internal_mocking` feature) was renamed to `test`. ([#5203](https://github.com/Azure/azure-sdk-for-rust/pull/5203))
+- Moved `OperationOptions::patch_strategy` and its generated builder, view, and environment APIs behind the `preview_patch` feature. Core PATCH execution remains available without the feature. ([#5346](https://github.com/Azure/azure-sdk-for-rust/pull/5346))
 
 ### Bugs Fixed
+
+- Preserve admitted throttle retry settings during operation-triggered account metadata refresh, including regional and HTTP-version recovery paths.
+- Honor per-operation endpoint unavailability TTL and runtime TTL updates during routing without changing sibling operations' cooldown intervals.
 
 - Reconciled dataflow partition-range identity resolution across logical, EPK, sequential, and hedged requests, preserving split-parent session tokens on Gateway 2.0 while keeping logical partition-key wire routing unchanged, and enforcing the end-to-end timeout across planning and first-page execution. ([#5315](https://github.com/Azure/azure-sdk-for-rust/pull/5315))
 - Container recreation now preserves collection RID mismatch errors during cold partition routing and rejects incompatible stale partition keys with a dedicated client substatus. ([#5324](https://github.com/Azure/azure-sdk-for-rust/pull/5324))

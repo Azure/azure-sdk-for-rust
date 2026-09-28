@@ -33,16 +33,13 @@ Run this after regenerating sources or changing Rust code that can affect a crat
 
    ```bash
    cargo run --manifest-path eng/tools/generate_api/Cargo.toml -- \
-     --manifest-path <crate>/Cargo.toml \
-     --output <crate>/api \
-     --no-docs \
-     --no-map
+     --manifest-path <crate>/Cargo.toml
    ```
 
 ## Optional outputs
 
-- To include `api.comments.patch`, omit `--no-docs`.
-- To include `api.md.map`, omit `--no-map`.
+- Pass `--review` to also generate `api.metadata.yml`, `api.md.map`, and
+  `api.documentation.patch`.
 
 ## No changed crates
 
@@ -51,5 +48,5 @@ report that no crate API artifacts need regeneration.
 
 ## Validation
 
-After generation, check the resulting `api/api.md` and `api/api.metadata.yml` files in `git diff`
-and report which crates were updated.
+After generation, check the resulting `api.md` files in `git diff` and report which crates were
+updated.

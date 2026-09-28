@@ -144,8 +144,9 @@ pub fn generate_from_env(input: &OptionsInput) -> Result<TokenStream> {
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     let field_inits = input.fields.iter().map(|field| {
+        let cfg_attrs = &field.cfg_attrs;
         let field_name = &field.ident;
-        if let Some(ref env_var) = field.env_var {
+        let init = if let Some(ref env_var) = field.env_var {
             field_init(
                 field_name,
                 &field.inner_type,
@@ -154,7 +155,8 @@ pub fn generate_from_env(input: &OptionsInput) -> Result<TokenStream> {
             )
         } else {
             quote! { #field_name: None }
-        }
+        };
+        quote! { #(#cfg_attrs)* #init }
     });
 
     let override_tokens = generate_from_env_override(input);
@@ -192,8 +194,9 @@ fn generate_from_env_override(input: &OptionsInput) -> TokenStream {
     }
 
     let field_inits = input.fields.iter().map(|field| {
+        let cfg_attrs = &field.cfg_attrs;
         let field_name = &field.ident;
-        if let Some(override_var) = field.override_env_var() {
+        let init = if let Some(override_var) = field.override_env_var() {
             field_init(
                 field_name,
                 &field.inner_type,
@@ -204,7 +207,8 @@ fn generate_from_env_override(input: &OptionsInput) -> TokenStream {
             // Non-overridable fields are never sourced from an `_OVERRIDE`
             // variable — the override layer only carries kill-switch values.
             quote! { #field_name: None }
-        }
+        };
+        quote! { #(#cfg_attrs)* #init }
     });
 
     quote! {

@@ -11,13 +11,12 @@
   - `reqwest`
   - `rustls`
 - `control_plane`
-- `distributed_tracing`
 - `fault_injection`
 - `hmac_openssl`
 - `hmac_rust`
 - `key_auth`
-- `metrics`
 - `native_tls`
+- `preview_opentelemetry`
 - `preview_patch`
 - `rustls`
 
@@ -316,15 +315,17 @@ pub mod clients {
         pub fn status_code(&self) -> azure_core::http::StatusCode;
         pub fn sub_status_code(&self) -> Option<crate::SubStatusCode>;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(all(feature = "preview_dtx", feature = "preview_patch"))]
     #[derive(Clone, Default)]
+    #[cfg(feature = "preview_patch")]
     #[non_exhaustive]
     pub struct DistributedTransactionPatchOperationOptions {
         pub session_token: Option<crate::options::SessionToken>,
         pub precondition: Option<crate::options::Precondition>,
         pub filter_predicate: Option<std::borrow::Cow<'static, str>>,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(all(feature = "preview_dtx", feature = "preview_patch"))]
+    #[cfg(feature = "preview_patch")]
     impl DistributedTransactionPatchOperationOptions {
         pub fn with_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
         pub fn with_precondition(self, precondition: Precondition) -> Self;
@@ -361,6 +362,7 @@ pub mod clients {
         pub fn create_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
         pub fn delete_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, options: Option<DistributedTransactionOperationOptions>) -> Self;
         pub fn new() -> Self;
+        #[cfg(feature = "preview_patch")]
         pub fn patch_item<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, patch: PatchInstructions, options: Option<DistributedTransactionPatchOperationOptions>) -> crate::Result<Self>;
         pub fn replace_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
         pub fn upsert_item<T: Serialize, impl Into<PartitionKey>: Into<PartitionKey>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(self, container: &ContainerClient, partition_key: impl Into<PartitionKey>, item_id: impl Into<std::borrow::Cow<'static, str>>, item: T, options: Option<DistributedTransactionOperationOptions>) -> crate::Result<Self>;
@@ -385,9 +387,8 @@ pub mod clients {
     }
 }
 pub mod diagnostics {
-    #[cfg(feature = "metrics")]
+    #[cfg(feature = "preview_opentelemetry")]
     pub use azure_data_cosmos::diagnostics::metrics::handler::CosmosMetricsHandler;
-    #[cfg(feature = "metrics")]
     pub use azure_data_cosmos::diagnostics::metrics::options::MetricsOptions;
     pub struct ClientLifetimeToken {
     }
@@ -434,34 +435,34 @@ pub mod diagnostics {
         #[must_use]
         pub fn with_server_address<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, address: impl Into<Cow<'static, str>>) -> Self;
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     pub struct CosmosTracingHandler {
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     impl CosmosTracingHandler {
         pub fn builder() -> CosmosTracingHandlerBuilder;
         pub fn should_emit(&self, diagnostics: &DiagnosticsContext) -> bool;
         pub fn thresholds(&self) -> &DiagnosticsThresholds;
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     impl DiagnosticsHandler for CosmosTracingHandler {
         fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     #[derive(Default)]
     pub struct CosmosTracingHandlerBuilder {
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     impl CosmosTracingHandlerBuilder {
         pub fn build(self) -> CosmosTracingHandler;
         pub fn build_with_tracer<T>(self, tracer: T) -> CosmosTracingHandlerWithTracer<T> where T: opentelemetry::trace::Tracer + Send + Sync + 'static;
         pub fn with_rate_limit(self, rate_limit: RateLimiterConfig) -> Self;
         pub fn with_thresholds(self, thresholds: DiagnosticsThresholds) -> Self;
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     pub struct CosmosTracingHandlerWithTracer<T> {
     }
-    #[cfg(feature = "distributed_tracing")]
+    #[cfg(feature = "preview_opentelemetry")]
     impl<T> DiagnosticsHandler for CosmosTracingHandlerWithTracer<T> where T: opentelemetry::trace::Tracer + Send + Sync + 'static {
         fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
     }
@@ -653,22 +654,26 @@ pub mod diagnostics {
         fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
         fn on_client_created(&self, client: &CosmosClientInfo) -> Option<ClientLifetimeToken>;
     }
-    #[cfg(feature = "metrics")]
     pub mod metrics {
+        #[cfg(feature = "preview_opentelemetry")]
         pub struct CosmosMetricsHandler {
         }
+        #[cfg(feature = "preview_opentelemetry")]
         impl CosmosMetricsHandler {
             pub fn new() -> Self;
             pub fn with_meter(meter: Meter) -> Self;
             pub fn with_meter_and_options(meter: Meter, options: MetricsOptions) -> Self;
             pub fn with_options(options: MetricsOptions) -> Self;
         }
+        #[cfg(feature = "preview_opentelemetry")]
         impl Debug for CosmosMetricsHandler {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
         }
+        #[cfg(feature = "preview_opentelemetry")]
         impl Default for CosmosMetricsHandler {
             fn default() -> Self;
         }
+        #[cfg(feature = "preview_opentelemetry")]
         impl DiagnosticsHandler for CosmosMetricsHandler {
             fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>);
             fn on_client_created(&self, client: &CosmosClientInfo) -> Option<ClientLifetimeToken>;
@@ -1730,18 +1735,21 @@ pub mod models {
     impl<T: Into<PartitionKeyValue>> From<Option<T>> for PartitionKeyValue {
         fn from(value: Option<T>) -> Self;
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     #[derive(Clone, Debug, Default, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub struct PatchInstructions {
         pub operations: Vec<PatchOperation>,
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl PatchInstructions {
         pub fn is_retry_safe(&self) -> bool;
         pub fn new() -> Self;
         pub fn with_operation(self, operation: PatchOperation) -> Self;
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl From<Vec<PatchOperation>> for PatchInstructions {
         fn from(operations: Vec<PatchOperation>) -> Self;
@@ -2029,6 +2037,7 @@ pub mod models {
         LastWriterWins,
         Custom,
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     #[derive(Clone, Copy, Debug, PartialEq)]
     #[non_exhaustive]
@@ -2036,18 +2045,22 @@ pub mod models {
         Int(i64),
         Float(f64),
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl From<f64> for CosmosNumber {
         fn from(v: f64) -> Self;
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl From<i64> for CosmosNumber {
         fn from(v: i64) -> Self;
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl Serialize for CosmosNumber {
         fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error>;
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl<'de> Deserialize<'de> for CosmosNumber {
         fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, <D as >::Error>;
@@ -2089,6 +2102,7 @@ pub mod models {
         type Error = &'static str;
         fn try_from(value: u32) -> Result<Self, <Self as >::Error>;
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
@@ -2102,6 +2116,7 @@ pub mod models {
         Increment { path: String, value: CosmosNumber },
         Move { from: String, path: String },
     }
+    #[cfg(feature = "preview_patch")]
     #[doc(inline)]
     impl PatchOperation {
         pub fn add<impl Into<String>: Into<String>>(path: impl Into<String>, value: Value) -> Self;
@@ -2519,6 +2534,7 @@ pub mod options {
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct OperationOptions {
+        #[cfg(feature = "preview_patch")]
         pub patch_strategy: Option<crate::options::PatchStrategy>,
         pub read_consistency_strategy: Option<crate::options::ReadConsistencyStrategy>,
         pub excluded_regions: Option<crate::options::ExcludedRegions>,
@@ -2561,6 +2577,7 @@ pub mod options {
         pub fn with_hedging_enabled(self, value: bool) -> Self;
         pub fn with_max_failover_retry_count(self, value: u32) -> Self;
         pub fn with_max_session_retry_count(self, value: u32) -> Self;
+        #[cfg(feature = "preview_patch")]
         pub fn with_patch_strategy(self, value: PatchStrategy) -> Self;
         pub fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
@@ -2586,6 +2603,7 @@ pub mod options {
         pub fn max_session_retry_count(&self) -> Option<&u32>;
         pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
+        #[cfg(feature = "preview_patch")]
         pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
         pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
         pub fn session_capturing_disabled(&self) -> Option<&bool>;
