@@ -91,6 +91,7 @@ libraries for .NET, Java, and Python remain outside the release matrix.
 | `native-driver.yml` | Defines the official 1ES build, Go module artifact, and downstream draft pull request. |
 | `native-driver-build-job.yml` | Runs one generated target row with the appropriate pool, image, Rust setup, and linker. |
 | `../docs/NATIVE_SUPPLY_CHAIN.md` | Explains how the artifacts are built and verified. |
+| `../docs/NATIVE_VERSIONING_AND_RELEASES.md` | Proposes native release identity, ABI compatibility, changelog, provenance, and host-SDK propagation. |
 
 ## Production flow
 
