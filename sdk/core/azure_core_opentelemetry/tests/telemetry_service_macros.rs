@@ -1,7 +1,7 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell: ignore azuresdkforcpp invalidtopleveldomain azurewebsites
+// cspell: ignore invalidtopleveldomain
 //! This file contains an Azure SDK for Rust fake service client API.
 //!
 use azure_core::{
@@ -15,7 +15,7 @@ use azure_core::{
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use opentelemetry_sdk::trace::{InMemorySpanExporter, SdkTracerProvider};
-use std::sync::Arc;
+use std::{env, sync::Arc};
 
 #[derive(Clone, SafeDebug)]
 pub struct TestServiceClientWithMacrosOptions {
@@ -208,7 +208,9 @@ mod tests {
         azure_provider: Arc<dyn TracerProvider>,
     ) -> TestServiceClientWithMacros {
         let recording = ctx.recording();
-        let endpoint = "https://azuresdkforcpp.azurewebsites.net";
+        let endpoint = env::var("AZSDKRUSTTEST_HTTPBIN_URL")
+            .expect("AZSDKRUSTTEST_HTTPBIN_URL env var must be set to https://httpbin.org or your own deployed instance of that service.");
+ 
         let credential = recording.credential().clone();
         let mut options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
@@ -293,9 +295,13 @@ mod tests {
     }
 
     #[recorded::test()]
+    #[ignore]
     async fn test_macro_service_client_get_simple(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
+
+        let endpoint = env::var("AZSDKRUSTTEST_HTTPBIN_URL")
+            .expect("AZSDKRUSTTEST_HTTPBIN_URL env var must be set to https://httpbin.org or your own deployed instance of that service.");
 
         let client = create_service_client(&ctx, azure_provider.clone());
 
@@ -324,7 +330,7 @@ mod tests {
                             "url.full",
                             format!("{}{}", client.endpoint(), "get?api-version=2023-10-01").into(),
                         ),
-                        ("server.address", "azuresdkforcpp.azurewebsites.net".into()),
+                        ("server.address", endpoint.into()),
                         ("server.port", 443.into()),
                         ("http.response.status_code", 200.into()),
                     ],
@@ -336,9 +342,13 @@ mod tests {
     }
 
     #[recorded::test()]
+    #[ignore]
     async fn test_macro_service_client_get_with_error(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
+
+        let endpoint = env::var("AZSDKRUSTTEST_HTTPBIN_URL")
+            .expect("AZSDKRUSTTEST_HTTPBIN_URL env var must be set to https://httpbin.org or your own deployed instance of that service.");
 
         let client = create_service_client(&ctx, azure_provider.clone());
 
@@ -371,7 +381,7 @@ mod tests {
                             )
                             .into(),
                         ),
-                        ("server.address", "azuresdkforcpp.azurewebsites.net".into()),
+                        ("server.address", endpoint.into()),
                         ("server.port", 443.into()),
                         ("error.type", "404".into()),
                         ("http.response.status_code", 404.into()),
@@ -384,9 +394,13 @@ mod tests {
     }
 
     #[recorded::test()]
+    #[ignore]
     async fn test_macro_service_client_get_with_function_tracing(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
+
+        let endpoint = env::var("AZSDKRUSTTEST_HTTPBIN_URL")
+            .expect("AZSDKRUSTTEST_HTTPBIN_URL env var must be set to https://httpbin.org or your own deployed instance of that service.");
 
         let client = create_service_client(&ctx, azure_provider.clone());
 
@@ -413,7 +427,7 @@ mod tests {
                         "url.full",
                         format!("{}{}", client.endpoint(), "get?api-version=2023-10-01").into(),
                     ),
-                    ("server.address", "azuresdkforcpp.azurewebsites.net".into()),
+                    ("server.address", endpoint.into()),
                     ("server.port", 443.into()),
                     ("http.response.status_code", 200.into()),
                 ],
@@ -439,9 +453,13 @@ mod tests {
     }
 
     #[recorded::test()]
+    #[ignore]
     async fn test_macro_service_client_get_function_tracing_error(ctx: TestContext) -> Result<()> {
         let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
+
+        let endpoint = env::var("AZSDKRUSTTEST_HTTPBIN_URL")
+            .expect("AZSDKRUSTTEST_HTTPBIN_URL env var must be set to https://httpbin.org or your own deployed instance of that service.");
 
         let client = create_service_client(&ctx, azure_provider.clone());
 
@@ -475,7 +493,7 @@ mod tests {
                         )
                         .into(),
                     ),
-                    ("server.address", "azuresdkforcpp.azurewebsites.net".into()),
+                    ("server.address", endpoint.into()),
                     ("server.port", 443.into()),
                     ("http.response.status_code", 404.into()),
                     ("error.type", "404".into()),
@@ -510,7 +528,7 @@ mod tests {
         let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
         let recording = ctx.recording();
-        let endpoint = "https://azuresdkforcpp.azurewebsites.invalidtopleveldomain";
+        let endpoint = "https://www.microsoft.invalidtopleveldomain";
         let credential = recording.credential().clone();
         let options = TestServiceClientWithMacrosOptions {
             client_options: ClientOptions {
@@ -557,7 +575,7 @@ mod tests {
                     ),
                     (
                         "server.address",
-                        "azuresdkforcpp.azurewebsites.invalidtopleveldomain".into(),
+                        "www.microsoft.invalidtopleveldomain".into(),
                     ),
                     ("server.port", 443.into()),
                     ("error.type", "Connection".into()),
@@ -586,7 +604,7 @@ mod tests {
                     ),
                     (
                         "server.address",
-                        "azuresdkforcpp.azurewebsites.invalidtopleveldomain".into(),
+                        "www.microsoft.invalidtopleveldomain".into(),
                     ),
                     ("server.port", 443.into()),
                     ("http.request.resend_count", 1.into()),
@@ -616,7 +634,7 @@ mod tests {
                     ),
                     (
                         "server.address",
-                        "azuresdkforcpp.azurewebsites.invalidtopleveldomain".into(),
+                        "www.microsoft.invalidtopleveldomain".into(),
                     ),
                     ("server.port", 443.into()),
                     ("http.request.resend_count", 2.into()),
@@ -646,7 +664,7 @@ mod tests {
                     ),
                     (
                         "server.address",
-                        "azuresdkforcpp.azurewebsites.invalidtopleveldomain".into(),
+                        "www.microsoft.invalidtopleveldomain".into(),
                     ),
                     ("server.port", 443.into()),
                     ("http.request.resend_count", 3.into()),
@@ -678,6 +696,7 @@ mod tests {
     }
 
     #[recorded::test()]
+    #[ignore]
     async fn test_http_tracing_tests(ctx: TestContext) -> Result<()> {
         let recording = ctx.recording();
         let package_name = recording.var("CARGO_PKG_NAME", None);
@@ -702,6 +721,7 @@ mod tests {
     }
 
     #[recorded::test()]
+    #[ignore]
     async fn test_function_tracing_tests(ctx: TestContext) -> Result<()> {
         let package_name = ctx.recording().var("CARGO_PKG_NAME", None).to_string();
         let package_version = env!("CARGO_PKG_VERSION").to_string();
@@ -727,7 +747,9 @@ mod tests {
 
         Ok(())
     }
+
     #[recorded::test()]
+    #[ignore]
     async fn test_function_tracing_tests_error(ctx: TestContext) -> Result<()> {
         use azure_core_test::tracing::ExpectedRestApiSpan;
 

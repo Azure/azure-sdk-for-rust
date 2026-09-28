@@ -1,8 +1,6 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-// cspell: ignore azuresdkforcpp azurewebsites
-
 //! This file contains an Azure SDK for Rust fake service client API.
 //!
 use azure_core::{
@@ -17,7 +15,7 @@ use azure_core::{
 };
 use azure_core_opentelemetry::OpenTelemetryTracerProvider;
 use opentelemetry_sdk::trace::{InMemorySpanExporter, SdkTracerProvider};
-use std::{borrow::Cow, sync::Arc};
+use std::{borrow::Cow, env, sync::Arc};
 
 #[derive(Clone, SafeDebug)]
 pub struct TestServiceClientOptions {
@@ -265,9 +263,12 @@ async fn test_service_client_new(ctx: TestContext) -> Result<()> {
 
 // Ensure that the the test client actually does what it's supposed to do without telemetry.
 #[recorded::test()]
+#[ignore]
 async fn test_service_client_get(ctx: TestContext) -> Result<()> {
     let recording = ctx.recording();
-    let endpoint = "https://azuresdkforcpp.azurewebsites.net";
+    let endpoint = env::var("AZSDKRUSTTEST_HTTPBIN_URL")
+        .expect("AZSDKRUSTTEST_HTTPBIN_URL env var must be set to https://httpbin.org or your own deployed instance of that service.");
+ 
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions::default();
     recording.instrument(&mut options.client_options);
@@ -282,12 +283,15 @@ async fn test_service_client_get(ctx: TestContext) -> Result<()> {
 }
 
 #[recorded::test()]
+#[ignore]
 async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
     let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
     let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
     let recording = ctx.recording();
-    let endpoint = "https://azuresdkforcpp.azurewebsites.net";
+    let endpoint = env::var("AZSDKRUSTTEST_HTTPBIN_URL")
+        .expect("AZSDKRUSTTEST_HTTPBIN_URL env var must be set to https://httpbin.org or your own deployed instance of that service.");
+ 
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
         client_options: ClientOptions {
@@ -330,7 +334,7 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
                     "url.full",
                     format!("{}{}", client.endpoint(), "get?api-version=2023-10-01").into(),
                 ),
-                ("server.address", "azuresdkforcpp.azurewebsites.net".into()),
+                ("server.address", endpoint.into()),
                 ("server.port", 443.into()),
                 ("http.response.status_code", 200.into()),
             ],
@@ -341,12 +345,15 @@ async fn test_service_client_get_with_tracing(ctx: TestContext) -> Result<()> {
 }
 
 #[recorded::test()]
+#[ignore]
 async fn test_service_client_get_tracing_error(ctx: TestContext) -> Result<()> {
     let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
     let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
     let recording = ctx.recording();
-    let endpoint = "https://azuresdkforcpp.azurewebsites.net";
+    let endpoint = env::var("AZSDKRUSTTEST_HTTPBIN_URL")
+        .expect("AZSDKRUSTTEST_HTTPBIN_URL env var must be set to https://httpbin.org or your own deployed instance of that service.");
+ 
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
         client_options: ClientOptions {
@@ -390,7 +397,7 @@ async fn test_service_client_get_tracing_error(ctx: TestContext) -> Result<()> {
                     )
                     .into(),
                 ),
-                ("server.address", "azuresdkforcpp.azurewebsites.net".into()),
+                ("server.address", endpoint.into()),
                 ("server.port", 443.into()),
                 ("error.type", "404".into()),
                 ("http.response.status_code", 404.into()),
@@ -402,12 +409,15 @@ async fn test_service_client_get_tracing_error(ctx: TestContext) -> Result<()> {
 }
 
 #[recorded::test()]
+#[ignore]
 async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Result<()> {
     let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
     let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
     let recording = ctx.recording();
-    let endpoint = "https://azuresdkforcpp.azurewebsites.net";
+    let endpoint = env::var("AZSDKRUSTTEST_HTTPBIN_URL")
+        .expect("AZSDKRUSTTEST_HTTPBIN_URL env var must be set to https://httpbin.org or your own deployed instance of that service.");
+ 
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
         client_options: ClientOptions {
@@ -444,7 +454,7 @@ async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Resu
                     "url.full",
                     format!("{}{}", client.endpoint(), "get?api-version=2023-10-01").into(),
                 ),
-                ("server.address", "azuresdkforcpp.azurewebsites.net".into()),
+                ("server.address", endpoint.into()),
                 ("server.port", 443.into()),
                 ("http.response.status_code", 200.into()),
             ],
@@ -465,12 +475,15 @@ async fn test_service_client_get_with_function_tracing(ctx: TestContext) -> Resu
 }
 
 #[recorded::test()]
+#[ignore]
 async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -> Result<()> {
     let (sdk_provider, otel_exporter) = create_exportable_tracer_provider();
     let azure_provider = OpenTelemetryTracerProvider::new(sdk_provider);
 
     let recording = ctx.recording();
-    let endpoint = "https://azuresdkforcpp.azurewebsites.net";
+    let endpoint = env::var("AZSDKRUSTTEST_HTTPBIN_URL")
+        .expect("AZSDKRUSTTEST_HTTPBIN_URL env var must be set to https://httpbin.org or your own deployed instance of that service.");
+ 
     let credential = recording.credential().clone();
     let mut options = TestServiceClientOptions {
         client_options: ClientOptions {
@@ -514,7 +527,7 @@ async fn test_service_client_get_with_function_tracing_error(ctx: TestContext) -
                     )
                     .into(),
                 ),
-                ("server.address", "azuresdkforcpp.azurewebsites.net".into()),
+                ("server.address", endpoint.into()),
                 ("server.port", 443.into()),
                 ("http.response.status_code", 404.into()),
                 ("error.type", "404".into()),

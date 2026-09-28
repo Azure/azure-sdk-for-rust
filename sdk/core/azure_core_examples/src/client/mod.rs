@@ -4,7 +4,7 @@
 //! Example service client for use in `azure_core` examples and tests.
 
 /// A public HTTP endpoint used for transport examples and benchmarks.
-pub const HTTP_ENDPOINT: &str = "https://azuresdkforcpp.azurewebsites.net";
+pub const HTTP_ENDPOINT: &str = "https://httpbin.org/";
 
 use crate::credentials::TokenCredential;
 use azure_core::{
