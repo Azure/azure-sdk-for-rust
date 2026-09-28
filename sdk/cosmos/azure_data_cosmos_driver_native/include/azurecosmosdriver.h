@@ -13,6 +13,13 @@
 // This should match the version of libazurecosmosdriver you are linking against.
 #define AZURECOSMOSDRIVER_H_VERSION "0.1.0"
 
+// Native ABI compatibility version. Consumers require an equal major
+// version and a minor version at least as new as the APIs they use.
+#define AZURECOSMOSDRIVER_ABI_VERSION_MAJOR 1
+#define AZURECOSMOSDRIVER_ABI_VERSION_MINOR 1
+#define AZURECOSMOSDRIVER_ABI_VERSION \
+((AZURECOSMOSDRIVER_ABI_VERSION_MAJOR << 16) | AZURECOSMOSDRIVER_ABI_VERSION_MINOR)
+
 // Packed-status helpers (see cosmos_status_code_t). Emitted as macros so
 // they keep the SCREAMING_SNAKE_CASE spelling shared with the
 // COSMOS_SUB_STATUS_* constants instead of being double-prefixed by the
@@ -1773,6 +1780,14 @@ extern "C" {
 const char *cosmos_version(void);
 
 /**
+ * Returns the native ABI version as `(major << 16) | minor`.
+ *
+ * Consumers must require an equal major version and a minor version greater
+ * than or equal to the minimum they use.
+ */
+uint32_t cosmos_abi_version(void);
+
+/**
  * Releases a heap-allocated, library-owned C string.
  *
  * Safe to call with a null pointer (the call is a no-op in that case). Must
@@ -1863,6 +1878,20 @@ void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
  * undefined behavior.
  */
 void cosmos_bytes_free(struct cosmos_bytes_t bytes);
+
+/**
+ * Releases a library-owned byte buffer through a pointer and clears it.
+ *
+ * This pointer-oriented form avoids passing [`CosmosBytes`] by value. On
+ * success, `bytes` is reset to its empty representation, preventing accidental
+ * reuse of the released pointer.
+ *
+ * # Returns
+ *
+ * `COSMOS_STATUS_SUCCESS` on success, or `400` /
+ * `CLIENT_FFI_NULL_ARGUMENT` when `bytes` is NULL.
+ */
+cosmos_status_code_t cosmos_bytes_free_ref(struct cosmos_bytes_t *bytes);
 
 /**
  * Returns the effective PATCH tracking UUID carried by a completion.
@@ -2258,6 +2287,19 @@ void cosmos_driver_options_free(struct cosmos_driver_options_t *options);
 struct cosmos_driver_options_config_t cosmos_driver_options_config_default(void);
 
 /**
+ * Writes an all-unset driver options config to `out_config`.
+ *
+ * This pointer-oriented form avoids aggregate return-value marshalling across
+ * foreign ABIs.
+ *
+ * # Returns
+ *
+ * `COSMOS_STATUS_SUCCESS` on success, or `400` /
+ * `CLIENT_FFI_NULL_ARGUMENT` when `out_config` is NULL.
+ */
+cosmos_status_code_t cosmos_driver_options_config_default_init(struct cosmos_driver_options_config_t *out_config);
+
+/**
  * Builds a `cosmos_driver_options_t *` from an account reference and a flat
  * [`CosmosDriverOptionsConfig`] in a single call.
  *
@@ -2348,6 +2390,19 @@ void cosmos_feed_range_free(struct cosmos_feed_range_t *fr);
  * sentinels.
  */
 struct cosmos_operation_options_t cosmos_operation_options_default(void);
+
+/**
+ * Writes all-unset operation options to `out_options`.
+ *
+ * This pointer-oriented form avoids aggregate return-value marshalling across
+ * foreign ABIs.
+ *
+ * # Returns
+ *
+ * `COSMOS_STATUS_SUCCESS` on success, or `400` /
+ * `CLIENT_FFI_NULL_ARGUMENT` when `out_options` is NULL.
+ */
+cosmos_status_code_t cosmos_operation_options_default_init(struct cosmos_operation_options_t *out_options);
 
 /**
  * Creates an immutable partition key from an inline component array in a
@@ -2451,6 +2506,19 @@ void cosmos_runtime_free(struct cosmos_runtime_t *runtime);
  * fields it cares about and leaves the rest at their default sentinels.
  */
 struct cosmos_runtime_options_t cosmos_runtime_options_default(void);
+
+/**
+ * Writes all-unset runtime options to `out_options`.
+ *
+ * This pointer-oriented form avoids aggregate return-value marshalling across
+ * foreign ABIs.
+ *
+ * # Returns
+ *
+ * `COSMOS_STATUS_SUCCESS` on success, or `400` /
+ * `CLIENT_FFI_NULL_ARGUMENT` when `out_options` is NULL.
+ */
+cosmos_status_code_t cosmos_runtime_options_default_init(struct cosmos_runtime_options_t *out_options);
 
 /**
  * Builds a `cosmos_runtime_t *` from a flat [`CosmosRuntimeOptions`] in a

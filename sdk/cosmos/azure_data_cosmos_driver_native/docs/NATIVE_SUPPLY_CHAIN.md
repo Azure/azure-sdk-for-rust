@@ -2,13 +2,12 @@
 Copyright (c) Microsoft Corporation. All rights reserved.
 Licensed under the MIT License.
 -->
-<!-- cSpell:ignore Authenticode codesign dylib staticlib rustls mingw musl msrustup SPDX -->
+<!-- cSpell:ignore Authenticode codesign dylib staticlib rustls mingw musl msrustup SPDX UCRT -->
 
 # How the Go native driver is built and verified
 
 This document explains the release design for the static Cosmos native driver
-consumed by Go. It describes what is built, why the static library cannot be
-signed directly, and which release files establish trust.
+consumed by Go and the separately published Windows ARM64 MSVC DLL.
 
 The pipeline definition is `pipeline/native-driver.yml`. The operational
 commands are documented in `pipeline/README.md`.
@@ -16,8 +15,8 @@ commands are documented in `pipeline/README.md`.
 ## Scope
 
 The Microsoft Rust policy applies to the native driver's release matrix. Five
-targets are active. Windows AMD64 (GNU) is deferred from the active matrix and
-is documented below and in `pipeline/README.md`.
+static targets and one DLL target are active. Windows AMD64 (GNU) remains
+deferred.
 
 | OS and architecture | Rust target | Observed `ms-prod-1.95` status |
 | --- | --- | --- |
@@ -26,6 +25,7 @@ is documented below and in `pipeline/README.md`.
 | Linux AMD64 (musl) | `x86_64-unknown-linux-musl` | Available: installation reached build validation |
 | Linux ARM64 (musl) | `aarch64-unknown-linux-musl` | Available: installation reached build validation |
 | macOS ARM64 | `aarch64-apple-darwin` | Available: installation reached build validation |
+| Windows ARM64 (MSVC DLL) | `aarch64-pc-windows-msvc` | Available for governed build; physical ARM64 validation remains a release gate |
 | Windows AMD64 (GNU) — deferred | `x86_64-pc-windows-gnu` | Unavailable: the `ms-prod` feed does not publish `rust.std` for the GNU/MinGW target, so `RustInstaller@1` fails before the build script runs |
 
 These observations come from internal pipeline runs with RustInstaller 1.0.92
@@ -36,15 +36,9 @@ shipped with an upstream fallback; it will be re-added once Microsoft Rust
 publishes that target or an alternate toolchain is ratified. Upstream Rust
 fallback is not permitted.
 
-Windows ARM64 MSVC (`aarch64-pc-windows-msvc`) is separate work tracked by
-[#5235](https://github.com/Azure/azure-sdk-for-rust/issues/5235); it does not
-replace or establish support for Windows AMD64 GNU.
-
-The Go SDK links this static library into the customer's final executable.
-
-The release does not distribute DLLs, macOS dynamic libraries, or Linux
-shared objects. Dynamic-library distribution and signing belong to a future
-release path.
+Windows ARM64 is a separate, cgo-free runtime-loading model. It does not replace
+or establish support for Windows AMD64 GNU. Other targets continue to publish
+only static libraries.
 
 ## What is published
 
@@ -77,6 +71,65 @@ The metadata records:
 - the linker command, resolved executable path, and version output;
 - the operating-system libraries required by the Go linker; and
 - the SHA256 checksums of the built libraries and C header.
+
+### Windows ARM64 DLL payload
+
+The Windows ARM64 target publishes a separate immutable binary artifact rather
+than entering the static Go-module/downstream-PR flow:
+
+```text
+native-windows-arm64-msvc/
+└── windows-arm64-msvc/
+    └── v<native-interface-version>/
+        ├── azurecosmosdriver.dll
+        ├── azurecosmosdriver.pdb
+        ├── azurecosmosdriver.h
+        ├── rust-driver-native-interface-metadata.json
+        └── SHA256SUMS
+```
+
+The versioned directory is immutable. The PDB is an optional diagnostics asset
+associated with the DLL's PE debug identity; it is not a loader input. The
+existing per-target 1ES publication keeps it beside the runtime payload so one
+signed SPDX inventory covers their association. The metadata binds the target,
+source commit, native and
+driver versions, ABI `1.1`, compiler/linker identity, PE machine `0xAA64`,
+exports, imported DLLs, signature/timestamp evidence, and final hashes. The DLL
+hash is deliberately absent from build metadata until ESRP Authenticode signing
+and verification complete. `Finalize-WindowsArm64Artifact.ps1` then validates
+the final PE and computes `SHA256SUMS` over the signed bytes. The SBOM-enabled
+1ES publication runs only after finalization.
+
+The Windows build uses the dynamic Universal CRT model selected by the MSVC
+toolchain. PE import validation rejects non-system dependencies outside the
+explicitly reviewed Windows/UCRT/VC runtime allowlist.
+
+This artifact is intentionally not copied into `Azure/azure-cosmos-driver`
+source today. Keeping it separate avoids inflating every Go module download,
+preserves Authenticode bytes, supports side-by-side servicing, and allows symbol
+retrieval to remain optional. A future Go module may provide a stable discovery
+coordinate, but downloader and cache behavior belongs to paired Go work.
+
+### Secure Windows consumer handoff
+
+The Rust release owns signed immutable bytes, hashes, ABI/version metadata,
+provenance, SBOM evidence, and symbols. A Go consumer must independently own:
+
+- proxy-aware/offline download and fail-loud version selection;
+- SHA-256, PE ARM64, Authenticode/WinVerifyTrust, and export verification;
+- a per-version cache with restrictive ACLs and atomic replacement;
+- downgrade/substitution resistance and side-by-side ABI isolation;
+- absolute-path `LoadLibraryExW` with
+  `LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32`;
+- cgo-free `GetProcAddress` wrappers and process-lifetime unload rules; and
+- installer/zip/application signing policy.
+
+Module-contained DLLs avoid runtime downloads but substantially increase module
+proxy and repository size. Embedding and extracting a DLL improves single-file
+packaging but creates antivirus, ACL, and Authenticode-preservation concerns.
+`go generate` permits independent servicing but must handle enterprise proxies,
+offline environments, atomic installation, and cache security. This repository
+does not choose or implement those Go behaviors.
 
 Before generating output, `New-GoModules.ps1` verifies that every selected
 artifact matches its matrix identity and recorded file hashes, that all targets

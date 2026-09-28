@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+# cspell:ignore LIBPATH Signtool vswhere
 
 parameters:
   - name: UsePlatformContainer
@@ -34,6 +35,26 @@ jobs:
 
       - ${{ if eq(parameters.OSName, 'windows') }}:
         - pwsh: |
+            if ('$(PublicationKind)' -eq 'windows-dll') {
+              $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+              $installation = & $vswhere -latest -products * `
+                -requires Microsoft.VisualStudio.Component.VC.Tools.ARM64 -property installationPath
+              if (-not $installation) {
+                throw 'Visual Studio ARM64 MSVC build tools were not found.'
+              }
+              $devShell = Join-Path $installation 'Common7\Tools\Microsoft.VisualStudio.DevShell.dll'
+              Import-Module $devShell
+              Enter-VsDevShell -VsInstallPath $installation -SkipAutomaticLocation `
+                -DevCmdArguments '-arch=arm64 -host_arch=amd64'
+              foreach ($name in @('PATH', 'INCLUDE', 'LIB', 'LIBPATH', 'VCToolsInstallDir')) {
+                Write-Host "##vso[task.setvariable variable=$name]$([Environment]::GetEnvironmentVariable($name))"
+              }
+              if (-not (Get-Command link.exe -CommandType Application -ErrorAction SilentlyContinue)) {
+                throw 'MSVC ARM64 linker is unavailable after Visual Studio initialization.'
+              }
+              exit 0
+            }
+
             $mingwBin = 'C:\msys64\mingw64\bin'
             if (-not (Test-Path $mingwBin -PathType Container)) {
               throw "MSYS2 MinGW64 toolchain directory was not found: $mingwBin"
@@ -46,7 +67,7 @@ jobs:
                 throw "Required MSYS2 tool is unavailable: $tool"
               }
             }
-          displayName: Add MSYS2 MinGW64 to PATH
+          displayName: Configure Windows native toolchain
 
       - ${{ if eq(parameters.OSName, 'linux') }}:
         - bash: |
@@ -95,11 +116,87 @@ jobs:
           -CCompiler $(CCompiler)
           -StaticOnly
         displayName: Build $(TargetId) (static library + metadata)
+        condition: and(succeeded(), eq(variables['PublicationKind'], 'static-go-module'))
+
+      - pwsh: >
+          $(pipelineDir)/Build-NativeMatrix.ps1
+          -TargetId $(TargetId)
+          -OutputRoot $(Build.ArtifactStagingDirectory)/native
+          -CCompiler $(CCompiler)
+        displayName: Build $(TargetId) (DLL + PDB + metadata)
+        condition: and(succeeded(), eq(variables['PublicationKind'], 'windows-dll'))
+
+      - task: EsrpCodeSigning@5
+        displayName: Authenticode sign and verify azurecosmosdriver.dll
+        condition: and(succeeded(), eq(variables['PublicationKind'], 'windows-dll'))
+        inputs:
+          ConnectedServiceName: $(CosmosNativeSigningServiceConnection)
+          AppRegistrationClientId: $(CosmosNativeSigningClientId)
+          AppRegistrationTenantId: $(CosmosNativeSigningTenantId)
+          AuthAKVName: $(CosmosNativeSigningKeyVault)
+          AuthCertName: $(CosmosNativeSigningAuthCertificate)
+          AuthSignCertName: $(CosmosNativeSigningCertificate)
+          FolderPath: $(Build.ArtifactStagingDirectory)/native/$(TargetId)
+          Pattern: azurecosmosdriver.dll
+          signConfigType: inlineSignParams
+          inlineOperation: >-
+            [
+              {
+                "KeyCode": "CP-230012",
+                "OperationCode": "SigntoolSign",
+                "Parameters": {
+                  "OpusName": "Microsoft",
+                  "OpusInfo": "https://www.microsoft.com",
+                  "FileDigest": "/fd SHA256",
+                  "PageHash": "/NPH",
+                  "TimeStamp": "/tr http://timestamp.acs.microsoft.com /td sha256"
+                },
+                "ToolName": "sign",
+                "ToolVersion": "1.0"
+              },
+              {
+                "KeyCode": "CP-230012",
+                "OperationCode": "SigntoolVerify",
+                "Parameters": {
+                  "VerifyAll": "/pa /all"
+                },
+                "ToolName": "sign",
+                "ToolVersion": "1.0"
+              }
+            ]
+
+      - pwsh: >
+          $(pipelineDir)/Finalize-WindowsArm64Artifact.ps1
+          -ArtifactRoot $(Build.ArtifactStagingDirectory)/native/$(TargetId)
+        displayName: Verify and finalize signed Windows ARM64 payload
+        condition: and(succeeded(), eq(variables['PublicationKind'], 'windows-dll'))
+
+      - pwsh: |
+          $source = "$(Build.ArtifactStagingDirectory)/native/$(TargetId)"
+          $metadata = Get-Content `
+            (Join-Path $source 'rust-driver-native-interface-metadata.json') `
+            -Raw | ConvertFrom-Json
+          $destination = Join-Path `
+            "$(Build.ArtifactStagingDirectory)/windows-arm64-release" `
+            "windows-arm64-msvc/v$($metadata.native_interface_version)"
+          New-Item -ItemType Directory -Force $destination | Out-Null
+          foreach ($filename in @(
+            'azurecosmosdriver.dll',
+            'azurecosmosdriver.pdb',
+            'azurecosmosdriver.h',
+            'rust-driver-native-interface-metadata.json',
+            'SHA256SUMS'
+          )) {
+            Copy-Item (Join-Path $source $filename) $destination
+          }
+        displayName: Stage versioned Windows ARM64 release
+        condition: and(succeeded(), eq(variables['PublicationKind'], 'windows-dll'))
 
       - task: GoTool@0
         displayName: Install Go $(GoToolchainVersion)
         inputs:
           version: $(GoToolchainVersion)
+        condition: and(succeeded(), eq(variables['PublicationKind'], 'static-go-module'))
 
       - pwsh: >
           $(pipelineDir)/Test-NativeLink.ps1
@@ -109,9 +206,17 @@ jobs:
         displayName: Link smoke test $(TargetId)
         env:
           GOTOOLCHAIN: local
+        condition: and(succeeded(), eq(variables['PublicationKind'], 'static-go-module'))
 
-      - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
-        parameters:
-          ArtifactName: native-$(TargetId)
-          ArtifactPath: $(Build.ArtifactStagingDirectory)/native/$(TargetId)
-          SbomEnabled: true
+      - ${{ if eq(parameters.OSName, 'windows') }}:
+        - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
+          parameters:
+            ArtifactName: native-$(TargetId)
+            ArtifactPath: $(Build.ArtifactStagingDirectory)/windows-arm64-release
+            SbomEnabled: true
+      - ${{ else }}:
+        - template: /eng/common/pipelines/templates/steps/publish-1es-artifact.yml
+          parameters:
+            ArtifactName: native-$(TargetId)
+            ArtifactPath: $(Build.ArtifactStagingDirectory)/native/$(TargetId)
+            SbomEnabled: true

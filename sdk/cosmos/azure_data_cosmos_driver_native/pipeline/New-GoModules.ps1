@@ -88,7 +88,7 @@ if (-not $ArtifactRoot) { $ArtifactRoot = Join-Path $PipelineDir 'artifacts' }
 if (-not $OutputRoot)   { $OutputRoot   = Join-Path $PipelineDir 'generated' 'azure-cosmos-driver' }
 
 $matrix = Get-Content $MatrixPath -Raw | ConvertFrom-Json
-$allRows = @($matrix.targets)
+$allRows = @($matrix.targets | Where-Object publication_kind -EQ 'static-go-module')
 $rows = $allRows
 if ($TargetId) {
     $rows = @($allRows | Where-Object { $TargetId -contains $_.id })

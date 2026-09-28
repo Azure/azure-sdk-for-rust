@@ -72,3 +72,48 @@ pub extern "C" fn cosmos_bytes_free(bytes: CosmosBytes) {
         drop(Box::from_raw(slice as *mut [u8]));
     }
 }
+
+/// Releases a library-owned byte buffer through a pointer and clears it.
+///
+/// This pointer-oriented form avoids passing [`CosmosBytes`] by value. On
+/// success, `bytes` is reset to its empty representation, preventing accidental
+/// reuse of the released pointer.
+///
+/// # Returns
+///
+/// `COSMOS_STATUS_SUCCESS` on success, or `400` /
+/// `CLIENT_FFI_NULL_ARGUMENT` when `bytes` is NULL.
+#[no_mangle]
+pub extern "C" fn cosmos_bytes_free_ref(bytes: *mut CosmosBytes) -> crate::error::CosmosStatusCode {
+    crate::safety::ffi_guard(crate::error::CosmosErrorCode::panic_status_code(), || {
+        if bytes.is_null() {
+            return crate::error::CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
+        }
+        // SAFETY: the caller provides writable storage containing a value
+        // returned by this library or the empty representation.
+        let owned = unsafe { bytes.replace(CosmosBytes::empty()) };
+        cosmos_bytes_free(owned);
+        crate::error::CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::error::CosmosErrorCode;
+
+    #[test]
+    fn bytes_free_ref_clears_buffer_and_rejects_null() {
+        let mut bytes = into_cosmos_bytes(vec![1, 2, 3]);
+        assert_eq!(
+            cosmos_bytes_free_ref(&mut bytes),
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+        );
+        assert!(bytes.ptr.is_null());
+        assert_eq!(bytes.len, 0);
+        assert_eq!(
+            cosmos_bytes_free_ref(std::ptr::null_mut()),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+    }
+}

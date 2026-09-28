@@ -16,6 +16,7 @@ Describe 'Prepare-GoDriverPullRequest generated tree synchronization' {
         $ScriptPath = Join-Path $PipelineDirectory 'Prepare-GoDriverPullRequest.ps1'
         $MatrixPath = Join-Path $PipelineDirectory 'build-matrix.json'
         $Matrix = Get-Content $MatrixPath -Raw | ConvertFrom-Json
+        $StaticTargets = @($Matrix.targets | Where-Object publication_kind -EQ 'static-go-module')
 
         function Write-TestFile {
             param(
@@ -52,7 +53,7 @@ Describe 'Prepare-GoDriverPullRequest generated tree synchronization' {
                 [string]$Root
             )
 
-            foreach ($modulePath in @($Matrix.targets.module_path | Sort-Object -Unique)) {
+            foreach ($modulePath in @($StaticTargets.module_path | Sort-Object -Unique)) {
                 $moduleRoot = Join-Path $Root $modulePath
                 Write-TestFile -Path (Join-Path $moduleRoot 'go.mod') -Content @"
 module $($Matrix.module_root)/$modulePath
@@ -66,7 +67,7 @@ go $($Matrix.go_version)
 
             $checksumLines = [Collections.Generic.List[string]]::new()
             $provenanceTargets = [Collections.Generic.List[object]]::new()
-            foreach ($target in $Matrix.targets) {
+            foreach ($target in $StaticTargets) {
                 $moduleRoot = Join-Path $Root $target.module_path
                 $libraryPath = Join-Path $moduleRoot $Matrix.static_lib_filename
                 Write-TestFile -Path $libraryPath -Content "archive-$($target.id)"

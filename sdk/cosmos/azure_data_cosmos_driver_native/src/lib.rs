@@ -48,6 +48,8 @@ pub mod submit;
 pub static COSMOS_BUILD_IDENTIFIER: &CStr = c_str!(env!("BUILD_IDENTIFIER"));
 
 const VERSION: &CStr = c_str!(env!("CARGO_PKG_VERSION"));
+const ABI_VERSION_MAJOR: u16 = 1;
+const ABI_VERSION_MINOR: u16 = 1;
 
 /// Returns a constant, NUL-terminated UTF-8 string containing the version of
 /// the `azurecosmosdriver` library. The returned pointer is statically
@@ -55,4 +57,23 @@ const VERSION: &CStr = c_str!(env!("CARGO_PKG_VERSION"));
 #[no_mangle]
 pub extern "C" fn cosmos_version() -> *const c_char {
     VERSION.as_ptr()
+}
+
+/// Returns the native ABI version as `(major << 16) | minor`.
+///
+/// Consumers must require an equal major version and a minor version greater
+/// than or equal to the minimum they use.
+#[no_mangle]
+pub extern "C" fn cosmos_abi_version() -> u32 {
+    u32::from(ABI_VERSION_MAJOR) << 16 | u32::from(ABI_VERSION_MINOR)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn abi_version_is_major_minor_encoded() {
+        assert_eq!(cosmos_abi_version(), 0x0001_0001);
+    }
 }

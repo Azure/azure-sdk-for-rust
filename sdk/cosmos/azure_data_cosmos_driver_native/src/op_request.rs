@@ -56,7 +56,7 @@ use azure_data_cosmos_driver::{
 use crate::account_ref::AccountRefHandle;
 use crate::container_ref::ContainerRefHandle;
 use crate::database_ref::DatabaseRefHandle;
-use crate::error::CosmosErrorCode;
+use crate::error::{CosmosErrorCode, CosmosStatusCode};
 use crate::feed_range::FeedRangeHandle;
 use crate::partition_key::{CosmosPartitionKeyComponent, PartitionKeyHandle};
 
@@ -611,6 +611,30 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
     }
 }
 
+/// Writes all-unset operation options to `out_options`.
+///
+/// This pointer-oriented form avoids aggregate return-value marshalling across
+/// foreign ABIs.
+///
+/// # Returns
+///
+/// `COSMOS_STATUS_SUCCESS` on success, or `400` /
+/// `CLIENT_FFI_NULL_ARGUMENT` when `out_options` is NULL.
+#[no_mangle]
+pub extern "C" fn cosmos_operation_options_default_init(
+    out_options: *mut CosmosOperationOptions,
+) -> CosmosStatusCode {
+    crate::safety::ffi_guard(CosmosErrorCode::panic_status_code(), || {
+        if out_options.is_null() {
+            return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
+        }
+        // SAFETY: the caller provides writable storage for one options value.
+        unsafe {
+            out_options.write(cosmos_operation_options_default());
+        }
+        CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+    })
+}
 // ─────────────────────────────────────────────────────────────────────────────
 // cosmos_operation_kind_t
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1338,6 +1362,22 @@ mod tests {
     };
     use crate::string::view;
     use azure_data_cosmos_driver::models::PatchOperation;
+
+    #[test]
+    fn operation_options_default_init_writes_output_and_rejects_null() {
+        let mut options = std::mem::MaybeUninit::uninit();
+        assert_eq!(
+            cosmos_operation_options_default_init(options.as_mut_ptr()),
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+        );
+        // SAFETY: the successful initializer wrote the complete value.
+        let options = unsafe { options.assume_init() };
+        assert_eq!(options.read_consistency_strategy, 0);
+        assert_eq!(
+            cosmos_operation_options_default_init(std::ptr::null_mut()),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+    }
 
     #[test]
     fn supplied_id_opts_retry_safe_patch_into_tracking() {

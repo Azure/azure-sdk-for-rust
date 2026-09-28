@@ -228,6 +228,31 @@ pub extern "C" fn cosmos_runtime_options_default() -> CosmosRuntimeOptions {
     }
 }
 
+/// Writes all-unset runtime options to `out_options`.
+///
+/// This pointer-oriented form avoids aggregate return-value marshalling across
+/// foreign ABIs.
+///
+/// # Returns
+///
+/// `COSMOS_STATUS_SUCCESS` on success, or `400` /
+/// `CLIENT_FFI_NULL_ARGUMENT` when `out_options` is NULL.
+#[no_mangle]
+pub extern "C" fn cosmos_runtime_options_default_init(
+    out_options: *mut CosmosRuntimeOptions,
+) -> CosmosStatusCode {
+    crate::safety::ffi_guard(CosmosErrorCode::panic_status_code(), || {
+        if out_options.is_null() {
+            return CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
+        }
+        // SAFETY: the caller provides writable storage for one options value.
+        unsafe {
+            out_options.write(cosmos_runtime_options_default());
+        }
+        CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+    })
+}
+
 /// Builds a `cosmos_runtime_t *` from a flat [`CosmosRuntimeOptions`] in a
 /// single call.
 ///
@@ -331,6 +356,23 @@ mod tests {
         assert!(o.user_agent_suffix.is_unset());
         assert!(o.wrapping_sdk_identifier.is_unset());
         assert_eq!(o.cpu_refresh_interval_ms, 0);
+    }
+
+    #[test]
+    fn runtime_options_default_init_writes_output_and_rejects_null() {
+        let mut options = std::mem::MaybeUninit::<CosmosRuntimeOptions>::uninit();
+        assert_eq!(
+            cosmos_runtime_options_default_init(options.as_mut_ptr()),
+            CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code()
+        );
+        // SAFETY: the successful initializer wrote the complete value.
+        let options = unsafe { options.assume_init() };
+        assert_eq!(options.workload_id, 0);
+        assert!(options.correlation_id.is_unset());
+        assert_eq!(
+            cosmos_runtime_options_default_init(std::ptr::null_mut()),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
     }
 
     #[test]

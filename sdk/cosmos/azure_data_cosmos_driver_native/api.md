@@ -17,6 +17,8 @@ macro_rules! c_str {
     ($s:expr) => { ... };
 }
 #[no_mangle]
+pub extern "C" fn cosmos_abi_version() -> u32;
+#[no_mangle]
 pub extern "C" fn cosmos_version() -> *const std::ffi::c_char;
 #[no_mangle]
 pub static COSMOS_BUILD_IDENTIFIER: &std::ffi::CStr = _;
@@ -33,6 +35,8 @@ pub mod account_ref {
 pub mod bytes {
     #[no_mangle]
     pub extern "C" fn cosmos_bytes_free(bytes: CosmosBytes);
+    #[no_mangle]
+    pub extern "C" fn cosmos_bytes_free_ref(bytes: *mut CosmosBytes) -> crate::error::CosmosStatusCode;
     #[repr(C)]
     pub struct CosmosBytes {
         pub ptr: *const u8,
@@ -208,6 +212,8 @@ pub mod driver_options {
     #[no_mangle]
     pub extern "C" fn cosmos_driver_options_config_default() -> CosmosDriverOptionsConfig;
     #[no_mangle]
+    pub extern "C" fn cosmos_driver_options_config_default_init(out_config: *mut CosmosDriverOptionsConfig) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
     pub extern "C" fn cosmos_driver_options_free(options: *mut DriverOptionsHandle);
     #[derive(Clone, Copy)]
     #[repr(C)]
@@ -325,6 +331,8 @@ pub mod feed_range {
 pub mod op_request {
     #[no_mangle]
     pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions;
+    #[no_mangle]
+    pub extern "C" fn cosmos_operation_options_default_init(out_options: *mut CosmosOperationOptions) -> crate::error::CosmosStatusCode;
     #[repr(C)]
     pub struct CosmosHeaderKv {
         pub name: crate::string::CosmosStringView,
@@ -555,6 +563,8 @@ pub mod runtime_builder {
     pub extern "C" fn cosmos_runtime_build(options: *const CosmosRuntimeOptions, out_runtime: *mut *mut crate::runtime::RuntimeContext, out_error: *mut *mut crate::error::CosmosError) -> crate::error::CosmosStatusCode;
     #[no_mangle]
     pub extern "C" fn cosmos_runtime_options_default() -> CosmosRuntimeOptions;
+    #[no_mangle]
+    pub extern "C" fn cosmos_runtime_options_default_init(out_options: *mut CosmosRuntimeOptions) -> crate::error::CosmosStatusCode;
     #[derive(Clone, Copy)]
     #[repr(C)]
     pub struct CosmosRuntimeOptions {

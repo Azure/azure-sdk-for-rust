@@ -7,6 +7,7 @@ BeforeAll {
     $ScriptPath = Join-Path $PipelineDirectory 'New-GoModules.ps1'
     $MatrixPath = Join-Path $PipelineDirectory 'build-matrix.json'
     $Matrix = Get-Content $MatrixPath -Raw | ConvertFrom-Json
+    $StaticTargets = @($Matrix.targets | Where-Object publication_kind -EQ 'static-go-module')
     $RepositoryRoot = (Resolve-Path (Join-Path $PipelineDirectory '../../../..')).Path
     $MicrosoftRustConfigPath = Join-Path $RepositoryRoot 'eng/templates/ms-rust-toolchain.toml'
     $MicrosoftRustConfig = Get-Content $MicrosoftRustConfigPath -Raw
@@ -60,7 +61,7 @@ BeforeAll {
             [string]$Root
         )
 
-        foreach ($row in $Matrix.targets) {
+        foreach ($row in $StaticTargets) {
             $targetRoot = Join-Path $Root $row.id
             $headerPath = Join-Path $targetRoot $Matrix.header_filename
             $libraryPath = Join-Path $targetRoot $Matrix.static_lib_filename
@@ -171,9 +172,9 @@ BeforeEach {
 
         & $ScriptPath -ArtifactRoot $ArtifactRoot -OutputRoot $OutputRoot
 
-        @($Matrix.targets).Count | Should -Be 5
-        @($Matrix.targets.module_path | Sort-Object -Unique).Count | Should -Be 5
-        foreach ($row in $Matrix.targets) {
+        @($StaticTargets).Count | Should -Be 5
+        @($StaticTargets.module_path | Sort-Object -Unique).Count | Should -Be 5
+        foreach ($row in $StaticTargets) {
             $moduleRoot = Join-Path $OutputRoot $row.module_path
             $linkSuffix = if ($row.native_subdir) { "_$($row.native_subdir)" } else { '' }
             $linkName = "link_$($row.goos)_$($row.goarch)$linkSuffix.go"
@@ -256,7 +257,7 @@ BeforeEach {
             Should -Be '0123456789abcdef0123456789abcdef01234567'
         $provenance.rust_toolchain.cargo_version | Should -Be 'cargo 1.95.0'
 
-        @($provenance.targets).Count | Should -Be @($Matrix.targets).Count
+        @($provenance.targets).Count | Should -Be @($StaticTargets).Count
         $linuxEntry = @($provenance.targets | Where-Object { $_.id -eq 'linux-amd64-glibc' })
         $linuxEntry.Count | Should -Be 1
         $linuxEntry[0].static_library_path | Should -Be 'linux/amd64/libazurecosmosdriver.a'
@@ -390,7 +391,7 @@ BeforeEach {
     }
 
     It 'rejects a Microsoft compiler release that differs from the pinned channel' {
-        foreach ($row in $Matrix.targets) {
+        foreach ($row in $StaticTargets) {
             Update-TestMetadata -Root $ArtifactRoot -TargetId $row.id -Update {
                 param($metadata)
                 $metadata.toolchain.rustc_release = '1.96.0'

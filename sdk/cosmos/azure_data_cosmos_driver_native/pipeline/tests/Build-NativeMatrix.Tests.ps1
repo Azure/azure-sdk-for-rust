@@ -8,6 +8,8 @@ Describe 'Build-NativeMatrix target compiler configuration' {
         $PipelineDirectory = Split-Path -Parent $PSScriptRoot
         $ScriptPath = Join-Path $PipelineDirectory 'Build-NativeMatrix.ps1'
         $MatrixPath = Join-Path $PipelineDirectory 'build-matrix.json'
+        $MatrixSchemaPath = Join-Path $PipelineDirectory 'build-matrix.schema.json'
+        $NativeInterfaceSourcePath = Join-Path (Split-Path -Parent $PipelineDirectory) 'src/lib.rs'
         $PipelinePath = Join-Path $PipelineDirectory 'native-driver.yml'
         $JobMatrixScriptPath = Join-Path $PipelineDirectory 'New-NativeJobMatrix.ps1'
         $BuildJobTemplatePath = Join-Path $PipelineDirectory 'native-driver-build-job.yml'
@@ -236,6 +238,17 @@ $env:TEST_INSTALLER_CARGO_VERSION
                 'artifacts/linux-amd64-glibc/rust-driver-native-interface-metadata.json'
             $metadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
             $metadata.schema_version | Should -Be 4
+            $abiSource = Get-Content $NativeInterfaceSourcePath -Raw
+            $abiMajor = [regex]::Match(
+                $abiSource,
+                '(?m)^\s*const ABI_VERSION_MAJOR:\s*u16\s*=\s*(\d+)\s*;'
+            ).Groups[1].Value
+            $abiMinor = [regex]::Match(
+                $abiSource,
+                '(?m)^\s*const ABI_VERSION_MINOR:\s*u16\s*=\s*(\d+)\s*;'
+            ).Groups[1].Value
+            $metadata.abi.version | Should -Be "$abiMajor.$abiMinor"
+            $metadata.abi.compatibility | Should -Be 'same-major-minimum-minor'
             @($metadata.rustc_native_static_libs) | Should -Be @('-lsystem')
             @($metadata.native_static_libs) | Should -Be @('-lsystem')
             $metadata.toolchain.provider | Should -Be 'microsoft'
@@ -498,9 +511,46 @@ targets = ["x86_64-unknown-linux-gnu"]
             $generated.TargetId | Should -Be $target.id
             $generated.Triple | Should -Be $target.triple
             $generated.CCompiler | Should -Be $target.c_compiler
+            $generated.PublicationKind | Should -Be $target.publication_kind
             $generated.GoToolchainVersion | Should -Be $Matrix.go_toolchain_version
         }
+    }
 
+    It 'defines Windows ARM64 as a signed DLL publication target' {
+        $target = $Matrix.targets | Where-Object id -EQ 'windows-arm64-msvc'
+
+        $target.publication_kind | Should -Be 'windows-dll'
+        $target.goos | Should -Be 'windows'
+        $target.goarch | Should -Be 'arm64'
+        $target.triple | Should -Be 'aarch64-pc-windows-msvc'
+        $target.c_compiler | Should -Be 'link.exe'
+        $target.module_path | Should -BeNullOrEmpty
+
+        $buildJobTemplate = Get-Content $BuildJobTemplatePath -Raw
+        $buildJobTemplate | Should -Match 'task:\s+EsrpCodeSigning@5'
+        $buildJobTemplate | Should -Match 'OperationCode":\s+"SigntoolSign"'
+        $buildJobTemplate | Should -Match 'OperationCode":\s+"SigntoolVerify"'
+        $buildJobTemplate | Should -Match 'Finalize-WindowsArm64Artifact\.ps1'
+        $buildJobTemplate | Should -Match ([regex]::Escape(
+            "eq(variables['PublicationKind'], 'windows-dll')"
+        ))
+    }
+
+    It 'requires module paths for static Go module targets' {
+        $matrixJson = Get-Content $MatrixPath -Raw
+        ($matrixJson | Test-Json -SchemaFile $MatrixSchemaPath) | Should -BeTrue
+
+        $invalidMatrix = $matrixJson | ConvertFrom-Json
+        $staticTarget = $invalidMatrix.targets |
+            Where-Object publication_kind -EQ 'static-go-module' |
+            Select-Object -First 1
+        $staticTarget.PSObject.Properties.Remove('module_path')
+
+        (
+            $invalidMatrix |
+                ConvertTo-Json -Depth 10 |
+                Test-Json -SchemaFile $MatrixSchemaPath -ErrorAction SilentlyContinue
+        ) | Should -BeFalse
     }
 
     It 'assigns symbolic pool and image values for shared matrix generation' {
@@ -652,7 +702,9 @@ targets = ["x86_64-unknown-linux-gnu"]
                 "$pipeline`n$buildJobTemplate",
                 'SbomEnabled:\s+true'
             )
-        ).Count | Should -Be 2
+        # The build template has mutually exclusive static and Windows
+        # publication branches; the pipeline adds the combined Go artifact.
+        ).Count | Should -Be 3
         $pipeline | Should -Match ([regex]::Escape(
             "eq(variables['Build.Reason'], 'Manual')"
         ))

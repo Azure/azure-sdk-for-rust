@@ -11,12 +11,12 @@
 .DESCRIPTION
     For each row in build-matrix.json this script:
       1. Ensures the Rust target triple is installed with msrustup.
-      2. Captures the exact rustc syslib link line PROGRAMMATICALLY via
+      2. For static-module rows, captures the exact rustc syslib link line via
          `cargo rustc ... -- --print native-static-libs`, then applies declared
          target-specific ABI-compatible compiler-library replacements.
       3. Builds the native libraries with cargo-auditable so the artifacts
          embed their Rust dependency manifest.
-      4. Emits rust-driver-native-interface-metadata.json (triple,
+      4. Emits rust-driver-native-interface-metadata.json (publication kind, triple,
          GOOS/GOARCH/libc, package versions, source commit, toolchain versions,
          SHA256, and syslibs).
 
@@ -48,7 +48,7 @@
 .PARAMETER StaticOnly
     Copies and describes only the static library release payload. The build may
     still produce a dynamic library because of the crate types, but it is not
-    copied into the release artifact. Production Go publication MUST set this.
+    copied into the release artifact. Ignored for windows-dll rows.
 
 .EXAMPLE
     ./Build-NativeMatrix.ps1 -TargetId windows-amd64 -CCompiler gcc
@@ -357,6 +357,11 @@ if ($cargoVersion -cne $installerCargoVersion) {
 
 $sourceCommit = (& git -C $RepoRoot rev-parse HEAD 2>$null)
 if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve the source commit.' }
+$cargoLockPath = Join-Path $RepoRoot 'Cargo.lock'
+if (-not (Test-Path $cargoLockPath -PathType Leaf)) {
+    throw "Locked dependency manifest was not found: $cargoLockPath"
+}
+$cargoLockSha256 = (Get-FileHash $cargoLockPath -Algorithm SHA256).Hash.ToLowerInvariant()
 
 $cargoMetadataJson = & cargo $cargoToolchainArgument metadata --format-version 1 --no-deps `
     --manifest-path (Join-Path $CrateDir 'Cargo.toml') 2>&1
@@ -377,6 +382,21 @@ if (-not $rustDriverPackage) {
     throw "Cargo package not found: $($matrix.rust_driver_crate)"
 }
 
+$nativeInterfaceSourcePath = Join-Path $CrateDir 'src/lib.rs'
+$nativeInterfaceSource = Get-Content $nativeInterfaceSourcePath -Raw
+$abiMajorMatch = [regex]::Match(
+    $nativeInterfaceSource,
+    '(?m)^\s*const ABI_VERSION_MAJOR:\s*u16\s*=\s*(\d+)\s*;'
+)
+$abiMinorMatch = [regex]::Match(
+    $nativeInterfaceSource,
+    '(?m)^\s*const ABI_VERSION_MINOR:\s*u16\s*=\s*(\d+)\s*;'
+)
+if (-not $abiMajorMatch.Success -or -not $abiMinorMatch.Success) {
+    throw "Unable to resolve ABI version constants from $nativeInterfaceSourcePath."
+}
+$abiVersion = "$($abiMajorMatch.Groups[1].Value).$($abiMinorMatch.Groups[1].Value)"
+
 $builtWith = if ($NoAuditable) { 'cargo' } else { 'cargo-auditable' }
 
 $summary = @()
@@ -395,9 +415,15 @@ foreach ($row in $rows) {
     $targetOut = Join-Path $OutputRoot $row.id
     New-Item -ItemType Directory -Force -Path $targetOut | Out-Null
 
+    $publicationKind = [string]$row.publication_kind
+    if ($publicationKind -notin @('static-go-module', 'windows-dll')) {
+        throw "[$($row.id)] unsupported publication_kind '$publicationKind'."
+    }
     $sha = $null
     $dynamicLibFilename = $null
     $dynamicSha = $null
+    $pdbFilename = $null
+    $pdbSha = $null
     $normalizedTriple = $row.triple.Replace('-', '_')
     $targetEnvironment = [ordered]@{
         "CARGO_TARGET_$($normalizedTriple.ToUpperInvariant())_LINKER" = $compiler
@@ -413,17 +439,21 @@ foreach ($row in $rows) {
             [Environment]::SetEnvironmentVariable($name, $targetEnvironment[$name], 'Process')
         }
 
-        $rustcSyslibs = @(Get-NativeStaticLibs $row.triple)
-        if ((-not $rustcSyslibs) -and $matrix.reference_syslibs.PSObject.Properties.Name -contains $row.triple) {
-            Write-Warning "    falling back to reference_syslibs for $($row.triple) (capture failed)"
-            $rustcSyslibs = @($matrix.reference_syslibs.$($row.triple))
+        $rustcSyslibs = @()
+        $syslibs = @()
+        if ($publicationKind -eq 'static-go-module') {
+            $rustcSyslibs = @(Get-NativeStaticLibs $row.triple)
+            if ((-not $rustcSyslibs) -and $matrix.reference_syslibs.PSObject.Properties.Name -contains $row.triple) {
+                Write-Warning "    falling back to reference_syslibs for $($row.triple) (capture failed)"
+                $rustcSyslibs = @($matrix.reference_syslibs.$($row.triple))
+            }
+            $syslibs = @(
+                Resolve-ConsumerNativeStaticLibs `
+                    -RustcNativeStaticLibs $rustcSyslibs `
+                    -Target $row `
+                    -Compiler $compiler
+            )
         }
-        $syslibs = @(
-            Resolve-ConsumerNativeStaticLibs `
-                -RustcNativeStaticLibs $rustcSyslibs `
-                -Target $row `
-                -Compiler $compiler
-        )
 
         if (-not $SkipBuild) {
             Push-Location $CrateDir
@@ -437,9 +467,17 @@ foreach ($row in $rows) {
                     # Keep panic unwinding because the FFI boundary relies on it.
                     '--config', 'profile.release.opt-level="z"',
                     '--config', 'profile.release.lto="fat"',
-                    '--config', 'profile.release.codegen-units=1',
-                    '--config', 'profile.release.strip="symbols"'
+                    '--config', 'profile.release.codegen-units=1'
                 )
+                if ($publicationKind -eq 'windows-dll') {
+                    $buildArgs += @(
+                        '--config', 'profile.release.debug=2',
+                        '--config', 'profile.release.strip="none"'
+                    )
+                }
+                else {
+                    $buildArgs += @('--config', 'profile.release.strip="symbols"')
+                }
                 if ($NoAuditable) { & cargo $cargoToolchainArgument @buildArgs }
                 else              { & cargo $cargoToolchainArgument auditable @buildArgs }
                 if ($LASTEXITCODE -ne 0) {
@@ -448,14 +486,32 @@ foreach ($row in $rows) {
             }
             finally { Pop-Location }
 
-            $aSrc = Join-Path $RepoRoot "target/$($row.triple)/release/$($matrix.static_lib_filename)"
-            if (-not (Test-Path $aSrc)) {
-                throw "Expected static library not found: $aSrc"
+            if ($publicationKind -eq 'static-go-module') {
+                $aSrc = Join-Path $RepoRoot "target/$($row.triple)/release/$($matrix.static_lib_filename)"
+                if (-not (Test-Path $aSrc)) {
+                    throw "Expected static library not found: $aSrc"
+                }
+                Copy-Item $aSrc (Join-Path $targetOut $matrix.static_lib_filename) -Force
+                $sha = (Get-FileHash $aSrc -Algorithm SHA256).Hash.ToLowerInvariant()
             }
-            Copy-Item $aSrc (Join-Path $targetOut $matrix.static_lib_filename) -Force
-            $sha = (Get-FileHash $aSrc -Algorithm SHA256).Hash.ToLowerInvariant()
 
-            if (-not $StaticOnly) {
+            if ($publicationKind -eq 'windows-dll') {
+                $dynamicLibFilename = $matrix.windows_dll_filename
+                $pdbFilename = $matrix.windows_pdb_filename
+                $dynamicSrc = Join-Path $RepoRoot "target/$($row.triple)/release/$dynamicLibFilename"
+                $pdbSrc = Join-Path $RepoRoot "target/$($row.triple)/release/$pdbFilename"
+                foreach ($requiredPath in @($dynamicSrc, $pdbSrc)) {
+                    if (-not (Test-Path $requiredPath -PathType Leaf)) {
+                        throw "Required Windows ARM64 artifact not found: $requiredPath"
+                    }
+                }
+                Copy-Item $dynamicSrc (Join-Path $targetOut $dynamicLibFilename) -Force
+                Copy-Item $pdbSrc (Join-Path $targetOut $pdbFilename) -Force
+                $pdbSha = (Get-FileHash $pdbSrc -Algorithm SHA256).Hash.ToLowerInvariant()
+                # The DLL hash is intentionally omitted until Authenticode
+                # signing is complete because signing mutates the PE bytes.
+            }
+            elseif (-not $StaticOnly) {
                 $dynamicLibFilename = switch ($row.goos) {
                     'windows' { "$($matrix.lib_basename).dll" }
                     'linux'   { "lib$($matrix.lib_basename).so" }
@@ -493,6 +549,7 @@ foreach ($row in $rows) {
     $manifest = [ordered]@{
         schema_version           = 4
         artifact_id              = $row.id
+        publication_kind         = $publicationKind
         goos                     = $row.goos
         goarch                   = $row.goarch
         libc                     = $row.libc
@@ -503,11 +560,21 @@ foreach ($row in $rows) {
         rust_driver_version      = $rustDriverPackage.version
         rust_driver_features     = $matrix.rust_driver_features
         source_commit            = $sourceCommit
-        built_with               = $builtWith
-        static_library = [ordered]@{
-            filename = $matrix.static_lib_filename
-            sha256   = $sha
+        locked_dependencies      = [ordered]@{
+            filename = 'Cargo.lock'
+            sha256   = $cargoLockSha256
         }
+        built_with               = $builtWith
+        abi = [ordered]@{
+            version = $abiVersion
+            compatibility = 'same-major-minimum-minor'
+        }
+        static_library = if ($publicationKind -eq 'static-go-module') {
+            [ordered]@{
+                filename = $matrix.static_lib_filename
+                sha256   = $sha
+            }
+        } else { $null }
         header = [ordered]@{
             filename = $matrix.header_filename
             sha256   = $headerSha
@@ -516,6 +583,14 @@ foreach ($row in $rows) {
             [ordered]@{
                 filename = $dynamicLibFilename
                 sha256   = $dynamicSha
+                authenticode_verified = $false
+            }
+        }
+        symbols = if ($SkipBuild -or (-not $pdbFilename)) { $null } else {
+            [ordered]@{
+                filename = $pdbFilename
+                sha256   = $pdbSha
+                runtime_dependency = $false
             }
         }
         rustc_native_static_libs = $rustcSyslibs
@@ -541,10 +616,14 @@ foreach ($row in $rows) {
             linker = [ordered]@{
                 command    = $compiler
                 executable = $compilerCommand.Source
-                version    = Invoke-RequiredToolOutput `
-                    -Executable $compiler `
-                    -Arguments @('--version') `
-                    -Description "$compiler --version"
+                version    = if ($publicationKind -eq 'windows-dll') {
+                    $compilerCommand.FileVersionInfo.FileVersion
+                } else {
+                    Invoke-RequiredToolOutput `
+                        -Executable $compiler `
+                        -Arguments @('--version') `
+                        -Description "$compiler --version"
+                }
             }
         }
         generated_utc = (Get-Date).ToUniversalTime().ToString('o')

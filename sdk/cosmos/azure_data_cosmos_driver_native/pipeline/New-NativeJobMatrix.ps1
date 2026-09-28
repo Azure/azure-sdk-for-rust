@@ -56,6 +56,7 @@ foreach ($target in $matrix.targets) {
         TargetId = $target.id
         Triple = $target.triple
         CCompiler = $target.c_compiler
+        PublicationKind = $target.publication_kind
         GoToolchainVersion = $matrix.go_toolchain_version
         Pool = $agent.Pool
         OSVmImage = $agent.OSVmImage
