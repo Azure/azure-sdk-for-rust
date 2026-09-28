@@ -206,7 +206,11 @@ pub mod driver_options {
     #[no_mangle]
     pub extern "C" fn cosmos_driver_options_build(account: *const crate::account_ref::AccountRefHandle, config: *const CosmosDriverOptionsConfig, out_options: *mut *mut DriverOptionsHandle) -> crate::error::CosmosStatusCode;
     #[no_mangle]
+    pub extern "C" fn cosmos_driver_options_build_v2(account: *const crate::account_ref::AccountRefHandle, config: *const CosmosDriverOptionsConfigV2, out_options: *mut *mut DriverOptionsHandle) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
     pub extern "C" fn cosmos_driver_options_config_default() -> CosmosDriverOptionsConfig;
+    #[no_mangle]
+    pub extern "C" fn cosmos_driver_options_config_v2_default() -> CosmosDriverOptionsConfigV2;
     #[no_mangle]
     pub extern "C" fn cosmos_driver_options_free(options: *mut DriverOptionsHandle);
     #[derive(Clone, Copy)]
@@ -215,6 +219,17 @@ pub mod driver_options {
         pub preferred_regions: *const crate::string::CosmosStringView,
         pub preferred_regions_len: usize,
         pub operation_options: *const crate::op_request::CosmosOperationOptions,
+    }
+    #[derive(Clone, Copy)]
+    #[repr(C)]
+    pub struct CosmosDriverOptionsConfigV2 {
+        pub header: crate::fault_injection::CosmosFaultInjectionRecordHeader,
+        pub preferred_regions: *const crate::string::CosmosStringView,
+        pub preferred_regions_len: usize,
+        pub operation_options: *const crate::op_request::CosmosOperationOptions,
+        pub fault_injection_rules: *const crate::fault_injection::CosmosFaultInjectionRule,
+        pub fault_injection_rules_len: usize,
+        pub fault_injection_rule_stride: usize,
     }
     pub struct DriverOptionsHandle {
     }
@@ -270,12 +285,14 @@ pub mod error {
         CosmosSubStatusClientQueryPlanInvalidTopOffsetLimit = 20114,
         CosmosSubStatusClientContinuationTokenNonQueryOperation = 20117,
         CosmosSubStatusClientDuplicateFaultInjectionRuleId = 20150,
+        CosmosSubStatusClientThroughputControlGroupNotRegistered = 20152,
         CosmosSubStatusClientHttpClientConstructionFailed = 20153,
         CosmosSubStatusClientReqwestFeatureRequired = 20154,
         CosmosSubStatusClientRequestUrlMissingHost = 20155,
         CosmosSubStatusClientRequestUrlMissingKnownPort = 20156,
         CosmosSubStatusClientImdsHttpClientConstructionFailed = 20157,
         CosmosSubStatusClientImdsReqwestFeatureRequired = 20158,
+        CosmosSubStatusClientPartitionKeyRangeCacheRequired = 20159,
         CosmosSubStatusClientContinuationTokenFetchInFlight = 20200,
         CosmosSubStatusClientTopologyProviderMissing = 20201,
         CosmosSubStatusClientDriverNotInitialized = 20202,
@@ -312,6 +329,98 @@ pub mod error {
     }
     pub const COSMOS_STATUS_SUCCESS: CosmosStatusCode = _;
 }
+pub mod fault_injection {
+    #[no_mangle]
+    pub extern "C" fn cosmos_fault_injection_condition_default() -> CosmosFaultInjectionCondition;
+    #[no_mangle]
+    pub extern "C" fn cosmos_fault_injection_result_default() -> CosmosFaultInjectionResult;
+    #[no_mangle]
+    pub extern "C" fn cosmos_fault_injection_rule_default() -> CosmosFaultInjectionRule;
+    #[derive(Clone, Copy)]
+    #[repr(C)]
+    pub struct CosmosFaultInjectionCondition {
+        pub header: CosmosFaultInjectionRecordHeader,
+        pub operation_type: i32,
+        pub region: crate::string::CosmosStringView,
+        pub container_id: crate::string::CosmosStringView,
+        pub transport_kind: i32,
+    }
+    #[derive(Clone, Copy)]
+    #[repr(C)]
+    pub struct CosmosFaultInjectionRecordHeader {
+        pub struct_size: usize,
+        pub version: u32,
+    }
+    #[derive(Clone, Copy)]
+    #[repr(C)]
+    pub struct CosmosFaultInjectionResult {
+        pub header: CosmosFaultInjectionRecordHeader,
+        pub error_type: i32,
+        pub delay_ms: i64,
+        pub probability: f32,
+        pub custom_status_code: i32,
+        pub custom_sub_status: i32,
+        pub retry_after_ms: i64,
+        pub custom_headers: *const crate::op_request::CosmosHeaderKv,
+        pub custom_headers_len: usize,
+        pub body: *const u8,
+        pub body_len: usize,
+    }
+    #[derive(Clone, Copy)]
+    #[repr(C)]
+    pub struct CosmosFaultInjectionRule {
+        pub header: CosmosFaultInjectionRecordHeader,
+        pub id: crate::string::CosmosStringView,
+        pub condition: *const CosmosFaultInjectionCondition,
+        pub result: *const CosmosFaultInjectionResult,
+        pub hit_limit: i64,
+        pub start_delay_ms: i64,
+        pub expire_after_ms: i64,
+    }
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[repr(i32)]
+    pub enum CosmosFaultInjectionErrorType {
+        CosmosFaultInjectionErrorTypeUnset = 0,
+        CosmosFaultInjectionErrorTypeInternalServerError = 1,
+        CosmosFaultInjectionErrorTypeTooManyRequests = 2,
+        CosmosFaultInjectionErrorTypeRetryWith = 3,
+        CosmosFaultInjectionErrorTypeReadSessionNotAvailable = 4,
+        CosmosFaultInjectionErrorTypeTimeout = 5,
+        CosmosFaultInjectionErrorTypeServiceUnavailable = 6,
+        CosmosFaultInjectionErrorTypePartitionIsGone = 7,
+        CosmosFaultInjectionErrorTypeWriteForbidden = 8,
+        CosmosFaultInjectionErrorTypeDatabaseAccountNotFound = 9,
+        CosmosFaultInjectionErrorTypeConnectionError = 10,
+        CosmosFaultInjectionErrorTypeResponseTimeout = 11,
+        CosmosFaultInjectionErrorTypeResponseTimeoutAfterService = 12,
+    }
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[repr(i32)]
+    pub enum CosmosFaultInjectionOperationType {
+        CosmosFaultInjectionOperationTypeUnset = 0,
+        CosmosFaultInjectionOperationTypeReadItem = 1,
+        CosmosFaultInjectionOperationTypeQueryItem = 2,
+        CosmosFaultInjectionOperationTypeCreateItem = 3,
+        CosmosFaultInjectionOperationTypeUpsertItem = 4,
+        CosmosFaultInjectionOperationTypeReplaceItem = 5,
+        CosmosFaultInjectionOperationTypeDeleteItem = 6,
+        CosmosFaultInjectionOperationTypePatchItem = 7,
+        CosmosFaultInjectionOperationTypeBatchItem = 8,
+        CosmosFaultInjectionOperationTypeChangeFeedItem = 9,
+        CosmosFaultInjectionOperationTypeMetadataReadContainer = 10,
+        CosmosFaultInjectionOperationTypeMetadataReadDatabaseAccount = 11,
+        CosmosFaultInjectionOperationTypeMetadataQueryPlan = 12,
+        CosmosFaultInjectionOperationTypeMetadataPartitionKeyRanges = 13,
+    }
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[repr(i32)]
+    pub enum CosmosFaultInjectionTransportKind {
+        CosmosFaultInjectionTransportKindUnset = 0,
+        CosmosFaultInjectionTransportKindGateway = 1,
+        CosmosFaultInjectionTransportKindGatewayV2 = 2,
+    }
+    pub const COSMOS_FAULT_INJECTION_ABI_VERSION_1: u32 = 1;
+}
 pub mod feed_range {
     #[no_mangle]
     pub extern "C" fn cosmos_feed_range_for_partition_key(container: *const crate::container_ref::ContainerRefHandle, pk: *const crate::partition_key::PartitionKeyHandle, out_fr: *mut *mut FeedRangeHandle) -> crate::error::CosmosStatusCode;
@@ -341,6 +450,7 @@ pub mod op_request {
         pub max_session_retry_count: i32,
         pub end_to_end_timeout_ms: i64,
         pub endpoint_unavailability_ttl_ms: i64,
+        pub throughput_control_group: crate::string::CosmosStringView,
         pub excluded_regions: *const crate::string::CosmosStringView,
         pub excluded_regions_len: usize,
         pub custom_headers: *const CosmosHeaderKv,
