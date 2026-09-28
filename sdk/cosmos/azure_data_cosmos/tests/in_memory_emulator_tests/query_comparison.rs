@@ -392,14 +392,14 @@ async fn buffered_query_policy_per_query_options_and_hierarchical_routing(
                     };
                     assert_eq!(
                         error.status(),
-                        azure_data_cosmos::models::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+                        azure_data_cosmos_driver::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
                     );
                 } else {
                     let mut pages = result?.into_pages();
                     if buffered {
                         assert_eq!(
                             pages.to_continuation_token().unwrap_err().status(),
-                            azure_data_cosmos::models::CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
+                            azure_data_cosmos_driver::error::status_codes::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
                         );
                     }
                     let mut values = Vec::new();

@@ -664,14 +664,14 @@ impl RequestDiagnostics {
     /// Records end-to-end timeout of this request.
     ///
     /// Sets the status to 408 (Request Timeout) with sub-status
-    /// [`SubStatusCode::CLIENT_OPERATION_TIMEOUT`] to indicate an end-to-end
+    /// [`crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT`] to indicate an end-to-end
     /// operation timeout from the client side.
     pub(crate) fn timeout(&mut self) {
         self.completed_at = Some(Instant::now());
         self.timed_out = true;
         self.status = CosmosStatus::from_parts(
             StatusCode::RequestTimeout,
-            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
         );
         self.duration_ms = self
             .completed_at
@@ -1919,7 +1919,7 @@ impl DiagnosticsContextBuilder {
     ///
     /// Should be called when a request times out before receiving a response
     /// due to hitting the end-to-end operation timeout. Sets the status to
-    /// 408 (Request Timeout) with sub-status [`SubStatusCode::CLIENT_OPERATION_TIMEOUT`].
+    /// 408 (Request Timeout) with sub-status [`crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT`].
     ///
     /// For transport-level timeouts (connection timeouts, etc.), use
     /// [`fail_transport_request`](Self::fail_transport_request) with the
@@ -4485,7 +4485,7 @@ mod tests {
             builder.complete_request(
                 handle,
                 StatusCode::TooManyRequests,
-                Some(SubStatusCode::RU_BUDGET_EXCEEDED),
+                Some(crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED),
             );
         });
 
@@ -4552,7 +4552,7 @@ mod tests {
                 builder.complete_request(
                     handle,
                     StatusCode::TooManyRequests,
-                    Some(SubStatusCode::RU_BUDGET_EXCEEDED),
+                    Some(crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED),
                 );
             }
         });
@@ -4616,7 +4616,7 @@ mod tests {
         builder.set_machine_id(Arc::new("uuid_debug-json-machine".to_string()));
         builder.set_operation_status(
             StatusCode::ServiceUnavailable,
-            Some(SubStatusCode::TRANSPORT_GENERATED_503),
+            Some(crate::error::status_codes::substatus::TRANSPORT_GENERATED_503),
         );
         let handle = builder.start_test_request(
             ExecutionContext::Initial,
@@ -4646,7 +4646,7 @@ mod tests {
             handle,
             "503/20011: error sending request for url (https://test.eastus2.documents.azure.com/dbs/db/colls/coll/docs)",
             RequestSentStatus::Unknown,
-            CosmosStatus::TRANSPORT_GENERATED_503,
+            crate::error::status_codes::TRANSPORT_GENERATED_503,
         );
         let ctx = builder.complete();
 
@@ -4800,7 +4800,7 @@ mod tests {
         let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
         builder.set_operation_status(
             StatusCode::NotFound,
-            Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+            Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
         );
         let ctx = builder.complete();
 
@@ -4822,13 +4822,13 @@ mod tests {
             handle,
             "connection refused",
             RequestSentStatus::Unknown,
-            CosmosStatus::TRANSPORT_GENERATED_503,
+            crate::error::status_codes::TRANSPORT_GENERATED_503,
         );
 
         let ctx = builder.complete();
         let requests = ctx.requests();
         let status = requests[0].status();
-        assert_eq!(status, &CosmosStatus::TRANSPORT_GENERATED_503);
+        assert_eq!(status, &crate::error::status_codes::TRANSPORT_GENERATED_503);
         assert_eq!(requests[0].error(), Some("connection refused"));
     }
 
@@ -4848,7 +4848,7 @@ mod tests {
             handle,
             "connection refused",
             RequestSentStatus::Sent,
-            CosmosStatus::TRANSPORT_GENERATED_503,
+            crate::error::status_codes::TRANSPORT_GENERATED_503,
         );
 
         let ctx = builder.complete();
@@ -4906,7 +4906,7 @@ mod tests {
             failed,
             "connection refused",
             RequestSentStatus::Sent,
-            CosmosStatus::TRANSPORT_GENERATED_503,
+            crate::error::status_codes::TRANSPORT_GENERATED_503,
         );
 
         let succeeded = builder.start_test_request(

@@ -10,8 +10,8 @@ use std::error::Error;
 use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::feed::{FeedRange, FeedScope};
 use azure_data_cosmos::models::{
-    ContainerProperties, CosmosStatus, EffectivePartitionKey, PartitionKeyDefinition,
-    PartitionKeyValue, ThroughputProperties,
+    ContainerProperties, EffectivePartitionKey, PartitionKeyDefinition, PartitionKeyValue,
+    ThroughputProperties,
 };
 use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::{PartitionKey, Query};
@@ -337,7 +337,10 @@ pub async fn feed_range_from_empty_partition_key_fails() -> Result<(), Box<dyn E
                 .feed_range_from_partition_key(empty, None)
                 .await
                 .expect_err("an empty partition key should be rejected");
-            assert_eq!(err.status(), CosmosStatus::CLIENT_PARTITION_KEY_EMPTY);
+            assert_eq!(
+                err.status(),
+                azure_data_cosmos_driver::error::status_codes::CLIENT_PARTITION_KEY_EMPTY
+            );
 
             Ok(())
         },
@@ -370,7 +373,7 @@ pub async fn feed_range_too_many_components_fails() -> Result<(), Box<dyn Error>
                 .expect_err("a too-many-component key should be rejected");
             assert_eq!(
                 err.status(),
-                CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS
+                azure_data_cosmos_driver::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS
             );
 
             Ok(())
@@ -410,7 +413,7 @@ pub async fn feed_range_multi_component_on_single_hash_fails() -> Result<(), Box
                 .expect_err("a 2-component key on a single-hash container should be rejected");
             assert_eq!(
                 err.status(),
-                CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS
+                azure_data_cosmos_driver::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS
             );
 
             Ok(())

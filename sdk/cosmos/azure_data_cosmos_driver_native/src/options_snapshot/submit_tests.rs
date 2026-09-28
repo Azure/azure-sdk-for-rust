@@ -28,6 +28,7 @@ use async_trait::async_trait;
 use azure_core::http::headers::{HeaderName, Headers};
 use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntimeBuilder,
+    error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT,
     models::AccountReference,
     options::{ConnectionPoolOptions, DriverOptions},
     test::{
@@ -329,9 +330,7 @@ fn submit_uses_remaining_admission_budget_instead_of_restarting_it() {
         assert_eq!(completion.status.0 >> 16, 408);
         assert_eq!(
             completion.status.0 & 0xffff,
-            i32::from(
-                azure_data_cosmos_driver::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT.value()
-            ),
+            i32::from(CLIENT_OPERATION_TIMEOUT.value()),
         );
         cosmos_completion_queue_free_completions(&mut completion, 1);
         cosmos_operation_handle_free(operation);

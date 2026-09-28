@@ -15,8 +15,8 @@ use std::{
 use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::{
     driver::{CosmosDriver, CosmosDriverRuntime},
-    error::CosmosError as DriverError,
-    models::{CosmosStatus, SubStatusCode},
+    error::{status_codes::substatus::CLIENT_OPERATION_TIMEOUT, CosmosError as DriverError},
+    models::CosmosStatus,
     options::OperationOptions,
 };
 
@@ -59,7 +59,7 @@ impl OperationOptionsSnapshot {
         Err(DriverError::builder()
             .with_status(
                 CosmosStatus::new(StatusCode::RequestTimeout)
-                    .with_sub_status(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value()),
+                    .with_sub_status(CLIENT_OPERATION_TIMEOUT.value()),
             )
             .with_message("end-to-end operation timeout exceeded after native admission")
             .build())

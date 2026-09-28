@@ -259,7 +259,7 @@ impl ChildStream {
                 last.skip_count.checked_add(1).ok_or_else(|| {
                     crate::error::CosmosError::builder()
                         .with_status(
-                            crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
+                            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_ORDER_BY_STATE_INVALID,
                         )
                         .with_message(
                             "ORDER BY resume skip_count overflowed u32 (a single document \
@@ -440,7 +440,7 @@ impl StreamingOrderedMerge {
                     split_retries += 1;
                     if split_retries > MAX_SPLIT_RETRIES {
                         return Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::CLIENT_SPLIT_RETRIES_EXHAUSTED)
+                            .with_status(crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED)
                             .with_message(format!(
                                 "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in StreamingOrderedMerge"
@@ -720,7 +720,7 @@ impl PipelineNode for StreamingOrderedMerge {
                     other => {
                         return Err(crate::error::CosmosError::builder()
                             .with_status(
-                                crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
+                                crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
                             )
                             .with_message(format!(
                                 "StreamingOrderedMerge child {idx} of {total} produced an \
@@ -1846,7 +1846,7 @@ mod tests {
             .expect_err("an array ORDER BY value must fail the query");
         assert_eq!(
             error.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
+            Some(crate::error::status_codes::substatus::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
         );
     }
 
@@ -2209,7 +2209,7 @@ mod tests {
             .expect_err("a replacement with an unknown position must be rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
             "must surface the typed split-replacement-invalid error (20215), got: {err}"
         );
     }
@@ -2399,7 +2399,7 @@ mod tests {
         let err = node.next_page(&mut context).await.unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID
+            crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
         );
     }
 
@@ -2614,7 +2614,7 @@ mod tests {
             .expect_err("the deferred encode failure must surface");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID
+            crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
         );
     }
 
@@ -2667,7 +2667,7 @@ mod tests {
             .expect_err("the only row fails to encode, so there is no partial page to emit");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID
+            crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
         );
         assert_eq!(
             node.session_token.as_ref().map(SessionToken::as_str),
