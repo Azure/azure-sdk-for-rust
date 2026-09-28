@@ -70,9 +70,10 @@ Investigate issue #${{ inputs.issue_number }} in `${{ github.repository }}` afte
 
 ## Tool Contract
 
-- Use authenticated `gh` only for bounded GitHub reads. Request only fields needed for the current decision. Do not use `gh` for writes or request another shell command.
-- Read checked-out repository files directly. Use web fetch only for public crate metadata and trusted package/service documentation on the allowed domains.
-- Use only the configured safe-output tools for comments, closure, Copilot assignment, or `noop`. Pass the input issue number as `item_number` to `add_comment` and `issue_number` to `close_issue` and `assign_to_agent`; never act on another issue or repository.
+- Use authenticated `gh api` REST requests for bounded GitHub reads. Request only fields needed for the current decision. Do not use `gh` for writes or request arbitrary shell commands.
+- Read checked-out repository files directly. Read GitHub-hosted metadata with `gh`; use the provided `web_fetch` tool, not `curl`, Python, or shell pipelines, for other public metadata and trusted documentation URLs on the allowed domains.
+- Invoke the configured safe-output tools through the runtime-provided `safeoutputs` CLI with named arguments, for example `safeoutputs add_comment --item_number 42 --body 'Final investigation comment'`, substituting the actual issue number and final body. Quote argument values as literals. Do not call a generic tool named `safeoutputs` or guess native MCP tool names. Do not construct payloads with `jq`, shell pipelines, scripts, or file redirection.
+- Pass the input issue number as `item_number` to `add_comment` and `issue_number` to `close_issue` and `assign_to_agent`; never act on another issue or repository. Do not probe write tools with `--help`, empty arguments, or placeholder payloads. Emit the final intended action once.
 - If a required GitHub read fails after one reasonable retry, call `missing_data` with the failed command and stop. Do not switch transports or attempt authentication workarounds.
 - If registry/documentation access is unavailable, do not guess facts or bypass network restrictions. Apply the version fallback or abstention rules below.
 - Always emit a safe output, including `noop` when no action is appropriate.
@@ -119,13 +120,37 @@ Layer available service and crate context:
 
 For example, Key Vault context belongs under `sdk/keyvault/`, but this workflow covers all services. Missing optional context files do not imply that behavior is unsupported or by design.
 
-Reuse triage duplicate research. If needed, use `gh issue list --repo ${{ github.repository }} --state all --search "<specific terms>" --limit 10 --json number,title,state,labels,url` for at most two focused searches, then read specific candidate issues. Do not perform exhaustive searches.
+Reuse triage duplicate research. Before ruling out duplicates, check one direct list of up to 30 recent issues with the verified service label, including closed issues:
+
+```bash
+gh api --method GET repos/${{ github.repository }}/issues -f state=all -f labels="<service label>" -f sort=updated -f direction=desc -F per_page=30 --jq '[.[] | select(.pull_request == null) | {number,title,state,html_url}]'
+```
+
+This direct listing does not depend on indexed search. Read the details of up to three plausible candidates with `gh api`, excluding the current issue, and compare the exact crate, affected API/file, and symptoms. An empty indexed search alone is not sufficient evidence that no duplicate exists.
+
+If needed, supplement this with at most two focused REST searches:
+
+```bash
+gh api --method GET search/issues -f q="repo:${{ github.repository }} is:issue <specific terms>" -F per_page=10 --jq '.items | map({number,title,state,html_url})'
+```
+
+Do not perform exhaustive searches or claim that bounded results prove no duplicate exists anywhere.
 
 ## Support Policy and Version Evidence
 
 Azure SDK support focuses on the latest released crate version. Version currency is a mandatory decision point before consequential action.
 
-Use the exact crate's public crates.io metadata or verified published release context. Select the newest non-yanked stable release using semantic version ordering, including stable `0.x` versions; do not compare versions lexicographically. If no stable release exists, use the newest non-yanked prerelease and explain that the crate is preview-only. If the customer reports a preview alongside a stable release, verify the relevant preview/release lineage rather than assuming that every prerelease is older or requiring a downgrade.
+Read the exact crate's version records from the official crates.io index at `rust-lang/crates.io-index` using the configured GitHub read path:
+
+```bash
+gh api repos/rust-lang/crates.io-index/contents/<index-path> --jq '.content | @base64d | split("\n") | map(select(length > 0) | fromjson | {vers,yanked})'
+```
+
+Derive `<index-path>` from the verified published crate name, lowercased: one-character names use `1/<name>`, two-character names use `2/<name>`, three-character names use `3/<first-character>/<name>`, and longer names use `<first-two-characters>/<next-two-characters>/<name>`. For example, `azure_security_keyvault_secrets` uses `az/ur/azure_security_keyvault_secrets`. The `--jq` expression runs inside `gh`; do not invoke a separate `jq` command.
+
+If that metadata is unavailable, use the provided `web_fetch` tool for `https://crates.io/api/v1/crates/<crate-name>` or verified published release context. If no trusted source establishes the applicable release, use the explicit Version Currency fallback below rather than guessing.
+
+Select the newest non-yanked stable release using semantic version ordering, including stable `0.x` versions; do not compare versions lexicographically. If no stable release exists, use the newest non-yanked prerelease and explain that the crate is preview-only. If the customer reports a preview alongside a stable release, verify the relevant preview/release lineage rather than assuming that every prerelease is older or requiring a downgrade.
 
 Treat a dependency range as a requirement, not the customer's resolved version. Ask for the exact resolved crate version when needed. A yanked version is not a recommended upgrade target. For Git/path dependencies, unpublished crates, or unclear release lineage, use exact revision/current-source evidence or request clarification; never invent a registry release.
 
