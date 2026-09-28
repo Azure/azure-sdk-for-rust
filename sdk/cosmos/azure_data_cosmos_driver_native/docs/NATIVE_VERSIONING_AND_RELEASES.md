@@ -147,13 +147,10 @@ flowchart LR
 `Azure/azure-cosmos-driver` receives one atomic release containing all supported
 platform modules, provenance, checksums, and signed evidence.
 
-Create one release-set tag:
-
-```text
-native-driver@X.Y.Z
-```
-
-Create platform-prefixed Go module tags on the same commit:
+The platform-prefixed Go module tags and their GitHub releases are the
+authoritative release records for these non-crates.io binaries. The Rust
+repository remains the source of record, connected through the existing
+provenance.
 
 ```text
 linux/amd64/vX.Y.Z
@@ -176,14 +173,12 @@ native_release = 0.2.1
 
 Bundled or statically linked hosts validate the exact native release during the
 build. Dynamically loading hosts call `cosmos_version()` before initialization
-and accept either the exact version or an explicitly supported SemVer range.
+and require the exact native version selected by the host SDK.
 
 | Host expectation | Loaded native version | Result |
 | --- | --- | --- |
 | Exact `0.2.1` | `0.2.1` with matching provenance | Accept |
-| `>=0.2.0, <0.3.0` | `0.2.4` | Accept |
-| `>=0.2.0, <0.3.0` | `0.3.0` | Reject |
-| `>=1.2.0, <2.0.0` | `2.0.0` | Reject |
+| Exact `0.2.1` | `0.2.2` | Reject |
 | Same version, different hash | Any | Reject |
 
 ## Release gates
@@ -211,22 +206,20 @@ different toolchain or artifact.
 3. Enforce version, tag, and FFI-diff checks.
 4. Publish one atomic downstream release and tag set.
 5. Record the native version in each host SDK.
-6. Register the native release with Azure SDK inventory and release systems.
 
 ## Acceptance criteria
 
-- One protected tag identifies one immutable release.
+- One protected source tag identifies one immutable release.
 - Cargo, runtime, header, changelog, and downstream versions agree.
 - FFI snapshot changes require the correct SemVer bump.
 - Existing provenance and signed SPDX behavior remains unchanged.
+- Each `Azure/azure-cosmos-driver` platform tag and GitHub release is the
+  authoritative binary release record for that module.
 - All downstream platform tags point to one release commit.
-- Host SDKs record and validate the native version they use.
-
-## Open decisions
-
-- Which Azure SDK release record represents this non-crates.io package?
-- Which team owns source and downstream tags?
-- Which FFI snapshot/diff tool should the release use?
-- Should dynamic hosts require an exact version or accept a SemVer range?
-- Who approves the `1.0.0` compatibility commitment?
-- Which Windows AMD64 toolchain joins the release matrix?
+- Host SDKs record the exact native version they use; dynamically loaded
+  libraries must match it before initialization.
+- The Cosmos SDK team owns the source and downstream release tags.
+- Moving to `1.0.0` is an explicit Cosmos SDK compatibility commitment: after
+  that release, breaking FFI changes require a new major version.
+- Windows AMD64 MSVC remains deferred and joins the same release policy when
+  its distribution path is implemented.
