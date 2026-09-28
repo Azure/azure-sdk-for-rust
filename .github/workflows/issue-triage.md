@@ -38,6 +38,9 @@ safe-outputs:
     assign-to-user:
         max: 1
         target: triggering
+    dispatch-workflow:
+        workflows: [issue-investigation]
+        max: 1
     noop:
         report-as-issue: false
 
@@ -65,7 +68,7 @@ Your task is to analyze issue #${{ github.event.issue.number }} and perform init
 ## Tool Contract
 
 - Use authenticated `gh` commands only for GitHub reads. Request only the fields needed by the current step and bound all list or search results.
-- Use the configured safe-output tools only for labels, assignments, comments, and completion. Do not invoke `safeoutputs` through shell or probe safe-output availability.
+- Use the configured safe-output tools only for labels, assignments, comments, investigation dispatch, and completion. Do not invoke `safeoutputs` through shell or probe safe-output availability.
 - Do not use `gh` for writes, request direct GitHub MCP tools, or request any shell command other than `gh`.
 - Read checked-out repository files such as `.github/CODEOWNERS` directly instead of fetching them through GitHub.
 - If a required read fails after one reasonable retry, call `missing_data` with the failed command and stop. Do not switch transports or attempt authentication workarounds.
@@ -358,4 +361,20 @@ Rules for both formats:
 - Do not add `@` mentions in the analysis comment; mentions belong in the Step 5 routing comment only.
 - Leave issue closure to human reviewers; do not use `close_issue`.
 
-After posting the analysis comment, the workflow is complete.
+After emitting the analysis comment, continue to Step 7.
+
+## Step 7: Investigation Handoff
+
+Dispatch `issue-investigation` only after completing label prediction, owner routing, and the analysis comment, and only when all of the following are true:
+
+- The target is an issue.
+- The final label set contains exactly one service label with color `#e99695`.
+- The final label set contains exactly one category label with color `#ffeb77`.
+- It contains `customer-reported`.
+- It does not contain `needs-triage`, `needs-team-triage`, `issue-addressed`, or `needs-author-feedback`.
+
+Use the final label set produced by this triage, including queued label additions and removals. Safe outputs are applied after the agent finishes, so do not expect a GitHub read during this run to reflect those queued changes. Call the generated `issue_investigation` safe-output tool last, after all label, assignment, and comment outputs, with the triggering issue number in the top-level `issue_number` argument. Do not pass `workflow_name` or a nested `inputs` object.
+
+This handoff is not limited to Key Vault, `Client`, or `bug` reports. In particular, `question`, `needs-team-attention`, and `Service Attention` do not prevent investigation when the conditions above hold. Preserve all existing triage labels and human assignments.
+
+If any condition fails, do not dispatch. The earlier triage outputs complete the workflow; do not add another comment. The investigation workflow independently revalidates the persisted issue before acting.
