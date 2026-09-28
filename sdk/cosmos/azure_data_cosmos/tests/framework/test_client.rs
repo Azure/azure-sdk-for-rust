@@ -379,8 +379,7 @@ pub async fn probe_data_plane_ready(
                 Ok(None) => Err(azure_data_cosmos_driver::error::CosmosError::builder()
                     .with_status(CosmosStatus::new(StatusCode::InternalServerError))
                     .with_message("change-feed readiness probe returned no page")
-                    .build()
-                    .into()),
+                    .build()),
                 // Empty feeds are long-polled; after item and query probes pass,
                 // reaching this bound means RBAC accepted the request.
                 Err(_) => Ok(()),
@@ -2071,7 +2070,6 @@ fn database_name(db_client: &DatabaseClient) -> azure_data_cosmos::Result<&str> 
             .with_status(status_codes::CLIENT_INVALID_RESOURCE_ID)
             .with_message("ARM-backed test resource management requires a name-addressed database")
             .build()
-            .into()
     })
 }
 
@@ -2126,7 +2124,6 @@ fn to_arm_throughput(
                     .with_status(status_codes::CLIENT_INVALID_RESOURCE_ID)
                     .with_message("throughput must specify either manual or autoscale RU/s")
                     .build()
-                    .into()
             }),
     }
 }
@@ -2164,7 +2161,6 @@ fn from_arm_throughput(
                 .with_message("failed to convert ARM throughput response")
                 .with_source(error)
                 .build()
-                .into()
         }),
     }
 }
@@ -2175,7 +2171,6 @@ fn arm_error(error: azure_core::Error) -> CosmosError {
         .with_message("Azure Resource Manager operation failed")
         .with_source(error)
         .build()
-        .into()
 }
 
 /// Returns `true` if `endpoint`'s host is a loopback/local host, indicating the
