@@ -3,16 +3,56 @@
 
 //! Example service client for use in `azure_core` examples and tests.
 
-/// A public HTTP endpoint used for transport examples and benchmarks.
-pub const HTTP_ENDPOINT: &str = "https://azuresdkforcpp.azurewebsites.net";
-
 use crate::credentials::TokenCredential;
 use azure_core::{
+    error::{ErrorKind, ResultExt},
     fmt::SafeDebug,
     http::{ClientMethodOptions, ClientOptions, Pipeline, RawResponse, Request, Url},
-    Result,
+    Error, Result,
 };
-use std::sync::Arc;
+use std::{env, sync::Arc};
+
+/// Reads the optional `AZURE_CORE_HTTPBIN_URL` endpoint for live examples and benchmarks.
+///
+/// Returns `None` only when the variable is unset. Use an HTTP or HTTPS origin
+/// hosting httpbin, such as `http://localhost:8080/`.
+///
+/// # Errors
+///
+/// Returns an error if the value isn't Unicode or isn't an HTTP(S) URL with a host.
+/// Paths other than `/`, credentials, query strings, and fragments aren't supported.
+pub fn httpbin_endpoint() -> Result<Option<Url>> {
+    parse_httpbin_endpoint(env::var("AZURE_CORE_HTTPBIN_URL"))
+}
+
+fn parse_httpbin_endpoint(
+    value: std::result::Result<String, env::VarError>,
+) -> Result<Option<Url>> {
+    let value = match value {
+        Ok(value) => value,
+        Err(env::VarError::NotPresent) => return Ok(None),
+        Err(error) => {
+            return Err(Error::new(ErrorKind::Other, error)
+                .with_context("AZURE_CORE_HTTPBIN_URL must contain a Unicode HTTP(S) URL"));
+        }
+    };
+    let endpoint =
+        Url::parse(&value).with_context(ErrorKind::Other, "Invalid AZURE_CORE_HTTPBIN_URL")?;
+    if !matches!(endpoint.scheme(), "http" | "https")
+        || endpoint.host_str().is_none()
+        || endpoint.path() != "/"
+        || !endpoint.username().is_empty()
+        || endpoint.password().is_some()
+        || endpoint.query().is_some()
+        || endpoint.fragment().is_some()
+    {
+        return Err(Error::with_message(
+            ErrorKind::Other,
+            "AZURE_CORE_HTTPBIN_URL must be an HTTP(S) origin with no credentials, path other than '/', query, or fragment",
+        ));
+    }
+    Ok(Some(endpoint))
+}
 
 /// Options for configuring a [`TestServiceClient`].
 #[derive(Clone, SafeDebug)]
@@ -111,5 +151,58 @@ impl TestServiceClient {
             ));
         }
         Ok(response)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_httpbin_endpoint;
+    use std::{env::VarError, ffi::OsString};
+
+    #[test]
+    fn httpbin_unset() {
+        assert!(parse_httpbin_endpoint(Err(VarError::NotPresent))
+            .unwrap()
+            .is_none());
+    }
+
+    #[test]
+    fn httpbin_valid_origins() {
+        for value in ["http://localhost:8080", "https://example.com/"] {
+            let endpoint = parse_httpbin_endpoint(Ok(value.to_owned()))
+                .unwrap()
+                .unwrap();
+            assert_eq!(endpoint.join("get").unwrap().path(), "/get");
+            assert_eq!(
+                endpoint.as_str(),
+                format!("{}/", value.trim_end_matches('/'))
+            );
+        }
+    }
+
+    #[test]
+    fn httpbin_invalid_configuration() {
+        for value in [
+            "",
+            "not a URL",
+            "/get",
+            "ftp://example.com",
+            "http+unix://example.com",
+            "https://example.com/base",
+            "https://user:password@example.com",
+            "https://example.com?query=value",
+            "https://example.com#fragment",
+        ] {
+            let error = parse_httpbin_endpoint(Ok(value.to_owned())).unwrap_err();
+            assert!(error.to_string().contains("AZURE_CORE_HTTPBIN_URL"));
+        }
+    }
+
+    #[test]
+    fn httpbin_non_unicode_is_not_unset() {
+        let error = parse_httpbin_endpoint(Err(VarError::NotUnicode(OsString::from("invalid"))))
+            .unwrap_err();
+        assert!(error.to_string().contains("AZURE_CORE_HTTPBIN_URL"));
+        assert!(std::error::Error::source(&error).is_some());
     }
 }

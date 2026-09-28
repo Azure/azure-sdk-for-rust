@@ -10,7 +10,7 @@ use azure_core::{
     },
 };
 use azure_core_examples::{
-    client::{TestServiceClient, TestServiceClientOptions, HTTP_ENDPOINT},
+    client::{httpbin_endpoint, TestServiceClient, TestServiceClientOptions},
     identity::MockCredential,
 };
 use std::sync::Arc;
@@ -24,7 +24,7 @@ impl Default for Agent {
     fn default() -> Self {
         Self(
             ureq::Agent::config_builder()
-                .https_only(true)
+                .https_only(false)
                 .tls_config(
                     TlsConfig::builder()
                         .provider(TlsProvider::NativeTls)
@@ -51,6 +51,8 @@ impl HttpClient for Agent {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let endpoint = httpbin_endpoint()?
+        .ok_or("Set AZURE_CORE_HTTPBIN_URL to an httpbin origin before running core_ureq_client")?;
     let agent = Arc::new(Agent::default());
     let options = TestServiceClientOptions {
         client_options: ClientOptions {
@@ -61,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let credential = MockCredential::new()?;
-    let client = TestServiceClient::new(HTTP_ENDPOINT, credential, Some(options))?;
+    let client = TestServiceClient::new(endpoint.as_str(), credential, Some(options))?;
     let response = client.get("get", None).await?;
     println!("Response status: {}", response.status());
     assert_eq!(response.status(), StatusCode::Ok);
