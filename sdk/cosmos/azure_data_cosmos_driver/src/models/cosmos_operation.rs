@@ -1390,8 +1390,8 @@ impl CosmosOperation {
 mod tests {
     use super::*;
     use crate::models::{
-        AccountReference, ContainerProperties, ContainerReference, PartitionKeyDefinition,
-        SystemProperties,
+        AccountReference, ContainerProperties, ContainerReference, EffectivePartitionKey,
+        PartitionKeyDefinition, SystemProperties,
     };
 
     use url::Url;
@@ -1463,8 +1463,11 @@ mod tests {
     }
 
     #[test]
-    fn retarget_rejects_explicit_epk_range() {
-        let range = FeedRange::new("10".into(), "20".into()).unwrap();
+    fn retarget_rejects_explicit_epk_range() -> crate::error::Result<()> {
+        let range = FeedRange::new(
+            EffectivePartitionKey::try_from("10")?,
+            EffectivePartitionKey::try_from("20")?,
+        )?;
         let mut operation = CosmosOperation::query_items(test_container(), Some(range.clone()));
 
         let error = operation
@@ -1477,6 +1480,7 @@ mod tests {
         );
         assert_eq!(operation.container().unwrap().rid(), "testcontainer_rid");
         assert_eq!(operation.target(), Some(&range));
+        Ok(())
     }
 
     #[test]

@@ -615,16 +615,15 @@ mod tests {
         min: &str,
         max: &str,
         partition_key_range_id: &str,
-    ) -> PhysicalPartitionSpec {
-        PhysicalPartitionSpec {
+    ) -> crate::error::Result<PhysicalPartitionSpec> {
+        Ok(PhysicalPartitionSpec {
             partition_key_range_id: partition_key_range_id.to_string(),
             parents: Vec::new(),
             range: FeedRange::new(
-                EffectivePartitionKey::from(min),
-                EffectivePartitionKey::from(max),
-            )
-            .unwrap(),
-        }
+                EffectivePartitionKey::try_from(min)?,
+                EffectivePartitionKey::try_from(max)?,
+            )?,
+        })
     }
 
     fn physical_partition_with_parents(
@@ -632,10 +631,10 @@ mod tests {
         max: &str,
         partition_key_range_id: &str,
         parents: &[&str],
-    ) -> PhysicalPartitionSpec {
-        let mut partition = physical_partition(min, max, partition_key_range_id);
+    ) -> crate::error::Result<PhysicalPartitionSpec> {
+        let mut partition = physical_partition(min, max, partition_key_range_id)?;
         partition.parents = parents.iter().map(|parent| (*parent).to_string()).collect();
-        partition
+        Ok(partition)
     }
 
     fn logical_partition_operation() -> CosmosOperation {
@@ -680,11 +679,11 @@ mod tests {
         max: &str,
         partition_key_range_id: &str,
         continuation: Option<&str>,
-    ) -> RequestSpec {
-        request_spec(
-            effective_partition_key_range_target(min, max, partition_key_range_id, min, max),
+    ) -> crate::error::Result<RequestSpec> {
+        Ok(request_spec(
+            effective_partition_key_range_target(min, max, partition_key_range_id, min, max)?,
             continuation,
-        )
+        ))
     }
 
     fn partition_key_request_with_parents(
@@ -693,13 +692,12 @@ mod tests {
         partition_key_range_id: &str,
         parents: &[&str],
         continuation: Option<&str>,
-    ) -> RequestSpec {
+    ) -> crate::error::Result<RequestSpec> {
         let range = FeedRange::new(
-            EffectivePartitionKey::from(min),
-            EffectivePartitionKey::from(max),
-        )
-        .unwrap();
-        request_spec(
+            EffectivePartitionKey::try_from(min)?,
+            EffectivePartitionKey::try_from(max)?,
+        )?;
+        Ok(request_spec(
             RequestTarget::effective_partition_key_range_with_parents(
                 range.clone(),
                 partition_key_range_id.to_string(),
@@ -707,7 +705,7 @@ mod tests {
                 range,
             ),
             continuation,
-        )
+        ))
     }
 
     fn effective_partition_key_request(
@@ -717,17 +715,17 @@ mod tests {
         partition_min: &str,
         partition_max: &str,
         continuation: Option<&str>,
-    ) -> RequestSpec {
-        request_spec(
+    ) -> crate::error::Result<RequestSpec> {
+        Ok(request_spec(
             effective_partition_key_range_target(
                 min,
                 max,
                 partition_key_range_id,
                 partition_min,
                 partition_max,
-            ),
+            )?,
             continuation,
-        )
+        ))
     }
 
     fn build_request(spec: RequestSpec) -> Request {
@@ -799,20 +797,18 @@ mod tests {
         partition_key_range_id: &str,
         partition_min: &str,
         partition_max: &str,
-    ) -> RequestTarget {
-        RequestTarget::effective_partition_key_range(
+    ) -> crate::error::Result<RequestTarget> {
+        Ok(RequestTarget::effective_partition_key_range(
             FeedRange::new(
-                EffectivePartitionKey::from(min),
-                EffectivePartitionKey::from(max),
-            )
-            .unwrap(),
+                EffectivePartitionKey::try_from(min)?,
+                EffectivePartitionKey::try_from(max)?,
+            )?,
             partition_key_range_id.to_string(),
             FeedRange::new(
-                EffectivePartitionKey::from(partition_min),
-                EffectivePartitionKey::from(partition_max),
-            )
-            .unwrap(),
-        )
+                EffectivePartitionKey::try_from(partition_min)?,
+                EffectivePartitionKey::try_from(partition_max)?,
+            )?,
+        ))
     }
 
     #[tokio::test]
@@ -1053,112 +1049,119 @@ mod tests {
     // ── Topology rewrite scenarios ───────────────────────────────────────
 
     #[tokio::test]
-    async fn topology_rewrite_handles_simple_split() {
+    async fn topology_rewrite_handles_simple_split() -> crate::error::Result<()> {
         assert_topology_rewrite(
-            vec![partition_key_request("", "80", "0", Some("server-token"))],
+            vec![partition_key_request("", "80", "0", Some("server-token"))?],
             vec![vec![
-                physical_partition_with_parents("", "40", "1", &["0"]),
-                physical_partition_with_parents("40", "80", "2", &["0"]),
+                physical_partition_with_parents("", "40", "1", &["0"])?,
+                physical_partition_with_parents("40", "80", "2", &["0"])?,
             ]],
             vec![
-                partition_key_request_with_parents("", "40", "1", &["0"], Some("server-token")),
-                partition_key_request_with_parents("40", "80", "2", &["0"], Some("server-token")),
+                partition_key_request_with_parents("", "40", "1", &["0"], Some("server-token"))?,
+                partition_key_request_with_parents("40", "80", "2", &["0"], Some("server-token"))?,
             ],
         )
         .await;
+        Ok(())
     }
 
     #[tokio::test]
-    async fn topology_rewrite_handles_simple_merge() {
+    async fn topology_rewrite_handles_simple_merge() -> crate::error::Result<()> {
         assert_topology_rewrite(
             vec![
-                partition_key_request("", "40", "left", Some("merge-token")),
-                partition_key_request("40", "80", "right", None),
+                partition_key_request("", "40", "left", Some("merge-token"))?,
+                partition_key_request("40", "80", "right", None)?,
             ],
-            vec![vec![physical_partition("", "80", "merged")]],
+            vec![vec![physical_partition("", "80", "merged")?]],
             vec![
-                effective_partition_key_request("", "40", "merged", "", "80", Some("merge-token")),
-                effective_partition_key_request("40", "80", "merged", "", "80", None),
+                effective_partition_key_request("", "40", "merged", "", "80", Some("merge-token"))?,
+                effective_partition_key_request("40", "80", "merged", "", "80", None)?,
             ],
         )
         .await;
+        Ok(())
     }
 
     #[tokio::test]
-    async fn topology_rewrite_leaves_unchanged_neighbors_alone() {
+    async fn topology_rewrite_leaves_unchanged_neighbors_alone() -> crate::error::Result<()> {
         assert_topology_rewrite(
             vec![
-                partition_key_request("", "40", "left", Some("ct")),
-                partition_key_request("40", "80", "right", None),
+                partition_key_request("", "40", "left", Some("ct"))?,
+                partition_key_request("40", "80", "right", None)?,
             ],
             vec![vec![
-                physical_partition("", "40", "left"),
-                physical_partition("40", "60", "right-a"),
-                physical_partition("60", "80", "right-b"),
+                physical_partition("", "40", "left")?,
+                physical_partition("40", "60", "right-a")?,
+                physical_partition("60", "80", "right-b")?,
             ]],
             vec![
-                partition_key_request("", "40", "left", Some("ct")),
-                partition_key_request("40", "60", "right-a", None),
-                partition_key_request("60", "80", "right-b", None),
+                partition_key_request("", "40", "left", Some("ct"))?,
+                partition_key_request("40", "60", "right-a", None)?,
+                partition_key_request("60", "80", "right-b", None)?,
             ],
         )
         .await;
+        Ok(())
     }
 
     #[tokio::test]
-    async fn topology_rewrite_can_return_from_merged_epk_slices_to_exact_pk_ranges() {
+    async fn topology_rewrite_can_return_from_merged_epk_slices_to_exact_pk_ranges(
+    ) -> crate::error::Result<()> {
         assert_topology_rewrite(
             vec![
-                effective_partition_key_request("", "40", "merged", "", "80", Some("ct")),
-                effective_partition_key_request("40", "80", "merged", "", "80", None),
+                effective_partition_key_request("", "40", "merged", "", "80", Some("ct"))?,
+                effective_partition_key_request("40", "80", "merged", "", "80", None)?,
             ],
             vec![vec![
-                physical_partition("", "40", "left"),
-                physical_partition("40", "80", "right"),
+                physical_partition("", "40", "left")?,
+                physical_partition("40", "80", "right")?,
             ]],
             vec![
-                partition_key_request("", "40", "left", Some("ct")),
-                partition_key_request("40", "80", "right", None),
+                partition_key_request("", "40", "left", Some("ct"))?,
+                partition_key_request("40", "80", "right", None)?,
             ],
         )
         .await;
+        Ok(())
     }
 
     #[tokio::test]
-    async fn topology_rewrite_handles_merge_then_different_split_mid_pipeline() {
+    async fn topology_rewrite_handles_merge_then_different_split_mid_pipeline(
+    ) -> crate::error::Result<()> {
         assert_topology_rewrite(
             vec![
-                partition_key_request("00", "20", "a", Some("ct")),
-                partition_key_request("20", "40", "b", None),
-                partition_key_request("40", "80", "c", None),
+                partition_key_request("00", "20", "a", Some("ct"))?,
+                partition_key_request("20", "40", "b", None)?,
+                partition_key_request("40", "80", "c", None)?,
             ],
             vec![
                 vec![
-                    physical_partition("00", "40", "merged-left"),
-                    physical_partition("40", "80", "c"),
+                    physical_partition("00", "40", "merged-left")?,
+                    physical_partition("40", "80", "c")?,
                 ],
                 vec![
-                    physical_partition("00", "10", "split-a"),
-                    physical_partition("10", "30", "split-b"),
-                    physical_partition("30", "50", "split-c"),
-                    physical_partition("50", "80", "split-d"),
+                    physical_partition("00", "10", "split-a")?,
+                    physical_partition("10", "30", "split-b")?,
+                    physical_partition("30", "50", "split-c")?,
+                    physical_partition("50", "80", "split-d")?,
                 ],
             ],
             vec![
-                partition_key_request("00", "10", "split-a", Some("ct")),
-                effective_partition_key_request("10", "20", "split-b", "10", "30", Some("ct")),
-                effective_partition_key_request("20", "30", "split-b", "10", "30", None),
-                effective_partition_key_request("30", "40", "split-c", "30", "50", None),
-                effective_partition_key_request("40", "50", "split-c", "30", "50", None),
-                partition_key_request("50", "80", "split-d", None),
+                partition_key_request("00", "10", "split-a", Some("ct"))?,
+                effective_partition_key_request("10", "20", "split-b", "10", "30", Some("ct"))?,
+                effective_partition_key_request("20", "30", "split-b", "10", "30", None)?,
+                effective_partition_key_request("30", "40", "split-c", "30", "50", None)?,
+                effective_partition_key_request("40", "50", "split-c", "30", "50", None)?,
+                partition_key_request("50", "80", "split-d", None)?,
             ],
         )
         .await;
+        Ok(())
     }
 
     #[tokio::test]
-    async fn topology_provider_error_propagates() {
-        let mut request = Request::new(Arc::new(operation()), epk_range_target(), None);
+    async fn topology_provider_error_propagates() -> crate::error::Result<()> {
+        let mut request = Request::new(Arc::new(operation()), epk_range_target()?, None);
         let mut executor = MockRequestExecutor::new(vec![Err(gone_error())]);
         let mut topology =
             MockTopologyProvider::new(vec![Err(crate::error::CosmosError::builder()
@@ -1175,6 +1178,7 @@ mod tests {
             rendered.ends_with("topology fetch failed"),
             "unexpected: {rendered}"
         );
+        Ok(())
     }
 
     #[tokio::test]
