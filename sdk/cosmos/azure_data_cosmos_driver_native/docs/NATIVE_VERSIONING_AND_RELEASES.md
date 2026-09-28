@@ -128,72 +128,16 @@ source=<full-git-sha>
 Do not embed branch names, pipeline build identifiers, absolute paths, or
 timestamps. Keep operational details in restricted pipeline records.
 
-## Provenance
+## Existing supply-chain evidence
 
-Publish a small, sanitized `provenance.json`:
-
-```json
-{
-  "schema_version": 3,
-  "release": {
-    "package": "azure_data_cosmos_driver_native",
-    "version": "0.2.1",
-    "tag": "azure_data_cosmos_driver_native@0.2.1",
-    "source_sha": "0123456789abcdef0123456789abcdef01234567"
-  },
-  "inputs": {
-    "cargo_lock_sha256": "sha256:...",
-    "build_matrix_sha256": "sha256:...",
-    "changelog_sha256": "sha256:...",
-    "ffi_snapshot_sha256": "sha256:..."
-  },
-  "toolchain": {
-    "provider": "microsoft",
-    "channel": "ms-prod-1.95",
-    "rustc_release": "1.95.0",
-    "rustc_commit": "abcdef0123456789abcdef0123456789abcdef01"
-  },
-  "targets": [
-    {
-      "id": "linux-amd64-glibc",
-      "triple": "x86_64-unknown-linux-gnu",
-      "module": "linux/amd64",
-      "header_sha256": "sha256:...",
-      "library_sha256": "sha256:..."
-    }
-  ]
-}
-```
-
-Public provenance must not contain operational paths, pipeline run identifiers,
-timestamps, credentials, private endpoints, or verbose tool output.
-
-## Signed evidence
-
-The governed build signs an SPDX inventory covering:
-
-- `provenance.json`;
-- `SHA256SUMS`;
-- the header and FFI snapshot; and
-- every platform artifact.
-
-Export only the existing six-file evidence allowlist:
-
-```text
-manifest.spdx.json
-manifest.spdx.json.sha256
-manifest.spdx.cose
-manifest.cat
-bsi.json
-bsi.cose
-```
-
-Do not publish signing-client logs or internal diagnostics.
+This design does not change provenance, SPDX generation, checksums, signing, or
+the six-file evidence allowlist. Continue using the current flow documented in
+`sdk/cosmos/azure_data_cosmos_driver_native/docs/NATIVE_SUPPLY_CHAIN.md`.
 
 ```mermaid
 flowchart LR
     T["Protected source tag"] --> B["Governed build"]
-    B --> E["Artifacts + provenance<br/>checksums + signed SPDX"]
+    B --> E["Existing artifacts<br/>and release evidence"]
     E --> R["One driver-repository commit"]
     R --> H["Host SDK release"]
 ```
@@ -228,7 +172,6 @@ Host SDK versions remain independent:
 ```text
 host_sdk_version = 4.12.0
 native_release = 0.2.1
-provenance_digest = sha256:...
 ```
 
 Bundled or statically linked hosts validate the exact native release during the
@@ -264,10 +207,10 @@ different toolchain or artifact.
 ## Adoption
 
 1. Add the changelog and FFI snapshot.
-2. Sanitize provenance and stabilize the embedded build identity.
+2. Stabilize the embedded build identity.
 3. Enforce version, tag, and FFI-diff checks.
 4. Publish one atomic downstream release and tag set.
-5. Record native version and provenance in each host SDK.
+5. Record the native version in each host SDK.
 6. Register the native release with Azure SDK inventory and release systems.
 
 ## Acceptance criteria
@@ -275,11 +218,9 @@ different toolchain or artifact.
 - One protected tag identifies one immutable release.
 - Cargo, runtime, header, changelog, and downstream versions agree.
 - FFI snapshot changes require the correct SemVer bump.
-- Provenance binds source, build inputs, toolchain, targets, and artifact hashes.
-- Signed SPDX evidence covers every public release file.
+- Existing provenance and signed SPDX behavior remains unchanged.
 - All downstream platform tags point to one release commit.
 - Host SDKs record and validate the native version they use.
-- Public evidence contains no internal operational details.
 
 ## Open decisions
 
