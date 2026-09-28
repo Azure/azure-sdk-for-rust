@@ -131,7 +131,6 @@ fn generate_default(input: &OptionsInput) -> Result<proc_macro2::TokenStream> {
                 Self {
                     #(#fields),*
                 }
-
             }
         }
     })
