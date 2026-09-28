@@ -39,7 +39,7 @@ use azure_data_cosmos::feed::{ContinuationToken, QueryPageIterator};
 use azure_data_cosmos::{
     clients::ContainerClient,
     feed::FeedScope,
-    models::{ContainerProperties, CosmosStatus, ThroughputProperties},
+    models::{ContainerProperties, ThroughputProperties},
     options::{BinaryEncodingOptions, MaxItemCountHint, OperationOptions, QueryOptions},
 };
 use framework::{TestClient, TestOptions};
@@ -140,7 +140,7 @@ async fn capture_ordered_checkpoint(
         Ok(token) => ContinuationToken::from_string(token.as_str().to_owned()),
         Err(error)
             if error.status().sub_status()
-                == CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED.sub_status() =>
+                == azure_data_cosmos_driver::error::status_codes::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED.sub_status() =>
         {
             panic!(
                 "service planned `{ORDERED_QUERY}` as unordered DISTINCT (continuation \

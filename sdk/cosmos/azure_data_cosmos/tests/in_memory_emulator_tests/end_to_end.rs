@@ -28,8 +28,7 @@ use azure_data_cosmos::{
         ReadConsistencyStrategy, Region, ThrottlingRetryOptionsBuilder,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClient, CosmosClientBuilder,
-    CosmosRuntimeBuilder, CosmosStatus, FeedScope, Query, RoutingStrategy, SubStatusCode,
-    TransactionalBatch,
+    CosmosRuntimeBuilder, CosmosStatus, FeedScope, Query, RoutingStrategy, TransactionalBatch,
 };
 use azure_data_cosmos_driver::in_memory_emulator::{
     ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
@@ -230,7 +229,7 @@ async fn create_container_if_needed(
 fn is_transient_failover_status(status: CosmosStatus) -> bool {
     status.status_code() == StatusCode::ServiceUnavailable
         || (status.status_code() == StatusCode::NotFound
-            && status.sub_status() == Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE))
+            && status.sub_status() == Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE))
 }
 
 #[cfg(feature = "fault_injection")]
@@ -252,7 +251,7 @@ async fn read_item_with_failover_retry(
             Err(e) => {
                 let is_503 = e.status().status_code() == StatusCode::ServiceUnavailable;
                 let is_session_unavailable = e.status().status_code() == StatusCode::NotFound
-                    && e.status().sub_status() == Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE);
+                    && e.status().sub_status() == Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE);
                 eprintln!(
                     "[{label}] read_item attempt {attempt}/{MAX_ATTEMPTS} failed \
                      (is_503={is_503}, is_session_unavailable={is_session_unavailable}): {e}",
@@ -352,15 +351,19 @@ fn transient_failover_status_is_scoped_to_503_and_404_1002() {
         StatusCode::ServiceUnavailable
     )));
     assert!(is_transient_failover_status(
-        CosmosStatus::new(StatusCode::NotFound)
-            .with_sub_status(SubStatusCode::READ_SESSION_NOT_AVAILABLE.value())
+        CosmosStatus::new(StatusCode::NotFound).with_sub_status(
+            azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE
+                .value()
+        )
     ));
     assert!(!is_transient_failover_status(CosmosStatus::new(
         StatusCode::NotFound
     )));
     assert!(!is_transient_failover_status(
-        CosmosStatus::new(StatusCode::Gone)
-            .with_sub_status(SubStatusCode::PARTITION_KEY_RANGE_GONE.value())
+        CosmosStatus::new(StatusCode::Gone).with_sub_status(
+            azure_data_cosmos_driver::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE
+                .value()
+        )
     ));
 }
 

@@ -7,16 +7,14 @@
 ## Features
 
 - `default`
-  - `distributed_tracing`
   - `fault_injection`
-  - `metrics`
   - `otlp_rustls`
-- `distributed_tracing`
+  - `preview_opentelemetry`
 - `fault_injection`
-- `metrics`
 - `opentelemetry-otlp`
 - `otlp`
 - `otlp_rustls`
+- `preview_opentelemetry`
 
 ```rust
 #![crate_name = "azure_data_cosmos_observability_harness"]

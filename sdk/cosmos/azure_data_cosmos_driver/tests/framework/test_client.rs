@@ -4,6 +4,7 @@
 //! Driver test client for emulator and live E2E tests.
 
 use azure_core::http::StatusCode;
+use azure_data_cosmos_driver::error::status_codes::substatus;
 #[cfg(feature = "fault_injection")]
 use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
 #[cfg(feature = "preview_patch")]
@@ -199,10 +200,9 @@ pub async fn probe_driver_data_plane_ready(
                     || (status.status_code() == StatusCode::Forbidden
                         && status.sub_status() == Some(SubStatusCode::new(5302)))
                     || (status.status_code() == StatusCode::NotFound
-                        && status.sub_status()
-                            == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS))
+                        && status.sub_status() == Some(substatus::COLLECTION_CREATE_IN_PROGRESS))
                     || (status.status_code() == StatusCode::NotFound
-                        && status.sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND))
+                        && status.sub_status() == Some(substatus::OWNER_RESOURCE_NOT_FOUND))
                     || matches!(
                         status.status_code(),
                         StatusCode::TooManyRequests
@@ -240,8 +240,8 @@ pub async fn resolve_driver_container_ready(
                     && matches!(
                         error.status().sub_status(),
                         Some(
-                            SubStatusCode::COLLECTION_CREATE_IN_PROGRESS
-                                | SubStatusCode::OWNER_RESOURCE_NOT_FOUND
+                            substatus::COLLECTION_CREATE_IN_PROGRESS
+                                | substatus::OWNER_RESOURCE_NOT_FOUND
                         )
                     )
                     && attempt < MAX_ATTEMPTS =>
@@ -1152,10 +1152,9 @@ impl DriverTestRunContext {
                     // than substring-scanning the error message.
                     let status = e.status();
                     let create_in_progress = status.status_code() == StatusCode::NotFound
-                        && status.sub_status()
-                            == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
+                        && status.sub_status() == Some(substatus::COLLECTION_CREATE_IN_PROGRESS);
                     let owner_not_found = status.status_code() == StatusCode::NotFound
-                        && status.sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND);
+                        && status.sub_status() == Some(substatus::OWNER_RESOURCE_NOT_FOUND);
                     let ambiguous_not_found = ambiguous_create_error.is_some()
                         && status.status_code() == StatusCode::NotFound;
                     if create_in_progress || owner_not_found || ambiguous_not_found {

@@ -217,7 +217,7 @@ impl DistributedTransactionRequest {
 
         serde_json::to_vec(&serde_json::json!({ "operations": operations })).map_err(|error| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("failed to serialize distributed transaction request body")
                 .with_source(error)
                 .build()
@@ -316,7 +316,7 @@ fn serialize_operation(
         let mut resource_body =
             serde_json::from_slice::<serde_json::Value>(body).map_err(|error| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(
                         "distributed transaction operation resource body must be valid JSON",
                     )

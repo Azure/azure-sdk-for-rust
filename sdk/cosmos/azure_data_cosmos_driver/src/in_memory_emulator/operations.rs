@@ -77,7 +77,7 @@ fn session_consistency_active(
 
 /// HTTP status a prepared-then-rolled-back write operation reports in an aborted
 /// distributed transaction, paired with sub-status 5415 (DtcOperationRolledBack).
-/// Mirrors the driver's `SubStatusCode::DTC_OPERATION_ROLLED_BACK`.
+/// Mirrors the driver's `crate::error::status_codes::substatus::DTC_OPERATION_ROLLED_BACK`.
 #[cfg(feature = "preview_dtx")]
 const DTX_ROLLED_BACK_STATUS: u16 = 453;
 /// Sub-status accompanying [`DTX_ROLLED_BACK_STATUS`] (DtcOperationRolledBack).
@@ -1781,7 +1781,7 @@ fn intended_collection_rid_mismatch(
         error_response(
             StatusCode::BadRequest,
             Some(
-                crate::models::SubStatusCode::COLLECTION_RID_MISMATCH
+                crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH
                     .value()
                     .into(),
             ),
@@ -2949,7 +2949,7 @@ fn query_document_feed_items(
 ) -> crate::error::Result<Option<Vec<DocumentFeedItem>>> {
     let program = crate::query::parse(sql).map_err(|e| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(format!("failed to parse query: {e}"))
             .with_source(e)
             .build()

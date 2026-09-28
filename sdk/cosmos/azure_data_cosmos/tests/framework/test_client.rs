@@ -17,7 +17,7 @@ use azure_data_cosmos::{
     CosmosClient, CosmosError, CosmosRuntime, CosmosStatus, PartitionKey, Query, RoutingStrategy,
     SubStatusCode,
 };
-use azure_data_cosmos_driver::models::ConnectionString;
+use azure_data_cosmos_driver::{error::status_codes, models::ConnectionString};
 use futures::{StreamExt, TryStreamExt};
 use std::error::Error;
 use std::future::Future;
@@ -202,12 +202,15 @@ where
 
 fn collection_create_in_progress(error: &CosmosError) -> bool {
     error.status().status_code() == StatusCode::NotFound
-        && error.status().sub_status() == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS)
+        && error.status().sub_status() == Some(azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS)
 }
 
 fn owner_resource_not_found(error: &CosmosError) -> bool {
     error.status().status_code() == StatusCode::NotFound
-        && error.status().sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND)
+        && error.status().sub_status()
+            == Some(
+                azure_data_cosmos_driver::error::status_codes::substatus::OWNER_RESOURCE_NOT_FOUND,
+            )
 }
 
 pub(crate) fn aad_token_invalid_issuer(error: &CosmosError) -> bool {
@@ -277,7 +280,6 @@ fn container_readiness_timeout_error(region: &str, attempts: usize) -> CosmosErr
             "container readiness probe timed out in {region} after {attempts} attempts"
         ))
         .build()
-        .into()
 }
 
 /// Data-plane readiness probe used after container creation on AAD legs.
@@ -319,8 +321,7 @@ pub async fn probe_data_plane_ready(
                     .with_message(format!(
                         "data-plane readiness probe deleted {probe_id} on {label}, which cannot exist"
                     ))
-                    .build()
-                    .into());
+                    .build());
             }
             Err(error) => error,
         };
@@ -2067,7 +2068,7 @@ impl TestRunContext {
 fn database_name(db_client: &DatabaseClient) -> azure_data_cosmos::Result<&str> {
     db_client.name().ok_or_else(|| {
         azure_data_cosmos_driver::error::CosmosError::builder()
-            .with_status(CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+            .with_status(status_codes::CLIENT_INVALID_RESOURCE_ID)
             .with_message("ARM-backed test resource management requires a name-addressed database")
             .build()
             .into()
@@ -2091,14 +2092,14 @@ fn to_arm_container_resource(
 
     let mut resource = serde_json::to_value(properties).map_err(|error| {
         azure_data_cosmos_driver::error::CosmosError::builder()
-            .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message("failed to serialize Cosmos container properties for ARM")
             .with_source(error)
             .build()
     })?;
     let resource = resource.as_object_mut().ok_or_else(|| {
         azure_data_cosmos_driver::error::CosmosError::builder()
-            .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message("serialized Cosmos container properties were not an object")
             .build()
     })?;
@@ -2122,7 +2123,7 @@ fn to_arm_throughput(
             .map(ArmThroughput::Manual)
             .ok_or_else(|| {
                 azure_data_cosmos_driver::error::CosmosError::builder()
-                    .with_status(CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                    .with_status(status_codes::CLIENT_INVALID_RESOURCE_ID)
                     .with_message("throughput must specify either manual or autoscale RU/s")
                     .build()
                     .into()
@@ -2159,7 +2160,7 @@ fn from_arm_throughput(
         }))
         .map_err(|error| {
             azure_data_cosmos_driver::error::CosmosError::builder()
-                .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("failed to convert ARM throughput response")
                 .with_source(error)
                 .build()
@@ -2170,7 +2171,7 @@ fn from_arm_throughput(
 
 fn arm_error(error: azure_core::Error) -> CosmosError {
     azure_data_cosmos_driver::error::CosmosError::builder()
-        .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+        .with_status(status_codes::TRANSPORT_GENERATED_503)
         .with_message("Azure Resource Manager operation failed")
         .with_source(error)
         .build()
@@ -2403,7 +2404,6 @@ mod tests {
             .with_status(CosmosStatus::new(status).with_sub_status(sub_status.value()))
             .with_message("test error")
             .build()
-            .into()
     }
 
     #[test]
@@ -2414,7 +2414,7 @@ mod tests {
         )));
         assert!(!aad_token_invalid_issuer(&error_with_status(
             StatusCode::Unauthorized,
-            SubStatusCode::AAD_TOKEN_EXPIRED,
+            azure_data_cosmos_driver::error::status_codes::substatus::AAD_TOKEN_EXPIRED,
         )));
         assert!(!aad_token_invalid_issuer(&error_with_status(
             StatusCode::NotFound,
@@ -2461,18 +2461,18 @@ mod tests {
     fn satellite_readiness_retries_only_expected_transient_errors() {
         let create_in_progress = error_with_status(
             StatusCode::NotFound,
-            SubStatusCode::COLLECTION_CREATE_IN_PROGRESS,
+            azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS,
         );
         let owner_not_found = error_with_status(
             StatusCode::NotFound,
-            SubStatusCode::OWNER_RESOURCE_NOT_FOUND,
+            azure_data_cosmos_driver::error::status_codes::substatus::OWNER_RESOURCE_NOT_FOUND,
         );
         let aad_invalid_issuer =
             error_with_status(StatusCode::Unauthorized, SubStatusCode::new(5007));
         let rbac_not_ready = error_with_status(StatusCode::Forbidden, SubStatusCode::new(5302));
         let read_session_not_available = error_with_status(
             StatusCode::NotFound,
-            SubStatusCode::READ_SESSION_NOT_AVAILABLE,
+            azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE,
         );
 
         for auth_mode in [AuthMode::Key, AuthMode::Aad] {
@@ -2522,11 +2522,11 @@ mod tests {
         )));
         assert!(!item_not_found(&error_with_status(
             StatusCode::NotFound,
-            SubStatusCode::READ_SESSION_NOT_AVAILABLE,
+            azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE,
         )));
         assert!(!item_not_found(&error_with_status(
             StatusCode::NotFound,
-            SubStatusCode::COLLECTION_CREATE_IN_PROGRESS,
+            azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS,
         )));
         assert!(!item_not_found(&error_with_status(
             StatusCode::Forbidden,
@@ -2555,7 +2555,7 @@ mod tests {
         assert!(satellite_probe_should_retry(
             &error_with_status(
                 StatusCode::NotFound,
-                SubStatusCode::COLLECTION_CREATE_IN_PROGRESS
+                azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS
             ),
             AuthMode::Key
         ));
