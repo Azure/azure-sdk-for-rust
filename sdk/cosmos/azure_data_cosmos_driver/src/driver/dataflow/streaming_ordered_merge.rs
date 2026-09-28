@@ -1059,12 +1059,11 @@ mod tests {
     use crate::driver::dataflow::mocks::{self, MockLeaf};
     use crate::models::effective_partition_key::EffectivePartitionKey;
 
-    fn range(min: &str, max: &str) -> FeedRange {
+    fn range(min: &str, max: &str) -> crate::error::Result<FeedRange> {
         FeedRange::new(
-            EffectivePartitionKey::from(min),
-            EffectivePartitionKey::from(max),
+            EffectivePartitionKey::try_from(min)?,
+            EffectivePartitionKey::try_from(max)?,
         )
-        .unwrap()
     }
 
     /// Builds a rewritten-envelope backend `CosmosResponse` with one row per
@@ -1259,7 +1258,7 @@ mod tests {
     ) -> crate::error::Result<PageResult> {
         Ok(PageResult::SplitRequired {
             replacements: SplitReplacements::try_tiling(
-                &range(scope_min, scope_max),
+                &range(scope_min, scope_max)?,
                 replacement_nodes,
             )?,
         })
@@ -1275,8 +1274,10 @@ mod tests {
         min: &str,
         max: &str,
         pages: Vec<crate::error::Result<PageResult>>,
-    ) -> Box<dyn PipelineNode> {
-        Box::new(MockLeaf::with_pages(pages).with_feed_range(range(min, max)))
+    ) -> crate::error::Result<Box<dyn PipelineNode>> {
+        Ok(Box::new(
+            MockLeaf::with_pages(pages).with_feed_range(range(min, max)?),
+        ))
     }
 
     /// A split-replacement leaf that reports a `Request` snapshot carrying a
@@ -1289,14 +1290,14 @@ mod tests {
         min: &str,
         max: &str,
         pages: Vec<crate::error::Result<PageResult>>,
-    ) -> Box<dyn PipelineNode> {
-        Box::new(
+    ) -> crate::error::Result<Box<dyn PipelineNode>> {
+        Ok(Box::new(
             MockLeaf::with_pages(pages)
-                .with_feed_range(range(min, max))
+                .with_feed_range(range(min, max)?)
                 .with_snapshot(PipelineNodeState::Request {
                     server_continuation: Some("split-forwarded-ct".to_owned()),
                 }),
-        )
+        ))
     }
 
     /// Drains `node` to completion against a no-op executor/topology (a merge
@@ -1334,9 +1335,9 @@ mod tests {
     /// boundary), so the merge wraps and orders them without re-resolving and
     /// with no client-side discard.
     #[tokio::test]
-    async fn split_during_pop_loop_fills_all_split_replacements() {
+    async fn split_during_pop_loop_fills_all_split_replacements() -> crate::error::Result<()> {
         let p0 = ChildStream::fresh(
-            range("", "80"),
+            range("", "80")?,
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page(&[("d1", 1), ("d2", 2)], Some("p0-ct")),
                 // The split child yields two sub-range leaves that carry the
@@ -1350,18 +1351,18 @@ mod tests {
                             "",
                             "40",
                             vec![envelope_page(&[("d3", 3)], None)],
-                        ),
+                        )?,
                         positioned_replacement_leaf(
                             "40",
                             "80",
                             vec![envelope_page(&[("d10", 10), ("d20", 20)], None)],
-                        ),
+                        )?,
                     ],
                 ),
             ])),
         );
         let p1 = ChildStream::fresh(
-            range("80", "FF"),
+            range("80", "FF")?,
             Box::new(MockLeaf::with_pages(vec![envelope_page(
                 &[("d50", 50)],
                 None,
@@ -1378,6 +1379,7 @@ mod tests {
                 .collect::<Vec<_>>(),
             "the second split replacement's smaller rows (10, 20) must precede 50"
         );
+        Ok(())
     }
 
     /// Regression: a split landing mid-skip-run must not resurrect the
@@ -1396,9 +1398,10 @@ mod tests {
     /// original `3` — rebuilding from the boundary would also swallow the
     /// legitimate `d-dup4` and `d9`.
     #[tokio::test]
-    async fn split_mid_skip_run_carries_remaining_discard_to_replacement() {
+    async fn split_mid_skip_run_carries_remaining_discard_to_replacement(
+    ) -> crate::error::Result<()> {
         let mut child = ChildStream::fresh(
-            range("", "80"),
+            range("", "80")?,
             Box::new(MockLeaf::with_pages(vec![
                 // Page 1 is entirely already-emitted duplicates: the discard
                 // eats both, leaving skip_count = 1 and an empty buffer.
@@ -1416,7 +1419,7 @@ mod tests {
                             &[("dup", 5, "d-dup3"), ("dup", 5, "d-dup4"), ("e", 9, "d9")],
                             None,
                         )],
-                    )],
+                    )?],
                 ),
             ])),
         );
@@ -1440,6 +1443,7 @@ mod tests {
             "the third duplicate is still owed to the skip run and must not re-emit, \
              while the fourth duplicate and the next key must survive"
         );
+        Ok(())
     }
 
     /// Companion to the large-cap regression: with a page cap that fills
@@ -1448,9 +1452,9 @@ mod tests {
     /// order on the next page. P0 emits `[1, 2]`, splits, emits `3`
     /// (cap = 3 reached), and P0b (`10, 20`) plus P1 (`50`) follow next page.
     #[tokio::test]
-    async fn split_during_pop_loop_small_cap_checkpoints_after_split() {
+    async fn split_during_pop_loop_small_cap_checkpoints_after_split() -> crate::error::Result<()> {
         let p0 = ChildStream::fresh(
-            range("", "80"),
+            range("", "80")?,
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page(&[("d1", 1), ("d2", 2)], Some("p0-ct")),
                 split_page(
@@ -1461,18 +1465,18 @@ mod tests {
                             "",
                             "40",
                             vec![envelope_page(&[("d3", 3)], None)],
-                        ),
+                        )?,
                         positioned_replacement_leaf(
                             "40",
                             "80",
                             vec![envelope_page(&[("d10", 10), ("d20", 20)], None)],
-                        ),
+                        )?,
                     ],
                 ),
             ])),
         );
         let p1 = ChildStream::fresh(
-            range("80", "FF"),
+            range("80", "FF")?,
             Box::new(MockLeaf::with_pages(vec![envelope_page(
                 &[("d50", 50)],
                 None,
@@ -1529,6 +1533,7 @@ mod tests {
             vec!["d10".to_owned(), "d20".to_owned(), "d50".to_owned()]
         );
         assert!(t2, "all children drained after the second page");
+        Ok(())
     }
 
     /// A split replacement may itself split before it yields a row (cascading
@@ -1536,31 +1541,32 @@ mod tests {
     /// forwarded continuation, so ordering and resume correctness hold no
     /// matter how deep the cascade goes — with no client-side discard.
     #[tokio::test]
-    async fn cascading_split_replacements_preserve_order_and_boundary() {
+    async fn cascading_split_replacements_preserve_order_and_boundary() -> crate::error::Result<()>
+    {
         // P0 emits [1, 2] then splits into P0a + P0b; P0a splits *again* into
         // P0a1 (next 3) and P0a2 (next 5) before yielding a row.
         let p0a_cascade = split_page(
             "",
             "40",
             vec![
-                positioned_replacement_leaf("", "20", vec![envelope_page(&[("d3", 3)], None)]),
-                positioned_replacement_leaf("20", "40", vec![envelope_page(&[("d5", 5)], None)]),
+                positioned_replacement_leaf("", "20", vec![envelope_page(&[("d3", 3)], None)])?,
+                positioned_replacement_leaf("20", "40", vec![envelope_page(&[("d5", 5)], None)])?,
             ],
         );
         let p0 = ChildStream::fresh(
-            range("", "80"),
+            range("", "80")?,
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page(&[("d1", 1), ("d2", 2)], Some("p0-ct")),
                 split_page(
                     "",
                     "80",
                     vec![
-                        positioned_replacement_leaf("", "40", vec![p0a_cascade]),
+                        positioned_replacement_leaf("", "40", vec![p0a_cascade])?,
                         positioned_replacement_leaf(
                             "40",
                             "80",
                             vec![envelope_page(&[("d10", 10)], None)],
-                        ),
+                        )?,
                     ],
                 ),
             ])),
@@ -1575,18 +1581,19 @@ mod tests {
                 .collect::<Vec<_>>(),
             "rows from a cascaded (twice-split) sub-range stay globally ordered"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn cross_partition_ties_are_broken_by_range() {
+    async fn cross_partition_ties_are_broken_by_range() -> crate::error::Result<()> {
         // Both children have rank=1; the leftmost EPK range wins regardless
         // of RID, matching .NET and Java.
         let left = ChildStream::fresh(
-            range("", "80"),
+            range("", "80")?,
             Box::new(MockLeaf::with_pages(vec![envelope_page(&[("b", 1)], None)])),
         );
         let right = ChildStream::fresh(
-            range("80", "FF"),
+            range("80", "FF")?,
             Box::new(MockLeaf::with_pages(vec![envelope_page(&[("a", 1)], None)])),
         );
         let mut node = merge(vec![left, right], vec![SortOrder::Ascending]);
@@ -1594,18 +1601,19 @@ mod tests {
             panic!("expected a page");
         };
         assert_eq!(ids(&response), vec!["b".to_owned(), "a".to_owned()]);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn buffered_only_page_preserves_merged_session_token() {
+    async fn buffered_only_page_preserves_merged_session_token() -> crate::error::Result<()> {
         let left = ChildStream::fresh(
-            range("", "80"),
+            range("", "80")?,
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page_with_session_token(&[("a", 1)], "0:1#10"),
             ])),
         );
         let right = ChildStream::fresh(
-            range("80", "FF"),
+            range("80", "FF")?,
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page_with_session_token(&[("b", 2)], "1:1#20"),
             ])),
@@ -1650,12 +1658,13 @@ mod tests {
                 .map(SessionToken::as_str),
             Some("0:1#10,1:1#20")
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn partial_fill_failure_preserves_absorbed_session_token() {
+    async fn partial_fill_failure_preserves_absorbed_session_token() -> crate::error::Result<()> {
         let left = ChildStream::fresh(
-            range("", "80"),
+            range("", "80")?,
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page_with_session_token(&[("a", 1)], "0:1#10"),
             ])),
@@ -1667,7 +1676,7 @@ mod tests {
             .with_message("transient")
             .build();
         let right = ChildStream::fresh(
-            range("80", "FF"),
+            range("80", "FF")?,
             Box::new(MockLeaf::with_pages(vec![
                 Err(transient),
                 envelope_page_with_session_token(&[("b", 2)], "1:1#20"),
@@ -1690,16 +1699,17 @@ mod tests {
                 .map(SessionToken::as_str),
             Some("0:1#10,1:1#20")
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn absorbed_session_token_survives_page_parse_failure() {
+    async fn absorbed_session_token_survives_page_parse_failure() -> crate::error::Result<()> {
         // A page can absorb cleanly and *then* fail to parse — a complex
         // (array) ORDER BY key is rejected downstream of `absorb`. The token
         // it carried must still be committed, or session state from a response
         // we already received is lost for good.
         let left = ChildStream::fresh(
-            range("", "80"),
+            range("", "80")?,
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page_with_session_token(&[("a", 1)], "0:1#10"),
             ])),
@@ -1722,7 +1732,7 @@ mod tests {
             })
         };
         let right = ChildStream::fresh(
-            range("80", "FF"),
+            range("80", "FF")?,
             Box::new(MockLeaf::with_pages(vec![
                 unparseable,
                 Ok(PageResult::Page {
@@ -1750,10 +1760,11 @@ mod tests {
                 .map(SessionToken::as_str),
             Some("0:1#10,1:1#20")
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn multi_column_mixed_direction_drives_pop_order() {
+    async fn multi_column_mixed_direction_drives_pop_order() -> crate::error::Result<()> {
         // Column 0 ASC ties at 1; column 1 DESC means "b" sorts before "a".
         fn two_col_page(rid: &str, c0: i64, c1: &str) -> crate::error::Result<PageResult> {
             let body = serde_json::json!({
@@ -1771,11 +1782,11 @@ mod tests {
             })
         }
         let left = ChildStream::fresh(
-            range("", "80"),
+            range("", "80")?,
             Box::new(MockLeaf::with_pages(vec![two_col_page("left", 1, "a")])),
         );
         let right = ChildStream::fresh(
-            range("80", "FF"),
+            range("80", "FF")?,
             Box::new(MockLeaf::with_pages(vec![two_col_page("right", 1, "b")])),
         );
         let mut node = merge(
@@ -1786,10 +1797,11 @@ mod tests {
             panic!("expected a page");
         };
         assert_eq!(ids(&response), vec!["right".to_owned(), "left".to_owned()]);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn undefined_sorts_before_defined_values_across_partitions() {
+    async fn undefined_sorts_before_defined_values_across_partitions() -> crate::error::Result<()> {
         fn page(rid: &str, item: Option<i64>) -> crate::error::Result<PageResult> {
             let order_by_items = match item {
                 Some(v) => serde_json::json!([{"item": v}]),
@@ -1806,11 +1818,11 @@ mod tests {
             })
         }
         let left = ChildStream::fresh(
-            range("", "80"),
+            range("", "80")?,
             Box::new(MockLeaf::with_pages(vec![page("has-value", Some(1))])),
         );
         let right = ChildStream::fresh(
-            range("80", "FF"),
+            range("80", "FF")?,
             Box::new(MockLeaf::with_pages(vec![page("undefined", None)])),
         );
         let mut node = merge(vec![left, right], vec![SortOrder::Ascending]);
@@ -1821,6 +1833,7 @@ mod tests {
             ids(&response),
             vec!["undefined".to_owned(), "has-value".to_owned()]
         );
+        Ok(())
     }
 
     /// An array/object ORDER BY value fails the query deterministically:
@@ -1828,9 +1841,9 @@ mod tests {
     /// cannot reproduce from JSON, so any client-side merge would silently
     /// mis-order them. Python and JavaScript reject these the same way.
     #[tokio::test]
-    async fn complex_order_by_values_are_rejected() {
+    async fn complex_order_by_values_are_rejected() -> crate::error::Result<()> {
         let child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![array_envelope_page(
                 &[("a", 5)],
                 None,
@@ -1848,6 +1861,7 @@ mod tests {
             error.status().sub_status(),
             Some(crate::error::status_codes::substatus::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED),
         );
+        Ok(())
     }
 
     /// Helper: an all-scalar single-column resume-boundary discard. `skip_count`
@@ -1865,10 +1879,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn resume_with_boundary_discards_already_emitted_ties_by_rid() {
+    async fn resume_with_boundary_discards_already_emitted_ties_by_rid() -> crate::error::Result<()>
+    {
         // Rows tied on rank=5 with `_rid <= "tied-2"` were already emitted.
         let mut child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![envelope_page(
                 &[("tied-1", 5), ("tied-2", 5), ("tied-3", 5), ("new", 6)],
                 None,
@@ -1880,12 +1895,13 @@ mod tests {
             panic!("expected a page");
         };
         assert_eq!(ids(&response), vec!["tied-3".to_owned(), "new".to_owned()]);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn resume_uses_backend_reverse_index_scan_for_rid_discard() {
+    async fn resume_uses_backend_reverse_index_scan_for_rid_discard() -> crate::error::Result<()> {
         let mut child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page_with_execution_info(
                     &[("c", 5), ("b", 5), ("a", 5)],
@@ -1907,14 +1923,15 @@ mod tests {
             panic!("expected a page");
         };
         assert_eq!(ids(&response), vec!["a".to_owned()]);
+        Ok(())
     }
 
     /// Regression: an empty leading page (with continuation) must keep the
     /// boundary discard active, not clear it, or later tied rows leak through.
     #[tokio::test]
-    async fn resume_boundary_discard_survives_empty_leading_page() {
+    async fn resume_boundary_discard_survives_empty_leading_page() -> crate::error::Result<()> {
         let mut child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page(&[], Some("ct-empty")),
                 envelope_page(&[("tied-1", 5), ("new", 6)], None),
@@ -1930,14 +1947,15 @@ mod tests {
             vec!["new".to_owned()],
             "the tied row on the second page must still be discarded"
         );
+        Ok(())
     }
 
     /// Regression: a tie run spanning a page boundary must stay fully
     /// discarded, not just the portion on the first page.
     #[tokio::test]
-    async fn resume_boundary_discard_survives_tie_run_spanning_pages() {
+    async fn resume_boundary_discard_survives_tie_run_spanning_pages() -> crate::error::Result<()> {
         let mut child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page(&[("tied-1", 5), ("tied-2", 5)], Some("ct-mid")),
                 envelope_page(&[("tied-3", 5), ("new", 6)], None),
@@ -1953,17 +1971,19 @@ mod tests {
             vec!["new".to_owned()],
             "every tied row up to and including tied-3 was already emitted"
         );
+        Ok(())
     }
 
     /// Regression: after a split, both sub-ranges resume from the same
     /// boundary; the `_rid`-aware discard avoids dropping/duplicating rows.
     #[tokio::test]
-    async fn split_resume_is_rid_aware_with_no_omissions_or_duplicates() {
+    async fn split_resume_is_rid_aware_with_no_omissions_or_duplicates() -> crate::error::Result<()>
+    {
         // Pre-split emitted a,b,c tied on rank=5; left keeps a,c + e (unemitted tie) + m;
         // right keeps b + z.
         let left = {
             let mut c = ChildStream::fresh(
-                range("", "80"),
+                range("", "80")?,
                 Box::new(MockLeaf::with_pages(vec![envelope_page(
                     &[("a", 5), ("c", 5), ("e", 5), ("m", 7)],
                     None,
@@ -1974,7 +1994,7 @@ mod tests {
         };
         let right = {
             let mut c = ChildStream::fresh(
-                range("80", "FF"),
+                range("80", "FF")?,
                 Box::new(MockLeaf::with_pages(vec![envelope_page(
                     &[("b", 5), ("z", 6)],
                     None,
@@ -1993,13 +2013,15 @@ mod tests {
             "the unemitted tied row `e` must survive (no omission) and no \
              already-emitted row may reappear (no duplicate)"
         );
+        Ok(())
     }
 
     // ── skip_count: JOIN duplicate-RID resume ────────────────────────────
 
     #[test]
-    fn record_emission_tracks_skip_count_for_duplicate_key_rid() {
-        let mut child = ChildStream::fresh(range("", "FF"), Box::new(MockLeaf::with_pages(vec![])));
+    fn record_emission_tracks_skip_count_for_duplicate_key_rid() -> crate::error::Result<()> {
+        let mut child =
+            ChildStream::fresh(range("", "FF")?, Box::new(MockLeaf::with_pages(vec![])));
         let key5 = [OrderByItem::Number(5_i64.into())];
         let key6 = [OrderByItem::Number(6_i64.into())];
 
@@ -2017,16 +2039,17 @@ mod tests {
         let boundary = child.boundary().unwrap();
         assert_eq!(boundary.skip_count, 1);
         assert_eq!(boundary.last_rid, "docB");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn resume_skips_exactly_skip_count_duplicate_rid_rows() {
+    async fn resume_skips_exactly_skip_count_duplicate_rid_rows() -> crate::error::Result<()> {
         // Resume at (rank=5, rid=docA) after emitting 2 of docA's JOIN rows.
         // The page re-returns all 3 docA rows plus a docB row; the discard
         // drops exactly 2 (the emitted duplicates) and keeps the third, then
         // the later document.
         let mut child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![join_envelope_page(
                 &[
                     ("docA", 5, "a1"),
@@ -2043,15 +2066,16 @@ mod tests {
             panic!("expected a page");
         };
         assert_eq!(ids(&response), vec!["a3".to_owned(), "b1".to_owned()]);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn resume_skip_count_persists_across_pages() {
+    async fn resume_skip_count_persists_across_pages() -> crate::error::Result<()> {
         // skip_count = 3, but docA's JOIN rows straddle a page boundary: 2 on
         // the first page, 2 on the second. The discard must carry the residual
         // skip across the page break, dropping exactly 3 docA rows total.
         let mut child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![
                 join_envelope_page(&[("docA", 5, "a1"), ("docA", 5, "a2")], Some("ct-mid")),
                 join_envelope_page(
@@ -2070,10 +2094,12 @@ mod tests {
             vec!["a4".to_owned(), "b1".to_owned()],
             "3 already-emitted docA duplicates dropped across the page break; a4 and b1 survive"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn legacy_boundary_missing_skip_count_discards_boundary_row() {
+    async fn legacy_boundary_missing_skip_count_discards_boundary_row() -> crate::error::Result<()>
+    {
         // A continuation token minted before `skip_count` existed omits the
         // field; it must deserialize as skip_count == 1 so the single boundary
         // row is still dropped on resume, never re-emitted.
@@ -2084,7 +2110,7 @@ mod tests {
         assert_eq!(boundary.skip_count, 1);
 
         let mut child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![envelope_page(
                 &[("boundary", 5), ("new", 6)],
                 None,
@@ -2101,6 +2127,7 @@ mod tests {
             panic!("expected a page");
         };
         assert_eq!(ids(&response), vec!["new".to_owned()]);
+        Ok(())
     }
 
     // ── Live-split: forwarded-continuation resume ───────────────────────
@@ -2115,7 +2142,8 @@ mod tests {
     /// boundary discard with `skip_count = 100` and would have silently dropped
     /// all 50.
     #[tokio::test]
-    async fn live_split_forwarded_continuation_emits_post_boundary_join_rows() {
+    async fn live_split_forwarded_continuation_emits_post_boundary_join_rows(
+    ) -> crate::error::Result<()> {
         let id_1_100: Vec<String> = (1..=100).map(|i| format!("a{i}")).collect();
         let id_101_150: Vec<String> = (101..=150).map(|i| format!("a{i}")).collect();
         let page1_rows: Vec<(&str, i64, &str)> =
@@ -2126,9 +2154,9 @@ mod tests {
         // The split child yields a real `Request` replacement carrying the
         // forwarded continuation, mirroring `split_for_topology_change`.
         let target = RequestTarget::effective_partition_key_range(
-            range("", "FF"),
+            range("", "FF")?,
             "pk-0".to_owned(),
-            range("", "FF"),
+            range("", "FF")?,
         );
         let replacement: Box<dyn PipelineNode> = Box::new(Request::new(
             Arc::new(mocks::operation()),
@@ -2136,7 +2164,7 @@ mod tests {
             Some("p0-ct".to_owned()),
         ));
         let split_child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![
                 join_envelope_page(&page1_rows, Some("p0-ct")),
                 split_page("", "FF", vec![replacement]),
@@ -2172,6 +2200,7 @@ mod tests {
             vec![Some("p0-ct".to_owned())],
             "the replacement resumed once from the forwarded continuation"
         );
+        Ok(())
     }
 
     /// A live split whose replacement reports no forwarded continuation, yet
@@ -2180,15 +2209,16 @@ mod tests {
     /// Reattaching the `skip_count` discard could drop or duplicate rows, so
     /// the merge rejects with a typed `SPLIT_REPLACEMENT_INVALID` error.
     #[tokio::test]
-    async fn live_split_replacement_without_continuation_with_boundary_errors() {
+    async fn live_split_replacement_without_continuation_with_boundary_errors(
+    ) -> crate::error::Result<()> {
         let split_child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![split_page(
                 "",
                 "FF",
                 vec![
-                    replacement_leaf("", "80", vec![envelope_page(&[("d3", 3)], None)]),
-                    replacement_leaf("80", "FF", vec![envelope_page(&[("d9", 9)], None)]),
+                    replacement_leaf("", "80", vec![envelope_page(&[("d3", 3)], None)])?,
+                    replacement_leaf("80", "FF", vec![envelope_page(&[("d9", 9)], None)])?,
                 ],
             )])),
         );
@@ -2212,6 +2242,7 @@ mod tests {
             Some(crate::error::status_codes::substatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
             "must surface the typed split-replacement-invalid error (20215), got: {err}"
         );
+        Ok(())
     }
 
     /// The companion accept case: a child that live-splits *before* emitting
@@ -2219,15 +2250,16 @@ mod tests {
     /// forwarded continuation) are accepted and their rows stream through
     /// fresh, in order.
     #[tokio::test]
-    async fn live_split_initial_no_boundary_accepts_generic_replacements() {
+    async fn live_split_initial_no_boundary_accepts_generic_replacements(
+    ) -> crate::error::Result<()> {
         let split_child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![split_page(
                 "",
                 "FF",
                 vec![
-                    replacement_leaf("", "80", vec![envelope_page(&[("d3", 3)], None)]),
-                    replacement_leaf("80", "FF", vec![envelope_page(&[("d9", 9)], None)]),
+                    replacement_leaf("", "80", vec![envelope_page(&[("d3", 3)], None)])?,
+                    replacement_leaf("80", "FF", vec![envelope_page(&[("d9", 9)], None)])?,
                 ],
             )])),
         );
@@ -2239,6 +2271,7 @@ mod tests {
             vec!["d3".to_owned(), "d9".to_owned()],
             "an initial split with no boundary accepts fresh replacements"
         );
+        Ok(())
     }
 
     // ── build_children resume/topology paths ─────────────────────────────
@@ -2255,12 +2288,12 @@ mod tests {
     /// `QueryInfo::order_by`.
     const ASC: &[SortOrder] = &[SortOrder::Ascending];
 
-    fn resolved_range(min: &str, max: &str, id: &str) -> ResolvedRange {
-        ResolvedRange {
+    fn resolved_range(min: &str, max: &str, id: &str) -> crate::error::Result<ResolvedRange> {
+        Ok(ResolvedRange {
             partition_key_range_id: id.to_owned(),
             parents: Vec::new(),
-            range: range(min, max),
-        }
+            range: range(min, max)?,
+        })
     }
 
     fn scalar_boundary(value: f64, last_rid: &str) -> ValueBoundary {
@@ -2276,12 +2309,13 @@ mod tests {
     /// A scalar boundary crossing a split fans out into one resume-filtered
     /// child per sub-range, each with the boundary discard installed.
     #[test]
-    fn build_children_splits_scalar_boundary_into_resume_filtered_children() {
+    fn build_children_splits_scalar_boundary_into_resume_filtered_children(
+    ) -> crate::error::Result<()> {
         let op = query_operation();
-        let scope = range("", "FF");
+        let scope = range("", "FF")?;
         let resolved = vec![
-            resolved_range("", "80", "pk-left"),
-            resolved_range("80", "FF", "pk-right"),
+            resolved_range("", "80", "pk-left")?,
+            resolved_range("80", "FF", "pk-right")?,
         ];
         let boundary = scalar_boundary(5.0, "c");
         let children = build_children(&resolved, &scope, &op, ASC, None, Some(&boundary))
@@ -2298,27 +2332,29 @@ mod tests {
                 "a resume-filtered child's continuation must never be snapshotted"
             );
         }
+        Ok(())
     }
 
     /// A merge resolves the saved sub-range to a wider physical range; it
     /// must be clipped to scope before coverage validation, not rejected.
     #[test]
-    fn build_children_clips_merged_physical_range_to_scope() {
+    fn build_children_clips_merged_physical_range_to_scope() -> crate::error::Result<()> {
         let op = query_operation();
-        let scope = range("", "80");
+        let scope = range("", "80")?;
         // Post-merge: the saved [00,80) sub-range is now served by [00,FF).
-        let resolved = vec![resolved_range("", "FF", "pk-merged")];
+        let resolved = vec![resolved_range("", "FF", "pk-merged")?];
         let boundary = scalar_boundary(5.0, "c");
         let children = build_children(&resolved, &scope, &op, ASC, None, Some(&boundary))
             .expect("a merged (widened) physical range clips to the saved scope");
         assert_eq!(children.len(), 1);
         assert_eq!(children[0].range, scope);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn page_size_cap_retains_unread_rows_for_next_call() {
+    async fn page_size_cap_retains_unread_rows_for_next_call() -> crate::error::Result<()> {
         let child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![envelope_page(
                 &[("a", 1), ("b", 2), ("c", 3)],
                 None,
@@ -2359,12 +2395,13 @@ mod tests {
         };
         assert_eq!(ids(&r3), vec!["c".to_owned()]);
         assert!(t3, "the child is drained and its buffer is now empty");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn terminal_page_reports_drained_children() {
+    async fn terminal_page_reports_drained_children() -> crate::error::Result<()> {
         let child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![envelope_page(&[("a", 1)], None)])),
         );
         let mut node = merge(vec![child], vec![SortOrder::Ascending]);
@@ -2376,17 +2413,18 @@ mod tests {
 
         // Calling again on an already-fully-drained merge reports Drained.
         assert!(matches!(next_page(&mut node).await, PageResult::Drained));
+        Ok(())
     }
 
     #[tokio::test]
-    async fn malformed_envelope_surfaces_typed_error() {
+    async fn malformed_envelope_surfaces_typed_error() -> crate::error::Result<()> {
         let body = serde_json::json!({
             "_rid": "",
             "Documents": [{"_rid": "a", "orderByItems": [{"item": 1}]}], // missing payload
             "_count": 1,
         });
         let child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
                 response: mocks::response(&serde_json::to_vec(&body).unwrap()),
                 is_terminal: true,
@@ -2401,6 +2439,7 @@ mod tests {
             err.status(),
             crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
         );
+        Ok(())
     }
 
     /// Regression: a page committed by the child `Request` but rejected during
@@ -2408,7 +2447,8 @@ mod tests {
     /// received. Snapshotting it would silently drop them on resume, so the
     /// snapshot must fall back to the value boundary instead.
     #[tokio::test]
-    async fn snapshot_after_failed_page_validation_drops_server_continuation() {
+    async fn snapshot_after_failed_page_validation_drops_server_continuation(
+    ) -> crate::error::Result<()> {
         // Missing `payload` — rejected by `parse_envelope_page` *after* the
         // leaf committed `ct-2`.
         let malformed = serde_json::json!({
@@ -2417,7 +2457,7 @@ mod tests {
             "_count": 1,
         });
         let child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(
                 MockLeaf::with_pages(vec![
                     envelope_page(&[("d1", 1)], Some("ct-1")),
@@ -2459,6 +2499,7 @@ mod tests {
             }
             other => panic!("expected StreamingOrderedMerge, got {other:?}"),
         }
+        Ok(())
     }
 
     /// Regression: the same hazard on the *priming* path. With a page size of 1
@@ -2467,14 +2508,15 @@ mod tests {
     /// emitted rows. That fetch still commits `ct-2` before validation rejects
     /// it, so the snapshot must fall back to the boundary here too.
     #[tokio::test]
-    async fn snapshot_after_failed_priming_validation_drops_server_continuation() {
+    async fn snapshot_after_failed_priming_validation_drops_server_continuation(
+    ) -> crate::error::Result<()> {
         let malformed = serde_json::json!({
             "_rid": "",
             "Documents": [{"_rid": "d2", "orderByItems": [{"item": 2}]}],
             "_count": 1,
         });
         let child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(
                 MockLeaf::with_pages(vec![
                     envelope_page(&[("d1", 1)], Some("ct-1")),
@@ -2530,6 +2572,7 @@ mod tests {
             }
             other => panic!("expected StreamingOrderedMerge, got {other:?}"),
         }
+        Ok(())
     }
 
     /// Regression: a per-item encode failure must not consume the row it fails
@@ -2547,7 +2590,8 @@ mod tests {
     /// retains payloads as `RawValue`, which does not walk the document, so it
     /// reaches the encoder intact.
     #[tokio::test]
-    async fn binary_encode_failure_does_not_advance_boundary_past_the_failing_row() {
+    async fn binary_encode_failure_does_not_advance_boundary_past_the_failing_row(
+    ) -> crate::error::Result<()> {
         let mut deep = serde_json::json!(1);
         for _ in 0..(crate::binary_json::reader::MAX_DEPTH + 8) {
             deep = serde_json::Value::Array(vec![deep]);
@@ -2561,7 +2605,7 @@ mod tests {
             "_count": 2,
         });
         let child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
                 response: mocks::response_with_continuation(
                     &serde_json::to_vec(&body).unwrap(),
@@ -2616,6 +2660,7 @@ mod tests {
             err.status(),
             crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
         );
+        Ok(())
     }
 
     /// When the *first* row fails to encode there is nothing to defer the
@@ -2625,7 +2670,8 @@ mod tests {
     /// to the node; without that commit a retry could issue a read weaker than
     /// one the session had satisfied.
     #[tokio::test]
-    async fn empty_page_encode_failure_keeps_the_absorbed_session_token() {
+    async fn empty_page_encode_failure_keeps_the_absorbed_session_token() -> crate::error::Result<()>
+    {
         let mut deep = serde_json::json!(1);
         for _ in 0..(crate::binary_json::reader::MAX_DEPTH + 8) {
             deep = serde_json::Value::Array(vec![deep]);
@@ -2644,7 +2690,7 @@ mod tests {
             ..Default::default()
         };
         let child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
                 response: crate::models::CosmosResponse::new(
                     response.body_bytes().to_vec(),
@@ -2674,6 +2720,7 @@ mod tests {
             Some("0:1#10"),
             "the absorbed page's session token must outlive the discarded aggregator"
         );
+        Ok(())
     }
 
     #[tokio::test]
@@ -2686,11 +2733,15 @@ mod tests {
     /// continuation; a `ResumeFilterInjected` child's is bound to the
     /// filtered text and must be suppressed, using its scalar boundary instead.
     #[test]
-    fn snapshot_suppresses_resume_filtered_child_backend_continuation() {
-        fn child_with_live_continuation(shape: ChildQueryShape, token: &str) -> ChildStream {
+    fn snapshot_suppresses_resume_filtered_child_backend_continuation() -> crate::error::Result<()>
+    {
+        fn child_with_live_continuation(
+            shape: ChildQueryShape,
+            token: &str,
+        ) -> crate::error::Result<ChildStream> {
             // Empty buffer, not drained, with a live backend continuation.
             let mut child = ChildStream::fresh(
-                range("", "FF"),
+                range("", "FF")?,
                 Box::new(
                     MockLeaf::with_pages(vec![]).with_snapshot(PipelineNodeState::Request {
                         server_continuation: Some(token.to_owned()),
@@ -2703,14 +2754,14 @@ mod tests {
                 skip_count: 1,
             });
             child.query_shape = shape;
-            child
+            Ok(child)
         }
 
         let resume_filtered = merge(
             vec![child_with_live_continuation(
                 ChildQueryShape::ResumeFilterInjected,
                 "resume-filtered-tok",
-            )],
+            )?],
             vec![SortOrder::Ascending],
         );
         match resume_filtered.snapshot_state().unwrap() {
@@ -2732,7 +2783,7 @@ mod tests {
             vec![child_with_live_continuation(
                 ChildQueryShape::Plain,
                 "plain-tok",
-            )],
+            )?],
             vec![SortOrder::Ascending],
         );
         match plain.snapshot_state().unwrap() {
@@ -2745,12 +2796,13 @@ mod tests {
             }
             other => panic!("expected StreamingOrderedMerge, got {other:?}"),
         }
+        Ok(())
     }
 
     #[tokio::test]
-    async fn cancellation_error_propagates_from_child_fetch() {
+    async fn cancellation_error_propagates_from_child_fetch() -> crate::error::Result<()> {
         let child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![Err(
                 mocks::non_topology_gone_error(),
             )])),
@@ -2760,6 +2812,7 @@ mod tests {
         let mut topology = mocks::NoopTopologyProvider;
         let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
         assert!(node.next_page(&mut context).await.is_err());
+        Ok(())
     }
 
     /// Regression: a fetch failure that happens *after* rows were consumed
@@ -2771,11 +2824,12 @@ mod tests {
     /// returns the partial page instead and surfaces the error on the next
     /// call.
     #[tokio::test]
-    async fn fetch_failure_after_emission_returns_partial_page_then_error() {
+    async fn fetch_failure_after_emission_returns_partial_page_then_error(
+    ) -> crate::error::Result<()> {
         // A single child so the failing replenish happens inside the pop loop
         // rather than during the up-front fill pass.
         let child = ChildStream::fresh(
-            range("", "FF"),
+            range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![
                 envelope_page(&[("d1", 1)], Some("ct-1")),
                 Err(mocks::non_topology_gone_error()),
@@ -2820,6 +2874,7 @@ mod tests {
             node.next_page(&mut context).await.is_err(),
             "the deferred error must surface on the next call, not be swallowed"
         );
+        Ok(())
     }
 
     // ── Catalog-driven scenarios ─────────────────────────────────────────
@@ -2880,7 +2935,7 @@ mod tests {
     /// skipped (need the real planner — see `integration_tests::order_by_resume`);
     /// malformed scenarios are covered by `malformed_envelope_surfaces_typed_error`.
     #[tokio::test]
-    async fn catalog_mock_pipeline_scenarios_drain_in_expected_order() {
+    async fn catalog_mock_pipeline_scenarios_drain_in_expected_order() -> crate::error::Result<()> {
         const CATALOG_JSON: &str =
             include_str!("../../../tests/fixtures/streaming_order_by_scenarios.json");
         let catalog: CatalogFixture =
@@ -2996,7 +3051,7 @@ mod tests {
                 let lo = format!("{:02x}", idx * 0x10);
                 let hi = format!("{:02x}", (idx + 1) * 0x10);
                 children.push(ChildStream::fresh(
-                    range(&lo, &hi),
+                    range(&lo, &hi)?,
                     Box::new(MockLeaf::with_pages(pages)),
                 ));
             }
@@ -3057,6 +3112,7 @@ mod tests {
             "expected at least one value-boundary resume checkpoint scenario \
              (e.g. equal_key_resume_requiring_skip_count) to run in the mock harness"
         );
+        Ok(())
     }
 
     /// The same query body under two different feed scopes must not share a
@@ -3065,11 +3121,11 @@ mod tests {
     /// read outside the caller's scope (or silently return only the old
     /// subset).
     #[test]
-    fn query_fingerprint_distinguishes_feed_scope() {
+    fn query_fingerprint_distinguishes_feed_scope() -> crate::error::Result<()> {
         let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank","parameters":[]}"#;
         let full = query_fingerprint(Some(body), Some(&FeedRange::full()));
-        let left = query_fingerprint(Some(body), Some(&range("", "80")));
-        let right = query_fingerprint(Some(body), Some(&range("80", "FF")));
+        let left = query_fingerprint(Some(body), Some(&range("", "80")?));
+        let right = query_fingerprint(Some(body), Some(&range("80", "FF")?));
         let unscoped = query_fingerprint(Some(body), None);
 
         assert_ne!(full, left);
@@ -3077,17 +3133,19 @@ mod tests {
         assert_ne!(left, right);
         // An absent scope is its own value, distinct from the full container.
         assert_ne!(full, unscoped);
+        Ok(())
     }
 
     /// Neither separator can appear inside an EPK hex bound, so no pair of
     /// distinct (body, scope) inputs can serialize to the same hash preimage.
     #[test]
-    fn query_fingerprint_separators_cannot_collide() {
+    fn query_fingerprint_separators_cannot_collide() -> crate::error::Result<()> {
         // Both scopes render as `408080` once the bound separator is dropped.
         assert_ne!(
-            query_fingerprint(None, Some(&range("40", "8080"))),
-            query_fingerprint(None, Some(&range("4080", "80"))),
+            query_fingerprint(None, Some(&range("40", "8080")?)),
+            query_fingerprint(None, Some(&range("4080", "80")?)),
         );
+        Ok(())
     }
 
     /// `EffectivePartitionKey`'s `Ord` treats trailing zero bytes as
@@ -3095,25 +3153,27 @@ mod tests {
     /// that padding trimmed. Bounds that compare equal must fingerprint alike,
     /// or a valid resume fails with a hard token error.
     #[test]
-    fn query_fingerprint_ignores_trailing_zero_padding_in_scope() {
+    fn query_fingerprint_ignores_trailing_zero_padding_in_scope() -> crate::error::Result<()> {
         assert_eq!(
-            query_fingerprint(None, Some(&range("", "80"))),
-            query_fingerprint(None, Some(&range("", "8000"))),
+            query_fingerprint(None, Some(&range("", "80")?)),
+            query_fingerprint(None, Some(&range("", "8000")?)),
         );
         assert_eq!(
-            query_fingerprint(None, Some(&range("40", "80"))),
-            query_fingerprint(None, Some(&range("400000", "8000"))),
+            query_fingerprint(None, Some(&range("40", "80")?)),
+            query_fingerprint(None, Some(&range("400000", "8000")?)),
         );
+        Ok(())
     }
 
     /// Preserve the exact fingerprint minted before binary query encoding so
     /// in-flight text tokens remain valid.
     #[test]
-    fn parameterized_text_query_fingerprint_matches_historical_value() {
+    fn parameterized_text_query_fingerprint_matches_historical_value() -> crate::error::Result<()> {
         let body = br#"{"query":"SELECT * FROM c WHERE c.rank >= @min ORDER BY c.rank","parameters":[{"name":"@min","value":1}]}"#;
         assert_eq!(
-            query_fingerprint(Some(body), Some(&range("", "80"))),
+            query_fingerprint(Some(body), Some(&range("", "80")?)),
             "b84b9c269862dcd73781038d90add3be",
         );
+        Ok(())
     }
 }

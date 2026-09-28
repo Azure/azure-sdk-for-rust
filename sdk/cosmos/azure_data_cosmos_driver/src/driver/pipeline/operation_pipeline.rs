@@ -5246,10 +5246,10 @@ mod tests {
     }
 
     #[test]
-    fn apply_headers_feed_range_emits_read_key_type_and_epk_bounds() {
+    fn apply_headers_feed_range_emits_read_key_type_and_epk_bounds() -> crate::error::Result<()> {
         let feed_range = FeedRange::new(
-            EffectivePartitionKey::from("10"),
-            EffectivePartitionKey::from("20"),
+            EffectivePartitionKey::try_from("10")?,
+            EffectivePartitionKey::try_from("20")?,
         )
         .unwrap();
         let overrides = OperationOverrides {
@@ -5282,6 +5282,7 @@ mod tests {
                 .map(|s| s.to_string()),
             Some("20".to_string())
         );
+        Ok(())
     }
 
     #[test]

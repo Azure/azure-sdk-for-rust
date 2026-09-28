@@ -13,6 +13,7 @@
 
 ### Breaking Changes
 
+- Replaced `EffectivePartitionKey` string `From` conversions with strict `TryFrom` conversions; malformed hexadecimal bounds now return errors instead of being truncated, including when deserializing feed ranges. [#5369](https://github.com/Azure/azure-sdk-for-rust/pull/5369)
 - Re-exported the driver's `CosmosError`, `CosmosStatus`, and `SubStatusCode` directly, removing the SDK-owned `CosmosError` wrapper and all associated `CosmosStatus` and `SubStatusCode` constants from the supported SDK surface. ([#5355](https://github.com/Azure/azure-sdk-for-rust/pull/5355))
 - Replaced the `metrics` and `distributed_tracing` feature flags with the off-by-default `preview_opentelemetry` flag for both OpenTelemetry handlers; enable `preview_opentelemetry` to keep emitting metrics and traces. Diagnostics types remain available without it. ([#5353](https://github.com/Azure/azure-sdk-for-rust/pull/5353))
 - `CosmosTracingHandler` is now constructed exclusively through `CosmosTracingHandler::builder()`. The `new`, `with_thresholds`, and `with_thresholds_and_rate_limit` constructors and the `Default` implementation were removed; configure the equivalent values with the builder and call `build` or `build_with_tracer`. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))

@@ -1118,12 +1118,6 @@ pub mod in_memory_emulator {
     impl Display for EffectivePartitionKey {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
     }
-    impl From<&str> for EffectivePartitionKey {
-        fn from(s: &str) -> Self;
-    }
-    impl From<String> for EffectivePartitionKey {
-        fn from(s: String) -> Self;
-    }
     impl Hash for EffectivePartitionKey {
         fn hash<H: std::hash::Hasher>(&self, state: &mut H);
     }
@@ -1144,6 +1138,14 @@ pub mod in_memory_emulator {
     }
     impl Serialize for EffectivePartitionKey {
         fn serialize<S>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error> where S: serde::Serializer;
+    }
+    impl TryFrom<&str> for EffectivePartitionKey {
+        type Error = CosmosError;
+        fn try_from(s: &str) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<String> for EffectivePartitionKey {
+        type Error = CosmosError;
+        fn try_from(s: String) -> Result<Self, <Self as >::Error>;
     }
     impl<'de> Deserialize<'de> for EffectivePartitionKey {
         fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: serde::Deserializer<'de>;
@@ -2431,12 +2433,6 @@ pub mod models {
         impl Display for EffectivePartitionKey {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
         }
-        impl From<&str> for EffectivePartitionKey {
-            fn from(s: &str) -> Self;
-        }
-        impl From<String> for EffectivePartitionKey {
-            fn from(s: String) -> Self;
-        }
         impl Hash for EffectivePartitionKey {
             fn hash<H: std::hash::Hasher>(&self, state: &mut H);
         }
@@ -2457,6 +2453,14 @@ pub mod models {
         }
         impl Serialize for EffectivePartitionKey {
             fn serialize<S>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error> where S: serde::Serializer;
+        }
+        impl TryFrom<&str> for EffectivePartitionKey {
+            type Error = CosmosError;
+            fn try_from(s: &str) -> Result<Self, <Self as >::Error>;
+        }
+        impl TryFrom<String> for EffectivePartitionKey {
+            type Error = CosmosError;
+            fn try_from(s: String) -> Result<Self, <Self as >::Error>;
         }
         impl<'de> Deserialize<'de> for EffectivePartitionKey {
             fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: serde::Deserializer<'de>;
@@ -2479,7 +2483,7 @@ pub mod models {
         }
         impl PartitionKeyRange {
             pub fn get_parent_ids(&self) -> HashSet<String>;
-            pub fn new<impl Into<EffectivePartitionKey>: Into<EffectivePartitionKey>, impl Into<EffectivePartitionKey>: Into<EffectivePartitionKey>>(id: String, min_inclusive: impl Into<EffectivePartitionKey>, max_exclusive: impl Into<EffectivePartitionKey>) -> Self;
+            pub fn new(id: String, min_inclusive: EffectivePartitionKey, max_exclusive: EffectivePartitionKey) -> Self;
         }
         impl Eq for PartitionKeyRange {
         }

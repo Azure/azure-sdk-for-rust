@@ -2340,7 +2340,7 @@ impl CosmosDriver {
                     }
                 };
                 match parse_pk_ranges_response(&body_bytes) {
-                    Some(ranges) => (
+                    Ok(ranges) => (
                         Ok(Some(PkRangeFetchResult {
                             ranges,
                             continuation: etag,
@@ -2348,12 +2348,13 @@ impl CosmosDriver {
                         })),
                         serving_endpoint,
                     ),
-                    None => {
+                    Err(error) => {
                         tracing::error!(
                             container = %container.name(),
+                            %error,
                             "Failed to parse partition key ranges response body"
                         );
-                        (Ok(None), serving_endpoint)
+                        (Err(error), serving_endpoint)
                     }
                 }
             }
@@ -5781,17 +5782,15 @@ mod tests {
     }
 
     #[test]
-    fn effective_partition_key_range_override_sets_feed_range() {
+    fn effective_partition_key_range_override_sets_feed_range() -> crate::error::Result<()> {
         let range = crate::models::FeedRange::new(
-            EffectivePartitionKey::from("10"),
-            EffectivePartitionKey::from("20"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("10")?,
+            EffectivePartitionKey::try_from("20")?,
+        )?;
         let pkrange = crate::models::FeedRange::new(
-            EffectivePartitionKey::from("00"),
-            EffectivePartitionKey::from("40"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("00")?,
+            EffectivePartitionKey::try_from("40")?,
+        )?;
         let overrides = request_target_overrides(
             None,
             RequestTarget::effective_partition_key_range_with_parents(
@@ -5811,10 +5810,12 @@ mod tests {
             overrides.effective_partition_key_range_parents("merged"),
             &["parent".to_string()]
         );
+        Ok(())
     }
 
     #[test]
-    fn effective_partition_key_range_override_omits_feed_range_when_full_pkrange() {
+    fn effective_partition_key_range_override_omits_feed_range_when_full_pkrange(
+    ) -> crate::error::Result<()> {
         // When the request covers the FULL pkrange (range == partition_key_range),
         // `feed_range` collapses to None — we do NOT emit the public
         // `x-ms-start-epk`/`x-ms-end-epk` headers on the legacy gateway path
@@ -5823,10 +5824,9 @@ mod tests {
         // `pkrange_bounds` for the GW_V2 dispatcher to derive its
         // `StartEpkHash`/`EndEpkHash` RNTBD tokens.
         let range = crate::models::FeedRange::new(
-            EffectivePartitionKey::from("10"),
-            EffectivePartitionKey::from("20"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("10")?,
+            EffectivePartitionKey::try_from("20")?,
+        )?;
         let overrides = request_target_overrides(
             None,
             RequestTarget::effective_partition_key_range(
@@ -5840,10 +5840,12 @@ mod tests {
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
         assert_eq!(overrides.feed_range, None);
         assert_eq!(overrides.pkrange_bounds, Some(range));
+        Ok(())
     }
 
     #[test]
-    fn effective_partition_key_range_override_forwards_logical_partition_key() {
+    fn effective_partition_key_range_override_forwards_logical_partition_key(
+    ) -> crate::error::Result<()> {
         // Regression: partition-scoped queries (e.g. `FeedScope::partition(partial_hpk)`)
         // decompose into per-pkrange `EffectivePartitionKeyRange` targets. The operation's
         // logical partition key must be forwarded into the override so the
@@ -5852,10 +5854,9 @@ mod tests {
         // Without this, the thin-client backend returns every document in the physical
         // partition because it has no per-component prefix to filter by.
         let range = crate::models::FeedRange::new(
-            EffectivePartitionKey::from("10"),
-            EffectivePartitionKey::from("20"),
-        )
-        .unwrap();
+            EffectivePartitionKey::try_from("10")?,
+            EffectivePartitionKey::try_from("20")?,
+        )?;
         let pk = PartitionKey::from("tenant-prefix");
         let overrides = request_target_overrides(
             Some(&pk),
@@ -5871,6 +5872,7 @@ mod tests {
         assert_eq!(overrides.partition_key_range_id.as_deref(), Some("pkrange"));
         assert_eq!(overrides.feed_range, None);
         assert_eq!(overrides.pkrange_bounds, Some(range));
+        Ok(())
     }
 
     #[tokio::test]

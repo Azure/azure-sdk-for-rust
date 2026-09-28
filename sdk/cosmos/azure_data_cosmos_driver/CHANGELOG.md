@@ -12,6 +12,7 @@
 
 ### Breaking Changes
 
+- Replaced `EffectivePartitionKey` string `From` conversions with strict `TryFrom` conversions and made deserialization reject malformed hexadecimal bounds; `PartitionKeyRange::new` now requires parsed `EffectivePartitionKey` bounds. [#5369](https://github.com/Azure/azure-sdk-for-rust/pull/5369)
 - Moved all `CosmosStatus` constants and the independently used `SubStatusCode` constants to `error::status_codes`; raw substatus constants are under `error::status_codes::substatus`, and constants used only to construct combined statuses were removed. ([#5355](https://github.com/Azure/azure-sdk-for-rust/pull/5355))
 - `UserAgentSuffix` replaces panicking `new` with `TryFrom<String>` and `TryFrom<&str>`, returning a typed `CosmosError` for invalid suffixes. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
 - Replaced panicking partition-key vector and floating-point `From` conversions with typed `TryFrom` errors; infallible key conversions remain unchanged. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
