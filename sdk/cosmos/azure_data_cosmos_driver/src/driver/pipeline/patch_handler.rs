@@ -1240,7 +1240,6 @@ mod tests {
         PartitionKey, PartitionKeyDefinition, SessionToken, SystemProperties,
     };
     use azure_core::http::Url;
-    use std::borrow::Cow;
 
     fn test_account() -> AccountReference {
         AccountReference::with_master_key(
@@ -1307,7 +1306,7 @@ mod tests {
 
     #[test]
     fn read_sub_op_carries_caller_session_token_for_fallback() {
-        let caller_token = SessionToken(Cow::Owned("0:1#7".into()));
+        let caller_token = SessionToken::new("0:1#7");
         let op = build_read_sub_op(test_item_ref(), Some(caller_token.clone()));
 
         assert_eq!(op.operation_type(), OperationType::Read);
@@ -1327,7 +1326,7 @@ mod tests {
         // SE-004 TOCTOU mitigation: the Replace must commit against the same replica
         // view we just read from, so the session token comes from the Read response,
         // not from the caller's options.
-        let read_response_token = SessionToken(Cow::Owned("0:1#99".into()));
+        let read_response_token = SessionToken::new("0:1#99");
         let etag = Etag::from("\"abc\"");
         let body = b"{\"id\":\"doc1\"}".to_vec();
 
@@ -1670,7 +1669,7 @@ mod tests {
             err.wire_payload()
                 .map(|p| p.headers())
                 .and_then(|h| h.session_token.as_ref())
-                .map(|t| t.0.as_ref()),
+                .map(SessionToken::as_str),
             Some("0:1#42"),
             "exhaustion error must forward the wrapped 412's session token"
         );
@@ -1916,7 +1915,7 @@ mod tests {
             headers.etag = Some(Etag::from(tag));
         }
         if let Some(token) = session_token {
-            headers.session_token = Some(SessionToken(Cow::Owned(token.into())));
+            headers.session_token = Some(SessionToken::new(token));
         }
         headers.request_charge = Some(RequestCharge::new(1.0));
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -1970,7 +1969,7 @@ mod tests {
     ) -> crate::error::CosmosError {
         let mut headers = CosmosResponseHeaders::new();
         if let Some(token) = session_token {
-            headers.session_token = Some(SessionToken(Cow::Owned(token.into())));
+            headers.session_token = Some(SessionToken::new(token));
         }
         // Match the production shape: the operation pipeline's abort
         // branch always promotes the per-attempt `WirePending` error
@@ -3185,7 +3184,7 @@ mod tests {
             ),
         ]);
 
-        let caller_token = SessionToken(Cow::Owned("0:1#7".into()));
+        let caller_token = SessionToken::new("0:1#7");
         let op = canonical_patch_op().with_session_token(caller_token.clone());
 
         let mut options = OperationOptions::default();
@@ -3237,7 +3236,7 @@ mod tests {
             },
         ]);
 
-        let caller_token = SessionToken(Cow::Owned("0:1#1".into()));
+        let caller_token = SessionToken::new("0:1#1");
         let op = canonical_patch_op().with_session_token(caller_token.clone());
 
         let _resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
@@ -3255,7 +3254,7 @@ mod tests {
         // mitigation, unchanged behavior).
         assert_eq!(calls[1].op_type, OperationType::Replace);
         assert_eq!(
-            calls[1].session_token.as_ref().map(|t| t.0.as_ref()),
+            calls[1].session_token.as_ref().map(SessionToken::as_str),
             Some("0:1#100")
         );
 
@@ -3267,7 +3266,7 @@ mod tests {
         // Attempt 2, Replace: uses Attempt 2 Read's response token.
         assert_eq!(calls[3].op_type, OperationType::Replace);
         assert_eq!(
-            calls[3].session_token.as_ref().map(|t| t.0.as_ref()),
+            calls[3].session_token.as_ref().map(SessionToken::as_str),
             Some("0:1#200")
         );
     }

@@ -3,6 +3,14 @@
 
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+//!
+//! ## Preview OpenTelemetry
+//!
+//! Enable the off-by-default `preview_opentelemetry` feature to emit metrics and
+//! distributed traces through the OpenTelemetry diagnostics handlers. This
+//! integration is in preview because the `opentelemetry` crate is still in
+//! preview. Diagnostics contexts and non-OpenTelemetry handlers remain available
+//! without the feature.
 
 // =========================================================================
 // Public API

@@ -33,7 +33,7 @@ pub const METRIC_OPERATION_REQUEST_CHARGE: &str = "azure.cosmosdb.client.operati
 pub const METRIC_RESPONSE_RETURNED_ROWS: &str = "db.client.response.returned_rows";
 
 /// Optional up-down counter (instances): number of live
-/// [`CosmosMetricsHandler`](super::CosmosMetricsHandler) instances (one per
+/// `CosmosMetricsHandler` instances (one per
 /// instrumented client, under the intended one-handler-per-client registration).
 pub const METRIC_ACTIVE_INSTANCE_COUNT: &str = "azure.cosmosdb.client.active_instance.count";
 

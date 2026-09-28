@@ -93,9 +93,9 @@ rustls = ["reqwest", "azure_data_cosmos_driver/rustls", "__tls"]
 native_tls = ["reqwest", "azure_data_cosmos_driver/native_tls", "__tls"]
 key_auth = [
 ] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
-distributed_tracing = [
+preview_opentelemetry = [
   "dep:opentelemetry",
-] # Enables the OpenTelemetry distributed-tracing diagnostics handler (off by default)
+] # Enables OpenTelemetry metrics and tracing emission (off by default; OpenTelemetry is in preview)
 control_plane = [
 ] # Enables control-plane APIs: Database and Container CRUD, and Throughput/Offer management. Disabled by default. Intentionally does NOT enable `key_auth` so a future Entra ID control-plane path can opt in without key-based authentication.
 hmac_rust = ["azure_core/hmac_rust"]
@@ -103,9 +103,6 @@ hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [
   "azure_data_cosmos_driver/fault_injection",
 ] # Enables support for fault injection testing
-metrics = [
-  "dep:opentelemetry",
-] # Enables the OpenTelemetry metrics handler (`CosmosMetricsHandler`). Off by default: with the feature disabled the metrics module is not compiled, so there is zero cost.
 preview_dtx = [
   "azure_data_cosmos_driver/preview_dtx",
 ] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
@@ -122,13 +119,12 @@ __tls = []
 
 [package.metadata.docs.rs]
 features = [
-  "distributed_tracing",
   "control_plane",
   "fault_injection",
   "hmac_openssl",
   "hmac_rust",
   "key_auth",
-  "metrics",
+  "preview_opentelemetry",
   "native_tls",
   "preview_patch",
   "rustls",
@@ -186,8 +182,7 @@ required-features = [
   "control_plane",
   "preview_patch",
   "fault_injection",
-  "metrics",
-  "distributed_tracing",
+  "preview_opentelemetry",
 ]
 
 # The `cosmos` example CLI exercises control-plane operations (database and
