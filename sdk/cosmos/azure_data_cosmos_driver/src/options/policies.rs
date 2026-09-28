@@ -95,7 +95,7 @@ impl From<Duration> for EndToEndOperationLatencyPolicy {
 
 /// List of regions to exclude from request routing.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct ExcludedRegions(pub Vec<Region>);
+pub struct ExcludedRegions(Vec<Region>);
 
 impl ExcludedRegions {
     /// Creates a new empty excluded regions list.

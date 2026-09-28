@@ -583,7 +583,7 @@ pub(crate) async fn execute_operation_pipeline(
         location_snapshot.account.multiple_write_locations_enabled,
         options
             .excluded_regions()
-            .map(|r| r.0.clone())
+            .map(|r| r.iter().cloned().collect())
             .unwrap_or_default(),
         max_failover_retries,
         max_session_retries,
