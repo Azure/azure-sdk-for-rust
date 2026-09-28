@@ -14,8 +14,8 @@ binding language.
 See the [Cosmos SDK project documentation](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/README.md) for the broader
 project and architecture context.
 
-The proposed release identity, C ABI compatibility, changelog, provenance,
-SBOM, and host-SDK propagation model is documented in
+The proposed native SemVer and C FFI compatibility policy, changelog,
+provenance, SBOM, and host-SDK propagation model is documented in
 [Native driver versioning and releases](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/docs/NATIVE_VERSIONING_AND_RELEASES.md).
 That document clearly separates verified current behavior from design proposals.
 
