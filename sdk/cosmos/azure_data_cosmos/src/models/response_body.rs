@@ -31,19 +31,19 @@ impl ResponseBody {
 
     /// Returns the single payload, or an error if the body is a feed response.
     pub fn single(self) -> crate::Result<Bytes> {
-        self.0.single().map_err(Into::into)
+        self.0.single()
     }
 
     /// Returns the per-item raw buffers of a feed response, or wraps a
     /// single-payload body as a one-element vector. A no-payload body yields
     /// an empty `Vec`.
     pub fn items(self) -> crate::Result<Vec<Bytes>> {
-        self.0.items().map_err(Into::into)
+        self.0.items()
     }
 
     /// Deserializes a single-payload body as JSON of type `T`.
     pub fn into_single<T: DeserializeOwned>(self) -> crate::Result<T> {
-        self.0.into_single().map_err(Into::into)
+        self.0.into_single()
     }
 
     /// Deserializes the items of a feed response as JSON of type `T`.
@@ -62,7 +62,7 @@ impl ResponseBody {
                 let body: FeedBody<T> = bytes.into_single()?;
                 Ok(body.items)
             }
-            pre_split => pre_split.into_items().map_err(Into::into),
+            pre_split => pre_split.into_items(),
         }
     }
 }

@@ -344,7 +344,7 @@ mod tests {
         let status = result.status();
         assert!(!status.is_success());
         assert!(status.is_throttled());
-        assert_eq!(status, CosmosStatus::RU_BUDGET_EXCEEDED);
+        assert_eq!(status, crate::error::status_codes::RU_BUDGET_EXCEEDED);
     }
 
     #[test]
@@ -380,7 +380,7 @@ mod tests {
     fn cosmos_response_status_accessor() {
         let status = make_status(
             Some(StatusCode::NotFound),
-            Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+            Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
         );
         let result = CosmosResponse::new(
             b"{}".to_vec(),
@@ -388,7 +388,7 @@ mod tests {
             status,
             make_diagnostics(
                 Some(StatusCode::NotFound),
-                Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+                Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
             ),
         );
 

@@ -3,6 +3,14 @@
 
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+//!
+//! ## Preview OpenTelemetry
+//!
+//! Enable the off-by-default `preview_opentelemetry` feature to emit metrics and
+//! distributed traces through the OpenTelemetry diagnostics handlers. This
+//! integration is in preview because the `opentelemetry` crate is still in
+//! preview. Diagnostics contexts and non-OpenTelemetry handlers remain available
+//! without the feature.
 
 // =========================================================================
 // Public API
@@ -48,13 +56,3 @@ mod region_proximity;
 mod resource_identity;
 mod runtime;
 mod session_helpers;
-
-// =========================================================================
-// Crate-internal re-exports
-// =========================================================================
-
-/// Internal alias for the driver's `CosmosError`. Used at error-construction
-/// sites inside this crate so they can call the driver's
-/// `CosmosError::builder()` directly and then `.into()` the result into the
-/// public [`CosmosError`] newtype. Not exposed in the public API.
-pub(crate) use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;

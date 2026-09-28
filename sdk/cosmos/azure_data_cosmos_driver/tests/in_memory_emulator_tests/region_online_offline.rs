@@ -39,7 +39,7 @@ use azure_data_cosmos_driver::in_memory_emulator::{
     RequestObserver, SeedingPolicy, VirtualAccountConfig, VirtualRegion, WriteMode,
 };
 use azure_data_cosmos_driver::models::{
-    AccountReference, CosmosOperation, ItemReference, PartitionKey, SubStatusCode,
+    AccountReference, CosmosOperation, ItemReference, PartitionKey,
 };
 use azure_data_cosmos_driver::options::{DriverOptions, ExcludedRegions, OperationOptions, Region};
 use azure_data_cosmos_driver::CosmosDriver;
@@ -385,7 +385,7 @@ async fn request_to_offlined_region_fails_at_the_transport_layer() {
     let status = error.status();
     assert_eq!(
         status.sub_status(),
-        Some(SubStatusCode::TRANSPORT_DNS_FAILED),
+        Some(azure_data_cosmos_driver::error::status_codes::substatus::TRANSPORT_DNS_FAILED),
         "an offlined region must fail name resolution, not return 403/1008; got {error}"
     );
 }

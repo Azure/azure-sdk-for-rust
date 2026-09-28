@@ -259,7 +259,7 @@ impl HttpClientFactory for DefaultHttpClientFactory {
             // (TLS / pool sizing / version pinning), so surface it as a typed
             // configuration error.
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED)
+                .with_status(crate::error::status_codes::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED)
                 .with_message("failed to create HTTP client")
                 .with_source(error)
                 .build()
@@ -277,7 +277,7 @@ impl HttpClientFactory for DefaultHttpClientFactory {
         _connection_pool: &ConnectionPoolOptions,
         _config: HttpClientConfig,
     ) -> crate::error::Result<Arc<dyn TransportClient>> {
-        Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_REQWEST_FEATURE_REQUIRED)
+        Err(crate::error::CosmosError::builder().with_status(crate::error::status_codes::CLIENT_REQWEST_FEATURE_REQUIRED)
             .with_message(
                 "azure_data_cosmos_driver requires the `reqwest` feature to construct the default transport",
             )

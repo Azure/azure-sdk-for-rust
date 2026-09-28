@@ -5,7 +5,6 @@
 
 use crate::diagnostics::RequestSentStatus;
 use crate::error::CosmosError;
-use crate::models::SubStatusCode;
 
 /// Infers from a typed Cosmos error whether the request was definitely sent,
 /// not sent, or unknown.
@@ -40,11 +39,13 @@ pub(crate) fn infer_request_sent_status(error: &CosmosError) -> RequestSentStatu
     // it can fire mid-stream after request bytes left the socket and
     // so must stay `Unknown`.
     match error.status().sub_status() {
-        Some(SubStatusCode::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
-        | Some(SubStatusCode::CLIENT_GENERATED_401)
-        | Some(SubStatusCode::TRANSPORT_CONNECTION_FAILED)
-        | Some(SubStatusCode::TRANSPORT_DNS_FAILED)
-        | Some(SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE) => RequestSentStatus::NotSent,
+        Some(crate::error::status_codes::substatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
+        | Some(crate::error::status_codes::substatus::CLIENT_GENERATED_401)
+        | Some(crate::error::status_codes::substatus::TRANSPORT_CONNECTION_FAILED)
+        | Some(crate::error::status_codes::substatus::TRANSPORT_DNS_FAILED)
+        | Some(crate::error::status_codes::substatus::TRANSPORT_HTTP2_INCOMPATIBLE) => {
+            RequestSentStatus::NotSent
+        }
         // Everything else (generic transport I/O, serialization, client,
         // configuration) could go either way at this point.
         _ => RequestSentStatus::Unknown,
@@ -65,25 +66,25 @@ mod tests {
 
     #[test]
     fn connection_failed_not_sent() {
-        let err = transport_err(CosmosStatus::TRANSPORT_CONNECTION_FAILED);
+        let err = transport_err(crate::error::status_codes::TRANSPORT_CONNECTION_FAILED);
         assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
     }
 
     #[test]
     fn dns_failed_not_sent() {
-        let err = transport_err(CosmosStatus::TRANSPORT_DNS_FAILED);
+        let err = transport_err(crate::error::status_codes::TRANSPORT_DNS_FAILED);
         assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
     }
 
     #[test]
     fn http2_incompatible_not_sent() {
-        let err = transport_err(CosmosStatus::TRANSPORT_HTTP2_INCOMPATIBLE);
+        let err = transport_err(crate::error::status_codes::TRANSPORT_HTTP2_INCOMPATIBLE);
         assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
     }
 
     #[test]
     fn generic_transport_io_is_unknown() {
-        let err = transport_err(CosmosStatus::TRANSPORT_IO_FAILED);
+        let err = transport_err(crate::error::status_codes::TRANSPORT_IO_FAILED);
         assert_eq!(infer_request_sent_status(&err), RequestSentStatus::Unknown);
     }
 
@@ -101,7 +102,7 @@ mod tests {
     #[test]
     fn serialization_error_is_unknown() {
         let err = CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message("bad json")
             .with_source(std::io::Error::other("stub"))
             .build();
@@ -111,12 +112,12 @@ mod tests {
     #[test]
     fn authentication_error_not_sent() {
         let err = CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
+            .with_status(crate::error::status_codes::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
             .with_message("invalid token")
             .build();
         assert_eq!(
             err.status().sub_status(),
-            Some(SubStatusCode::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
+            Some(crate::error::status_codes::substatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
         );
         assert_eq!(infer_request_sent_status(&err), RequestSentStatus::NotSent);
     }

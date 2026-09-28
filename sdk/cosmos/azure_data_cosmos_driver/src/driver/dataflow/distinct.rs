@@ -33,7 +33,7 @@
 //! Unordered `DISTINCT` is not. The set *is* the state, and serializing it
 //! can produce impractically large tokens even with a finite admission window;
 //! truncating it would silently re-emit duplicates. [`Distinct::snapshot_state`] fails with
-//! [`CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`], which surfaces
+//! [`crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED`], which surfaces
 //! at `OperationPlan::to_continuation_token` time — while the caller still
 //! holds a live plan and can either keep draining in-process or rewrite the
 //! query with a matching `ORDER BY`. .NET refuses here too, with the same
@@ -57,7 +57,6 @@ use async_trait::async_trait;
 use bytes::Bytes;
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::error::CosmosStatus;
 use crate::models::{CosmosResponse, FeedRange, RequestCharge, ResponseBody};
 
 use super::distinct_hash::{hash_value, Hash128};
@@ -320,7 +319,7 @@ impl Distinct {
     /// encoding rather than suggesting a retry.
     fn poisoned_error() -> crate::error::CosmosError {
         crate::error::CosmosError::builder()
-            .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(
                 "DISTINCT node is unusable: a page was consumed from its child but could not be \
                  processed, so the deduplication map and the child's resume position no longer \
@@ -342,7 +341,7 @@ impl Distinct {
 fn parse_row(item: &Bytes) -> crate::error::Result<serde_json::Value> {
     fn row_error(e: impl std::error::Error + Send + Sync + 'static) -> crate::error::CosmosError {
         crate::error::CosmosError::builder()
-            .with_status(CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message("failed to parse a DISTINCT row payload as JSON")
             .with_source(e)
             .build()
@@ -387,7 +386,9 @@ impl PipelineNode for Distinct {
                     // wrapped fan-out node absorbs splits internally, so this
                     // is unreachable today; fail loudly if that ever changes.
                     return Err(crate::error::CosmosError::builder()
-                        .with_status(CosmosStatus::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT)
+                        .with_status(
+                            crate::error::status_codes::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT,
+                        )
                         .with_message(
                             "DISTINCT cannot forward a partition split; the wrapped fan-out \
                              node must absorb splits internally",
@@ -429,7 +430,9 @@ impl PipelineNode for Distinct {
             DistinctMap::Ordered { last_hash } => *last_hash,
             DistinctMap::Unordered { .. } => {
                 return Err(crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED)
+                    .with_status(
+                        crate::error::status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED,
+                    )
                     .with_message(UNORDERED_CONTINUATION_MESSAGE)
                     .build());
             }
@@ -913,7 +916,7 @@ mod tests {
             .expect_err("an unordered DISTINCT must not produce a resumable snapshot");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED),
+            Some(crate::error::status_codes::substatus::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED),
         );
         assert!(
             err.to_string().contains("ORDER BY"),
@@ -969,7 +972,7 @@ mod tests {
         let err = node.next_page(&mut context).await.unwrap_err();
         assert_eq!(
             err.status(),
-            CosmosStatus::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT
+            crate::error::status_codes::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT
         );
     }
 

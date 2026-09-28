@@ -348,7 +348,7 @@ pub(crate) fn generate_query_plan_with_parameters(
 fn resolve_integer_parameter(name: &str, parameters: &Params) -> crate::error::Result<i64> {
     crate::query::common::resolve_non_negative_integer_parameter(parameters, name).map_err(|msg| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT)
+            .with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT)
             .with_message(format!("{msg} (TOP/OFFSET/LIMIT clause)"))
             .build()
     })
@@ -524,7 +524,7 @@ fn expr_to_path_string(expr: &SqlScalarExpression) -> crate::error::Result<Strin
     if collect_path_parts(expr, &mut parts) {
         Ok(parts.join("."))
     } else {
-        Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED).with_message(format!(
+        Err(crate::error::CosmosError::builder().with_status(crate::error::status_codes::CLIENT_QUERY_PLAN_COMPLEX_PROJECTION_UNSUPPORTED).with_message(format!(
                 "{} GROUP BY / ORDER BY expression is not a property path; local plan generation cannot reproduce the Gateway's rewrite. Fall back to the Gateway query-plan endpoint. expression: {expr:?}",
                 LocalPlanFallbackError::NEEDS_GATEWAY_FALLBACK
             )).build())
@@ -1311,7 +1311,7 @@ pub fn __test_only_generate_query_plan_for_pk_paths(
 ) -> crate::error::Result<serde_json::Value> {
     let program = crate::query::parse(sql).map_err(|e| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message("failed to parse query")
             .with_source(e)
             .build()
@@ -1321,7 +1321,7 @@ pub fn __test_only_generate_query_plan_for_pk_paths(
 
     serde_json::to_value(&raw_plan).map_err(|e| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message("failed to serialize query plan")
             .with_source(e)
             .build()

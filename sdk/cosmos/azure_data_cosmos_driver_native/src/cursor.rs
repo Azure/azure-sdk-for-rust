@@ -16,7 +16,7 @@ use crate::{
     string::CosmosStringView,
 };
 use azure_data_cosmos_driver::{
-    error::{CosmosError, SubStatusCode},
+    error::{status_codes, CosmosError},
     models::{ContainerReference, CosmosResponse, ResponseBody},
     options::OperationOptions,
     CosmosDriver, OperationPlan,
@@ -543,11 +543,9 @@ fn submit_cursor(
             let unsupported = checkpoint
                 && result.as_ref().err().is_some_and(|err| {
                     matches!(
-                        err.status().sub_status(),
-                        Some(
-                            SubStatusCode::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
-                                | SubStatusCode::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION
-                        )
+                        err.status(),
+                        status_codes::CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED
+                            | status_codes::CLIENT_CONTINUATION_TOKEN_NON_QUERY_OPERATION
                     )
                 });
             if result.is_ok() || unsupported {

@@ -784,7 +784,7 @@ impl AsRef<str> for OperationType {
 /// Session tokens track the logical sequence number of operations, enabling
 /// read-your-writes consistency within a session.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct SessionToken(pub Cow<'static, str>);
+pub struct SessionToken(Cow<'static, str>);
 
 impl SessionToken {
     /// Creates a new session token with the given value.

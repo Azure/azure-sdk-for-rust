@@ -240,13 +240,13 @@ impl EffectivePartitionKey {
     ) -> crate::error::Result<std::ops::Range<Self>> {
         if pk_values.is_empty() {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY)
+                .with_status(crate::error::status_codes::CLIENT_COMPUTE_RANGE_INVOKED_WITH_EMPTY_PARTITION_KEY)
                 .with_message("compute_range called with empty pk_values")
                 .build());
         }
         if pk_values.len() > pk_definition.paths().len() {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+                .with_status(crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
                 .with_message(format!(
                     "more partition key components ({}) than definition paths ({})",
                     pk_values.len(),
@@ -263,7 +263,7 @@ impl EffectivePartitionKey {
             kind == PartitionKeyKind::MultiHash && pk_values.len() < pk_definition.paths().len();
 
         if kind != PartitionKeyKind::MultiHash && pk_values.len() != pk_definition.paths().len() {
-            return Err(crate::error::CosmosError::builder().with_status(crate::error::CosmosStatus::CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH).with_message(format!(
+            return Err(crate::error::CosmosError::builder().with_status(crate::error::status_codes::CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH).with_message(format!(
                     "non-MultiHash containers require exactly as many components ({}) as paths ({})",
                     pk_values.len(),
                     pk_definition.paths().len()

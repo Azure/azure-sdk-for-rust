@@ -227,7 +227,7 @@ cosmos_status_code_t = (http_status << 16) | sub_status
 The synthetic sub-status codes the driver can produce are re-exported as
 `cosmos_sub_status_t` / `COSMOS_SUB_STATUS_*` constants in the generated header.
 These are a **named mirror of the driver's canonical
-`azure_data_cosmos_driver::error::SubStatusCode` constants** — the
+`azure_data_cosmos_driver::error::status_codes::substatus` constants** — the
 `CosmosSubStatus` enum in `src/error.rs` re-exports each value so C hosts get
 stable, documented constant names. A host can therefore switch on
 `sub == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT`, etc.

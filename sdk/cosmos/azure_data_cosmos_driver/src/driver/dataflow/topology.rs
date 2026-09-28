@@ -72,7 +72,7 @@ where
                 Some(ranges) if !ranges.is_empty() => ranges,
                 _ => {
                     return Err(crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+                        .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
                         .with_message("failed to resolve partition key ranges from topology cache")
                         .build());
                 }
@@ -202,7 +202,9 @@ mod tests {
         crate::error::CosmosError::builder()
             .with_status(
                 crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
-                    .with_sub_status(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH.value()),
+                    .with_sub_status(
+                        crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH.value(),
+                    ),
             )
             .with_message("container RID mismatch")
             .build()
@@ -350,7 +352,7 @@ mod tests {
         );
         assert_eq!(
             error.status().sub_status(),
-            Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH)
+            Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
         );
     }
 
@@ -383,7 +385,7 @@ mod tests {
         for error in [left_result.unwrap_err(), right_result.unwrap_err()] {
             assert_eq!(
                 error.status().sub_status(),
-                Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH)
+                Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
             );
         }
     }
@@ -445,7 +447,7 @@ mod tests {
             .expect_err("typed waiter must receive the coalesced fetch error");
         assert_eq!(
             error.status().sub_status(),
-            Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH)
+            Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
         );
         assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
     }

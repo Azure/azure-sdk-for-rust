@@ -24,7 +24,7 @@
 use crate::{
     diagnostics::RequestSentStatus,
     driver::routing::{CosmosEndpoint, LocationEffect, UnavailablePartition, UnavailableReason},
-    models::{CosmosOperation, CosmosResponseHeaders, CosmosStatus, SubStatusCode},
+    models::{CosmosOperation, CosmosResponseHeaders, CosmosStatus},
 };
 
 use std::sync::atomic::Ordering;
@@ -134,7 +134,8 @@ pub(crate) fn is_region_confirming_status(status: &CosmosStatus) -> bool {
     }
 
     if status.is_throttled()
-        && status.sub_status() == Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE)
+        && status.sub_status()
+            == Some(crate::error::status_codes::substatus::SYSTEM_RESOURCE_UNAVAILABLE)
     {
         return false;
     }
@@ -144,7 +145,8 @@ pub(crate) fn is_region_confirming_status(status: &CosmosStatus) -> bool {
     }
 
     // Synthesized client-side statuses (e.g., end-to-end timeout) — not from a server.
-    if status.sub_status() == Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT) {
+    if status.sub_status() == Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
+    {
         return false;
     }
 
@@ -486,7 +488,8 @@ fn try_dtx_bodyless_retry(
 fn is_dtx_bodyless_coordinator_retriable(status: &CosmosStatus) -> bool {
     status.status_code() == azure_core::http::StatusCode::RequestTimeout
         || (u16::from(status.status_code()) == 449
-            && status.sub_status() == Some(SubStatusCode::DTC_COORDINATOR_RACE_CONFLICT))
+            && status.sub_status()
+                == Some(crate::error::status_codes::substatus::DTC_COORDINATOR_RACE_CONFLICT))
 }
 
 #[cfg(feature = "preview_dtx")]
@@ -494,9 +497,9 @@ fn is_dtx_bodyless_infra_retriable(status: &CosmosStatus) -> bool {
     status.status_code() == azure_core::http::StatusCode::InternalServerError
         && matches!(
             status.sub_status(),
-            Some(SubStatusCode::DTC_LEDGER_FAILURE)
-                | Some(SubStatusCode::DTC_ACCOUNT_CONFIG_FAILURE)
-                | Some(SubStatusCode::DTC_DISPATCH_FAILURE)
+            Some(crate::error::status_codes::substatus::DTC_LEDGER_FAILURE)
+                | Some(crate::error::status_codes::substatus::DTC_ACCOUNT_CONFIG_FAILURE)
+                | Some(crate::error::status_codes::substatus::DTC_DISPATCH_FAILURE)
         )
 }
 
@@ -780,7 +783,8 @@ fn try_handle_retry_trigger_group(
     request_sent: RequestSentStatus,
 ) -> Option<(OperationAction, Vec<LocationEffect>)> {
     let is_system_resource_unavailable = status.is_throttled()
-        && status.sub_status() == Some(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE);
+        && status.sub_status()
+            == Some(crate::error::status_codes::substatus::SYSTEM_RESOURCE_UNAVAILABLE);
     let is_service_unavailable =
         status.status_code() == azure_core::http::StatusCode::ServiceUnavailable;
     // Partition Topology changes (410 with sub-status 1009) are handled by the dataflow layer, not classified as retry triggers here. Only non-topology 410s trigger retries.
@@ -1014,7 +1018,7 @@ fn evaluate_deadline_exceeded_outcome(
     let cosmos_err = crate::error::CosmosError::builder()
         .with_status(CosmosStatus::from_parts(
             azure_core::http::StatusCode::RequestTimeout,
-            Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
         ))
         .with_message(message)
         .build();
@@ -1190,7 +1194,7 @@ pub(crate) fn build_service_error(
     // unsupported features (ORDER BY, aggregates, GROUP BY, ...) without
     // emitting the `x-ms-substatus: 1004` header that the .NET / Java SDKs
     // rely on. Detect that case from the response body and synthesize the
-    // canonical [`CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE`] so
+    // canonical [`crate::error::status_codes::CROSS_PARTITION_QUERY_NOT_SERVABLE`] so
     // callers get a consistent typed status regardless of gateway version.
     let effective_status = synthesize_cross_partition_query_status(*status, body);
     let mut message = service_error_message(&effective_status);
@@ -1208,7 +1212,7 @@ pub(crate) fn build_service_error(
         .build()
 }
 
-/// Returns [`CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE`] when `status`
+/// Returns [`crate::error::status_codes::CROSS_PARTITION_QUERY_NOT_SERVABLE`] when `status`
 /// is a bare HTTP 400 (no sub-status) and `body` is the gateway's
 /// "unsupported query features" rejection. Otherwise returns `status`
 /// unchanged.
@@ -1225,7 +1229,7 @@ fn synthesize_cross_partition_query_status(status: CosmosStatus, body: &[u8]) ->
     // avoid a serde dependency on the hot error path. The fragment is
     // stable across .NET / Java / Python emulator gateways.
     if text.contains("unsupported features") && text.contains("Upgrade your SDK") {
-        crate::error::CosmosStatus::CROSS_PARTITION_QUERY_NOT_SERVABLE
+        crate::error::status_codes::CROSS_PARTITION_QUERY_NOT_SERVABLE
     } else {
         status
     }
@@ -1275,6 +1279,7 @@ mod tests {
     use super::*;
     use crate::{
         diagnostics::RequestSentStatus,
+        error::SubStatusCode,
         models::{
             AccountReference, ContainerProperties, ContainerReference, CosmosOperation,
             CosmosResponseHeaders, CosmosStatus, DatabaseReference, ItemReference, PartitionKey,
@@ -1378,9 +1383,9 @@ mod tests {
     fn make_transport_error(sent: RequestSentStatus) -> TransportResult {
         TransportResult {
             outcome: TransportOutcome::TransportError {
-                status: CosmosStatus::TRANSPORT_GENERATED_503,
+                status: crate::error::status_codes::TRANSPORT_GENERATED_503,
                 error: crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                     .with_message("connection refused")
                     .build(),
                 request_sent: sent,
@@ -1437,7 +1442,7 @@ mod tests {
         let result = make_dtx_http_error(
             CosmosStatus::from_parts(
                 StatusCode::from(449_u16),
-                Some(SubStatusCode::DTC_COORDINATOR_RACE_CONFLICT),
+                Some(crate::error::status_codes::substatus::DTC_COORDINATOR_RACE_CONFLICT),
             ),
             Vec::new(),
             Some(250),
@@ -1467,7 +1472,7 @@ mod tests {
         let result = make_dtx_http_error(
             CosmosStatus::from_parts(
                 StatusCode::InternalServerError,
-                Some(SubStatusCode::DTC_LEDGER_FAILURE),
+                Some(crate::error::status_codes::substatus::DTC_LEDGER_FAILURE),
             ),
             Vec::new(),
             None,
@@ -1497,7 +1502,7 @@ mod tests {
         let result = make_dtx_http_error(
             CosmosStatus::from_parts(
                 StatusCode::from(449_u16),
-                Some(SubStatusCode::DTC_COORDINATOR_RACE_CONFLICT),
+                Some(crate::error::status_codes::substatus::DTC_COORDINATOR_RACE_CONFLICT),
             ),
             Vec::new(),
             None,
@@ -1521,7 +1526,7 @@ mod tests {
         let result = make_dtx_http_error(
             CosmosStatus::from_parts(
                 StatusCode::InternalServerError,
-                Some(SubStatusCode::DTC_LEDGER_FAILURE),
+                Some(crate::error::status_codes::substatus::DTC_LEDGER_FAILURE),
             ),
             Vec::new(),
             None,
@@ -1543,7 +1548,10 @@ mod tests {
     fn dtx_body_bearing_449_completes_for_outer_loop() {
         let op = make_dtx_operation();
         let result = make_dtx_http_error(
-            CosmosStatus::from_parts(StatusCode::from(449_u16), Some(SubStatusCode::UNKNOWN)),
+            CosmosStatus::from_parts(
+                StatusCode::from(449_u16),
+                Some(crate::error::status_codes::substatus::UNKNOWN),
+            ),
             br#"{"isRetriable":true}"#.to_vec(),
             None,
         );
@@ -1650,7 +1658,10 @@ mod tests {
             CosmosStatus::new(StatusCode::from(503_u16)),
             CosmosStatus::from_parts(StatusCode::from(429_u16), Some(SubStatusCode::new(3092))),
             CosmosStatus::from_parts(StatusCode::from(404_u16), Some(SubStatusCode::new(1002))),
-            CosmosStatus::from_parts(StatusCode::from(449_u16), Some(SubStatusCode::UNKNOWN)),
+            CosmosStatus::from_parts(
+                StatusCode::from(449_u16),
+                Some(crate::error::status_codes::substatus::UNKNOWN),
+            ),
             CosmosStatus::new(StatusCode::from(408_u16)),
             CosmosStatus::new(StatusCode::from(410_u16)),
             CosmosStatus::new(StatusCode::from(500_u16)),
@@ -2047,12 +2058,13 @@ mod tests {
             .complete(),
         );
         let inner = crate::error::CosmosError::builder()
-            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
             .with_message("inner transport failure")
             .with_diagnostics(std::sync::Arc::clone(&diag))
             .build();
 
-        let outer = build_transport_error(&CosmosStatus::TRANSPORT_GENERATED_503, inner);
+        let outer =
+            build_transport_error(&crate::error::status_codes::TRANSPORT_GENERATED_503, inner);
 
         let outer_diag = outer
             .diagnostics()
@@ -2068,9 +2080,9 @@ mod tests {
         let op = make_create_operation();
         let result = TransportResult {
             outcome: TransportOutcome::TransportError {
-                status: CosmosStatus::TRANSPORT_GENERATED_503,
+                status: crate::error::status_codes::TRANSPORT_GENERATED_503,
                 error: crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                    .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                     .with_message("failed to execute `reqwest` request")
                     .with_source(std::io::Error::new(
                         std::io::ErrorKind::BrokenPipe,
@@ -2090,7 +2102,10 @@ mod tests {
         match action {
             OperationAction::Abort { error } => {
                 // `.status()` compiling proves this stayed a typed `CosmosError`.
-                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
+                assert_eq!(
+                    error.status(),
+                    crate::error::status_codes::TRANSPORT_GENERATED_503
+                );
                 let text = error.to_string();
                 assert!(text.contains("HTTP 503/20003"));
                 assert!(text.contains("TransportGenerated503"));
@@ -2140,7 +2155,10 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(&op, &endpoint, result, &state);
         match action {
             OperationAction::Abort { error } => {
-                assert_eq!(error.status(), CosmosStatus::TRANSPORT_GENERATED_503);
+                assert_eq!(
+                    error.status(),
+                    crate::error::status_codes::TRANSPORT_GENERATED_503
+                );
             }
             other => panic!("expected abort, got {other:?}"),
         }
@@ -2162,10 +2180,9 @@ mod tests {
     #[test]
     fn partition_topology_gone_aborts_for_dataflow_handling() {
         let op = make_read_operation();
-        let result = make_http_error_status(
-            CosmosStatus::new(StatusCode::Gone)
-                .with_sub_status(SubStatusCode::PARTITION_KEY_RANGE_GONE.value()),
-        );
+        let result = make_http_error_status(CosmosStatus::new(StatusCode::Gone).with_sub_status(
+            crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE.value(),
+        ));
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
         let endpoint = CosmosEndpoint::global(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
@@ -2177,8 +2194,9 @@ mod tests {
             OperationAction::Abort { error, .. } => {
                 assert_eq!(
                     error.status(),
-                    CosmosStatus::new(StatusCode::Gone)
-                        .with_sub_status(SubStatusCode::PARTITION_KEY_RANGE_GONE.value())
+                    CosmosStatus::new(StatusCode::Gone).with_sub_status(
+                        crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE.value()
+                    )
                 );
             }
             other => panic!("expected abort, got {other:?}"),
@@ -2191,7 +2209,7 @@ mod tests {
         let op = make_read_operation();
         let result = make_http_error_status(
             CosmosStatus::new(StatusCode::Gone)
-                .with_sub_status(SubStatusCode::NAME_CACHE_STALE.value()),
+                .with_sub_status(crate::error::status_codes::substatus::NAME_CACHE_STALE.value()),
         );
         let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
         let endpoint = CosmosEndpoint::global(
@@ -2211,7 +2229,7 @@ mod tests {
         let op = make_create_operation();
         let result = TransportResult {
             outcome: TransportOutcome::HttpError {
-                status: CosmosStatus::WRITE_FORBIDDEN,
+                status: crate::error::status_codes::WRITE_FORBIDDEN,
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -2257,7 +2275,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -2306,7 +2324,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2357,7 +2375,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2391,7 +2409,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2399,7 +2417,7 @@ mod tests {
             OperationAction::Abort { error } => {
                 assert_eq!(
                     error.status(),
-                    CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND,
+                    crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND,
                     "1008 exhausted-budget bubble-up must surface the original status unchanged"
                 );
             }
@@ -2423,7 +2441,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -2431,7 +2449,7 @@ mod tests {
             OperationAction::Abort { error } => {
                 assert_eq!(
                     error.status(),
-                    CosmosStatus::WRITE_FORBIDDEN,
+                    crate::error::status_codes::WRITE_FORBIDDEN,
                     "403/3 exhausted-budget bubble-up must surface the original status unchanged"
                 );
             }
@@ -2454,7 +2472,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2478,7 +2496,7 @@ mod tests {
             let (action, _effects) = evaluate_transport_result(
                 &op,
                 &endpoint,
-                http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+                http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
                 &state,
             );
             match action {
@@ -2517,7 +2535,7 @@ mod tests {
         let (first, _) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
         let OperationAction::FailoverRetry {
@@ -2532,7 +2550,7 @@ mod tests {
         let (second, _) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &new_state,
         );
         let OperationAction::FailoverRetry {
@@ -2561,7 +2579,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2597,7 +2615,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -2633,7 +2651,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -2667,7 +2685,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -2693,7 +2711,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -2713,7 +2731,7 @@ mod tests {
         let (action, _effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2752,7 +2770,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            http_error_status(CosmosStatus::DATABASE_ACCOUNT_NOT_FOUND),
+            http_error_status(crate::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND),
             &state,
         );
 
@@ -2783,7 +2801,7 @@ mod tests {
         let op = make_read_operation();
         let result = TransportResult {
             outcome: TransportOutcome::HttpError {
-                status: CosmosStatus::READ_SESSION_NOT_AVAILABLE,
+                status: crate::error::status_codes::READ_SESSION_NOT_AVAILABLE,
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -2847,7 +2865,7 @@ mod tests {
         let (action, _) = evaluate_transport_result(
             &op,
             &endpoint,
-            throttle_result(SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE),
+            throttle_result(crate::error::status_codes::substatus::SYSTEM_RESOURCE_UNAVAILABLE),
             &state,
         );
         assert!(
@@ -2858,9 +2876,9 @@ mod tests {
         // Every other throttle sub-status must NOT become a region-changing
         // retry, so it can never be upgraded into a cross-region hedge.
         for sub in [
-            SubStatusCode::RU_BUDGET_EXCEEDED,            // 3200
-            SubStatusCode::RU_BUDGET_EXCEEDED_FOR_MASTER, // 3210
-            SubStatusCode::HOT_PARTITION_KEY_THROTTLED,   // 3214
+            crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED, // 3200
+            crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED_FOR_MASTER, // 3210
+            crate::error::status_codes::substatus::HOT_PARTITION_KEY_THROTTLED, // 3214
         ] {
             let op = make_read_operation();
             let state = OperationRetryState::initial(0, false, Vec::new(), 3, 1);
@@ -2960,7 +2978,7 @@ mod tests {
                 assert_eq!(status.status_code(), StatusCode::RequestTimeout);
                 assert_eq!(
                     status.sub_status(),
-                    Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+                    Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
                 );
             }
             _ => panic!("expected timeout to abort"),
@@ -3218,22 +3236,22 @@ mod tests {
         // 429/3092 SystemResourceUnavailable
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::TooManyRequests,
-            SubStatusCode::SYSTEM_RESOURCE_UNAVAILABLE
+            crate::error::status_codes::substatus::SYSTEM_RESOURCE_UNAVAILABLE
         )));
         // 403/3 WriteForbidden
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::Forbidden,
-            SubStatusCode::WRITE_FORBIDDEN
+            crate::error::status_codes::substatus::WRITE_FORBIDDEN
         )));
         // 403/1008 is a topology signal; the dedicated handler refreshes and fails over.
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::Forbidden,
-            SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND
+            crate::error::status_codes::substatus::DATABASE_ACCOUNT_NOT_FOUND
         )));
         // 410/1008 is partition migration, not DatabaseAccountNotFound.
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::Gone,
-            SubStatusCode::COMPLETING_PARTITION_MIGRATION
+            crate::error::status_codes::substatus::COMPLETING_PARTITION_MIGRATION
         )));
     }
 
@@ -3241,7 +3259,7 @@ mod tests {
     fn region_confirming_false_for_client_synthesized_timeout() {
         assert!(!is_region_confirming_status(&status_with_substatus(
             StatusCode::RequestTimeout,
-            SubStatusCode::CLIENT_OPERATION_TIMEOUT
+            crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT
         )));
     }
 
@@ -3405,7 +3423,7 @@ mod tests {
     fn make_read_session_not_available_result() -> TransportResult {
         TransportResult {
             outcome: TransportOutcome::HttpError {
-                status: CosmosStatus::READ_SESSION_NOT_AVAILABLE,
+                status: crate::error::status_codes::READ_SESSION_NOT_AVAILABLE,
                 cosmos_headers: CosmosResponseHeaders::default(),
                 body: vec![],
                 request_sent: RequestSentStatus::Sent,
@@ -3792,7 +3810,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            make_http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -3831,7 +3849,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            make_http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -3858,7 +3876,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            make_http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -3889,7 +3907,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            make_http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -3913,7 +3931,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            make_http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
@@ -3946,7 +3964,7 @@ mod tests {
         let (action, effects) = evaluate_transport_result(
             &op,
             &endpoint,
-            make_http_error_status(CosmosStatus::WRITE_FORBIDDEN),
+            make_http_error_status(crate::error::status_codes::WRITE_FORBIDDEN),
             &state,
         );
 
