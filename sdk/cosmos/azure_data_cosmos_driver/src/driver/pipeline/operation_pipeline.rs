@@ -743,6 +743,7 @@ pub(crate) async fn execute_operation_pipeline(
                 &location.account,
                 &routing,
                 configured_request_timeout,
+                location.cross_region_hedging_disabled,
             )
             .and_then(|upgrade| match hedge_budget.try_admit(pipeline_type) {
                 Some(permit) => Some((upgrade, permit)),
@@ -1104,6 +1105,7 @@ pub(crate) async fn execute_operation_pipeline(
                 operation,
                 options,
                 &location.account,
+                location.cross_region_hedging_disabled,
                 &routing,
                 configured_request_timeout,
                 hedge_budget,
@@ -1346,6 +1348,7 @@ pub(crate) async fn execute_operation_pipeline(
                     &location.account,
                     &primary_routing,
                     configured_request_timeout,
+                    location.cross_region_hedging_disabled,
                 ) {
                     Some(upgrade) => upgrade.secondary_routing,
                     None => {
@@ -3300,6 +3303,7 @@ fn maybe_upgrade_to_hedge<'a>(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
     account_state: &AccountEndpointState,
+    cross_region_hedging_disabled: bool,
     primary: &RoutingDecision,
     request_timeout: Option<Duration>,
     hedge_budget: &'a HedgeBudget,
@@ -3321,7 +3325,14 @@ fn maybe_upgrade_to_hedge<'a>(
         _ => return (action, None),
     };
 
-    match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
+    match evaluate_hedge_eligibility(
+        operation,
+        options,
+        account_state,
+        primary,
+        request_timeout,
+        cross_region_hedging_disabled,
+    ) {
         Some(upgrade) => {
             // Hedge consumes two failover-budget slots on the race
             // (primary + secondary) and a third on BothTransient
