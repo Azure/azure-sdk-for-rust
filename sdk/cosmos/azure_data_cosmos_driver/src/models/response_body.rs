@@ -184,7 +184,7 @@ impl ResponseBody {
             }
             let text = crate::binary_json::transcode_to_text(bytes).map_err(|e| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!("failed to transcode binary response to text: {e}"))
                     .with_source(e)
                     .build()
@@ -251,7 +251,7 @@ where
     E: std::error::Error + Send + Sync + 'static,
 {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+        .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
         .with_message(message)
         .with_source(source)
         .build()

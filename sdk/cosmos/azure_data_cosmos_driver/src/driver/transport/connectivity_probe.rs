@@ -292,7 +292,7 @@ impl ConnectivityProbe for Http2ConnectivityProbe {
 mod tests {
     use super::*;
     use crate::diagnostics::RequestSentStatus;
-    use crate::error::{CosmosError, CosmosStatus};
+    use crate::error::CosmosError;
     use async_trait::async_trait;
     use std::sync::Mutex;
 
@@ -368,7 +368,7 @@ mod tests {
                 }),
                 Some(Err(message)) => Err(TransportError::new(
                     CosmosError::builder()
-                        .with_status(CosmosStatus::TRANSPORT_CONNECTION_FAILED)
+                        .with_status(crate::error::status_codes::TRANSPORT_CONNECTION_FAILED)
                         .with_message(message)
                         .build(),
                     RequestSentStatus::NotSent,

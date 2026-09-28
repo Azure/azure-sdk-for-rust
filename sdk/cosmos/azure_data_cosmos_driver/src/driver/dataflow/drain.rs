@@ -86,7 +86,7 @@ impl PipelineNode for SequentialDrain {
                         // This should be ridiculously rare.
                         // The topology provider already waits for splits to converge before returning.
                         return Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::CLIENT_SPLIT_RETRIES_EXHAUSTED)
+                            .with_status(crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED)
                             .with_message(format!(
                                 "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in SequentialDrain"
@@ -124,7 +124,7 @@ impl PipelineNode for SequentialDrain {
         for (idx, child) in self.children.iter().enumerate() {
             let Some(range) = child.feed_range() else {
                 return Err(crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE)
+                    .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE)
                     .with_message(format!(
                         "SequentialDrain child {idx} of {total} has no feed_range; \
                          cannot snapshot continuation state safely",
@@ -149,7 +149,7 @@ impl PipelineNode for SequentialDrain {
                     if cursor.is_some() {
                         return Err(crate::error::CosmosError::builder()
                             .with_status(
-                                crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
+                                crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
                             )
                             .with_message(format!(
                                 "SequentialDrain child {idx} of {total} is Drained after the cursor was \

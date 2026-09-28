@@ -365,13 +365,12 @@ pub(crate) fn get_latest_session_token(
         // making the original ranges stale. `410 Gone` is the
         // service-style signal that the resource the caller is
         // referencing no longer exists in the requested shape.
-        return Err(crate::DriverCosmosError::builder()
+        return Err(crate::CosmosError::builder()
             .with_status(
-                crate::error::CosmosStatus::CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN,
+                azure_data_cosmos_driver::error::status_codes::CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN,
             )
             .with_message("no overlapping feed ranges with the target feed range")
-            .build()
-            .into());
+            .build());
     }
 
     // Step 2: Merge session tokens for identical feed ranges

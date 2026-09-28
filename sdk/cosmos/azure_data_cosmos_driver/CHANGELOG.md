@@ -12,6 +12,7 @@
 
 ### Breaking Changes
 
+- Moved all `CosmosStatus` constants and the independently used `SubStatusCode` constants to `error::status_codes`; raw substatus constants are under `error::status_codes::substatus`, and constants used only to construct combined statuses were removed. ([#5355](https://github.com/Azure/azure-sdk-for-rust/pull/5355))
 - `UserAgentSuffix` replaces panicking `new` with `TryFrom<String>` and `TryFrom<&str>`, returning a typed `CosmosError` for invalid suffixes. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
 - Replaced panicking partition-key vector and floating-point `From` conversions with typed `TryFrom` errors; infallible key conversions remain unchanged. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
 - Removed throughput-control group registration, group types, and `ThroughputControlOptions::group_name`; direct priority and throughput-bucket options remain available. ([#5343](https://github.com/Azure/azure-sdk-for-rust/pull/5343))

@@ -133,9 +133,10 @@ fn is_container_recreation_signal(
     };
 
     (status.status_code() == azure_core::http::StatusCode::BadRequest
-        && status.sub_status() == Some(SubStatusCode::COLLECTION_RID_MISMATCH))
+        && status.sub_status()
+            == Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH))
         || (status.status_code() == azure_core::http::StatusCode::Gone
-            && status.sub_status() == Some(SubStatusCode::NAME_CACHE_STALE))
+            && status.sub_status() == Some(crate::error::status_codes::substatus::NAME_CACHE_STALE))
         || (status.is_read_session_not_available() && !retry_state.can_retry_session())
 }
 
@@ -2508,7 +2509,7 @@ fn effective_partition_key_for_request(
     let partition_key_definition = container.partition_key_definition();
     if partition_key.values().len() > partition_key_definition.paths().len() {
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+            .with_status(crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
             .with_message(
                 "Partition key supplies more components than the container's \
                  partition-key definition declares",
@@ -2548,7 +2549,7 @@ fn build_cosmos_response(
             // This should only be called with a Complete(Success) result.
             // Treat as a programmer-error invariant violation.
             Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE)
+                .with_status(crate::error::status_codes::CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE)
                 .with_message("build_cosmos_response called with non-success result")
                 .build())
         }
@@ -2579,7 +2580,8 @@ fn should_capture_session_token_from_status(
             }
             if code == azure_core::http::StatusCode::NotFound {
                 // Capture on 404 unless substatus is ReadSessionNotAvailable (1002)
-                return substatus != Some(&SubStatusCode::READ_SESSION_NOT_AVAILABLE);
+                return substatus
+                    != Some(&crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE);
             }
             false
         }
@@ -2850,13 +2852,13 @@ fn enforce_deadline_or_timeout(
 
     diagnostics.set_operation_status(
         azure_core::http::StatusCode::RequestTimeout,
-        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+        Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
     );
     let diagnostics_ctx = Arc::new(diagnostics.complete());
     Err(crate::error::CosmosError::builder()
         .with_status(crate::models::CosmosStatus::from_parts(
             azure_core::http::StatusCode::RequestTimeout,
-            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
         ))
         .with_message(format!(
             "end-to-end operation timeout exceeded ({timeout_duration:?})"
@@ -3259,13 +3261,13 @@ fn finalize_hedge_attempt(
             let mut diagnostics = diagnostics;
             diagnostics.set_operation_status(
                 azure_core::http::StatusCode::RequestTimeout,
-                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+                Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
             );
             let diagnostics_ctx = Arc::new(diagnostics.complete());
             Err(crate::error::CosmosError::builder()
                 .with_status(crate::models::CosmosStatus::from_parts(
                     azure_core::http::StatusCode::RequestTimeout,
-                    Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+                    Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
                 ))
                 .with_message("deadline exceeded during hedged attempt")
                 .with_diagnostics(diagnostics_ctx)
@@ -3628,13 +3630,13 @@ fn application_cancelled_error(
 ) -> crate::error::CosmosError {
     diagnostics.set_operation_status(
         azure_core::http::StatusCode::RequestTimeout,
-        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+        Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
     );
     let diagnostics_ctx = Arc::new(diagnostics.complete());
     crate::error::CosmosError::builder()
         .with_status(crate::models::CosmosStatus::from_parts(
             azure_core::http::StatusCode::RequestTimeout,
-            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
         ))
         .with_message("operation cancelled by application deadline during cross-region hedging")
         .with_diagnostics(diagnostics_ctx)
@@ -3955,11 +3957,11 @@ async fn execute_hedged(
             // attempted before bailing.
             parent_diagnostics.set_operation_status(
                 azure_core::http::StatusCode::InternalServerError,
-                Some(SubStatusCode::TRANSPORT_GENERATED_503),
+                Some(crate::error::status_codes::substatus::TRANSPORT_GENERATED_503),
             );
             let diagnostics_ctx = Arc::new(parent_diagnostics.complete());
             return HedgedRaceResult::Terminal(Err(crate::error::CosmosError::builder()
-                .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                 .with_message("hedge threshold exceeds azure_core::time::Duration range")
                 .with_diagnostics(diagnostics_ctx)
                 .build()));
@@ -4506,7 +4508,7 @@ fn operation_allows_automatic_session_token_resolution(
 fn global_strong_account_validation_error(
     mut diagnostics: DiagnosticsContextBuilder,
 ) -> crate::error::CosmosError {
-    let status = crate::error::CosmosStatus::CLIENT_BAD_REQUEST;
+    let status = crate::error::status_codes::CLIENT_BAD_REQUEST;
     diagnostics.set_operation_status(status.status_code(), status.sub_status());
     crate::error::CosmosError::builder()
         .with_status(status)
@@ -4531,7 +4533,7 @@ fn global_strong_account_validation_error(
 /// as the [`HedgeDiagnostics::UNKNOWN_REGION_SENTINEL`] string for
 /// consistency with the diagnostics-attachment surface.
 ///
-/// Status is set to [`CosmosStatus::TRANSPORT_GENERATED_503`] so
+/// Status is set to [`crate::error::status_codes::TRANSPORT_GENERATED_503`] so
 /// retry-evaluation and telemetry can discriminate a client-side
 /// "both legs transient" classification from any other 5xx surface.
 /// Diagnostics are not threaded here: the surrounding
@@ -4551,7 +4553,7 @@ fn transient_outcome_error(
         .map(Region::as_str)
         .unwrap_or(HedgeDiagnostics::UNKNOWN_REGION_SENTINEL);
     crate::error::CosmosError::builder()
-        .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
+        .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
         .with_message(format!(
             "hedging completed without producing a final response \
              (primary={p}, secondary={s})"
@@ -5028,7 +5030,7 @@ mod tests {
         );
         assert_eq!(
             error.status().sub_status(),
-            Some(crate::models::SubStatusCode::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+            Some(crate::error::status_codes::substatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
         );
     }
 
@@ -7345,7 +7347,7 @@ mod tests {
 
         use crate::{
             driver::pipeline::components::TransportOutcome,
-            models::{CosmosResponseHeaders, CosmosStatus, SubStatusCode},
+            models::{CosmosResponseHeaders, CosmosStatus},
         };
 
         use super::super::should_capture_session_token_from_status;
@@ -7388,7 +7390,7 @@ mod tests {
         #[test]
         fn skips_on_404_with_substatus_1002() {
             let outcome = http_error_outcome(StatusCode::NotFound);
-            let substatus = SubStatusCode::READ_SESSION_NOT_AVAILABLE;
+            let substatus = crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE;
             assert!(!should_capture_session_token_from_status(
                 Some(&substatus),
                 &outcome
@@ -10708,7 +10710,7 @@ mod tests {
 
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+            crate::error::status_codes::CLIENT_BAD_REQUEST
         );
         assert!(error.response().is_none());
         let diagnostics = error
@@ -11251,7 +11253,7 @@ mod tests {
         );
         assert_eq!(
             status.sub_status(),
-            Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
         );
         // Diagnostics-on-error invariant: the synthesized error must
         // carry the operation's diagnostics chain (cf. P0 #1).

@@ -907,7 +907,7 @@ impl DriverTestRunContext {
                     let status = e.status();
                     let create_in_progress = status.status_code() == StatusCode::NotFound
                         && status.sub_status()
-                            == Some(SubStatusCode::COLLECTION_CREATE_IN_PROGRESS);
+                            == Some(azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS);
                     let ambiguous_not_found = ambiguous_create_error.is_some()
                         && status.status_code() == StatusCode::NotFound;
                     if create_in_progress || ambiguous_not_found {

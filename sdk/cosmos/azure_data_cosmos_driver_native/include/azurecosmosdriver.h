@@ -539,7 +539,7 @@ typedef int32_t cosmos_patch_strategy_t;
  * from the driver — or a driver constant that is renamed or removed — fails the
  * build instead of silently diverging.
  *
- * [`SubStatusCode`] is a set of associated `pub const`s, not an enumerable
+ * The driver exposes these values as free constants, not an enumerable
  * type, so exposing a *new* synthetic `2xxxx` sub-status on the C surface is
  * still a manual step: add the variant to the Rust enum and pin it in that same
  * guard. Because the guard maps variants with an exhaustive match, a variant

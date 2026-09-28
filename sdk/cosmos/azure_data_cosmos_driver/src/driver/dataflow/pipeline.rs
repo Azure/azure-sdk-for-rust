@@ -64,7 +64,7 @@ impl Pipeline {
             // does, surfacing it as an explicit error is preferable to silently
             // dropping the page.
             PageResult::SplitRequired { .. } => Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT)
+                .with_status(crate::error::status_codes::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT)
                 .with_message(
                     "root node cannot request a split; splits must be handled by a parent node",
                 )
@@ -172,7 +172,7 @@ impl OperationPlan {
     /// reasoning as `SkipTake::poisoned_error`, at the boundary layer.
     pub(crate) fn poisoned_error() -> crate::error::CosmosError {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(
                 "this plan is unusable: a page advanced it but could not be returned to the \
                  caller, so its progress and what the caller received no longer agree. Continuing \
@@ -208,7 +208,7 @@ impl OperationPlan {
     /// The same applies when a page was produced but could not be delivered to
     /// the caller — a binary response body that failed to transcode to text.
     /// Reported as
-    /// [`CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE`](crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE).
+    /// [`CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE`](crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE).
     /// That failure also stops the plan being executed again — see
     /// [`CosmosDriver::execute_plan`](crate::driver::CosmosDriver::execute_plan)
     /// — so a caller cannot step over the lost page by simply pulling the next
@@ -217,7 +217,7 @@ impl OperationPlan {
         if self.continuation_poisoned {
             return Err(crate::error::CosmosError::builder()
                 .with_status(
-                    crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE,
+                    crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE,
                 )
                 .with_message(
                     "a page advanced this plan but could not be returned to the caller, so no \

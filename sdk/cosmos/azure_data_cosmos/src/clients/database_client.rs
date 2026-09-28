@@ -300,15 +300,16 @@ impl DatabaseClient {
             // would otherwise silently read or replace that container's offer.
             // Reject any RID that is not database-level before reusing it.
             if !azure_data_cosmos_driver::models::is_database_rid(rid.as_str()) {
-                return Err(crate::DriverCosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::CLIENT_INVALID_RESOURCE_ID)
+                return Err(crate::CosmosError::builder()
+                    .with_status(
+                        azure_data_cosmos_driver::error::status_codes::CLIENT_INVALID_RESOURCE_ID,
+                    )
                     .with_message(format!(
                         "'{}' is not a database resource id; a DatabaseClient's throughput \
                          operations require a database-level RID",
                         rid.as_str()
                     ))
-                    .build()
-                    .into());
+                    .build());
             }
             return Ok(rid.as_str().to_owned());
         }
@@ -399,13 +400,12 @@ fn resource_id_or_error(rid: Option<String>, resource_kind: &str) -> crate::Resu
         "service should always return a '_rid' for a {resource_kind}"
     );
     rid.ok_or_else(|| {
-        crate::DriverCosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERVICE_RETURNED_OBJECT_WITHOUT_RID)
+        crate::CosmosError::builder()
+            .with_status(azure_data_cosmos_driver::error::status_codes::SERVICE_RETURNED_OBJECT_WITHOUT_RID)
             .with_message(format!(
                 "service did not return a '_rid' for a {resource_kind}; cannot resolve the throughput offer"
             ))
             .build()
-            .into()
     })
 }
 
