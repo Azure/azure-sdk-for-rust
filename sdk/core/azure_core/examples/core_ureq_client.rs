@@ -51,8 +51,9 @@ impl HttpClient for Agent {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let endpoint = httpbin_endpoint()?
-        .ok_or("Set AZURE_CORE_HTTPBIN_URL to an httpbin origin before running core_ureq_client")?;
+    let endpoint = httpbin_endpoint()?.ok_or(
+        "Set AZSDKRUSTTEST_HTTPBIN_URL to an httpbin origin before running core_ureq_client",
+    )?;
     let agent = Arc::new(Agent::default());
     let options = TestServiceClientOptions {
         client_options: ClientOptions {
