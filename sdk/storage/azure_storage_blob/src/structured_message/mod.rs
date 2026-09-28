@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod decode;
 mod encode_in_place;
 mod encode_streaming;
 mod smv1;

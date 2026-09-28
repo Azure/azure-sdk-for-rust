@@ -25,7 +25,7 @@ pub(crate) const SEGMENT_HEADER_LENGTH: usize = 10;
 pub(crate) const INIT_SEGMENT_NUM: u16 = 1;
 
 bitflags! {
-    #[derive(Clone, Copy, Default, PartialEq, Eq)]
+    #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
     pub struct Flags: u16 {
         const NONE = 0x0000;
         const CRC_64_NVME = 0x0001;
@@ -33,7 +33,7 @@ bitflags! {
 }
 
 /// A Structured Message version 1 stream header.
-#[derive(Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct StreamHeader {
     /// Total message length recorded by the stream header.
     pub(crate) message_len: u64,
@@ -46,6 +46,8 @@ pub(crate) struct StreamHeader {
 }
 
 impl StreamHeader {
+    pub(crate) const LENGTH: usize = STREAM_HEADER_LENGTH;
+
     /// Parses a stream header from raw bytes.
     /// The buffer is expected to be exactly `STREAM_HEADER_LENGTH` bytes long.
     pub(crate) fn parse(buffer: &[u8]) -> Result<Self> {
@@ -141,6 +143,8 @@ pub(crate) struct SegmentHeader {
 }
 
 impl SegmentHeader {
+    pub(crate) const LENGTH: usize = SEGMENT_HEADER_LENGTH;
+
     /// Parses a segment header from raw bytes.
     /// The buffer is expected to be exactly `SEGMENT_HEADER_LENGTH` bytes long.
     pub(crate) fn parse(buffer: &[u8]) -> Result<Self> {
