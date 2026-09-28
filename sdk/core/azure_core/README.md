@@ -507,32 +507,6 @@ See the [example](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/core
 
 After you've implemented `HttpClient`, you pass it in `ClientOptions` to our client libraries as [shown for `reqwest` above](#reqwest).
 
-To run `core_ureq_client`, set `AZSDKRUSTTEST_HTTPBIN_URL` to the HTTP or HTTPS origin of
-an existing local or deployed [httpbin](https://httpbin.org/) service. For example,
-if you already run httpbin on port 8080:
-
-```sh
-AZSDKRUSTTEST_HTTPBIN_URL=http://localhost:8080 cargo run -p azure_core --example core_ureq_client
-```
-
-### Live HTTP transport benchmarks
-
-The `http_transport_benchmarks` benchmark also uses `AZSDKRUSTTEST_HTTPBIN_URL`.
-The previous SDK-hosted httpbin service has been retired; there is no default endpoint
-and these commands do not provision a server. The configured origin must serve `GET /get`
-with status 200. A trailing slash is optional; credentials, other paths, query strings,
-and fragments are not supported.
-
-```sh
-AZSDKRUSTTEST_HTTPBIN_URL=http://localhost:8080 cargo bench -p azure_core --bench http_transport_benchmarks
-```
-
-When the variable is unset, the four live transport benchmarks are not registered and
-a notice is printed. This is not a successful HTTP test. Other, offline benchmarks are
-unaffected. Invalid configuration and failed requests fail the run rather than skipping it.
-The existing macOS exclusion remains: even with an endpoint configured, these live
-benchmarks do not execute on macOS and print a notice instead.
-
 ### Replacing the async runtime
 
 Internally, the Azure SDK uses either the [`tokio`] async runtime (with the `tokio` feature), or it implements asynchronous functionality using functions in the `std` namespace.
