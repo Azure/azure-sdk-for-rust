@@ -2310,7 +2310,7 @@ pub mod models {
         fn sum<I: Iterator<Item = Self>>(iter: I) -> Self;
     }
     #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-    pub struct SessionToken(pub std::borrow::Cow<'static, str>);
+    pub struct SessionToken(/* private fields */);
     impl SessionToken {
         pub fn as_str(&self) -> &str;
         pub fn merge(&self, other: &Self) -> crate::error::Result<Self>;
@@ -3222,7 +3222,7 @@ pub mod options {
         fn from(timeout: Duration) -> Self;
     }
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
-    pub struct ExcludedRegions(pub Vec<crate::options::Region>);
+    pub struct ExcludedRegions(/* private fields */);
     impl ExcludedRegions {
         pub fn is_empty(&self) -> bool;
         pub fn iter(&self) -> impl Iterator<Item = &Region>;

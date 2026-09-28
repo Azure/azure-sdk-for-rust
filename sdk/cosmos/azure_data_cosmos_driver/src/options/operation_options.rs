@@ -156,8 +156,14 @@ pub struct OperationOptions {
     /// `Some(true)` forces it on, regardless of the strategy configured here.
     pub availability_strategy: Option<AvailabilityStrategy>,
 
-    // Additional headers beyond those natively supported by the driver.
-    // May be removed in the future as we analyze exactly what options are needed.
+    /// Extra headers for purposes not represented by Cosmos-specific options.
+    ///
+    /// Never use this field to set Cosmos-specific HTTP headers. Gateway V2 may
+    /// ignore these headers.
+    ///
+    /// Use typed SDK options for consistency, session and routing, throughput,
+    /// and other Cosmos settings. Do not reject custom headers at runtime or
+    /// invent a header denylist.
     pub custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
 
     /// Cosmos binary JSON encoding for this operation.
@@ -324,7 +330,7 @@ mod tests {
             content_response_on_write: Some(ContentResponseOnWrite::Enabled),
             max_failover_retry_count: Some(u32::MAX),
             session_capturing_disabled: Some(true),
-            excluded_regions: Some(ExcludedRegions(vec!["East US".into()])),
+            excluded_regions: Some(ExcludedRegions::new().with_region("East US")),
             end_to_end_latency_policy: Some(Duration::from_secs(4).into()),
             #[cfg(feature = "preview_patch")]
             patch_strategy: Some(PatchStrategy::ServerSide),
@@ -342,7 +348,7 @@ mod tests {
         });
         let request = OperationOptions {
             hedging_enabled: Some(true),
-            excluded_regions: Some(ExcludedRegions(vec![])),
+            excluded_regions: Some(ExcludedRegions::new()),
             custom_headers: Some(HashMap::new()),
             availability_strategy: Some(AvailabilityStrategy::Disabled),
             ..Default::default()
@@ -369,7 +375,7 @@ mod tests {
             Some(&ContentResponseOnWrite::Enabled)
         );
         assert_eq!(view.session_capturing_disabled(), Some(&true));
-        assert_eq!(view.excluded_regions(), Some(&ExcludedRegions(vec![])));
+        assert_eq!(view.excluded_regions(), Some(&ExcludedRegions::new()));
         assert!(view.custom_headers().unwrap().is_empty());
         assert_eq!(
             view.end_to_end_latency_policy().unwrap().timeout(),

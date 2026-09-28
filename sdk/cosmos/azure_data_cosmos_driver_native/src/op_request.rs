@@ -626,7 +626,7 @@ unsafe fn decode_regions(
         return Ok(None);
     }
     if len == 0 {
-        return Ok(Some(ExcludedRegions(Vec::new())));
+        return Ok(Some(ExcludedRegions::new()));
     }
     // SAFETY: caller contract above.
     let slice = unsafe { std::slice::from_raw_parts(regions, len) };
@@ -636,7 +636,7 @@ unsafe fn decode_regions(
         let s = unsafe { required_text(p, CosmosErrorCode::CosmosErrorCodeInvalidOptionValue) }?;
         out.push(Region::from(s));
     }
-    Ok(Some(ExcludedRegions(out)))
+    Ok(Some(out.into_iter().collect()))
 }
 
 /// Returns an all-unset [`CosmosOperationOptions`] by value. The host
@@ -1653,7 +1653,7 @@ mod tests {
         // SAFETY: zero length never dereferences this valid pointer.
         assert_eq!(
             unsafe { decode_regions(&region, 0) }.unwrap(),
-            Some(ExcludedRegions(Vec::new()))
+            Some(ExcludedRegions::new())
         );
         // SAFETY: invalid NULL/1 is rejected before any dereference.
         assert!(unsafe { decode_regions(std::ptr::null(), 1) }.is_err());
@@ -2189,7 +2189,13 @@ mod tests {
             );
             assert!(built.options.throughput_control.is_none());
             assert_eq!(
-                built.options.excluded_regions.unwrap().0,
+                built
+                    .options
+                    .excluded_regions
+                    .unwrap()
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>(),
                 vec![Region::from("East US")]
             );
         })
