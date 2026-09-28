@@ -13,7 +13,7 @@ use azure_data_cosmos::{
     options::{
         AvailabilityStrategy, ItemReadOptions, OperationOptionsBuilder, QueryOptions, Region,
     },
-    Query, RoutingStrategy, SubStatusCode,
+    Query, RoutingStrategy,
 };
 use futures::StreamExt;
 
@@ -138,7 +138,7 @@ async fn partition_topology_change_refreshes_and_retries_query() -> TestResult {
             );
             assert_eq!(
                 diagnostics.requests()[0].status().sub_status(),
-                Some(SubStatusCode::PARTITION_KEY_RANGE_GONE)
+                Some(azure_data_cosmos_driver::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE)
             );
             assert_eq!(
                 diagnostics.requests()[1].status().status_code(),
@@ -319,7 +319,7 @@ async fn run_retry_case(
                     );
                     assert_eq!(
                         diagnostics.requests()[1].status().sub_status(),
-                        Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
+                        Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE)
                     );
                     assert_eq!(diagnostics.requests()[1].region(), Some(&Region::WEST_US));
                     assert!(diagnostics.requests()[1].request_sent().definitely_sent());
@@ -338,7 +338,7 @@ async fn run_retry_case(
                 } else {
                     assert_eq!(
                         diagnostics.requests()[0].status().sub_status(),
-                        Some(SubStatusCode::TRANSPORT_GENERATED_503)
+                        Some(azure_data_cosmos_driver::error::status_codes::substatus::TRANSPORT_GENERATED_503)
                     );
                     assert_eq!(diagnostics.requests()[0].region(), Some(&Region::EAST_US));
                     let sent = diagnostics.requests()[0].request_sent();

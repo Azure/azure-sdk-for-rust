@@ -92,7 +92,7 @@ impl TransportClient for CapturingTransport {
 
         Err(TransportError::new(
             azure_data_cosmos_driver::error::CosmosError::builder()
-                .with_status(azure_data_cosmos_driver::CosmosStatus::TRANSPORT_IO_FAILED)
+                .with_status(azure_data_cosmos_driver::error::status_codes::TRANSPORT_IO_FAILED)
                 .with_message("capturing transport refuses every request")
                 .build(),
             azure_data_cosmos_driver::diagnostics::RequestSentStatus::NotSent,

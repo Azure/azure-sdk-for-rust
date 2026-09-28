@@ -240,7 +240,7 @@ pub(crate) fn evaluate_hedge_eligibility(
 
     let user_excluded: Vec<Region> = options
         .excluded_regions()
-        .map(|r| r.0.clone())
+        .map(|r| r.iter().cloned().collect())
         .unwrap_or_default();
 
     if !should_hedge(Some(&strategy), operation, account_state, &user_excluded) {
@@ -885,7 +885,7 @@ mod tests {
             Some(&enabled_strategy()),
             &op,
             &state,
-            &excluded.0,
+            &excluded.iter().cloned().collect::<Vec<_>>(),
         ));
     }
 

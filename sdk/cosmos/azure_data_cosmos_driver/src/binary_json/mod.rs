@@ -79,6 +79,11 @@ pub fn is_binary(buffer: &[u8]) -> bool {
     buffer.first() == Some(&PREAMBLE)
 }
 
+/// Magic newtype-struct name `serde_json::value::RawValue` uses for verbatim
+/// JSON. The serializer rejects it (raw JSON can't be re-encoded blindly) while
+/// the deserializer renders the value at the cursor back to text for it.
+pub(crate) const RAW_VALUE_TOKEN: &str = "$serde_json::private::RawValue";
+
 /// Transcodes a Cosmos binary JSON buffer to UTF-8 **text** JSON.
 ///
 /// This is the driver-side conversion used when an upstream SDK/app wants to

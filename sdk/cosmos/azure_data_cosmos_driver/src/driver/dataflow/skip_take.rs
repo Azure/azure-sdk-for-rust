@@ -253,7 +253,7 @@ impl SkipTake {
     /// the message points at the encoding rather than suggesting a retry.
     fn poisoned_error() -> crate::error::CosmosError {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(
                 "skip/take node is unusable: a page was consumed from its child but could not be \
                  processed, so the offset/limit window and the child's resume position no longer \
@@ -298,7 +298,7 @@ impl PipelineNode for SkipTake {
                     // than silently mishandling it.
                     return Err(crate::error::CosmosError::builder()
                         .with_status(
-                            crate::error::CosmosStatus::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT,
+                            crate::error::status_codes::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT,
                         )
                         .with_message(
                             "SkipTake received a SplitRequired from its child; splits must be \
@@ -558,7 +558,7 @@ mod tests {
             .expect_err("re-encoding an infinite number must fail");
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+            crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
         );
 
         // No further page, even though the child has one left to give.

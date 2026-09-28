@@ -25,7 +25,7 @@ use azure_data_cosmos_driver::models::{ContainerReference, DatabaseReference};
 use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::options::{ExcludedRegions, OperationOptionsBuilder, Region};
-use azure_data_cosmos_driver::{CosmosStatus, SubStatusCode};
+use azure_data_cosmos_driver::SubStatusCode;
 use std::error::Error;
 use std::sync::Arc;
 use std::time::Duration;
@@ -71,7 +71,7 @@ fn assert_preserves_upstream_status(
     let status = err.status();
     assert_ne!(
         status,
-        CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+        azure_data_cosmos_driver::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
         "error must preserve the upstream HTTP status, not be \
          relabeled as SERIALIZATION_RESPONSE_BODY_INVALID. Got: {err:?}"
     );
@@ -159,7 +159,7 @@ async fn write_forbidden_on_metadata_preserves_upstream_status() {
         "multi-region-write-forbidden",
         FaultInjectionErrorType::WriteForbidden,
         StatusCode::Forbidden,
-        Some(SubStatusCode::WRITE_FORBIDDEN),
+        Some(azure_data_cosmos_driver::error::status_codes::substatus::WRITE_FORBIDDEN),
     )
     .await;
 }
@@ -183,7 +183,7 @@ async fn session_not_available_on_metadata_preserves_upstream_status() {
         "multi-region-read-session-not-available",
         FaultInjectionErrorType::ReadSessionNotAvailable,
         StatusCode::NotFound,
-        Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+        Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
     )
     .await;
 }

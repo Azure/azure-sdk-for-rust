@@ -16,7 +16,7 @@ use serde::forward_to_deserialize_any;
 
 use super::markers::NULL;
 use super::reader::{ContainerHeader, Frame, Reader, ScalarToken};
-use super::{is_binary, BinaryError, Result};
+use super::{is_binary, BinaryError, Result, RAW_VALUE_TOKEN};
 
 /// Maximum container nesting depth, mirroring the reference decoder's
 /// [`MAX_DEPTH`](super::reader) so both paths reject the same
@@ -33,6 +33,11 @@ const MAX_DEPTH: usize = 256;
 /// `decode(buf).and_then(serde_json::from_value)` — it drives `T::deserialize`
 /// straight off the bytes, materializing a [`serde_json::Value`] only for the
 /// rare exotic forms handled by the fallback (see the module docs).
+///
+/// Owned `serde_json::value::RawValue` targets (such as `Box<RawValue>`) are
+/// supported: the value is rendered to normalized JSON text (key order and
+/// number spelling follow the codec, not the original service bytes). A
+/// borrowed `&RawValue` is not, since that text cannot borrow from the input.
 ///
 /// # Errors
 ///
@@ -258,10 +263,20 @@ impl<'de> Deserializer<'de> for &mut BinaryDeserializer<'de> {
         }
     }
 
-    fn deserialize_newtype_struct<V>(self, _name: &'static str, visitor: V) -> Result<V::Value>
+    fn deserialize_newtype_struct<V>(self, name: &'static str, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
+        // Owned `RawValue` (e.g. `Box<RawValue>`) wants the value's JSON text.
+        // Render it through the full-buffer reader so reference strings resolve
+        // against absolute page offsets, normalized to match the text path.
+        if name == RAW_VALUE_TOKEN {
+            let mut value = self.reader.read_value(self.depth)?;
+            super::normalize_integral_floats(&mut value);
+            let text =
+                serde_json::to_string(&value).map_err(|e| BinaryError::Custom(e.to_string()))?;
+            return visitor.visit_map(RawValueMapAccess::new(text));
+        }
         // Newtype structs serialize transparently, so deserialize the inner
         // value straight through.
         visitor.visit_newtype_struct(self)
@@ -371,7 +386,97 @@ impl<'de> Deserializer<'de> for &mut BinaryDeserializer<'de> {
     }
 }
 
-/// Streams the elements of a binary array into a [`SeqAccess`], deserializing
+/// Feeds `serde_json::value::RawValue`'s map-shaped visitor the verbatim JSON
+/// text of a decoded binary value.
+///
+/// `RawValue`'s `Deserialize` calls
+/// [`deserialize_newtype_struct`](Deserializer::deserialize_newtype_struct)
+/// with the [`RAW_VALUE_TOKEN`] name and then expects `visit_map` on a single
+/// entry: the token as the key and the raw JSON text as the value. This access
+/// reproduces exactly that shape from an owned, already-transcoded string.
+struct RawValueMapAccess {
+    /// The raw JSON text, taken when the value is read; its presence also marks
+    /// the single entry as not yet consumed.
+    text: Option<String>,
+}
+
+impl RawValueMapAccess {
+    fn new(text: String) -> Self {
+        Self { text: Some(text) }
+    }
+}
+
+impl<'de> MapAccess<'de> for RawValueMapAccess {
+    type Error = BinaryError;
+
+    fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
+    where
+        K: DeserializeSeed<'de>,
+    {
+        // Exactly one entry: emit the token key while the text is unread, then
+        // report the map exhausted once `next_value_seed` has taken it.
+        if self.text.is_none() {
+            return Ok(None);
+        }
+        seed.deserialize(RawKeyDeserializer).map(Some)
+    }
+
+    fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value>
+    where
+        V: DeserializeSeed<'de>,
+    {
+        let text = self
+            .text
+            .take()
+            .expect("RawValue map value requested without a preceding key");
+        seed.deserialize(RawTextDeserializer { text })
+    }
+}
+
+/// Yields the [`RAW_VALUE_TOKEN`] as `RawValue`'s single map key. `RawValue`
+/// reads the key via `deserialize_identifier`, which forwards here.
+struct RawKeyDeserializer;
+
+impl<'de> Deserializer<'de> for RawKeyDeserializer {
+    type Error = BinaryError;
+
+    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value>
+    where
+        V: Visitor<'de>,
+    {
+        visitor.visit_borrowed_str(RAW_VALUE_TOKEN)
+    }
+
+    forward_to_deserialize_any! {
+        bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
+        bytes byte_buf option unit unit_struct newtype_struct seq tuple
+        tuple_struct map struct enum identifier ignored_any
+    }
+}
+
+/// Yields the raw JSON text as `RawValue`'s single map value. `RawValue` reads
+/// the value via `deserialize_str`, which forwards here.
+struct RawTextDeserializer {
+    text: String,
+}
+
+impl<'de> Deserializer<'de> for RawTextDeserializer {
+    type Error = BinaryError;
+
+    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value>
+    where
+        V: Visitor<'de>,
+    {
+        visitor.visit_string(self.text)
+    }
+
+    forward_to_deserialize_any! {
+        bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char str string
+        bytes byte_buf option unit unit_struct newtype_struct seq tuple
+        tuple_struct map struct enum identifier ignored_any
+    }
+}
+
 /// each element natively (no intermediate `Value` for the array structure).
 struct SeqStream<'a, 'de> {
     de: &'a mut BinaryDeserializer<'de>,
@@ -886,6 +991,160 @@ mod tests {
                 decode(&vector.binary).unwrap(),
                 "from_slice must equal decode for vector {}",
                 vector.name
+            );
+        }
+    }
+
+    /// The exact minimal offline repro from issue #5328: `{"v":1}` deserialized
+    /// into `Box<RawValue>` on the text path (`serde_json::from_slice`) and the
+    /// binary path (`binary_json::from_slice`) must produce the same JSON text.
+    /// Before the fix the binary path returned
+    /// `Custom("invalid type: newtype struct, expected any valid JSON value")`.
+    #[test]
+    fn raw_value_issue_5328_repro_matches_text_path() {
+        use serde_json::value::RawValue;
+
+        let text = br#"{"v":1}"#;
+
+        let from_text: Box<RawValue> = serde_json::from_slice(text).unwrap();
+        let binary = crate::binary_json::transcode_to_binary(text).unwrap();
+        let from_binary: Box<RawValue> = from_slice(&binary).unwrap();
+
+        assert_eq!(from_binary.get(), from_text.get());
+        assert_eq!(from_binary.get(), r#"{"v":1}"#);
+    }
+
+    /// A borrowed `&RawValue` cannot borrow the freshly-rendered text, so the
+    /// binary path rejects it cleanly (an error, never a panic), matching the
+    /// documented owned-only guarantee.
+    #[test]
+    fn borrowed_raw_value_from_binary_is_rejected() {
+        use serde_json::value::RawValue;
+
+        let binary = crate::binary_json::transcode_to_binary(br#"{"v":1}"#).unwrap();
+        let borrowed: Result<&RawValue> = from_slice(&binary);
+        assert!(
+            borrowed.is_err(),
+            "borrowed &RawValue must not deserialize from binary, got {borrowed:?}"
+        );
+    }
+
+    /// `serde_json::value::RawValue` must deserialize from a binary payload with
+    /// the value's JSON text — the regression in issue #5328, where binary
+    /// encoding (now on by default) broke `RawValue` callers that worked on
+    /// text. The text is rendered through the codec, so (like every binary
+    /// payload) key order and number spelling are the codec's normalized form.
+    #[test]
+    fn raw_value_reads_from_binary_as_transcoded_text() {
+        use serde_json::value::RawValue;
+
+        let text = br#"{"v":1,"tags":["a","b"],"nested":{"x":true}}"#;
+        let binary = crate::binary_json::transcode_to_binary(text).unwrap();
+
+        let from_binary: Box<RawValue> = from_slice(&binary).unwrap();
+
+        // Matches the codec's own binary->text conversion, byte-for-byte.
+        let transcoded = crate::binary_json::transcode_to_text(&binary).unwrap();
+        assert_eq!(from_binary.get().as_bytes(), transcoded.as_slice());
+
+        // And it is semantically the value that was sent.
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(from_binary.get()).unwrap(),
+            serde_json::from_slice::<serde_json::Value>(text).unwrap(),
+        );
+    }
+
+    /// A `RawValue` field nested in a larger document renders only that field's
+    /// value, resolved through the full buffer.
+    #[test]
+    fn raw_value_reads_a_nested_field() {
+        use serde_json::value::RawValue;
+
+        #[derive(Deserialize)]
+        struct Envelope {
+            id: String,
+            payload: Box<RawValue>,
+        }
+
+        let text = br#"{"id":"1","payload":{"k":[1,2,3]}}"#;
+        let binary = crate::binary_json::transcode_to_binary(text).unwrap();
+
+        let envelope: Envelope = from_slice(&binary).unwrap();
+        assert_eq!(envelope.id, "1");
+        assert_eq!(envelope.payload.get(), r#"{"k":[1,2,3]}"#);
+    }
+
+    /// A reference string (`STR_R1`) inside the extracted `RawValue` whose target
+    /// lies **outside** it must still resolve, because the value is rendered
+    /// through the full-buffer reader (references use absolute page offsets, so
+    /// slicing the sub-value would mis-resolve). Regression guard for issue #5328.
+    #[test]
+    fn raw_value_resolves_reference_targeting_bytes_outside_it() {
+        use serde_json::value::RawValue;
+
+        // Top-level array `[ "hello", <STR_R1 -> "hello"> ]`:
+        //   0: PREAMBLE
+        //   1: ARR_L1, 2: payload length 8
+        //   3: encoded-length string, len 5 ("hello") -> offsets 3..=8
+        //   9: STR_R1, 10: target 3 (absolute offset of "hello")
+        let hello_marker = markers::ENCODED_STRING_LENGTH_MIN | 5;
+        let buffer = [
+            crate::binary_json::PREAMBLE,
+            markers::ARR_L1,
+            8,
+            hello_marker,
+            b'h',
+            b'e',
+            b'l',
+            b'l',
+            b'o',
+            markers::STR_R1,
+            3,
+        ];
+
+        // The second element's own bytes (offsets 9..=10) do not contain the
+        // string; only the absolute reference to offset 3 does.
+        let (first, second): (String, Box<RawValue>) = from_slice(&buffer).unwrap();
+        assert_eq!(first, "hello");
+        assert_eq!(second.get(), r#""hello""#);
+    }
+
+    /// `RawValue` must work for every top-level JSON shape, not just objects:
+    /// scalars (including a bare top-level number, which also exercises the
+    /// trailing-bytes check), arrays, `null`, and nested containers. Each must
+    /// equal the codec's own binary->text conversion and remain semantically
+    /// the original value.
+    #[test]
+    fn raw_value_reads_every_value_shape() {
+        use serde_json::value::RawValue;
+
+        for text in [
+            br#"null"#.as_slice(),
+            br#"true"#.as_slice(),
+            br#"42"#.as_slice(),
+            br#"-7"#.as_slice(),
+            br#"3.5"#.as_slice(),
+            br#""hi""#.as_slice(),
+            br#"[1,2,3]"#.as_slice(),
+            br#"[]"#.as_slice(),
+            br#"{}"#.as_slice(),
+            br#"{"a":[true,null,"x"],"b":{"c":1}}"#.as_slice(),
+        ] {
+            let binary = crate::binary_json::transcode_to_binary(text).unwrap();
+
+            let raw: Box<RawValue> =
+                from_slice(&binary).unwrap_or_else(|e| panic!("RawValue failed for {text:?}: {e}"));
+
+            let transcoded = crate::binary_json::transcode_to_text(&binary).unwrap();
+            assert_eq!(
+                raw.get().as_bytes(),
+                transcoded.as_slice(),
+                "RawValue text must match transcode_to_text for {text:?}"
+            );
+            assert_eq!(
+                serde_json::from_str::<serde_json::Value>(raw.get()).unwrap(),
+                serde_json::from_slice::<serde_json::Value>(text).unwrap(),
+                "RawValue must be semantically the original for {text:?}"
             );
         }
     }

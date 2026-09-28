@@ -127,7 +127,7 @@ mod tests {
             .expect_err("a poisoned plan must not mint a token");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
             "got: {err}"
         );
     }
@@ -141,7 +141,7 @@ mod tests {
             .expect_err("a read_database operation cannot be tokenized");
         assert_ne!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
+            Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
             "a plan that was never poisoned must not report transcode poisoning; got: {err}"
         );
     }

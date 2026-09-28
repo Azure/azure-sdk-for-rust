@@ -300,10 +300,11 @@ impl Config {
                     .into(),
             );
         }
-        if !cfg!(feature = "metrics") && self.extended_metrics {
+        if !cfg!(feature = "preview_opentelemetry") && self.extended_metrics {
             return Err(
                 "--extended-metrics was requested but this build was compiled without \
-                        the `metrics` feature; rebuild with `--features metrics` (on by default)"
+                        the `preview_opentelemetry` feature; rebuild with \
+                        `--features preview_opentelemetry` (on by default)"
                     .into(),
             );
         }
