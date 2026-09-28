@@ -612,7 +612,7 @@ pub mod builders {
         common::{
             connection_string::{resolve_eventhub, ConnectionString},
             sas_credential::SasCredential,
-            SAS_TOKEN_TYPE,
+            validate_idle_timeout, SAS_TOKEN_TYPE,
         },
         Result,
     };
@@ -734,7 +734,8 @@ pub mod builders {
         ///
         /// The connection reports an idle timeout when it receives no AMQP frames
         /// within this duration. Setting the timeout also advertises it to the
-        /// service so that the peers can negotiate heartbeats.
+        /// service so that the peers can negotiate heartbeats. The duration must
+        /// contain between 1 and [`u32::MAX`] whole milliseconds.
         pub fn with_idle_timeout(mut self, idle_timeout: Duration) -> Self {
             self.idle_timeout = Some(idle_timeout);
             self
@@ -750,6 +751,10 @@ pub mod builders {
         #[cfg(test)]
         pub(crate) fn idle_timeout(&self) -> Option<Duration> {
             self.idle_timeout
+        }
+
+        pub(crate) fn validate(&self) -> Result<()> {
+            validate_idle_timeout(self.idle_timeout)
         }
 
         /// Opens a connection to the Event Hub.
@@ -793,6 +798,7 @@ pub mod builders {
             eventhub_name: String,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> Result<super::ConsumerClient> {
+            self.validate()?;
             let transport = self.transport();
             let custom_endpoint = match self.custom_endpoint {
                 Some(endpoint) => Some(Url::parse(&endpoint).map_err(azure_core::Error::from)?),
@@ -860,6 +866,7 @@ pub mod builders {
             connection_string: &str,
             eventhub: Option<&str>,
         ) -> Result<super::ConsumerClient> {
+            self.validate()?;
             let transport = self.transport();
             let connection_string: ConnectionString = connection_string.parse()?;
             let eventhub = resolve_eventhub(&connection_string, eventhub)?;
@@ -929,6 +936,30 @@ pub(crate) mod tests {
                 .idle_timeout(),
             Some(idle_timeout)
         );
+    }
+
+    #[test]
+    fn builder_validates_idle_timeout() {
+        assert!(ConsumerClient::builder()
+            .with_idle_timeout(Duration::milliseconds(1))
+            .validate()
+            .is_ok());
+        assert!(ConsumerClient::builder()
+            .with_idle_timeout(Duration::milliseconds(i64::from(u32::MAX)))
+            .validate()
+            .is_ok());
+
+        for invalid in [
+            Duration::milliseconds(-1),
+            Duration::ZERO,
+            Duration::nanoseconds(1),
+            Duration::milliseconds(i64::from(u32::MAX) + 1),
+        ] {
+            assert!(ConsumerClient::builder()
+                .with_idle_timeout(invalid)
+                .validate()
+                .is_err());
+        }
     }
     use tracing::info;
 
