@@ -346,8 +346,8 @@ mod tests {
     use super::*;
     use std::cmp::Ordering;
 
-    fn epk(s: &str) -> EffectivePartitionKey {
-        EffectivePartitionKey::from(s.to_string())
+    fn epk(s: &str) -> crate::error::Result<EffectivePartitionKey> {
+        EffectivePartitionKey::try_from(s)
     }
 
     fn make_range(
@@ -355,137 +355,144 @@ mod tests {
         min_inclusive: &str,
         max_exclusive: &str,
         parents: Option<Vec<String>>,
-    ) -> PartitionKeyRange {
-        let mut r = PartitionKeyRange::new(id.into(), min_inclusive, max_exclusive);
+    ) -> crate::error::Result<PartitionKeyRange> {
+        let mut r = PartitionKeyRange::new(id.into(), epk(min_inclusive)?, epk(max_exclusive)?);
         r.parents = parents;
-        r
+        Ok(r)
     }
 
-    fn single_range() -> Vec<PartitionKeyRange> {
-        vec![make_range("0", "", "FF", None)]
+    fn single_range() -> crate::error::Result<Vec<PartitionKeyRange>> {
+        Ok(vec![make_range("0", "", "FF", None)?])
     }
 
-    fn three_ranges() -> Vec<PartitionKeyRange> {
-        vec![
-            make_range("1", "", "3F", Some(vec!["0".into()])),
-            make_range("2", "3F", "7F", Some(vec!["0".into()])),
-            make_range("3", "7F", "FF", Some(vec!["0".into()])),
-        ]
+    fn three_ranges() -> crate::error::Result<Vec<PartitionKeyRange>> {
+        Ok(vec![
+            make_range("1", "", "3F", Some(vec!["0".into()]))?,
+            make_range("2", "3F", "7F", Some(vec!["0".into()]))?,
+            make_range("3", "7F", "FF", Some(vec!["0".into()]))?,
+        ])
     }
 
     #[test]
-    fn create_single_range() {
-        let map = ContainerRoutingMap::try_create(single_range(), None, None)
+    fn create_single_range() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(single_range()?, None, None)
             .unwrap()
             .unwrap();
         let ranges = map.ranges();
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].id, "0");
-        assert_eq!(ranges[0].min_inclusive, "");
-        assert_eq!(ranges[0].max_exclusive, "FF");
+        assert_eq!(ranges[0].min_inclusive, epk("")?);
+        assert_eq!(ranges[0].max_exclusive, epk("FF")?);
+        Ok(())
     }
 
     #[test]
-    fn create_three_ranges() {
-        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+    fn create_three_ranges() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(three_ranges()?, None, None)
             .unwrap()
             .unwrap();
         let ids: Vec<&str> = map.ranges().iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["1", "2", "3"]);
-        assert_eq!(map.ranges()[0].min_inclusive, "");
-        assert_eq!(map.ranges()[0].max_exclusive, "3F");
-        assert_eq!(map.ranges()[1].min_inclusive, "3F");
-        assert_eq!(map.ranges()[1].max_exclusive, "7F");
-        assert_eq!(map.ranges()[2].min_inclusive, "7F");
-        assert_eq!(map.ranges()[2].max_exclusive, "FF");
+        assert_eq!(map.ranges()[0].min_inclusive, epk("")?);
+        assert_eq!(map.ranges()[0].max_exclusive, epk("3F")?);
+        assert_eq!(map.ranges()[1].min_inclusive, epk("3F")?);
+        assert_eq!(map.ranges()[1].max_exclusive, epk("7F")?);
+        assert_eq!(map.ranges()[2].min_inclusive, epk("7F")?);
+        assert_eq!(map.ranges()[2].max_exclusive, epk("FF")?);
+        Ok(())
     }
 
     #[test]
-    fn lookup_in_single_range() {
-        let map = ContainerRoutingMap::try_create(single_range(), None, None)
+    fn lookup_in_single_range() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(single_range()?, None, None)
             .unwrap()
             .unwrap();
         let r = map
-            .get_range_by_effective_partition_key(&epk("7A"))
+            .get_range_by_effective_partition_key(&epk("7A")?)
             .unwrap();
         assert_eq!(r.id, "0");
+        Ok(())
     }
 
     #[test]
-    fn lookup_in_three_ranges() {
-        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+    fn lookup_in_three_ranges() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(three_ranges()?, None, None)
             .unwrap()
             .unwrap();
 
         // epk "" → range 1
-        let r = map.get_range_by_effective_partition_key(&epk("")).unwrap();
+        let r = map.get_range_by_effective_partition_key(&epk("")?).unwrap();
         assert_eq!(r.id, "1");
 
         // epk "20" → range 1
         let r = map
-            .get_range_by_effective_partition_key(&epk("20"))
+            .get_range_by_effective_partition_key(&epk("20")?)
             .unwrap();
         assert_eq!(r.id, "1");
 
         // epk "3F" → range 2 (min_inclusive of range 2)
         let r = map
-            .get_range_by_effective_partition_key(&epk("3F"))
+            .get_range_by_effective_partition_key(&epk("3F")?)
             .unwrap();
         assert_eq!(r.id, "2");
 
         // epk "50" → range 2
         let r = map
-            .get_range_by_effective_partition_key(&epk("50"))
+            .get_range_by_effective_partition_key(&epk("50")?)
             .unwrap();
         assert_eq!(r.id, "2");
 
         // epk "7F" → range 3
         let r = map
-            .get_range_by_effective_partition_key(&epk("7F"))
+            .get_range_by_effective_partition_key(&epk("7F")?)
             .unwrap();
         assert_eq!(r.id, "3");
 
         // epk "A0" → range 3
         let r = map
-            .get_range_by_effective_partition_key(&epk("A0"))
+            .get_range_by_effective_partition_key(&epk("A0")?)
             .unwrap();
         assert_eq!(r.id, "3");
+        Ok(())
     }
 
     #[test]
-    fn lookup_by_id() {
-        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+    fn lookup_by_id() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(three_ranges()?, None, None)
             .unwrap()
             .unwrap();
         let r = map.range("2").unwrap();
         assert_eq!(r.id, "2");
-        assert_eq!(r.min_inclusive, "3F");
-        assert_eq!(r.max_exclusive, "7F");
+        assert_eq!(r.min_inclusive, epk("3F")?);
+        assert_eq!(r.max_exclusive, epk("7F")?);
         assert!(map.range("0").is_none()); // gone parent
+        Ok(())
     }
 
     #[test]
-    fn incomplete_range_returns_error() {
-        let ranges = vec![make_range("0", "", "7F", None)];
+    fn incomplete_range_returns_error() -> crate::error::Result<()> {
+        let ranges = vec![make_range("0", "", "7F", None)?];
         let result = ContainerRoutingMap::try_create(ranges, None, None);
         assert!(matches!(result, Err(RoutingMapError::IncompleteRanges)));
+        Ok(())
     }
 
     #[test]
-    fn overlapping_ranges_returns_error() {
+    fn overlapping_ranges_returns_error() -> crate::error::Result<()> {
         let ranges = vec![
-            make_range("0", "", "80", None),
-            make_range("1", "7F", "FF", None), // Overlaps with range 0
+            make_range("0", "", "80", None)?,
+            make_range("1", "7F", "FF", None)?, // Overlaps with range 0
         ];
         let result = ContainerRoutingMap::try_create(ranges, None, None);
         assert!(matches!(result, Err(RoutingMapError::OverlappingRanges)));
+        Ok(())
     }
 
     #[test]
-    fn filters_gone_parent_ranges() {
-        let mut ranges = three_ranges();
+    fn filters_gone_parent_ranges() -> crate::error::Result<()> {
+        let mut ranges = three_ranges()?;
         // Add the parent range "0" which should be filtered out.
-        ranges.push(make_range("0", "", "FF", None));
+        ranges.push(make_range("0", "", "FF", None)?);
         let map = ContainerRoutingMap::try_create(ranges, None, None)
             .unwrap()
             .unwrap();
@@ -493,11 +500,12 @@ mod tests {
         let ids: Vec<&str> = map.ranges().iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["1", "2", "3"]);
         assert!(map.range("0").is_none());
+        Ok(())
     }
 
     #[test]
-    fn is_gone_tracks_parent_ranges() {
-        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+    fn is_gone_tracks_parent_ranges() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(three_ranges()?, None, None)
             .unwrap()
             .unwrap();
         // "0" is listed as a parent in all three child ranges.
@@ -505,39 +513,43 @@ mod tests {
         assert!(!map.is_gone("1"));
         assert!(!map.is_gone("2"));
         assert!(!map.is_gone("3"));
+        Ok(())
     }
 
     #[test]
-    fn get_overlapping_ranges_full_span() {
-        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+    fn get_overlapping_ranges_full_span() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(three_ranges()?, None, None)
             .unwrap()
             .unwrap();
         // Query the full EPK space — should return all ranges.
-        let overlapping = map.get_overlapping_ranges(&epk("")..&epk("FF"));
+        let overlapping = map.get_overlapping_ranges(&epk("")?..&epk("FF")?);
         let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["1", "2", "3"]);
+        Ok(())
     }
 
     #[test]
-    fn get_overlapping_ranges_partial() {
-        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+    fn get_overlapping_ranges_partial() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(three_ranges()?, None, None)
             .unwrap()
             .unwrap();
         // Query [30, 50) — overlaps range 1 (max "3F" > "30") and range 2 (min "3F" < "50").
-        let overlapping = map.get_overlapping_ranges(&epk("30")..&epk("50"));
+        let overlapping = map.get_overlapping_ranges(&epk("30")?..&epk("50")?);
         let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["1", "2"]);
+        Ok(())
     }
 
     #[test]
-    fn get_overlapping_ranges_single() {
-        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+    fn get_overlapping_ranges_single() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(three_ranges()?, None, None)
             .unwrap()
             .unwrap();
         // Query [40, 50) — only range 2 [3F, 7F).
-        let overlapping = map.get_overlapping_ranges(&epk("40")..&epk("50"));
+        let overlapping = map.get_overlapping_ranges(&epk("40")?..&epk("50")?);
         let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["2"]);
+        Ok(())
     }
 
     #[test]
@@ -547,16 +559,16 @@ mod tests {
     }
 
     #[test]
-    fn try_combine_split_produces_valid_map() {
+    fn try_combine_split_produces_valid_map() -> crate::error::Result<()> {
         // Start with a single range covering the full EPK space.
-        let map = ContainerRoutingMap::try_create(single_range(), None, None)
+        let map = ContainerRoutingMap::try_create(single_range()?, None, None)
             .unwrap()
             .unwrap();
 
         // Simulate a split: range "0" splits into "1" [, 7F) and "2" [7F, FF).
         let new_ranges = vec![
-            make_range("1", "", "7F", Some(vec!["0".into()])),
-            make_range("2", "7F", "FF", Some(vec!["0".into()])),
+            make_range("1", "", "7F", Some(vec!["0".into()]))?,
+            make_range("2", "7F", "FF", Some(vec!["0".into()]))?,
         ];
 
         let merged = map
@@ -571,32 +583,33 @@ mod tests {
         // EPK lookup should work on the merged map.
         assert_eq!(
             merged
-                .get_range_by_effective_partition_key(&epk("30"))
+                .get_range_by_effective_partition_key(&epk("30")?)
                 .unwrap()
                 .id,
             "1"
         );
         assert_eq!(
             merged
-                .get_range_by_effective_partition_key(&epk("A0"))
+                .get_range_by_effective_partition_key(&epk("A0")?)
                 .unwrap()
                 .id,
             "2"
         );
+        Ok(())
     }
 
     #[test]
-    fn try_combine_resolves_cascading_splits_from_one_page() {
-        let map = ContainerRoutingMap::try_create(single_range(), None, None)
+    fn try_combine_resolves_cascading_splits_from_one_page() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(single_range()?, None, None)
             .unwrap()
             .unwrap();
 
         // 0 -> B + C, then B -> D + E. Children of B intentionally precede B.
         let new_ranges = vec![
-            make_range("D", "", "33", Some(vec!["B".into()])),
-            make_range("E", "33", "55", Some(vec!["B".into()])),
-            make_range("B", "", "55", Some(vec!["0".into()])),
-            make_range("C", "55", "FF", Some(vec!["0".into()])),
+            make_range("D", "", "33", Some(vec!["B".into()]))?,
+            make_range("E", "33", "55", Some(vec!["B".into()]))?,
+            make_range("B", "", "55", Some(vec!["0".into()]))?,
+            make_range("C", "55", "FF", Some(vec!["0".into()]))?,
         ];
 
         let merged = map
@@ -612,35 +625,38 @@ mod tests {
         assert_eq!(ids, ["D", "E", "C"]);
         assert!(merged.is_gone("0"));
         assert!(merged.is_gone("B"));
+        Ok(())
     }
 
     #[test]
-    fn try_combine_incomplete_returns_none() {
-        let map = ContainerRoutingMap::try_create(single_range(), None, None)
+    fn try_combine_incomplete_returns_none() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(single_range()?, None, None)
             .unwrap()
             .unwrap();
 
         // Only one child range — the merged set has a gap [7F, FF).
-        let new_ranges = vec![make_range("1", "", "7F", Some(vec!["0".into()]))];
+        let new_ranges = vec![make_range("1", "", "7F", Some(vec!["0".into()]))?];
 
         let result = map.try_combine(new_ranges, Some("etag".into())).unwrap();
         assert!(result.is_none(), "Incomplete merge should return None");
+        Ok(())
     }
 
     #[test]
-    fn try_combine_overlapping_returns_error() {
-        let map = ContainerRoutingMap::try_create(single_range(), None, None)
+    fn try_combine_overlapping_returns_error() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(single_range()?, None, None)
             .unwrap()
             .unwrap();
 
         // Two children that overlap: [, 80) and [7F, FF) — "80" > "7F".
         let new_ranges = vec![
-            make_range("1", "", "80", Some(vec!["0".into()])),
-            make_range("2", "7F", "FF", Some(vec!["0".into()])),
+            make_range("1", "", "80", Some(vec!["0".into()]))?,
+            make_range("2", "7F", "FF", Some(vec!["0".into()]))?,
         ];
 
         let result = map.try_combine(new_ranges, Some("etag".into()));
         assert!(matches!(result, Err(RoutingMapError::OverlappingRanges)));
+        Ok(())
     }
 
     /// Builds a range with an explicit lifecycle status. Used by the
@@ -653,20 +669,21 @@ mod tests {
         max_exclusive: &str,
         parents: Option<Vec<String>>,
         status: PartitionKeyRangeStatus,
-    ) -> PartitionKeyRange {
-        let mut r = PartitionKeyRange::new(id.into(), min_inclusive, max_exclusive);
+    ) -> crate::error::Result<PartitionKeyRange> {
+        let mut r = PartitionKeyRange::new(id.into(), epk(min_inclusive)?, epk(max_exclusive)?);
         r.parents = parents;
         r.status = status;
-        r
+        Ok(r)
     }
 
     #[test]
-    fn highest_non_offline_pk_range_id_picks_max_online_id() {
+    fn highest_non_offline_pk_range_id_picks_max_online_id() -> crate::error::Result<()> {
         // Three online ranges, ids "1", "2", "3" — highest should be 3.
-        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+        let map = ContainerRoutingMap::try_create(three_ranges()?, None, None)
             .unwrap()
             .unwrap();
         assert_eq!(map.highest_non_offline_pk_range_id(), 3);
+        Ok(())
     }
 
     /// Regression guard: when an incremental change-feed merge re-publishes
@@ -676,8 +693,8 @@ mod tests {
     /// path that would silently break if we ever stripped `status` without
     /// a replacement plumbed through `try_combine`.
     #[test]
-    fn try_combine_online_to_offline_recomputes_highest_non_offline() {
-        let map = ContainerRoutingMap::try_create(three_ranges(), None, None)
+    fn try_combine_online_to_offline_recomputes_highest_non_offline() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(three_ranges()?, None, None)
             .unwrap()
             .unwrap();
         assert_eq!(map.highest_non_offline_pk_range_id(), 3);
@@ -690,7 +707,7 @@ mod tests {
             "FF",
             None,
             PartitionKeyRangeStatus::Offline,
-        )];
+        )?];
 
         let merged = map
             .try_combine(new_ranges, Some("etag".into()))
@@ -721,7 +738,7 @@ mod tests {
             "FF",
             None,
             PartitionKeyRangeStatus::Online,
-        )];
+        )?];
         let recovered = merged
             .try_combine(recovered_ranges, Some("etag2".into()))
             .unwrap()
@@ -731,231 +748,246 @@ mod tests {
             3,
             "Highest non-offline id should bump back to 3 after the range recovers"
         );
+        Ok(())
     }
 
     // -- Length-aware EPK ordering tests --
 
     #[test]
-    fn epk_cmp_equal_strings() {
-        assert_eq!(epk("06AB34CF").cmp(&epk("06AB34CF")), Ordering::Equal);
+    fn epk_cmp_equal_strings() -> crate::error::Result<()> {
+        assert_eq!(epk("06AB34CF")?.cmp(&epk("06AB34CF")?), Ordering::Equal);
+        Ok(())
     }
 
     #[test]
-    fn epk_cmp_shorter_less_than_longer_nonzero_suffix() {
+    fn epk_cmp_shorter_less_than_longer_nonzero_suffix() -> crate::error::Result<()> {
         assert_eq!(
-            epk("06AB34CF").cmp(&epk("06AB34CF11223344")),
+            epk("06AB34CF")?.cmp(&epk("06AB34CF11223344")?),
             Ordering::Less
         );
+        Ok(())
     }
 
     #[test]
-    fn epk_cmp_prefix_with_partial_zero_suffix_is_equal() {
+    fn epk_cmp_prefix_with_partial_zero_suffix_is_equal() -> crate::error::Result<()> {
         assert_eq!(
-            epk("06AB34CF").cmp(&epk("06AB34CF00000000")),
+            epk("06AB34CF")?.cmp(&epk("06AB34CF00000000")?),
             Ordering::Equal
         );
+        Ok(())
     }
 
     #[test]
-    fn epk_cmp_prefix_with_zero_suffix_is_equal() {
+    fn epk_cmp_prefix_with_zero_suffix_is_equal() -> crate::error::Result<()> {
         assert_eq!(
-            epk("06AB34CFE4E482236BCACBBF50E234AB").cmp(&epk(
+            epk("06AB34CFE4E482236BCACBBF50E234AB")?.cmp(&epk(
                 "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000"
-            )),
+            )?),
             Ordering::Equal
         );
+        Ok(())
     }
 
     #[test]
-    fn epk_cmp_zero_padded_first_arg() {
+    fn epk_cmp_zero_padded_first_arg() -> crate::error::Result<()> {
         assert_eq!(
-            epk("06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000")
-                .cmp(&epk("06AB34CFE4E482236BCACBBF50E234AB")),
+            epk("06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000")?
+                .cmp(&epk("06AB34CFE4E482236BCACBBF50E234AB")?),
             Ordering::Equal
         );
+        Ok(())
     }
 
     #[test]
-    fn epk_cmp_different_prefixes() {
-        assert_eq!(epk("06AB34CF").cmp(&epk("07AB34CF")), Ordering::Less);
-        assert_eq!(epk("07AB34CF").cmp(&epk("06AB34CF")), Ordering::Greater);
+    fn epk_cmp_different_prefixes() -> crate::error::Result<()> {
+        assert_eq!(epk("06AB34CF")?.cmp(&epk("07AB34CF")?), Ordering::Less);
+        assert_eq!(epk("07AB34CF")?.cmp(&epk("06AB34CF")?), Ordering::Greater);
+        Ok(())
     }
 
     // -- HPK mixed-length boundary tests (ported from .NET PR #5260) --
 
     /// Builds a routing map with mixed-length EPK boundaries typical of
     /// HPK containers, matching the .NET test GenerateRoutingMap.
-    fn hpk_ranges() -> Vec<PartitionKeyRange> {
-        vec![
-            make_range("0", "", "03559A67F2724111B5E565DFA8711A00", None),
+    fn hpk_ranges() -> crate::error::Result<Vec<PartitionKeyRange>> {
+        Ok(vec![
+            make_range("0", "", "03559A67F2724111B5E565DFA8711A00", None)?,
             make_range(
                 "1",
                 "03559A67F2724111B5E565DFA8711A00",
                 "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000",
                 None,
-            ),
+            )?,
             make_range(
                 "2",
                 "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000",
                 "0BD3FBE846AF75790CE63F78B1A81620",
                 None,
-            ),
+            )?,
             make_range(
                 "3",
                 "0BD3FBE846AF75790CE63F78B1A81620",
                 "0BD3FBE846AF75790CE63F78B1A8163100000000000000000000000000000000",
                 None,
-            ),
+            )?,
             make_range(
                 "11",
                 "0BD3FBE846AF75790CE63F78B1A8163100000000000000000000000000000000",
                 "0BD3FBE846AF75790CE63F78B1A81631FF",
                 None,
-            ),
+            )?,
             make_range(
                 "12",
                 "0BD3FBE846AF75790CE63F78B1A81631FF",
                 "0D4DC2CD8F49C65A8E0C5306B61B4343",
                 None,
-            ),
+            )?,
             make_range(
                 "4",
                 "0D4DC2CD8F49C65A8E0C5306B61B4343",
                 "0D4EC2CD8F49C65A8E0C5306B61B4343",
                 None,
-            ),
+            )?,
             make_range(
                 "44",
                 "0D4EC2CD8F49C65A8E0C5306B61B4343",
                 "0D5DC2CD8F49C65A8E0C5306B61B4343",
                 None,
-            ),
+            )?,
             make_range(
                 "24",
                 "0D5DC2CD8F49C65A8E0C5306B61B4343",
                 "0DCEB8CE51C6BFE84F4BD9409F69B9BB2164DEBD78C50C850E0C1E3E3F0579ED",
                 None,
-            ),
+            )?,
             make_range(
                 "5",
                 "0DCEB8CE51C6BFE84F4BD9409F69B9BB2164DEBD78C50C850E0C1E3E3F0579ED",
                 "FF",
                 None,
-            ),
-        ]
+            )?,
+        ])
     }
 
     /// .NET scenario 1.1: Partial input EPK on boundary between ranges 1 and 2.
     /// The partial EPK "06AB...AB" matches the fully-specified boundary
     /// "06AB...AB00000000000000000000000000000000" — should resolve to range 2 only.
     #[test]
-    fn hpk_partial_epk_on_boundary_returns_correct_range() {
-        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+    fn hpk_partial_epk_on_boundary_returns_correct_range() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(hpk_ranges()?, None, None)
             .unwrap()
             .unwrap();
 
         let overlapping = map.get_overlapping_ranges(
-            &epk("06AB34CFE4E482236BCACBBF50E234AB")..&epk("06AB34CFE4E482236BCACBBF50E234ABFF"),
+            &epk("06AB34CFE4E482236BCACBBF50E234AB")?..&epk("06AB34CFE4E482236BCACBBF50E234ABFF")?,
         );
         let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["2"]);
+        Ok(())
     }
 
     /// .NET scenario 1.2: Partial EPK on another boundary.
     #[test]
-    fn hpk_partial_epk_boundary_second_split() {
-        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+    fn hpk_partial_epk_boundary_second_split() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(hpk_ranges()?, None, None)
             .unwrap()
             .unwrap();
 
         let overlapping = map.get_overlapping_ranges(
-            &epk("0BD3FBE846AF75790CE63F78B1A81631")..&epk("0BD3FBE846AF75790CE63F78B1A81631FF"),
+            &epk("0BD3FBE846AF75790CE63F78B1A81631")?..&epk("0BD3FBE846AF75790CE63F78B1A81631FF")?,
         );
         let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["11"]);
+        Ok(())
     }
 
     /// .NET scenario 1.2 (continued): Fully-specified input within a single range.
     #[test]
-    fn hpk_full_epk_within_single_range() {
-        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+    fn hpk_full_epk_within_single_range() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(hpk_ranges()?, None, None)
             .unwrap()
             .unwrap();
 
         let overlapping = map.get_overlapping_ranges(
-            &epk("0D4DC2CD8F49C65A8E0C5306B61B43440D4DC2CD8F49C65A8E0C5306B61B4343")
-                ..&epk("0D4DC2CD8F49C65A8E0C5306B61B43440D4DC2CD8F49C65A8E0C5306B61B4344"),
+            &epk("0D4DC2CD8F49C65A8E0C5306B61B43440D4DC2CD8F49C65A8E0C5306B61B4343")?
+                ..&epk("0D4DC2CD8F49C65A8E0C5306B61B43440D4DC2CD8F49C65A8E0C5306B61B4344")?,
         );
         let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["4"]);
+        Ok(())
     }
 
     /// .NET scenario 1.2 (continued): Range that falls inside range 3.
     #[test]
-    fn hpk_range_inside_range_3() {
-        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+    fn hpk_range_inside_range_3() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(hpk_ranges()?, None, None)
             .unwrap()
             .unwrap();
 
         let overlapping = map.get_overlapping_ranges(
-            &epk("0BD3FBE846AF75790CE63F78B1A81620")..&epk("0BD3FBE846AF75790CE63F78B1A81631"),
+            &epk("0BD3FBE846AF75790CE63F78B1A81620")?..&epk("0BD3FBE846AF75790CE63F78B1A81631")?,
         );
         let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["3"]);
+        Ok(())
     }
 
     /// .NET scenario 1.3: Partial EPK spans two overlapping ranges.
     #[test]
-    fn hpk_partial_epk_spans_two_ranges() {
-        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+    fn hpk_partial_epk_spans_two_ranges() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(hpk_ranges()?, None, None)
             .unwrap()
             .unwrap();
 
         let overlapping = map.get_overlapping_ranges(
-            &epk("0DCEB8CE51C6BFE84F4BD9409F69B9BB")..&epk("0DCEB8CE51C6BFE84F4BD9409F69B9BBFF"),
+            &epk("0DCEB8CE51C6BFE84F4BD9409F69B9BB")?..&epk("0DCEB8CE51C6BFE84F4BD9409F69B9BBFF")?,
         );
         let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["24", "5"]);
+        Ok(())
     }
 
     /// .NET scenario 1.4: Partial point EPK in the middle.
     #[test]
-    fn hpk_partial_point_epk_in_middle() {
-        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+    fn hpk_partial_point_epk_in_middle() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(hpk_ranges()?, None, None)
             .unwrap()
             .unwrap();
 
         let r = map
-            .get_range_by_effective_partition_key(&epk("02559A67F2724111B5E565DFA8711A00"))
+            .get_range_by_effective_partition_key(&epk("02559A67F2724111B5E565DFA8711A00")?)
             .unwrap();
         assert_eq!(r.id, "0");
+        Ok(())
     }
 
     /// .NET scenario 1.5: Partial point EPK where range has partial boundaries.
     #[test]
-    fn hpk_partial_point_epk_in_partial_range() {
-        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+    fn hpk_partial_point_epk_in_partial_range() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(hpk_ranges()?, None, None)
             .unwrap()
             .unwrap();
 
         let r = map
-            .get_range_by_effective_partition_key(&epk("0D4DC2CD8F49C65A8E0C5306B61B4345"))
+            .get_range_by_effective_partition_key(&epk("0D4DC2CD8F49C65A8E0C5306B61B4345")?)
             .unwrap();
         assert_eq!(r.id, "4");
+        Ok(())
     }
 
     /// .NET scenario 1.6: Fully-specified input against partially-specified backend range.
     #[test]
-    fn hpk_full_epk_against_partial_backend_range() {
-        let map = ContainerRoutingMap::try_create(hpk_ranges(), None, None)
+    fn hpk_full_epk_against_partial_backend_range() -> crate::error::Result<()> {
+        let map = ContainerRoutingMap::try_create(hpk_ranges()?, None, None)
             .unwrap()
             .unwrap();
 
         let overlapping = map.get_overlapping_ranges(
-            &epk("0D4DC2CD8F49C65A8E0C5306B61B434300000000000000000000000000000000")
-                ..&epk("0D4EC2CD8F49C65A8E0C5306B61B434300000000000000000000000000000000"),
+            &epk("0D4DC2CD8F49C65A8E0C5306B61B434300000000000000000000000000000000")?
+                ..&epk("0D4EC2CD8F49C65A8E0C5306B61B434300000000000000000000000000000000")?,
         );
         let ids: Vec<&str> = overlapping.iter().map(|r| r.id.as_str()).collect();
         assert_eq!(ids, ["4"]);
+        Ok(())
     }
 }

@@ -95,16 +95,15 @@ fn full_range_plan() -> QueryPlan {
     }
 }
 
-fn resolved(min: &str, max: &str, pk_range_id: &str) -> ResolvedRange {
-    ResolvedRange {
+fn resolved(min: &str, max: &str, pk_range_id: &str) -> crate::error::Result<ResolvedRange> {
+    Ok(ResolvedRange {
         partition_key_range_id: pk_range_id.to_string(),
         parents: Vec::new(),
         range: FeedRange::new(
-            EffectivePartitionKey::from(min),
-            EffectivePartitionKey::from(max),
-        )
-        .unwrap(),
-    }
+            EffectivePartitionKey::try_from(min)?,
+            EffectivePartitionKey::try_from(max)?,
+        )?,
+    })
 }
 
 /// Builds a `CosmosResponse` with the given body bytes and optional
@@ -186,12 +185,12 @@ fn round_trip_state(state: PipelineNodeState, op: &CosmosOperation) -> PipelineN
 /// and drains. No topology change. Sanity-checks the end-to-end round-trip
 /// before the more interesting split scenarios.
 #[tokio::test]
-async fn single_partition_resume_roundtrips_cleanly() {
+async fn single_partition_resume_roundtrips_cleanly() -> crate::error::Result<()> {
     let op = cross_partition_query_operation();
     let plan = full_range_plan();
 
     // Session 1: build, drain page 1 (returns continuation "ct-1"), snapshot.
-    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor1 = MockRequestExecutor::new(vec![Ok(page_response(b"page-1", Some("ct-1")))]);
 
     let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None)
@@ -205,7 +204,7 @@ async fn single_partition_resume_roundtrips_cleanly() {
 
     // Session 2: resume, drain page 2 + drained, no further continuation.
     let resumed_state = round_trip_state(state, &op);
-    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor2 = MockRequestExecutor::new(vec![Ok(page_response(b"page-2", None))]);
 
     let mut pipeline2 = build_sequential_drain(&plan, &mut topology2, &op, Some(resumed_state))
@@ -218,6 +217,7 @@ async fn single_partition_resume_roundtrips_cleanly() {
         vec![Some("ct-1".to_owned())],
         "page 2 must be requested with the continuation page 1 returned",
     );
+    Ok(())
 }
 
 /// End-to-end guard for the planner's split fan-out. Session 1 sees a
@@ -226,13 +226,14 @@ async fn single_partition_resume_roundtrips_cleanly() {
 /// continuation to BOTH children — otherwise the second child fresh-starts
 /// and re-emits whatever the first child already returned.
 #[tokio::test]
-async fn resume_after_split_forwards_continuation_to_every_surviving_leaf() {
+async fn resume_after_split_forwards_continuation_to_every_surviving_leaf(
+) -> crate::error::Result<()> {
     let op = cross_partition_query_operation();
     let plan = full_range_plan();
 
     // Session 1: one partition spans the full range. Page 1 carries 5 items;
     // continuation "ct-pre-split" marks the un-drained tail.
-    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor1 = MockRequestExecutor::new(vec![Ok(page_response(
         b"page-1-presplit",
         Some("ct-pre-split"),
@@ -251,8 +252,8 @@ async fn resume_after_split_forwards_continuation_to_every_surviving_leaf() {
     // both leaves issued requests bearing "ct-pre-split".
     let resumed_state = round_trip_state(state, &op);
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor2 = MockRequestExecutor::new(vec![
         Ok(page_response(b"page-left", None)),
@@ -279,6 +280,7 @@ async fn resume_after_split_forwards_continuation_to_every_surviving_leaf() {
         ],
         "both post-split leaves must resume with the saved continuation",
     );
+    Ok(())
 }
 
 /// End-to-end guard for the snapshot's mid-fan-out fidelity. A snapshot
@@ -288,7 +290,7 @@ async fn resume_after_split_forwards_continuation_to_every_surviving_leaf() {
 /// continuations would be lost and they would fresh-start on resume,
 /// re-emitting items the caller already consumed.
 #[tokio::test]
-async fn resume_mid_fanout_preserves_every_sibling_state() {
+async fn resume_mid_fanout_preserves_every_sibling_state() -> crate::error::Result<()> {
     let op = cross_partition_query_operation();
     let plan = full_range_plan();
 
@@ -298,8 +300,8 @@ async fn resume_mid_fanout_preserves_every_sibling_state() {
     // RIGHT sibling is never touched yet — it still owes its original
     // (fresh, `None`) start token.
     let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor1 =
         MockRequestExecutor::new(vec![Ok(page_response(b"left-page-1", Some("ct-left")))]);
@@ -342,8 +344,8 @@ async fn resume_mid_fanout_preserves_every_sibling_state() {
     // drained range covering it.
     let resumed_state = round_trip_state(state, &op);
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor2 = MockRequestExecutor::new(vec![
         Ok(page_response(b"left-page-2", None)),
@@ -378,6 +380,7 @@ async fn resume_mid_fanout_preserves_every_sibling_state() {
     ];
     expected.sort();
     assert_eq!(all_pages, expected);
+    Ok(())
 }
 
 /// Combined scenario: snapshot mid-fan-out AND the front sibling splits
@@ -385,15 +388,16 @@ async fn resume_mid_fanout_preserves_every_sibling_state() {
 /// the snapshot, and the left sibling's saved continuation must fan out
 /// to BOTH of its post-split children.
 #[tokio::test]
-async fn resume_mid_fanout_then_split_preserves_state_and_fans_out_continuation() {
+async fn resume_mid_fanout_then_split_preserves_state_and_fans_out_continuation(
+) -> crate::error::Result<()> {
     let op = cross_partition_query_operation();
     let plan = full_range_plan();
 
     // Session 1: post-split topology with two siblings. Page 1 returns a
     // left-scoped continuation; right is never touched.
     let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor1 =
         MockRequestExecutor::new(vec![Ok(page_response(b"left-page-1", Some("ct-left")))]);
@@ -411,9 +415,9 @@ async fn resume_mid_fanout_then_split_preserves_state_and_fans_out_continuation(
     // be visited fresh.
     let resumed_state = round_trip_state(state, &op);
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "40", "pk-left-l"),
-        resolved("40", "80", "pk-left-r"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "40", "pk-left-l")?,
+        resolved("40", "80", "pk-left-r")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor2 = MockRequestExecutor::new(vec![
         Ok(page_response(b"left-l-page-1", None)),
@@ -453,6 +457,7 @@ async fn resume_mid_fanout_then_split_preserves_state_and_fans_out_continuation(
     ];
     expected.sort();
     assert_eq!(all_pages, expected);
+    Ok(())
 }
 
 /// Snapshot of a fully-drained left sibling MUST mark it `Drained` so the
@@ -460,7 +465,7 @@ async fn resume_mid_fanout_then_split_preserves_state_and_fans_out_continuation(
 /// in that scope, the saved-children ledger is authoritative remaining
 /// work — drained scope stays drained.
 #[tokio::test]
-async fn resume_does_not_requery_already_drained_sibling_scope() {
+async fn resume_does_not_requery_already_drained_sibling_scope() -> crate::error::Result<()> {
     let op = cross_partition_query_operation();
     let plan = full_range_plan();
 
@@ -484,9 +489,9 @@ async fn resume_does_not_requery_already_drained_sibling_scope() {
     // though the topology has changed within it.
     let resumed_state = round_trip_state(saved_state, &op);
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "40", "pk-left-l"),
-        resolved("40", "80", "pk-left-r"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "40", "pk-left-l")?,
+        resolved("40", "80", "pk-left-r")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor = MockRequestExecutor::new(vec![Ok(page_response(b"right-page-1", None))]);
 
@@ -500,6 +505,7 @@ async fn resume_does_not_requery_already_drained_sibling_scope() {
         vec![Some("ct-right".to_owned())],
         "drained left scope must not be re-queried; only the right sibling executes",
     );
+    Ok(())
 }
 
 /// A saved range that the current topology cannot fully cover must fail
@@ -508,7 +514,7 @@ async fn resume_does_not_requery_already_drained_sibling_scope() {
 /// `CLIENT_CONTINUATION_TOKEN_SAVED_RANGE_UNHONORED` error path at the
 /// integration level.
 #[tokio::test]
-async fn resume_fails_loudly_when_saved_range_cannot_be_covered() {
+async fn resume_fails_loudly_when_saved_range_cannot_be_covered() -> crate::error::Result<()> {
     let op = cross_partition_query_operation();
     let plan = full_range_plan();
 
@@ -525,8 +531,8 @@ async fn resume_fails_loudly_when_saved_range_cannot_be_covered() {
     // Topology only covers part of the saved range — [, 70) + [70, 80).
     // The saved range [55, AA) extends past 80 with no leaf to honor it.
     let mut topology = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "70", "pk-a"),
-        resolved("70", "80", "pk-b"),
+        resolved("", "70", "pk-a")?,
+        resolved("70", "80", "pk-b")?,
     ])]);
 
     let err: Result<Pipeline> =
@@ -537,6 +543,7 @@ async fn resume_fails_loudly_when_saved_range_cannot_be_covered() {
         rendered.contains("saved") || rendered.contains("unhonored") || rendered.contains("cover"),
         "error message should describe the unhonored-saved-range failure; got: {rendered}"
     );
+    Ok(())
 }
 
 /// End-to-end deterministic equivalent of the live multi-PK / single-item
@@ -562,7 +569,8 @@ async fn resume_fails_loudly_when_saved_range_cannot_be_covered() {
 /// session 3 carrying the original `T1`, so the server skips the
 /// already-emitted rows and no duplicates appear on the wire.
 #[tokio::test]
-async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
+async fn three_session_loop_propagates_presplit_token_through_two_snapshots(
+) -> crate::error::Result<()> {
     let op = cross_partition_query_operation();
     let plan = full_range_plan();
 
@@ -570,7 +578,7 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     // Pre-split: a single physical partition covers [, FF). Page 1
     // returns a server continuation T1 that conceptually covers the
     // whole range.
-    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-pre")])]);
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-pre")?])]);
     let mut executor1 =
         MockRequestExecutor::new(vec![Ok(page_response(b"page-1-pre", Some("T1")))]);
     let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None)
@@ -609,8 +617,8 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     // must carry both children, with the back child still owing T1.
     let resumed_s2 = round_trip_state(state_s1, &op);
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor2 = MockRequestExecutor::new(vec![Ok(page_response(
         b"page-1-postsplit-left",
@@ -671,8 +679,8 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     // T1 was already past, surfacing as duplicates to the caller.
     let resumed_s3 = round_trip_state(state_s2, &op);
     let mut topology3 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor3 = MockRequestExecutor::new(vec![
         Ok(page_response(b"page-2-postsplit-left", None)),
@@ -715,6 +723,7 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
     ];
     expected.sort();
     assert_eq!(all_pages, expected);
+    Ok(())
 }
 
 /// Cascading splits — the back sibling from a first split itself
@@ -723,12 +732,13 @@ async fn three_session_loop_propagates_presplit_token_through_two_snapshots() {
 /// grand-child leaf the back range is now resolved to. This guards the
 /// "split-of-a-split" path that the basic post-split tests don't reach.
 #[tokio::test]
-async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
+async fn cascading_split_propagates_back_sibling_token_to_every_grand_child(
+) -> crate::error::Result<()> {
     let op = cross_partition_query_operation();
     let plan = full_range_plan();
 
     // ── Session 1: pre-split, single physical partition. ─────────────
-    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-pre")])]);
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-pre")?])]);
     let mut executor1 =
         MockRequestExecutor::new(vec![Ok(page_response(b"page-1-pre", Some("T1")))]);
     let mut pipeline1 = build_sequential_drain(&plan, &mut topology1, &op, None)
@@ -745,8 +755,8 @@ async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
     // T1. Snapshot again.
     let resumed_s2 = round_trip_state(state_s1, &op);
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor2 =
         MockRequestExecutor::new(vec![Ok(page_response(b"page-1-postsplit-left", None))]);
@@ -781,8 +791,8 @@ async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
     // to BOTH grand-children. Drain both to completion.
     let resumed_s3 = round_trip_state(state_s2, &op);
     let mut topology3 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("80", "C0", "pk-back-left"),
-        resolved("C0", "FF", "pk-back-right"),
+        resolved("80", "C0", "pk-back-left")?,
+        resolved("C0", "FF", "pk-back-right")?,
     ])]);
     let mut executor3 = MockRequestExecutor::new(vec![
         Ok(page_response(b"page-1-back-left", None)),
@@ -822,4 +832,5 @@ async fn cascading_split_propagates_back_sibling_token_to_every_grand_child() {
     ];
     expected.sort();
     assert_eq!(all_pages, expected);
+    Ok(())
 }

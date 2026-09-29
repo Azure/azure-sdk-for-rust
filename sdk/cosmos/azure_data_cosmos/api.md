@@ -1490,14 +1490,6 @@ pub mod models {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
     }
     #[doc(inline)]
-    impl From<&str> for EffectivePartitionKey {
-        fn from(s: &str) -> Self;
-    }
-    #[doc(inline)]
-    impl From<String> for EffectivePartitionKey {
-        fn from(s: String) -> Self;
-    }
-    #[doc(inline)]
     impl Hash for EffectivePartitionKey {
         fn hash<H: std::hash::Hasher>(&self, state: &mut H);
     }
@@ -1524,6 +1516,16 @@ pub mod models {
     #[doc(inline)]
     impl Serialize for EffectivePartitionKey {
         fn serialize<S>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error> where S: serde::Serializer;
+    }
+    #[doc(inline)]
+    impl TryFrom<&str> for EffectivePartitionKey {
+        type Error = CosmosError;
+        fn try_from(s: &str) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<String> for EffectivePartitionKey {
+        type Error = CosmosError;
+        fn try_from(s: String) -> Result<Self, <Self as >::Error>;
     }
     #[doc(inline)]
     impl<'de> Deserialize<'de> for EffectivePartitionKey {

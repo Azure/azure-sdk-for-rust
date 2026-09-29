@@ -1324,8 +1324,8 @@ fn query_plan_ranges(plan: &Value) -> Result<Vec<EpkRangeBounds>, Box<dyn Error>
                 std::io::Error::other(format!("query range missing max: {range}"))
             })?;
             Ok(EpkRangeBounds {
-                min: EffectivePartitionKey::from(min),
-                max: EffectivePartitionKey::from(max),
+                min: EffectivePartitionKey::try_from(min)?,
+                max: EffectivePartitionKey::try_from(max)?,
             })
         })
         .collect()
