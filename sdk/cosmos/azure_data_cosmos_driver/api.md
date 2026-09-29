@@ -825,6 +825,9 @@ pub mod error {
             pub const CLIENT_DRIVER_NOT_INITIALIZED: crate::error::SubStatusCode = _;
             pub const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: crate::error::SubStatusCode = _;
             pub const CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE: crate::error::SubStatusCode = _;
+            pub const CLIENT_FFI_CURSOR_BUSY: crate::error::SubStatusCode = _;
+            pub const CLIENT_FFI_CURSOR_CLOSED: crate::error::SubStatusCode = _;
+            pub const CLIENT_FFI_DELIVERY_LOST: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_FEED_EXHAUSTED: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_INVALID_HEADER: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_INVALID_OPTION_VALUE: crate::error::SubStatusCode = _;
@@ -834,8 +837,10 @@ pub mod error {
             pub const CLIENT_FFI_OPERATION_CONSUMED: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_PANIC: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_PRECONDITION_ALREADY_SET: crate::error::SubStatusCode = _;
+            pub const CLIENT_FFI_QUEUE_FORMAT: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_QUEUE_FULL: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_QUEUE_SHUTDOWN: crate::error::SubStatusCode = _;
+            pub const CLIENT_FFI_REPRESENTATION_UNSUPPORTED: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_RUNTIME_BUILD_FAILED: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR: crate::error::SubStatusCode = _;
             pub const CLIENT_GENERATED_401: crate::error::SubStatusCode = _;

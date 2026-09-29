@@ -1,9 +1,17 @@
 # Release History
 
-## 0.8.0 (Unreleased)
+## Unreleased
+
+### Bugs Fixed
+
+- Preserve admitted throttle retry settings during operation-triggered account metadata refresh, including regional and HTTP-version recovery paths. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
+- Honor per-operation endpoint unavailability TTL and runtime TTL updates during routing without changing sibling operations' cooldown intervals. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
+
+## 1.0.0-beta.1 (2026-09-28)
 
 ### Features Added
 
+- Added canonical status constants for native cursor lifecycle and result-delivery errors. ([#5334](https://github.com/Azure/azure-sdk-for-rust/pull/5334))
 - Added per-query `PlanOptions::max_buffered_query_window`, `with_max_buffered_query_window`, and `DEFAULT_MAX_BUFFERED_QUERY_WINDOW` (1000) to cap global OFFSET plus effective take for client-buffered queries, with no opt-out. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Extended Cosmos binary JSON query-page handling to cross-partition `DISTINCT`, including composition with streaming `ORDER BY` and `OFFSET`/`LIMIT`/`TOP`. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 - Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes, and `QueryPlanMode::{LocalPreferred, GatewayOnly}` to select providers per query. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
@@ -31,8 +39,6 @@
 
 ### Bugs Fixed
 
-- Preserve admitted throttle retry settings during operation-triggered account metadata refresh, including regional and HTTP-version recovery paths. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
-- Honor per-operation endpoint unavailability TTL and runtime TTL updates during routing without changing sibling operations' cooldown intervals. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
 - Account metadata now honors the service-provided `disableCrossRegionalHedging` signal for data-plane and eligible metadata operations, including refresh transitions and omitted-property retention. ([#5350](https://github.com/Azure/azure-sdk-for-rust/pull/5350))
 - Fixed `serde_json::value::RawValue` deserialization on the Cosmos binary JSON path: `binary_json::from_slice` and `ResponseBody::into_single`/`into_items` now render the value's JSON text for a `RawValue` target instead of failing with a misclassified serialization error, so `RawValue` callers keep working now that binary encoding is on by default. ([#5338](https://github.com/Azure/azure-sdk-for-rust/pull/5338))
 - Reconciled dataflow partition-range identity resolution across logical, EPK, sequential, and hedged requests, preserving split-parent session tokens on Gateway 2.0 while keeping logical partition-key wire routing unchanged, and enforcing the end-to-end timeout across planning and first-page execution. ([#5315](https://github.com/Azure/azure-sdk-for-rust/pull/5315))

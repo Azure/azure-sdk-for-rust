@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use super::config::ContainerConfig;
 use super::dispatch::{OperationType, ParsedRequest};
 use super::epk::{compute_epk, extract_pk_from_body, parse_partition_key_header, Epk};
-#[cfg(any(test, feature = "preview_dtx"))]
+#[cfg(feature = "preview_dtx")]
 use super::response::headers::ETAG;
 use super::response::headers::{
     ACTIVITY_ID, CONTINUATION, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN,
@@ -6531,6 +6531,7 @@ mod tests {
     use crate::in_memory_emulator::{
         config::{VirtualAccountConfig, VirtualRegion},
         dispatch::parse_request,
+        response::headers::ETAG,
     };
     use azure_core::http::{Method, Request};
     use url::Url;

@@ -15,7 +15,7 @@
 //! The runtime is **opaque** at the FFI boundary — consumers get a
 //! `cosmos_runtime_t *` and never look inside. See spec section 3.1.1 + section 4.1.
 
-use std::sync::Arc;
+use std::{mem::ManuallyDrop, sync::Arc};
 
 use azure_data_cosmos_driver::driver::{CosmosDriverRuntime, CosmosDriverRuntimeBuilder};
 use tokio::runtime::Runtime;
@@ -48,7 +48,7 @@ pub struct RuntimeContext {
         reason = "consumed via `tokio.block_on` / `tokio.spawn`; the field itself \
                   is never read directly"
     )]
-    pub(crate) tokio: Runtime,
+    pub(crate) tokio: ManuallyDrop<Runtime>,
     /// `Arc::clone`d into every per-account handle by the driver / account
     /// surfaces.
     #[allow(
@@ -97,7 +97,10 @@ impl RuntimeContext {
             .block_on(async move { builder.build().await })
             .map_err(RuntimeBuildError::Driver)?;
 
-        Ok(Arc::into_raw(Arc::new(RuntimeContext { tokio, driver })) as *mut RuntimeContext)
+        Ok(Arc::into_raw(Arc::new(RuntimeContext {
+            tokio: ManuallyDrop::new(tokio),
+            driver,
+        })) as *mut RuntimeContext)
     }
 
     /// Returns a cloned `Arc` to the inner state, used by completion queues
@@ -144,6 +147,13 @@ impl RuntimeContext {
         unsafe {
             drop(Arc::from_raw(this as *const RuntimeContext));
         }
+    }
+}
+
+impl Drop for RuntimeContext {
+    fn drop(&mut self) {
+        // SAFETY: the runtime is taken exactly once and never accessed after this destructor.
+        unsafe { ManuallyDrop::take(&mut self.tokio) }.shutdown_background();
     }
 }
 

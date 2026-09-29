@@ -14,6 +14,12 @@ use crate::{
         CompletionQueue, CosmosCompletion, CosmosCompletionOutcome, CosmosCompletionQueueState,
         OperationHandle,
     },
+    cursor::{
+        cosmos_cursor_completion_free, cosmos_cursor_completion_take_cursor, cosmos_cursor_free,
+        cosmos_cursor_next_submit, cosmos_cursor_open_submit, cosmos_cursor_queue_create,
+        cosmos_cursor_queue_wait, CosmosCursorCompletion,
+    },
+    cursor_request::{cosmos_cursor_request_init, CosmosCursorRequest},
     driver::{cosmos_driver_free, DriverHandle},
     error::{CosmosErrorCode, CosmosStatusCode},
     op_request::{
@@ -314,6 +320,7 @@ fn submit_uses_remaining_admission_budget_instead_of_restarting_it() {
         unsafe {
             (*snapshot).started -= Duration::from_millis(990);
         }
+
         let request = fixture.request(snapshot, feed);
         let mut status = CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code();
         let operation = submitter(feed)(fixture.driver, &request, fixture.queue, 42, &mut status);
@@ -334,5 +341,108 @@ fn submit_uses_remaining_admission_budget_instead_of_restarting_it() {
         );
         cosmos_completion_queue_free_completions(&mut completion, 1);
         cosmos_operation_handle_free(operation);
+    }
+}
+
+fn cursor_request(
+    fixture: &Fixture,
+    snapshot: *const OperationOptionsSnapshot,
+) -> CosmosCursorRequest {
+    let mut request = MaybeUninit::uninit();
+    cosmos_cursor_request_init(request.as_mut_ptr());
+    // SAFETY: init writes the complete request.
+    let mut request = unsafe { request.assume_init() };
+    request.operation = fixture.request(snapshot, true);
+    request
+}
+
+fn cursor_completion(queue: *mut CompletionQueue) -> *mut CosmosCursorCompletion {
+    let mut completion = ptr::null_mut();
+    let mut count = 0;
+    assert_eq!(
+        cosmos_cursor_queue_wait(queue, &mut completion, 1, 5000, &mut count).0,
+        0
+    );
+    assert_eq!(count, 1);
+    completion
+}
+
+#[test]
+fn cursor_rejects_snapshot_from_other_runtime_before_admission() {
+    let fixture = Fixture::new();
+    let other = Fixture::new();
+    let queue = cosmos_cursor_queue_create(fixture.runtime, 1);
+    let snapshot = other.snapshot(&cosmos_operation_options_default());
+    let request = cursor_request(&fixture, snapshot);
+    let mut status = CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code();
+    let operation = cosmos_cursor_open_submit(fixture.driver, &request, queue, 42, &mut status);
+    assert!(operation.is_null());
+    assert_eq!(
+        status,
+        CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+    );
+    cosmos_completion_queue_shutdown(queue);
+    assert_eq!(
+        cosmos_completion_queue_state(queue),
+        CosmosCompletionQueueState::CosmosCompletionQueueStateDrained
+    );
+    assert!(fixture.transport.requests.lock().unwrap().is_empty());
+    // SAFETY: the snapshot remains exclusively owned after rejected admission.
+    unsafe {
+        cosmos_operation_options_snapshot_free(snapshot);
+    }
+    cosmos_completion_queue_free(queue);
+}
+
+#[test]
+fn cursor_enforces_admission_deadline_at_open_and_between_pages() {
+    for expire_before_open in [true, false] {
+        let fixture = Fixture::new();
+        let queue = cosmos_cursor_queue_create(fixture.runtime, 1);
+        let mut options = cosmos_operation_options_default();
+        options.end_to_end_timeout_ms = 1000;
+        options.hedging_enabled = 1;
+        let snapshot = fixture.snapshot(&options);
+        if expire_before_open {
+            // SAFETY: the test exclusively owns the live snapshot before submission.
+            unsafe {
+                (*snapshot).started -= Duration::from_secs(2);
+            }
+        }
+        let request = cursor_request(&fixture, snapshot);
+        let mut status = CosmosErrorCode::CosmosErrorCodeSuccess.as_status_code();
+        let operation = cosmos_cursor_open_submit(fixture.driver, &request, queue, 42, &mut status);
+        assert!(!operation.is_null());
+        // SAFETY: open must retain its own copy before returning.
+        unsafe {
+            cosmos_operation_options_snapshot_free(snapshot);
+        }
+        let opened = cursor_completion(queue);
+        cosmos_operation_handle_free(operation);
+        if expire_before_open {
+            // SAFETY: the queue returned an owned, initialized completion.
+            assert_eq!(
+                unsafe { (*opened).common.status.0 },
+                (408 << 16) | i32::from(CLIENT_OPERATION_TIMEOUT.value())
+            );
+        } else {
+            let cursor = cosmos_cursor_completion_take_cursor(opened);
+            assert!(!cursor.is_null());
+            std::thread::sleep(Duration::from_millis(1050));
+            let next = cosmos_cursor_next_submit(cursor, 43, &mut status);
+            assert!(!next.is_null());
+            let page = cursor_completion(queue);
+            // SAFETY: the queue returned an owned, initialized completion.
+            assert_eq!(
+                unsafe { (*page).common.status.0 },
+                (408 << 16) | i32::from(CLIENT_OPERATION_TIMEOUT.value())
+            );
+            cosmos_cursor_completion_free(page);
+            cosmos_operation_handle_free(next);
+            cosmos_cursor_free(cursor);
+        }
+        assert!(fixture.transport.requests.lock().unwrap().is_empty());
+        cosmos_cursor_completion_free(opened);
+        cosmos_completion_queue_free(queue);
     }
 }

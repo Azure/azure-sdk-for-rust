@@ -26,7 +26,7 @@ crate-type = ["cdylib", "staticlib"]
 # HTTP client (the driver's default factory needs either `rustls` or
 # `native_tls` — `rustls` matches the driver's own default and avoids the
 # OpenSSL-on-Windows breakage that bites `native_tls`).
-azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.8.0", default-features = false, features = ["preview_patch", "tokio", "rustls", "fault_injection"] }
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "1.0.0-beta.1", default-features = false, features = ["preview_patch", "tokio", "rustls", "fault_injection"] }
 # Required at runtime for master-key auth — `Secret` lives in
 # `azure_core::credentials` and `Url::parse` is the gate for the account
 # endpoint. Both are zero-cost wrappers around existing driver deps so
@@ -42,16 +42,12 @@ tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macr
 futures.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
+time.workspace = true
 
 [dev-dependencies]
 # Path-only — the driver crate is not (yet) a workspace dependency.
-# `__internal_mocking` backs the driver mocking helpers used by the wrapper's
-# tests; `__internal_test_diagnostics_construction` unlocks the driver's hidden
-# `DiagnosticsContext`/`RequestDiagnostics` test constructors so the diagnostics
-# accessors can be exercised against populated data without a live service.
-# Both are dev-only, internal, unstable features never enabled for the shipped
-# `cdylib`/`staticlib`.
-azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.8.0", default-features = false, features = ["__internal_mocking", "__internal_test_diagnostics_construction"] }
+# Internal features provide mock transport, populated cursor fixtures, and diagnostics test data.
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "1.0.0-beta.1", default-features = false, features = ["__internal_mocking", "__internal_in_memory_emulator", "__internal_test_diagnostics_construction"] }
 azure_core = { workspace = true, default-features = false }
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macros", "test-util"] }
 
@@ -64,7 +60,7 @@ cbindgen = "0.29.2"
 # builds do not expose these symbols. Enabled by the CMake C-test build
 # (`corrosion_import_crate(FEATURES test-abi)`); Rust integration tests
 # and normal consumer builds must not enable it.
-test-abi = ["azure_data_cosmos_driver/__internal_mocking"]
+test-abi = ["azure_data_cosmos_driver/__internal_in_memory_emulator", "azure_data_cosmos_driver/__internal_mocking"]
 
 [lints]
 workspace = true

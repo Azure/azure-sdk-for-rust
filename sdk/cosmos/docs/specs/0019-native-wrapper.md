@@ -19,6 +19,13 @@
 > and the credential bridge's existing counted buffers are unchanged.
 > Binding examples and full allocation/array contracts are maintained in
 > `sdk/cosmos/azure_data_cosmos_driver_native/README.md`.
+>
+> **Retained cursor:** `sdk/cosmos/docs/specs/0029-native-feed-cursor.md`
+> consolidates the unfinished pager design in Phase 8 and open questions 3, 4,
+> 9, and 14. It identifies conflicts with section 4.7's no-wrapper-pager text
+> and defines additive retained-plan paging, complete payload access, and
+> explicit EOF/checkpoint semantics. The `cosmos_cursor_*` exports implement
+> that contract without replacing legacy record layouts.
 
 ---
 
@@ -1993,6 +2000,13 @@ the same `CosmosOperation` fields as native Rust callers.
 **Done when:** A `to_json` snapshot can be diff'd against the Rust driver's `DiagnosticsContext::Debug` output and matches structurally.
 
 ### Phase 8 — Pagination (read-feeds & query) *(Goal: handle multi-page responses)*
+
+The historical sketch below is superseded by
+`sdk/cosmos/docs/specs/0029-native-feed-cursor.md`. That specification replaces the
+proposed 404-as-EOF and borrowed-token accessor with explicit End and separate
+checkpoint completions, includes change feed, and preserves existing ABI layouts.
+Use its overlap matrix when reconciling this phase; these are not shipped pager
+symbols; use the additive `cosmos_cursor_*` surface instead.
 
 - Async pager handle: `cosmos_pager_t`, with:
   - `cosmos_driver_submit_pager` → returns `cosmos_operation_handle_t*`; first completion delivers a `cosmos_response_t` from which `cosmos_response_take_pager` extracts the `cosmos_pager_t*`.

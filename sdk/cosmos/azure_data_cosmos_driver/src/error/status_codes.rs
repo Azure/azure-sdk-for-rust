@@ -826,6 +826,16 @@ pub mod substatus {
     /// firewall synthesized a failure so the host continuation is released
     /// rather than leaked (20362). Paired with HTTP 500.
     pub const CLIENT_FFI_PANIC: SubStatusCode = SubStatusCode::new(20362);
+    /// A retained cursor already has an undelivered operation (20363).
+    pub const CLIENT_FFI_CURSOR_BUSY: SubStatusCode = SubStatusCode::new(20363);
+    /// The queue's immutable completion format does not match the API (20364).
+    pub const CLIENT_FFI_QUEUE_FORMAT: SubStatusCode = SubStatusCode::new(20364);
+    /// A cursor can no longer advance safely (20365).
+    pub const CLIENT_FFI_CURSOR_CLOSED: SubStatusCode = SubStatusCode::new(20365);
+    /// The legacy response cannot represent all driver item buffers (20366).
+    pub const CLIENT_FFI_REPRESENTATION_UNSUPPORTED: SubStatusCode = SubStatusCode::new(20366);
+    /// An admitted result was abandoned before transfer to the caller (20367).
+    pub const CLIENT_FFI_DELIVERY_LOST: SubStatusCode = SubStatusCode::new(20367);
     /// Client CPU overload (20004).
     pub const CLIENT_CPU_OVERLOAD: SubStatusCode = SubStatusCode::new(20004);
     /// Client thread starvation (20005).
