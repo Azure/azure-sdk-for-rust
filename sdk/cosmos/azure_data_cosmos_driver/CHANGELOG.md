@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added canonical status constants for native cursor lifecycle and result-delivery errors. ([#5334](https://github.com/Azure/azure-sdk-for-rust/pull/5334))
 - Added per-query `PlanOptions::max_buffered_query_window`, `with_max_buffered_query_window`, and `DEFAULT_MAX_BUFFERED_QUERY_WINDOW` (1000) to cap global OFFSET plus effective take for client-buffered queries, with no opt-out. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Extended Cosmos binary JSON query-page handling to cross-partition `DISTINCT`, including composition with streaming `ORDER BY` and `OFFSET`/`LIMIT`/`TOP`. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 - Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes, and `QueryPlanMode::{LocalPreferred, GatewayOnly}` to select providers per query. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
