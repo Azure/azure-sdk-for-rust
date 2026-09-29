@@ -98,21 +98,20 @@ fn avad_change_feed_operation(start_from: Option<ChangeFeedStartFrom>) -> Arc<Co
     Arc::new(op)
 }
 
-fn resolved(min: &str, max: &str, pk_range_id: &str) -> ResolvedRange {
-    ResolvedRange {
+fn resolved(min: &str, max: &str, pk_range_id: &str) -> crate::error::Result<ResolvedRange> {
+    Ok(ResolvedRange {
         partition_key_range_id: pk_range_id.to_string(),
         parents: Vec::new(),
-        range: fr(min, max),
-    }
+        range: fr(min, max)?,
+    })
 }
 
 /// Builds a [`FeedRange`] from raw EPK bounds (`""` is MIN, `"FF"` is MAX).
-fn fr(min: &str, max: &str) -> FeedRange {
+fn fr(min: &str, max: &str) -> crate::error::Result<FeedRange> {
     FeedRange::new(
-        EffectivePartitionKey::from(min),
-        EffectivePartitionKey::from(max),
+        EffectivePartitionKey::try_from(min)?,
+        EffectivePartitionKey::try_from(max)?,
     )
-    .unwrap()
 }
 
 /// Builds a change feed `CosmosResponse` carrying its continuation in the
@@ -226,24 +225,25 @@ fn assert_unordered_snapshot(
     }
 }
 
-fn assert_merged_parent_targets(executor: &MockRequestExecutor) {
-    let merged = fr("", "FF");
+fn assert_merged_parent_targets(executor: &MockRequestExecutor) -> crate::error::Result<()> {
+    let merged = fr("", "FF")?;
     assert_eq!(
         executor.target_calls,
         vec![
             RequestTarget::effective_partition_key_range(
-                fr("", "80"),
+                fr("", "80")?,
                 "pk-merged".to_owned(),
                 merged.clone(),
             ),
             RequestTarget::effective_partition_key_range(
-                fr("80", "FF"),
+                fr("80", "FF")?,
                 "pk-merged".to_owned(),
                 merged,
             ),
         ],
         "the merged physical range must retain both parent EPK slices",
     );
+    Ok(())
 }
 
 fn assert_now_resume_inputs(executor: &StartRecordingExecutor) {
@@ -270,12 +270,12 @@ fn assert_now_resume_inputs(executor: &StartRecordingExecutor) {
 /// round-trip — including that the ETag continuation and the `start_from`
 /// marker both survive serialize -> resume — before the merge scenario.
 #[tokio::test]
-async fn single_partition_change_feed_resume_roundtrips() {
+async fn single_partition_change_feed_resume_roundtrips() -> crate::error::Result<()> {
     let op = change_feed_operation(Some(ChangeFeedStartFrom::Now));
 
     // Session 1: one partition spans the full range. Poll once; the page
     // carries the next continuation in its ETag ("lsn-1").
-    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor1 = MockRequestExecutor::new(vec![Ok(cf_page(b"page-1", "lsn-1"))]);
 
     let mut pipeline1 = build_unordered_merge(&FeedRange::full(), &mut topology1, &op, None)
@@ -312,7 +312,7 @@ async fn single_partition_change_feed_resume_roundtrips() {
     // Session 2: resume from the round-tripped token, same topology. The poll
     // must carry the saved ETag as its continuation — not restart the feed.
     let resumed_state = round_trip_state(state, &op);
-    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")])]);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-0")?])]);
     let mut executor2 = MockRequestExecutor::new(vec![Ok(cf_page(b"page-2", "lsn-2"))]);
 
     let mut pipeline2 =
@@ -326,6 +326,7 @@ async fn single_partition_change_feed_resume_roundtrips() {
         vec![Some("lsn-1".to_owned())],
         "resume must re-send the saved ETag, not poll from the start",
     );
+    Ok(())
 }
 
 /// End-to-end guard for change feed resume across a partition **merge**.
@@ -343,7 +344,7 @@ async fn single_partition_change_feed_resume_roundtrips() {
 /// Java, Python), where a merge keeps the finer sub-ranges and their tokens
 /// rather than collapsing to a single parent continuation.
 #[tokio::test]
-async fn change_feed_resume_across_merge_reads_each_parent_subrange() {
+async fn change_feed_resume_across_merge_reads_each_parent_subrange() -> crate::error::Result<()> {
     // Read from the beginning (no explicit start marker) so the test isolates
     // the continuation-forwarding behavior across the merge.
     let op = change_feed_operation(None);
@@ -351,8 +352,8 @@ async fn change_feed_resume_across_merge_reads_each_parent_subrange() {
     // Session 1: two adjacent partitions [, 80) and [80, FF). Round-robin
     // polling visits left then right; each returns its own next-ETag.
     let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor1 = MockRequestExecutor::new(vec![
         Ok(cf_page(b"left-1", "lsn-left")),
@@ -382,7 +383,7 @@ async fn change_feed_resume_across_merge_reads_each_parent_subrange() {
 
     // Session 2: the two partitions have MERGED into one range [, FF).
     let resumed_state = round_trip_state(state, &op);
-    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")])]);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")?])]);
     let mut executor2 = MockRequestExecutor::new(vec![
         Ok(cf_page(b"merged-left-1", "lsn-left-2")),
         Ok(cf_page(b"merged-right-1", "lsn-right-2")),
@@ -408,18 +409,19 @@ async fn change_feed_resume_across_merge_reads_each_parent_subrange() {
 
     // Each leaf is scoped to its parent's sub-range within the merged physical
     // partition, so the wire layer emits `x-ms-start/end-epk` for both.
-    assert_merged_parent_targets(&executor2);
+    assert_merged_parent_targets(&executor2)?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn point_in_time_merge_resume_keeps_marker_and_parent_slices() {
+async fn point_in_time_merge_resume_keeps_marker_and_parent_slices() -> crate::error::Result<()> {
     let marker = ChangeFeedStartFrom::PointInTime(time::macros::datetime!(
         2026-08-21 12:34:56 UTC
     ));
     let op = change_feed_operation(Some(marker.clone()));
     let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor1 = MockRequestExecutor::new(vec![
         Ok(cf_page(b"left-1", "pit-left")),
@@ -441,7 +443,7 @@ async fn point_in_time_merge_resume_keeps_marker_and_parent_slices() {
 
     let resume_op = change_feed_operation(None);
     let resumed = round_trip_state(state, &resume_op);
-    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")])]);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")?])]);
     let mut executor2 = StartRecordingExecutor::new(vec![
         Ok(cf_page(b"merged-left", "pit-left-2")),
         Ok(cf_page(b"merged-right", "pit-right-2")),
@@ -468,15 +470,17 @@ async fn point_in_time_merge_resume_keeps_marker_and_parent_slices() {
             2
         ],
     );
-    assert_merged_parent_targets(&executor2.inner);
+    assert_merged_parent_targets(&executor2.inner)?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn latest_version_now_merge_resume_reapplies_now_to_unsaved_slice() {
+async fn latest_version_now_merge_resume_reapplies_now_to_unsaved_slice() -> crate::error::Result<()>
+{
     let op = change_feed_operation(Some(ChangeFeedStartFrom::Now));
     let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor1 = MockRequestExecutor::new(vec![Ok(cf_page(b"left-1", "now-left"))]);
     let mut pipeline1 = build_unordered_merge(&FeedRange::full(), &mut topology1, &op, None)
@@ -492,7 +496,7 @@ async fn latest_version_now_merge_resume_reapplies_now_to_unsaved_slice() {
 
     let resume_op = change_feed_operation(None);
     let resumed = round_trip_state(state, &resume_op);
-    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")])]);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")?])]);
     let mut executor2 = StartRecordingExecutor::new(vec![
         Ok(cf_page(b"merged-left", "now-left-2")),
         Ok(cf_page(b"merged-right", "now-right-1")),
@@ -513,15 +517,16 @@ async fn latest_version_now_merge_resume_reapplies_now_to_unsaved_slice() {
     );
     // These are RequestExecutor inputs; transport tests cover final header precedence.
     assert_now_resume_inputs(&executor2);
-    assert_merged_parent_targets(&executor2.inner);
+    assert_merged_parent_targets(&executor2.inner)?;
+    Ok(())
 }
 
 #[tokio::test]
-async fn avad_now_merge_resume_keeps_both_primed_parent_etags() {
+async fn avad_now_merge_resume_keeps_both_primed_parent_etags() -> crate::error::Result<()> {
     let op = avad_change_feed_operation(Some(ChangeFeedStartFrom::Now));
     let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor1 = MockRequestExecutor::new(vec![
         Ok(cf_page(b"", "avad-left")),
@@ -541,7 +546,7 @@ async fn avad_now_merge_resume_keeps_both_primed_parent_etags() {
 
     let resume_op = avad_change_feed_operation(None);
     let resumed = round_trip_state(state, &resume_op);
-    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")])]);
+    let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")?])]);
     let mut executor2 = StartRecordingExecutor::new(vec![
         Ok(cf_page(b"merged-left", "avad-left-2")),
         Ok(cf_page(b"merged-right", "avad-right-1")),
@@ -564,7 +569,8 @@ async fn avad_now_merge_resume_keeps_both_primed_parent_etags() {
         "both AVAD parent slices must retain their pinned ETags through the merge",
     );
     assert_now_resume_inputs(&executor2);
-    assert_merged_parent_targets(&executor2.inner);
+    assert_merged_parent_targets(&executor2.inner)?;
+    Ok(())
 }
 
 /// Guards the AllVersionsAndDeletes lossless-`Now` contract: a fresh
@@ -582,15 +588,15 @@ async fn avad_now_merge_resume_keeps_both_primed_parent_etags() {
 /// never-polled range there simply re-reads from the persisted start on resume,
 /// which is benign because incremental only surfaces the latest version.
 #[tokio::test]
-async fn all_versions_and_deletes_pins_every_range_before_checkpoint() {
+async fn all_versions_and_deletes_pins_every_range_before_checkpoint() -> crate::error::Result<()> {
     let op = avad_change_feed_operation(Some(ChangeFeedStartFrom::Now));
 
     // Session 1: two partitions. Priming polls left then right (each a
     // start-from-`Now` 304 carrying only an ETag); the round-robin then serves
     // the left range's next poll. Three polls total for one served page.
     let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor1 = MockRequestExecutor::new(vec![
         Ok(cf_page(b"", "lsn-left-0")),       // prime left
@@ -640,8 +646,8 @@ async fn all_versions_and_deletes_pins_every_range_before_checkpoint() {
     // in particular must NOT restart from `Now` and drop its gap.
     let resumed_state = round_trip_state(state, &op);
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor2 = MockRequestExecutor::new(vec![
         Ok(cf_page(b"left-2", "lsn-left-2")),
@@ -662,6 +668,7 @@ async fn all_versions_and_deletes_pins_every_range_before_checkpoint() {
         ],
         "resume must re-send each range's pinned ETag, not restart from Now",
     );
+    Ok(())
 }
 
 /// The LatestVersion feed must **not** prime: a single page pull polls only one
@@ -670,12 +677,12 @@ async fn all_versions_and_deletes_pins_every_range_before_checkpoint() {
 /// [`all_versions_and_deletes_pins_every_range_before_checkpoint`] and pins the
 /// mode-gated behavior so priming can't accidentally leak into incremental.
 #[tokio::test]
-async fn latest_version_does_not_prime_ranges() {
+async fn latest_version_does_not_prime_ranges() -> crate::error::Result<()> {
     let op = change_feed_operation(Some(ChangeFeedStartFrom::Now));
 
     let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     // Only one response is available: if priming were (incorrectly) enabled the
     // mock would be polled twice and panic on the missing second response.
@@ -701,6 +708,7 @@ async fn latest_version_does_not_prime_ranges() {
         }
         other => panic!("expected UnorderedMerge snapshot, got {other:?}"),
     }
+    Ok(())
 }
 
 /// Guards the pre-first-page window of the AllVersionsAndDeletes lossless-`Now`
@@ -714,14 +722,15 @@ async fn latest_version_does_not_prime_ranges() {
 /// empty `UnorderedMerge` token set unambiguously means "not yet polled" and is
 /// safe to treat as still-needs-priming.
 #[tokio::test]
-async fn all_versions_and_deletes_pins_ranges_when_resumed_before_first_page() {
+async fn all_versions_and_deletes_pins_ranges_when_resumed_before_first_page(
+) -> crate::error::Result<()> {
     let op = avad_change_feed_operation(Some(ChangeFeedStartFrom::Now));
 
     // Session 1: build the pipeline and checkpoint immediately, before pulling
     // any page. No range has been polled, so the snapshot carries no tokens.
     let mut topology1 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let pipeline1 = build_unordered_merge(&FeedRange::full(), &mut topology1, &op, None)
         .await
@@ -746,8 +755,8 @@ async fn all_versions_and_deletes_pins_ranges_when_resumed_before_first_page() {
     // (the token set is empty), pinning BOTH ranges before the first page.
     let resumed_state = round_trip_state(state, &op);
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![
-        resolved("", "80", "pk-left"),
-        resolved("80", "FF", "pk-right"),
+        resolved("", "80", "pk-left")?,
+        resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor2 = MockRequestExecutor::new(vec![
         Ok(cf_page(b"", "lsn-left-0")),       // prime left
@@ -782,4 +791,5 @@ async fn all_versions_and_deletes_pins_ranges_when_resumed_before_first_page() {
         }
         other => panic!("expected UnorderedMerge snapshot, got {other:?}"),
     }
+    Ok(())
 }

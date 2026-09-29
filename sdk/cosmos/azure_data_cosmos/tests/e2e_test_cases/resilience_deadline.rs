@@ -12,7 +12,7 @@ use azure_data_cosmos::{
         AvailabilityStrategy, EndToEndOperationLatencyPolicy, ItemReadOptions,
         OperationOptionsBuilder, Region,
     },
-    RoutingStrategy, SubStatusCode,
+    RoutingStrategy,
 };
 
 use crate::e2e_test_cases::{
@@ -84,7 +84,7 @@ async fn operation_deadline_preempts_delayed_response() -> TestResult {
             assert!(elapsed < Duration::from_secs(2));
             assert_eq!(
                 error.status().sub_status(),
-                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+                Some(azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
             );
             let diagnostics = error
                 .diagnostics()

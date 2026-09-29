@@ -138,7 +138,7 @@ async fn fetch_gateway_plan_once(
     let body = serde_json::to_vec(&query_body).map_err(|e| {
         azure_data_cosmos_driver::CosmosError::builder()
             .with_status(
-                azure_data_cosmos_driver::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID,
+                azure_data_cosmos_driver::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
             )
             .with_message("failed to serialize query-plan request body")
             .with_source(e)
@@ -1079,7 +1079,7 @@ async fn gw_production_local_plan_unbounded_distinct_requires_opt_out() {
         .expect("unordered DISTINCT must require a finite global window");
     assert_eq!(
         error.status(),
-        azure_data_cosmos_driver::error::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+        azure_data_cosmos_driver::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
     );
 
     validate_production_local_plan(

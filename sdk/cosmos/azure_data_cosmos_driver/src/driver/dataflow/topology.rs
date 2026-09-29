@@ -72,7 +72,7 @@ where
                 Some(ranges) if !ranges.is_empty() => ranges,
                 _ => {
                     return Err(crate::error::CosmosError::builder()
-                        .with_status(crate::error::CosmosStatus::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+                        .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
                         .with_message("failed to resolve partition key ranges from topology cache")
                         .build());
                 }
@@ -129,7 +129,11 @@ mod tests {
                 not_modified: true,
             })
         } else {
-            let mut range = PkRange::new("0".into(), "", "FF");
+            let mut range = PkRange::new(
+                "0".into(),
+                EffectivePartitionKey::MIN,
+                EffectivePartitionKey::MAX,
+            );
             range.parents = Some(vec!["parent".to_string()]);
             Some(PkRangeFetchResult {
                 ranges: vec![range],
@@ -150,10 +154,11 @@ mod tests {
                 not_modified: true,
             })
         } else {
+            let boundary = EffectivePartitionKey::try_from("80")?;
             Some(PkRangeFetchResult {
                 ranges: vec![
-                    PkRange::new("1".into(), "", "80"),
-                    PkRange::new("2".into(), "80", "FF"),
+                    PkRange::new("1".into(), EffectivePartitionKey::MIN, boundary.clone()),
+                    PkRange::new("2".into(), boundary, EffectivePartitionKey::MAX),
                 ],
                 continuation: Some("etag-2".to_string()),
                 not_modified: false,
@@ -172,11 +177,17 @@ mod tests {
                 not_modified: true,
             })
         } else {
+            let first_boundary = EffectivePartitionKey::try_from("40")?;
+            let second_boundary = EffectivePartitionKey::try_from("80")?;
             Some(PkRangeFetchResult {
                 ranges: vec![
-                    PkRange::new("1".into(), "", "40"),
-                    PkRange::new("2".into(), "40", "80"),
-                    PkRange::new("3".into(), "80", "FF"),
+                    PkRange::new(
+                        "1".into(),
+                        EffectivePartitionKey::MIN,
+                        first_boundary.clone(),
+                    ),
+                    PkRange::new("2".into(), first_boundary, second_boundary.clone()),
+                    PkRange::new("3".into(), second_boundary, EffectivePartitionKey::MAX),
                 ],
                 continuation: Some("etag-3".to_string()),
                 not_modified: false,
@@ -202,14 +213,17 @@ mod tests {
         crate::error::CosmosError::builder()
             .with_status(
                 crate::error::CosmosStatus::new(azure_core::http::StatusCode::BadRequest)
-                    .with_sub_status(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH.value()),
+                    .with_sub_status(
+                        crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH.value(),
+                    ),
             )
             .with_message("container RID mismatch")
             .build()
     }
 
     #[tokio::test]
-    async fn resolves_normalized_point_to_owning_partition_including_boundary() {
+    async fn resolves_normalized_point_to_owning_partition_including_boundary(
+    ) -> crate::error::Result<()> {
         // Issue #4574: an equality / `IN` predicate's closed point `[X, X]` is
         // normalized to the half-open `[X, successor(X))`, which must resolve to
         // exactly its owning partition. Topology is split at "80"; a point
@@ -218,7 +232,7 @@ mod tests {
         let cache = PartitionKeyRangeCache::new();
         let mut provider = CachedTopologyProvider::new(&cache, make_container(), two_range_fetch);
 
-        let inside_epk = EffectivePartitionKey::from("C0");
+        let inside_epk = EffectivePartitionKey::try_from("C0")?;
         let inside = FeedRange::new(inside_epk.clone(), inside_epk.successor()).unwrap();
         let ranges = provider
             .resolve_ranges(&inside, PartitionRoutingRefresh::ForceRefresh)
@@ -227,7 +241,7 @@ mod tests {
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].partition_key_range_id, "2");
 
-        let boundary_epk = EffectivePartitionKey::from("80");
+        let boundary_epk = EffectivePartitionKey::try_from("80")?;
         let at_boundary = FeedRange::new(boundary_epk.clone(), boundary_epk.successor()).unwrap();
         let ranges = provider
             .resolve_ranges(&at_boundary, PartitionRoutingRefresh::UseCached)
@@ -238,6 +252,7 @@ mod tests {
             ranges[0].partition_key_range_id, "2",
             "a point at the inclusive lower bound belongs to that partition"
         );
+        Ok(())
     }
 
     #[tokio::test]
@@ -259,7 +274,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn resolves_split_ranges() {
+    async fn resolves_split_ranges() -> crate::error::Result<()> {
         let cache = PartitionKeyRangeCache::new();
         let mut provider = CachedTopologyProvider::new(&cache, make_container(), two_range_fetch);
 
@@ -273,24 +288,25 @@ mod tests {
         assert_eq!(ranges[0].range.min_inclusive(), &EffectivePartitionKey::MIN);
         assert_eq!(
             ranges[0].range.max_exclusive(),
-            &EffectivePartitionKey::from("80")
+            &EffectivePartitionKey::try_from("80")?
         );
         assert_eq!(ranges[1].partition_key_range_id, "2");
         assert_eq!(
             ranges[1].range.min_inclusive(),
-            &EffectivePartitionKey::from("80")
+            &EffectivePartitionKey::try_from("80")?
         );
         assert_eq!(ranges[1].range.max_exclusive(), &EffectivePartitionKey::MAX);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn resolves_partial_epk_range() {
+    async fn resolves_partial_epk_range() -> crate::error::Result<()> {
         let cache = PartitionKeyRangeCache::new();
         let mut provider = CachedTopologyProvider::new(&cache, make_container(), two_range_fetch);
 
         let left_half = FeedRange::new(
             EffectivePartitionKey::MIN.clone(),
-            EffectivePartitionKey::from("80"),
+            EffectivePartitionKey::try_from("80")?,
         )
         .unwrap();
         let ranges = provider
@@ -300,6 +316,7 @@ mod tests {
 
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].partition_key_range_id, "1");
+        Ok(())
     }
 
     #[tokio::test]
@@ -350,7 +367,7 @@ mod tests {
         );
         assert_eq!(
             error.status().sub_status(),
-            Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH)
+            Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
         );
     }
 
@@ -383,7 +400,7 @@ mod tests {
         for error in [left_result.unwrap_err(), right_result.unwrap_err()] {
             assert_eq!(
                 error.status().sub_status(),
-                Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH)
+                Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
             );
         }
     }
@@ -445,7 +462,7 @@ mod tests {
             .expect_err("typed waiter must receive the coalesced fetch error");
         assert_eq!(
             error.status().sub_status(),
-            Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH)
+            Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
         );
         assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
     }

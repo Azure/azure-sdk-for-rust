@@ -148,7 +148,7 @@ impl CosmosResourceReference {
     ) -> crate::error::Result<()> {
         let current = self.container().ok_or_else(|| {
             crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
                 .with_message("operation does not target a container")
                 .build()
         })?;
@@ -160,7 +160,7 @@ impl CosmosResourceReference {
             && current.name() == replacement.name();
         if !same_logical_container {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
                 .with_message("replacement metadata does not identify the same named container")
                 .build());
         }
@@ -485,11 +485,11 @@ impl CosmosResourceReference {
     ///
     /// See [`addressing_conflict`](Self::addressing_conflict) for `leaf_in_path`.
     ///
-    /// [`CLIENT_MIXED_NAME_RID_ADDRESSING`]: crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+    /// [`CLIENT_MIXED_NAME_RID_ADDRESSING`]: crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
     pub(crate) fn validate_addressing(&self, leaf_in_path: bool) -> crate::error::Result<()> {
         if let Some(conflict) = self.addressing_conflict(leaf_in_path) {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING)
+                .with_status(crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING)
                 .with_message(format!(
                     "mixed name/RID addressing is not allowed ({conflict}); the service \
                      classifies a request from its `dbs` segment, so a RID-addressed path must \
@@ -1277,7 +1277,7 @@ mod tests {
             .expect_err("mixed addressing must be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+            crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
     }
 
@@ -1334,7 +1334,7 @@ mod tests {
             .expect_err("a name leaf under a RID parent must be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+            crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
     }
 
@@ -1358,7 +1358,7 @@ mod tests {
             .expect_err("a RID leaf under a name parent must be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+            crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
     }
 

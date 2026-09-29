@@ -1153,10 +1153,10 @@ pub async fn gateway_v2_connection_error_fails_fast_after_all_regions_attempted(
             let status = err.status();
             assert!(
                 status.sub_status()
-                    == Some(azure_data_cosmos_driver::SubStatusCode::TRANSPORT_IO_FAILED)
+                    == Some(azure_data_cosmos_driver::error::status_codes::substatus::TRANSPORT_IO_FAILED)
                     || status.sub_status()
                         == Some(
-                            azure_data_cosmos_driver::SubStatusCode::TRANSPORT_CONNECTION_FAILED
+                            azure_data_cosmos_driver::error::status_codes::substatus::TRANSPORT_CONNECTION_FAILED
                         )
                     || err.to_string().to_lowercase().contains("connection"),
                 "expected a connection-failure error, got: {err:?}"

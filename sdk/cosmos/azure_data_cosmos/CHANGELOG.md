@@ -1,6 +1,6 @@
 # Release History
 
-## 0.39.0 (Unreleased)
+## 1.0.0-beta.1 (2026-09-28)
 
 ### Features Added
 
@@ -13,6 +13,8 @@
 
 ### Breaking Changes
 
+- Replaced `EffectivePartitionKey` string `From` conversions with strict `TryFrom` conversions; malformed hexadecimal bounds now return errors instead of being truncated, including when deserializing feed ranges. [#5369](https://github.com/Azure/azure-sdk-for-rust/pull/5369)
+- Re-exported the driver's `CosmosError`, `CosmosStatus`, and `SubStatusCode` directly, removing the SDK-owned `CosmosError` wrapper and all associated `CosmosStatus` and `SubStatusCode` constants from the supported SDK surface. ([#5355](https://github.com/Azure/azure-sdk-for-rust/pull/5355))
 - Replaced the `metrics` and `distributed_tracing` feature flags with the off-by-default `preview_opentelemetry` flag for both OpenTelemetry handlers; enable `preview_opentelemetry` to keep emitting metrics and traces. Diagnostics types remain available without it. ([#5353](https://github.com/Azure/azure-sdk-for-rust/pull/5353))
 - `CosmosTracingHandler` is now constructed exclusively through `CosmosTracingHandler::builder()`. The `new`, `with_thresholds`, and `with_thresholds_and_rate_limit` constructors and the `Default` implementation were removed; configure the equivalent values with the builder and call `build` or `build_with_tracer`. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Re-exported `UserAgentSuffix` replaces panicking `new` with `TryFrom<String>` and `TryFrom<&str>`, returning a typed `CosmosError` for invalid suffixes. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
@@ -25,9 +27,11 @@
 - Replaced `CosmosClientBuilder::with_partition_key_range_cache_enabled` with `PartitionFailoverOptionsBuilder::with_partition_topology_cache_mode`; partition topology caching can no longer be disabled, and `PartitionTopologyCacheMode::{Eager, Lazy}` controls only when the cache is loaded. ([#5319](https://github.com/Azure/azure-sdk-for-rust/pull/5319))
 - Container resolution now loads the complete partition topology by default and fails if it cannot load a valid routing map. `PartitionTopologyCacheMode::Lazy` preserves the previous first-use loading behavior as a compatibility escape hatch. ([#5319](https://github.com/Azure/azure-sdk-for-rust/pull/5319))
 - Moved the PATCH-specific models, distributed transaction PATCH APIs, and PATCH-related operation options behind the `preview_patch` feature. These APIs remain available to preview-feature consumers but are no longer part of the default feature set. ([#5346](https://github.com/Azure/azure-sdk-for-rust/pull/5346))
+- Removed the public `ConsistencyLevel` and `CosmosClientOptions` types and the `OperationOptionsView`, `ThrottlingRetryOptionsView`, and `ThroughputControlOptionsView` re-exports. Use `ReadConsistencyStrategy` and typed operation options instead; client configuration remains available through `CosmosClientBuilder`. The tuple fields of `SessionToken` and `ExcludedRegions` are now private; use their constructors, `From`, `iter`, `len`, and `is_empty` APIs. ([#5352](https://github.com/Azure/azure-sdk-for-rust/pull/5352))
 
 ### Bugs Fixed
 
+- Fixed `serde_json::value::RawValue` deserialization for binary-encoded responses: `ResponseBody::into_single` (and the `into_model` helpers built on it) now yield the document's JSON text for a `RawValue` target instead of failing, restoring raw passthrough now that binary encoding is on by default. ([#5338](https://github.com/Azure/azure-sdk-for-rust/pull/5338))
 - Container recreation now preserves collection RID mismatch errors during cold partition routing and rejects incompatible stale partition keys with a dedicated client substatus. ([#5324](https://github.com/Azure/azure-sdk-for-rust/pull/5324))
 - Change feed reads now work over Gateway 2.0 by forwarding incremental-mode and wire-format-version request metadata. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))
 - Cosmos root spans now use the last retained request endpoint for their fallback `server.address`, matching the operation-duration metric when no SDK operation context supplies an address. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))

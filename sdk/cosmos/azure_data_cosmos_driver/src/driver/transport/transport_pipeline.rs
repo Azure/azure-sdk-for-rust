@@ -26,7 +26,7 @@ use crate::{
         RequestEvent, RequestEventType, RequestHandle, RequestSentStatus, TransportSecurity,
         TransportShardDiagnostics,
     },
-    models::{CosmosResponseHeaders, CosmosStatus, Credential, SubStatusCode},
+    models::{CosmosResponseHeaders, CosmosStatus, Credential},
 };
 
 use super::{
@@ -309,11 +309,11 @@ pub(crate) async fn execute_transport_pipeline(
                 request_handle,
                 cosmos_err.to_string(),
                 RequestSentStatus::NotSent,
-                CosmosStatus::CLIENT_GENERATED_401,
+                crate::error::status_codes::CLIENT_GENERATED_401,
             );
             return TransportResult {
                 outcome: TransportOutcome::TransportError {
-                    status: CosmosStatus::CLIENT_GENERATED_401,
+                    status: crate::error::status_codes::CLIENT_GENERATED_401,
                     error: cosmos_err,
                     request_sent: RequestSentStatus::NotSent,
                 },
@@ -336,7 +336,7 @@ pub(crate) async fn execute_transport_pipeline(
                 Ok(wrapped_request) => http_request = wrapped_request,
                 Err(e) => {
                     let cosmos_err = crate::error::CosmosError::builder()
-                        .with_status(CosmosStatus::CLIENT_BAD_REQUEST)
+                        .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
                         .with_message(format!("Gateway 2.0 request wrap failed: {e}"))
                         .with_source(e)
                         .build();
@@ -665,7 +665,7 @@ fn finalize_http_attempt(
                         // failure here is a real protocol error.
                         None => {
                             let cosmos_err = crate::error::CosmosError::builder()
-                                .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                                .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                                 .with_message(format!(
                                     "Gateway 2.0 response unwrap failed: {error}"
                                 ))
@@ -748,13 +748,13 @@ fn is_connectivity_error(error: &crate::error::CosmosError) -> bool {
     }
     matches!(
         error.status().sub_status(),
-        Some(SubStatusCode::TRANSPORT_GENERATED_503)
-            | Some(SubStatusCode::TRANSPORT_CONNECTION_FAILED)
-            | Some(SubStatusCode::TRANSPORT_IO_FAILED)
-            | Some(SubStatusCode::TRANSPORT_DNS_FAILED)
-            | Some(SubStatusCode::TRANSPORT_HTTP2_INCOMPATIBLE)
-            | Some(SubStatusCode::TRANSPORT_BODY_READ_FAILED)
-            | Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+        Some(crate::error::status_codes::substatus::TRANSPORT_GENERATED_503)
+            | Some(crate::error::status_codes::substatus::TRANSPORT_CONNECTION_FAILED)
+            | Some(crate::error::status_codes::substatus::TRANSPORT_IO_FAILED)
+            | Some(crate::error::status_codes::substatus::TRANSPORT_DNS_FAILED)
+            | Some(crate::error::status_codes::substatus::TRANSPORT_HTTP2_INCOMPATIBLE)
+            | Some(crate::error::status_codes::substatus::TRANSPORT_BODY_READ_FAILED)
+            | Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
     )
 }
 
@@ -763,7 +763,7 @@ fn gateway_v2_wrap_error_result(
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
-    let status = CosmosStatus::CLIENT_BAD_REQUEST;
+    let status = crate::error::status_codes::CLIENT_BAD_REQUEST;
     let error_details = format_transport_error_details_cosmos(&error);
     diagnostics.fail_transport_request(
         request_handle,
@@ -786,7 +786,7 @@ fn gateway_v2_unwrap_error_result(
     request_handle: RequestHandle,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> TransportResult {
-    let status = CosmosStatus::TRANSPORT_GENERATED_503;
+    let status = crate::error::status_codes::TRANSPORT_GENERATED_503;
     let error_details = format_transport_error_details_cosmos(&error);
     diagnostics.add_event(
         request_handle,
@@ -819,7 +819,7 @@ fn transport_error_result(
     } else {
         infer_request_sent_status(&cosmos_error)
     };
-    let status = CosmosStatus::TRANSPORT_GENERATED_503;
+    let status = crate::error::status_codes::TRANSPORT_GENERATED_503;
     let error_details = format_transport_error_details_cosmos(&cosmos_error);
 
     if headers_received {
@@ -910,6 +910,7 @@ fn map_http_response_payload(
 mod tests {
     use super::*;
     use crate::driver::pipeline::components::METADATA_MAX_PER_RETRY_DELAY;
+    use crate::error::SubStatusCode;
     use std::{
         collections::VecDeque,
         sync::{Arc, Mutex},
@@ -942,9 +943,9 @@ mod tests {
     fn connectivity_failure(request_sent: RequestSentStatus) -> TransportResult {
         TransportResult {
             outcome: TransportOutcome::TransportError {
-                status: CosmosStatus::TRANSPORT_IO_FAILED,
+                status: crate::error::status_codes::TRANSPORT_IO_FAILED,
                 error: crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
                     .with_message("connection reset")
                     .build(),
                 request_sent,
@@ -1016,7 +1017,7 @@ mod tests {
             .await;
             Err(TransportError::new(
                 crate::error::CosmosError::builder()
-                    .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                    .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
                     .with_message("request should have timed out before completion")
                     .build(),
                 crate::diagnostics::RequestSentStatus::Unknown,
@@ -1287,7 +1288,7 @@ mod tests {
     #[test]
     fn evaluate_transport_retry_dtx_bodyless_429_ru_budget_uses_shared_throttle() {
         let result = make_throttled_result_with_substatus_and_retry_after(
-            SubStatusCode::RU_BUDGET_EXCEEDED,
+            crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED,
             42,
         );
         let state = ThrottleRetryState::new();
@@ -2104,9 +2105,9 @@ mod tests {
     #[tokio::test]
     async fn execute_transport_pipeline_retries_not_sent_connectivity_error_on_different_shard() {
         let client = scripted_transport(
-            CosmosStatus::TRANSPORT_CONNECTION_FAILED,
+            crate::error::status_codes::TRANSPORT_CONNECTION_FAILED,
             "first shard failed",
-            CosmosStatus::TRANSPORT_CONNECTION_FAILED,
+            crate::error::status_codes::TRANSPORT_CONNECTION_FAILED,
             "second shard failed",
         );
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -2160,9 +2161,9 @@ mod tests {
         let user_agent = azure_core::http::headers::HeaderValue::from_static("test-agent");
 
         let client_without_retry = scripted_transport(
-            CosmosStatus::TRANSPORT_IO_FAILED,
+            crate::error::status_codes::TRANSPORT_IO_FAILED,
             "first io shard failed",
-            CosmosStatus::TRANSPORT_IO_FAILED,
+            crate::error::status_codes::TRANSPORT_IO_FAILED,
             "second io shard failed",
         );
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -2203,9 +2204,9 @@ mod tests {
         }
 
         let client_with_retry = scripted_transport(
-            CosmosStatus::TRANSPORT_IO_FAILED,
+            crate::error::status_codes::TRANSPORT_IO_FAILED,
             "first io shard failed",
-            CosmosStatus::TRANSPORT_IO_FAILED,
+            crate::error::status_codes::TRANSPORT_IO_FAILED,
             "second io shard failed",
         );
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -2280,10 +2281,10 @@ mod tests {
                 request_sent,
                 ..
             } => {
-                assert_eq!(status, CosmosStatus::CLIENT_GENERATED_401);
+                assert_eq!(status, crate::error::status_codes::CLIENT_GENERATED_401);
                 assert_eq!(
                     status.sub_status(),
-                    Some(SubStatusCode::CLIENT_GENERATED_401)
+                    Some(crate::error::status_codes::substatus::CLIENT_GENERATED_401)
                 );
                 assert_eq!(request_sent, RequestSentStatus::NotSent);
             }
@@ -2293,7 +2294,10 @@ mod tests {
         let completed = diagnostics.complete();
         let requests = completed.requests();
         assert_eq!(requests.len(), 1);
-        assert_eq!(requests[0].status(), &CosmosStatus::CLIENT_GENERATED_401);
+        assert_eq!(
+            requests[0].status(),
+            &crate::error::status_codes::CLIENT_GENERATED_401
+        );
         assert_eq!(requests[0].request_sent(), RequestSentStatus::NotSent);
     }
 
@@ -2323,7 +2327,7 @@ mod tests {
             self.responses.lock().unwrap().pop_front().ok_or_else(|| {
                 TransportError::new(
                     crate::error::CosmosError::builder()
-                        .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+                        .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
                         .with_message("no response queued")
                         .build(),
                     RequestSentStatus::Unknown,
@@ -2528,7 +2532,7 @@ mod tests {
                 request_sent,
                 ..
             } => {
-                assert_eq!(status, CosmosStatus::TRANSPORT_GENERATED_503);
+                assert_eq!(status, crate::error::status_codes::TRANSPORT_GENERATED_503);
                 assert_eq!(request_sent, RequestSentStatus::Sent);
             }
             other => panic!("expected transport error, got {other:?}"),
@@ -2706,7 +2710,7 @@ mod tests {
     fn format_transport_error_details_includes_error_chain() {
         let inner = std::io::Error::new(std::io::ErrorKind::ConnectionReset, "socket reset");
         let cosmos = crate::error::CosmosError::builder()
-            .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+            .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
             .with_message("failed to execute `reqwest` request")
             .with_source(inner)
             .build();

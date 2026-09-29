@@ -28,6 +28,7 @@ use crate::{
 
 pub(crate) mod cosmos_status;
 pub use cosmos_status::{CosmosStatus, SubStatusCode};
+pub mod status_codes;
 
 pub(crate) mod backtrace;
 pub(crate) use backtrace::Backtrace;
@@ -194,8 +195,8 @@ impl CosmosError {
     /// Returns the typed Cosmos status (HTTP status code + optional
     /// sub-status) associated with this error. Always present — non-service
     /// errors carry a synthetic status with a placeholder HTTP code (e.g.
-    /// [`CosmosStatus::TRANSPORT_GENERATED_503`] for transport failures,
-    /// [`CosmosStatus::CLIENT_GENERATED_401`] for authorization failures).
+    /// [`crate::error::status_codes::TRANSPORT_GENERATED_503`] for transport failures,
+    /// [`crate::error::status_codes::CLIENT_GENERATED_401`] for authorization failures).
     ///
     /// When [`response()`](Self::response) is `Some`, this is guaranteed
     /// to equal `response().status()` (the builder reconciles them at
@@ -518,6 +519,83 @@ const MAX_BACKTRACE_INHERITANCE_DEPTH: usize = 4;
 /// Driver-wide `Result` alias.
 pub type Result<T> = std::result::Result<T, CosmosError>;
 
+impl From<serde_json::Error> for CosmosError {
+    fn from(error: serde_json::Error) -> Self {
+        Self::builder()
+            .with_status(status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message("JSON serialization or deserialization failed")
+            .with_source(error)
+            .build()
+    }
+}
+
+impl From<url::ParseError> for CosmosError {
+    fn from(error: url::ParseError) -> Self {
+        Self::builder()
+            .with_status(status_codes::CLIENT_INVALID_URL)
+            .with_message("invalid URL")
+            .with_source(error)
+            .build()
+    }
+}
+
+impl From<CosmosError> for azure_core::Error {
+    fn from(error: CosmosError) -> Self {
+        let kind = classify_for_azure_core(&error);
+        azure_core::Error::new(kind, error)
+    }
+}
+
+fn classify_for_azure_core(error: &CosmosError) -> azure_core::error::ErrorKind {
+    use azure_core::error::ErrorKind;
+
+    let status = error.status();
+    let sub_status = status.sub_status();
+
+    if let Some(response) = error.response() {
+        let raw_response = match response.body() {
+            crate::models::ResponseBody::Bytes(bytes) => {
+                Some(Box::new(azure_core::http::RawResponse::from_bytes(
+                    status.status_code(),
+                    response.headers().to_raw_headers(),
+                    bytes.clone(),
+                )))
+            }
+            crate::models::ResponseBody::NoPayload => {
+                Some(Box::new(azure_core::http::RawResponse::from_bytes(
+                    status.status_code(),
+                    response.headers().to_raw_headers(),
+                    azure_core::Bytes::new(),
+                )))
+            }
+            crate::models::ResponseBody::Items(_) => None,
+        };
+
+        return ErrorKind::HttpResponse {
+            status: status.status_code(),
+            error_code: sub_status.map(|code| code.value().to_string()),
+            raw_response,
+        };
+    }
+
+    match sub_status {
+        Some(status_codes::substatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED)
+        | Some(status_codes::substatus::CLIENT_GENERATED_401) => ErrorKind::Credential,
+        Some(status_codes::substatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+        | Some(status_codes::substatus::SERIALIZATION_REQUEST_BODY_INVALID) => {
+            ErrorKind::DataConversion
+        }
+        Some(status_codes::substatus::TRANSPORT_CONNECTION_FAILED)
+        | Some(status_codes::substatus::TRANSPORT_DNS_FAILED)
+        | Some(status_codes::substatus::TRANSPORT_HTTP2_INCOMPATIBLE) => ErrorKind::Connection,
+        Some(status_codes::substatus::TRANSPORT_IO_FAILED)
+        | Some(status_codes::substatus::TRANSPORT_BODY_READ_FAILED)
+        | Some(status_codes::substatus::TRANSPORT_GENERATED_503)
+        | Some(status_codes::substatus::CLIENT_OPERATION_TIMEOUT) => ErrorKind::Io,
+        _ => ErrorKind::Other,
+    }
+}
+
 // =========================================================================
 // CosmosErrorBuilder
 // =========================================================================
@@ -527,10 +605,10 @@ impl CosmosError {
     /// defaults (a synthetic `500 InternalServerError` status). Callers
     /// typically follow with [`.with_status(...)`](CosmosErrorBuilder::with_status)
     /// to set the appropriate typed status — the well-known
-    /// [`CosmosStatus`] constants ([`TRANSPORT_GENERATED_503`](CosmosStatus::TRANSPORT_GENERATED_503),
-    /// [`AUTHENTICATION_TOKEN_ACQUISITION_FAILED`](CosmosStatus::AUTHENTICATION_TOKEN_ACQUISITION_FAILED),
-    /// [`SERIALIZATION_RESPONSE_BODY_INVALID`](CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID),
-    /// [`CLIENT_GENERATED_401`](CosmosStatus::CLIENT_GENERATED_401), etc.)
+    /// [`CosmosStatus`] constants ([`TRANSPORT_GENERATED_503`](crate::error::status_codes::TRANSPORT_GENERATED_503),
+    /// [`AUTHENTICATION_TOKEN_ACQUISITION_FAILED`](crate::error::status_codes::AUTHENTICATION_TOKEN_ACQUISITION_FAILED),
+    /// [`SERIALIZATION_RESPONSE_BODY_INVALID`](crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID),
+    /// [`CLIENT_GENERATED_401`](crate::error::status_codes::CLIENT_GENERATED_401), etc.)
     /// cover the common synthetic cases; for service errors received from
     /// the wire, use [`.with_response(...)`](CosmosErrorBuilder::with_response).
     ///
@@ -1332,14 +1410,14 @@ mod tests {
         let err = CosmosError::builder()
             .with_status(CosmosStatus::from_parts(
                 StatusCode::RequestTimeout,
-                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+                Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
             ))
             .with_message("e2e timeout")
             .build();
         assert_eq!(err.status().status_code(), StatusCode::RequestTimeout);
         assert_eq!(
             err.status().sub_status(),
-            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
         );
         assert!(err.status().is_timeout());
         assert!(err.status().is_transient());
@@ -1350,7 +1428,7 @@ mod tests {
         CosmosError::builder()
             .with_status(CosmosStatus::from_parts(
                 StatusCode::RequestTimeout,
-                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+                Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
             ))
             .with_message(message)
             .build()
@@ -1397,7 +1475,7 @@ mod tests {
             );
 
             let outer = CosmosError::builder()
-                .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                 .with_message("outer")
                 .with_arc_source(Arc::new(inner))
                 .build();
@@ -1494,7 +1572,7 @@ mod tests {
                 source: Arc::new(inner),
             };
             let outer = CosmosError::builder()
-                .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                 .with_message("outer")
                 .with_source(wrapper)
                 .build();
@@ -1564,7 +1642,7 @@ mod tests {
                 });
             }
             let outer = CosmosError::builder()
-                .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                 .with_message("outer")
                 .with_arc_source(src)
                 .build();
@@ -1808,7 +1886,7 @@ mod tests {
     fn make_error_with_diagnostics_and_source() -> CosmosError {
         let inner = end_to_end_timeout_error("inner timeout");
         CosmosError::builder()
-            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
             .with_message("outer transport failure")
             .with_diagnostics(make_test_diagnostics())
             .with_arc_source(Arc::new(inner))
@@ -1985,7 +2063,7 @@ mod tests {
         }
 
         let err = CosmosError::builder()
-            .with_status(CosmosStatus::TRANSPORT_GENERATED_503)
+            .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
             .with_message("outer")
             .with_arc_source(Arc::new(CyclicError))
             .build();
@@ -2015,7 +2093,7 @@ mod tests {
         let response = make_test_response(
             CosmosStatus::from_parts(
                 StatusCode::TooManyRequests,
-                Some(SubStatusCode::THROTTLE_DUE_TO_SPLIT),
+                Some(crate::error::status_codes::substatus::THROTTLE_DUE_TO_SPLIT),
             ),
             Arc::clone(&diag),
         );
@@ -2033,7 +2111,7 @@ mod tests {
         assert_eq!(err.status().status_code(), StatusCode::TooManyRequests);
         assert_eq!(
             err.status().sub_status(),
-            Some(SubStatusCode::THROTTLE_DUE_TO_SPLIT),
+            Some(crate::error::status_codes::substatus::THROTTLE_DUE_TO_SPLIT),
             "sub-status must round-trip to the SDK as `error_code` on the HttpResponse kind"
         );
         // And the response is reachable for further inspection.
@@ -2050,7 +2128,7 @@ mod tests {
     #[test]
     fn synthetic_error_reports_not_from_wire_for_sdk_classifier() {
         let err = CosmosError::builder()
-            .with_status(CosmosStatus::TRANSPORT_DNS_FAILED)
+            .with_status(crate::error::status_codes::TRANSPORT_DNS_FAILED)
             .with_message("dns failure")
             .build();
         assert!(!err.is_from_wire());
@@ -2058,7 +2136,7 @@ mod tests {
         // Sub-status is still readable so the SDK classifier can route on it.
         assert_eq!(
             err.status().sub_status(),
-            Some(SubStatusCode::TRANSPORT_DNS_FAILED)
+            Some(crate::error::status_codes::substatus::TRANSPORT_DNS_FAILED)
         );
     }
 

@@ -40,7 +40,7 @@ pub struct PlanOptions {
     /// Cross-partition operations are expensive by design; an accidental broad
     /// query can span a very large number of physical partitions. When a fresh
     /// plan would exceed this limit, planning fails with
-    /// [`CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED`](crate::error::CosmosStatus::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED).
+    /// [`crate::error::status_codes::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED`](crate::error::status_codes::CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED).
     ///
     /// The limit is enforced **only at initial plan time**, against the fan-out
     /// computed from the current partition topology. It is not a runtime cap: if
@@ -86,12 +86,9 @@ impl PlanOptions {
 #[cfg(test)]
 mod tests {
     use super::PlanOptions;
-    use crate::{
-        driver::dataflow::{
-            planner::validate_buffered_query,
-            query_plan::{DistinctType, QueryInfo, QueryPlan},
-        },
-        error::CosmosStatus,
+    use crate::driver::dataflow::{
+        planner::validate_buffered_query,
+        query_plan::{DistinctType, QueryInfo, QueryPlan},
     };
 
     #[test]
@@ -126,7 +123,7 @@ mod tests {
             if let Err(error) = result {
                 assert_eq!(
                     error.status(),
-                    CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+                    crate::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
                 );
             }
         }
