@@ -13,6 +13,7 @@
 
 ### Breaking Changes
 
+- Replaced `EffectivePartitionKey` string `From` conversions with strict `TryFrom` conversions and made deserialization reject malformed hexadecimal bounds; `PartitionKeyRange::new` now requires parsed `EffectivePartitionKey` bounds. [#5369](https://github.com/Azure/azure-sdk-for-rust/pull/5369)
 - Moved all `CosmosStatus` constants and the independently used `SubStatusCode` constants to `error::status_codes`; raw substatus constants are under `error::status_codes::substatus`, and constants used only to construct combined statuses were removed. ([#5355](https://github.com/Azure/azure-sdk-for-rust/pull/5355))
 - `UserAgentSuffix` replaces panicking `new` with `TryFrom<String>` and `TryFrom<&str>`, returning a typed `CosmosError` for invalid suffixes. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
 - Replaced panicking partition-key vector and floating-point `From` conversions with typed `TryFrom` errors; infallible key conversions remain unchanged. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
@@ -31,6 +32,7 @@
 
 ### Bugs Fixed
 
+- Account metadata now honors the service-provided `disableCrossRegionalHedging` signal for data-plane and eligible metadata operations, including refresh transitions and omitted-property retention. ([#5350](https://github.com/Azure/azure-sdk-for-rust/pull/5350))
 - Fixed `serde_json::value::RawValue` deserialization on the Cosmos binary JSON path: `binary_json::from_slice` and `ResponseBody::into_single`/`into_items` now render the value's JSON text for a `RawValue` target instead of failing with a misclassified serialization error, so `RawValue` callers keep working now that binary encoding is on by default. ([#5338](https://github.com/Azure/azure-sdk-for-rust/pull/5338))
 - Reconciled dataflow partition-range identity resolution across logical, EPK, sequential, and hedged requests, preserving split-parent session tokens on Gateway 2.0 while keeping logical partition-key wire routing unchanged, and enforcing the end-to-end timeout across planning and first-page execution. ([#5315](https://github.com/Azure/azure-sdk-for-rust/pull/5315))
 - Container recreation now preserves collection RID mismatch errors during cold partition routing and rejects incompatible stale partition keys with a dedicated client substatus. ([#5324](https://github.com/Azure/azure-sdk-for-rust/pull/5324))

@@ -395,8 +395,8 @@ mod tests {
     use super::*;
     use azure_data_cosmos_driver::models::effective_partition_key::EffectivePartitionKey as DriverEpk;
 
-    fn fr(min: &str, max: &str) -> FeedRange {
-        FeedRange::new(DriverEpk::from(min), DriverEpk::from(max)).unwrap()
+    fn fr(min: &str, max: &str) -> crate::Result<FeedRange> {
+        FeedRange::new(DriverEpk::try_from(min)?, DriverEpk::try_from(max)?)
     }
 
     fn st(s: &str) -> SessionToken {
@@ -406,27 +406,28 @@ mod tests {
     // === Normal merge scenarios ===
 
     #[test]
-    fn normal_case_same_range_merge() {
+    fn normal_case_same_range_merge() -> crate::Result<()> {
         let result = get_latest_session_token(
             &[
-                (fr("AA", "BB"), st("0:1#54#3=50")),
-                (fr("AA", "BB"), st("0:1#51#3=52")),
+                (fr("AA", "BB")?, st("0:1#54#3=50")),
+                (fr("AA", "BB")?, st("0:1#51#3=52")),
             ],
-            &fr("AA", "BB"),
+            &fr("AA", "BB")?,
         )
         .unwrap();
         assert_eq!(result.as_str(), "0:1#54#3=52");
+        Ok(())
     }
 
     #[test]
-    fn split_with_both_children() {
+    fn split_with_both_children() -> crate::Result<()> {
         let result = get_latest_session_token(
             &[
-                (fr("AA", "DD"), st("0:1#51#3=52")),
-                (fr("AA", "BB"), st("1:1#55#3=52")),
-                (fr("BB", "DD"), st("2:1#54#3=52")),
+                (fr("AA", "DD")?, st("0:1#51#3=52")),
+                (fr("AA", "BB")?, st("1:1#55#3=52")),
+                (fr("BB", "DD")?, st("2:1#54#3=52")),
             ],
-            &fr("AA", "DD"),
+            &fr("AA", "DD")?,
         )
         .unwrap();
         // Children are newer → split detected
@@ -434,16 +435,17 @@ mod tests {
         assert_eq!(parts.len(), 2);
         assert!(parts.contains(&"1:1#55#3=52"));
         assert!(parts.contains(&"2:1#54#3=52"));
+        Ok(())
     }
 
     #[test]
-    fn split_with_one_child() {
+    fn split_with_one_child() -> crate::Result<()> {
         let result = get_latest_session_token(
             &[
-                (fr("AA", "DD"), st("0:1#51#3=52")),
-                (fr("AA", "BB"), st("1:1#55#3=52")),
+                (fr("AA", "DD")?, st("0:1#51#3=52")),
+                (fr("AA", "BB")?, st("1:1#55#3=52")),
             ],
-            &fr("AA", "DD"),
+            &fr("AA", "DD")?,
         )
         .unwrap();
         // Single child can't cover parent → both survive
@@ -451,30 +453,32 @@ mod tests {
         assert_eq!(parts.len(), 2);
         assert!(parts.contains(&"0:1#51#3=52"));
         assert!(parts.contains(&"1:1#55#3=52"));
+        Ok(())
     }
 
     #[test]
-    fn merge_parent_newer() {
+    fn merge_parent_newer() -> crate::Result<()> {
         let result = get_latest_session_token(
             &[
-                (fr("AA", "DD"), st("0:1#55#3=52")),
-                (fr("AA", "BB"), st("1:1#51#3=52")),
+                (fr("AA", "DD")?, st("0:1#55#3=52")),
+                (fr("AA", "BB")?, st("1:1#51#3=52")),
             ],
-            &fr("AA", "DD"),
+            &fr("AA", "DD")?,
         )
         .unwrap();
         // Parent is newer → child removed (merge scenario)
         assert_eq!(result.as_str(), "0:1#55#3=52");
+        Ok(())
     }
 
     #[test]
-    fn compound_token_passthrough() {
+    fn compound_token_passthrough() -> crate::Result<()> {
         let result = get_latest_session_token(
             &[
-                (fr("AA", "DD"), st("2:1#54#3=52,1:1#55#3=52")),
-                (fr("AA", "BB"), st("0:1#51#3=52")),
+                (fr("AA", "DD")?, st("2:1#54#3=52,1:1#55#3=52")),
+                (fr("AA", "BB")?, st("0:1#51#3=52")),
             ],
-            &fr("AA", "BB"),
+            &fr("AA", "BB")?,
         )
         .unwrap();
         // Compound passes through, all tokens preserved
@@ -483,16 +487,17 @@ mod tests {
         assert!(parts.contains(&"2:1#54#3=52"));
         assert!(parts.contains(&"1:1#55#3=52"));
         assert!(parts.contains(&"0:1#51#3=52"));
+        Ok(())
     }
 
     #[test]
-    fn several_compound_tokens() {
+    fn several_compound_tokens() -> crate::Result<()> {
         let result = get_latest_session_token(
             &[
-                (fr("AA", "DD"), st("2:1#57#3=52,1:1#57#3=52")),
-                (fr("AA", "DD"), st("2:1#56#3=52,1:1#58#3=52")),
+                (fr("AA", "DD")?, st("2:1#57#3=52,1:1#57#3=52")),
+                (fr("AA", "DD")?, st("2:1#56#3=52,1:1#58#3=52")),
             ],
-            &fr("AA", "DD"),
+            &fr("AA", "DD")?,
         )
         .unwrap();
         // Compound tokens split and merged by pk range id
@@ -500,16 +505,17 @@ mod tests {
         assert_eq!(parts.len(), 2);
         assert!(parts.contains(&"2:1#57#3=52"));
         assert!(parts.contains(&"1:1#58#3=52"));
+        Ok(())
     }
 
     #[test]
-    fn overlapping_ranges() {
+    fn overlapping_ranges() -> crate::Result<()> {
         let result = get_latest_session_token(
             &[
-                (fr("AA", "CC"), st("0:1#54#3=52")),
-                (fr("BB", "FF"), st("2:1#51#3=52")),
+                (fr("AA", "CC")?, st("0:1#54#3=52")),
+                (fr("BB", "FF")?, st("2:1#51#3=52")),
             ],
-            &fr("AA", "EE"),
+            &fr("AA", "EE")?,
         )
         .unwrap();
         // Both overlap with target, different pk range ids
@@ -517,54 +523,62 @@ mod tests {
         assert_eq!(parts.len(), 2);
         assert!(parts.contains(&"0:1#54#3=52"));
         assert!(parts.contains(&"2:1#51#3=52"));
+        Ok(())
     }
 
     #[test]
-    fn no_relevant_feed_ranges() {
+    fn no_relevant_feed_ranges() -> crate::Result<()> {
         let result = get_latest_session_token(
             &[
-                (fr("CC", "DD"), st("0:1#54#3=52")),
-                (fr("EE", "FF"), st("0:1#51")),
+                (fr("CC", "DD")?, st("0:1#54#3=52")),
+                (fr("EE", "FF")?, st("0:1#51")),
             ],
-            &fr("AA", "BB"),
+            &fr("AA", "BB")?,
         );
         assert!(result.is_err());
+        Ok(())
     }
 
     // === Additional edge cases ===
 
     #[test]
-    fn same_range_different_pk_range_ids() {
+    fn same_range_different_pk_range_ids() -> crate::Result<()> {
         // When same feed range has different pk range ids, keep the one with higher LSN
         let result = get_latest_session_token(
             &[
-                (fr("AA", "BB"), st("0:1#100#3=50")),
-                (fr("AA", "BB"), st("1:1#200#3=60")),
+                (fr("AA", "BB")?, st("0:1#100#3=50")),
+                (fr("AA", "BB")?, st("1:1#200#3=60")),
             ],
-            &fr("AA", "BB"),
+            &fr("AA", "BB")?,
         )
         .unwrap();
         // pk range id 1 has higher global LSN (200 > 100)
         assert!(result.as_str().starts_with("1:"));
         assert!(result.as_str().contains("#200#"));
+        Ok(())
     }
 
     #[test]
-    fn v1_tokens_merge() {
+    fn v1_tokens_merge() -> crate::Result<()> {
         let result = get_latest_session_token(
-            &[(fr("AA", "BB"), st("0:100")), (fr("AA", "BB"), st("0:200"))],
-            &fr("AA", "BB"),
+            &[
+                (fr("AA", "BB")?, st("0:100")),
+                (fr("AA", "BB")?, st("0:200")),
+            ],
+            &fr("AA", "BB")?,
         )
         .unwrap();
         assert_eq!(result.as_str(), "0:200");
+        Ok(())
     }
 
     #[test]
-    fn single_input() {
+    fn single_input() -> crate::Result<()> {
         let result =
-            get_latest_session_token(&[(fr("AA", "FF"), st("0:1#100#1=10"))], &fr("AA", "FF"))
+            get_latest_session_token(&[(fr("AA", "FF")?, st("0:1#100#1=10"))], &fr("AA", "FF")?)
                 .unwrap();
         assert_eq!(result.as_str(), "0:1#100#1=10");
+        Ok(())
     }
 
     #[test]
@@ -578,15 +592,15 @@ mod tests {
     }
 
     #[test]
-    fn mixed_split_scenario() {
+    fn mixed_split_scenario() -> crate::Result<()> {
         // Parent LSN is between the two children
         let result = get_latest_session_token(
             &[
-                (fr("AA", "DD"), st("0:1#53#3=52")),
-                (fr("AA", "BB"), st("1:1#55#3=52")),
-                (fr("BB", "DD"), st("2:1#51#3=52")),
+                (fr("AA", "DD")?, st("0:1#53#3=52")),
+                (fr("AA", "BB")?, st("1:1#55#3=52")),
+                (fr("BB", "DD")?, st("2:1#51#3=52")),
             ],
-            &fr("AA", "DD"),
+            &fr("AA", "DD")?,
         )
         .unwrap();
         // Mixed: child 1 newer (55 > 53), child 2 older (51 < 53) → keep all
@@ -595,21 +609,22 @@ mod tests {
         assert!(parts.contains(&"0:1#53#3=52"));
         assert!(parts.contains(&"1:1#55#3=52"));
         assert!(parts.contains(&"2:1#51#3=52"));
+        Ok(())
     }
 
     // === Input ordering tests (Findings 2, 3, 4) ===
 
     #[test]
-    fn three_way_split_sorted() {
+    fn three_way_split_sorted() -> crate::Result<()> {
         // Parent with 3 children in sorted order, all children newer
         let result = get_latest_session_token(
             &[
-                (fr("AA", "FF"), st("0:1#50#3=50")),
-                (fr("AA", "BB"), st("1:1#55#3=52")),
-                (fr("BB", "DD"), st("2:1#56#3=52")),
-                (fr("DD", "FF"), st("3:1#57#3=52")),
+                (fr("AA", "FF")?, st("0:1#50#3=50")),
+                (fr("AA", "BB")?, st("1:1#55#3=52")),
+                (fr("BB", "DD")?, st("2:1#56#3=52")),
+                (fr("DD", "FF")?, st("3:1#57#3=52")),
             ],
-            &fr("AA", "FF"),
+            &fr("AA", "FF")?,
         )
         .unwrap();
         // All children newer → split detected, parent replaced
@@ -620,19 +635,20 @@ mod tests {
         assert!(parts.contains(&"3:1#57#3=52"));
         // Parent token should NOT be present
         assert!(!parts.contains(&"0:1#50#3=50"));
+        Ok(())
     }
 
     #[test]
-    fn three_way_split_shuffled() {
+    fn three_way_split_shuffled() -> crate::Result<()> {
         // Same as above but children in non-sorted order (Finding 3)
         let result = get_latest_session_token(
             &[
-                (fr("AA", "FF"), st("0:1#50#3=50")),
-                (fr("DD", "FF"), st("3:1#57#3=52")),
-                (fr("AA", "BB"), st("1:1#55#3=52")),
-                (fr("BB", "DD"), st("2:1#56#3=52")),
+                (fr("AA", "FF")?, st("0:1#50#3=50")),
+                (fr("DD", "FF")?, st("3:1#57#3=52")),
+                (fr("AA", "BB")?, st("1:1#55#3=52")),
+                (fr("BB", "DD")?, st("2:1#56#3=52")),
             ],
-            &fr("AA", "FF"),
+            &fr("AA", "FF")?,
         )
         .unwrap();
         // Should produce same result regardless of child order
@@ -642,18 +658,19 @@ mod tests {
         assert!(parts.contains(&"2:1#56#3=52"));
         assert!(parts.contains(&"3:1#57#3=52"));
         assert!(!parts.contains(&"0:1#50#3=50"));
+        Ok(())
     }
 
     #[test]
-    fn children_before_parent_in_input() {
+    fn children_before_parent_in_input() -> crate::Result<()> {
         // Children appear before parent in the input array (Finding 4)
         let result = get_latest_session_token(
             &[
-                (fr("AA", "BB"), st("1:1#55#3=52")),
-                (fr("BB", "DD"), st("2:1#54#3=52")),
-                (fr("AA", "DD"), st("0:1#51#3=52")),
+                (fr("AA", "BB")?, st("1:1#55#3=52")),
+                (fr("BB", "DD")?, st("2:1#54#3=52")),
+                (fr("AA", "DD")?, st("0:1#51#3=52")),
             ],
-            &fr("AA", "DD"),
+            &fr("AA", "DD")?,
         )
         .unwrap();
         // Should still detect the split — same as split_with_both_children
@@ -661,19 +678,20 @@ mod tests {
         assert_eq!(parts.len(), 2);
         assert!(parts.contains(&"1:1#55#3=52"));
         assert!(parts.contains(&"2:1#54#3=52"));
+        Ok(())
     }
 
     #[test]
-    fn unrelated_between_parent_and_children() {
+    fn unrelated_between_parent_and_children() -> crate::Result<()> {
         // Unrelated feed range sits between parent and children in input (Finding 2)
         let result = get_latest_session_token(
             &[
-                (fr("AA", "DD"), st("0:1#51#3=52")),
-                (fr("EE", "FF"), st("9:1#99#3=99")),
-                (fr("AA", "BB"), st("1:1#55#3=52")),
-                (fr("BB", "DD"), st("2:1#54#3=52")),
+                (fr("AA", "DD")?, st("0:1#51#3=52")),
+                (fr("EE", "FF")?, st("9:1#99#3=99")),
+                (fr("AA", "BB")?, st("1:1#55#3=52")),
+                (fr("BB", "DD")?, st("2:1#54#3=52")),
             ],
-            &fr("AA", "FF"),
+            &fr("AA", "FF")?,
         )
         .unwrap();
         // Split should still be detected for [AA,DD), and unrelated [EE,FF) preserved
@@ -684,56 +702,63 @@ mod tests {
         assert!(parts.contains(&"9:1#99#3=99"));
         // Parent should have been replaced by children
         assert!(!parts.contains(&"0:1#51#3=52"));
+        Ok(())
     }
 
     // === FeedRange helper tests ===
 
     #[test]
-    fn can_merge_adjacent() {
-        let a = fr("AA", "BB");
-        let b = fr("BB", "DD");
+    fn can_merge_adjacent() -> crate::Result<()> {
+        let a = fr("AA", "BB")?;
+        let b = fr("BB", "DD")?;
         assert!(can_merge(&a, &b));
         assert!(can_merge(&b, &a));
+        Ok(())
     }
 
     #[test]
-    fn can_merge_overlapping() {
-        let a = fr("AA", "CC");
-        let b = fr("BB", "DD");
+    fn can_merge_overlapping() -> crate::Result<()> {
+        let a = fr("AA", "CC")?;
+        let b = fr("BB", "DD")?;
         assert!(can_merge(&a, &b));
+        Ok(())
     }
 
     #[test]
-    fn cannot_merge_disjoint() {
-        let a = fr("AA", "BB");
-        let b = fr("CC", "DD");
+    fn cannot_merge_disjoint() -> crate::Result<()> {
+        let a = fr("AA", "BB")?;
+        let b = fr("CC", "DD")?;
         assert!(!can_merge(&a, &b));
+        Ok(())
     }
 
     #[test]
-    fn can_merge_rejects_logical_partition_ranges_symmetrically() {
+    fn can_merge_rejects_logical_partition_ranges_symmetrically() -> crate::Result<()> {
         use azure_data_cosmos_driver::models::{PartitionKey, PartitionKeyDefinition};
         let pk_def: PartitionKeyDefinition = serde_json::from_str(r#"{"paths":["/pk"]}"#).unwrap();
         let logical = FeedRange::for_partition(PartitionKey::from("pk1"), &pk_def);
-        let explicit = fr("", "FF");
+        let explicit = fr("", "FF")?;
         assert!(!can_merge(&logical, &explicit));
         assert!(!can_merge(&explicit, &logical));
         assert!(!can_merge(&logical, &logical));
+        Ok(())
     }
 
     #[test]
-    fn merge_ranges_produces_bounding_range() {
-        let a = fr("AA", "BB");
-        let b = fr("BB", "DD");
+    fn merge_ranges_produces_bounding_range() -> crate::Result<()> {
+        let a = fr("AA", "BB")?;
+        let b = fr("BB", "DD")?;
         let merged = merge_ranges(&a, &b);
-        assert_eq!(merged, fr("AA", "DD"));
+        assert_eq!(merged, fr("AA", "DD")?);
+        Ok(())
     }
 
     #[test]
-    fn merge_ranges_overlapping_uses_outermost_bounds() {
-        let a = fr("00", "50");
-        let b = fr("30", "FF");
+    fn merge_ranges_overlapping_uses_outermost_bounds() -> crate::Result<()> {
+        let a = fr("00", "50")?;
+        let b = fr("30", "FF")?;
         let merged = merge_ranges(&a, &b);
-        assert_eq!(merged, fr("00", "FF"));
+        assert_eq!(merged, fr("00", "FF")?);
+        Ok(())
     }
 }

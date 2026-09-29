@@ -573,13 +573,12 @@ pub async fn feed_range_scope_restricts_cross_partition_query() -> Result<(), Bo
             // strictly greater than `X_mid` and — because adjacent single-hash
             // EPKs differ within their leading bytes — strictly less than
             // `X_{mid+1}`. So `[X_mid || 0x80, X_{mid+1})` contains no doc's EPK.
-            // (A single hex nibble would be dropped by the byte-wise hex parser,
-            // so a full byte is required.) This guards against an off-by-one
+            // A full byte is required for valid hexadecimal. This guards against an off-by-one
             // where the lower bound is treated as inclusive of `X_mid`.
-            let gap_start = EffectivePartitionKey::from(format!(
+            let gap_start = EffectivePartitionKey::try_from(format!(
                 "{}80",
                 points[mid].1.min_inclusive().to_hex()
-            ));
+            ))?;
             let window_d = FeedRange::new(gap_start, points[mid + 1].1.min_inclusive().clone())?;
             let got_d = drain_ids(&container, FeedScope::range(window_d)).await?;
             assert!(

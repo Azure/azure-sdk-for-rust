@@ -10,8 +10,8 @@
 //! Also accepts simple V1 tokens (`{pkrangeId}:{lsn}`) and legacy V1 tokens
 //! (`{pkrangeId}:-1#{lsn}`) for backward compatibility.
 
-use std::collections::HashSet;
-use std::sync::Mutex;
+use crate::in_memory_emulator::epk::Epk;
+use std::{collections::HashSet, sync::Mutex};
 
 /// Newtype wrapper around the region-id `u64` carried in V2 session tokens.
 ///
@@ -278,7 +278,7 @@ pub(crate) fn parse_composite_session_token(
 /// brittle. The set keys on the EPK already computed by the caller, so we
 /// match exactly the logical partition the test asked for.
 pub(crate) struct SessionState {
-    forced_epks: Mutex<HashSet<String>>,
+    forced_epks: Mutex<HashSet<Epk>>,
 }
 
 impl SessionState {
@@ -289,20 +289,20 @@ impl SessionState {
     }
 
     /// Marks the given EPK as forced-unavailable on the next read (one-shot).
-    pub fn set_force_unavailable_for(&self, epk: &str) {
-        self.forced_epks.lock().unwrap().insert(epk.to_string());
+    pub fn set_force_unavailable_for(&self, epk: &Epk) {
+        self.forced_epks.lock().unwrap().insert(epk.clone());
     }
 
     /// Checks and clears the forced-unavailability marker for pk.
     /// Returns true if it was set (one-shot: only fires once).
-    pub fn check_and_clear_forced_for(&self, epk: &str) -> bool {
+    pub fn check_and_clear_forced_for(&self, epk: &Epk) -> bool {
         self.forced_epks.lock().unwrap().remove(epk)
     }
 
     /// Returns a snapshot of the currently-pending forced-unavailable EPKs.
     /// Used during partition split/merge so child partitions can inherit any
     /// pending markers whose EPK falls within their new range.
-    pub fn snapshot_forced_epks(&self) -> Vec<String> {
+    pub fn snapshot_forced_epks(&self) -> Vec<Epk> {
         self.forced_epks.lock().unwrap().iter().cloned().collect()
     }
 }
@@ -431,23 +431,25 @@ mod tests {
     }
 
     #[test]
-    fn forced_unavailability_one_shot() {
+    fn forced_unavailability_one_shot() -> crate::error::Result<()> {
         let state = SessionState::new();
-        let epk = "ABCD";
-        assert!(!state.check_and_clear_forced_for(epk));
+        let epk = Epk::try_from("ABCD")?;
+        assert!(!state.check_and_clear_forced_for(&epk));
 
-        state.set_force_unavailable_for(epk);
-        assert!(state.check_and_clear_forced_for(epk));
-        assert!(!state.check_and_clear_forced_for(epk));
+        state.set_force_unavailable_for(&epk);
+        assert!(state.check_and_clear_forced_for(&epk));
+        assert!(!state.check_and_clear_forced_for(&epk));
+        Ok(())
     }
 
     #[test]
-    fn forced_unavailability_scoped_per_epk() {
+    fn forced_unavailability_scoped_per_epk() -> crate::error::Result<()> {
         let state = SessionState::new();
-        state.set_force_unavailable_for("AAAA");
+        state.set_force_unavailable_for(&Epk::try_from("AAAA")?);
         // Other EPKs in the same physical partition must not trip.
-        assert!(!state.check_and_clear_forced_for("BBBB"));
+        assert!(!state.check_and_clear_forced_for(&Epk::try_from("BBBB")?));
         // The targeted EPK still trips on its own next read.
-        assert!(state.check_and_clear_forced_for("AAAA"));
+        assert!(state.check_and_clear_forced_for(&Epk::try_from("AAAA")?));
+        Ok(())
     }
 }
