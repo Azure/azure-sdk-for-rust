@@ -396,7 +396,7 @@ criterion requires `harness = false` to supply its own test harness.
 
 ##### Live HTTP transport benchmarks
 
-The `azure_core` `http_transport_benchmarks` benchmark uses `AZSDKRUSTTEST_HTTPBIN_URL`.
+The `azure_core` `http_transport_benchmarks` benchmark uses `AZURE_TEST_HTTPBIN_URL`.
 Set it to the HTTP or HTTPS origin of an existing local or deployed
 [httpbin](https://httpbin.org/) service. The previous SDK-hosted httpbin service has
 been retired; there is no default endpoint and these commands do not provision a server.
@@ -406,7 +406,7 @@ credentials, other paths, query strings, and fragments are not supported.
 For example, if you already run httpbin on port 8080, run from the repository root:
 
 ```sh
-AZSDKRUSTTEST_HTTPBIN_URL=http://localhost:8080 cargo bench -p azure_core --bench http_transport_benchmarks
+AZURE_TEST_HTTPBIN_URL=http://localhost:8080 cargo bench -p azure_core --bench http_transport_benchmarks
 ```
 
 When the variable is unset, the four live transport benchmarks are not registered and
@@ -418,7 +418,7 @@ benchmarks do not execute on macOS and print a notice instead.
 The `core_ureq_client` example requires the same endpoint configuration:
 
 ```sh
-AZSDKRUSTTEST_HTTPBIN_URL=http://localhost:8080 cargo run -p azure_core --example core_ureq_client
+AZURE_TEST_HTTPBIN_URL=http://localhost:8080 cargo run -p azure_core --example core_ureq_client
 ```
 
 #### Performance Tests

@@ -31,7 +31,6 @@
     "amqp",
     "asyncoperation",
     "azsdk",
-    "azsdkrusttest",
     "azurecli",
     "bugbug",
     "callsite",

@@ -36,7 +36,7 @@ pub fn simple_http_transport_test(c: &mut Criterion, endpoint: &Url) {
             let response = client
                 .get("get", None)
                 .await
-                .expect("GET /get failed; check AZSDKRUSTTEST_HTTPBIN_URL and the httpbin service");
+                .expect("GET /get failed; check AZURE_TEST_HTTPBIN_URL and the httpbin service");
             assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
         });
     });
@@ -61,7 +61,7 @@ pub fn disable_pooling_http_transport_test(c: &mut Criterion, endpoint: &Url) {
             let response = client
                 .get("get", None)
                 .await
-                .expect("GET /get failed; check AZSDKRUSTTEST_HTTPBIN_URL and the httpbin service");
+                .expect("GET /get failed; check AZURE_TEST_HTTPBIN_URL and the httpbin service");
             assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
         });
     });
@@ -79,7 +79,7 @@ pub fn baseline_http_transport_test(c: &mut Criterion, endpoint: &Url) {
             async move {
                 let request = Request::new(url, Method::Get);
                 let response = http_client.execute_request(&request).await.expect(
-                    "GET /get failed; check AZSDKRUSTTEST_HTTPBIN_URL and the httpbin service",
+                    "GET /get failed; check AZURE_TEST_HTTPBIN_URL and the httpbin service",
                 );
                 assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
             }
@@ -98,7 +98,7 @@ pub fn raw_reqwest_http_transport_test(c: &mut Criterion, endpoint: &Url) {
             let response = request
                 .send()
                 .await
-                .expect("GET /get failed; check AZSDKRUSTTEST_HTTPBIN_URL and the httpbin service");
+                .expect("GET /get failed; check AZURE_TEST_HTTPBIN_URL and the httpbin service");
             assert_eq!(response.status(), reqwest::StatusCode::OK);
         });
     });
@@ -108,7 +108,7 @@ fn configured_http_transport_benchmarks(c: &mut Criterion) {
     let Some(endpoint) = httpbin_endpoint().expect("Invalid live HTTP benchmark configuration")
     else {
         eprintln!(
-            "Live HTTP transport benchmarks not enabled: set AZSDKRUSTTEST_HTTPBIN_URL to an httpbin origin. No HTTP requests were tested."
+            "Live HTTP transport benchmarks not enabled: set AZURE_TEST_HTTPBIN_URL to an httpbin origin. No HTTP requests were tested."
         );
         return;
     };
