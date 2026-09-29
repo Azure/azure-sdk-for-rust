@@ -68,16 +68,20 @@ pub(crate) enum PartitionKeyRangeStatus {
 }
 
 impl PartitionKeyRange {
-    /// Creates a new PartitionKeyRange with required fields
+    /// Creates a partition key range from an ID and parsed EPK bounds.
+    ///
+    /// Parse hexadecimal bounds with [`EffectivePartitionKey::try_from()`]
+    /// before calling this constructor. This constructor does not validate
+    /// the ordering of the bounds.
     pub fn new(
         id: String,
-        min_inclusive: impl Into<EffectivePartitionKey>,
-        max_exclusive: impl Into<EffectivePartitionKey>,
+        min_inclusive: EffectivePartitionKey,
+        max_exclusive: EffectivePartitionKey,
     ) -> Self {
         Self {
             id,
-            min_inclusive: min_inclusive.into(),
-            max_exclusive: max_exclusive.into(),
+            min_inclusive,
+            max_exclusive,
             status: PartitionKeyRangeStatus::default(),
             throughput_fraction: 0.0,
             parents: None,
@@ -159,35 +163,54 @@ mod tests {
     use super::*;
 
     #[test]
-    fn partition_key_range_creation() {
-        let pkr = PartitionKeyRange::new("1".to_string(), "", "FF");
+    fn partition_key_range_creation() -> crate::error::Result<()> {
+        let pkr = PartitionKeyRange::new(
+            "1".to_string(),
+            EffectivePartitionKey::try_from("")?,
+            EffectivePartitionKey::try_from("FF")?,
+        );
 
         assert_eq!(pkr.id, "1");
         assert_eq!(pkr.min_inclusive.to_hex(), "");
         assert_eq!(pkr.max_exclusive.to_hex(), "FF");
+        Ok(())
     }
 
     #[test]
-    fn as_range() {
-        let pkr = PartitionKeyRange::new("1".to_string(), "00", "FF");
+    fn as_range() -> crate::error::Result<()> {
+        let pkr = PartitionKeyRange::new(
+            "1".to_string(),
+            EffectivePartitionKey::try_from("00")?,
+            EffectivePartitionKey::try_from("FF")?,
+        );
 
         let range = pkr.as_range();
         assert_eq!(range.min.to_hex(), "00");
         assert_eq!(range.max.to_hex(), "FF");
         assert!(range.is_min_inclusive);
         assert!(!range.is_max_inclusive);
+        Ok(())
     }
 
     #[test]
-    fn equality_check() {
-        let pkr1 = PartitionKeyRange::new("1".to_string(), "00", "FF");
+    fn equality_check() -> crate::error::Result<()> {
+        let pkr1 = PartitionKeyRange::new(
+            "1".to_string(),
+            EffectivePartitionKey::try_from("00")?,
+            EffectivePartitionKey::try_from("FF")?,
+        );
 
-        let mut pkr2 = PartitionKeyRange::new("1".to_string(), "00", "FF");
+        let mut pkr2 = PartitionKeyRange::new(
+            "1".to_string(),
+            EffectivePartitionKey::try_from("00")?,
+            EffectivePartitionKey::try_from("FF")?,
+        );
 
         assert_eq!(pkr1, pkr2);
 
         pkr2.id = "2".to_string();
         assert_ne!(pkr1, pkr2);
+        Ok(())
     }
 
     /// Service responses commonly include metadata fields (`_rid`, `_self`,
@@ -222,6 +245,20 @@ mod tests {
         assert_eq!(pkr.status, PartitionKeyRangeStatus::Online);
         assert_eq!(pkr.throughput_fraction, 0.5);
         assert_eq!(pkr.parents.as_deref(), Some(&["0".to_string()][..]));
+    }
+
+    #[test]
+    fn deserialization_rejects_malformed_epk_bounds() {
+        for malformed in ["4", "GG", "40G0", "4080GG", "4080x", "é", "4080é"] {
+            for (min, max) in [(malformed, "FF"), ("", malformed)] {
+                let json = serde_json::json!({
+                    "id": "0",
+                    "minInclusive": min,
+                    "maxExclusive": max
+                });
+                assert!(serde_json::from_value::<PartitionKeyRange>(json).is_err());
+            }
+        }
     }
 
     /// The whole point of slimming the cached struct is to keep its

@@ -1118,12 +1118,6 @@ pub mod in_memory_emulator {
     impl Display for EffectivePartitionKey {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
     }
-    impl From<&str> for EffectivePartitionKey {
-        fn from(s: &str) -> Self;
-    }
-    impl From<String> for EffectivePartitionKey {
-        fn from(s: String) -> Self;
-    }
     impl Hash for EffectivePartitionKey {
         fn hash<H: std::hash::Hasher>(&self, state: &mut H);
     }
@@ -1144,6 +1138,14 @@ pub mod in_memory_emulator {
     }
     impl Serialize for EffectivePartitionKey {
         fn serialize<S>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error> where S: serde::Serializer;
+    }
+    impl TryFrom<&str> for EffectivePartitionKey {
+        type Error = CosmosError;
+        fn try_from(s: &str) -> Result<Self, <Self as >::Error>;
+    }
+    impl TryFrom<String> for EffectivePartitionKey {
+        type Error = CosmosError;
+        fn try_from(s: String) -> Result<Self, <Self as >::Error>;
     }
     impl<'de> Deserialize<'de> for EffectivePartitionKey {
         fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: serde::Deserializer<'de>;
@@ -1249,6 +1251,7 @@ pub mod in_memory_emulator {
         pub fn active_region_names(&self) -> Vec<String>;
         pub fn active_regions(&self) -> Vec<VirtualRegion>;
         pub fn consistency(&self) -> ConsistencyLevel;
+        pub fn cross_region_hedging_disabled(&self) -> Option<bool>;
         pub fn is_write_region(&self, region_name: &str) -> bool;
         pub fn new(regions: Vec<VirtualRegion>) -> crate::error::Result<Self>;
         pub fn per_partition_failover_enabled(&self) -> bool;
@@ -1257,10 +1260,12 @@ pub mod in_memory_emulator {
         pub fn replication(&self) -> &ReplicationConfig;
         pub fn replication_for(&self, source: &str, target: &str) -> &ReplicationConfig;
         pub fn ru_model(&self) -> &RequestUnitChargingModel;
+        pub fn set_cross_region_hedging_disabled(&self, disabled: Option<bool>);
         pub fn set_per_partition_failover(&self, enabled: bool);
         pub fn throttling_enabled(&self) -> bool;
         pub fn topology_snapshot(&self) -> TopologySnapshot;
         pub fn with_consistency(self, level: ConsistencyLevel) -> Self;
+        pub fn with_cross_region_hedging_disabled(self, disabled: bool) -> Self;
         pub fn with_per_partition_failover(self, enabled: bool) -> Self;
         pub fn with_replication_config(self, config: ReplicationConfig) -> Self;
         pub fn with_replication_override(self, source: &str, target: &str, config: ReplicationConfig) -> crate::error::Result<Self>;
@@ -2431,12 +2436,6 @@ pub mod models {
         impl Display for EffectivePartitionKey {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
         }
-        impl From<&str> for EffectivePartitionKey {
-            fn from(s: &str) -> Self;
-        }
-        impl From<String> for EffectivePartitionKey {
-            fn from(s: String) -> Self;
-        }
         impl Hash for EffectivePartitionKey {
             fn hash<H: std::hash::Hasher>(&self, state: &mut H);
         }
@@ -2457,6 +2456,14 @@ pub mod models {
         }
         impl Serialize for EffectivePartitionKey {
             fn serialize<S>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error> where S: serde::Serializer;
+        }
+        impl TryFrom<&str> for EffectivePartitionKey {
+            type Error = CosmosError;
+            fn try_from(s: &str) -> Result<Self, <Self as >::Error>;
+        }
+        impl TryFrom<String> for EffectivePartitionKey {
+            type Error = CosmosError;
+            fn try_from(s: String) -> Result<Self, <Self as >::Error>;
         }
         impl<'de> Deserialize<'de> for EffectivePartitionKey {
             fn deserialize<D>(deserializer: D) -> Result<Self, <D as >::Error> where D: serde::Deserializer<'de>;
@@ -2479,7 +2486,7 @@ pub mod models {
         }
         impl PartitionKeyRange {
             pub fn get_parent_ids(&self) -> HashSet<String>;
-            pub fn new<impl Into<EffectivePartitionKey>: Into<EffectivePartitionKey>, impl Into<EffectivePartitionKey>: Into<EffectivePartitionKey>>(id: String, min_inclusive: impl Into<EffectivePartitionKey>, max_exclusive: impl Into<EffectivePartitionKey>) -> Self;
+            pub fn new(id: String, min_inclusive: EffectivePartitionKey, max_exclusive: EffectivePartitionKey) -> Self;
         }
         impl Eq for PartitionKeyRange {
         }

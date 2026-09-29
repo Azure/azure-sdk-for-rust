@@ -429,15 +429,13 @@ async fn fetch_and_build_routing_map<F, Fut, R>(
     container: ContainerReference,
     previous_routing_map: Option<Arc<ContainerRoutingMap>>,
     fetch_pk_ranges: F,
-) -> Arc<ContainerRoutingMap>
+) -> CachedRoutingMap
 where
     F: Fn(ContainerReference, Option<String>) -> Fut,
     Fut: std::future::Future<Output = R>,
     R: IntoPkRangeFetchOutcome,
 {
-    fetch_and_build_routing_map_result(container, previous_routing_map, fetch_pk_ranges)
-        .await
-        .unwrap_or_else(|_| Arc::new(ContainerRoutingMap::empty()))
+    fetch_and_build_routing_map_result(container, previous_routing_map, fetch_pk_ranges).await
 }
 
 async fn fetch_and_build_routing_map_inner<F, Fut, R>(
@@ -787,11 +785,21 @@ where
 }
 
 /// Parses a pkranges REST response body into partition key ranges.
+///
+/// Invalid JSON or EPK bounds return a serialization error with the parsing source.
 pub(crate) fn parse_pk_ranges_response(
     body: &[u8],
-) -> Option<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
-    let response: PkRangesResponse = serde_json::from_slice(body).ok()?;
-    Some(response.partition_key_ranges)
+) -> crate::error::Result<Vec<crate::models::partition_key_range::PartitionKeyRange>> {
+    let response: PkRangesResponse = serde_json::from_slice(body).map_err(|error| {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_message(format!(
+                "failed to parse partition key ranges response: {error}"
+            ))
+            .with_source(error)
+            .build()
+    })?;
+    Ok(response.partition_key_ranges)
 }
 
 #[cfg(test)]
@@ -799,8 +807,16 @@ mod tests {
     use super::*;
     use crate::models::partition_key_range::PartitionKeyRange as PkRange;
 
-    fn test_ranges() -> Vec<PkRange> {
-        vec![PkRange::new("0".into(), "", "FF")]
+    fn make_range(id: String, min: &str, max: &str) -> crate::error::Result<PkRange> {
+        Ok(PkRange::new(
+            id,
+            EffectivePartitionKey::try_from(min)?,
+            EffectivePartitionKey::try_from(max)?,
+        ))
+    }
+
+    fn test_ranges() -> crate::error::Result<Vec<PkRange>> {
+        Ok(vec![make_range("0".into(), "", "FF")?])
     }
 
     /// Simulates a single-page change feed fetch:
@@ -809,8 +825,8 @@ mod tests {
     async fn test_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
-        if continuation.is_some() {
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        Ok(if continuation.is_some() {
             Some(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
@@ -818,11 +834,11 @@ mod tests {
             })
         } else {
             Some(PkRangeFetchResult {
-                ranges: test_ranges(),
+                ranges: test_ranges()?,
                 continuation: Some("test-etag".to_string()),
                 not_modified: false,
             })
-        }
+        })
     }
 
     #[tokio::test]
@@ -921,15 +937,97 @@ mod tests {
     }
 
     #[test]
-    fn parse_pk_ranges_response_test() {
+    fn parse_pk_ranges_response_test() -> crate::error::Result<()> {
         let body = br#"{
             "PartitionKeyRanges": [
                 {"id": "0", "_rid": "rid0", "minInclusive": "", "maxExclusive": "FF"}
             ]
         }"#;
-        let ranges = parse_pk_ranges_response(body).unwrap();
+        let ranges = parse_pk_ranges_response(body)?;
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].id, "0");
+        Ok(())
+    }
+
+    #[test]
+    fn parse_pk_ranges_response_rejects_malformed_bounds() {
+        for field in ["minInclusive", "maxExclusive"] {
+            for invalid in ["A", "00A", "0G", "GG", "00GG", "é", "00😀"] {
+                let mut range = serde_json::json!({
+                    "id": "0", "minInclusive": "", "maxExclusive": "FF"
+                });
+                range[field] = invalid.into();
+                let body = serde_json::json!({"PartitionKeyRanges": [range]}).to_string();
+                let Err(error) = parse_pk_ranges_response(body.as_bytes()) else {
+                    panic!("accepted invalid {field}: {invalid:?}");
+                };
+                assert_eq!(
+                    error.status(),
+                    crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+                );
+                let Some(source) = std::error::Error::source(&error)
+                    .and_then(|source| source.downcast_ref::<serde_json::Error>())
+                else {
+                    panic!("missing JSON parsing error source");
+                };
+                assert!(source.is_data());
+                assert!(source.line() > 0);
+                assert!(source.column() > 0);
+                assert!(error.to_string().contains("partition key ranges response"));
+                assert!(error.to_string().contains(&source.to_string()));
+            }
+        }
+    }
+
+    #[test]
+    fn parse_pk_ranges_response_accepts_empty_lowercase_and_max_bounds() -> crate::error::Result<()>
+    {
+        let body = br#"{
+            "PartitionKeyRanges": [
+                {"id": "0", "minInclusive": "", "maxExclusive": "ab"},
+                {"id": "1", "minInclusive": "ab", "maxExclusive": "FF"}
+            ]
+        }"#;
+        let ranges = parse_pk_ranges_response(body)?;
+        assert_eq!(ranges.len(), 2);
+        assert_eq!(ranges[0].min_inclusive, EffectivePartitionKey::MIN);
+        assert_eq!(
+            ranges[0].max_exclusive,
+            EffectivePartitionKey::try_from("AB")?
+        );
+        assert_eq!(ranges[1].min_inclusive, ranges[0].max_exclusive);
+        assert_eq!(ranges[1].max_exclusive, EffectivePartitionKey::MAX);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn malformed_bounds_error_is_propagated_and_not_cached() -> crate::error::Result<()> {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
+        let result = cache
+            .try_lookup_result(&container, false, |_, _| async {
+                Ok::<_, crate::error::CosmosError>(Some(PkRangeFetchResult {
+                    ranges: parse_pk_ranges_response(
+                        br#"{"PartitionKeyRanges":[{"id":"0","minInclusive":"","maxExclusive":"00GG"}]}"#,
+                    )?,
+                    continuation: None,
+                    not_modified: false,
+                }))
+            })
+            .await;
+        let Err(error) = result else {
+            panic!("malformed routing metadata must return an error");
+        };
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+        );
+        assert!(std::error::Error::source(&error).is_some());
+        assert!(cache
+            .try_lookup_result(&container, false, test_fetch)
+            .await?
+            .is_some());
+        Ok(())
     }
 
     // =========================================================================
@@ -969,8 +1067,8 @@ mod tests {
     async fn two_range_fetch(
         _container: ContainerReference,
         continuation: Option<String>,
-    ) -> Option<PkRangeFetchResult> {
-        if continuation.is_some() {
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        Ok(if continuation.is_some() {
             Some(PkRangeFetchResult {
                 ranges: vec![],
                 continuation,
@@ -979,13 +1077,13 @@ mod tests {
         } else {
             Some(PkRangeFetchResult {
                 ranges: vec![
-                    PkRange::new("0".into(), "", "80"),
-                    PkRange::new("1".into(), "80", "FF"),
+                    make_range("0".into(), "", "80")?,
+                    make_range("1".into(), "80", "FF")?,
                 ],
                 continuation: Some("test-etag".to_string()),
                 not_modified: false,
             })
-        }
+        })
     }
 
     #[tokio::test]
@@ -1195,7 +1293,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn resolve_overlapping_ranges_point_resolves_to_owning_partition_including_boundary() {
+    async fn resolve_overlapping_ranges_point_resolves_to_owning_partition_including_boundary(
+    ) -> crate::error::Result<()> {
         // Option B (issues #4574 / #4638): an equality / `IN` predicate yields a
         // *point* EPK range `X..X`. `get_overlapping_ranges` treats that as an
         // empty `std::ops::Range` and misses the owning partition when `X` sits
@@ -1205,7 +1304,7 @@ mod tests {
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
 
         // Point strictly inside range "0" ["", "80").
-        let inside = EffectivePartitionKey::from("40");
+        let inside = EffectivePartitionKey::try_from("40")?;
         let ranges = cache
             .resolve_overlapping_ranges(&container, &inside..&inside, false, two_range_fetch)
             .await
@@ -1215,13 +1314,14 @@ mod tests {
 
         // Point exactly on the boundary "80" == range "1".min_inclusive. This is
         // the case `get_overlapping_ranges(X..X)` would miss (returns empty).
-        let boundary = EffectivePartitionKey::from("80");
+        let boundary = EffectivePartitionKey::try_from("80")?;
         let ranges = cache
             .resolve_overlapping_ranges(&container, &boundary..&boundary, false, two_range_fetch)
             .await
             .unwrap();
         assert_eq!(ranges.len(), 1);
         assert_eq!(ranges[0].id, "1");
+        Ok(())
     }
 
     #[tokio::test]
@@ -1260,7 +1360,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn force_refresh_repopulates_after_empty_cache() {
+    async fn force_refresh_repopulates_after_empty_cache() -> crate::error::Result<()> {
         use std::sync::{
             atomic::{AtomicUsize, Ordering},
             Arc,
@@ -1293,18 +1393,18 @@ mod tests {
 
         // Force refresh with a fetch that returns valid ranges
         let recovering_fetch = |_container: ContainerReference, continuation: Option<String>| async move {
-            Some(match continuation {
+            Ok::<_, crate::error::CosmosError>(Some(match continuation {
                 Some(continuation) => PkRangeFetchResult {
                     ranges: vec![],
                     continuation: Some(continuation),
                     not_modified: true,
                 },
                 None => PkRangeFetchResult {
-                    ranges: vec![PkRange::new("0".into(), "", "FF")],
+                    ranges: vec![make_range("0".into(), "", "FF")?],
                     continuation: Some("etag-2".to_string()),
                     not_modified: false,
                 },
-            })
+            }))
         };
 
         let map2 = cache
@@ -1313,10 +1413,11 @@ mod tests {
             .unwrap();
         assert_eq!(map2.ranges().len(), 1);
         assert_eq!(map2.ranges()[0].id, "0");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn drains_more_than_ten_partition_range_pages() {
+    async fn drains_more_than_ten_partition_range_pages() -> crate::error::Result<()> {
         use std::sync::{
             atomic::{AtomicUsize, Ordering},
             Arc,
@@ -1339,22 +1440,22 @@ mod tests {
                 seen.lock().unwrap().push(continuation.clone());
                 let page = count.fetch_add(1, Ordering::SeqCst);
                 if page == BOUNDARIES.len() - 1 {
-                    return Some(PkRangeFetchResult {
+                    return Ok(Some(PkRangeFetchResult {
                         ranges: vec![],
                         continuation,
                         not_modified: true,
-                    });
+                    }));
                 }
 
-                Some(PkRangeFetchResult {
-                    ranges: vec![PkRange::new(
+                Ok::<_, crate::error::CosmosError>(Some(PkRangeFetchResult {
+                    ranges: vec![make_range(
                         page.to_string(),
                         BOUNDARIES[page],
                         BOUNDARIES[page + 1],
-                    )],
+                    )?],
                     continuation: Some(format!("etag-{page}")),
                     not_modified: false,
-                })
+                }))
             }
         };
 
@@ -1369,10 +1470,11 @@ mod tests {
             .chain((0..BOUNDARIES.len() - 1).map(|page| Some(format!("etag-{page}"))))
             .collect::<Vec<_>>();
         assert_eq!(*continuations_seen.lock().unwrap(), expected);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn redelivered_ranges_are_deduplicated_by_id() {
+    async fn redelivered_ranges_are_deduplicated_by_id() -> crate::error::Result<()> {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
@@ -1383,40 +1485,43 @@ mod tests {
             fetch_and_build_routing_map(container, None, move |_container, continuation| {
                 let count = count.clone();
                 async move {
-                    Some(match count.fetch_add(1, Ordering::SeqCst) {
-                        0 => PkRangeFetchResult {
-                            ranges: vec![PkRange::new("0".into(), "", "80")],
-                            continuation: Some("etag-before-split".to_string()),
-                            not_modified: false,
+                    Ok::<_, crate::error::CosmosError>(Some(
+                        match count.fetch_add(1, Ordering::SeqCst) {
+                            0 => PkRangeFetchResult {
+                                ranges: vec![make_range("0".into(), "", "80")?],
+                                continuation: Some("etag-before-split".to_string()),
+                                not_modified: false,
+                            },
+                            1 => PkRangeFetchResult {
+                                ranges: vec![
+                                    make_range("0".into(), "", "80")?,
+                                    make_range("1".into(), "80", "FF")?,
+                                ],
+                                continuation: Some("etag-after-split".to_string()),
+                                not_modified: false,
+                            },
+                            2 => PkRangeFetchResult {
+                                ranges: vec![],
+                                continuation,
+                                not_modified: true,
+                            },
+                            call => panic!("unexpected fetch call: {call}"),
                         },
-                        1 => PkRangeFetchResult {
-                            ranges: vec![
-                                PkRange::new("0".into(), "", "80"),
-                                PkRange::new("1".into(), "80", "FF"),
-                            ],
-                            continuation: Some("etag-after-split".to_string()),
-                            not_modified: false,
-                        },
-                        2 => PkRangeFetchResult {
-                            ranges: vec![],
-                            continuation,
-                            not_modified: true,
-                        },
-                        call => panic!("unexpected fetch call: {call}"),
-                    })
+                    ))
                 }
             })
-            .await;
+            .await?;
 
         assert_eq!(result.ranges().len(), 2);
         assert_eq!(result.ranges()[0].id, "0");
         assert_eq!(result.ranges()[1].id, "1");
+        Ok(())
     }
 
     #[tokio::test]
-    async fn immediate_not_modified_preserves_previous_ranges() {
+    async fn immediate_not_modified_preserves_previous_ranges() -> crate::error::Result<()> {
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
-        let previous = routing_map(test_ranges(), "etag-previous");
+        let previous = routing_map(test_ranges()?, "etag-previous");
 
         let result = fetch_and_build_routing_map(
             container,
@@ -1429,32 +1534,33 @@ mod tests {
                 })
             },
         )
-        .await;
+        .await?;
 
         assert_eq!(result.ranges().len(), 1);
         assert_eq!(
             result.change_feed_next_if_none_match.as_deref(),
             Some("etag-previous")
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn not_modified_wins_over_non_empty_payload() {
+    async fn not_modified_wins_over_non_empty_payload() -> crate::error::Result<()> {
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
-        let previous = routing_map(test_ranges(), "etag-previous");
+        let previous = routing_map(test_ranges()?, "etag-previous");
 
         let result = fetch_and_build_routing_map(
             container,
             Some(previous),
             |_container, _continuation| async {
-                Some(PkRangeFetchResult {
-                    ranges: vec![PkRange::new("ignored".into(), "", "80")],
+                Ok::<_, crate::error::CosmosError>(Some(PkRangeFetchResult {
+                    ranges: vec![make_range("ignored".into(), "", "80")?],
                     continuation: Some("etag-advanced".to_string()),
                     not_modified: true,
-                })
+                }))
             },
         )
-        .await;
+        .await?;
 
         assert_eq!(result.ranges().len(), 1);
         assert_eq!(result.ranges()[0].id, "0");
@@ -1462,12 +1568,14 @@ mod tests {
             result.change_feed_next_if_none_match.as_deref(),
             Some("etag-advanced")
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn terminal_page_advances_continuation_without_range_changes() {
+    async fn terminal_page_advances_continuation_without_range_changes() -> crate::error::Result<()>
+    {
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
-        let previous = routing_map(test_ranges(), "etag-previous");
+        let previous = routing_map(test_ranges()?, "etag-previous");
 
         let result = fetch_and_build_routing_map(
             container,
@@ -1480,17 +1588,18 @@ mod tests {
                 })
             },
         )
-        .await;
+        .await?;
 
         assert_eq!(result.ranges().len(), 1);
         assert_eq!(
             result.change_feed_next_if_none_match.as_deref(),
             Some("etag-advanced")
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn real_wire_not_modified_preserves_last_data_etag() {
+    async fn real_wire_not_modified_preserves_last_data_etag() -> crate::error::Result<()> {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
@@ -1501,22 +1610,24 @@ mod tests {
             fetch_and_build_routing_map(container, None, move |_container, _continuation| {
                 let count = count.clone();
                 async move {
-                    Some(if count.fetch_add(1, Ordering::SeqCst) == 0 {
-                        PkRangeFetchResult {
-                            ranges: test_ranges(),
-                            continuation: Some("etag-data".to_string()),
-                            not_modified: false,
-                        }
-                    } else {
-                        PkRangeFetchResult {
-                            ranges: vec![],
-                            continuation: None,
-                            not_modified: true,
-                        }
-                    })
+                    Ok::<_, crate::error::CosmosError>(Some(
+                        if count.fetch_add(1, Ordering::SeqCst) == 0 {
+                            PkRangeFetchResult {
+                                ranges: test_ranges()?,
+                                continuation: Some("etag-data".to_string()),
+                                not_modified: false,
+                            }
+                        } else {
+                            PkRangeFetchResult {
+                                ranges: vec![],
+                                continuation: None,
+                                not_modified: true,
+                            }
+                        },
+                    ))
                 }
             })
-            .await;
+            .await?;
 
         assert_eq!(result.ranges().len(), 1);
         assert_eq!(
@@ -1524,10 +1635,11 @@ mod tests {
             Some("etag-data")
         );
         assert_eq!(call_count.load(Ordering::SeqCst), 2);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn mid_drain_failure_does_not_cache_partial_map() {
+    async fn mid_drain_failure_does_not_cache_partial_map() -> crate::error::Result<()> {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         let cache = PartitionKeyRangeCache::new();
@@ -1537,11 +1649,17 @@ mod tests {
         let failing_fetch = move |_container: ContainerReference, _continuation: Option<String>| {
             let count = count.clone();
             async move {
-                (count.fetch_add(1, Ordering::SeqCst) & 1 == 0).then(|| PkRangeFetchResult {
-                    ranges: vec![PkRange::new("0".into(), "", "80")],
-                    continuation: Some("etag-partial".to_string()),
-                    not_modified: false,
-                })
+                Ok::<_, crate::error::CosmosError>(
+                    if count.fetch_add(1, Ordering::SeqCst) & 1 == 0 {
+                        Some(PkRangeFetchResult {
+                            ranges: vec![make_range("0".into(), "", "80")?],
+                            continuation: Some("etag-partial".to_string()),
+                            not_modified: false,
+                        })
+                    } else {
+                        None
+                    },
+                )
             }
         };
 
@@ -1554,14 +1672,15 @@ mod tests {
             .await
             .is_none());
         assert_eq!(call_count.load(Ordering::SeqCst), 4);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn missing_continuation_preserves_previous_map() {
+    async fn missing_continuation_preserves_previous_map() -> crate::error::Result<()> {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
-        let previous = routing_map(test_ranges(), "etag-previous");
+        let previous = routing_map(test_ranges()?, "etag-previous");
         let call_count = Arc::new(AtomicUsize::new(0));
         let count = call_count.clone();
 
@@ -1571,25 +1690,27 @@ mod tests {
             move |_container, continuation| {
                 let count = count.clone();
                 async move {
-                    Some(if count.fetch_add(1, Ordering::SeqCst) == 0 {
-                        let mut updated = PkRange::new("0".into(), "", "FF");
-                        updated.throughput_fraction = 0.5;
-                        PkRangeFetchResult {
-                            ranges: vec![updated],
-                            continuation: None,
-                            not_modified: false,
-                        }
-                    } else {
-                        PkRangeFetchResult {
-                            ranges: vec![],
-                            continuation,
-                            not_modified: true,
-                        }
-                    })
+                    Ok::<_, crate::error::CosmosError>(Some(
+                        if count.fetch_add(1, Ordering::SeqCst) == 0 {
+                            let mut updated = make_range("0".into(), "", "FF")?;
+                            updated.throughput_fraction = 0.5;
+                            PkRangeFetchResult {
+                                ranges: vec![updated],
+                                continuation: None,
+                                not_modified: false,
+                            }
+                        } else {
+                            PkRangeFetchResult {
+                                ranges: vec![],
+                                continuation,
+                                not_modified: true,
+                            }
+                        },
+                    ))
                 }
             },
         )
-        .await;
+        .await?;
 
         assert_eq!(result.ranges()[0].id, "0");
         assert_eq!(result.ranges()[0].throughput_fraction, 0.5);
@@ -1598,14 +1719,16 @@ mod tests {
             Some("etag-previous")
         );
         assert_eq!(call_count.load(Ordering::SeqCst), 2);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn unknown_incremental_parent_can_converge_on_incremental_retry() {
+    async fn unknown_incremental_parent_can_converge_on_incremental_retry(
+    ) -> crate::error::Result<()> {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
-        let previous = routing_map(test_ranges(), "etag-previous");
+        let previous = routing_map(test_ranges()?, "etag-previous");
         let call_count = Arc::new(AtomicUsize::new(0));
         let count = call_count.clone();
 
@@ -1615,55 +1738,57 @@ mod tests {
             move |_container, continuation| {
                 let count = count.clone();
                 async move {
-                    Some(match count.fetch_add(1, Ordering::SeqCst) {
-                        0 => {
-                            assert_eq!(continuation.as_deref(), Some("etag-previous"));
-                            let mut child = PkRange::new("child".into(), "", "FF");
-                            child.parents = Some(vec!["ghost-parent".to_string()]);
-                            PkRangeFetchResult {
-                                ranges: vec![child],
-                                continuation: Some("etag-child".to_string()),
-                                not_modified: false,
+                    Ok::<_, crate::error::CosmosError>(Some(
+                        match count.fetch_add(1, Ordering::SeqCst) {
+                            0 => {
+                                assert_eq!(continuation.as_deref(), Some("etag-previous"));
+                                let mut child = make_range("child".into(), "", "FF")?;
+                                child.parents = Some(vec!["ghost-parent".to_string()]);
+                                PkRangeFetchResult {
+                                    ranges: vec![child],
+                                    continuation: Some("etag-child".to_string()),
+                                    not_modified: false,
+                                }
                             }
-                        }
-                        1 => {
-                            assert_eq!(continuation.as_deref(), Some("etag-child"));
-                            PkRangeFetchResult {
-                                ranges: vec![],
-                                continuation,
-                                not_modified: true,
+                            1 => {
+                                assert_eq!(continuation.as_deref(), Some("etag-child"));
+                                PkRangeFetchResult {
+                                    ranges: vec![],
+                                    continuation,
+                                    not_modified: true,
+                                }
                             }
-                        }
-                        2 => {
-                            assert_eq!(
-                                continuation.as_deref(),
-                                Some("etag-previous"),
-                                "the first merge failure must retry the inherited incremental ETag"
-                            );
-                            let mut left = PkRange::new("left".into(), "", "80");
-                            left.parents = Some(vec!["0".to_string()]);
-                            let mut right = PkRange::new("right".into(), "80", "FF");
-                            right.parents = Some(vec!["0".to_string()]);
-                            PkRangeFetchResult {
-                                ranges: vec![left, right],
-                                continuation: Some("etag-child-retry".to_string()),
-                                not_modified: false,
+                            2 => {
+                                assert_eq!(
+        continuation.as_deref(),
+        Some("etag-previous"),
+        "the first merge failure must retry the inherited incremental ETag"
+    );
+                                let mut left = make_range("left".into(), "", "80")?;
+                                left.parents = Some(vec!["0".to_string()]);
+                                let mut right = make_range("right".into(), "80", "FF")?;
+                                right.parents = Some(vec!["0".to_string()]);
+                                PkRangeFetchResult {
+                                    ranges: vec![left, right],
+                                    continuation: Some("etag-child-retry".to_string()),
+                                    not_modified: false,
+                                }
                             }
-                        }
-                        3 => {
-                            assert_eq!(continuation.as_deref(), Some("etag-child-retry"));
-                            PkRangeFetchResult {
-                                ranges: vec![],
-                                continuation,
-                                not_modified: true,
+                            3 => {
+                                assert_eq!(continuation.as_deref(), Some("etag-child-retry"));
+                                PkRangeFetchResult {
+                                    ranges: vec![],
+                                    continuation,
+                                    not_modified: true,
+                                }
                             }
-                        }
-                        call => panic!("unexpected fetch call: {call}"),
-                    })
+                            call => panic!("unexpected fetch call: {call}"),
+                        },
+                    ))
                 }
             },
         )
-        .await;
+        .await?;
 
         assert_eq!(result.ranges()[0].id, "left");
         assert_eq!(result.ranges()[1].id, "right");
@@ -1672,6 +1797,7 @@ mod tests {
             Some("etag-child-retry")
         );
         assert_eq!(call_count.load(Ordering::SeqCst), 4);
+        Ok(())
     }
 
     /// A cold retry that comes back empty must not hand the previous map's
@@ -1684,11 +1810,12 @@ mod tests {
     /// region that issued it. The next resumed refresh could then send it
     /// somewhere it means nothing.
     #[tokio::test]
-    async fn failed_full_refresh_after_merge_failure_drops_orphaned_continuation() {
+    async fn failed_full_refresh_after_merge_failure_drops_orphaned_continuation(
+    ) -> crate::error::Result<()> {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
-        let previous = routing_map(test_ranges(), "etag-previous");
+        let previous = routing_map(test_ranges()?, "etag-previous");
         let call_count = Arc::new(AtomicUsize::new(0));
         let count = call_count.clone();
 
@@ -1698,9 +1825,9 @@ mod tests {
             move |_container, continuation| {
                 let count = count.clone();
                 async move {
-                    match count.fetch_add(1, Ordering::SeqCst) {
+                    Ok::<_, crate::error::CosmosError>(match count.fetch_add(1, Ordering::SeqCst) {
                         0 => {
-                            let mut child = PkRange::new("child".into(), "", "FF");
+                            let mut child = make_range("child".into(), "", "FF")?;
                             child.parents = Some(vec!["ghost-parent".to_string()]);
                             Some(PkRangeFetchResult {
                                 ranges: vec![child],
@@ -1714,7 +1841,7 @@ mod tests {
                             not_modified: true,
                         }),
                         2 => {
-                            let mut child = PkRange::new("child".into(), "", "FF");
+                            let mut child = make_range("child".into(), "", "FF")?;
                             child.parents = Some(vec!["ghost-parent".to_string()]);
                             Some(PkRangeFetchResult {
                                 ranges: vec![child],
@@ -1729,11 +1856,11 @@ mod tests {
                         }),
                         4 => None,
                         call => panic!("unexpected fetch call: {call}"),
-                    }
+                    })
                 }
             },
         )
-        .await;
+        .await?;
 
         assert_eq!(result.ranges()[0].id, "0");
         assert_eq!(
@@ -1742,14 +1869,16 @@ mod tests {
              and must be dropped with it",
         );
         assert_eq!(call_count.load(Ordering::SeqCst), 5);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn overlapping_incremental_page_retries_once_before_full_refresh() {
+    async fn overlapping_incremental_page_retries_once_before_full_refresh(
+    ) -> crate::error::Result<()> {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
-        let previous = routing_map(test_ranges(), "etag-previous");
+        let previous = routing_map(test_ranges()?, "etag-previous");
         let call_count = Arc::new(AtomicUsize::new(0));
         let count = call_count.clone();
 
@@ -1759,37 +1888,39 @@ mod tests {
             move |_container, continuation| {
                 let count = count.clone();
                 async move {
-                    Some(match count.fetch_add(1, Ordering::SeqCst) {
-                        0 | 2 => {
-                            let mut left = PkRange::new("left".into(), "", "AA");
-                            left.parents = Some(vec!["0".to_string()]);
-                            let mut right = PkRange::new("right".into(), "80", "FF");
-                            right.parents = Some(vec!["0".to_string()]);
-                            PkRangeFetchResult {
-                                ranges: vec![left, right],
-                                continuation: Some(format!("etag-overlap-{continuation:?}")),
-                                not_modified: false,
+                    Ok::<_, crate::error::CosmosError>(Some(
+                        match count.fetch_add(1, Ordering::SeqCst) {
+                            0 | 2 => {
+                                let mut left = make_range("left".into(), "", "AA")?;
+                                left.parents = Some(vec!["0".to_string()]);
+                                let mut right = make_range("right".into(), "80", "FF")?;
+                                right.parents = Some(vec!["0".to_string()]);
+                                PkRangeFetchResult {
+                                    ranges: vec![left, right],
+                                    continuation: Some(format!("etag-overlap-{continuation:?}")),
+                                    not_modified: false,
+                                }
                             }
-                        }
-                        1 | 3 | 5 => PkRangeFetchResult {
-                            ranges: vec![],
-                            continuation,
-                            not_modified: true,
+                            1 | 3 | 5 => PkRangeFetchResult {
+                                ranges: vec![],
+                                continuation,
+                                not_modified: true,
+                            },
+                            4 => PkRangeFetchResult {
+                                ranges: vec![
+                                    make_range("full-left".into(), "", "80")?,
+                                    make_range("full-right".into(), "80", "FF")?,
+                                ],
+                                continuation: Some("etag-full".to_string()),
+                                not_modified: false,
+                            },
+                            call => panic!("unexpected fetch call: {call}"),
                         },
-                        4 => PkRangeFetchResult {
-                            ranges: vec![
-                                PkRange::new("full-left".into(), "", "80"),
-                                PkRange::new("full-right".into(), "80", "FF"),
-                            ],
-                            continuation: Some("etag-full".to_string()),
-                            not_modified: false,
-                        },
-                        call => panic!("unexpected fetch call: {call}"),
-                    })
+                    ))
                 }
             },
         )
-        .await;
+        .await?;
 
         assert_eq!(result.ranges()[0].id, "full-left");
         assert_eq!(result.ranges()[1].id, "full-right");
@@ -1798,10 +1929,11 @@ mod tests {
             Some("etag-full")
         );
         assert_eq!(call_count.load(Ordering::SeqCst), 6);
+        Ok(())
     }
 
     #[tokio::test]
-    async fn per_page_retry_does_not_restart_completed_pages() {
+    async fn per_page_retry_does_not_restart_completed_pages() -> crate::error::Result<()> {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         let container = make_container(r#"{"paths":["/pk"],"version":2}"#);
@@ -1815,11 +1947,11 @@ mod tests {
                 let first = first.clone();
                 let second = second.clone();
                 async move {
-                    Some(match continuation.as_deref() {
+                    Ok::<_, crate::error::CosmosError>(Some(match continuation.as_deref() {
                         None => {
                             first.fetch_add(1, Ordering::SeqCst);
                             PkRangeFetchResult {
-                                ranges: vec![PkRange::new("0".into(), "", "80")],
+                                ranges: vec![make_range("0".into(), "", "80")?],
                                 continuation: Some("etag-1".to_string()),
                                 not_modified: false,
                             }
@@ -1829,7 +1961,7 @@ mod tests {
                             // only the successful page result.
                             second.fetch_add(2, Ordering::SeqCst);
                             PkRangeFetchResult {
-                                ranges: vec![PkRange::new("1".into(), "80", "FF")],
+                                ranges: vec![make_range("1".into(), "80", "FF")?],
                                 continuation: Some("etag-2".to_string()),
                                 not_modified: false,
                             }
@@ -1840,14 +1972,15 @@ mod tests {
                             not_modified: true,
                         },
                         other => panic!("unexpected continuation: {other:?}"),
-                    })
+                    }))
                 }
             })
-            .await;
+            .await?;
 
         assert_eq!(result.ranges().len(), 2);
         assert_eq!(first_page_attempts.load(Ordering::SeqCst), 1);
         assert_eq!(second_page_attempts.load(Ordering::SeqCst), 2);
+        Ok(())
     }
 
     #[tokio::test(start_paused = true)]
@@ -1893,7 +2026,8 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
-    async fn cold_fetch_retries_incomplete_snapshot_until_it_converges() {
+    async fn cold_fetch_retries_incomplete_snapshot_until_it_converges() -> crate::error::Result<()>
+    {
         // A partition split can leave `/pkranges` structurally incomplete for
         // a brief window (parent gone, children not yet visible). The first
         // cold drain here only sees the left half of the space; the second
@@ -1910,18 +2044,18 @@ mod tests {
                 let entries = entries.clone();
                 async move {
                     if continuation.is_some() {
-                        return Some(PkRangeFetchResult {
+                        return Ok(Some(PkRangeFetchResult {
                             ranges: vec![],
                             continuation,
                             not_modified: true,
-                        });
+                        }));
                     }
                     let entry = entries.fetch_add(1, Ordering::SeqCst);
-                    Some(if entry == 0 {
+                    Ok::<_, crate::error::CosmosError>(Some(if entry == 0 {
                         // First cold attempt: transient split snapshot missing
                         // the right half of the EPK space.
                         PkRangeFetchResult {
-                            ranges: vec![PkRange::new("0".into(), "", "80")],
+                            ranges: vec![make_range("0".into(), "", "80")?],
                             continuation: Some("etag-incomplete".to_string()),
                             not_modified: false,
                         }
@@ -1929,24 +2063,26 @@ mod tests {
                         // Retry: the split has settled and the full space is covered.
                         PkRangeFetchResult {
                             ranges: vec![
-                                PkRange::new("0".into(), "", "80"),
-                                PkRange::new("1".into(), "80", "FF"),
+                                make_range("0".into(), "", "80")?,
+                                make_range("1".into(), "80", "FF")?,
                             ],
                             continuation: Some("etag-complete".to_string()),
                             not_modified: false,
                         }
-                    })
+                    }))
                 }
             })
-            .await;
+            .await?;
 
         assert_eq!(result.ranges().len(), 2);
         // Converged on the second cold attempt, well within the bound.
         assert_eq!(cold_entries.load(Ordering::SeqCst), 2);
+        Ok(())
     }
 
     #[tokio::test(start_paused = true)]
-    async fn cold_fetch_gives_up_after_bounded_retries_when_still_incomplete() {
+    async fn cold_fetch_gives_up_after_bounded_retries_when_still_incomplete(
+    ) -> crate::error::Result<()> {
         // If the snapshot never converges (e.g. a stuck split), the cache
         // must give up after a bounded number of attempts rather than
         // retrying forever, and must never cache or return the incomplete
@@ -1963,18 +2099,18 @@ mod tests {
                 let entries = entries.clone();
                 async move {
                     if continuation.is_some() {
-                        return Some(PkRangeFetchResult {
+                        return Ok(Some(PkRangeFetchResult {
                             ranges: vec![],
                             continuation,
                             not_modified: true,
-                        });
+                        }));
                     }
                     entries.fetch_add(1, Ordering::SeqCst);
-                    Some(PkRangeFetchResult {
-                        ranges: vec![PkRange::new("0".into(), "", "80")],
+                    Ok::<_, crate::error::CosmosError>(Some(PkRangeFetchResult {
+                        ranges: vec![make_range("0".into(), "", "80")?],
                         continuation: Some("etag-incomplete".to_string()),
                         not_modified: false,
-                    })
+                    }))
                 }
             };
 
@@ -1987,10 +2123,12 @@ mod tests {
             cold_entries.load(Ordering::SeqCst),
             MAX_TRANSIENT_SNAPSHOT_ATTEMPTS as usize
         );
+        Ok(())
     }
 
     #[tokio::test(start_paused = true)]
-    async fn cold_fetch_retries_overlapping_snapshot_until_it_converges() {
+    async fn cold_fetch_retries_overlapping_snapshot_until_it_converges() -> crate::error::Result<()>
+    {
         // Lagging split metadata can briefly expose incompatible generations.
         // The overlap remains invalid and is never published, but the next cold
         // snapshot can converge to a complete, non-overlapping topology.
@@ -2005,20 +2143,20 @@ mod tests {
                 let entries = entries.clone();
                 async move {
                     if continuation.is_some() {
-                        return Some(PkRangeFetchResult {
+                        return Ok(Some(PkRangeFetchResult {
                             ranges: vec![],
                             continuation,
                             not_modified: true,
-                        });
+                        }));
                     }
                     let entry = entries.fetch_add(1, Ordering::SeqCst);
-                    Some(if entry == 0 {
+                    Ok::<_, crate::error::CosmosError>(Some(if entry == 0 {
                         // "0" covers ["", "90") and "1" covers ["80", "FF"), so
                         // ["80", "90") is double-covered.
                         PkRangeFetchResult {
                             ranges: vec![
-                                PkRange::new("0".into(), "", "90"),
-                                PkRange::new("1".into(), "80", "FF"),
+                                make_range("0".into(), "", "90")?,
+                                make_range("1".into(), "80", "FF")?,
                             ],
                             continuation: Some("etag-overlap".to_string()),
                             not_modified: false,
@@ -2026,23 +2164,25 @@ mod tests {
                     } else {
                         PkRangeFetchResult {
                             ranges: vec![
-                                PkRange::new("0".into(), "", "80"),
-                                PkRange::new("1".into(), "80", "FF"),
+                                make_range("0".into(), "", "80")?,
+                                make_range("1".into(), "80", "FF")?,
                             ],
                             continuation: Some("etag-converged".to_string()),
                             not_modified: false,
                         }
-                    })
+                    }))
                 }
             })
-            .await;
+            .await?;
 
         assert_eq!(result.ranges().len(), 2);
         assert_eq!(cold_entries.load(Ordering::SeqCst), 2);
+        Ok(())
     }
 
     #[tokio::test(start_paused = true)]
-    async fn cold_fetch_gives_up_after_bounded_retries_when_still_overlapping() {
+    async fn cold_fetch_gives_up_after_bounded_retries_when_still_overlapping(
+    ) -> crate::error::Result<()> {
         use std::sync::atomic::{AtomicUsize, Ordering};
 
         let cache = PartitionKeyRangeCache::new();
@@ -2055,21 +2195,21 @@ mod tests {
                 let entries = entries.clone();
                 async move {
                     if continuation.is_some() {
-                        return Some(PkRangeFetchResult {
+                        return Ok(Some(PkRangeFetchResult {
                             ranges: vec![],
                             continuation,
                             not_modified: true,
-                        });
+                        }));
                     }
                     entries.fetch_add(1, Ordering::SeqCst);
-                    Some(PkRangeFetchResult {
+                    Ok::<_, crate::error::CosmosError>(Some(PkRangeFetchResult {
                         ranges: vec![
-                            PkRange::new("0".into(), "", "90"),
-                            PkRange::new("1".into(), "80", "FF"),
+                            make_range("0".into(), "", "90")?,
+                            make_range("1".into(), "80", "FF")?,
                         ],
                         continuation: Some("etag-overlap".to_string()),
                         not_modified: false,
-                    })
+                    }))
                 }
             };
 
@@ -2082,6 +2222,7 @@ mod tests {
             cold_entries.load(Ordering::SeqCst),
             MAX_TRANSIENT_SNAPSHOT_ATTEMPTS as usize
         );
+        Ok(())
     }
 
     #[tokio::test]
@@ -2150,7 +2291,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn force_refresh_with_unavailable_pinned_region_retries_cold() {
+    async fn force_refresh_with_unavailable_pinned_region_retries_cold() -> crate::error::Result<()>
+    {
         // A refresh that resumes a cached continuation is pinned to the region
         // that served the previous page. When that region is unavailable the
         // pinned fetch must not be the end of the story: the continuation is
@@ -2180,7 +2322,7 @@ mod tests {
             let recorder = recorder.clone();
             async move {
                 recorder.lock().unwrap().push(continuation.clone());
-                match continuation.as_deref() {
+                Ok::<_, crate::error::CosmosError>(match continuation.as_deref() {
                     // Pinned region: unreachable.
                     Some("test-etag") => None,
                     // Healthy region drained the cold chain.
@@ -2192,14 +2334,14 @@ mod tests {
                     // Cold first page from the healthy region.
                     None => Some(PkRangeFetchResult {
                         ranges: vec![
-                            PkRange::new("2".into(), "", "40"),
-                            PkRange::new("3".into(), "40", "80"),
-                            PkRange::new("1".into(), "80", "FF"),
+                            make_range("2".into(), "", "40")?,
+                            make_range("3".into(), "40", "80")?,
+                            make_range("1".into(), "80", "FF")?,
                         ],
                         continuation: Some("healthy-etag".to_string()),
                         not_modified: false,
                     }),
-                }
+                })
             }
         };
 
@@ -2228,10 +2370,11 @@ mod tests {
             Some("healthy-etag"),
             "the adopted map carries the healthy region's continuation"
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn failed_pinned_refresh_clears_stale_continuation() {
+    async fn failed_pinned_refresh_clears_stale_continuation() -> crate::error::Result<()> {
         // When both the pinned attempt and the cold retry fail, the cached
         // ranges are kept (routing must keep working) but the region-affine
         // continuation is dropped. Without that, every later force-refresh
@@ -2291,7 +2434,7 @@ mod tests {
             let recorder = recorder.clone();
             async move {
                 recorder.lock().unwrap().push(continuation.clone());
-                if continuation.is_some() {
+                Ok::<_, crate::error::CosmosError>(if continuation.is_some() {
                     Some(PkRangeFetchResult {
                         ranges: vec![],
                         continuation,
@@ -2300,14 +2443,14 @@ mod tests {
                 } else {
                     Some(PkRangeFetchResult {
                         ranges: vec![
-                            PkRange::new("2".into(), "", "40"),
-                            PkRange::new("3".into(), "40", "80"),
-                            PkRange::new("1".into(), "80", "FF"),
+                            make_range("2".into(), "", "40")?,
+                            make_range("3".into(), "40", "80")?,
+                            make_range("1".into(), "80", "FF")?,
                         ],
                         continuation: Some("recovered-etag".to_string()),
                         not_modified: false,
                     })
-                }
+                })
             }
         };
 
@@ -2322,5 +2465,6 @@ mod tests {
             "the follow-up refresh must run cold, not replay the discarded token"
         );
         assert_eq!(recovered.ranges().len(), 3);
+        Ok(())
     }
 }

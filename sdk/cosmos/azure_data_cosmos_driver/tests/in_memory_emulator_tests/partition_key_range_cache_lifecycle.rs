@@ -545,7 +545,8 @@ async fn resolve_partition_key_ranges_for_key_full_key_returns_single_owning_ran
 }
 
 #[tokio::test]
-async fn resolve_partition_key_ranges_for_key_multihash_prefix_returns_multiple_ranges() {
+async fn resolve_partition_key_ranges_for_key_multihash_prefix_returns_multiple_ranges(
+) -> azure_data_cosmos_driver::error::Result<()> {
     let emulator = build_emulator(None);
     let store = emulator.store();
     store.create_database(DATABASE_NAME);
@@ -576,7 +577,7 @@ async fn resolve_partition_key_ranges_for_key_multihash_prefix_returns_multiple_
         .expect("prefix lookup returns its initial owner");
     assert_eq!(before.len(), 1);
     let owner_id = before[0].id.parse::<u32>().expect("range id is numeric");
-    let split_epk = Epk::from(format!("{}80", prefix.min_inclusive().to_hex()));
+    let split_epk = Epk::try_from(format!("{}80", prefix.min_inclusive().to_hex()))?;
     assert!(split_epk > *prefix.min_inclusive());
     assert!(split_epk < *prefix.max_exclusive());
     store.split_partition_at_epk(DATABASE_NAME, "coll", owner_id, split_epk, Duration::ZERO);
@@ -602,6 +603,7 @@ async fn resolve_partition_key_ranges_for_key_multihash_prefix_returns_multiple_
         .expect("full-key lookup succeeds")
         .expect("full-key lookup returns an owning range");
     assert_eq!(full_ranges.len(), 1);
+    Ok(())
 }
 
 #[tokio::test]

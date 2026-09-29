@@ -14,12 +14,22 @@ use crate::{
         CosmosCompletionQueueState, CosmosOperationHandleState,
     },
     driver::{cosmos_driver_free, DriverHandle},
-    error::{CosmosErrorCode, COSMOS_STATUS_SUCCESS},
-    op_request::{build_request, CosmosOperationKind, CosmosOperationRequest},
+    driver_options::{
+        cosmos_driver_options_build_v2, cosmos_driver_options_config_v2_default,
+        cosmos_driver_options_free, DriverOptionsHandle,
+    },
+    error::{CosmosErrorCode, CosmosStatusCode, COSMOS_STATUS_SUCCESS},
+    fault_injection::{
+        cosmos_fault_injection_condition_default, cosmos_fault_injection_result_default,
+        cosmos_fault_injection_rule_default, CosmosFaultInjectionOperationType,
+        CosmosFaultInjectionRule,
+    },
+    op_request::{build_request, CosmosHeaderKv, CosmosOperationKind, CosmosOperationRequest},
     partition_key::{
         cosmos_partition_key_create, cosmos_partition_key_free, CosmosPartitionKeyComponent,
         CosmosPartitionKeyComponentKind, CosmosPartitionKeyComponentValue,
     },
+    response_header::{CosmosHeaderId, CosmosValueKind},
     runtime::{cosmos_runtime_free, RuntimeContext},
     string::{view, CosmosStringView},
     submit::{
@@ -50,6 +60,7 @@ const DATABASE: &str = "données";
 const CONTAINER: &str = "容器";
 const CONTAINER_PATH: &str = "/dbs/donn%C3%A9es/colls/%E5%AE%B9%E5%99%A8";
 const PARTITION_RANGES_PATH: &str = "/dbs/donn%C3%A9es/colls/%E5%AE%B9%E5%99%A8/pkranges";
+const ITEM_PATH: &str = "/dbs/donn%C3%A9es/colls/%E5%AE%B9%E5%99%A8/docs/item";
 
 #[derive(Debug, Default)]
 struct MetadataTransport {
@@ -111,6 +122,7 @@ impl TransportClient for MetadataTransport {
                 )
             }
             PARTITION_RANGES_PATH => (304, serde_json::Value::Null),
+            ITEM_PATH => (200, serde_json::json!({"id": "item", "pk": "tenant"})),
             _ => panic!("unexpected downstream request: {path}"),
         };
         Ok(HttpResponse {
@@ -143,6 +155,14 @@ struct Fixture {
 
 impl Fixture {
     fn new() -> Self {
+        let account = AccountReference::with_master_key(
+            Url::parse("https://counted-strings.invalid/").unwrap(),
+            "dGVzdA==",
+        );
+        Self::with_options(DriverOptions::builder(account).build())
+    }
+
+    fn with_options(options: DriverOptions) -> Self {
         // A current-thread runtime cannot poll submitted work until explicitly driven.
         let tokio = tokio::runtime::Builder::new_current_thread()
             .enable_all()
@@ -156,13 +176,7 @@ impl Fixture {
                     .build(),
             )
             .unwrap();
-        let account = AccountReference::with_master_key(
-            Url::parse("https://counted-strings.invalid/").unwrap(),
-            "dGVzdA==",
-        );
-        let driver = tokio
-            .block_on(runtime.create_driver(DriverOptions::builder(account).build()))
-            .unwrap();
+        let driver = tokio.block_on(runtime.create_driver(options)).unwrap();
         let runtime = Arc::into_raw(Arc::new(RuntimeContext {
             tokio,
             driver: runtime,
@@ -178,7 +192,234 @@ impl Fixture {
             transport,
         }
     }
+}
 
+fn fixture_with_native_fault_rule(
+    rule: &CosmosFaultInjectionRule,
+) -> (
+    Fixture,
+    Arc<azure_data_cosmos_driver::fault_injection::FaultInjectionRule>,
+) {
+    let account = crate::account_ref::tests::make_master_key_handle(
+        "https://counted-strings.invalid/",
+        "dGVzdA==",
+    );
+    let mut config = cosmos_driver_options_config_v2_default();
+    config.fault_injection_rules = rule;
+    config.fault_injection_rules_len = 1;
+    let mut options = ptr::null_mut();
+    assert_eq!(
+        cosmos_driver_options_build_v2(account, &config, &mut options),
+        COSMOS_STATUS_SUCCESS
+    );
+    let options_arc = DriverOptionsHandle::inner_arc(options).unwrap();
+    let tracked_rule = options_arc.inner.fault_injection_rules().unwrap()[0].clone();
+    let driver_options = options_arc.inner.clone();
+    drop(options_arc);
+    cosmos_driver_options_free(options);
+    crate::account_ref::cosmos_account_ref_free(account);
+    (Fixture::with_options(driver_options), tracked_rule)
+}
+
+fn resolve_item_request(
+    fixture: &Fixture,
+) -> (
+    CosmosOperationRequest,
+    *mut ContainerRefHandle,
+    *mut crate::partition_key::PartitionKeyHandle,
+) {
+    let mut container = ptr::null_mut();
+    assert_eq!(
+        cosmos_driver_resolve_container_blocking(
+            fixture.runtime,
+            fixture.driver,
+            view(DATABASE.as_bytes()),
+            view(CONTAINER.as_bytes()),
+            &mut container,
+            ptr::null_mut(),
+        ),
+        COSMOS_STATUS_SUCCESS
+    );
+    let component = CosmosPartitionKeyComponent {
+        kind: CosmosPartitionKeyComponentKind::STRING.0,
+        value: CosmosPartitionKeyComponentValue {
+            string_value: view(b"tenant"),
+        },
+    };
+    let mut key = ptr::null_mut();
+    assert_eq!(
+        cosmos_partition_key_create(&component, 1, &mut key),
+        COSMOS_STATUS_SUCCESS
+    );
+    // SAFETY: zero is the documented unset state for every pointer/integer field.
+    let mut request: CosmosOperationRequest = unsafe { std::mem::zeroed() };
+    request.kind = CosmosOperationKind::CosmosOperationKindReadItem as i32;
+    request.container = container;
+    request.item_id = view(b"item");
+    request.partition_key = key;
+    request.max_item_count = -1;
+    (request, container, key)
+}
+
+fn submit_and_complete(fixture: &Fixture, request: &CosmosOperationRequest) -> CosmosCompletion {
+    let mut pre_error = COSMOS_STATUS_SUCCESS;
+    let operation = cosmos_submit_singleton_operation(
+        fixture.driver,
+        request,
+        fixture.queue,
+        73,
+        &mut pre_error,
+    );
+    assert!(!operation.is_null());
+    assert_eq!(pre_error, COSMOS_STATUS_SUCCESS);
+    let completion = fixture.completion();
+    cosmos_operation_handle_free(operation);
+    completion
+}
+
+#[test]
+fn native_fault_rule_publishes_429_body_and_typed_headers() {
+    let id = b"ffi-429";
+    let body = br#"{"code":"TooManyRequests","message":"native injected"}"#;
+    let header_names = [
+        b"x-ms-request-charge".as_slice(),
+        b"x-ms-activity-id".as_slice(),
+        b"x-ms-session-token".as_slice(),
+    ];
+    let header_values = [
+        b"4.25".as_slice(),
+        b"fault-activity".as_slice(),
+        b"0:-1#7".as_slice(),
+    ];
+    let headers = [
+        CosmosHeaderKv {
+            name: view(header_names[0]),
+            value: view(header_values[0]),
+        },
+        CosmosHeaderKv {
+            name: view(header_names[1]),
+            value: view(header_values[1]),
+        },
+        CosmosHeaderKv {
+            name: view(header_names[2]),
+            value: view(header_values[2]),
+        },
+    ];
+    let mut condition = cosmos_fault_injection_condition_default();
+    condition.operation_type =
+        CosmosFaultInjectionOperationType::CosmosFaultInjectionOperationTypeReadItem as i32;
+    let mut result = cosmos_fault_injection_result_default();
+    result.custom_status_code = 429;
+    result.custom_sub_status = 3200;
+    result.retry_after_ms = 0;
+    result.custom_headers = headers.as_ptr();
+    result.custom_headers_len = headers.len();
+    result.body = body.as_ptr();
+    result.body_len = body.len();
+    let mut rule = cosmos_fault_injection_rule_default();
+    rule.id = view(id);
+    rule.condition = &condition;
+    rule.result = &result;
+    rule.hit_limit = 100;
+    let (fixture, tracked_rule) = fixture_with_native_fault_rule(&rule);
+    let (request, container, key) = resolve_item_request(&fixture);
+    let mut completion = submit_and_complete(&fixture, &request);
+
+    assert_eq!(
+        completion.outcome,
+        CosmosCompletionOutcome::CosmosCompletionOutcomeError
+    );
+    assert_eq!(completion.http_status_code, 429);
+    assert_eq!(
+        completion.status,
+        CosmosStatusCode::from_status(
+            azure_data_cosmos_driver::error::CosmosStatus::new(
+                azure_core::http::StatusCode::TooManyRequests
+            )
+            .with_sub_status(3200)
+        )
+    );
+    assert_eq!(completion.is_from_wire, 1);
+    assert!(!completion.message.is_null());
+    // SAFETY: completion body and headers remain borrowed until it is freed.
+    assert_eq!(
+        unsafe { std::slice::from_raw_parts(completion.body, completion.body_len) },
+        body
+    );
+    // SAFETY: completion owns exactly headers_len initialized entries.
+    let published =
+        unsafe { std::slice::from_raw_parts(completion.headers, completion.headers_len) };
+    let sub_status = published
+        .iter()
+        .find(|h| h.id == CosmosHeaderId::CosmosHeaderIdSubStatus)
+        .unwrap();
+    assert_eq!(sub_status.value.kind, CosmosValueKind::I64.0);
+    // SAFETY: the tag above selects the signed-integer union field.
+    assert_eq!(unsafe { sub_status.value.payload.i64_value }, 3200);
+    let retry_after = published
+        .iter()
+        .find(|h| h.id == CosmosHeaderId::CosmosHeaderIdRetryAfterMs)
+        .unwrap();
+    assert_eq!(retry_after.value.kind, CosmosValueKind::U64.0);
+    // SAFETY: the tag above selects the unsigned-integer union field.
+    assert_eq!(unsafe { retry_after.value.payload.u64_value }, 0);
+    let charge = published
+        .iter()
+        .find(|h| h.id == CosmosHeaderId::CosmosHeaderIdRequestCharge)
+        .unwrap();
+    assert_eq!(charge.value.kind, CosmosValueKind::F64.0);
+    // SAFETY: the tag above selects the floating-point union field.
+    assert_eq!(unsafe { charge.value.payload.f64_value }, 4.25);
+    assert!(tracked_rule.hit_count() > 0);
+    assert!(tracked_rule.hit_count() <= 100);
+
+    cosmos_completion_queue_free_completions(&mut completion, 1);
+    cosmos_partition_key_free(key);
+    cosmos_container_ref_free(container);
+}
+
+#[test]
+fn native_fault_rule_operation_condition_and_hit_limit_apply_once() {
+    let id = b"ffi-once";
+    let body = br#"{"message":"once"}"#;
+    let mut condition = cosmos_fault_injection_condition_default();
+    condition.operation_type =
+        CosmosFaultInjectionOperationType::CosmosFaultInjectionOperationTypeReadItem as i32;
+    let mut result = cosmos_fault_injection_result_default();
+    result.custom_status_code = 418;
+    result.body = body.as_ptr();
+    result.body_len = body.len();
+    let mut rule = cosmos_fault_injection_rule_default();
+    rule.id = view(id);
+    rule.condition = &condition;
+    rule.result = &result;
+    rule.hit_limit = 1;
+    let (fixture, tracked_rule) = fixture_with_native_fault_rule(&rule);
+    let (request, container, key) = resolve_item_request(&fixture);
+
+    let mut first = submit_and_complete(&fixture, &request);
+    assert_eq!(
+        first.outcome,
+        CosmosCompletionOutcome::CosmosCompletionOutcomeError
+    );
+    assert_eq!(first.http_status_code, 418);
+    cosmos_completion_queue_free_completions(&mut first, 1);
+    assert_eq!(tracked_rule.hit_count(), 1);
+
+    let mut second = submit_and_complete(&fixture, &request);
+    assert_eq!(
+        second.outcome,
+        CosmosCompletionOutcome::CosmosCompletionOutcomeOk
+    );
+    assert_eq!(second.http_status_code, 200);
+    cosmos_completion_queue_free_completions(&mut second, 1);
+    assert_eq!(tracked_rule.hit_count(), 1);
+
+    cosmos_partition_key_free(key);
+    cosmos_container_ref_free(container);
+}
+
+impl Fixture {
     fn completion(&self) -> CosmosCompletion {
         let runtime = RuntimeContext::inner_arc(self.runtime).unwrap();
         runtime.tokio.block_on(async {

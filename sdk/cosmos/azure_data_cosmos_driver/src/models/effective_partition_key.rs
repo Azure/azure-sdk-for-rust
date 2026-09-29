@@ -6,10 +6,13 @@
 //! Hashes partition key values into a hex-encoded effective partition key string
 //! that can be used to locate the target partition key range.
 
-use crate::models::{
-    murmur_hash::{murmurhash3_128, murmurhash3_32},
-    partition_key::write_number_v1_binary,
-    PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
+use crate::{
+    error::{CosmosError, CosmosStatus},
+    models::{
+        murmur_hash::{murmurhash3_128, murmurhash3_32},
+        partition_key::write_number_v1_binary,
+        PartitionKeyDefinition, PartitionKeyKind, PartitionKeyValue, PartitionKeyVersion,
+    },
 };
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -42,6 +45,10 @@ pub(crate) fn prefix_range_end_hex(prefix: &[u8]) -> String {
 /// full width or trimmed. Deriving `PartialEq` here would make `Eq` and `Ord`
 /// disagree, violating the `Ord` contract and silently rejecting valid
 /// topologies at the several places that compare range bounds.
+///
+/// Use [`TryFrom`] to parse an even-length hexadecimal string. Both letter
+/// cases and the empty string ([`MIN`](Self::MIN)) are accepted. Parsing and
+/// serialization preserve all bytes, including trailing zero padding.
 #[derive(Debug, Clone, Eq)]
 pub struct EffectivePartitionKey(Cow<'static, [u8]>);
 
@@ -85,16 +92,6 @@ impl EffectivePartitionKey {
     /// Constructs an EPK from its raw bytes.
     pub(crate) fn from_bytes(bytes: impl Into<Cow<'static, [u8]>>) -> Self {
         Self(bytes.into())
-    }
-
-    /// Strictly parses an even-length hexadecimal EPK.
-    ///
-    /// Use this for caller-controlled values such as continuation-token bounds.
-    /// Service-provided routing metadata continues to use the infallible
-    /// [`From<&str>`] conversion, whose lenient behavior is retained for
-    /// compatibility with its existing call sites.
-    pub(crate) fn try_from_hex(value: &str) -> Option<Self> {
-        try_hex_to_bytes(value).map(Self::from_bytes)
     }
 
     /// Returns the next EPK after `self`: the smallest EPK strictly greater than
@@ -166,12 +163,12 @@ impl EffectivePartitionKey {
     fn increment_be(&self, mut bytes: Vec<u8>) -> EffectivePartitionKey {
         if bytes.is_empty() {
             // The minimum EPK ("") successor is the smallest representable EPK.
-            return EffectivePartitionKey::from("00");
+            return Self::from_bytes(vec![0x00]);
         }
         for i in (0..bytes.len()).rev() {
             if bytes[i] != 0xFF {
                 bytes[i] += 1;
-                return EffectivePartitionKey::from(bytes_to_hex_upper(&bytes));
+                return Self::from_bytes(bytes);
             }
             bytes[i] = 0x00;
         }
@@ -296,8 +293,6 @@ impl fmt::Display for EffectivePartitionKey {
 /// assert on the exact wire encoding.
 impl PartialEq<str> for EffectivePartitionKey {
     fn eq(&self, other: &str) -> bool {
-        // Parsed strictly, unlike `From<&str>`: that conversion is infallible and
-        // so tolerates a malformed suffix, which would let `MIN == "GG"` hold.
         try_hex_to_bytes(other)
             .is_some_and(|bytes| self.canonical_bytes() == canonical_slice(&bytes))
     }
@@ -310,22 +305,44 @@ impl PartialEq<&str> for EffectivePartitionKey {
     }
 }
 
-impl From<String> for EffectivePartitionKey {
-    /// Parses an upper- or lower-hex EPK string into raw bytes.
-    fn from(s: String) -> Self {
-        Self::from(s.as_str())
+impl TryFrom<String> for EffectivePartitionKey {
+    type Error = CosmosError;
+
+    /// Parses an owned hexadecimal EPK string, preserving all decoded bytes.
+    ///
+    /// Accepts uppercase and lowercase digits, including an empty string for
+    /// [`MIN`](Self::MIN).
+    ///
+    /// # Errors
+    ///
+    /// Returns a bad-request error if the string has an odd length or contains
+    /// a character other than an ASCII hexadecimal digit.
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Self::try_from(s.as_str())
     }
 }
 
-impl From<&str> for EffectivePartitionKey {
-    /// Parses an upper- or lower-hex EPK string into raw bytes.
+impl TryFrom<&str> for EffectivePartitionKey {
+    type Error = CosmosError;
+
+    /// Parses a hexadecimal EPK string, preserving all decoded bytes.
     ///
-    /// EPK strings always originate as even-length hex (service pkrange/query
-    /// plan bounds, `compute` output, and the `"…FF"` prefix
-    /// sentinel), so a malformed value is a caller bug; `hex_to_bytes` stops at
-    /// the first byte that fails to parse rather than panicking on the wire path.
-    fn from(s: &str) -> Self {
-        Self(Cow::Owned(hex_to_bytes(s)))
+    /// Accepts uppercase and lowercase digits, including an empty string for
+    /// [`MIN`](Self::MIN).
+    ///
+    /// # Errors
+    ///
+    /// Returns a bad-request error if the string has an odd length or contains
+    /// a character other than an ASCII hexadecimal digit.
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        try_hex_to_bytes(s).map(Self::from_bytes).ok_or_else(|| {
+            CosmosError::builder()
+                .with_status(CosmosStatus::new(azure_core::http::StatusCode::BadRequest))
+                .with_message(
+                    "effective partition key must contain an even number of ASCII hexadecimal digits",
+                )
+                .build()
+        })
     }
 }
 
@@ -348,7 +365,7 @@ impl<'de> Deserialize<'de> for EffectivePartitionKey {
         D: serde::Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        Ok(Self::from(s))
+        Self::try_from(s).map_err(serde::de::Error::custom)
     }
 }
 
@@ -526,9 +543,7 @@ fn canonical_slice(bytes: &[u8]) -> &[u8] {
 }
 
 /// Parses a hex EPK string, returning `None` unless *every* character is a hex
-/// digit and the length is even. [`hex_to_bytes`] is deliberately lenient
-/// because [`From<&str>`](EffectivePartitionKey::from) cannot report an error;
-/// use this wherever accepting a malformed string would be a silent match.
+/// digit and the length is even.
 fn try_hex_to_bytes(s: &str) -> Option<Vec<u8>> {
     let bytes = s.as_bytes();
     if !bytes.len().is_multiple_of(2) {
@@ -538,24 +553,6 @@ fn try_hex_to_bytes(s: &str) -> Option<Vec<u8>> {
         .chunks_exact(2)
         .map(|pair| Some((hex_nibble(pair[0])? << 4) | hex_nibble(pair[1])?))
         .collect()
-}
-
-/// Decodes an even-length hex string (upper or lower case) into bytes.
-///
-/// Returns the bytes decoded so far if the input is malformed. EPK strings are
-/// always well-formed, even-length hex in practice, so this lenient handling
-/// only guards against caller bugs without panicking on the wire path. Use
-/// [`try_hex_to_bytes`] where a malformed string must not be accepted.
-fn hex_to_bytes(s: &str) -> Vec<u8> {
-    let bytes = s.as_bytes();
-    let mut out = Vec::with_capacity(bytes.len() / 2);
-    for pair in bytes.chunks_exact(2) {
-        match (hex_nibble(pair[0]), hex_nibble(pair[1])) {
-            (Some(hi), Some(lo)) => out.push((hi << 4) | lo),
-            _ => break,
-        }
-    }
-    out
 }
 
 fn hex_nibble(c: u8) -> Option<u8> {
@@ -585,7 +582,7 @@ mod tests {
     /// otherwise every bound comparison in the driver silently disagrees with
     /// routing.
     #[test]
-    fn equality_and_hashing_agree_with_ordering() {
+    fn equality_and_hashing_agree_with_ordering() -> crate::error::Result<()> {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
 
@@ -604,8 +601,8 @@ mod tests {
         ];
         for (a, b) in cases {
             let (a, b) = (
-                EffectivePartitionKey::from(a),
-                EffectivePartitionKey::from(b),
+                EffectivePartitionKey::try_from(a)?,
+                EffectivePartitionKey::try_from(b)?,
             );
             assert_eq!(a.cmp(&b), std::cmp::Ordering::Equal, "{a:?} vs {b:?}");
             assert_eq!(a, b, "equality must follow `Ord`");
@@ -613,19 +610,20 @@ mod tests {
         }
 
         // Padding is only insignificant when it is zero.
-        let a = EffectivePartitionKey::from("80");
-        let b = EffectivePartitionKey::from("8001");
+        let a = EffectivePartitionKey::try_from("80")?;
+        let b = EffectivePartitionKey::try_from("8001")?;
         assert_ne!(a.cmp(&b), std::cmp::Ordering::Equal);
         assert_ne!(a, b);
+        Ok(())
     }
 
     /// The `str` comparisons must agree with `PartialEq<Self>`, or a caller
     /// string-comparing a service-supplied bound gets an answer contradicting
     /// every `Ord`-based routing decision in the driver.
     #[test]
-    fn string_equality_agrees_with_self_equality() {
-        let padded = EffectivePartitionKey::from("8000");
-        let trimmed = EffectivePartitionKey::from("80");
+    fn string_equality_agrees_with_self_equality() -> crate::error::Result<()> {
+        let padded = EffectivePartitionKey::try_from("8000")?;
+        let trimmed = EffectivePartitionKey::try_from("80")?;
         assert_eq!(padded, trimmed);
         for probe in ["80", "8000", "800000"] {
             assert_eq!(padded, probe, "padded vs {probe}");
@@ -634,14 +632,13 @@ mod tests {
         assert_ne!(padded, "8001");
         // The wire encoding is still reachable when it is what you want.
         assert_eq!(padded.to_hex(), "8000");
+        Ok(())
     }
 
-    /// `From<&str>` is infallible and so silently truncates at the first
-    /// non-hex pair. String equality must not inherit that, or a malformed
-    /// boundary would compare equal to a valid one.
+    /// Malformed boundaries must not compare equal to valid keys.
     #[test]
-    fn string_equality_rejects_malformed_hex() {
-        let epk = EffectivePartitionKey::from("80");
+    fn string_equality_rejects_malformed_hex() -> crate::error::Result<()> {
+        let epk = EffectivePartitionKey::try_from("80")?;
         assert_ne!(epk, *"80ZZ", "a bad suffix must not be truncated away");
         assert_ne!(epk, *"8", "an odd nibble count is not a valid EPK");
         assert_ne!(
@@ -655,28 +652,79 @@ mod tests {
         assert_eq!(epk, *"8000");
         assert_eq!(epk, *"80");
         assert_eq!(epk, *"8000000000");
-        assert_eq!(EffectivePartitionKey::from("3aab"), *"3AAB");
+        assert_eq!(EffectivePartitionKey::try_from("3aab")?, *"3AAB");
         // Probe-side lowercase: the previous `to_hex() == other` impl compared
         // against uppercase output and would have rejected this.
-        assert_eq!(EffectivePartitionKey::from("3AAB"), *"3aab");
+        assert_eq!(EffectivePartitionKey::try_from("3AAB")?, *"3aab");
         assert_eq!(EffectivePartitionKey::MIN, *"");
         assert_eq!(EffectivePartitionKey::MIN, *"0000");
+        Ok(())
     }
 
     #[test]
-    fn strict_hex_parser_rejects_malformed_bounds() {
+    fn string_conversions_preserve_wire_bytes() -> Result<(), Box<dyn std::error::Error>> {
+        for text in [
+            "",
+            "FF",
+            "ff",
+            "00",
+            "4080",
+            "3aAb",
+            "800000",
+            "1631FF",
+            "0102030405",
+        ] {
+            let borrowed = EffectivePartitionKey::try_from(text)?;
+            let owned = EffectivePartitionKey::try_from(text.to_owned())?;
+            assert_eq!(borrowed.as_bytes(), owned.as_bytes());
+            assert_eq!(borrowed.to_hex(), text.to_ascii_uppercase());
+            assert_eq!(borrowed.to_string(), text.to_ascii_uppercase());
+            let json = serde_json::to_string(&borrowed)?;
+            assert_eq!(json, serde_json::to_string(&text.to_ascii_uppercase())?);
+            let decoded: EffectivePartitionKey = serde_json::from_str(&json)?;
+            assert_eq!(decoded.as_bytes(), borrowed.as_bytes());
+            let lowercase: EffectivePartitionKey =
+                serde_json::from_str(&serde_json::to_string(text)?)?;
+            assert_eq!(lowercase.as_bytes(), borrowed.as_bytes());
+        }
         assert_eq!(
-            EffectivePartitionKey::try_from_hex("4080")
-                .expect("well-formed EPK")
-                .to_hex(),
-            "4080"
-        );
-        assert_eq!(
-            EffectivePartitionKey::try_from_hex("").expect("the minimum EPK is an empty string"),
+            EffectivePartitionKey::try_from("")?,
             EffectivePartitionKey::MIN
         );
-        assert!(EffectivePartitionKey::try_from_hex("40G0").is_none());
-        assert!(EffectivePartitionKey::try_from_hex("408").is_none());
+        assert_eq!(
+            EffectivePartitionKey::try_from("FF")?,
+            EffectivePartitionKey::MAX
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn string_conversions_reject_malformed_bounds() -> Result<(), Box<dyn std::error::Error>> {
+        let mut message = None;
+        for text in [
+            "4", "408", "GG", "40G0", "4080GG", "4080x", "é", "4080é", "😀", "８０", " 80", "80\n",
+        ] {
+            for result in [
+                EffectivePartitionKey::try_from(text),
+                EffectivePartitionKey::try_from(text.to_owned()),
+            ] {
+                let error = match result {
+                    Err(error) => error,
+                    Ok(epk) => return Err(format!("malformed EPK accepted: {epk}").into()),
+                };
+                assert_eq!(
+                    error.status().status_code(),
+                    azure_core::http::StatusCode::BadRequest
+                );
+                match &message {
+                    Some(expected) => assert_eq!(&error.to_string(), expected),
+                    None => message = Some(error.to_string()),
+                }
+            }
+            let json = serde_json::to_string(text)?;
+            assert!(serde_json::from_str::<EffectivePartitionKey>(&json).is_err());
+        }
+        Ok(())
     }
 
     /// Coarsening equality creates an obligation that operations respect the
@@ -685,9 +733,9 @@ mod tests {
     /// so the asymmetry stays a reviewed property rather than a latent trap;
     /// `normalized_successor` is the congruent form when the width is known.
     #[test]
-    fn successor_is_deliberately_not_congruent_with_equality() {
-        let padded = EffectivePartitionKey::from("8000");
-        let trimmed = EffectivePartitionKey::from("80");
+    fn successor_is_deliberately_not_congruent_with_equality() -> crate::error::Result<()> {
+        let padded = EffectivePartitionKey::try_from("8000")?;
+        let trimmed = EffectivePartitionKey::try_from("80")?;
         assert_eq!(padded, trimmed, "the inputs are the same key");
         assert_eq!(padded.successor().to_hex(), "8001");
         assert_eq!(trimmed.successor().to_hex(), "81");
@@ -698,6 +746,7 @@ mod tests {
             padded.normalized_successor(2),
             trimmed.normalized_successor(2)
         );
+        Ok(())
     }
 
     /// The `0xFF` prefix sentinel from `prefix_range_end_bytes` is the one
@@ -705,59 +754,73 @@ mod tests {
     /// must leave it alone — collapsing it would merge an HPK prefix range's
     /// exclusive end into its own start.
     #[test]
-    fn prefix_sentinel_is_not_collapsed_by_canonicalization() {
-        let prefix = EffectivePartitionKey::from("1631");
+    fn prefix_sentinel_is_not_collapsed_by_canonicalization() -> crate::error::Result<()> {
+        let prefix = EffectivePartitionKey::try_from("1631")?;
         let sentinel = EffectivePartitionKey::from_bytes(prefix_range_end_bytes(prefix.as_bytes()));
         assert_eq!(sentinel.to_hex(), "1631FF");
         assert!(prefix < sentinel, "the sentinel must order strictly after");
         assert_ne!(prefix, sentinel);
         // Zero padding on the same prefix stays equal, unlike the sentinel.
-        assert_eq!(prefix, EffectivePartitionKey::from("16310000"));
+        assert_eq!(prefix, EffectivePartitionKey::try_from("16310000")?);
+        Ok(())
     }
 
     #[test]
-    fn successor_increments_last_digit() {
-        assert_eq!(EffectivePartitionKey::from("30").successor().to_hex(), "31");
+    fn successor_increments_last_digit() -> crate::error::Result<()> {
         assert_eq!(
-            EffectivePartitionKey::from("3AAB").successor().to_hex(),
+            EffectivePartitionKey::try_from("30")?.successor().to_hex(),
+            "31"
+        );
+        assert_eq!(
+            EffectivePartitionKey::try_from("3AAB")?
+                .successor()
+                .to_hex(),
             "3AAC"
         );
+        Ok(())
     }
 
     #[test]
-    fn successor_carries_across_trailing_ff() {
+    fn successor_carries_across_trailing_ff() -> crate::error::Result<()> {
         // Last byte 0xFF rolls to 0x00 and carries into the previous byte.
         assert_eq!(
-            EffectivePartitionKey::from("3AFF").successor().to_hex(),
+            EffectivePartitionKey::try_from("3AFF")?
+                .successor()
+                .to_hex(),
             "3B00"
         );
         // Multiple trailing 0xFF bytes all carry.
         assert_eq!(
-            EffectivePartitionKey::from("01FFFF").successor().to_hex(),
+            EffectivePartitionKey::try_from("01FFFF")?
+                .successor()
+                .to_hex(),
             "020000"
         );
+        Ok(())
     }
 
     #[test]
-    fn successor_is_strictly_greater_and_width_preserving() {
-        let a = EffectivePartitionKey::from("22E342F38A486A088463DFF7838A5963");
+    fn successor_is_strictly_greater_and_width_preserving() -> crate::error::Result<()> {
+        let a = EffectivePartitionKey::try_from("22E342F38A486A088463DFF7838A5963")?;
         let next = a.successor();
         assert_eq!(next.to_hex(), "22E342F38A486A088463DFF7838A5964");
         assert_eq!(next.to_hex().len(), a.to_hex().len());
         assert!(next > a);
+        Ok(())
     }
 
     #[test]
-    fn successor_handles_hpk_width() {
+    fn successor_handles_hpk_width() -> crate::error::Result<()> {
         // A full hierarchical (MultiHash) EPK is 64 hex chars; the successor is
         // width-preserving and only touches the final component.
         let hpk = "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000000";
-        let next = EffectivePartitionKey::from(hpk).successor();
+        let next = EffectivePartitionKey::try_from(hpk)?.successor();
         assert_eq!(
             next.to_hex(),
             "06AB34CFE4E482236BCACBBF50E234AB00000000000000000000000000000001"
         );
         assert_eq!(next.to_hex().len(), 64);
+        Ok(())
     }
 
     #[test]
@@ -766,7 +829,7 @@ mod tests {
     }
 
     #[test]
-    fn normalized_successor_zero_extends_then_increments() {
+    fn normalized_successor_zero_extends_then_increments() -> crate::error::Result<()> {
         // A trailing-zero-trimmed EPK ("3A" for a 16-byte hash) is padded to
         // full width with 0x00 before the increment, so the successor bumps the
         // real last byte position, not the trimmed one.
@@ -775,39 +838,44 @@ mod tests {
         expected[15] = 0x01;
         let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
         assert_eq!(
-            EffectivePartitionKey::from("3A")
+            EffectivePartitionKey::try_from("3A")?
                 .normalized_successor(16)
                 .to_hex(),
             expected_hex
         );
+        Ok(())
     }
 
     #[test]
-    fn normalized_successor_is_noop_pad_for_full_width_key() {
+    fn normalized_successor_is_noop_pad_for_full_width_key() -> crate::error::Result<()> {
         // When the EPK is already at (or beyond) the normalized width, no
         // padding is applied and the result equals the plain successor.
-        let full = EffectivePartitionKey::from("22E342F38A486A088463DFF7838A5963");
+        let full = EffectivePartitionKey::try_from("22E342F38A486A088463DFF7838A5963")?;
         assert_eq!(
             full.normalized_successor(16).to_hex(),
             full.successor().to_hex()
         );
+        Ok(())
     }
 
     #[test]
-    fn normalized_successor_hpk_pads_to_multi_component_width() {
+    fn normalized_successor_hpk_pads_to_multi_component_width() -> crate::error::Result<()> {
         // Hierarchical (MultiHash, 2 paths) width is 32 bytes; a value carrying
         // only the first component is zero-extended across both before +1.
         let first_component = "06AB34CFE4E482236BCACBBF50E234AB";
-        let mut expected = hex_to_bytes(first_component);
+        let mut expected = EffectivePartitionKey::try_from(first_component)?
+            .as_bytes()
+            .to_vec();
         expected.resize(32, 0x00);
         expected[31] = 0x01;
         let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
         assert_eq!(
-            EffectivePartitionKey::from(first_component)
+            EffectivePartitionKey::try_from(first_component)?
                 .normalized_successor(32)
                 .to_hex(),
             expected_hex
         );
+        Ok(())
     }
 
     #[test]
@@ -827,7 +895,7 @@ mod tests {
     }
 
     #[test]
-    fn normalized_successor_encodes_the_planner_algorithm_end_to_end() {
+    fn normalized_successor_encodes_the_planner_algorithm_end_to_end() -> crate::error::Result<()> {
         // Encodes the exact normalization the planner applies to an equality /
         // `IN` point: derive the container's full EPK width from its PK
         // definition, then take the width-normalized successor of a
@@ -843,7 +911,7 @@ mod tests {
         expected[len - 1] = 0x01;
         let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
         assert_eq!(
-            EffectivePartitionKey::from("3A")
+            EffectivePartitionKey::try_from("3A")?
                 .normalized_successor(len)
                 .to_hex(),
             expected_hex
@@ -856,16 +924,19 @@ mod tests {
         let hpk_len = normalized_epk_len(&hpk).unwrap();
         assert_eq!(hpk_len, 48);
         let first_component = "06AB34CFE4E482236BCACBBF50E234AB";
-        let mut expected = hex_to_bytes(first_component);
+        let mut expected = EffectivePartitionKey::try_from(first_component)?
+            .as_bytes()
+            .to_vec();
         expected.resize(hpk_len, 0x00);
         expected[hpk_len - 1] = 0x01;
         let expected_hex: String = expected.iter().map(|b| format!("{:02X}", b)).collect();
         assert_eq!(
-            EffectivePartitionKey::from(first_component)
+            EffectivePartitionKey::try_from(first_component)?
                 .normalized_successor(hpk_len)
                 .to_hex(),
             expected_hex
         );
+        Ok(())
     }
 
     #[test]
@@ -1480,7 +1551,8 @@ mod conformance_tests {
     }
 
     #[test]
-    fn cross_sdk_final_effective_partition_keys_match_production_pipeline() {
+    fn cross_sdk_final_effective_partition_keys_match_production_pipeline(
+    ) -> crate::error::Result<()> {
         let fixtures: FixtureSet =
             serde_json::from_str(FIXTURES).expect("EPK conformance fixture must be valid JSON");
 
@@ -1516,8 +1588,7 @@ mod conformance_tests {
                 "{} must store the final EPK as uppercase hex",
                 case.id
             );
-            EffectivePartitionKey::try_from_hex(&case.expected_epk)
-                .unwrap_or_else(|| panic!("{} has a malformed expected EPK", case.id));
+            EffectivePartitionKey::try_from(case.expected_epk.as_str())?;
 
             let kind = match case.kind {
                 FixtureKind::Hash => PartitionKeyKind::Hash,
@@ -1559,6 +1630,7 @@ mod conformance_tests {
                 case.source
             );
         }
+        Ok(())
     }
 }
 
