@@ -106,10 +106,11 @@ lookups and recreation refreshes. Cached references retain the credentials used
 to create them, so same-account clients on one runtime must use compatible
 credentials. Use separate runtimes when credential isolation is required.
 
-`cosmos_operation_handle_cancel` requests cancellation for any submitted work.
-Continue draining until its terminal completion before releasing the host cookie.
-An already-ready result wins the cancellation race; otherwise pending work is
-dropped before one CANCELLED completion is published, retaining patch tracking ID.
+Host-requested cancellation is not supported: dropping an in-flight driver future
+can discard its diagnostics. The CANCELLED outcome and handle-state values remain
+reserved. Hosts must retain operation cookies and drain terminal completions even
+if their own callers stop waiting. Admission deadlines remain enforced separately;
+an admission timeout does not guarantee partial driver diagnostics.
 
 ### Commands
 

@@ -80,7 +80,9 @@ enum cosmos_completion_outcome_t
    */
   COSMOS_COMPLETION_OUTCOME_ERROR = 1,
   /**
-   * Cancellation won before a terminal driver result was available.
+   * Reserved and unused. On-demand cancellation is not supported, so no
+   * operation produces this outcome. The value is kept fixed so it can be
+   * reused if cancellation is added in the future.
    */
   COSMOS_COMPLETION_OUTCOME_CANCELLED = 2,
   /**
@@ -253,7 +255,9 @@ enum cosmos_operation_handle_state_t
    */
   COSMOS_OPERATION_HANDLE_STATE_FAILED = 2,
   /**
-   * A cancelled completion was posted after the pending future was dropped.
+   * Reserved and unused. No completion drives a handle into this state.
+   * The value is kept fixed so it can be reused if cancellation is added
+   * in the future.
    */
   COSMOS_OPERATION_HANDLE_STATE_CANCELLED = 3,
 };
@@ -2094,14 +2098,6 @@ void cosmos_account_ref_free(struct cosmos_account_ref_t *account);
 void cosmos_bytes_free(struct cosmos_bytes_t bytes);
 
 /**
- * Requests cancellation without consuming the operation handle.
- *
- * NULL is a no-op. Keep the handle and host cookie alive until the terminal
- * completion is drained; an already-ready driver result wins over cancellation.
- */
-void cosmos_operation_handle_cancel(const struct cosmos_operation_handle_t *handle);
-
-/**
  * Returns the effective PATCH tracking UUID carried by a completion.
  *
  * The returned NUL-terminated UTF-8 string is borrowed from `completion` and
@@ -2125,7 +2121,7 @@ struct cosmos_completion_queue_t *cosmos_completion_queue_create(const struct co
  * Does **not** block or wait for in-flight operations — it drops the
  * producer-side handle immediately. In-flight submissions keep the shared
  * queue state alive through their own `Arc`s and still run to completion
- * unless explicitly cancelled, but once the handle is freed their completions,
+ * (there is no cancellation), but once the handle is freed their completions,
  * and the diagnostics they carry, can no longer be observed and are dropped
  * with any pending allocations. Hosts that must observe every completion first
  * call `cosmos_completion_queue_shutdown` and drain via

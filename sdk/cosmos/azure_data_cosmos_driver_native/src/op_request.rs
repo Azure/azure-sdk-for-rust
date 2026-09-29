@@ -72,13 +72,14 @@ use crate::partition_key::{CosmosPartitionKeyComponent, PartitionKeyHandle};
 ///
 /// - **enum fields** (`*_strategy`, `content_response_on_write`): `0` = unset
 ///   (inherit), any other value = the corresponding driver variant.
-/// - **tri-state bools** (`session_capturing_disabled`): `0` = unset,
-///   `1` = `false`, `2` = `true`.
+/// - **tri-state bools** (`session_capturing_disabled`, `hedging_enabled`,
+///   and binary-encoding flags): `0` = unset, `1` = `false`, `2` = `true`.
 /// - **i64 numeric fields** (retry counters/bucket): `< 0` = unset,
 ///   `0..=u32::MAX` = the value; larger values are rejected.
 /// - **i64 duration fields** (`*_ms`): `< 0` = unset, `>= 0` = milliseconds.
-/// - **string / array fields** (`excluded_regions`, `custom_headers`):
-///   NULL / length `0` = unset.
+/// - **array fields** (`excluded_regions`, `custom_headers`): NULL with length
+///   `0` = unset (inherit); non-NULL with length `0` clears inherited values.
+///   NULL with a nonzero length is invalid.
 ///
 /// It is a documentation marker only — the fields are plain integers /
 /// pointers so the struct stays `#[repr(C)]`.

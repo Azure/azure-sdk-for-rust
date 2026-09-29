@@ -178,19 +178,12 @@ fn spawn_oneshot<Fut, R>(
         // would stay `IN_FLIGHT` forever — the host continuation hangs and
         // leaks. Catching the panic here lets us still publish exactly one
         // completion, honoring the spec section 3.6 invariant.
-        let done = {
-            let work = std::panic::AssertUnwindSafe(async move { fut.await.map(to_success) });
-            tokio::select! {
-                biased;
-                result = work.catch_unwind() => Some(result),
-                () = ctx.op_inner.cancelled() => None,
-            }
-        };
+        let work = std::panic::AssertUnwindSafe(async move { fut.await.map(to_success) });
+        let done = work.catch_unwind().await;
 
         let user_data = ctx.user_data.as_isize();
         let completion = match done {
-            None => PendingCompletion::cancelled(user_data, ctx.op_inner.clone()),
-            Some(Ok(Ok(success))) => match success {
+            Ok(Ok(success)) => match success {
                 SuccessKind::Response {
                     response,
                     next_continuation,
@@ -207,13 +200,13 @@ fn spawn_oneshot<Fut, R>(
                     PendingCompletion::ok_container(user_data, ctx.op_inner.clone(), *container)
                 }
             },
-            Some(Ok(Err(err))) => PendingCompletion::error(
+            Ok(Err(err)) => PendingCompletion::error(
                 user_data,
                 ctx.op_inner.clone(),
                 err,
                 ctx.include_error_details,
             ),
-            Some(Err(panic_payload)) => {
+            Err(panic_payload) => {
                 // The driver future (or success conversion) panicked. Synthesize
                 // a driver error carrying the CLIENT_FFI_PANIC status and route
                 // it through the normal rich-error path so the completion's
@@ -875,85 +868,5 @@ mod tests {
         cosmos_operation_handle_free(op_handle);
         cosmos_completion_queue_free(queue);
         cosmos_runtime_free(rt);
-    }
-
-    #[test]
-    fn cancellation_drops_pending_work_but_ready_results_win() {
-        use crate::completion::{
-            cosmos_completion_patch_tracking_id, cosmos_completion_queue_create,
-            cosmos_completion_queue_free, cosmos_completion_queue_free_completions,
-            cosmos_completion_queue_wait, cosmos_operation_handle_cancel,
-            cosmos_operation_handle_free, CosmosCompletion, CosmosCompletionOutcome,
-        };
-        use crate::runtime::{__test_only_create_default_runtime, cosmos_runtime_free};
-        use std::{
-            mem::MaybeUninit,
-            sync::atomic::{AtomicBool, Ordering},
-        };
-
-        struct DropSignal(Arc<AtomicBool>);
-        impl Drop for DropSignal {
-            fn drop(&mut self) {
-                self.0.store(true, Ordering::SeqCst);
-            }
-        }
-        let runtime = __test_only_create_default_runtime();
-        let queue = cosmos_completion_queue_create(runtime, std::ptr::null());
-        for ready in [false, true] {
-            let dropped = Arc::new(AtomicBool::new(false));
-            let guard = DropSignal(Arc::clone(&dropped));
-            let (ctx, handle) = pre_flight_spawn(queue, 42).unwrap();
-            ctx.op_inner
-                .set_patch_tracking_id("7f5241c9-d7c2-4071-97a3-43bdebf6ef8f".into());
-            let runtime = Arc::clone(ctx.queue.runtime());
-            cosmos_operation_handle_cancel(handle);
-            cosmos_operation_handle_cancel(handle);
-            spawn_oneshot(
-                ctx,
-                runtime,
-                async move {
-                    let _guard = guard;
-                    if !ready {
-                        futures::future::pending::<()>().await;
-                    }
-                    Ok(())
-                },
-                |()| SuccessKind::Response {
-                    response: None,
-                    next_continuation: None,
-                },
-            );
-            let mut slot = MaybeUninit::<CosmosCompletion>::uninit();
-            assert_eq!(
-                cosmos_completion_queue_wait(queue, slot.as_mut_ptr(), 1, 5000),
-                1
-            );
-            // SAFETY: wait wrote exactly one initialized completion.
-            let mut completion = unsafe { slot.assume_init() };
-            assert!(
-                dropped.load(Ordering::SeqCst),
-                "work is quiescent before delivery"
-            );
-            assert_eq!(completion.user_data, 42);
-            assert_eq!(
-                completion.outcome,
-                if ready {
-                    CosmosCompletionOutcome::CosmosCompletionOutcomeOk
-                } else {
-                    CosmosCompletionOutcome::CosmosCompletionOutcomeCancelled
-                }
-            );
-            assert!(!cosmos_completion_patch_tracking_id(&completion).is_null());
-            cosmos_operation_handle_cancel(handle);
-            let mut slot = MaybeUninit::<CosmosCompletion>::uninit();
-            assert_eq!(
-                cosmos_completion_queue_wait(queue, slot.as_mut_ptr(), 1, 0),
-                0
-            );
-            cosmos_completion_queue_free_completions(&mut completion, 1);
-            cosmos_operation_handle_free(handle);
-        }
-        cosmos_completion_queue_free(queue);
-        cosmos_runtime_free(runtime);
     }
 }

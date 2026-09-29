@@ -6060,8 +6060,8 @@ mod tests {
             &user_agent,
             &client_id,
             false,
-                    None,
-)
+            None,
+        )
         .await
         .expect_err(
             "503 ServiceUnavailable response with a non-empty JSON envelope must surface as an error",
