@@ -36,7 +36,25 @@ struct AbiTransport {
 impl TransportClient for AbiTransport {
     async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
         let path = request.url.path();
-        self.paths.lock().unwrap().push(path.to_owned());
+        let request_number = {
+            let mut paths = self.paths.lock().unwrap();
+            paths.push(path.to_owned());
+            paths
+                .iter()
+                .filter(|recorded| recorded.as_str() == path)
+                .count()
+        };
+        let mut headers = Headers::new();
+        if path == "/dbs/db/colls/items/pkranges" {
+            if request_number > 1 {
+                return Ok(HttpResponse {
+                    status: 304,
+                    headers,
+                    body: Vec::new(),
+                });
+            }
+            headers.insert("etag", "native-fault-topology");
+        }
         let body = match path {
             "/" => serde_json::json!({
                 "_self": "",
@@ -58,11 +76,19 @@ impl TransportClient for AbiTransport {
                 "_rid": "AQIDBAUGBwg=",
                 "partitionKey": {"paths": ["/pk"], "kind": "Hash", "version": 2}
             }),
+            "/dbs/db/colls/items/pkranges" => serde_json::json!({
+                "PartitionKeyRanges": [{
+                    "id": "0",
+                    "_rid": "range-0",
+                    "minInclusive": "",
+                    "maxExclusive": "FF"
+                }]
+            }),
             _ => serde_json::json!({"id": "item", "pk": "tenant"}),
         };
         Ok(HttpResponse {
             status: 200,
-            headers: Headers::new(),
+            headers,
             body: serde_json::to_vec(&body).unwrap(),
         })
     }
