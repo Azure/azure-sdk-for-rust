@@ -8,7 +8,7 @@ use crate::{
     http::{headers::ERROR_CODE, AsyncRawResponse, RawResponse, StatusCode},
 };
 use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, collections::HashMap, future::Future, str};
+use std::{collections::HashMap, future::Future, str};
 
 /// An HTTP error response.
 ///
@@ -100,25 +100,13 @@ pub struct InnerError {
 /// Strings are owned because a JSON string containing escape sequences cannot be borrowed from the
 /// body.
 #[derive(Debug, Deserialize)]
-struct ErrorResponseInternal<'a> {
-    #[serde(borrow)]
-    error: ErrorDetailsInternal<'a>,
+struct ErrorResponseInternal {
+    error: ErrorDetailsInternal,
 }
 
 #[derive(Debug, Deserialize)]
-struct ErrorDetailsInternal<'a> {
-    /// Optional status code.
-    ///
-    /// Status code will be obtained from [`ERROR_CODE`] if available so allocation may not be necessary.
-    #[serde(
-        borrow,
-        default,
-        deserialize_with = "crate::fmt::borrowed_str::option::deserialize"
-    )]
-    code: Option<Cow<'a, str>>,
-    /// Optional error message.
-    ///
-    /// The message always gets owned so there is no value in borrowing from the raw error response.
+struct ErrorDetailsInternal {
+    code: Option<String>,
     message: Option<String>,
 }
 
@@ -569,7 +557,7 @@ mod tests {
             .expect("Parse success.");
         println!("{:?}", err);
 
-        assert!(matches!(err.error.code, Some(Cow::Borrowed(s)) if s == "InvalidRequest"));
+        assert_eq!(err.error.code.as_deref(), Some("InvalidRequest"));
         assert_eq!(
             err.error.message.as_deref(),
             Some("The request object is not recognized.")
@@ -583,7 +571,7 @@ mod tests {
         )
         .expect("Parse success.");
 
-        assert!(matches!(err.error.code, Some(Cow::Borrowed(s)) if s == "Forbidden"));
+        assert_eq!(err.error.code.as_deref(), Some("Forbidden"));
         assert_eq!(
             err.error.message.as_deref(),
             Some("Caller is not authorized.\r\nAction: \"sign\"")
