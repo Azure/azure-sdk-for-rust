@@ -58,8 +58,8 @@ requires a new version.
 
 ## Changelog
 
-Add `CHANGELOG.md` beside `Cargo.toml` when this policy is implemented. Follow
-the existing Cosmos `Release History` format and describe host-visible changes.
+`CHANGELOG.md` sits beside `Cargo.toml`. Follow the existing Cosmos
+`Release History` format and describe host-visible changes.
 
 ```markdown
 # Release History
@@ -90,30 +90,20 @@ Create a protected annotated tag on the reviewed `main` commit:
 azure_data_cosmos_driver_native@X.Y.Z
 ```
 
-The release builds the tagged commit. The tag annotation records the version
-and release-evidence digest.
+The release builds the tagged commit. The pipeline requires an annotated tag that points to the built commit.
 
 ## FFI compatibility check
 
-Generate a canonical snapshot from the checked-in header and exported symbols.
-Compare it with the latest released tag.
+`Test-NativeRelease.ps1` compares the checked-in C header with the latest
+released source tag. It ignores only the package-version macro.
 
-The snapshot covers:
+For the current pre-`1.0.0` policy:
 
-- exported symbols and signatures;
-- constants and enum values;
-- structure field order, size, alignment, and offsets; and
-- ownership and freeing contracts.
+- a patch release must have an unchanged FFI header;
+- a minor release may change the FFI header.
 
-| Snapshot result | Release rule |
-| --- | --- |
-| No FFI change | Any bump allowed by other host-visible changes |
-| Additive FFI change | Minor bump |
-| Breaking FFI change before `1.0.0` | Minor bump |
-| Breaking FFI change at or after `1.0.0` | Major bump |
-| Unexplained platform difference | Fail |
-
-This snapshot enforces SemVer. It is not another public version.
+Before `1.0.0`, add a classifier for additive versus breaking header and layout
+changes so the stable minor/major rules can be enforced automatically.
 
 ## Existing supply-chain evidence
 
@@ -188,16 +178,19 @@ different toolchain or artifact.
 
 ## Adoption
 
-1. Add the changelog and FFI snapshot.
-2. Enforce version, tag, and FFI-diff checks.
-3. Publish one atomic downstream release and tag set.
-4. Record the native version in each host SDK.
+1. **Implemented here:** changelog, version agreement, annotated source-tag
+   validation, and the pre-`1.0.0` patch FFI gate.
+2. **Downstream:** publish one atomic driver release and platform tag set.
+3. **Host SDKs:** record and validate the selected native version.
+4. **Before `1.0.0`:** add stable additive/breaking FFI classification.
 
 ## Acceptance criteria
 
 - One protected source tag identifies one immutable release.
 - Cargo, runtime, header, changelog, and downstream versions agree.
-- FFI snapshot changes require the correct SemVer bump.
+- Pre-`1.0.0` patch tags are rejected when the C FFI header changes.
+- Stable releases add automated additive/breaking FFI classification before
+  `1.0.0`.
 - Existing provenance and signed SPDX behavior remains unchanged.
 - Each `Azure/azure-cosmos-driver` platform tag and GitHub release is the
   authoritative binary release record for that module.

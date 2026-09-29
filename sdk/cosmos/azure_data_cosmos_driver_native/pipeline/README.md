@@ -13,7 +13,7 @@ to review where the library came from.
 
 The production pipeline extends the repository's official 1ES wrapper and is
 registered for manual internal runs rather than automatic CI. A successful
-manual main-branch build can open a draft pull request in
+manual annotated native-package tag build can open a draft pull request in
 `Azure/azure-cosmos-driver`.
 
 Production jobs install the centrally pinned Microsoft Rust toolchain from
@@ -80,6 +80,7 @@ libraries for .NET, Java, and Python remain outside the release matrix.
 | `New-NativeJobMatrix.ps1` | Converts the canonical target list into the standard Azure Pipelines matrix-generator format. |
 | `Build-NativeMatrix.ps1` | Verifies Microsoft Rust, builds each static library, and writes schema 4 release metadata. |
 | `Test-NativeLink.ps1` | Cross-links a minimal Go/cgo program against each target archive before publication. |
+| `Test-NativeRelease.ps1` | Validates version agreement, the annotated source tag, and pre-1.0 patch FFI compatibility. |
 | `New-GoModules.ps1` | Creates the `Azure/azure-cosmos-driver` directory layout, Go module files, cgo linker files, headers, and static libraries. |
 | `Test-GoModuleConsumer.ps1` | Builds direct and vendored Go consumers that call `cosmos_version()` from a generated host module. |
 | `Prepare-GoDriverPullRequest.ps1` | Verifies the artifact, synchronizes the downstream generated roots, validates the Go modules, and stages the changes. |
@@ -87,16 +88,20 @@ libraries for .NET, Java, and Python remain outside the release matrix.
 | `tests/Prepare-GoDriverPullRequest.Tests.ps1` | Verifies that downstream synchronization removes retired generated files without modifying hand-maintained files. |
 | `tests/Test-GoModuleConsumer.Tests.ps1` | Verifies direct and vendored consumer command flow and symbol-call source generation. |
 | `tests/Test-NativeLink.Tests.ps1` | Verifies target metadata checks and Go link-smoke command wiring. |
+| `tests/Test-NativeRelease.Tests.ps1` | Verifies version, tag, source-commit, and patch FFI release gates. |
 | `Invoke-LocalSupplyChain.ps1` | Runs a local end-to-end integration test without publishing anything. |
 | `native-driver.yml` | Defines the official 1ES build, Go module artifact, and downstream draft pull request. |
 | `native-driver-build-job.yml` | Runs one generated target row with the appropriate pool, image, Rust setup, and linker. |
 | `../docs/NATIVE_SUPPLY_CHAIN.md` | Explains how the artifacts are built and verified. |
-| `../docs/NATIVE_VERSIONING_AND_RELEASES.md` | Proposes native SemVer and FFI compatibility policy, changelog, provenance, and host-SDK propagation. |
+| `../docs/NATIVE_VERSIONING_AND_RELEASES.md` | Defines native SemVer, FFI compatibility, release identity, and host-SDK propagation. |
 
 ## Production flow
 
 ```text
-Pinned azure-sdk-for-rust commit and Microsoft Rust channel
+Annotated azure_data_cosmos_driver_native@X.Y.Z source tag
+    |
+    v
+Validate version, changelog, source commit, and pre-1.0 patch FFI
     |
     v
 Generate jobs from build-matrix.json using the shared matrix infrastructure
@@ -145,11 +150,16 @@ The native-driver pipeline is not part of the automatic pull-request pipeline.
 Authorized reviewers can run its registered pipeline definition against a pull
 request with an `/azp run` comment.
 
-The publication stage runs only after a successful manual build of
-`refs/heads/main`. It mints a short-lived Azure SDK Automation GitHub App token,
-clones the downstream repository, verifies `SHA256SUMS`, excludes the 1ES
-`_manifest` evidence directory from payload validation, then exports only the
-required signed evidence bundle: `manifest.spdx.json`,
+The publication stage runs only after a successful manual build of an
+`azure_data_cosmos_driver_native@X.Y.Z` tag. Before building, the pipeline
+requires Cargo, header, changelog, tag, and source commit identity to agree. A
+pre-`1.0.0` patch release also requires the C header to match the prior release,
+apart from its version macro.
+
+The publication stage mints a short-lived Azure SDK Automation GitHub App
+token, clones the downstream repository, verifies `SHA256SUMS`, excludes the
+1ES `_manifest` evidence directory from payload validation, then exports only
+the required signed evidence bundle: `manifest.spdx.json`,
 `manifest.spdx.json.sha256`, `manifest.spdx.cose`, `manifest.cat`, `bsi.json`,
 and `bsi.cose`. The downloaded pipeline artifact may contain verbose 1ES and
 ESRP diagnostic logs, but the downstream staging script never copies them into
