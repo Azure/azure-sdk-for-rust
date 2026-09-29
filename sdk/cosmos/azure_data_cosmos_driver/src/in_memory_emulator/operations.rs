@@ -6529,7 +6529,7 @@ mod tests {
     use crate::in_memory_emulator::{
         config::{VirtualAccountConfig, VirtualRegion},
         dispatch::parse_request,
-        test_headers::ETAG,
+        response::headers::ETAG,
     };
     use azure_core::http::{Method, Request};
     use url::Url;

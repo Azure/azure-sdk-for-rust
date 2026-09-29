@@ -4,12 +4,13 @@
 //! Test-only helpers used by the linked-C ABI suite.
 
 use std::{
+    mem::ManuallyDrop,
     ptr,
     sync::{Arc, Mutex},
 };
 
 use async_trait::async_trait;
-use azure_core::http::headers::Headers;
+use azure_core::http::headers::{HeaderName, Headers};
 use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntime,
     options::OperationOptions,
@@ -37,6 +38,21 @@ impl TransportClient for AbiTransport {
     async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
         let path = request.url.path();
         self.paths.lock().unwrap().push(path.to_owned());
+        let mut headers = Headers::new();
+        if path.ends_with("/pkranges") {
+            headers.insert("etag", "\"ranges\"");
+            if request
+                .headers
+                .get_optional_str(&HeaderName::from_static("if-none-match"))
+                .is_some()
+            {
+                return Ok(HttpResponse {
+                    status: 304,
+                    headers,
+                    body: Vec::new(),
+                });
+            }
+        }
         let body = match path {
             "/" => serde_json::json!({
                 "_self": "",
@@ -58,11 +74,17 @@ impl TransportClient for AbiTransport {
                 "_rid": "AQIDBAUGBwg=",
                 "partitionKey": {"paths": ["/pk"], "kind": "Hash", "version": 2}
             }),
+            path if path.ends_with("/pkranges") => serde_json::json!({
+                "PartitionKeyRanges": [
+                    {"id": "0", "minInclusive": "", "maxExclusive": "FF"}
+                ],
+                "_count": 1
+            }),
             _ => serde_json::json!({"id": "item", "pk": "tenant"}),
         };
         Ok(HttpResponse {
             status: 200,
-            headers: Headers::new(),
+            headers,
             body: serde_json::to_vec(&body).unwrap(),
         })
     }
@@ -136,7 +158,7 @@ pub extern "C" fn __test_only_create_fault_injection_fixture(
     };
 
     let runtime = Arc::into_raw(Arc::new(RuntimeContext {
-        tokio,
+        tokio: ManuallyDrop::new(tokio),
         driver: runtime,
     })) as *mut RuntimeContext;
     let driver = DriverHandle::from_arc_into_raw(Arc::new(DriverHandle { inner: driver }));
