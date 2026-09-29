@@ -178,7 +178,7 @@ impl Fixture {
             .unwrap();
         let driver = tokio.block_on(runtime.create_driver(options)).unwrap();
         let runtime = Arc::into_raw(Arc::new(RuntimeContext {
-            tokio,
+            tokio: std::mem::ManuallyDrop::new(tokio),
             driver: runtime,
         })) as *mut RuntimeContext;
         let driver = DriverHandle::from_arc_into_raw(Arc::new(DriverHandle { inner: driver }));

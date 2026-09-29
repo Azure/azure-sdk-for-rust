@@ -82,7 +82,7 @@ impl CosmosStatusCode {
 ///
 /// This enum is the **single source of truth** for those names on the C side.
 /// Each discriminant is a literal copy of the corresponding
-/// [`azure_data_cosmos_driver::error::SubStatusCode`] constant (cbindgen needs
+/// [`azure_data_cosmos_driver::error::status_codes::substatus`] constant (cbindgen needs
 /// literals to emit `= N`). A compile-time guard in the Rust source that defines
 /// this enum (`src/error.rs`, not part of the generated header) verifies every
 /// discriminant against the driver constant it mirrors, so a value that drifts
@@ -232,6 +232,16 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientFfiRuntimeBuildFailed = 20361,
     /// `CLIENT_FFI_PANIC` (20362).
     CosmosSubStatusClientFfiPanic = 20362,
+    /// A cursor has an outstanding operation.
+    CosmosSubStatusClientFfiCursorBusy = 20363,
+    /// Wrong completion queue format.
+    CosmosSubStatusClientFfiQueueFormat = 20364,
+    /// Cursor progress is terminal.
+    CosmosSubStatusClientFfiCursorClosed = 20365,
+    /// Legacy completion cannot represent the page.
+    CosmosSubStatusClientFfiRepresentationUnsupported = 20366,
+    /// An admitted result was not delivered.
+    CosmosSubStatusClientFfiDeliveryLost = 20367,
     /// `CLIENT_GENERATED_401` (20401).
     CosmosSubStatusClientGenerated401 = 20401,
     /// `AUTHENTICATION_TOKEN_ACQUISITION_FAILED` (20402).
@@ -243,7 +253,7 @@ pub enum CosmosSubStatus {
 }
 
 /// Compile-time guard that keeps [`CosmosSubStatus`] pinned to the driver's
-/// canonical [`SubStatusCode`] constants.
+/// canonical [`azure_data_cosmos_driver::error::status_codes::substatus`] constants.
 ///
 /// cbindgen requires the enum above to carry literal discriminants (it neither
 /// expands macros nor parses the driver crate), so the names and values are
@@ -274,7 +284,7 @@ const _: () = {
                     concat!(
                         "CosmosSubStatus::",
                         stringify!($variant),
-                        " no longer matches driver SubStatusCode::",
+                        " no longer matches driver status_codes::substatus::",
                         stringify!($driver)
                     )
                 );
@@ -345,6 +355,11 @@ const _: () = {
         CosmosSubStatusClientFfiOperationCancelled => CLIENT_FFI_OPERATION_CANCELLED,
         CosmosSubStatusClientFfiRuntimeBuildFailed => CLIENT_FFI_RUNTIME_BUILD_FAILED,
         CosmosSubStatusClientFfiPanic => CLIENT_FFI_PANIC,
+        CosmosSubStatusClientFfiCursorBusy => CLIENT_FFI_CURSOR_BUSY,
+        CosmosSubStatusClientFfiQueueFormat => CLIENT_FFI_QUEUE_FORMAT,
+        CosmosSubStatusClientFfiCursorClosed => CLIENT_FFI_CURSOR_CLOSED,
+        CosmosSubStatusClientFfiRepresentationUnsupported => CLIENT_FFI_REPRESENTATION_UNSUPPORTED,
+        CosmosSubStatusClientFfiDeliveryLost => CLIENT_FFI_DELIVERY_LOST,
         CosmosSubStatusClientGenerated401 => CLIENT_GENERATED_401,
         CosmosSubStatusAuthenticationTokenAcquisitionFailed => AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
         CosmosSubStatusTransitTimeout => TRANSIT_TIMEOUT,
@@ -398,6 +413,11 @@ pub(crate) enum CosmosErrorCode {
     /// A driver future spawned by the wrapper panicked; the panic firewall
     /// synthesized a failure so the host continuation is released.
     CosmosErrorCodeInternalError,
+    CosmosErrorCodeCursorBusy,
+    CosmosErrorCodeQueueFormat,
+    CosmosErrorCodeCursorClosed,
+    CosmosErrorCodeRepresentationUnsupported,
+    CosmosErrorCodeDeliveryLost,
 }
 
 impl CosmosErrorCode {
@@ -406,6 +426,25 @@ impl CosmosErrorCode {
     pub(crate) fn to_status(self) -> Option<CosmosStatus> {
         let (status_code, sub_status) = match self {
             Self::CosmosErrorCodeSuccess => return None,
+            Self::CosmosErrorCodeCursorBusy => {
+                (StatusCode::Conflict, azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_CURSOR_BUSY)
+            }
+            Self::CosmosErrorCodeQueueFormat => (
+                StatusCode::BadRequest,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_QUEUE_FORMAT,
+            ),
+            Self::CosmosErrorCodeCursorClosed => (
+                StatusCode::Conflict,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_CURSOR_CLOSED,
+            ),
+            Self::CosmosErrorCodeRepresentationUnsupported => (
+                StatusCode::BadRequest,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_REPRESENTATION_UNSUPPORTED,
+            ),
+            Self::CosmosErrorCodeDeliveryLost => (
+                StatusCode::ServiceUnavailable,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_DELIVERY_LOST,
+            ),
             Self::CosmosErrorCodeInvalidArgument => (
                 StatusCode::BadRequest,
                 azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_NULL_ARGUMENT,
@@ -748,11 +787,21 @@ mod tests {
                 Ec::CosmosErrorCodeQueueFull => (503, 20359),          // CLIENT_FFI_QUEUE_FULL
                 Ec::CosmosErrorCodeRuntimeBuildFailed => (500, 20361), // CLIENT_FFI_RUNTIME_BUILD_FAILED
                 Ec::CosmosErrorCodeInternalError => (500, 20362),      // CLIENT_FFI_PANIC
+                Ec::CosmosErrorCodeCursorBusy => (409, 20363),
+                Ec::CosmosErrorCodeQueueFormat => (400, 20364),
+                Ec::CosmosErrorCodeCursorClosed => (409, 20365),
+                Ec::CosmosErrorCodeRepresentationUnsupported => (400, 20366),
+                Ec::CosmosErrorCodeDeliveryLost => (503, 20367),
             }
         }
 
         use CosmosErrorCode as Ec;
         let all = [
+            Ec::CosmosErrorCodeCursorBusy,
+            Ec::CosmosErrorCodeQueueFormat,
+            Ec::CosmosErrorCodeCursorClosed,
+            Ec::CosmosErrorCodeRepresentationUnsupported,
+            Ec::CosmosErrorCodeDeliveryLost,
             Ec::CosmosErrorCodeSuccess,
             Ec::CosmosErrorCodeInvalidArgument,
             Ec::CosmosErrorCodeInvalidUtf8,
