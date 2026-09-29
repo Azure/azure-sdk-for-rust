@@ -115,19 +115,6 @@ The snapshot covers:
 
 This snapshot enforces SemVer. It is not another public version.
 
-## Stable binary identity
-
-The embedded identity should contain only stable release data:
-
-```text
-package=azure_data_cosmos_driver_native
-version=X.Y.Z
-source=<full-git-sha>
-```
-
-Do not embed branch names, pipeline build identifiers, absolute paths, or
-timestamps. Keep operational details in restricted pipeline records.
-
 ## Existing supply-chain evidence
 
 This design does not change provenance, SPDX generation, checksums, signing, or
@@ -202,10 +189,9 @@ different toolchain or artifact.
 ## Adoption
 
 1. Add the changelog and FFI snapshot.
-2. Stabilize the embedded build identity.
-3. Enforce version, tag, and FFI-diff checks.
-4. Publish one atomic downstream release and tag set.
-5. Record the native version in each host SDK.
+2. Enforce version, tag, and FFI-diff checks.
+3. Publish one atomic downstream release and tag set.
+4. Record the native version in each host SDK.
 
 ## Acceptance criteria
 
