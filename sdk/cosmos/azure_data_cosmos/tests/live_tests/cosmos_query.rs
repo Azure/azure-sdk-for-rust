@@ -4,14 +4,198 @@
 use crate::framework::{self, test_client::TEST_MODE_ENV_VAR, test_data, TestClient, TestOptions};
 use azure_data_cosmos::{
     feed::FeedScope,
+    models::{
+        ContainerProperties, FullTextIndex, FullTextPath, FullTextPolicy, IndexingMode,
+        IndexingPolicy, ThroughputProperties, VectorDataType, VectorDistanceFunction,
+        VectorEmbedding, VectorEmbeddingPolicy, VectorIndex, VectorIndexType,
+    },
     options::{
-        BinaryEncodingOptions, MaxItemCountHint, OperationOptions, QueryOptions, QueryPlanMode,
-        Region,
+        BinaryEncodingOptions, CreateContainerOptions, FullTextScoreScope, MaxItemCountHint,
+        OperationOptions, QueryOptions, QueryPlanMode, Region,
     },
     AccountReference, CosmosClient, Query, RoutingStrategy,
 };
 use futures::StreamExt;
+use serde::{Deserialize, Serialize};
 use std::error::Error;
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SearchDocument {
+    id: String,
+    partition_key: String,
+    text: String,
+    embedding: [f32; 2],
+}
+
+#[tokio::test]
+#[cfg_attr(not(test_category = "live"), ignore = "requires live account")]
+async fn live_ranked_full_text_and_hybrid_search() -> Result<(), Box<dyn Error>> {
+    assert!(
+        framework::resolve_connection_string().is_some() && !framework::targets_emulator(),
+        "ranked full-text coverage requires a live Cosmos DB account"
+    );
+    TestClient::run_with_unique_db(
+        async |run_context, db| {
+            let indexing = IndexingPolicy::default()
+                .with_indexing_mode(IndexingMode::Consistent)
+                .with_included_path("/*")
+                .with_excluded_path("/embedding/*")
+                .with_full_text_index(FullTextIndex::new("/text"))
+                .with_vector_index(VectorIndex::new("/embedding", VectorIndexType::Flat));
+            let properties = ContainerProperties::new("SearchContainer", "/partitionKey".into())
+                .with_full_text_policy(
+                    FullTextPolicy::new("en-US")
+                        .with_full_text_path(FullTextPath::new("/text")),
+                )
+                .with_vector_embedding_policy(VectorEmbeddingPolicy::default().with_embedding(
+                    VectorEmbedding::new(
+                        "/embedding",
+                        VectorDataType::Float32,
+                        2,
+                        VectorDistanceFunction::Euclidean,
+                    ),
+                ))
+                .with_indexing_policy(indexing);
+            let container = run_context
+                .create_container(
+                    db,
+                    properties,
+                    Some(
+                        CreateContainerOptions::default()
+                            .with_throughput(ThroughputProperties::manual(11_000)),
+                    ),
+                )
+                .await?;
+            assert!(
+                container.read_feed_ranges(None).await?.len() > 1,
+                "ranked search test requires multiple physical partitions"
+            );
+            for (id, partition, text, embedding) in [
+                ("one", "a", "blue bicycle", [0.0, 0.0]),
+                ("two", "b", "red bicycle bicycle", [0.2, 0.0]),
+                ("three", "a", "blue mountain bicycle", [0.5, 0.0]),
+                ("four", "b", "red skateboard", [1.0, 0.0]),
+            ] {
+                let document = SearchDocument {
+                    id: id.to_owned(),
+                    partition_key: partition.to_owned(),
+                    text: text.to_owned(),
+                    embedding,
+                };
+                container.create_item(partition, id, &document, None).await?;
+            }
+            for binary in [false, true] {
+                let mut operation = OperationOptions::default();
+                operation.binary_encoding =
+                    Some(BinaryEncodingOptions::new().with_enabled(binary));
+                let options = QueryOptions::default()
+                    .with_query_plan_mode(QueryPlanMode::GatewayOnly)
+                    .with_operation_options(operation)
+                    .with_max_item_count(MaxItemCountHint::Limit(
+                        std::num::NonZeroU32::new(1).unwrap(),
+                    ));
+            for (sql, scope, scope_option, expected) in [
+                (
+                    "SELECT TOP 3 * FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+                    FeedScope::full_container(),
+                    FullTextScoreScope::Global,
+                    &["two", "one", "three"][..],
+                ),
+                (
+                    "SELECT TOP 3 * FROM c ORDER BY RANK RRF(FullTextScore(c.text, @term), FullTextScore(c.text, @second), [2, 1])",
+                    FeedScope::full_container(),
+                    FullTextScoreScope::Global,
+                    &["two", "one", "three"],
+                ),
+                (
+                    "SELECT TOP 3 * FROM c ORDER BY RANK RRF(VectorDistance(c.embedding, @vector), FullTextScore(c.text, @term), [2, 1])",
+                    FeedScope::full_container(),
+                    FullTextScoreScope::Global,
+                    &["one", "two", "three"],
+                ),
+                (
+                    "SELECT TOP 2 * FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+                    FeedScope::partition("a"),
+                    FullTextScoreScope::Local,
+                    &["one", "three"],
+                ),
+                (
+                    "SELECT TOP 2 * FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+                    FeedScope::partition("a"),
+                    FullTextScoreScope::Global,
+                    &["one", "three"],
+                ),
+                (
+                    "SELECT * FROM c ORDER BY RANK FullTextScore(c.text, @term) OFFSET 1 LIMIT 2",
+                    FeedScope::full_container(),
+                    FullTextScoreScope::Global,
+                    &["one", "three"],
+                ),
+                (
+                    "SELECT TOP @bound * FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+                    FeedScope::full_container(),
+                    FullTextScoreScope::Global,
+                    &["two", "one", "three"],
+                ),
+            ] {
+                let query = Query::from(sql)
+                    .with_parameter("@term", "bicycle")?
+                    .with_parameter("@second", "blue")?
+                    .with_parameter("@vector", vec![0.0_f32, 0.0])?
+                    .with_parameter("@bound", 3)?;
+                let mut pages = container
+                    .query_items::<SearchDocument>(
+                        query,
+                        scope,
+                        Some(options.clone().with_full_text_score_scope(scope_option)),
+                    )
+                    .await?
+                    .into_pages();
+                assert!(pages.to_continuation_token().is_err());
+                let mut ids = Vec::new();
+                while let Some(page) = pages.next().await {
+                    ids.extend(page?.into_items().into_iter().map(|item| item.id));
+                }
+                assert_eq!(
+                    ids.iter().map(String::as_str).collect::<Vec<_>>(),
+                    expected,
+                    "ranked query mismatch with binary={binary}: {sql}"
+                );
+            }
+            }
+            for (sql, expected) in [
+                (
+                    "SELECT TOP 2 c.id FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+                    serde_json::json!({"id": "two"}),
+                ),
+                (
+                    "SELECT TOP 2 VALUE c.id FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+                    serde_json::json!("two"),
+                ),
+            ] {
+                let query = Query::from(sql).with_parameter("@term", "bicycle")?;
+                let mut pages = container
+                    .query_items::<serde_json::Value>(
+                        query,
+                        FeedScope::full_container(),
+                        Some(QueryOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly)),
+                    )
+                    .await?
+                    .into_pages();
+                let mut values = Vec::new();
+                while let Some(page) = pages.next().await {
+                    values.extend(page?.into_items());
+                }
+                assert_eq!(values.first(), Some(&expected), "{sql}");
+                assert_eq!(values.len(), 2, "{sql}");
+            }
+            Ok(())
+        },
+        Some(TestOptions::default().with_timeout(std::time::Duration::from_secs(180))),
+    )
+    .await
+}
 
 #[tokio::test]
 #[cfg_attr(not(test_category = "live"), ignore = "requires live account")]

@@ -1,5 +1,11 @@
 # Release History
 
+## Unreleased
+
+### Features Added
+
+- Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results.
+
 ## 1.0.0-beta.1 (2026-09-28)
 
 ### Features Added

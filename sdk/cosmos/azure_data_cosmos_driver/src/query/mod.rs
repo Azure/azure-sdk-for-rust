@@ -39,8 +39,7 @@ pub(crate) use parser::parse;
 /// plans that require the fully buffered ordered merge pipeline.
 ///
 /// Other advanced rewrite shapes (Aggregate, CompositeAggregate, CountIf,
-/// DCount, GroupBy, HybridSearch, MultipleAggregates, NonValueAggregate,
-/// WeightedRankFusion) remain
+/// DCount, GroupBy, MultipleAggregates, NonValueAggregate) remain
 /// unadvertised until their corresponding pipeline stages are implemented;
 /// advertising one prematurely would cause the Gateway to return a plan we
 /// cannot execute.
@@ -53,7 +52,22 @@ pub(crate) use parser::parse;
 /// Java/.NET advertise) so plan-shape parity against the live Gateway is
 /// validated end-to-end across the full feature surface.
 pub(crate) const SUPPORTED_QUERY_FEATURES: &str =
-    "Distinct,MultipleOrderBy,NonStreamingOrderBy,OffsetAndLimit,OrderBy,Top";
+    "Distinct,HybridSearch,MultipleOrderBy,NonStreamingOrderBy,OffsetAndLimit,OrderBy,Top,WeightedRankFusion";
+
+/// Whether a query requires hybrid planning even when scoped to one logical partition.
+pub(crate) fn uses_ranked_search(body: Option<&[u8]>) -> bool {
+    let Some(query) = body
+        .and_then(|body| serde_json::from_slice::<serde_json::Value>(body).ok())
+        .and_then(|spec| {
+            spec.get("query")
+                .and_then(|query| query.as_str())
+                .map(str::to_owned)
+        })
+    else {
+        return false;
+    };
+    local_plan_adapter::uses_ranked_search(&query)
+}
 
 /// Broad supported-features list used by cross-crate gateway-comparison
 /// tests. Matches what the Java and .NET SDKs send today so the Gateway

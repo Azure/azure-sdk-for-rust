@@ -2864,11 +2864,13 @@ pub mod options {
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct PlanOptions {
+        pub full_text_score_scope: crate::options::FullTextScoreScope,
         pub max_buffered_query_window: u64,
         pub query_plan_mode: crate::options::QueryPlanMode,
         pub max_fan_out: u32,
     }
     impl PlanOptions {
+        pub fn with_full_text_score_scope(self, scope: FullTextScoreScope) -> Self;
         pub fn with_max_buffered_query_window(self, max_buffered_query_window: u64) -> Self;
         pub fn with_max_fan_out(self, max_fan_out: u32) -> Self;
         pub fn with_query_plan_mode(self, mode: QueryPlanMode) -> Self;
@@ -3151,6 +3153,13 @@ pub mod options {
     impl FromStr for DiagnosticsVerbosity {
         type Err = String;
         fn from_str(s: &str) -> Result<Self, <Self as >::Err>;
+    }
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum FullTextScoreScope {
+        #[default]
+        Global,
+        Local,
     }
     #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
     #[non_exhaustive]

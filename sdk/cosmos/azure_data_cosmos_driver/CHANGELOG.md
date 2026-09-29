@@ -1,5 +1,11 @@
 # Release History
 
+## Unreleased
+
+### Features Added
+
+- Added `FullTextScoreScope` and client-side ranked full-text and weighted hybrid query execution with bounded result windows.
+
 ## 1.0.0-beta.1 (2026-09-28)
 
 ### Features Added
