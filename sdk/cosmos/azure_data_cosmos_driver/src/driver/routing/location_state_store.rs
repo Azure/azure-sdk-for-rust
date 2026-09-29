@@ -40,6 +40,7 @@ use super::{
 pub(crate) struct LocationSnapshot {
     pub account: Arc<AccountEndpointState>,
     pub partitions: Arc<PartitionEndpointState>,
+    pub cross_region_hedging_disabled: bool,
 }
 
 #[cfg(test)]
@@ -48,6 +49,7 @@ impl LocationSnapshot {
         Self {
             account,
             partitions: Arc::new(PartitionEndpointState::default()),
+            cross_region_hedging_disabled: false,
         }
     }
 
@@ -58,6 +60,7 @@ impl LocationSnapshot {
         Self {
             account,
             partitions,
+            cross_region_hedging_disabled: false,
         }
     }
 }
@@ -116,6 +119,11 @@ pub(crate) struct LocationStateStore {
     /// endpoints. Defaults to `false` (fail-open) so behavior is unchanged
     /// when no probe is wired.
     gateway_v2_runtime_blocked: AtomicBool,
+    /// Last explicitly observed account-level hedging suppression value.
+    ///
+    /// This belongs to the per-account store rather than the shared runtime so
+    /// drivers for different accounts cannot affect each other.
+    cross_region_hedging_disabled: AtomicBool,
     probe_succeeded_regions: std::sync::Mutex<HashSet<Region>>,
     endpoint_unavailability_ttl: Duration,
     refresh_interval: Duration,
@@ -226,6 +234,7 @@ impl LocationStateStore {
         let initial_snapshot = LocationSnapshot {
             account: Arc::new(account_state.clone()),
             partitions: Arc::new(partition_state.clone()),
+            cross_region_hedging_disabled: false,
         };
 
         Self {
@@ -239,6 +248,7 @@ impl LocationStateStore {
             gateway_v2_enabled,
             connectivity_probe,
             gateway_v2_runtime_blocked: AtomicBool::new(false),
+            cross_region_hedging_disabled: AtomicBool::new(false),
             probe_succeeded_regions: std::sync::Mutex::new(HashSet::new()),
             endpoint_unavailability_ttl,
             // Rate limit for event-driven refreshes emitted by
@@ -315,6 +325,9 @@ impl LocationStateStore {
         let snapshot = LocationSnapshot {
             account,
             partitions,
+            cross_region_hedging_disabled: self
+                .cross_region_hedging_disabled
+                .load(Ordering::Acquire),
         };
 
         let mut cached = self.cached_snapshot.lock().unwrap();
@@ -799,8 +812,9 @@ impl LocationStateStore {
     /// Updates account state from properties using a CAS loop that preserves
     /// existing `unavailable_endpoints` marks set by concurrent operations.
     ///
-    /// Skips the CAS loop when the `AccountProperties` etag matches
-    /// the last synced value (same server version, properties unchanged).
+    /// Skips the CAS loop when the `AccountProperties` etag matches the last
+    /// synced value, unless an explicit hedging suppression signal changed
+    /// independently of that etag.
     pub fn sync_account_properties(
         &self,
         properties: Arc<AccountProperties>,
@@ -814,14 +828,26 @@ impl LocationStateStore {
             }
         }
 
+        let hedging_suppression_changed =
+            properties
+                .disable_cross_regional_hedging
+                .is_some_and(|disabled| {
+                    disabled != self.cross_region_hedging_disabled.load(Ordering::Acquire)
+                });
+
         if !properties.etag.is_empty() {
             let last_etag = self.last_synced_etag.lock().unwrap();
-            if *last_etag == properties.etag {
+            if *last_etag == properties.etag && !hedging_suppression_changed {
                 // Etag matches: update the pointer so future calls hit the fast path.
                 drop(last_etag);
                 *self.last_synced_properties.lock().unwrap() = Some(properties);
                 return;
             }
+        }
+
+        if let Some(disabled) = properties.disable_cross_regional_hedging {
+            self.cross_region_hedging_disabled
+                .store(disabled, Ordering::Release);
         }
 
         let default_endpoint = default_endpoint.clone();
@@ -1254,6 +1280,7 @@ mod tests {
             continuous_backup_enabled: false,
             enable_n_region_synchronous_commit: false,
             enable_per_partition_failover_behavior: false,
+            disable_cross_regional_hedging: None,
             user_replication_policy: ReplicationPolicy {
                 min_replica_set_size: 3,
                 max_replica_set_size: 4,
@@ -1288,6 +1315,14 @@ mod tests {
     fn test_payload_with_ppaf(enabled: bool, etag: &str) -> AccountProperties {
         AccountProperties {
             enable_per_partition_failover_behavior: enabled,
+            etag: etag.into(),
+            ..default_account_properties()
+        }
+    }
+
+    fn test_payload_with_hedging_signal(disabled: Option<bool>, etag: &str) -> AccountProperties {
+        AccountProperties {
+            disable_cross_regional_hedging: disabled,
             etag: etag.into(),
             ..default_account_properties()
         }
@@ -2934,6 +2969,124 @@ mod tests {
             Vec::new(),
             None,
         )
+    }
+
+    #[test]
+    fn sync_reconciles_hedging_signal_without_coupling_ppaf() {
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        assert!(!store.snapshot().cross_region_hedging_disabled);
+
+        let mut suppressed = test_payload_with_hedging_signal(Some(true), "etag-on");
+        suppressed.enable_per_partition_failover_behavior = false;
+        store.sync_account_properties(Arc::new(suppressed), &default_endpoint);
+
+        let snapshot = store.snapshot();
+        assert!(snapshot.cross_region_hedging_disabled);
+        assert!(!snapshot.partitions.per_partition_automatic_failover_enabled);
+
+        let mut resumed = test_payload_with_hedging_signal(Some(false), "etag-off");
+        resumed.enable_per_partition_failover_behavior = true;
+        store.sync_account_properties(Arc::new(resumed), &default_endpoint);
+
+        let snapshot = store.snapshot();
+        assert!(!snapshot.cross_region_hedging_disabled);
+        assert!(snapshot.partitions.per_partition_automatic_failover_enabled);
+    }
+
+    #[test]
+    fn sync_preserves_hedging_signal_when_property_is_omitted() {
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(None, "etag-absent")),
+            &default_endpoint,
+        );
+        assert!(!store.snapshot().cross_region_hedging_disabled);
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(Some(true), "etag-on")),
+            &default_endpoint,
+        );
+        store.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(None, "etag-omitted")),
+            &default_endpoint,
+        );
+
+        assert!(store.snapshot().cross_region_hedging_disabled);
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(Some(false), "etag-off")),
+            &default_endpoint,
+        );
+        assert!(!store.snapshot().cross_region_hedging_disabled);
+    }
+
+    #[test]
+    fn sync_detects_flag_only_change_with_unchanged_etag() {
+        let store = build_store_for_ppaf_tests();
+        let default_endpoint = store.default_endpoint().clone();
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(Some(false), "same-etag")),
+            &default_endpoint,
+        );
+        let generation_before = store.snapshot().account.generation;
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(Some(true), "same-etag")),
+            &default_endpoint,
+        );
+        let snapshot = store.snapshot();
+
+        assert!(snapshot.cross_region_hedging_disabled);
+        assert!(snapshot.account.generation > generation_before);
+    }
+
+    #[test]
+    fn hedging_signal_is_isolated_between_accounts_sharing_cache() {
+        let cache = Arc::new(AccountMetadataCache::new());
+        let build_store = |account_name: &str| {
+            let endpoint = AccountEndpoint::from(
+                url::Url::parse(&format!("https://{account_name}.documents.azure.com:443/"))
+                    .unwrap(),
+            );
+            let default_endpoint = CosmosEndpoint::global(endpoint.url().clone());
+            let refresh = Arc::new(|_previous: Option<Arc<AccountProperties>>| {
+                let payload = test_refresh_payload();
+                let fut: BoxFuture<'static, crate::error::Result<AccountProperties>> =
+                    Box::pin(async move { Ok(payload) });
+                fut
+            });
+            LocationStateStore::new(
+                Arc::clone(&cache),
+                endpoint,
+                default_endpoint,
+                refresh,
+                false,
+                Duration::from_secs(60),
+                PartitionFailoverOptions::default(),
+                Vec::new(),
+                None,
+            )
+        };
+
+        let suppressed_account = build_store("suppressed");
+        let enabled_account = build_store("enabled");
+
+        suppressed_account.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(Some(true), "etag-a")),
+            suppressed_account.default_endpoint(),
+        );
+        enabled_account.sync_account_properties(
+            Arc::new(test_payload_with_hedging_signal(Some(false), "etag-b")),
+            enabled_account.default_endpoint(),
+        );
+
+        assert!(suppressed_account.snapshot().cross_region_hedging_disabled);
+        assert!(!enabled_account.snapshot().cross_region_hedging_disabled);
     }
 
     #[test]

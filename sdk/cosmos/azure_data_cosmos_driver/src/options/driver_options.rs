@@ -238,7 +238,7 @@ impl DriverOptionsBuilder {
             if !seen.insert(rule.id().to_string()) {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID,
+                        crate::error::status_codes::CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID,
                     )
                     .with_message(format!("duplicate fault injection rule id: {}", rule.id()))
                     .build());

@@ -18,7 +18,7 @@
 //! Sorting on a value that evaluates to an array or object is **not
 //! supported** in a cross-partition query: [`parse_order_by_items`] rejects
 //! such a row with
-//! [`crate::error::CosmosStatus::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED`].
+//! [`crate::error::status_codes::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED`].
 //! Ordering complex values requires reproducing the backend's structural
 //! hash, and resuming across one requires a hash-shaped resume filter;
 //! neither is worth the correctness risk until there is a real scenario
@@ -469,7 +469,7 @@ fn json_type_name(v: &serde_json::Value) -> &'static str {
 
 fn envelope_error(message: impl Into<std::borrow::Cow<'static, str>>) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID)
+        .with_status(crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID)
         .with_message(message)
         .build()
 }
@@ -478,7 +478,7 @@ fn envelope_error(message: impl Into<std::borrow::Cow<'static, str>>) -> crate::
 /// zero-based `ORDER BY` column index.
 pub(crate) fn complex_order_by_error(column: usize, found: &str) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED)
+        .with_status(crate::error::status_codes::CLIENT_ORDER_BY_COMPLEX_VALUE_UNSUPPORTED)
         .with_message(format!(
             "ORDER BY column {column} sorts on a value that evaluated to a JSON {found}. \
              Sorting on array or object values is not currently supported; ORDER BY a \
@@ -1049,7 +1049,7 @@ mod tests {
         let err = parse_order_by_items(&value, 2).unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID
+            crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
         );
     }
 
@@ -1059,7 +1059,7 @@ mod tests {
         let err = parse_order_by_items(&value, 1).unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID
+            crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
         );
     }
 
@@ -1069,7 +1069,7 @@ mod tests {
         let err = parse_order_by_items(&value, 1).unwrap_err();
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::SERVICE_ORDER_BY_ENVELOPE_INVALID
+            crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
         );
     }
 

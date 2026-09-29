@@ -197,7 +197,7 @@ pub(crate) fn split_replacement_invalid(
     message: impl Into<std::borrow::Cow<'static, str>>,
 ) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
-        .with_status(crate::error::CosmosStatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID)
+        .with_status(crate::error::status_codes::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID)
         .with_message(message)
         .build()
 }
@@ -289,35 +289,41 @@ mod tests {
         driver::dataflow::mocks::MockLeaf, models::effective_partition_key::EffectivePartitionKey,
     };
 
-    fn range(min: &str, max: &str) -> FeedRange {
+    fn range(min: &str, max: &str) -> crate::error::Result<FeedRange> {
         FeedRange::new(
-            EffectivePartitionKey::from(min),
-            EffectivePartitionKey::from(max),
+            EffectivePartitionKey::try_from(min)?,
+            EffectivePartitionKey::try_from(max)?,
         )
-        .unwrap()
     }
 
-    fn leaf(min: &str, max: &str) -> Box<dyn PipelineNode> {
-        Box::new(MockLeaf::with_pages(vec![]).with_feed_range(range(min, max)))
+    fn leaf(min: &str, max: &str) -> crate::error::Result<Box<dyn PipelineNode>> {
+        Ok(Box::new(
+            MockLeaf::with_pages(vec![]).with_feed_range(range(min, max)?),
+        ))
     }
 
     /// The invariant `SplitReplacements` exists to uphold: replacements that
     /// exactly tile the split scope are accepted.
     #[test]
-    fn try_tiling_accepts_exact_coverage() {
-        let replacements =
-            SplitReplacements::try_tiling(&range("", "80"), vec![leaf("", "40"), leaf("40", "80")])
-                .expect("exactly tiling replacements are accepted");
+    fn try_tiling_accepts_exact_coverage() -> crate::error::Result<()> {
+        let replacements = SplitReplacements::try_tiling(
+            &range("", "80")?,
+            vec![leaf("", "40")?, leaf("40", "80")?],
+        )
+        .expect("exactly tiling replacements are accepted");
         assert_eq!(replacements.len(), 2);
+        Ok(())
     }
 
     /// Input order is not part of the contract — the type sorts before
     /// validating so an out-of-order producer still yields ascending nodes.
     #[test]
-    fn try_tiling_sorts_unordered_input() {
-        let replacements =
-            SplitReplacements::try_tiling(&range("", "80"), vec![leaf("40", "80"), leaf("", "40")])
-                .expect("out-of-order replacements are sorted, then accepted");
+    fn try_tiling_sorts_unordered_input() -> crate::error::Result<()> {
+        let replacements = SplitReplacements::try_tiling(
+            &range("", "80")?,
+            vec![leaf("40", "80")?, leaf("", "40")?],
+        )
+        .expect("out-of-order replacements are sorted, then accepted");
         let ranged = replacements.into_ranged().unwrap();
         assert_eq!(
             ranged
@@ -326,56 +332,67 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec!["".to_owned(), "40".to_owned()],
         );
+        Ok(())
     }
 
     /// A gap would silently drop every row in the uncovered sub-range.
     #[test]
-    fn try_tiling_rejects_gap() {
-        let err =
-            SplitReplacements::try_tiling(&range("", "80"), vec![leaf("", "20"), leaf("40", "80")])
-                .map(|_| ())
-                .expect_err("a gap between replacements is rejected");
+    fn try_tiling_rejects_gap() -> crate::error::Result<()> {
+        let err = SplitReplacements::try_tiling(
+            &range("", "80")?,
+            vec![leaf("", "20")?, leaf("40", "80")?],
+        )
+        .map(|_| ())
+        .expect_err("a gap between replacements is rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
         );
+        Ok(())
     }
 
     /// An overlap would silently emit the overlapping rows twice.
     #[test]
-    fn try_tiling_rejects_overlap() {
-        let err =
-            SplitReplacements::try_tiling(&range("", "80"), vec![leaf("", "60"), leaf("40", "80")])
-                .map(|_| ())
-                .expect_err("overlapping replacements are rejected");
+    fn try_tiling_rejects_overlap() -> crate::error::Result<()> {
+        let err = SplitReplacements::try_tiling(
+            &range("", "80")?,
+            vec![leaf("", "60")?, leaf("40", "80")?],
+        )
+        .map(|_| ())
+        .expect_err("overlapping replacements are rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
         );
+        Ok(())
     }
 
     /// Coverage that stops short of the scope's upper bound drops the tail.
     #[test]
-    fn try_tiling_rejects_short_coverage() {
-        let err =
-            SplitReplacements::try_tiling(&range("", "80"), vec![leaf("", "40"), leaf("40", "60")])
-                .map(|_| ())
-                .expect_err("replacements that stop short of the scope are rejected");
+    fn try_tiling_rejects_short_coverage() -> crate::error::Result<()> {
+        let err = SplitReplacements::try_tiling(
+            &range("", "80")?,
+            vec![leaf("", "40")?, leaf("40", "60")?],
+        )
+        .map(|_| ())
+        .expect_err("replacements that stop short of the scope are rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
         );
+        Ok(())
     }
 
     #[test]
-    fn try_tiling_rejects_empty_set() {
-        let err = SplitReplacements::try_tiling(&range("", "80"), vec![])
+    fn try_tiling_rejects_empty_set() -> crate::error::Result<()> {
+        let err = SplitReplacements::try_tiling(&range("", "80")?, vec![])
             .map(|_| ())
             .expect_err("an empty replacement set covers nothing and is rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
         );
+        Ok(())
     }
 
     /// The service may report a boundary padded to the partition key
@@ -383,51 +400,58 @@ mod tests {
     /// (or vice versa). `Ord` treats those as the same boundary, so coverage
     /// must accept them — comparing raw bytes would reject a valid tiling.
     #[test]
-    fn validate_exact_coverage_accepts_zero_padded_bounds() {
+    fn validate_exact_coverage_accepts_zero_padded_bounds() -> crate::error::Result<()> {
         validate_exact_coverage(
-            &range("", "FF"),
-            [range("", "8000"), range("80", "FF")].iter(),
+            &range("", "FF")?,
+            [range("", "8000")?, range("80", "FF")?].iter(),
         )
         .expect("`8000` and `80` name the same boundary");
 
-        validate_exact_coverage(&range("0000", "FF"), [range("", "FF")].iter())
+        validate_exact_coverage(&range("0000", "FF")?, [range("", "FF")?].iter())
             .expect("a padded scope start matches an unpadded range start");
+        Ok(())
     }
 
     /// Mirrors .NET's `isRoutingMapFullySpecified` parameterization
     /// (azure-cosmos-dotnet-v3#5260): the backend may report a tiling at mixed
     /// widths or fully padded, and both must resolve identically.
     #[test]
-    fn validate_exact_coverage_is_width_agnostic() {
-        let scope = range("", "FF");
-        let mixed = [range("", "3F00"), range("3F", "7F"), range("7F0000", "FF")];
+    fn validate_exact_coverage_is_width_agnostic() -> crate::error::Result<()> {
+        let scope = range("", "FF")?;
+        let mixed = [
+            range("", "3F00")?,
+            range("3F", "7F")?,
+            range("7F0000", "FF")?,
+        ];
         let padded = [
-            range("", "3F000000"),
-            range("3F000000", "7F00"),
-            range("7F", "FF"),
+            range("", "3F000000")?,
+            range("3F000000", "7F00")?,
+            range("7F", "FF")?,
         ];
         validate_exact_coverage(&scope, mixed.iter()).expect("mixed-width tiling covers the scope");
         validate_exact_coverage(&scope, padded.iter())
             .expect("the same tiling, padded, must resolve identically");
 
         // A genuine gap is still caught at either width.
-        validate_exact_coverage(&scope, [range("", "3F"), range("40", "FF")].iter())
+        validate_exact_coverage(&scope, [range("", "3F")?, range("40", "FF")?].iter())
             .expect_err("a real gap between 3F and 40 must still be rejected");
+        Ok(())
     }
 
     /// Coverage is unverifiable without a range, so a range-less node is
     /// rejected rather than assumed to fit.
     #[test]
-    fn try_tiling_rejects_node_without_feed_range() {
+    fn try_tiling_rejects_node_without_feed_range() -> crate::error::Result<()> {
         let err = SplitReplacements::try_tiling(
-            &range("", "80"),
+            &range("", "80")?,
             vec![Box::new(MockLeaf::with_pages(vec![]))],
         )
         .map(|_| ())
         .expect_err("a replacement without a feed_range is rejected");
         assert_eq!(
             err.status().sub_status(),
-            Some(crate::error::SubStatusCode::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
+            Some(crate::error::status_codes::substatus::CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID),
         );
+        Ok(())
     }
 }

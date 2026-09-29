@@ -940,9 +940,7 @@ impl EmulatorStore {
                 ))
                 .build()
         })?;
-        partition
-            .session_state
-            .set_force_unavailable_for(&epk.to_hex());
+        partition.session_state.set_force_unavailable_for(&epk);
         Ok(())
     }
 
@@ -2276,12 +2274,12 @@ fn create_partitions(
         let min = if i == 0 {
             Epk::MIN.clone()
         } else {
-            Epk::from(boundaries[(i - 1) as usize].clone())
+            boundaries[(i - 1) as usize].clone()
         };
         let max = if i == n - 1 {
             Epk::MAX.clone()
         } else {
-            Epk::from(boundaries[i as usize].clone())
+            boundaries[i as usize].clone()
         };
 
         let rid = pkrange_rid_for(meta, rid_gen, i);
@@ -2315,10 +2313,9 @@ fn create_partitions(
     partitions
 }
 
-/// Computes the N-1 internal EPK boundary strings that divide the reachable
-/// hash space into N equal ranges, returning the boundaries in lex-comparable
-/// hex form. The endpoints (partition 0's lower bound and partition N-1's
-/// upper bound) are represented by the [`Epk::MIN.clone()`] / [`Epk::MAX.clone()`]
+/// Computes the N-1 internal EPK boundaries that divide the reachable
+/// hash space into N equal ranges. The endpoints (partition 0's lower bound
+/// and partition N-1's upper bound) are represented by [`Epk::MIN`] / [`Epk::MAX`]
 /// sentinels at the call site, so they are intentionally not emitted here.
 ///
 /// # Boundary scheme by partition key kind/version
@@ -2341,7 +2338,7 @@ fn compute_partition_boundaries(
     n: u32,
     kind: PartitionKeyKind,
     version: PartitionKeyVersion,
-) -> Vec<String> {
+) -> Vec<Epk> {
     if n <= 1 {
         return Vec::new();
     }
@@ -2353,13 +2350,13 @@ fn compute_partition_boundaries(
 }
 
 /// V2 / MultiHash boundaries: evenly-spaced 126-bit values in 32-char hex.
-fn v2_boundaries(n: u32) -> Vec<String> {
+fn v2_boundaries(n: u32) -> Vec<Epk> {
     let mut boundaries = Vec::with_capacity((n - 1) as usize);
     let total: u128 = 1u128 << 126;
     let step = total / n as u128;
     for i in 1..n {
         let boundary = step * i as u128;
-        boundaries.push(format!("{:032X}", boundary));
+        boundaries.push(Epk::from_bytes(boundary.to_be_bytes().to_vec()));
     }
     boundaries
 }
@@ -2373,7 +2370,7 @@ fn v2_boundaries(n: u32) -> Vec<String> {
 /// strictly *above* the boundary (the EPK has the appended-component bytes,
 /// the boundary does not). That matches the half-open `[min_inclusive,
 /// max_exclusive)` convention used by [`PhysicalPartition::contains_epk`].
-fn v1_boundaries(n: u32) -> Vec<String> {
+fn v1_boundaries(n: u32) -> Vec<Epk> {
     let mut boundaries = Vec::with_capacity((n - 1) as usize);
     let total: u64 = 1u64 << 32;
     let step = total / n as u64;
@@ -2381,21 +2378,11 @@ fn v1_boundaries(n: u32) -> Vec<String> {
         let boundary_hash = (step * i as u64) as u32;
         let mut buf = Vec::new();
         crate::models::partition_key::write_number_v1_binary(boundary_hash as f64, &mut buf);
-        boundaries.push(bytes_to_hex_upper(&buf));
+        boundaries.push(Epk::from_bytes(buf));
     }
     boundaries
 }
 
-/// Uppercase hex encoding of a byte slice. Local helper so the V1 boundary
-/// code does not depend on the production crate's private hex helpers.
-fn bytes_to_hex_upper(bytes: &[u8]) -> String {
-    use std::fmt::Write;
-    let mut s = String::with_capacity(bytes.len() * 2);
-    for b in bytes {
-        let _ = write!(&mut s, "{:02X}", b);
-    }
-    s
-}
 /// Returns true if `epk` represents the open lower bound of the EPK space.
 ///
 /// Intentionally treats *any* all-`'0'` hex string as the lower-bound sentinel
@@ -3013,12 +3000,11 @@ impl EmulatorStore {
                 let parent_forced = parent.session_state.snapshot_forced_epks();
                 let child1_session = SessionState::new();
                 let child2_session = SessionState::new();
-                for epk_str in parent_forced {
-                    let epk = Epk::from(epk_str.clone());
+                for epk in parent_forced {
                     if epk < midpoint {
-                        child1_session.set_force_unavailable_for(&epk_str);
+                        child1_session.set_force_unavailable_for(&epk);
                     } else {
-                        child2_session.set_force_unavailable_for(&epk_str);
+                        child2_session.set_force_unavailable_for(&epk);
                     }
                 }
 
@@ -3479,11 +3465,11 @@ impl EmulatorStore {
 
                 // Merge forced-session-not-available markers from both parents.
                 let merged_session = SessionState::new();
-                for epk_str in lower.session_state.snapshot_forced_epks() {
-                    merged_session.set_force_unavailable_for(&epk_str);
+                for epk in lower.session_state.snapshot_forced_epks() {
+                    merged_session.set_force_unavailable_for(&epk);
                 }
-                for epk_str in upper.session_state.snapshot_forced_epks() {
-                    merged_session.set_force_unavailable_for(&epk_str);
+                for epk in upper.session_state.snapshot_forced_epks() {
+                    merged_session.set_force_unavailable_for(&epk);
                 }
 
                 let n = state.physical_partitions.len().saturating_sub(1).max(1) as u64;
@@ -3609,7 +3595,7 @@ fn compute_epk_midpoint_v2(min: &Epk, max: &Epk) -> Result<Epk, String> {
     // Safe midpoint: `min/2 + max/2` loses 1 bit when both operands are odd.
     // Add the missing carry explicitly.
     let mid = min_val / 2 + max_val / 2 + ((min_val & 1) & (max_val & 1));
-    Ok(Epk::from(format!("{:032X}", mid)))
+    Ok(Epk::from_bytes(mid.to_be_bytes().to_vec()))
 }
 
 /// V1 split midpoint.
@@ -3655,7 +3641,7 @@ fn compute_epk_midpoint_v1(min: &Epk, max: &Epk) -> Result<Epk, String> {
     let mid = ((min_val as u64 + max_val as u64) / 2) as u32;
     let mut buf = Vec::new();
     crate::models::partition_key::write_number_v1_binary(mid as f64, &mut buf);
-    Ok(Epk::from(bytes_to_hex_upper(&buf)))
+    Ok(Epk::from_bytes(buf))
 }
 
 /// V1 EPK type-marker byte for `Number` components — must match
@@ -4164,7 +4150,7 @@ mod tests {
         assert_eq!(bs.len(), 3);
         for b in &bs {
             assert!(
-                b.starts_with("05"),
+                b.as_bytes().starts_with(&[0x05]),
                 "V1 boundary {b} must start with Number type marker '05'",
             );
         }
@@ -4185,8 +4171,8 @@ mod tests {
         let bs = super::v2_boundaries(4);
         assert_eq!(bs.len(), 3);
         for b in &bs {
-            assert_eq!(b.len(), 32, "V2 boundary must be 32 hex chars: {b}");
-            let first_nibble = u8::from_str_radix(&b[..1], 16).unwrap();
+            assert_eq!(b.as_bytes().len(), 16, "V2 boundary must be 16 bytes: {b}");
+            let first_nibble = b.as_bytes()[0] >> 4;
             assert!(
                 first_nibble < 0x4,
                 "V2 boundary {b} first nibble {:X} must be <0x4 (top 2 bits cleared)",
@@ -4219,9 +4205,10 @@ mod tests {
     fn decode_v1_number_round_trips_v1_boundaries() {
         for n in [2u32, 4, 8, 16, 100, 1024] {
             let bs = super::v1_boundaries(n);
-            for (i, hex) in bs.iter().enumerate() {
+            for (i, epk) in bs.iter().enumerate() {
+                let hex = epk.to_hex();
                 let expected = ((1u64 << 32) / n as u64) as u32 * (i as u32 + 1);
-                let recovered = super::decode_v1_number_hex_to_u32(hex)
+                let recovered = super::decode_v1_number_hex_to_u32(&hex)
                     .unwrap_or_else(|e| panic!("decode failed for n={n} i={i} hex={hex}: {e}"));
                 assert_eq!(
                     recovered, expected,
@@ -4255,7 +4242,7 @@ mod tests {
         for &v in cases {
             let mut buf = Vec::new();
             crate::models::partition_key::write_number_v1_binary(v as f64, &mut buf);
-            let hex = super::bytes_to_hex_upper(&buf);
+            let hex = Epk::from_bytes(buf).to_hex();
             let back = super::decode_v1_number_hex_to_u32(&hex)
                 .unwrap_or_else(|e| panic!("decode failed for v={v} hex={hex}: {e}"));
             assert_eq!(back, v, "round-trip failed for v={v} hex={hex} back={back}");
@@ -4289,7 +4276,7 @@ mod tests {
         let encode = |v: u32| -> Epk {
             let mut buf = Vec::new();
             crate::models::partition_key::write_number_v1_binary(v as f64, &mut buf);
-            Epk::from(super::bytes_to_hex_upper(&buf))
+            Epk::from_bytes(buf)
         };
         let mid_narrow = super::compute_epk_midpoint(
             &encode(lo_u32),

@@ -135,7 +135,7 @@ impl UnorderedMerge {
                         if split_retries > MAX_SPLIT_RETRIES {
                             return Err(crate::error::CosmosError::builder()
                                 .with_status(
-                                    crate::error::CosmosStatus::CLIENT_SPLIT_RETRIES_EXHAUSTED,
+                                    crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED,
                                 )
                                 .with_message(format!(
                                     "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
@@ -239,7 +239,7 @@ impl PipelineNode for UnorderedMerge {
                     split_retries += 1;
                     if split_retries > MAX_SPLIT_RETRIES {
                         return Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::CosmosStatus::CLIENT_SPLIT_RETRIES_EXHAUSTED)
+                            .with_status(crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED)
                             .with_message(format!(
                                 "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in UnorderedMerge"
@@ -274,7 +274,7 @@ impl PipelineNode for UnorderedMerge {
             let Some(range) = child.feed_range() else {
                 return Err(crate::error::CosmosError::builder()
                     .with_status(
-                        crate::error::CosmosStatus::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
                     )
                     .with_message(format!(
                         "UnorderedMerge child {idx} of {total} has no feed_range; \

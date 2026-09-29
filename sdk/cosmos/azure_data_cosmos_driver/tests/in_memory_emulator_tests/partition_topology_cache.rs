@@ -186,7 +186,7 @@ async fn eager_mode_fails_name_and_rid_resolution_when_topology_load_fails() {
         .unwrap_err();
     assert_eq!(
         name_error.status(),
-        azure_data_cosmos_driver::error::CosmosStatus::CLIENT_TOPOLOGY_RESOLUTION_FAILED
+        azure_data_cosmos_driver::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED
     );
 
     let eager_by_rid = runtime
@@ -199,6 +199,6 @@ async fn eager_mode_fails_name_and_rid_resolution_when_topology_load_fails() {
         .unwrap_err();
     assert_eq!(
         rid_error.status(),
-        azure_data_cosmos_driver::error::CosmosStatus::CLIENT_TOPOLOGY_RESOLUTION_FAILED
+        azure_data_cosmos_driver::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED
     );
 }

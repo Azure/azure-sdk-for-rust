@@ -64,6 +64,8 @@ pub mod completion {
     pub extern "C" fn cosmos_operation_handle_free(op: *mut OperationHandle);
     #[no_mangle]
     pub extern "C" fn cosmos_operation_handle_state(op: *const OperationHandle) -> CosmosOperationHandleState;
+    #[no_mangle]
+    pub extern "C" fn cosmos_operation_handle_status(op: *const OperationHandle) -> crate::error::CosmosStatusCode;
     pub struct CompletionQueue {
     }
     #[repr(C)]
@@ -154,6 +156,62 @@ pub mod credential {
     pub type CosmosTokenProviderCallback = unsafe extern "C" fn(isize, *const CosmosTokenRequest) -> i32;
     pub type CosmosTokenProviderFree = unsafe extern "C" fn(isize);
 }
+pub mod cursor {
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_checkpoint_submit(cursor: *const CursorHandle, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_completion_free(completion: *mut CosmosCursorCompletion);
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_completion_take_cursor(completion: *mut CosmosCursorCompletion) -> *mut CursorHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_free(cursor: *mut CursorHandle);
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_next_submit(cursor: *const CursorHandle, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_open_submit(driver: *const crate::driver::DriverHandle, request: *const crate::cursor_request::CosmosCursorRequest, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_queue_create(runtime: *const crate::runtime::RuntimeContext, max_capacity: u32) -> *mut crate::completion::CompletionQueue;
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_queue_wait(queue: *mut crate::completion::CompletionQueue, out: *mut *mut CosmosCursorCompletion, max: usize, timeout_ms: u32, out_count: *mut usize) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_status(cursor: *const CursorHandle) -> crate::error::CosmosStatusCode;
+    #[repr(C)]
+    pub struct CosmosCursorBytes {
+        pub data: *const u8,
+        pub len: usize,
+    }
+    #[repr(C)]
+    pub struct CosmosCursorCompletion {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub common: crate::completion::CosmosCompletion,
+        pub result_kind: u32,
+        pub body_kind: u32,
+        pub items: *const CosmosCursorBytes,
+        pub items_len: usize,
+        pub checkpoint: crate::string::CosmosStringView,
+        pub cursor: *mut CursorHandle,
+        pub backing: *mut CursorCompletionBacking,
+    }
+    pub struct CursorCompletionBacking {
+    }
+    pub struct CursorHandle {
+    }
+}
+pub mod cursor_request {
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_request_init(out: *mut CosmosCursorRequest);
+    #[repr(C)]
+    pub struct CosmosCursorRequest {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub operation: crate::op_request::CosmosOperationRequest,
+        pub change_feed_mode: u32,
+        pub start_from: u32,
+        pub start_time: crate::string::CosmosStringView,
+        pub reserved: [u32; 4],
+    }
+}
 pub mod database_ref {
     #[no_mangle]
     pub extern "C" fn cosmos_database_ref_create(account: *const crate::account_ref::AccountRefHandle, database_id: crate::string::CosmosStringView, out_database: *mut *mut DatabaseRefHandle) -> crate::error::CosmosStatusCode;
@@ -206,7 +264,11 @@ pub mod driver_options {
     #[no_mangle]
     pub extern "C" fn cosmos_driver_options_build(account: *const crate::account_ref::AccountRefHandle, config: *const CosmosDriverOptionsConfig, out_options: *mut *mut DriverOptionsHandle) -> crate::error::CosmosStatusCode;
     #[no_mangle]
+    pub extern "C" fn cosmos_driver_options_build_v2(account: *const crate::account_ref::AccountRefHandle, config: *const CosmosDriverOptionsConfigV2, out_options: *mut *mut DriverOptionsHandle) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
     pub extern "C" fn cosmos_driver_options_config_default() -> CosmosDriverOptionsConfig;
+    #[no_mangle]
+    pub extern "C" fn cosmos_driver_options_config_v2_default() -> CosmosDriverOptionsConfigV2;
     #[no_mangle]
     pub extern "C" fn cosmos_driver_options_free(options: *mut DriverOptionsHandle);
     #[derive(Clone, Copy)]
@@ -215,6 +277,17 @@ pub mod driver_options {
         pub preferred_regions: *const crate::string::CosmosStringView,
         pub preferred_regions_len: usize,
         pub operation_options: *const crate::op_request::CosmosOperationOptions,
+    }
+    #[derive(Clone, Copy)]
+    #[repr(C)]
+    pub struct CosmosDriverOptionsConfigV2 {
+        pub header: crate::fault_injection::CosmosFaultInjectionRecordHeader,
+        pub preferred_regions: *const crate::string::CosmosStringView,
+        pub preferred_regions_len: usize,
+        pub operation_options: *const crate::op_request::CosmosOperationOptions,
+        pub fault_injection_rules: *const crate::fault_injection::CosmosFaultInjectionRule,
+        pub fault_injection_rules_len: usize,
+        pub fault_injection_rule_stride: usize,
     }
     pub struct DriverOptionsHandle {
     }
@@ -305,12 +378,109 @@ pub mod error {
         CosmosSubStatusClientFfiOperationCancelled = 20360,
         CosmosSubStatusClientFfiRuntimeBuildFailed = 20361,
         CosmosSubStatusClientFfiPanic = 20362,
+        CosmosSubStatusClientFfiCursorBusy = 20363,
+        CosmosSubStatusClientFfiQueueFormat = 20364,
+        CosmosSubStatusClientFfiCursorClosed = 20365,
+        CosmosSubStatusClientFfiRepresentationUnsupported = 20366,
+        CosmosSubStatusClientFfiDeliveryLost = 20367,
         CosmosSubStatusClientGenerated401 = 20401,
         CosmosSubStatusAuthenticationTokenAcquisitionFailed = 20402,
         CosmosSubStatusTransitTimeout = 20911,
         CosmosSubStatusServerBarrierThrottled = 21011,
     }
     pub const COSMOS_STATUS_SUCCESS: CosmosStatusCode = _;
+}
+pub mod fault_injection {
+    #[no_mangle]
+    pub extern "C" fn cosmos_fault_injection_condition_default() -> CosmosFaultInjectionCondition;
+    #[no_mangle]
+    pub extern "C" fn cosmos_fault_injection_result_default() -> CosmosFaultInjectionResult;
+    #[no_mangle]
+    pub extern "C" fn cosmos_fault_injection_rule_default() -> CosmosFaultInjectionRule;
+    #[derive(Clone, Copy)]
+    #[repr(C)]
+    pub struct CosmosFaultInjectionCondition {
+        pub header: CosmosFaultInjectionRecordHeader,
+        pub operation_type: i32,
+        pub region: crate::string::CosmosStringView,
+        pub container_id: crate::string::CosmosStringView,
+        pub transport_kind: i32,
+    }
+    #[derive(Clone, Copy)]
+    #[repr(C)]
+    pub struct CosmosFaultInjectionRecordHeader {
+        pub struct_size: usize,
+        pub version: u32,
+    }
+    #[derive(Clone, Copy)]
+    #[repr(C)]
+    pub struct CosmosFaultInjectionResult {
+        pub header: CosmosFaultInjectionRecordHeader,
+        pub error_type: i32,
+        pub delay_ms: i64,
+        pub probability: f32,
+        pub custom_status_code: i32,
+        pub custom_sub_status: i32,
+        pub retry_after_ms: i64,
+        pub custom_headers: *const crate::op_request::CosmosHeaderKv,
+        pub custom_headers_len: usize,
+        pub body: *const u8,
+        pub body_len: usize,
+    }
+    #[derive(Clone, Copy)]
+    #[repr(C)]
+    pub struct CosmosFaultInjectionRule {
+        pub header: CosmosFaultInjectionRecordHeader,
+        pub id: crate::string::CosmosStringView,
+        pub condition: *const CosmosFaultInjectionCondition,
+        pub result: *const CosmosFaultInjectionResult,
+        pub hit_limit: i64,
+        pub start_delay_ms: i64,
+        pub expire_after_ms: i64,
+    }
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[repr(i32)]
+    pub enum CosmosFaultInjectionErrorType {
+        CosmosFaultInjectionErrorTypeUnset = 0,
+        CosmosFaultInjectionErrorTypeInternalServerError = 1,
+        CosmosFaultInjectionErrorTypeTooManyRequests = 2,
+        CosmosFaultInjectionErrorTypeRetryWith = 3,
+        CosmosFaultInjectionErrorTypeReadSessionNotAvailable = 4,
+        CosmosFaultInjectionErrorTypeTimeout = 5,
+        CosmosFaultInjectionErrorTypeServiceUnavailable = 6,
+        CosmosFaultInjectionErrorTypePartitionIsGone = 7,
+        CosmosFaultInjectionErrorTypeWriteForbidden = 8,
+        CosmosFaultInjectionErrorTypeDatabaseAccountNotFound = 9,
+        CosmosFaultInjectionErrorTypeConnectionError = 10,
+        CosmosFaultInjectionErrorTypeResponseTimeout = 11,
+        CosmosFaultInjectionErrorTypeResponseTimeoutAfterService = 12,
+    }
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[repr(i32)]
+    pub enum CosmosFaultInjectionOperationType {
+        CosmosFaultInjectionOperationTypeUnset = 0,
+        CosmosFaultInjectionOperationTypeReadItem = 1,
+        CosmosFaultInjectionOperationTypeQueryItem = 2,
+        CosmosFaultInjectionOperationTypeCreateItem = 3,
+        CosmosFaultInjectionOperationTypeUpsertItem = 4,
+        CosmosFaultInjectionOperationTypeReplaceItem = 5,
+        CosmosFaultInjectionOperationTypeDeleteItem = 6,
+        CosmosFaultInjectionOperationTypePatchItem = 7,
+        CosmosFaultInjectionOperationTypeBatchItem = 8,
+        CosmosFaultInjectionOperationTypeChangeFeedItem = 9,
+        CosmosFaultInjectionOperationTypeMetadataReadContainer = 10,
+        CosmosFaultInjectionOperationTypeMetadataReadDatabaseAccount = 11,
+        CosmosFaultInjectionOperationTypeMetadataQueryPlan = 12,
+        CosmosFaultInjectionOperationTypeMetadataPartitionKeyRanges = 13,
+    }
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    #[repr(i32)]
+    pub enum CosmosFaultInjectionTransportKind {
+        CosmosFaultInjectionTransportKindUnset = 0,
+        CosmosFaultInjectionTransportKindGateway = 1,
+        CosmosFaultInjectionTransportKindGatewayV2 = 2,
+    }
+    pub const COSMOS_FAULT_INJECTION_ABI_VERSION_1: u32 = 1;
 }
 pub mod feed_range {
     #[no_mangle]
@@ -548,6 +718,9 @@ pub mod runtime {
     #[no_mangle]
     pub extern "C" fn cosmos_runtime_free(runtime: *mut RuntimeContext);
     pub struct RuntimeContext {
+    }
+    impl Drop for RuntimeContext {
+        fn drop(&mut self);
     }
 }
 pub mod runtime_builder {

@@ -766,7 +766,7 @@ pub fn query_documents(
 ) -> crate::error::Result<Vec<serde_json::Value>> {
     let program = crate::query::parse(sql).map_err(|e| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(format!("failed to parse query: {e}"))
             .with_source(e)
             .build()

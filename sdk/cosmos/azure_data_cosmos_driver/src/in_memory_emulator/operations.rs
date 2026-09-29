@@ -77,7 +77,7 @@ fn session_consistency_active(
 
 /// HTTP status a prepared-then-rolled-back write operation reports in an aborted
 /// distributed transaction, paired with sub-status 5415 (DtcOperationRolledBack).
-/// Mirrors the driver's `SubStatusCode::DTC_OPERATION_ROLLED_BACK`.
+/// Mirrors the driver's `crate::error::status_codes::substatus::DTC_OPERATION_ROLLED_BACK`.
 #[cfg(feature = "preview_dtx")]
 const DTX_ROLLED_BACK_STATUS: u16 = 453;
 /// Sub-status accompanying [`DTX_ROLLED_BACK_STATUS`] (DtcOperationRolledBack).
@@ -1781,7 +1781,7 @@ fn intended_collection_rid_mismatch(
         error_response(
             StatusCode::BadRequest,
             Some(
-                crate::models::SubStatusCode::COLLECTION_RID_MISMATCH
+                crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH
                     .value()
                     .into(),
             ),
@@ -2466,21 +2466,13 @@ impl DocumentFeedCursor {
                 start,
             ));
         }
-        if !is_even_length_hex(&token.epk) {
-            return Err(invalid_continuation_response(
-                "Invalid continuation token EPK",
-                start,
-            ));
-        }
         Ok(Self {
-            epk: Epk::from(token.epk.as_str()),
+            epk: Epk::try_from(token.epk).map_err(|_| {
+                invalid_continuation_response("Invalid continuation token EPK", start)
+            })?,
             id: token.id,
         })
     }
-}
-
-fn is_even_length_hex(value: &str) -> bool {
-    value.len().is_multiple_of(2) && value.bytes().all(|b| b.is_ascii_hexdigit())
 }
 
 fn invalid_continuation_response(message: &str, start: Instant) -> AsyncRawResponse {
@@ -2698,7 +2690,7 @@ fn success_change_feed_response(
             change_feed_cursor_token_for(
                 0,
                 &(DocumentFeedCursor {
-                    epk: Epk::from(""),
+                    epk: Epk::MIN,
                     id: String::new(),
                 }),
             )
@@ -2776,7 +2768,7 @@ fn parse_change_feed_cursor(
 ) -> Result<ChangeFeedCursor, AsyncRawResponse> {
     let token: ChangeFeedCursorToken = serde_json::from_str(token)
         .map_err(|_| invalid_continuation_response("Invalid change feed continuation", start))?;
-    if token.kind != CHANGE_FEED_CURSOR_TOKEN_KIND || !is_even_length_hex(&token.epk) {
+    if token.kind != CHANGE_FEED_CURSOR_TOKEN_KIND {
         return Err(invalid_continuation_response(
             "Invalid change feed continuation",
             start,
@@ -2785,7 +2777,9 @@ fn parse_change_feed_cursor(
     Ok(ChangeFeedCursor {
         lsn: token.lsn,
         cursor: DocumentFeedCursor {
-            epk: Epk::from(token.epk.as_str()),
+            epk: Epk::try_from(token.epk).map_err(|_| {
+                invalid_continuation_response("Invalid change feed continuation", start)
+            })?,
             id: token.id,
         },
     })
@@ -2949,7 +2943,7 @@ fn query_document_feed_items(
 ) -> crate::error::Result<Option<Vec<DocumentFeedItem>>> {
     let program = crate::query::parse(sql).map_err(|e| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message(format!("failed to parse query: {e}"))
             .with_source(e)
             .build()
@@ -3444,8 +3438,10 @@ fn collect_item_documents(
             },
             None => None,
         };
-        let start_epk = parsed.start_epk.as_deref().map(Epk::from);
-        let end_epk = parsed.end_epk.as_deref().map(Epk::from);
+        let start_epk = parsed.start_epk.as_deref().map(Epk::try_from).transpose()
+            .map_err(|error| bad_partition_key_response(error, start))?;
+        let end_epk = parsed.end_epk.as_deref().map(Epk::try_from).transpose()
+            .map_err(|error| bad_partition_key_response(error, start))?;
         // A query that pins an explicit physical partition key range id must fail
         // with 410/1002 (PartitionKeyRangeGone) when that range no longer exists
         // (e.g. it was split away). Real Cosmos surfaces PartitionKeyRangeGone here
@@ -5101,10 +5097,7 @@ fn handle_read(
         }
 
         // Check forced session unavailability (one-shot)
-        if partition
-            .session_state
-            .check_and_clear_forced_for(&epk.to_hex())
-        {
+        if partition.session_state.check_and_clear_forced_for(&epk) {
             return Err(error_response(
                 StatusCode::NotFound,
                 Some(1002),
@@ -6533,6 +6526,52 @@ fn container_not_found(db_id: &str, coll_id: &str, start: Instant) -> AsyncRawRe
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::in_memory_emulator::{
+        config::{VirtualAccountConfig, VirtualRegion},
+        dispatch::parse_request,
+        response::headers::ETAG,
+    };
+    use azure_core::http::{Method, Request};
+    use url::Url;
+
+    #[test]
+    fn document_feed_rejects_malformed_epk_headers() -> Result<(), Box<dyn std::error::Error>> {
+        let endpoint = Url::parse("https://east.local")?;
+        let store = EmulatorStore::new(VirtualAccountConfig::new(vec![VirtualRegion::new(
+            "East",
+            endpoint.clone(),
+        )])?);
+        store.create_database("db");
+        store.create_container("db", "coll", "/pk".into());
+
+        for header in ["x-ms-start-epk", "x-ms-end-epk"] {
+            for value in ["0", "00zz", "é"] {
+                let mut request =
+                    Request::new(endpoint.join("/dbs/db/colls/coll/docs")?, Method::Get);
+                request.insert_header("x-ms-read-key-type", "EffectivePartitionKeyRange");
+                request.insert_header(header, value);
+                let result = collect_item_documents(
+                    &store,
+                    "East",
+                    &parse_request(&request),
+                    Instant::now(),
+                );
+                assert!(
+                    matches!(result, Err(response) if response.status() == StatusCode::BadRequest)
+                );
+            }
+        }
+
+        let mut request = Request::new(endpoint.join("/dbs/db/colls/coll/docs")?, Method::Get);
+        request.insert_header("x-ms-read-key-type", "EffectivePartitionKeyRange");
+        request.insert_header("x-ms-start-epk", "");
+        request.insert_header("x-ms-end-epk", "ff");
+        assert!(
+            collect_item_documents(&store, "East", &parse_request(&request), Instant::now(),)
+                .is_ok()
+        );
+        Ok(())
+    }
 
     #[test]
     fn session_consistency_activation_matches_strategy_and_account_default() {
@@ -6689,19 +6728,23 @@ mod tests {
         assert!(rewritten.ends_with("ORDER BY c.rank"));
     }
 
-    fn document_item(epk: &str, id: &str) -> DocumentFeedItem {
+    fn document_item(epk: &str, id: &str) -> crate::error::Result<DocumentFeedItem> {
         document_item_with_lsn(epk, id, 0)
     }
 
-    fn document_item_with_lsn(epk: &str, id: &str, lsn: u64) -> DocumentFeedItem {
-        DocumentFeedItem {
+    fn document_item_with_lsn(
+        epk: &str,
+        id: &str,
+        lsn: u64,
+    ) -> crate::error::Result<DocumentFeedItem> {
+        Ok(DocumentFeedItem {
             body: serde_json::json!({ "id": id }),
             cursor: DocumentFeedCursor {
-                epk: Epk::from(epk),
+                epk: Epk::try_from(epk)?,
                 id: id.to_owned(),
             },
             lsn,
-        }
+        })
     }
 
     fn ids(values: &[serde_json::Value]) -> Vec<&str> {
@@ -6727,10 +6770,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn change_feed_resume_skips_consumed_prefix() {
+    async fn change_feed_resume_skips_consumed_prefix() -> crate::error::Result<()> {
         let items: Vec<_> = (1..=5)
             .map(|lsn| document_item_with_lsn("01", &format!("item-{lsn}"), lsn))
-            .collect();
+            .collect::<crate::error::Result<_>>()?;
         let first = success_change_feed_response(
             "rid",
             items.clone(),
@@ -6764,11 +6807,12 @@ mod tests {
             ids(body["Documents"].as_array().unwrap()),
             ["item-3", "item-4"]
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn change_feed_empty_resume_preserves_checkpoint() {
-        let item = document_item_with_lsn("01", "item-1", 1);
+    async fn change_feed_empty_resume_preserves_checkpoint() -> crate::error::Result<()> {
+        let item = document_item_with_lsn("01", "item-1", 1)?;
         let checkpoint = change_feed_cursor_token(&item);
         let headers = FeedResponseHeaders {
             session_token: String::new(),
@@ -6801,13 +6845,14 @@ mod tests {
             response.headers().get_optional_str(&INTERNAL_PARTITION_ID),
             Some("partition-rid")
         );
+        Ok(())
     }
 
     #[tokio::test]
-    async fn change_feed_now_checkpoints_at_highest_lsn() {
+    async fn change_feed_now_checkpoints_at_highest_lsn() -> crate::error::Result<()> {
         let items = vec![
-            document_item_with_lsn("01", "item-1", 1),
-            document_item_with_lsn("01", "item-2", 2),
+            document_item_with_lsn("01", "item-1", 1)?,
+            document_item_with_lsn("01", "item-2", 2)?,
         ];
         let response = success_change_feed_response(
             "rid",
@@ -6829,6 +6874,7 @@ mod tests {
         assert_eq!(response.status(), StatusCode::NotModified);
         assert_eq!(cursor.lsn, 2);
         assert_eq!(cursor.cursor.id, "item-2");
+        Ok(())
     }
 
     #[test]
@@ -6845,6 +6891,56 @@ mod tests {
     }
 
     #[test]
+    fn change_feed_cursor_rejects_malformed_epk_hex() {
+        for epk in ["0", "00zz", "é"] {
+            let token = serde_json::json!({
+                "kind": CHANGE_FEED_CURSOR_TOKEN_KIND,
+                "lsn": 1,
+                "epk": epk,
+                "id": "item-1"
+            })
+            .to_string();
+            assert!(matches!(
+                parse_change_feed_cursor(&token, Instant::now()),
+                Err(response) if response.status() == StatusCode::BadRequest
+            ));
+        }
+    }
+
+    #[test]
+    fn document_and_change_feed_cursors_preserve_valid_epk_encodings(
+    ) -> Result<(), AsyncRawResponse> {
+        for epk in [
+            "",
+            "FF",
+            "ff",
+            "aB",
+            "010000",
+            "0123456789abcdef0123456789abcdef01ab",
+        ] {
+            let document_token = serde_json::json!({
+                "kind": DOCUMENT_FEED_CURSOR_TOKEN_KIND,
+                "epk": epk,
+                "id": "item-1",
+            })
+            .to_string();
+            let document_cursor = DocumentFeedCursor::parse(&document_token, Instant::now())?;
+            assert_eq!(document_cursor.epk.to_hex(), epk.to_ascii_uppercase());
+
+            let change_token = serde_json::json!({
+                "kind": CHANGE_FEED_CURSOR_TOKEN_KIND,
+                "lsn": 1,
+                "epk": epk,
+                "id": "item-1",
+            })
+            .to_string();
+            let change_cursor = parse_change_feed_cursor(&change_token, Instant::now())?;
+            assert_eq!(change_cursor.cursor.epk.to_hex(), epk.to_ascii_uppercase());
+        }
+        Ok(())
+    }
+
+    #[test]
     fn unique_key_numbers_follow_service_double_equivalence() {
         assert!(unique_key_values_equal(
             &serde_json::json!(1),
@@ -6857,19 +6953,20 @@ mod tests {
     }
 
     #[test]
-    fn document_feed_cursor_skips_already_returned_low_child_prefix_after_split() {
+    fn document_feed_cursor_skips_already_returned_low_child_prefix_after_split(
+    ) -> crate::error::Result<()> {
         let start = Instant::now();
         let parent = vec![
-            document_item("01", "hash-a-0"),
-            document_item("02", "hash-a-1"),
-            document_item("80", "hash-e-0"),
+            document_item("01", "hash-a-0")?,
+            document_item("02", "hash-a-1")?,
+            document_item("80", "hash-e-0")?,
         ];
         let (_page, continuation) =
             paginate_document_feed_items(parent, Some(1), None, start).unwrap();
 
         let low_child = vec![
-            document_item("01", "hash-a-0"),
-            document_item("02", "hash-a-1"),
+            document_item("01", "hash-a-0")?,
+            document_item("02", "hash-a-1")?,
         ];
         let (page, next) =
             paginate_document_feed_items(low_child, Some(10), continuation.as_deref(), start)
@@ -6877,48 +6974,53 @@ mod tests {
 
         assert_eq!(ids(&page), vec!["hash-a-1"]);
         assert!(next.is_none());
+        Ok(())
     }
 
     #[test]
-    fn document_feed_cursor_does_not_skip_high_child_after_split() {
+    fn document_feed_cursor_does_not_skip_high_child_after_split() -> crate::error::Result<()> {
         let start = Instant::now();
         let parent = vec![
-            document_item("01", "hash-a-0"),
-            document_item("02", "hash-a-1"),
-            document_item("80", "hash-e-0"),
+            document_item("01", "hash-a-0")?,
+            document_item("02", "hash-a-1")?,
+            document_item("80", "hash-e-0")?,
         ];
         let (_page, continuation) =
             paginate_document_feed_items(parent, Some(1), None, start).unwrap();
 
-        let high_child = vec![document_item("80", "hash-e-0")];
+        let high_child = vec![document_item("80", "hash-e-0")?];
         let (page, next) =
             paginate_document_feed_items(high_child, Some(10), continuation.as_deref(), start)
                 .unwrap();
 
         assert_eq!(ids(&page), vec!["hash-e-0"]);
         assert!(next.is_none());
+        Ok(())
     }
 
     #[test]
     fn document_feed_cursor_rejects_malformed_epk_hex() {
-        let token = serde_json::to_string(&DocumentFeedCursorToken {
-            kind: DOCUMENT_FEED_CURSOR_TOKEN_KIND.to_owned(),
-            epk: "00zz".to_owned(),
-            id: "item1".to_owned(),
-        })
-        .unwrap();
-
-        let err = DocumentFeedCursor::parse(&token, Instant::now()).unwrap_err();
-        assert_eq!(err.status(), StatusCode::BadRequest);
+        for epk in ["0", "00zz", "é"] {
+            let token = serde_json::json!({
+                "kind": DOCUMENT_FEED_CURSOR_TOKEN_KIND,
+                "epk": epk,
+                "id": "item1"
+            })
+            .to_string();
+            assert!(matches!(
+                DocumentFeedCursor::parse(&token, Instant::now()),
+                Err(response) if response.status() == StatusCode::BadRequest
+            ));
+        }
     }
 
     #[test]
-    fn document_feed_cursor_pagination_requires_cursor_sorted_items() {
+    fn document_feed_cursor_pagination_requires_cursor_sorted_items() -> crate::error::Result<()> {
         let start = Instant::now();
         let mut items = vec![
-            document_item("80", "hash-e-0"),
-            document_item("01", "hash-a-0"),
-            document_item("02", "hash-a-1"),
+            document_item("80", "hash-e-0")?,
+            document_item("01", "hash-a-0")?,
+            document_item("02", "hash-a-1")?,
         ];
         items.sort_by(|left, right| left.cursor.cmp(&right.cursor));
 
@@ -6927,5 +7029,6 @@ mod tests {
 
         assert_eq!(ids(&page), vec!["hash-a-0"]);
         assert!(continuation.is_some());
+        Ok(())
     }
 }

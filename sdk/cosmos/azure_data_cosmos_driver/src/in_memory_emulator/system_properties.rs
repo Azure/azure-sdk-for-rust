@@ -255,7 +255,6 @@ pub(crate) fn account_properties_to_json(
         // that flip `VirtualAccountConfig::set_per_partition_failover(...)`
         // observe the change here on the next refresh tick.
         "enablePerPartitionFailoverBehavior": config.per_partition_failover_enabled(),
-        "disableCrossRegionalHedging": false,
         "userReplicationPolicy": {
             "asyncReplication": false,
             "minReplicaSetSize": 3,
@@ -268,6 +267,16 @@ pub(crate) fn account_properties_to_json(
         "readPolicy": { "primaryReadCoefficient": 1, "secondaryReadCoefficient": 1 },
         "queryEngineConfiguration": "{}"
     });
+
+    if let Some(disabled) = config.cross_region_hedging_disabled() {
+        response
+            .as_object_mut()
+            .expect("account properties response is a JSON object")
+            .insert(
+                "disableCrossRegionalHedging".to_owned(),
+                serde_json::Value::Bool(disabled),
+            );
+    }
 
     #[cfg(feature = "__internal_in_memory_emulator")]
     {

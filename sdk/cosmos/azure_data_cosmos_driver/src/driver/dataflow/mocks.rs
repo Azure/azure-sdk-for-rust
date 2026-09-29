@@ -17,7 +17,7 @@ use crate::{
     models::{
         effective_partition_key::EffectivePartitionKey, AccountReference, ActivityId,
         CosmosOperation, CosmosResponse, CosmosResponseHeaders, CosmosStatus, DatabaseReference,
-        FeedRange, PartitionKey, SubStatusCode,
+        FeedRange, PartitionKey,
     },
     options::DiagnosticsOptions,
 };
@@ -295,13 +295,16 @@ pub(crate) fn logical_partition_target() -> RequestTarget {
 }
 
 /// Creates a `RequestTarget` for an EPK range ("" to "80", partition key range ID "0").
-pub(crate) fn epk_range_target() -> RequestTarget {
+pub(crate) fn epk_range_target() -> crate::error::Result<RequestTarget> {
     let range = FeedRange::new(
         EffectivePartitionKey::MIN,
-        EffectivePartitionKey::from("80"),
-    )
-    .unwrap();
-    RequestTarget::effective_partition_key_range(range.clone(), "0".to_string(), range)
+        EffectivePartitionKey::try_from("80")?,
+    )?;
+    Ok(RequestTarget::effective_partition_key_range(
+        range.clone(),
+        "0".to_string(),
+        range,
+    ))
 }
 
 /// Creates a test response with the given body.
@@ -406,7 +409,7 @@ pub(crate) fn gone_error() -> crate::error::CosmosError {
         ))
         .with_status(CosmosStatus::from_parts(
             StatusCode::Gone,
-            Some(SubStatusCode::PARTITION_KEY_RANGE_GONE),
+            Some(crate::error::status_codes::substatus::PARTITION_KEY_RANGE_GONE),
         ))
         .with_message("partition topology changed")
         .with_response_parts(crate::models::CosmosResponsePayload::new(
@@ -424,7 +427,7 @@ pub(crate) fn non_topology_gone_error() -> crate::error::CosmosError {
         ))
         .with_status(CosmosStatus::from_parts(
             StatusCode::Gone,
-            Some(SubStatusCode::NAME_CACHE_STALE),
+            Some(crate::error::status_codes::substatus::NAME_CACHE_STALE),
         ))
         .with_message("name cache is stale")
         .with_response_parts(crate::models::CosmosResponsePayload::new(

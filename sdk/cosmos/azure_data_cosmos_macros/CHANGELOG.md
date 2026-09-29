@@ -1,16 +1,10 @@
 # Release History
 
-## 0.3.0 (Unreleased)
-
-### Features Added
+## 1.0.0-beta.1 (2026-09-28)
 
 ### Breaking Changes
 
 - `CosmosOptions` now propagates field-level `#[cfg]` attributes to generated builders, views, defaults, and environment-variable APIs. ([#5346](https://github.com/Azure/azure-sdk-for-rust/pull/5346))
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 0.2.0 (2026-06-19)
 

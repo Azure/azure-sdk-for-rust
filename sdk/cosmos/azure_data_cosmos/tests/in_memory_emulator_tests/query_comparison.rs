@@ -392,14 +392,14 @@ async fn buffered_query_policy_per_query_options_and_hierarchical_routing(
                     };
                     assert_eq!(
                         error.status(),
-                        azure_data_cosmos::models::CosmosStatus::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
+                        azure_data_cosmos_driver::error::status_codes::CLIENT_BUFFERED_QUERY_REQUIRES_FINITE_WINDOW
                     );
                 } else {
                     let mut pages = result?.into_pages();
                     if buffered {
                         assert_eq!(
                             pages.to_continuation_token().unwrap_err().status(),
-                            azure_data_cosmos::models::CosmosStatus::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
+                            azure_data_cosmos_driver::error::status_codes::CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED
                         );
                     }
                     let mut values = Vec::new();
@@ -1319,8 +1319,8 @@ fn query_plan_ranges(plan: &Value) -> Result<Vec<EpkRangeBounds>, Box<dyn Error>
                 std::io::Error::other(format!("query range missing max: {range}"))
             })?;
             Ok(EpkRangeBounds {
-                min: EffectivePartitionKey::from(min),
-                max: EffectivePartitionKey::from(max),
+                min: EffectivePartitionKey::try_from(min)?,
+                max: EffectivePartitionKey::try_from(max)?,
             })
         })
         .collect()

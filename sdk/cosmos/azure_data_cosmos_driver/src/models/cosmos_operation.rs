@@ -371,7 +371,7 @@ impl CosmosOperation {
             .is_some_and(|target| target.partition_key().is_none() && target != &FeedRange::full())
         {
             return Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
                 .with_message(
                     "an explicit effective partition key range cannot be carried to a recreated \
                      container; obtain a new feed range from the replacement container",
@@ -1390,8 +1390,8 @@ impl CosmosOperation {
 mod tests {
     use super::*;
     use crate::models::{
-        AccountReference, ContainerProperties, ContainerReference, PartitionKeyDefinition,
-        SystemProperties,
+        AccountReference, ContainerProperties, ContainerReference, EffectivePartitionKey,
+        PartitionKeyDefinition, SystemProperties,
     };
 
     use url::Url;
@@ -1463,8 +1463,11 @@ mod tests {
     }
 
     #[test]
-    fn retarget_rejects_explicit_epk_range() {
-        let range = FeedRange::new("10".into(), "20".into()).unwrap();
+    fn retarget_rejects_explicit_epk_range() -> crate::error::Result<()> {
+        let range = FeedRange::new(
+            EffectivePartitionKey::try_from("10")?,
+            EffectivePartitionKey::try_from("20")?,
+        )?;
         let mut operation = CosmosOperation::query_items(test_container(), Some(range.clone()));
 
         let error = operation
@@ -1473,10 +1476,11 @@ mod tests {
 
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+            crate::error::status_codes::CLIENT_BAD_REQUEST
         );
         assert_eq!(operation.container().unwrap().rid(), "testcontainer_rid");
         assert_eq!(operation.target(), Some(&range));
+        Ok(())
     }
 
     #[test]
@@ -1510,7 +1514,7 @@ mod tests {
             .expect_err("a name leaf under a RID parent must be rejected");
         assert_eq!(
             err.status(),
-            crate::error::CosmosStatus::CLIENT_MIXED_NAME_RID_ADDRESSING
+            crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
     }
 
