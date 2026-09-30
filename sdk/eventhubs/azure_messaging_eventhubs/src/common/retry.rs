@@ -4,8 +4,13 @@
 // cspell: ignore retryable backoff
 
 use azure_core::{sleep, time::Duration};
+use futures::future::BoxFuture;
 use rand::random;
-use std::{fmt::Debug, pin::Pin};
+use std::{
+    fmt::Debug,
+    pin::Pin,
+    time::{Duration as StdDuration, Instant},
+};
 use tracing::{debug, info, warn};
 
 /// Type alias for recovery operation function to reduce complexity
@@ -41,6 +46,10 @@ pub struct RetryOptions {
     pub max_delay: Duration,
 
     /// The maximum total elapsed time for retries (Default is 60s).
+    ///
+    /// For send, management, and authorization operations, the time starts
+    /// with the first attempt. For a receive, the time starts at the first
+    /// failure, so the wait for an event before that failure does not count.
     pub max_total_elapsed: Duration,
 
     /// The maximum number of retries (Default is 5).
@@ -55,6 +64,110 @@ impl Default for RetryOptions {
             max_retries: 8,
             max_total_elapsed: Duration::seconds(60),
         }
+    }
+}
+
+/// Source of time for a recovery loop, so tests can control it.
+pub(crate) trait RecoveryClock: Sync {
+    fn now(&self) -> Instant;
+    fn sleep(&self, duration: Duration) -> BoxFuture<'_, ()>;
+}
+
+/// The clock that production recovery loops use.
+pub(crate) struct SystemClock;
+
+impl RecoveryClock for SystemClock {
+    fn now(&self) -> Instant {
+        Instant::now()
+    }
+
+    fn sleep(&self, duration: Duration) -> BoxFuture<'_, ()> {
+        Box::pin(sleep(duration))
+    }
+}
+
+/// When the elapsed-time budget (`RetryOptions::max_total_elapsed`) of a
+/// recovery loop starts.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub(crate) enum BudgetStart {
+    /// The budget includes the first attempt. Send, management, and
+    /// authorization operations use this.
+    OperationStart,
+    /// The budget starts when the first failure occurs. A receive uses this,
+    /// because its first attempt can wait for an event without limit.
+    FirstFailure,
+}
+
+/// The decision that ended a recovery loop with an error.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub(crate) enum StopReason {
+    ElapsedBudgetExhausted,
+    RetriesExhausted,
+    NonRecoverable,
+    RecoveryFailed,
+    RecoveryUnavailable,
+}
+
+impl StopReason {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            StopReason::ElapsedBudgetExhausted => "elapsed_budget_exhausted",
+            StopReason::RetriesExhausted => "retries_exhausted",
+            StopReason::NonRecoverable => "non_recoverable",
+            StopReason::RecoveryFailed => "recovery_failed",
+            StopReason::RecoveryUnavailable => "recovery_unavailable",
+        }
+    }
+}
+
+/// Identifiers that a recovery loop adds to each of its events.
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct RecoveryLogContext<'a> {
+    pub connection_id: Option<&'a str>,
+    pub partition_id: Option<&'a str>,
+}
+
+/// The per-operation settings of [`recover_with_policy`].
+pub(crate) struct RecoveryPolicy<'a, K> {
+    pub budget_start: BudgetStart,
+    pub log_context: RecoveryLogContext<'a>,
+    pub clock: &'a K,
+}
+
+/// The state of one recovery episode, which the recovery events report.
+///
+/// The durations in the events have these meanings:
+///
+/// * `receive_wait_elapsed`: for [`BudgetStart::FirstFailure`] only, the time
+///   from the start of the operation to the first failure. It is not charged
+///   to the budget.
+/// * `recovery_elapsed`: the time charged to `max_total_elapsed`. It starts at
+///   the first failure for [`BudgetStart::FirstFailure`] and at the start of
+///   the operation for [`BudgetStart::OperationStart`]. It includes recovery
+///   actions, backoff, and the retried attempts.
+struct Episode<'a> {
+    options: &'a RetryOptions,
+    log_context: RecoveryLogContext<'a>,
+    max_total_elapsed: StdDuration,
+    retries_attempted: u32,
+    receive_wait_elapsed: Option<StdDuration>,
+    recovery_elapsed: StdDuration,
+}
+
+impl Episode<'_> {
+    fn stop<E: Debug>(&self, stop_reason: StopReason, err: &E) {
+        warn!(
+            connection_id = self.log_context.connection_id.map(display),
+            partition_id = self.log_context.partition_id.map(display),
+            stop_reason = %stop_reason.as_str(),
+            retries_attempted = self.retries_attempted,
+            max_retries = self.options.max_retries,
+            receive_wait_elapsed = self.receive_wait_elapsed.map(debug),
+            recovery_elapsed = ?self.recovery_elapsed,
+            max_total_elapsed = ?self.max_total_elapsed,
+            err = ?err,
+            "Operation recovery stopped, returning error."
+        );
     }
 }
 
@@ -89,110 +202,178 @@ where
     E: Debug + std::fmt::Display,
     C: Clone,
 {
-    let mut current_retry = 0u32;
+    recover_with_policy(
+        operation,
+        options,
+        categorize_error,
+        recover_operation,
+        context,
+        RecoveryPolicy {
+            budget_start: BudgetStart::OperationStart,
+            log_context: RecoveryLogContext::default(),
+            clock: &SystemClock,
+        },
+    )
+    .await
+}
+
+/// Executes an operation with exponential backoff under `policy`.
+///
+/// On failure, the loop checks the retry count and the elapsed-time budget
+/// before it classifies the error, then retries or recovers. It logs one
+/// warning with a `stop_reason` when it returns an error.
+pub(crate) async fn recover_with_policy<F, Fut, T, E, C, K>(
+    operation: F,
+    options: &RetryOptions,
+    categorize_error: fn(&E) -> ErrorRecoveryAction,
+    recover_operation: Option<RecoveryOperation<C, E>>,
+    context: Option<C>,
+    policy: RecoveryPolicy<'_, K>,
+) -> std::result::Result<T, E>
+where
+    F: Fn() -> Fut,
+    Fut: std::future::Future<Output = std::result::Result<T, E>>,
+    E: Debug + std::fmt::Display,
+    C: Clone,
+    K: RecoveryClock,
+{
+    let clock = policy.clock;
+    let log_context = policy.log_context;
     let mut current_delay = options.initial_delay;
 
-    let start_time = std::time::Instant::now();
+    let operation_start = clock.now();
+    let mut budget_start = match policy.budget_start {
+        BudgetStart::OperationStart => Some(operation_start),
+        BudgetStart::FirstFailure => None,
+    };
+    let mut episode = Episode {
+        options,
+        log_context,
+        // A negative limit converts to zero, so the budget stays exhausted as before.
+        max_total_elapsed: StdDuration::try_from(options.max_total_elapsed).unwrap_or_default(),
+        retries_attempted: 0,
+        receive_wait_elapsed: None,
+        recovery_elapsed: StdDuration::ZERO,
+    };
 
     loop {
-        match operation().await {
+        let err = match operation().await {
             Ok(result) => {
-                if current_retry > 0 {
-                    info!("Operation succeeded after {} retries", current_retry);
+                if episode.retries_attempted > 0 {
+                    info!(
+                        connection_id = log_context.connection_id.map(display),
+                        partition_id = log_context.partition_id.map(display),
+                        retries_attempted = episode.retries_attempted,
+                        receive_wait_elapsed = episode.receive_wait_elapsed.map(debug),
+                        recovery_elapsed = ?clock.now().saturating_duration_since(budget_start.unwrap_or(operation_start)),
+                        "Operation succeeded after retries."
+                    );
                 }
                 return Ok(result);
             }
-            Err(err) => {
-                let time_since_start = start_time.elapsed();
-                debug!(
-                    err = %err,
-                    current_retry,
-                    "Operation failed, checking for retry."
+            Err(err) => err,
+        };
+
+        let now = clock.now();
+        let budget_started = *budget_start.get_or_insert_with(|| {
+            episode.receive_wait_elapsed = Some(now.saturating_duration_since(operation_start));
+            now
+        });
+        episode.recovery_elapsed = now.saturating_duration_since(budget_started);
+        debug!(
+            connection_id = log_context.connection_id.map(display),
+            partition_id = log_context.partition_id.map(display),
+            err = %err,
+            retries_attempted = episode.retries_attempted,
+            recovery_elapsed = ?episode.recovery_elapsed,
+            "Operation failed, checking for retry."
+        );
+        // Check if we've exhausted our retries
+        if episode.retries_attempted >= options.max_retries {
+            episode.stop(StopReason::RetriesExhausted, &err);
+            return Err(err);
+        }
+        if episode.recovery_elapsed >= episode.max_total_elapsed {
+            episode.stop(StopReason::ElapsedBudgetExhausted, &err);
+            return Err(err);
+        }
+        // Check if we should retry this error
+        let error_category = categorize_error(&err);
+        match error_category {
+            ErrorRecoveryAction::RetryAction => {
+                let sleep_ms = options.initial_delay.whole_milliseconds() as u64
+                    * 2u64.pow(episode.retries_attempted)
+                    + u64::from(random::<u8>());
+                let sleep_ms = sleep_ms.min(
+                    options
+                        .max_delay
+                        .whole_milliseconds()
+                        .try_into()
+                        .unwrap_or(u64::MAX),
                 );
-                // Check if we've exhausted our retries
-                if current_retry >= options.max_retries
-                    || time_since_start >= options.max_total_elapsed
-                {
-                    warn!(
-                        err = ?err,
-                        max_retries = options.max_retries,
-                        elapsed = ?time_since_start,
-                        "Maximum retries reached or time elapsed, returning error."
-                    );
+                let sleep_duration = Duration::milliseconds(sleep_ms as i64);
+
+                debug!(
+                    connection_id = log_context.connection_id.map(display),
+                    partition_id = log_context.partition_id.map(display),
+                    err = ?err,
+                    backoff = ?sleep_duration,
+                    retry = episode.retries_attempted + 1,
+                    max_retries = options.max_retries,
+                    "Operation failed, retrying after backoff."
+                );
+
+                // Wait for the backoff duration
+                clock.sleep(sleep_duration).await;
+
+                // Calculate the next delay with exponential backoff
+                let next_delay = current_delay.saturating_mul(2);
+                current_delay = std::cmp::min(next_delay, options.max_delay);
+                // Continue to retry
+            }
+            ErrorRecoveryAction::ReturnError => {
+                episode.stop(StopReason::NonRecoverable, &err);
+                return Err(err);
+            }
+            _ => {
+                warn!(
+                    connection_id = log_context.connection_id.map(display),
+                    partition_id = log_context.partition_id.map(display),
+                    error_category = ?error_category,
+                    retries_attempted = episode.retries_attempted,
+                    max_retries = options.max_retries,
+                    receive_wait_elapsed = episode.receive_wait_elapsed.map(debug),
+                    recovery_elapsed = ?episode.recovery_elapsed,
+                    err = ?err,
+                    "Error requires recovery, attempting recovery action."
+                );
+                // Handle recoverable error cases (reconnecting connection, session, or
+                // link). If no recovery action is provided, return the error.
+                let (Some(recover_operation), Some(context)) = (recover_operation, context.clone())
+                else {
+                    episode.stop(StopReason::RecoveryUnavailable, &err);
                     return Err(err);
-                }
-                // Check if we should retry this error
-                let error_category = categorize_error(&err);
-                match error_category {
-                    ErrorRecoveryAction::RetryAction => {
-                        let sleep_ms = options.initial_delay.whole_milliseconds() as u64
-                            * 2u64.pow(current_retry)
-                            + u64::from(random::<u8>());
-                        let sleep_ms = sleep_ms.min(
-                            options
-                                .max_delay
-                                .whole_milliseconds()
-                                .try_into()
-                                .unwrap_or(u64::MAX),
-                        );
-                        let sleep_duration = Duration::milliseconds(sleep_ms as i64);
-
-                        debug!(
-                            err = ?err,
-                            backoff = ?sleep_duration,
-                            retry = current_retry + 1,
-                            max_retries = options.max_retries,
-                            "Operation failed, retrying after backoff."
-                        );
-
-                        // Wait for the backoff duration
-                        sleep(sleep_duration).await;
-
-                        // Calculate the next delay with exponential backoff
-                        let next_delay = current_delay.saturating_mul(2);
-                        current_delay = std::cmp::min(next_delay, options.max_delay);
-                        // Continue to retry
-                    }
-                    ErrorRecoveryAction::ReturnError => {
-                        warn!(err = ?err, "Error is not retryable, returning.");
-                        return Err(err);
-                    }
-                    _ => {
-                        warn!(
+                };
+                match recover_operation(context, error_category.clone()).await {
+                    Ok(()) => {
+                        info!(
+                            connection_id = log_context.connection_id.map(display),
+                            partition_id = log_context.partition_id.map(display),
                             error_category = ?error_category,
-                            err = ?err,
-                            "Error requires recovery, attempting recovery action."
+                            "Recovery action succeeded."
                         );
-                        // Handle recoverable error cases (reconnecting connection, session, or
-                        // link). If no recovery action is provided, return the error.
-                        if let (Some(recover_operation), Some(context)) =
-                            (recover_operation, context.clone())
-                        {
-                            match recover_operation(context, error_category.clone()).await {
-                                Ok(()) => {
-                                    info!(
-                                        error_category = ?error_category,
-                                        "Recovery action succeeded."
-                                    );
-                                }
-                                Err(recovery_err) => {
-                                    warn!(
-                                        error_category = ?error_category,
-                                        err = ?recovery_err,
-                                        "Recovery action failed."
-                                    );
-                                    return Err(recovery_err);
-                                }
-                            }
-                        } else {
-                            return Err(err);
-                        }
+                    }
+                    Err(recovery_err) => {
+                        episode.recovery_elapsed =
+                            clock.now().saturating_duration_since(budget_started);
+                        episode.stop(StopReason::RecoveryFailed, &recovery_err);
+                        return Err(recovery_err);
                     }
                 }
-                // Increase retry count
-                current_retry += 1;
             }
         }
+        // Increase retry count
+        episode.retries_attempted += 1;
     }
 }
 
@@ -234,14 +415,102 @@ where
 }
 
 #[cfg(test)]
+pub(crate) mod test_support {
+    use super::*;
+    use futures::future::ready;
+    use std::{
+        future::Future,
+        io,
+        sync::{Arc, Mutex},
+    };
+    use tracing::{instrument::WithSubscriber, Level};
+
+    /// A clock that moves only when a test advances it or a backoff sleeps.
+    pub(crate) struct ManualClock {
+        origin: Instant,
+        offset: Mutex<StdDuration>,
+    }
+
+    impl ManualClock {
+        pub(crate) fn new() -> Arc<Self> {
+            Arc::new(Self {
+                origin: Instant::now(),
+                offset: Mutex::new(StdDuration::ZERO),
+            })
+        }
+
+        pub(crate) fn advance(&self, by: StdDuration) {
+            *self.offset.lock().unwrap() += by;
+        }
+    }
+
+    impl RecoveryClock for ManualClock {
+        fn now(&self) -> Instant {
+            self.origin + *self.offset.lock().unwrap()
+        }
+
+        fn sleep(&self, duration: Duration) -> BoxFuture<'_, ()> {
+            self.advance(StdDuration::try_from(duration).unwrap_or_default());
+            Box::pin(ready(()))
+        }
+    }
+
+    #[derive(Clone)]
+    struct SharedBuffer(Arc<Mutex<Vec<u8>>>);
+
+    impl io::Write for SharedBuffer {
+        fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+            self.0.lock().unwrap().extend_from_slice(buf);
+            Ok(buf.len())
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    /// Runs `future` with only WARN and higher enabled and returns the log text.
+    pub(crate) async fn capture_warnings<Fut: Future>(future: Fut) -> (Fut::Output, String) {
+        let buffer = SharedBuffer(Arc::new(Mutex::new(Vec::new())));
+        let writer = buffer.clone();
+        let subscriber = tracing_subscriber::fmt()
+            .with_max_level(Level::WARN)
+            .with_ansi(false)
+            .without_time()
+            .with_writer(move || writer.clone())
+            .finish();
+        let output = future.with_subscriber(subscriber).await;
+        let logs = String::from_utf8(buffer.0.lock().unwrap().clone()).unwrap();
+        (output, logs)
+    }
+
+    /// Returns the single terminal recovery warning in `logs`.
+    pub(crate) fn stop_warning(logs: &str) -> &str {
+        let mut lines = logs
+            .lines()
+            .filter(|line| line.contains("Operation recovery stopped"));
+        let line = lines.next().expect("no terminal recovery warning");
+        assert!(lines.next().is_none(), "duplicate terminal warning: {logs}");
+        line
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use crate::EventHubsError;
 
-    use super::*;
+    use super::{
+        test_support::{capture_warnings, stop_warning, ManualClock},
+        *,
+    };
     use azure_core_test::{recorded, TestContext};
     use std::{
+        future::Future,
         result,
-        sync::atomic::{AtomicUsize, Ordering},
+        sync::{
+            atomic::{AtomicUsize, Ordering},
+            Arc,
+        },
     };
     use tracing::info;
 
@@ -351,5 +620,96 @@ mod tests {
         assert_eq!(result.unwrap_err(), "I told you not to retry");
         assert_eq!(attempts.load(Ordering::SeqCst), 3);
         Ok(())
+    }
+
+    type Counter = Arc<AtomicUsize>;
+
+    fn count_recovery(
+        recoveries: Counter,
+        _: ErrorRecoveryAction,
+    ) -> Pin<Box<dyn Future<Output = result::Result<(), String>> + Send>> {
+        recoveries.fetch_add(1, Ordering::SeqCst);
+        Box::pin(async { Ok(()) })
+    }
+
+    fn fail_recovery(
+        _: Counter,
+        _: ErrorRecoveryAction,
+    ) -> Pin<Box<dyn Future<Output = result::Result<(), String>> + Send>> {
+        Box::pin(async { Err(String::from("reconnect failed")) })
+    }
+
+    fn reconnect_link(_: &String) -> ErrorRecoveryAction {
+        ErrorRecoveryAction::ReconnectLink
+    }
+
+    /// Fails the first attempt after a 120 s wait and succeeds after that.
+    async fn slow_first_failure(
+        budget_start: BudgetStart,
+        recover: RecoveryOperation<Counter, String>,
+    ) -> (result::Result<usize, String>, usize, String) {
+        let clock = ManualClock::new();
+        let attempts = AtomicUsize::new(0);
+        let recoveries = Counter::default();
+        let (result, logs) = capture_warnings(recover_with_policy(
+            || {
+                let attempt = attempts.fetch_add(1, Ordering::SeqCst);
+                let clock = clock.clone();
+                async move {
+                    if attempt > 0 {
+                        return Ok(attempt);
+                    }
+                    clock.advance(StdDuration::from_secs(120));
+                    Err(String::from("link closed"))
+                }
+            },
+            &RetryOptions::default(),
+            reconnect_link,
+            Some(recover),
+            Some(recoveries.clone()),
+            RecoveryPolicy {
+                budget_start,
+                log_context: RecoveryLogContext::default(),
+                clock: &*clock,
+            },
+        ))
+        .await;
+        (result, recoveries.load(Ordering::SeqCst), logs)
+    }
+
+    // Send, management, and authorization operations keep their behavior: the
+    // first attempt counts, so a slow attempt that fails stops at once.
+    #[tokio::test]
+    async fn operation_start_budget_includes_first_attempt() {
+        let (result, recoveries, logs) =
+            slow_first_failure(BudgetStart::OperationStart, count_recovery).await;
+        assert_eq!(result.unwrap_err(), "link closed");
+        assert_eq!(recoveries, 0);
+        let warning = stop_warning(&logs);
+        assert!(
+            warning.contains("stop_reason=elapsed_budget_exhausted"),
+            "{warning}"
+        );
+        assert!(warning.contains("retries_attempted=0"), "{warning}");
+        assert!(warning.contains("recovery_elapsed=120s"), "{warning}");
+        assert!(warning.contains("max_total_elapsed=60s"), "{warning}");
+        assert!(!warning.contains("receive_wait_elapsed"), "{warning}");
+    }
+
+    #[tokio::test]
+    async fn first_failure_budget_excludes_first_attempt() {
+        let (result, recoveries, _) =
+            slow_first_failure(BudgetStart::FirstFailure, count_recovery).await;
+        assert_eq!(result.unwrap(), 1);
+        assert_eq!(recoveries, 1);
+    }
+
+    #[tokio::test]
+    async fn failed_recovery_action_is_the_stop_reason() {
+        let (result, _, logs) = slow_first_failure(BudgetStart::FirstFailure, fail_recovery).await;
+        assert_eq!(result.unwrap_err(), "reconnect failed");
+        let warning = stop_warning(&logs);
+        assert!(warning.contains("stop_reason=recovery_failed"), "{warning}");
+        assert!(warning.contains("receive_wait_elapsed=120s"), "{warning}");
     }
 }

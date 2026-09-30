@@ -1,5 +1,11 @@
 # Release History
 
+## 0.18.0 (Unreleased)
+
+### Bugs Fixed
+
+- A receive no longer charges its wait for an event to the recovery budget. The `RetryOptions::max_total_elapsed` time now starts at the first failure, so a partition that waited longer than the limit before a recoverable error, such as a dropped session, now recovers instead of returning the error. The terminal recovery warning now reports the stop reason, the retry count and elapsed time with their limits, the receive wait, and the connection and partition IDs.
+
 ## 0.17.0 (2026-09-14)
 
 ### Breaking Changes

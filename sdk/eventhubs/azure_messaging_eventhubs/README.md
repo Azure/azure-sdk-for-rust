@@ -411,6 +411,21 @@ Events follow a consistent level policy so you can pick the verbosity you need:
   map updates.
 - `trace` - very-high-frequency or per-message detail, including the hot send path.
 
+When a retried operation returns an error, the SDK logs one `warn` event, `Operation recovery
+stopped, returning error.`, with these fields:
+
+- `stop_reason` - the decision that ended recovery: `elapsed_budget_exhausted`,
+  `retries_exhausted`, `non_recoverable`, `recovery_failed`, or `recovery_unavailable`.
+- `retries_attempted` and `max_retries` - the retries that ran and the configured limit.
+- `recovery_elapsed` and `max_total_elapsed` - the time charged to the elapsed-time budget and
+  its configured limit. For a receive, this time starts at the first failure. For other
+  operations, it starts with the first attempt.
+- `receive_wait_elapsed` - receive only: the time that the receive waited for an event before the
+  first failure. This time is not charged to the budget.
+- `connection_id` and `partition_id` - the receiver that stopped, present on receive events at
+  every level.
+- `err` - the error that the operation returns.
+
 ## Contributing
 
 See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.

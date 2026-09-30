@@ -603,6 +603,7 @@ impl RecoverableConnection {
         source_url: &Url,
         message_source: AmqpSource,
         receiver_options: AmqpReceiverOptions,
+        partition_id: &str,
         timeout: Option<Duration>,
     ) -> Result<RecoverableReceiver> {
         self.ensure_receiver(source_url, &message_source, &receiver_options)
@@ -613,6 +614,8 @@ impl RecoverableConnection {
             receiver_options,
             message_source,
             source_url.clone(),
+            self.get_connection_id().to_string(),
+            partition_id.to_string(),
             timeout,
         ))
     }
