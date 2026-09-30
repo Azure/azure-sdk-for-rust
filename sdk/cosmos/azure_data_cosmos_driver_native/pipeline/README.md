@@ -151,7 +151,7 @@ The native-driver pipeline is not part of the automatic pull-request pipeline.
 Authorized reviewers can use `/azp run` on a pull request to validate it. Final
 publication requires a separate manual run of the registered pipeline using the
 immutable native release tag as the source ref. See the
-[release guide](../docs/RELEASE_GUIDE.md).
+[release guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/docs/RELEASE_GUIDE.md).
 
 The publication stage runs only after a successful manual build of an
 `azure_data_cosmos_driver_native@X.Y.Z` tag. Before building, the pipeline
