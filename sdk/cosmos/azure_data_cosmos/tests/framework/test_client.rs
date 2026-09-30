@@ -178,7 +178,7 @@ fn setup_dns_failure(error: &CosmosError) -> bool {
     false
 }
 
-/// Retries setup for up to 30 seconds after the first DNS failure, preserving the last error.
+/// Retries resource setup/cleanup for 30 seconds after the first DNS failure, preserving the error.
 /// Never use this to replay a test body or an assertion.
 async fn retry_setup_dns<T, F, Fut>(phase: &str, mut operation: F) -> azure_data_cosmos::Result<T>
 where
@@ -206,6 +206,21 @@ where
         }
     }
     Err(error)
+}
+
+fn combine_test_and_cleanup_results(
+    test: Result<(), Box<dyn Error>>,
+    cleanup: Result<(), Box<dyn Error>>,
+) -> Result<(), Box<dyn Error>> {
+    match (test, cleanup) {
+        (Err(error), cleanup) => {
+            if let Err(cleanup_error) = cleanup {
+                eprintln!("Test cleanup also failed: {cleanup_error}");
+            }
+            Err(error)
+        }
+        (Ok(()), cleanup) => cleanup,
+    }
 }
 
 async fn retry_container_readiness<T, E, F, Fut, TimeoutError, ShouldRetry>(
@@ -1055,9 +1070,9 @@ impl TestClient {
             .await;
 
             // Always cleanup, even if test timed out
-            run.cleanup().await?;
+            let cleanup_result = run.cleanup().await;
 
-            match result {
+            let test_result = match result {
                 Ok(test_result) => {
                     if let Err(e) = &test_result {
                         if e.downcast_ref::<super::InconclusiveError>().is_some() {
@@ -1071,7 +1086,8 @@ impl TestClient {
                     test_result
                 }
                 Err(_) => Err(format!("Test timed out after {} seconds", timeout.as_secs()).into()),
-            }
+            };
+            combine_test_and_cleanup_results(test_result, cleanup_result)
         } else if test_mode == CosmosTestMode::Required {
             panic!("Cosmos Test Mode is 'required' but no connection string was provided in the AZURE_COSMOS_CONNECTION_STRING environment variable.");
         } else {
@@ -1348,8 +1364,7 @@ impl TestRunContext {
         }
     }
 
-    /// Creates a container with exponential backoff retries on 429 (Too Many Requests) errors.
-    /// This is useful for tests where rate limiting may cause transient failures.
+    /// Creates a test container with backoff on 429 and bounded DNS recovery during setup.
     pub async fn create_container(
         &self,
         db_client: &DatabaseClient,
@@ -1360,9 +1375,10 @@ impl TestRunContext {
         const MAX_BACKOFF: Duration = Duration::from_secs(10);
 
         loop {
-            match db_client
-                .create_container(properties.clone(), options.clone())
-                .await
+            match retry_setup_dns("test container creation", || {
+                db_client.create_container(properties.clone(), options.clone())
+            })
+            .await
             {
                 Ok(response) => {
                     let created = response.into_model()?;
@@ -1378,15 +1394,18 @@ impl TestRunContext {
                 }
                 Err(e) if e.status().status_code() == StatusCode::Conflict => {
                     // Container already exists, delete and recreate it, then return a client
-                    let container_client = db_client
-                        .container_client(properties.id.as_ref(), None)
+                    let container_client = retry_setup_dns("test container resolution", || {
+                        db_client.container_client(properties.id.as_ref(), None)
+                    })
+                    .await?;
+                    retry_setup_dns("test container reset", || container_client.delete(None))
                         .await?;
-                    container_client.delete(None).await?;
 
                     // recreate
-                    let response = db_client
-                        .create_container(properties.clone(), options.clone())
-                        .await?;
+                    let response = retry_setup_dns("test container recreation", || {
+                        db_client.create_container(properties.clone(), options.clone())
+                    })
+                    .await?;
                     let created = response.into_model()?;
                     return Self::wait_for_container_ready(db_client, created.id.as_ref()).await;
                 }
@@ -1399,8 +1418,8 @@ impl TestRunContext {
     /// test client's metadata and data-plane paths.
     ///
     /// Cosmos can return `404/1013 CollectionCreateInProgress` after a create
-    /// request succeeds. Only that explicitly transient status is retried;
-    /// authorization, routing, and all other errors fail immediately.
+    /// request succeeds. That status and DNS failures are retried;
+    /// authorization and other service errors fail immediately.
     pub(crate) async fn wait_for_container_ready(
         db_client: &DatabaseClient,
         container_id: &str,
@@ -1409,11 +1428,14 @@ impl TestRunContext {
         const POLL_INTERVAL: Duration = Duration::from_millis(500);
 
         for attempt in 0..MAX_ATTEMPTS {
-            let error = match db_client.container_client(container_id, None).await {
-                Ok(container_client) => match container_client.read(None).await {
-                    Ok(_) => return Ok(container_client),
-                    Err(error) => error,
-                },
+            let error = match retry_setup_dns("test container readiness", || async {
+                let container_client = db_client.container_client(container_id, None).await?;
+                container_client.read(None).await?;
+                Ok(container_client)
+            })
+            .await
+            {
+                Ok(container_client) => return Ok(container_client),
                 Err(error) => error,
             };
 
@@ -1915,31 +1937,40 @@ impl TestRunContext {
     /// Cleans up test resources.
     ///
     /// This should be called at the end of a test run to delete any databases created during the test.
-    /// If using [`TestClient::run`], this will be called automatically.
+    /// If using [`TestClient::run`], this runs automatically with bounded DNS recovery.
     pub async fn cleanup(&self) -> Result<(), Box<dyn std::error::Error>> {
         let query = Query::from(format!(
             "SELECT * FROM root r WHERE r.id LIKE 'auto-test-{}'",
             self.run_id
         ));
-        let mut pager = self
-            .management_client()
-            .query_databases(query, None)
-            .await?;
-        let mut ids = Vec::new();
-        while let Some(db) = pager.try_next().await? {
-            if let Some(id) = db.id {
-                ids.push(id);
+        let ids = retry_setup_dns("cleanup database enumeration", || async {
+            let mut pager = self
+                .management_client()
+                .query_databases(query.clone(), None)
+                .await?;
+            let mut ids = Vec::new();
+            while let Some(db) = pager.try_next().await? {
+                if let Some(id) = db.id {
+                    ids.push(id);
+                }
             }
-        }
+            Ok(ids)
+        })
+        .await?;
 
         // Now that we have a list of databases created by this test, we delete them.
         // We COULD choose not to delete them and instead validate that they were deleted, but this is what I've gone with for now.
         for id in ids {
             println!("Deleting left-over database: {}", id);
-            self.management_client()
-                .database_client(&id)
-                .delete(None)
-                .await?;
+            let database = self.management_client().database_client(&id);
+            retry_setup_dns("cleanup database deletion", || async {
+                match database.delete(None).await {
+                    Ok(_) => Ok(()),
+                    Err(error) if error.status().status_code() == StatusCode::NotFound => Ok(()),
+                    Err(error) => Err(error),
+                }
+            })
+            .await?;
         }
         Ok(())
     }
@@ -2083,8 +2114,8 @@ pub async fn build_aad_client_from_env(
 #[cfg(test)]
 mod tests {
     use super::{
-        aad_token_invalid_issuer, effective_binary_encoding, item_not_found,
-        rbac_name_based_data_not_ready, retry_container_readiness, retry_setup_dns,
+        aad_token_invalid_issuer, combine_test_and_cleanup_results, effective_binary_encoding,
+        item_not_found, rbac_name_based_data_not_ready, retry_container_readiness, retry_setup_dns,
         satellite_probe_should_retry, setup_dns_failure, transient_satellite_readiness_error,
         AuthMode, BinaryEncodingOptions, SETUP_DNS_TIMEOUT,
     };
@@ -2102,6 +2133,135 @@ mod tests {
         },
         time::Duration,
     };
+
+    #[test]
+    fn cleanup_preserves_test_failure_and_fails_otherwise_successful_tests() {
+        for (test_fails, cleanup_fails) in
+            [(false, false), (false, true), (true, false), (true, true)]
+        {
+            let test = if test_fails {
+                Err("original test failure".into())
+            } else {
+                Ok(())
+            };
+            let cleanup = if cleanup_fails {
+                Err("cleanup failure".into())
+            } else {
+                Ok(())
+            };
+            let result = combine_test_and_cleanup_results(test, cleanup);
+            if test_fails {
+                assert_eq!(result.unwrap_err().to_string(), "original test failure");
+            } else if cleanup_fails {
+                assert_eq!(result.unwrap_err().to_string(), "cleanup failure");
+            } else {
+                result.unwrap();
+            }
+        }
+    }
+
+    #[cfg(feature = "__internal_in_memory_emulator")]
+    mod resource_dns {
+        use super::super::TestRunContext;
+        use azure_core::{credentials::Secret, http::StatusCode};
+        use azure_data_cosmos::{
+            fault_injection::{
+                CustomResponseBuilder, FaultInjectionResultBuilder, FaultInjectionRuleBuilder,
+            },
+            models::ContainerProperties,
+            options::Region,
+            AccountReference, CosmosClient, CosmosRuntimeBuilder, RoutingStrategy,
+        };
+        use azure_data_cosmos_driver::{
+            error::status_codes,
+            in_memory_emulator::{InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion},
+        };
+        use std::{sync::Arc, time::Duration};
+
+        #[tokio::test(start_paused = true)]
+        async fn container_setup_and_cleanup_recover_from_dns() {
+            let rule = Arc::new(
+                FaultInjectionRuleBuilder::new(
+                    "resource-dns",
+                    FaultInjectionResultBuilder::new()
+                        .with_custom_response(
+                            CustomResponseBuilder::new(StatusCode::ServiceUnavailable)
+                                .with_sub_status(
+                                    status_codes::substatus::TRANSPORT_DNS_FAILED.value(),
+                                )
+                                .build(),
+                        )
+                        .build(),
+                )
+                .build(),
+            );
+            rule.disable();
+            let endpoint = "https://eastus.emulator.local";
+            let emulator = Arc::new(InMemoryEmulatorHttpClient::new(
+                VirtualAccountConfig::new(vec![VirtualRegion::new(
+                    "East US",
+                    endpoint.parse().unwrap(),
+                )])
+                .unwrap(),
+            ));
+            let client = CosmosClient::builder()
+                .with_runtime(
+                    CosmosRuntimeBuilder::from(
+                        emulator.runtime_builder_with_fault_rules(vec![rule.clone()]),
+                    )
+                    .build()
+                    .await
+                    .unwrap(),
+                )
+                .build(
+                    AccountReference::with_authentication_key(
+                        endpoint.parse().unwrap(),
+                        Secret::new("dGVzdGtleQ=="),
+                    ),
+                    RoutingStrategy::ProximityTo(Region::EAST_US),
+                )
+                .await
+                .unwrap();
+            let run = TestRunContext::new(client, None, None, false);
+            let database = run.create_db().await.unwrap();
+
+            for cleanup in [false, true] {
+                let hits = rule.hit_count();
+                rule.enable();
+                let recover = rule.clone();
+                let recovery = tokio::spawn(async move {
+                    tokio::time::sleep(Duration::from_secs(2)).await;
+                    recover.disable();
+                });
+                let start = tokio::time::Instant::now();
+                if cleanup {
+                    run.cleanup().await.unwrap();
+                } else {
+                    let container = run
+                        .create_container(
+                            &database,
+                            ContainerProperties::new("container", "/pk".into()),
+                            None,
+                        )
+                        .await
+                        .unwrap();
+                    assert_eq!(container.read(None).await.unwrap().status(), StatusCode::Ok);
+                }
+                recovery.await.unwrap();
+                assert!(rule.hit_count() > hits);
+                assert!(start.elapsed() >= Duration::from_secs(2));
+            }
+            assert_eq!(
+                database
+                    .read(None)
+                    .await
+                    .unwrap_err()
+                    .status()
+                    .status_code(),
+                StatusCode::NotFound,
+            );
+        }
+    }
 
     fn dns_error() -> CosmosError {
         CosmosError::builder()
