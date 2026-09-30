@@ -118,7 +118,7 @@ function New-ApiFile(
   $manifestPath = $package.manifest_path
   $generateApiManifestPath = [System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'generate_api', 'Cargo.toml')
   $reviewArgument = $Format -eq 'markdown' ? ' --review' : ''
-  $command = "cargo run --manifest-path `"$generateApiManifestPath`" -- --manifest-path `"$manifestPath`" --format $Format --output `"$OutputDirectory`"$reviewArgument"
+  $command = "cargo run --manifest-path `"$generateApiManifestPath`" -- --manifest-path `"$manifestPath`" --format $Format --output-dir `"$OutputDirectory`"$reviewArgument"
   Invoke-LoggedCommand $command -GroupOutput | Out-Host
 
   $fileName = switch ($Format) {

@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 use clap::{Parser, ValueEnum};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Parser)]
 #[command(
@@ -28,8 +28,12 @@ struct Args {
     check: bool,
 
     /// Directory where generated files will be written. Defaults to the crate directory.
+    #[arg(long = "output-dir", alias = "output", value_name = "DIR")]
+    output_dir: Option<PathBuf>,
+
+    /// Directory where Markdown review state is written. Defaults to --output-dir.
     #[arg(long, value_name = "DIR")]
-    output: Option<PathBuf>,
+    working_dir: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone)]
@@ -39,6 +43,7 @@ pub(crate) struct Request {
     pub(crate) review: bool,
     pub(crate) check: bool,
     pub(crate) output_dir: Option<PathBuf>,
+    pub(crate) working_dir: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, ValueEnum)]
@@ -64,6 +69,19 @@ impl OutputFormat {
     }
 }
 
+impl Request {
+    pub(crate) fn output_dir<'a>(&'a self, package_dir: &'a Path) -> &'a Path {
+        self.output_dir.as_deref().unwrap_or(package_dir)
+    }
+
+    pub(crate) fn working_dir<'a>(&'a self, package_dir: &'a Path) -> &'a Path {
+        self.working_dir
+            .as_deref()
+            .or(self.output_dir.as_deref())
+            .unwrap_or(package_dir)
+    }
+}
+
 pub(crate) fn parse() -> Result<Request, String> {
     let args = Args::parse();
     Request::try_from(args)
@@ -77,12 +95,19 @@ impl TryFrom<Args> for Request {
             return Err("--review can only be used with --format markdown".to_string());
         }
 
+        if args.working_dir.is_some() && (!args.review || args.format != OutputFormat::Markdown) {
+            return Err(
+                "--working-dir can only be used with --format markdown --review".to_string(),
+            );
+        }
+
         Ok(Self {
             manifest_path: args.manifest_path,
             format: args.format,
             review: args.review,
             check: args.check,
-            output_dir: args.output,
+            output_dir: args.output_dir,
+            working_dir: args.working_dir,
         })
     }
 }
