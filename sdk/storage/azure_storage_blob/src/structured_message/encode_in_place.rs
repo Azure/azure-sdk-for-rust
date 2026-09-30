@@ -39,7 +39,7 @@ pub fn wrap_body_with_structured_message(
     }
     .as_bytes();
     let segment_header = smv1::SegmentHeader {
-        segment_number: 0,
+        segment_number: smv1::INIT_SEGMENT_NUM,
         content_length: body_len,
     }
     .as_bytes();
@@ -86,7 +86,7 @@ pub fn encode_bytes_in_structured_message(
     sequence.push(stream_header);
     for (i, (segment, crc)) in segments_with_checksums.iter().enumerate() {
         let segment_header = smv1::SegmentHeader {
-            segment_number: i as u16,
+            segment_number: i as u16 + smv1::INIT_SEGMENT_NUM,
             content_length: segment.len() as u64,
         }
         .as_bytes();
@@ -150,7 +150,7 @@ mod tests {
                 &dst[smv1::STREAM_HEADER_LENGTH
                     ..smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH],
                 smv1::SegmentHeader {
-                    segment_number: 0,
+                    segment_number: 1,
                     content_length: DATA_LEN as u64,
                 }
                 .as_bytes()
@@ -309,7 +309,7 @@ mod tests {
             &dst[smv1::STREAM_HEADER_LENGTH
                 ..smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH],
             smv1::SegmentHeader {
-                segment_number: 0,
+                segment_number: 1,
                 content_length: DATA_LEN as u64,
             }
             .as_bytes()
@@ -363,37 +363,12 @@ mod tests {
         );
         dst_offset += smv1::STREAM_HEADER_LENGTH;
 
-        // check segment 0 header
-        assert_eq!(
-            &dst[dst_offset..dst_offset + smv1::SEGMENT_HEADER_LENGTH],
-            smv1::SegmentHeader {
-                segment_number: 0,
-                content_length: SEGMENT_0_LEN as u64,
-            }
-            .as_bytes()
-        );
-        dst_offset += smv1::SEGMENT_HEADER_LENGTH;
-
-        // check segment 0 content
-        assert_eq!(
-            &dst[dst_offset..dst_offset + SEGMENT_0_LEN],
-            &data[..SEGMENT_0_LEN],
-        );
-        dst_offset += SEGMENT_0_LEN;
-
-        // check segment 0 footer
-        assert_eq!(
-            &dst[dst_offset..dst_offset + 8],
-            &expected_segment_0_crc.to_le_bytes()[..],
-        );
-        dst_offset += 8;
-
         // check segment 1 header
         assert_eq!(
             &dst[dst_offset..dst_offset + smv1::SEGMENT_HEADER_LENGTH],
             smv1::SegmentHeader {
                 segment_number: 1,
-                content_length: (DATA_LEN - SEGMENT_0_LEN) as u64,
+                content_length: SEGMENT_0_LEN as u64,
             }
             .as_bytes()
         );
@@ -401,12 +376,37 @@ mod tests {
 
         // check segment 1 content
         assert_eq!(
+            &dst[dst_offset..dst_offset + SEGMENT_0_LEN],
+            &data[..SEGMENT_0_LEN],
+        );
+        dst_offset += SEGMENT_0_LEN;
+
+        // check segment 1 footer
+        assert_eq!(
+            &dst[dst_offset..dst_offset + 8],
+            &expected_segment_0_crc.to_le_bytes()[..],
+        );
+        dst_offset += 8;
+
+        // check segment 2 header
+        assert_eq!(
+            &dst[dst_offset..dst_offset + smv1::SEGMENT_HEADER_LENGTH],
+            smv1::SegmentHeader {
+                segment_number: 2,
+                content_length: (DATA_LEN - SEGMENT_0_LEN) as u64,
+            }
+            .as_bytes()
+        );
+        dst_offset += smv1::SEGMENT_HEADER_LENGTH;
+
+        // check segment 2 content
+        assert_eq!(
             &dst[dst_offset..dst_offset + DATA_LEN - SEGMENT_0_LEN],
             &data[SEGMENT_0_LEN..],
         );
         dst_offset += DATA_LEN - SEGMENT_0_LEN;
 
-        // check segment 1 footer
+        // check segment 2 footer
         assert_eq!(
             &dst[dst_offset..dst_offset + 8],
             &expected_segment_1_crc.to_le_bytes()[..],

@@ -21,6 +21,9 @@ pub(crate) const STREAM_HEADER_LENGTH: usize = 13;
 /// 2 bytes for segment number, 8 bytes for content length.
 pub(crate) const SEGMENT_HEADER_LENGTH: usize = 10;
 
+/// Defined segment number for the first segment.
+pub(crate) const INIT_SEGMENT_NUM: u16 = 1;
+
 bitflags! {
     #[derive(Clone, Copy, Default, PartialEq, Eq)]
     pub struct Flags: u16 {

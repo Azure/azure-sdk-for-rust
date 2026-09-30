@@ -41,13 +41,16 @@ pub struct SeekableStructuredMessageEncodingStream {
     /// This value should be reset on stream reset.
     content_read: u64,
 
-    /// Current segment index. This is tracked separately because the current segment index is often needed exactly on
+    /// Current segment index, the 0-indexed position of the current segment within the stream.
+    /// This is distinct from [Self::current_segment_num], which is 1-indexed.
+    ///
+    /// This is tracked separately because the current segment index is often needed exactly on
     /// the border of `content_read / segment_len` on both sides of the border.
     ///
     /// The value is modified when transitioning to the next segment (when `state` is set to
     /// `StructuredMetadata(SegmentHeader, _)`). Therefore, it will always reflect the correct segment while operating
     /// with `SegmentContent`, `StructuredMetadata(SegmentHeader, _)`, and `StructuredMetadata(SegmentFooter, _)`
-    current_segment: u16,
+    current_segment_idx: u16,
 
     /// Exact number of content bytes to encode per segment, excluding the final segment which may be smaller.
     ///
@@ -105,7 +108,7 @@ impl SeekableStructuredMessageEncodingStream {
             content,
             content_len,
             content_read: 0,
-            current_segment: 0,
+            current_segment_idx: 0,
             segment_len,
             segment_checksums: vec![None; segment_count as usize],
             state: StructuredMessageStateMachine::StructuredMetadata(
@@ -130,6 +133,12 @@ impl SeekableStructuredMessageEncodingStream {
             .div_ceil(self.segment_len)
             .try_into()
             .map_err(std::io::Error::other)
+    }
+
+    /// Gets the segment number, the 1-indexed value to be encoded into the segment header.
+    /// This is distinct from [Self::current_segment_idx], which is 0-indexed.
+    fn current_segment_num(&self) -> u16 {
+        self.current_segment_idx + smv1::INIT_SEGMENT_NUM
     }
 
     /// Composes the overall checksum from individual segment checksums.
@@ -176,7 +185,7 @@ impl SeekableStructuredMessageEncodingStream {
             // effectively we will never need to actually extend the vector, as it is initialized
             // upfront with the encoded segment count, but the most harm it does is deny a fast
             // fail and it buys us a safe, guaranteed successful get()
-            .get_or_extend_mut(self.current_segment as usize, None);
+            .get_or_extend_mut(self.current_segment_idx as usize, None);
         let segment_crc: u64 =
             // if there's a cached value, always use it
             if let Some(cached_crc) = segment_checksum_cache_slot {
@@ -272,13 +281,14 @@ impl AsyncRead for SeekableStructuredMessageEncodingStream {
                                     )
                                 // otherwise move to the next segment header
                                 } else {
-                                    this.current_segment = (this.content_read / this.segment_len)
+                                    this.current_segment_idx = (this.content_read
+                                        / this.segment_len)
                                         .try_into()
                                         .map_err(std::io::Error::other)?;
                                     StructuredMessageStateMachine::StructuredMetadata(
                                         StructuredMetadata::SegmentHeader,
                                         smv1::SegmentHeader {
-                                            segment_number: this.current_segment,
+                                            segment_number: this.current_segment_num(),
                                             content_length: min(
                                                 this.segment_len,
                                                 this.content_len - this.content_read,
@@ -407,7 +417,7 @@ mod tests {
             &dst[smv1::STREAM_HEADER_LENGTH
                 ..smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH],
             smv1::SegmentHeader {
-                segment_number: 0,
+                segment_number: 1,
                 content_length: DATA_LEN as u64,
             }
             .as_bytes()
@@ -465,37 +475,12 @@ mod tests {
         );
         dst_offset += smv1::STREAM_HEADER_LENGTH;
 
-        // check segment 0 header
-        assert_eq!(
-            &dst[dst_offset..dst_offset + smv1::SEGMENT_HEADER_LENGTH],
-            smv1::SegmentHeader {
-                segment_number: 0,
-                content_length: SEGMENT_0_LEN as u64,
-            }
-            .as_bytes()
-        );
-        dst_offset += smv1::SEGMENT_HEADER_LENGTH;
-
-        // check segment 0 content
-        assert_eq!(
-            &dst[dst_offset..dst_offset + SEGMENT_0_LEN],
-            &data[..SEGMENT_0_LEN],
-        );
-        dst_offset += SEGMENT_0_LEN;
-
-        // check segment 0 footer
-        assert_eq!(
-            &dst[dst_offset..dst_offset + 8],
-            &expected_segment_0_crc.to_le_bytes()[..],
-        );
-        dst_offset += 8;
-
         // check segment 1 header
         assert_eq!(
             &dst[dst_offset..dst_offset + smv1::SEGMENT_HEADER_LENGTH],
             smv1::SegmentHeader {
                 segment_number: 1,
-                content_length: (DATA_LEN - SEGMENT_0_LEN) as u64,
+                content_length: SEGMENT_0_LEN as u64,
             }
             .as_bytes()
         );
@@ -503,12 +488,37 @@ mod tests {
 
         // check segment 1 content
         assert_eq!(
+            &dst[dst_offset..dst_offset + SEGMENT_0_LEN],
+            &data[..SEGMENT_0_LEN],
+        );
+        dst_offset += SEGMENT_0_LEN;
+
+        // check segment 1 footer
+        assert_eq!(
+            &dst[dst_offset..dst_offset + 8],
+            &expected_segment_0_crc.to_le_bytes()[..],
+        );
+        dst_offset += 8;
+
+        // check segment 2 header
+        assert_eq!(
+            &dst[dst_offset..dst_offset + smv1::SEGMENT_HEADER_LENGTH],
+            smv1::SegmentHeader {
+                segment_number: 2,
+                content_length: (DATA_LEN - SEGMENT_0_LEN) as u64,
+            }
+            .as_bytes()
+        );
+        dst_offset += smv1::SEGMENT_HEADER_LENGTH;
+
+        // check segment 2 content
+        assert_eq!(
             &dst[dst_offset..dst_offset + DATA_LEN - SEGMENT_0_LEN],
             &data[SEGMENT_0_LEN..],
         );
         dst_offset += DATA_LEN - SEGMENT_0_LEN;
 
-        // check segment 1 footer
+        // check segment 2 footer
         assert_eq!(
             &dst[dst_offset..dst_offset + 8],
             &expected_segment_1_crc.to_le_bytes()[..],
