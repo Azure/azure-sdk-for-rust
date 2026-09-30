@@ -91,11 +91,11 @@ impl StreamHeader {
         })
     }
 
-    pub(crate) fn as_bytes(&self) -> Bytes {
+    pub(crate) fn to_vec(&self) -> Vec<u8> {
         let mut buffer = vec![0u8; STREAM_HEADER_LENGTH];
         // SAFETY: The buffer has been created above with the required length.
         unsafe { self.write_unchecked(&mut buffer) };
-        buffer.into()
+        buffer
     }
 
     pub(crate) fn write(&self, buffer: &mut [u8]) -> Result<()> {
@@ -129,6 +129,18 @@ impl TryFrom<&[u8]> for StreamHeader {
 
     fn try_from(buffer: &[u8]) -> Result<Self> {
         Self::parse(buffer)
+    }
+}
+
+impl From<StreamHeader> for Vec<u8> {
+    fn from(value: StreamHeader) -> Self {
+        value.to_vec()
+    }
+}
+
+impl From<StreamHeader> for Bytes {
+    fn from(value: StreamHeader) -> Self {
+        value.to_vec().into()
     }
 }
 
@@ -176,11 +188,11 @@ impl SegmentHeader {
         })
     }
 
-    pub(crate) fn as_bytes(&self) -> Bytes {
+    pub(crate) fn to_vec(&self) -> Vec<u8> {
         let mut buffer = vec![0u8; SEGMENT_HEADER_LENGTH];
         // SAFETY: The buffer has been created above with the required length.
         unsafe { self.write_unchecked(&mut buffer) };
-        buffer.into()
+        buffer
     }
 
     pub(crate) fn write(&self, buffer: &mut [u8]) -> Result<()> {
@@ -208,6 +220,18 @@ impl TryFrom<&[u8]> for SegmentHeader {
 
     fn try_from(buffer: &[u8]) -> Result<Self> {
         Self::parse(buffer)
+    }
+}
+
+impl From<SegmentHeader> for Vec<u8> {
+    fn from(value: SegmentHeader) -> Self {
+        value.to_vec()
+    }
+}
+
+impl From<SegmentHeader> for Bytes {
+    fn from(value: SegmentHeader) -> Self {
+        value.to_vec().into()
     }
 }
 
