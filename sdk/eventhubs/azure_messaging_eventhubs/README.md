@@ -431,6 +431,13 @@ so the SDK starts a new recovery episode with a new retry count and a new budget
   every level.
 - `err` - the error that the operation returns.
 
+### Link attachment during recovery
+
+Connection recovery can replace a session while a sender or receiver prepares
+to attach. The SDK checks that preparation still belongs to the current recovery
+generation before attaching the link. Superseded preparation restarts against the
+current session, avoiding a duplicate link-name attachment on that session.
+
 ## Contributing
 
 See the [CONTRIBUTING.md] for details on building, testing, and contributing to these libraries.
