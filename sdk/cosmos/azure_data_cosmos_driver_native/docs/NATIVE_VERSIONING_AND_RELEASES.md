@@ -58,7 +58,12 @@ requires a new version.
 
 ## Changelog
 
-`CHANGELOG.md` sits beside `Cargo.toml`. Follow the existing Cosmos
+Maintained native release history begins with `0.2.0`, the first tracked native
+release boundary. Earlier `0.1.0` development is the bootstrap baseline and is
+not reconstructed entry by entry.
+
+The pull request that changes the FFI and increments `Cargo.toml` creates or
+finalizes that version's `CHANGELOG.md` section. Follow the existing Cosmos
 `Release History` format and describe host-visible changes.
 
 ```markdown
@@ -178,8 +183,8 @@ different toolchain or artifact.
 
 ## Adoption
 
-1. **Implemented here:** changelog, version agreement, annotated source-tag
-   validation, and the pre-`1.0.0` patch FFI gate.
+1. **Implemented here:** version agreement, annotated source-tag validation,
+   and the pre-`1.0.0` patch FFI gate.
 2. **Downstream:** publish one atomic driver release and platform tag set.
 3. **Host SDKs:** record and validate the selected native version.
 4. **Before `1.0.0`:** add stable additive/breaking FFI classification.

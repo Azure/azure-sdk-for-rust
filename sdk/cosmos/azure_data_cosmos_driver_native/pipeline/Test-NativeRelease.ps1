@@ -30,6 +30,7 @@ Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 
 $packageName = 'azure_data_cosmos_driver_native'
+$firstTrackedVersion = [version]'0.2.0'
 $crateRelativePath = 'sdk/cosmos/azure_data_cosmos_driver_native'
 $cratePath = [System.IO.Path]::Combine(
     $RepositoryRoot,
@@ -104,22 +105,33 @@ if ($headerVersion -ne $cargoVersion) {
     throw "Header version '$headerVersion' does not match Cargo version '$cargoVersion'."
 }
 
-$changelogContent = Get-Content $changelogPath -Raw
-$changelogMatch = [regex]::Match(
-    $changelogContent,
-    "(?m)^## $([regex]::Escape($cargoVersion)) \((Unreleased|\d{4}-\d{2}-\d{2})\)\s*$"
-)
-if (-not $changelogMatch.Success) {
-    throw "CHANGELOG.md must contain a '$cargoVersion' release heading."
-}
-
 $tagPrefix = "refs/tags/$packageName@"
 $isRelease = $SourceBranch -and $SourceBranch.StartsWith(
     $tagPrefix,
     [StringComparison]::Ordinal
 )
+$changelogMatch = $null
+if (Test-Path $changelogPath) {
+    $changelogContent = Get-Content $changelogPath -Raw
+    $changelogMatch = [regex]::Match(
+        $changelogContent,
+        "(?m)^## $([regex]::Escape($cargoVersion)) \((Unreleased|\d{4}-\d{2}-\d{2})\)\s*$"
+    )
+    if (-not $changelogMatch.Success) {
+        throw "CHANGELOG.md must contain a '$cargoVersion' release heading."
+    }
+}
+elseif ($isRelease -or $parsedVersion -ge $firstTrackedVersion) {
+    throw "CHANGELOG.md must contain a '$cargoVersion' release heading."
+}
+
 if (-not $isRelease) {
-    Write-Host "Validated native development version $cargoVersion."
+    if ($parsedVersion -lt $firstTrackedVersion) {
+        Write-Host "Validated native bootstrap version $cargoVersion."
+    }
+    else {
+        Write-Host "Validated native development version $cargoVersion."
+    }
     return
 }
 

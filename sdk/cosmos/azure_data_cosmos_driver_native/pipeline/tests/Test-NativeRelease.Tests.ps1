@@ -85,6 +85,40 @@ $Header
         $global:GitInvocations | Should -BeNullOrEmpty
     }
 
+    It 'accepts the pre-0.2 bootstrap baseline without a changelog' {
+        $root = New-ReleaseFixture -Version '0.1.0'
+        Remove-Item (
+            [System.IO.Path]::Combine(
+                $root,
+                'sdk',
+                'cosmos',
+                'azure_data_cosmos_driver_native',
+                'CHANGELOG.md'
+            )
+        )
+
+        {
+            & $ScriptPath -RepositoryRoot $root -GitInvoker $GitInvoker
+        } | Should -Not -Throw
+    }
+
+    It 'requires a changelog starting with version 0.2.0' {
+        $root = New-ReleaseFixture -Version '0.2.0'
+        Remove-Item (
+            [System.IO.Path]::Combine(
+                $root,
+                'sdk',
+                'cosmos',
+                'azure_data_cosmos_driver_native',
+                'CHANGELOG.md'
+            )
+        )
+
+        {
+            & $ScriptPath -RepositoryRoot $root -GitInvoker $GitInvoker
+        } | Should -Throw "*must contain a '0.2.0' release heading*"
+    }
+
     It 'rejects a header version that differs from Cargo' {
         $root = New-ReleaseFixture
         $headerPath = [System.IO.Path]::Combine(
