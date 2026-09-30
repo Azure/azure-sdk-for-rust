@@ -10,7 +10,7 @@
 //! sentinel that is cached for a cooldown period so the service is not stormed.
 
 use crate::{
-    cache::{AcquireFn, AutoRefreshingCache, ExpiringValue},
+    cache::{AcquireFn, AutoRefreshingCache, RefreshableValue},
     models::{AuthenticationType, CreateSessionConfiguration, CreateSessionResponse},
     BlobServiceClient, BlobServiceClientOptions,
 };
@@ -23,11 +23,7 @@ use azure_core::{
     time::{Duration, OffsetDateTime},
     Error, Result,
 };
-use std::{
-    collections::HashMap,
-    fmt,
-    sync::{Arc, Mutex},
-};
+use std::{fmt, sync::Arc};
 
 #[cfg(test)]
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -131,7 +127,7 @@ impl SessionTokenInfo {
     }
 }
 
-impl ExpiringValue for SessionTokenInfo {
+impl RefreshableValue for SessionTokenInfo {
     fn refresh_on(&self) -> OffsetDateTime {
         self.refresh_on
     }
@@ -184,9 +180,7 @@ pub trait SessionProvider: sealed::Sealed + fmt::Debug + Send + Sync {
 /// A [`SessionProvider`] that mints sessions with a [`TokenCredential`] and
 /// caches them per container.
 pub struct ContainerSessionProvider {
-    service_client: Arc<BlobServiceClient>,
-    refresh_buffer: Duration,
-    caches: Mutex<HashMap<String, AutoRefreshingCache<SessionTokenInfo>>>,
+    sessions: AutoRefreshingCache<String, SessionTokenInfo>,
 }
 
 impl fmt::Debug for ContainerSessionProvider {
@@ -216,36 +210,16 @@ impl ContainerSessionProvider {
     ) -> Result<Arc<Self>> {
         let endpoint = service_endpoint(service_url);
         let service_client = Arc::new(BlobServiceClient::new(endpoint, Some(credential), options)?);
-        Ok(Arc::new(Self {
-            service_client,
-            refresh_buffer: REFRESH_BUFFER,
-            caches: Mutex::new(HashMap::new()),
-        }))
-    }
-
-    /// Returns the per-container cache, creating it on first access.
-    fn cache_for(&self, container: &str) -> AutoRefreshingCache<SessionTokenInfo> {
-        let mut caches = self.caches.lock().unwrap();
-        if let Some(cache) = caches.get(container) {
-            return cache.clone();
-        }
-        let cache = self.build_cache(container);
-        caches.insert(container.to_string(), cache.clone());
-        cache
-    }
-
-    fn build_cache(&self, container: &str) -> AutoRefreshingCache<SessionTokenInfo> {
-        let service_client = self.service_client.clone();
-        let container = container.to_string();
-        let refresh_buffer = self.refresh_buffer;
-        let acquire: AcquireFn<SessionTokenInfo> = Arc::new(move || {
-            let service_client = service_client.clone();
-            let container = container.clone();
+        let acquire_client = service_client.clone();
+        let acquire: AcquireFn<String, SessionTokenInfo> = Arc::new(move |container| {
+            let service_client = acquire_client.clone();
             Box::pin(
-                async move { acquire_session(&service_client, &container, refresh_buffer).await },
+                async move { acquire_session(&service_client, &container, REFRESH_BUFFER).await },
             )
         });
-        AutoRefreshingCache::new(acquire, BACKGROUND_ACQUIRE_TIMEOUT)
+        Ok(Arc::new(Self {
+            sessions: AutoRefreshingCache::new(acquire, BACKGROUND_ACQUIRE_TIMEOUT),
+        }))
     }
 }
 
@@ -258,13 +232,13 @@ impl SessionProvider for ContainerSessionProvider {
                 "Could not determine the container name from the request URL.",
             )
         })?;
-        self.cache_for(&container).get().await
+        self.sessions.get(&container).await
     }
 
     async fn invalidate_session(&self, request: &Request, current: &SessionTokenInfo) {
         if let Some(container) = container_name(request.url()) {
-            self.cache_for(&container)
-                .invalidate_if_current(current)
+            self.sessions
+                .invalidate_if_current(&container, current)
                 .await;
         }
     }

@@ -1,11 +1,38 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use crate::generated::clients::{BlobServiceClient, BlobServiceClientOptions};
+pub use crate::generated::clients::BlobServiceClient;
 
 use crate::{BlobClient, BlobContainerClient, SessionOptions};
-use azure_core::{credentials::TokenCredential, http::Url, tracing, Result};
+use azure_core::{
+    credentials::TokenCredential,
+    fmt::SafeDebug,
+    http::{ClientOptions, Url},
+    tracing, Result,
+};
 use std::sync::Arc;
+
+/// Options used when creating a [`BlobServiceClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlobServiceClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Options for session token authentication.
+    pub session_options: Option<SessionOptions>,
+    /// Specifies the version of the operation to use for requests.
+    pub version: String,
+}
+
+impl Default for BlobServiceClientOptions {
+    fn default() -> Self {
+        let generated = crate::generated::clients::BlobServiceClientOptions::default();
+        Self {
+            client_options: generated.client_options,
+            session_options: None,
+            version: generated.version,
+        }
+    }
+}
 
 impl BlobServiceClient {
     /// Creates a new BlobServiceClient from a service URL.
@@ -29,45 +56,13 @@ impl BlobServiceClient {
                 format!("{service_url} is not a valid base URL."),
             ));
         }
-        let options = options.unwrap_or_default();
-        let pipeline = super::build_pipeline(&service_url, credential, None, &options)?;
-
-        Ok(Self {
-            endpoint: service_url,
-            pipeline,
-            version: options.version,
-        })
-    }
-
-    /// Creates a new BlobServiceClient that authenticates eligible blob downloads with session tokens.
-    ///
-    /// # Arguments
-    ///
-    /// * `service_url` - The full URL of the Azure storage account, for example `https://myaccount.blob.core.windows.net/`.
-    ///   The caller is responsible for percent-encoding the URL correctly; it will be used as-is.
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    /// * `session_options` - Configuration for session token authentication.
-    /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Blob.Service")]
-    pub fn new_with_session(
-        service_url: Url,
-        credential: Arc<dyn TokenCredential>,
-        session_options: SessionOptions,
-        options: Option<BlobServiceClientOptions>,
-    ) -> Result<Self> {
-        // Storage endpoints must be base URLs.
-        if service_url.cannot_be_a_base() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{service_url} is not a valid base URL."),
-            ));
-        }
-        let options = options.unwrap_or_default();
+        let mut options = options.unwrap_or_default();
         let pipeline = super::build_pipeline(
             &service_url,
-            Some(credential),
-            Some(&session_options),
-            &options,
+            credential,
+            options.session_options.as_ref(),
+            &mut options.client_options,
+            &options.version,
         )?;
 
         Ok(Self {

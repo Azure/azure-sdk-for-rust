@@ -1,10 +1,38 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use crate::generated::clients::{PageBlobClient, PageBlobClientOptions};
+pub use crate::generated::clients::PageBlobClient;
 
-use azure_core::{credentials::TokenCredential, http::Url, tracing, Result};
+use crate::SessionOptions;
+use azure_core::{
+    credentials::TokenCredential,
+    fmt::SafeDebug,
+    http::{ClientOptions, Url},
+    tracing, Result,
+};
 use std::sync::Arc;
+
+/// Options used when creating a [`PageBlobClient`].
+#[derive(Clone, SafeDebug)]
+pub struct PageBlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Options for session token authentication.
+    pub session_options: Option<SessionOptions>,
+    /// Specifies the version of the operation to use for requests.
+    pub version: String,
+}
+
+impl Default for PageBlobClientOptions {
+    fn default() -> Self {
+        let generated = crate::generated::clients::PageBlobClientOptions::default();
+        Self {
+            client_options: generated.client_options,
+            session_options: None,
+            version: generated.version,
+        }
+    }
+}
 
 impl PageBlobClient {
     /// Creates a new PageBlobClient from a blob URL.
@@ -29,8 +57,14 @@ impl PageBlobClient {
             ));
         }
 
-        let options = options.unwrap_or_default();
-        let pipeline = super::build_pipeline(&blob_url, credential, None, &options)?;
+        let mut options = options.unwrap_or_default();
+        let pipeline = super::build_pipeline(
+            &blob_url,
+            credential,
+            options.session_options.as_ref(),
+            &mut options.client_options,
+            &options.version,
+        )?;
 
         Ok(Self {
             endpoint: blob_url,

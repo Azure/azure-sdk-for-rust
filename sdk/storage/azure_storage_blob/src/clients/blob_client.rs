@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use crate::generated::clients::{BlobClient, BlobClientOptions};
+pub use crate::generated::clients::BlobClient;
 
 use crate::{
     generated::{
@@ -19,10 +19,35 @@ use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
-    http::{AsyncRawResponse, Etag, NoFormat, RequestContent, StatusCode, Url, UrlExt},
+    fmt::SafeDebug,
+    http::{
+        AsyncRawResponse, ClientOptions, Etag, NoFormat, RequestContent, StatusCode, Url, UrlExt,
+    },
     tracing, Bytes, Result,
 };
 use std::{ops::Range, sync::Arc};
+
+/// Options used when creating a [`BlobClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Options for session token authentication.
+    pub session_options: Option<SessionOptions>,
+    /// Specifies the version of the operation to use for requests.
+    pub version: String,
+}
+
+impl Default for BlobClientOptions {
+    fn default() -> Self {
+        let generated = crate::generated::clients::BlobClientOptions::default();
+        Self {
+            client_options: generated.client_options,
+            session_options: None,
+            version: generated.version,
+        }
+    }
+}
 
 impl BlobClient {
     /// Creates a new BlobClient from a blob URL.
@@ -47,46 +72,13 @@ impl BlobClient {
             ));
         }
 
-        let options = options.unwrap_or_default();
-        let pipeline = super::build_pipeline(&blob_url, credential, None, &options)?;
-
-        Ok(Self {
-            endpoint: blob_url,
-            pipeline,
-            version: options.version,
-        })
-    }
-
-    /// Creates a new BlobClient that authenticates eligible downloads with session tokens.
-    ///
-    /// # Arguments
-    ///
-    /// * `blob_url` - The full URL of the blob, for example `https://myaccount.blob.core.windows.net/mycontainer/myblob`.
-    ///   The caller is responsible for percent-encoding the URL correctly; it will be used as-is.
-    /// * `credential` - An implementation of [`TokenCredential`] that can provide an Entra ID token to use when authenticating.
-    /// * `session_options` - Configuration for session token authentication.
-    /// * `options` - Optional configuration for the client.
-    #[tracing::new("Storage.Blob.Blob")]
-    pub fn new_with_session(
-        blob_url: Url,
-        credential: Arc<dyn TokenCredential>,
-        session_options: SessionOptions,
-        options: Option<BlobClientOptions>,
-    ) -> Result<Self> {
-        // Storage endpoints must be base URLs.
-        if blob_url.cannot_be_a_base() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!("{blob_url} is not a valid base URL."),
-            ));
-        }
-
-        let options = options.unwrap_or_default();
+        let mut options = options.unwrap_or_default();
         let pipeline = super::build_pipeline(
             &blob_url,
-            Some(credential),
-            Some(&session_options),
-            &options,
+            credential,
+            options.session_options.as_ref(),
+            &mut options.client_options,
+            &options.version,
         )?;
 
         Ok(Self {

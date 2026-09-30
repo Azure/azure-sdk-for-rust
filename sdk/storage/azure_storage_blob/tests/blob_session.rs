@@ -169,15 +169,14 @@ async fn session_service_client(
         .var("AZURE_STORAGE_ACCOUNT_NAME", None)
         .as_str()
         .to_string();
-    let session_options = SessionOptions {
+    options.session_options = Some(SessionOptions {
         mode,
         account_name: Some(account_name),
         ..Default::default()
-    };
-    BlobServiceClient::new_with_session(
+    });
+    BlobServiceClient::new(
         Url::parse(&endpoint)?,
-        recording.credential(),
-        session_options,
+        Some(recording.credential()),
         Some(options),
     )
 }
@@ -207,15 +206,14 @@ fn shared_provider_client(
         &mut options.client_options,
     );
     options.client_options.transport = Some(transport);
-    let session_options = SessionOptions {
+    options.session_options = Some(SessionOptions {
         mode: SessionMode::Enabled,
         account_name: Some(account_name.to_string()),
         session_provider: Some(provider),
-    };
-    BlobServiceClient::new_with_session(
+    });
+    BlobServiceClient::new(
         Url::parse(&endpoint)?,
-        recording.credential(),
-        session_options,
+        Some(recording.credential()),
         Some(options),
     )
 }

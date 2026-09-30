@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use crate::generated::clients::{BlockBlobClient, BlockBlobClientOptions};
+pub use crate::generated::clients::BlockBlobClient;
 
 use crate::{
     generated::models::{
@@ -13,15 +13,39 @@ use crate::{
         BlockBlobClientUploadOptions, BlockBlobClientUploadResult, BlockLookupList,
     },
     partitioned_transfer::{self, PartitionedUploadBehavior},
+    SessionOptions,
 };
 use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
-    http::{Body, NoFormat, RequestContent, Url},
+    fmt::SafeDebug,
+    http::{Body, ClientOptions, NoFormat, RequestContent, Url},
     tracing, Bytes, Result, Uuid,
 };
 use futures::lock::Mutex;
 use std::sync::Arc;
+
+/// Options used when creating a [`BlockBlobClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlockBlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Options for session token authentication.
+    pub session_options: Option<SessionOptions>,
+    /// Specifies the version of the operation to use for requests.
+    pub version: String,
+}
+
+impl Default for BlockBlobClientOptions {
+    fn default() -> Self {
+        let generated = crate::generated::clients::BlockBlobClientOptions::default();
+        Self {
+            client_options: generated.client_options,
+            session_options: None,
+            version: generated.version,
+        }
+    }
+}
 
 impl BlockBlobClient {
     /// Creates a new BlockBlobClient from a block blob URL.
@@ -46,8 +70,14 @@ impl BlockBlobClient {
             ));
         }
 
-        let options = options.unwrap_or_default();
-        let pipeline = super::build_pipeline(&blob_url, credential, None, &options)?;
+        let mut options = options.unwrap_or_default();
+        let pipeline = super::build_pipeline(
+            &blob_url,
+            credential,
+            options.session_options.as_ref(),
+            &mut options.client_options,
+            &options.version,
+        )?;
 
         Ok(Self {
             endpoint: blob_url,

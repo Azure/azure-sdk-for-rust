@@ -43,46 +43,15 @@ pub use page_blob_client::{PageBlobClient, PageBlobClientOptions};
 /// The OAuth scope used for Entra ID authentication against Storage.
 const STORAGE_SCOPE: &str = "https://storage.azure.com/.default";
 
-/// The shape shared by every generated `*ClientOptions` type, which have no common type of their own.
-trait GeneratedClientOptions {
-    fn client_options(&self) -> &ClientOptions;
-    fn version(&self) -> &str;
-}
-
-macro_rules! impl_generated_client_options {
-    ($($t:ty),+ $(,)?) => {
-        $(impl GeneratedClientOptions for $t {
-            fn client_options(&self) -> &ClientOptions {
-                &self.client_options
-            }
-
-            fn version(&self) -> &str {
-                &self.version
-            }
-        })+
-    };
-}
-
-impl_generated_client_options!(
-    AppendBlobClientOptions,
-    BlobClientOptions,
-    BlobContainerClientOptions,
-    BlobServiceClientOptions,
-    BlockBlobClientOptions,
-    PageBlobClientOptions,
-);
-
-/// Returns a copy of `options` with Storage defaults applied: a transport that does
-/// not transparently decompress blob content, and the Storage logging allow lists.
-fn with_client_defaults(options: &ClientOptions) -> ClientOptions {
-    let mut options = options.clone();
+/// Applies Storage defaults: a transport that does not transparently decompress
+/// blob content, and the Storage logging allow lists.
+fn apply_client_defaults(options: &mut ClientOptions) {
     if options.transport.is_none() {
         options.transport = Some(Transport::new(new_http_client(Some(HttpClientOptions {
             automatic_decompression: false,
         }))));
     }
-    apply_storage_logging_defaults(&mut options);
-    options
+    apply_storage_logging_defaults(options);
 }
 
 /// Builds a client pipeline, sharing the configured transport with the session
@@ -91,22 +60,23 @@ fn build_pipeline(
     endpoint: &Url,
     credential: Option<Arc<dyn TokenCredential>>,
     session_options: Option<&SessionOptions>,
-    options: &impl GeneratedClientOptions,
+    client_options: &mut ClientOptions,
+    version: &str,
 ) -> Result<Pipeline> {
-    let client_options = with_client_defaults(options.client_options());
+    apply_client_defaults(client_options);
     // The session provider clones these, so it must get the defaulted copy rather than the raw options, or it ends up on a different transport than this pipeline.
     let per_retry_policies = build_auth_policies(
         endpoint,
         credential,
         session_options,
-        &client_options,
-        options.version(),
+        client_options,
+        version,
     )?;
 
     Ok(Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
         option_env!("CARGO_PKG_VERSION"),
-        client_options,
+        client_options.clone(),
         Vec::default(),
         per_retry_policies,
         None,
@@ -186,6 +156,7 @@ fn build_auth_policies(
         None => {
             let service_options = BlobServiceClientOptions {
                 client_options: client_options.clone(),
+                session_options: None,
                 version: version.to_string(),
             };
             let provider: Arc<dyn SessionProvider> =
