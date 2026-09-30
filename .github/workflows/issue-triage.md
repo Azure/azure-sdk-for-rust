@@ -67,7 +67,7 @@ Your task is to analyze issue #${{ github.event.issue.number }} and perform init
 
 ## Tool Contract
 
-- Use authenticated `gh` commands only for GitHub reads. Request only the fields needed by the current step and bound all list or search results.
+- Use authenticated `gh api` REST requests only for GitHub reads. Request only the fields needed by the current step and bound all list or search results.
 - Use the configured safe-output tools through the runtime-provided `safeoutputs` CLI only for labels, assignments, comments, investigation dispatch, and completion. Use direct named arguments, not helper scripts or pipelines, and emit only final intended actions; do not probe write tools.
 - Do not use `gh` for writes, request direct GitHub MCP tools, or request shell commands other than `gh` and the configured `safeoutputs` commands.
 - Read checked-out repository files such as `.github/CODEOWNERS` directly instead of fetching them through GitHub.
@@ -95,7 +95,7 @@ The issue number is `${{ github.event.issue.number }}`. Pass it as `item_number`
 Retrieve the issue with bounded `gh` reads:
 
 1. Use `gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}` with `--jq` to select only `number`, `title`, `body`, `user.login`, `author_association`, and label names and colors.
-2. Use `gh issue view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json parent --jq '.parent'` to determine whether it has a parent issue.
+2. Use `gh api repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/parent --jq '{number}'` to determine whether it has a parent issue. HTTP 404 with the explicit message `No parent issue found` means there is no parent. Other errors follow the failed-read rule; do not treat an inaccessible issue as parentless.
 
 **Precondition checks** — if any are true, call `noop` and stop:
 
@@ -150,7 +150,7 @@ All issues reaching this step proceed through label prediction and ownership rou
 
 ### Label Identification
 
-Labels are distinguished by color. Only after an issue reaches this step, use `gh label list --repo ${{ github.repository }} --limit 500 --json name,color` to inspect available repository labels:
+Labels are distinguished by color. Only after an issue reaches this step, use `gh api 'repos/${{ github.repository }}/labels?per_page=100&page=<page>' --jq '.[] | {name,color}'` to inspect available repository labels, at most five pages. Stop when a page contains fewer than 100 labels. If five full pages do not establish the complete label set, report `missing_data` rather than guessing omitted labels.
 
 - **Category label** (color #ffeb77): exactly one of `Client`, `Mgmt`, or `Service`.
   - `Client` — crates that do NOT start with `azure_resourcemanager_` (e.g., `azure_core`, `azure_identity`, `azure_security_keyvault_secrets`, `azure_storage_blob`).
@@ -177,7 +177,7 @@ If `Service` would be the most-confident category prediction, treat the predicti
 
 When selecting labels, use repository context and previously seen issues for guidance. Only use labels confirmed by the bounded repository-label query.
 
-You may use `gh issue list --repo ${{ github.repository }} --state all --search "<specific terms>" --limit 10 --json number,title,state,labels,url` to find similar issues for reference. If you find a very close match to an OPEN issue, also consider adding the `duplicate` label.
+You may use `gh api --method GET search/issues -f q="repo:${{ github.repository }} is:issue <specific terms>" -F per_page=10 --jq '.items | map({number,title,state,labels,html_url})'` to find similar issues for reference. If you find a very close match to an OPEN issue, also consider adding the `duplicate` label.
 
 For a previous issue to be a quality reference, it should have exactly one #ffeb77 category label and exactly one #e99695 service label.
 
@@ -370,11 +370,11 @@ Dispatch `issue-investigation` only after completing label prediction, owner rou
 - The target is an issue.
 - The final label set contains exactly one service label with color `#e99695`.
 - The final label set contains exactly one category label with color `#ffeb77`.
-- It contains `customer-reported`.
+- Eligibility depends on completed triage, not author affiliation or a `customer-reported` label.
 - It does not contain `needs-triage`, `needs-team-triage`, `issue-addressed`, or `needs-author-feedback`.
 
 Use the final label set produced by this triage, including queued label additions and removals. Safe outputs are applied after the agent finishes, so do not expect a GitHub read during this run to reflect those queued changes. Invoke the generated `safeoutputs issue_investigation --issue_number ${{ github.event.issue.number }}` command last, after all label, assignment, and comment outputs. Do not pass `workflow_name` or a nested `inputs` object.
 
-This handoff is not limited to Key Vault, `Client`, or `bug` reports. In particular, `question`, `needs-team-attention`, and `Service Attention` do not prevent investigation when the conditions above hold. Preserve all existing triage labels and human assignments.
+This handoff covers any service/category pair that passes the checks above. `question`, `needs-team-attention`, and `Service Attention` do not prevent investigation. Preserve existing triage labels and human assignments; do not change the initial author-routing policy.
 
 If any condition fails, do not dispatch. The earlier triage outputs complete the workflow; do not add another comment. The investigation workflow independently revalidates the persisted issue before acting.

@@ -1,8 +1,8 @@
 ---
 description: |
-  Investigates customer-reported Azure SDK for Rust issues after initial triage.
+  Investigates Azure SDK for Rust issues after completed triage.
   Validates the handoff, checks crate and service evidence, requests missing information,
-  closes clearly service-side issues, or assigns bounded SDK work to Copilot.
+  closes clearly service-side issues, or reports SDK findings for maintainer review.
 
 on:
   workflow_dispatch:
@@ -20,6 +20,7 @@ concurrency:
 permissions:
   contents: read
   issues: read
+  pull-requests: read
   copilot-requests: write
 
 network:
@@ -43,11 +44,6 @@ safe-outputs:
     max: 1
     target: ${{ inputs.issue_number }}
     state-reason: not_planned
-  assign-to-agent:
-    name: copilot
-    allowed: [copilot]
-    max: 1
-    target: ${{ inputs.issue_number }}
   noop:
     report-as-issue: false
 
@@ -66,14 +62,14 @@ engine: copilot
 
 <!-- After editing this file, run 'gh aw compile' to regenerate lock files. -->
 
-Investigate issue #${{ inputs.issue_number }} in `${{ github.repository }}` after `issue-triage.md` completes. This is a single-pass investigation, not an implementation workflow.
+Investigate issue #${{ inputs.issue_number }} in `${{ github.repository }}` after `issue-triage.md` completes. This is a single-pass investigation, not an implementation workflow. It cannot assign a coding agent or create a pull request; maintainers decide how any fix is implemented.
 
 ## Tool Contract
 
 - Use authenticated `gh api` REST requests for bounded GitHub reads. Request only fields needed for the current decision. Do not use `gh` for writes or request arbitrary shell commands.
 - Read checked-out repository files directly. Read GitHub-hosted metadata with `gh`; use the provided `web_fetch` tool, not `curl`, Python, or shell pipelines, for other public metadata and trusted documentation URLs on the allowed domains.
 - Invoke the configured safe-output tools through the runtime-provided `safeoutputs` CLI with named arguments, for example `safeoutputs add_comment --item_number 42 --body 'Final investigation comment'`, substituting the actual issue number and final body. Quote argument values as literals. Do not call a generic tool named `safeoutputs` or guess native MCP tool names. Do not construct payloads with `jq`, shell pipelines, scripts, or file redirection.
-- Pass the input issue number as `item_number` to `add_comment` and `issue_number` to `close_issue` and `assign_to_agent`; never act on another issue or repository. Do not probe write tools with `--help`, empty arguments, or placeholder payloads. Emit the final intended action once.
+- Pass the input issue number as `item_number` to `add_comment` and `issue_number` to `close_issue`; never act on another issue or repository. Do not probe write tools with `--help`, empty arguments, or placeholder payloads. Emit the final intended action once.
 - If a required GitHub read fails after one reasonable retry, call `missing_data` with the failed command and stop. Do not switch transports or attempt authentication workarounds.
 - If registry/documentation access is unavailable, do not guess facts or bypass network restrictions. Apply the version fallback or abstention rules below.
 - Always emit a safe output, including `noop` when no action is appropriate.
@@ -95,12 +91,11 @@ Continue only when all of these are true:
 - The target is an open issue, not a pull request.
 - It has exactly one service label with color `e99695`.
 - It has exactly one category label with color `ffeb77`.
-- It has `customer-reported`.
 - It does not have `needs-triage`, `needs-team-triage`, `issue-addressed`, or `needs-author-feedback`.
 
 Compare color values case-insensitively, ignoring an optional leading `#`. Use actual label colors, not a fixed list of services or categories. `bug` is not required, and `question`, `needs-team-attention`, and `Service Attention` are not exclusions.
 
-If a precondition fails, call `noop` with a short reason. Do not comment, label, close, or assign. If Copilot is already assigned, call `noop` rather than starting a second investigation or repeating its handoff comment.
+If a precondition fails, call `noop` with a short reason. Do not comment, label, close, or assign. If a coding agent is already assigned, call `noop` rather than interfering with its work or repeating a handoff comment.
 
 Read relevant issue comments with `gh api`, at most three pages of 100 comments, selecting only author, body, timestamp, and URL. Reuse existing triage context, but verify crate identification and technical claims against repository or registry evidence. If the discussion exceeds this bound, do not make a consequential decision based on an incomplete discussion; call `noop` for maintainer review.
 
@@ -118,7 +113,7 @@ Layer available service and crate context:
 - `sdk/<service>/<crate>/TROUBLESHOOTING.md` and `sdk/<service>/<crate>/known-behaviors.md`.
 - The crate's `Cargo.toml`, README, CHANGELOG, source, and relevant tests.
 
-For example, Key Vault context belongs under `sdk/keyvault/`, but this workflow covers all services. Missing optional context files do not imply that behavior is unsupported or by design.
+Missing optional context files do not imply that behavior is unsupported or by design.
 
 Reuse triage duplicate research. Before ruling out duplicates, check one direct list of up to 30 recent issues with the verified service label, including closed issues:
 
@@ -160,38 +155,38 @@ Evaluate the rules below in order. Stop after completing the first applicable br
 
 ### Global Abstention and Confidence Gate
 
-Closing an issue, declaring a duplicate, or assigning Copilot requires all of the following:
+Closing an issue, declaring a duplicate, or recommending an SDK fix requires all of the following:
 
 - **Issue evidence:** concrete symptoms and reproduction context support the exact decision.
 - **Ownership evidence:** trusted source, documentation, or crate/service metadata establishes the relevant ownership.
 - **Alternative checks:** version currency and specific duplicate status have been checked and do not change the outcome, where relevant to that decision.
 - **Action evidence:** the chosen conclusion is directly supported, not inferred from a similar error or unrelated behavior.
-- **Scope safety:** an assignment is bounded and testable and meets every exclusion below.
+- **Scope safety:** an SDK fix recommendation is bounded and testable and meets every exclusion below.
 - **No reasonable competing interpretation** remains.
 
 This is a pass/fail evidence gate, not a probability or keyword score. Unknown, conflicting, or ambiguous facts cannot justify a consequential action. Request specific missing information when that would resolve the gap; otherwise call `noop`.
 
-Immediately before emitting a consequential output, re-read the issue's state, labels, and assignees. If the handoff no longer holds, the issue is closed, or Copilot is already assigned, call `noop`. Do not overwrite maintainer routing or remove human assignees.
+Immediately before emitting a consequential output, re-read the issue's state, labels, and assignees. If the handoff no longer holds, the issue is closed, or a coding agent is already assigned, call `noop`. Do not overwrite maintainer routing or remove human assignees.
 
 ### 1. Version Currency
 
-If the reported version is older than the applicable latest release, inspect current source, README, CHANGELOG, or documentation for the exact reported defect. Bypass the upgrade request only if a specific current file, snippet, or CHANGELOG entry proves the problem still exists; plausibility is not enough. Explain that evidence if proceeding to assignment.
+If the reported version is older than the applicable latest release, inspect current source, README, CHANGELOG, or documentation for the exact reported defect. Bypass the upgrade request only if a specific current file, snippet, or CHANGELOG entry proves the problem still exists; plausibility is not enough. Explain that evidence if recommending an SDK fix.
 
-Without that proof, add one comment naming the reported crate/version and verified latest release, explaining the latest-version support policy, and asking the customer to reproduce on that release and report back. Stop without assigning Copilot.
+Without that proof, add one comment naming the reported crate/version and verified latest release, explaining the latest-version support policy, and asking the customer to reproduce on that release and report back. Stop without recommending an implementation.
 
-If the crate and reported version are known but the applicable latest release cannot be verified, add one comment stating that the exact latest version could not be verified and asking for reproduction on the latest available release. Do not guess a version or assign Copilot. If crate/version identity itself is unclear, use Insufficient Context.
+If the crate and reported version are known but the applicable latest release cannot be verified, add one comment stating that the exact latest version could not be verified and asking for reproduction on the latest available release. Do not guess a version or recommend an implementation. If crate/version identity itself is unclear, use Insufficient Context.
 
 ### 2. Duplicate
 
 A duplicate must be a specific open or closed issue with materially matching crate/service context and symptoms or affected API. Shared keywords, HTTP status codes, or broad topics are insufficient.
 
-For a supported match, add one comment explaining and linking the match. Do not close the issue or assign Copilot. If there is no specific match, continue without a duplicate comment.
+For a supported match, add one comment explaining and linking the match. Do not close the issue or propose a separate fix. If there is no specific match, continue without a duplicate comment.
 
 ### 3. Insufficient Context
 
 Add one concise comment stating that more information is needed and listing the exact missing details, such as the resolved crate version, Rust version, enabled features, target/OS, sanitized error, minimal reproduction, and expected versus actual behavior. Ask only for facts needed for this issue.
 
-Say that the team can continue once the details are provided. Do not promise automatic resumption: this workflow has no author-response trigger. Do not add labels, close, or assign Copilot.
+Say that the team can continue once the details are provided. Do not promise automatic resumption: this workflow has no author-response trigger. Do not add labels, close, or propose an implementation.
 
 ### 4. Working as Designed or Service-Side
 
@@ -217,20 +212,20 @@ If ownership is plausibly ambiguous or documentation does not cover the scenario
 
 ### 5. Actionable SDK Issue
 
-Assign Copilot only when the handoff is valid, the confidence gate passes, and:
+Report an SDK-side fix for maintainer review only when the handoff is valid, the confidence gate passes, and:
 
 - An exact crate/API or documentation location is identified.
 - Current source or documentation establishes a specific SDK-side cause.
 - The proposed change is small, bounded, and verifiable with a targeted test or documentation diff.
 - No specific duplicate exists and version currency does not require customer follow-up first.
 
-Do not assign work requiring public API design or compatibility decisions, security/privacy-sensitive changes, data-loss or reliability risk, service-contract/protocol changes, broad multi-component refactoring, unclear ownership, or live-service behavior that repository evidence cannot establish.
+Use `noop` or request specific missing information when the report requires public API design or compatibility decisions, security/privacy-sensitive changes, data-loss or reliability risk, service-contract/protocol changes, broad multi-component refactoring, unclear ownership, or live-service behavior that repository evidence cannot establish.
 
-Do not ask the coding agent to hand-edit `generated/` files. TypeSpec specification/emitter changes requiring another repository belong with the appropriate owners, not an automatic Rust implementation assignment. Preserve local `AGENTS.md` instructions and limit any proposed tests to the affected crate.
+For a defect in `generated/` code, identify the affected generated API and the TypeSpec specification or emitter when repository evidence establishes that relationship. Report that evidence and route the proposed change to the appropriate maintainers; do not suggest hand-editing generated files. Follow `CONTRIBUTING.md` and local `AGENTS.md` when describing handwritten-code or documentation fixes and their validation.
 
-Add one comment naming the crate/API, exact fix area, evidence that it is SDK-side, expected regression test or documentation change, and relevant constraints. Say that a Copilot assignment is being requested, not that a fix or PR already exists.
+Add one comment naming the crate/API, exact fix area, evidence that it is SDK-side, expected regression test or documentation change, and relevant constraints. State that a maintainer must review the finding and choose the implementation path.
 
-Then call `assign_to_agent` for this issue with agent `copilot`. Do not implement a fix, create a PR directly, remove existing assignees, or retry assignment through raw GitHub writes. Assignment failures must remain visible as workflow failures, not be treated as successful handoffs.
+Do not implement a fix, create a pull request, start a coding-agent task, or change assignees. The configured safe outputs intentionally provide no assignment or pull-request creation capability; this is an investigation-only rollout.
 
 ### 6. No Action
 
