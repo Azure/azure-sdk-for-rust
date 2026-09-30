@@ -279,6 +279,24 @@ async fn metadata_container_read_primary_wins_when_fast() {
     );
 }
 
+#[tokio::test]
+async fn account_suppression_prevents_metadata_hedging_when_locally_enabled() {
+    let ctx = setup_multi_region(WriteMode::Single).await;
+    ctx.emulator
+        .store()
+        .config()
+        .set_cross_region_hedging_disabled(Some(true));
+    let driver = make_driver(&ctx, Vec::new()).await;
+    let mut options = hedging_options();
+    options.hedging_enabled = Some(true);
+
+    let hedge_diag = container_read_hedge_diagnostics(&driver, options).await;
+    assert!(
+        hedge_diag.is_none(),
+        "the account signal must prevent entering the metadata hedge path"
+    );
+}
+
 /// Disabled + primary metadata read slow ⇒ the read is NOT hedged (no
 /// HedgeDiagnostics attached) and still succeeds via the primary region.
 #[tokio::test]

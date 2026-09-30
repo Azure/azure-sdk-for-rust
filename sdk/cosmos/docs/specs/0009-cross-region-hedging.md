@@ -556,6 +556,22 @@ leniently — `true`/`false`, `1`/`0`, `yes`/`no`, `on`/`off`, case-insensitive
 There is still no env var for the hedge threshold or write hedging because
 those features do not exist (see §4.1 divergence note).
 
+### 4.5 Account-Level Service Suppression
+
+The gateway account response may include `disableCrossRegionalHedging`.
+An explicit `true` suppresses new data-plane and metadata hedge races for that
+account before local strategy resolution, including when
+`AZURE_COSMOS_HEDGING_ENABLED=true`. An explicit `false` removes only the
+service suppression and resumes the normal environment/client/operation
+resolution described above; it does not rewrite or discard customer
+configuration.
+
+The signal is retained in per-account location state. Before the property is
+first observed, or when the initial response omits it, the effective value is
+`false`. Once observed, a later account response that omits the property
+preserves the last explicit value. This state is not stored in the shared
+runtime and remains independent from PPAF/PPCB enablement.
+
 ---
 
 ## 5. Eligibility Rules
@@ -588,12 +604,13 @@ fn should_hedge(
 
 | # | Condition | Hedge? |
 |---:|-----------|--------|
-| 1 | No strategy resolved (or `AvailabilityStrategy::Disabled`) | No |
-| 2 | Application preferred-region list empty | No |
-| 3 | `ResourceType` not in the **phase-allowed set** † | No |
-| 4 | Operation is a write (any topology) | No |
-| 5 | Applicable `preferred_read_endpoints` (after `ExcludeRegions`) has < 2 entries | No |
-| 6 | Read with ≥ 2 applicable read endpoints | **Yes** |
+| 1 | Account `disableCrossRegionalHedging` is explicitly `true` | No |
+| 2 | No strategy resolved (or `AvailabilityStrategy::Disabled`) | No |
+| 3 | Application preferred-region list empty | No |
+| 4 | `ResourceType` not in the **phase-allowed set** † | No |
+| 5 | Operation is a write (any topology) | No |
+| 6 | Applicable `preferred_read_endpoints` (after `ExcludeRegions`) has < 2 entries | No |
+| 7 | Read with ≥ 2 applicable read endpoints | **Yes** |
 
 The "≥ 2 applicable endpoints" check is computed against the
 post-`ExcludeRegions` list, not the raw account region count — a user

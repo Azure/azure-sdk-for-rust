@@ -3099,6 +3099,11 @@ impl DiagnosticsContext {
         self
     }
 
+    pub(crate) fn with_operation_status(mut self, status: CosmosStatus) -> Self {
+        self.status = Some(status);
+        self
+    }
+
     /// Pushes a context-level operation name down onto the requests that were
     /// issued under it, so relabeling the context does not erase where its
     /// requests came from.

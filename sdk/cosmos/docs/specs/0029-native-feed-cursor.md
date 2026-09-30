@@ -25,6 +25,35 @@ optimization, and on-demand cancellation remain separate concerns.
 
 ## 2. Relationship to existing designs
 
+### Read-many extension
+
+Read-many uses an additive versioned open request and the same cursor queues,
+Open/Next/Free lifecycle, complete item buffers, and delivery-loss rules.
+Existing cursor and legacy request layouts do not change.
+
+Selection is explicit: exact partition-key/id pairs or complete logical
+partition keys. Duplicate selections are removed before physical-range grouping
+and query batching. Empty selections issue no item requests. Item selections may
+complete a missing final hierarchical `/id` component from the item id;
+partition selections require every component.
+
+An optional parameterized scalar predicate narrows the selection. The driver
+parses and serializes the predicate, then conjoins it with generated identity or
+partition predicates using distinct parameter names. Filters have a 256-token
+complexity bound; subqueries, user-defined functions, and full SELECT queries
+are rejected. Only unfiltered singleton item groups use point reads. Query
+batches contain at most 64 selections and 256 KiB of serialized query input.
+
+Both native callers and the Rust SDK page over the same retained plan. Results
+are unordered, missing items are omitted, and there is no cross-partition
+snapshot guarantee. The SDK's explicit collection helper buffers all items and
+aggregates charge and diagnostics under a shared deadline. Collection is only
+available before the iterator is polled.
+
+Read-many never emits durable continuation tokens. Checkpoint failure is
+non-terminal; inbound resume is rejected. A failed page terminates the cursor,
+and already transferred pages remain valid until their completions are freed.
+
 Paths below are relative to `sdk/cosmos/docs`.
 
 | Document | Relationship |

@@ -25,6 +25,11 @@ use crate::{
     error::{CosmosErrorCode, COSMOS_STATUS_SUCCESS},
     op_request::cosmos_operation_options_default,
     partition_key::{cosmos_partition_key_free, PartitionKeyHandle},
+    partition_key::{CosmosPartitionKeyComponent, CosmosPartitionKeyComponentValue},
+    read_many::{
+        cosmos_read_many_open_submit, cosmos_read_many_request_init, CosmosReadManyIdentity,
+        CosmosReadManyParameter, CosmosReadManyRequest,
+    },
     runtime::{cosmos_runtime_free, RuntimeContext},
     string::view,
 };
@@ -35,6 +40,102 @@ use std::{
     sync::{atomic::Ordering, Arc},
     time::Duration,
 };
+
+#[test]
+fn read_many_cursor_selection_filter_and_owned_results() {
+    for kind in [1, 2] {
+        let fixture = Fixture::new(2);
+        let mut options = cosmos_operation_options_default();
+        options.binary_encoding_enabled = 1;
+        let mut status = COSMOS_STATUS_SUCCESS;
+        let op = {
+            let keys = ["pk-0".to_string(), "pk-1".to_string(), "pk-2".to_string()];
+            let ids = ["d0".to_string(), "d1".to_string(), "d2".to_string()];
+            let components = keys
+                .iter()
+                .map(|key| CosmosPartitionKeyComponent {
+                    kind: 0,
+                    value: CosmosPartitionKeyComponentValue {
+                        string_value: view(key.as_bytes()),
+                    },
+                })
+                .collect::<Vec<_>>();
+            let identities = components
+                .iter()
+                .enumerate()
+                .map(|(i, component)| CosmosReadManyIdentity {
+                    partition_key: component,
+                    partition_key_len: 1,
+                    item_id: if kind == 1 {
+                        view(ids[i].as_bytes())
+                    } else {
+                        Default::default()
+                    },
+                })
+                .collect::<Vec<_>>();
+            let parameters = [CosmosReadManyParameter {
+                name: view(b"@min"),
+                json_value: view(b"1"),
+            }];
+            let mut request = MaybeUninit::<CosmosReadManyRequest>::uninit();
+            // SAFETY: full initialized output storage and live nested input arrays.
+            unsafe {
+                cosmos_read_many_request_init(request.as_mut_ptr());
+                let mut request = request.assume_init();
+                request.operation.container = fixture.container;
+                request.operation.options = &options;
+                request.operation.max_item_count = 1;
+                request.selection_kind = kind;
+                request.identities = identities.as_ptr();
+                request.identities_len = identities.len();
+                request.filter = view(b"c.rank >= @min");
+                request.parameters = parameters.as_ptr();
+                request.parameters_len = parameters.len();
+                cosmos_read_many_open_submit(
+                    fixture.driver,
+                    &request,
+                    fixture.queue,
+                    88,
+                    &mut status,
+                )
+            }
+        };
+        assert_eq!(status, COSMOS_STATUS_SUCCESS);
+        let opened = fixture.receive(op);
+        // SAFETY: completion is live.
+        assert_eq!(unsafe { (*opened).common.status }, COSMOS_STATUS_SUCCESS);
+        let cursor = cosmos_cursor_completion_take_cursor(opened);
+        assert!(!cursor.is_null());
+        cosmos_cursor_completion_free(opened);
+        let checkpoint =
+            fixture.receive(cosmos_cursor_checkpoint_submit(cursor, 0, ptr::null_mut()));
+        // SAFETY: checkpoint is live and owned.
+        assert_eq!(unsafe { (*checkpoint).common.status.0 & 0xffff }, 20124);
+        cosmos_cursor_completion_free(checkpoint);
+        let mut held = Vec::new();
+        let mut ranks = Vec::new();
+        loop {
+            let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+            // SAFETY: page is a live owned completion.
+            if unsafe { (*page).result_kind } == 4 {
+                cosmos_cursor_completion_free(page);
+                break;
+            }
+            ranks.extend(documents(page).iter().map(|d| d["rank"].as_i64().unwrap()));
+            held.push(page);
+        }
+        cosmos_cursor_free(cursor);
+        let mut retained = Vec::new();
+        for page in held {
+            retained.extend(documents(page).iter().map(|d| d["rank"].as_i64().unwrap()));
+            cosmos_cursor_completion_free(page);
+        }
+        ranks.sort();
+        retained.sort();
+        assert_eq!(ranks, vec![1, 2]);
+        assert_eq!(retained, ranks);
+    }
+}
 
 #[test]
 fn only_legacy_representation_errors_recommend_cursor_migration() {

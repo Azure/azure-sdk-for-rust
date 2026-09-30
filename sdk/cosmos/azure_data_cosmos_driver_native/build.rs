@@ -85,7 +85,10 @@ fn generate_c_header() {
          // Discriminants for cosmos_operation_options_t.query_plan_mode.\n\
          #define COSMOS_QUERY_PLAN_MODE_UNSET           0\n\
          #define COSMOS_QUERY_PLAN_MODE_LOCAL_PREFERRED 1\n\
-         #define COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY    2",
+         #define COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY    2\n\
+         \n\
+         // Version of the size-prefixed native fault-injection records.\n\
+         #define COSMOS_FAULT_INJECTION_ABI_VERSION_1 1",
         env!("CARGO_PKG_VERSION")
     );
 
@@ -176,6 +179,15 @@ fn generate_c_header() {
             "partition_key_component_value_t".into(),
         ),
         ("CosmosStringView".into(), "string_view_t".into()),
+        ("CosmosReadManyRequest".into(), "read_many_request_t".into()),
+        (
+            "CosmosReadManyIdentity".into(),
+            "read_many_identity_t".into(),
+        ),
+        (
+            "CosmosReadManyParameter".into(),
+            "read_many_parameter_t".into(),
+        ),
         ("CosmosResponseHeader".into(), "response_header_t".into()),
         ("CosmosValue".into(), "value_t".into()),
         ("CosmosValueKind".into(), "value_kind_t".into()),
@@ -196,6 +208,38 @@ fn generate_c_header() {
         (
             "CosmosDriverOptionsConfig".into(),
             "driver_options_config_t".into(),
+        ),
+        (
+            "CosmosDriverOptionsConfigV2".into(),
+            "driver_options_config_v2_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionRecordHeader".into(),
+            "fault_injection_record_header_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionCondition".into(),
+            "fault_injection_condition_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionResult".into(),
+            "fault_injection_result_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionRule".into(),
+            "fault_injection_rule_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionOperationType".into(),
+            "fault_injection_operation_type_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionErrorType".into(),
+            "fault_injection_error_type_t".into(),
+        ),
+        (
+            "CosmosFaultInjectionTransportKind".into(),
+            "fault_injection_transport_kind_t".into(),
         ),
         ("CosmosQueryPlanMode".into(), "query_plan_mode_t".into()),
         // Enums / option structs. Variant prefixes are baked into
@@ -282,6 +326,9 @@ fn generate_c_header() {
                 // referenced by any exported struct field (hosts read the low 16
                 // bits of a packed cosmos_status_code_t), so force its emission.
                 "CosmosSubStatus".into(),
+                "CosmosFaultInjectionOperationType".into(),
+                "CosmosFaultInjectionErrorType".into(),
+                "CosmosFaultInjectionTransportKind".into(),
             ],
             // Test-only C-ABI helpers gated behind the `test-abi` feature.
             // Kept out of the public header even when the feature is on so
@@ -294,7 +341,9 @@ fn generate_c_header() {
             exclude: vec![
                 "__test_only_enqueue_ok_completion_with_all_value_kinds".into(),
                 "cosmos_test_cursor_fixture".into(),
+                "__test_only_create_fault_injection_fixture".into(),
                 "COSMOS_STATUS_SUCCESS".into(),
+                "COSMOS_FAULT_INJECTION_ABI_VERSION_1".into(),
             ],
             rename,
             ..Default::default()

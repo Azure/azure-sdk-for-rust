@@ -316,6 +316,7 @@ pub mod clients {
         pub async fn read(&self, options: Option<ReadContainerOptions>) -> crate::Result<ResourceResponse<ContainerProperties>>;
         pub async fn read_feed_ranges(&self, options: Option<ReadFeedRangesOptions>) -> crate::Result<Vec<FeedRange>>;
         pub async fn read_item<impl Into<PartitionKey>: Into<PartitionKey>>(&self, partition_key: impl Into<PartitionKey>, item_id: &str, options: Option<ItemReadOptions>) -> crate::Result<ItemResponse>;
+        pub async fn read_many<T: DeserializeOwned + Send + 'static>(&self, selection: ReadManySelection, options: Option<ReadManyOptions>) -> crate::Result<ReadManyIterator<T>>;
         #[cfg(feature = "control_plane")]
         pub async fn read_throughput(&self, options: Option<ThroughputOptions>) -> crate::Result<Option<ThroughputProperties>>;
         #[cfg(feature = "control_plane")]
@@ -1248,6 +1249,34 @@ pub mod feed {
         type Item = Result<QueryFeedPage<T>, CosmosError>;
         fn poll_next(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> task::Poll<Option<<Self as >::Item>>;
     }
+    #[derive(Clone, Debug)]
+    pub struct ReadManyFilter(/* private fields */);
+    impl ReadManyFilter {
+        pub fn with_parameter<impl Into<String>: Into<String>, impl Serialize: Serialize>(self, name: impl Into<String>, value: impl Serialize) -> crate::Result<Self>;
+    }
+    impl FromStr for ReadManyFilter {
+        type Err = CosmosError;
+        fn from_str(value: &str) -> crate::Result<Self>;
+    }
+    #[pin_project]
+    pub struct ReadManyIterator<T: Send> {
+    }
+    impl<T: DeserializeOwned + Send + 'static> ReadManyIterator<T> {
+        pub async fn collect_all(self) -> crate::Result<ReadManyResponse<T>>;
+    }
+    impl<T: DeserializeOwned + Send + 'static> Stream for ReadManyIterator<T> {
+        type Item = Result<QueryFeedPage<T>, CosmosError>;
+        fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<<Self as >::Item>>;
+    }
+    #[derive(Debug)]
+    pub struct ReadManyResponse<T> {
+    }
+    impl<T> ReadManyResponse<T> {
+        pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>>;
+        pub fn into_items(self) -> Vec<T>;
+        pub fn items(&self) -> &[T];
+        pub fn request_charge(&self) -> RequestCharge;
+    }
     #[derive(Clone)]
     #[non_exhaustive]
     pub enum FeedScope {
@@ -1258,6 +1287,12 @@ pub mod feed {
         pub fn full_container() -> Self;
         pub fn partition<impl Into<PartitionKey>: Into<PartitionKey>>(pk: impl Into<PartitionKey>) -> Self;
         pub fn range<impl Into<FeedRange>: Into<FeedRange>>(fr: impl Into<FeedRange>) -> Self;
+    }
+    #[derive(Clone, Debug)]
+    #[non_exhaustive]
+    pub enum ReadManySelection {
+        Items(Vec<(crate::PartitionKey, String)>),
+        Partitions(Vec<crate::PartitionKey>),
     }
 }
 pub mod models {
@@ -1490,14 +1525,6 @@ pub mod models {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
     }
     #[doc(inline)]
-    impl From<&str> for EffectivePartitionKey {
-        fn from(s: &str) -> Self;
-    }
-    #[doc(inline)]
-    impl From<String> for EffectivePartitionKey {
-        fn from(s: String) -> Self;
-    }
-    #[doc(inline)]
     impl Hash for EffectivePartitionKey {
         fn hash<H: std::hash::Hasher>(&self, state: &mut H);
     }
@@ -1524,6 +1551,16 @@ pub mod models {
     #[doc(inline)]
     impl Serialize for EffectivePartitionKey {
         fn serialize<S>(&self, serializer: S) -> Result<<S as >::Ok, <S as >::Error> where S: serde::Serializer;
+    }
+    #[doc(inline)]
+    impl TryFrom<&str> for EffectivePartitionKey {
+        type Error = CosmosError;
+        fn try_from(s: &str) -> Result<Self, <Self as >::Error>;
+    }
+    #[doc(inline)]
+    impl TryFrom<String> for EffectivePartitionKey {
+        type Error = CosmosError;
+        fn try_from(s: String) -> Result<Self, <Self as >::Error>;
     }
     #[doc(inline)]
     impl<'de> Deserialize<'de> for EffectivePartitionKey {
@@ -2795,6 +2832,22 @@ pub mod options {
     impl ReadFeedRangesOptions {
         pub fn with_force_refresh(self, force_refresh: bool) -> Self;
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
+    }
+    #[derive(Clone, Default)]
+    #[non_exhaustive]
+    pub struct ReadManyOptions {
+        pub operation: crate::options::OperationOptions,
+        pub filter: Option<crate::feed::ReadManyFilter>,
+        pub session_token: Option<crate::options::SessionToken>,
+        pub max_item_count: Option<crate::options::MaxItemCountHint>,
+        pub max_fan_out: Option<u32>,
+    }
+    impl ReadManyOptions {
+        pub fn with_filter(self, filter: ReadManyFilter) -> Self;
+        pub fn with_max_fan_out(self, limit: u32) -> Self;
+        pub fn with_max_item_count(self, hint: MaxItemCountHint) -> Self;
+        pub fn with_operation_options(self, options: OperationOptions) -> Self;
+        pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, token: impl Into<SessionToken>) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, serde::Serialize)]

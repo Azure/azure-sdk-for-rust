@@ -128,6 +128,7 @@ fn format_rfc1123(timestamp: &OffsetDateTime) -> String {
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct CosmosOperation {
+    pub(crate) read_many: Option<std::sync::Arc<crate::read_many::ReadManyRequest>>,
     /// The type of operation (immutable after construction).
     operation_type: OperationType,
     /// The type of resource (derived from resource reference, immutable).
@@ -236,6 +237,9 @@ impl CosmosOperation {
     /// caller actually invoked keeps reporting `patch_item` on the root span and
     /// the operation metric.
     pub fn db_operation_name(&self) -> Option<&'static str> {
+        if self.read_many.is_some() {
+            return Some("read_many");
+        }
         let name = match (self.operation_type, self.resource_type) {
             // Data-plane item operations.
             (OperationType::Create, ResourceType::Document) => "create_item",
@@ -720,6 +724,7 @@ impl CosmosOperation {
             "Attempted to create a partitioned operation without an OperationTarget specifying the partitions to access"
         );
         Self {
+            read_many: None,
             operation_type,
             resource_type,
             resource_reference,
@@ -743,6 +748,25 @@ impl CosmosOperation {
     fn for_item(operation_type: OperationType, item: ItemReference) -> Self {
         let range = FeedRange::for_item(&item);
         Self::new(operation_type, item, Some(range))
+    }
+
+    /// Reads selected items or complete logical partitions, optionally filtered.
+    ///
+    /// Execute with [`CosmosDriver::plan_operation()`](crate::CosmosDriver::plan_operation)
+    /// and [`CosmosDriver::execute_plan()`](crate::CosmosDriver::execute_plan).
+    /// Pages are unordered, duplicates are removed, and missing items are omitted.
+    /// Durable continuation tokens are not supported.
+    pub fn read_many(
+        container: ContainerReference,
+        selection: crate::read_many::ReadManySelection,
+        filter: Option<crate::read_many::ReadManyFilter>,
+    ) -> Self {
+        let mut operation = Self::query_items(container, Some(FeedRange::full()));
+        operation.read_many = Some(std::sync::Arc::new(crate::read_many::ReadManyRequest {
+            selection,
+            filter,
+        }));
+        operation
     }
 
     // ===== Control Plane Factory Methods =====
@@ -1390,8 +1414,8 @@ impl CosmosOperation {
 mod tests {
     use super::*;
     use crate::models::{
-        AccountReference, ContainerProperties, ContainerReference, PartitionKeyDefinition,
-        SystemProperties,
+        AccountReference, ContainerProperties, ContainerReference, EffectivePartitionKey,
+        PartitionKeyDefinition, SystemProperties,
     };
 
     use url::Url;
@@ -1463,8 +1487,11 @@ mod tests {
     }
 
     #[test]
-    fn retarget_rejects_explicit_epk_range() {
-        let range = FeedRange::new("10".into(), "20".into()).unwrap();
+    fn retarget_rejects_explicit_epk_range() -> crate::error::Result<()> {
+        let range = FeedRange::new(
+            EffectivePartitionKey::try_from("10")?,
+            EffectivePartitionKey::try_from("20")?,
+        )?;
         let mut operation = CosmosOperation::query_items(test_container(), Some(range.clone()));
 
         let error = operation
@@ -1477,6 +1504,7 @@ mod tests {
         );
         assert_eq!(operation.container().unwrap().rid(), "testcontainer_rid");
         assert_eq!(operation.target(), Some(&range));
+        Ok(())
     }
 
     #[test]

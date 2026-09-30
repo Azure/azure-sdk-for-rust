@@ -142,6 +142,7 @@ pub mod certificates {
     }
 }
 pub mod client {
+    pub fn httpbin_endpoint() -> azure_core::Result<Option<azure_core::http::Url>>;
     pub struct TestServiceClient {
     }
     impl TestServiceClient {
@@ -161,7 +162,6 @@ pub mod client {
     impl Default for TestServiceClientOptions {
         fn default() -> Self;
     }
-    pub const HTTP_ENDPOINT: &str = "https://azuresdkforcpp.azurewebsites.net";
 }
 pub mod credentials {
     #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]

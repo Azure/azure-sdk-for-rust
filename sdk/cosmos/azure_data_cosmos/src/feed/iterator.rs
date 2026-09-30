@@ -306,6 +306,23 @@ pub struct QueryPageIterator<T: Send> {
 }
 
 impl<T: Send + DeserializeOwned + 'static> QueryPageIterator<T> {
+    pub(crate) fn set_collection_deadline(
+        &mut self,
+        deadline: std::time::Instant,
+    ) -> crate::Result<()> {
+        if let PageSource::Live(state) = &mut self.source {
+            let state = state.as_mut().get_mut();
+            let plan = state.plan.take().ok_or_else(|| {
+                crate::CosmosError::builder()
+                    .with_status(azure_data_cosmos_driver::error::status_codes::CLIENT_BAD_REQUEST)
+                    .with_message("cannot collect while a page is in flight")
+                    .build()
+            })?;
+            state.plan = Some(plan.with_execution_deadline(deadline));
+        }
+        Ok(())
+    }
+
     /// Captures the current iterator position as a [`ContinuationToken`].
     ///
     /// Pass the returned token to a subsequent

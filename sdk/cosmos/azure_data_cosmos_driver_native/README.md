@@ -51,11 +51,38 @@ for the full design.
 | `cosmos_submit_operation` (legacy feeds) | ✅ with explicit errors for unrepresentable results |
 | Response status / RU / body / activity-id / session-token / etag / continuation | ✅ |
 | Retained query/read-feed/change-feed cursors | Supported through `cosmos_cursor_*` |
+| Read-many with optional scoped filters | `cosmos_read_many_open_submit` uses the retained cursor lifecycle |
 | Multi-part response body iteration | All buffers in cursor completions |
-| Diagnostics accessors | ⏳ planned |
+| Diagnostics accessors | Supported through completion diagnostics |
 | Patch instruction builder | ⏳ planned |
 | Transactional batch sub-operation builder | ⏳ planned |
 | Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
+| Driver fault injection | Supported through versioned `cosmos_driver_options_config_v2_t` records |
+
+## Read-many cursors
+
+Initialize `cosmos_read_many_request_t` with `cosmos_read_many_request_init`,
+set its container, and select either exact items (`selection_kind = 1`) or
+complete logical partitions (`selection_kind = 2`). Supply counted identities;
+partition selections must leave each item id unset. Duplicate selections are
+removed, empty selections read nothing, and missing items are omitted.
+
+An optional scalar SQL predicate using alias `c` narrows the selection.
+Bind values through the counted parameter array, with names including `@` and
+values encoded as JSON. Filters cannot replace the selection. Full SELECT
+queries, subqueries, projections, ordering, and aggregates belong in the query
+API. Hierarchical prefixes are not supported for partition selections.
+
+Submit through `cosmos_read_many_open_submit` on a cursor queue, then use the
+existing Next, completion, and Free APIs. Input buffers can be released as soon
+as submit returns. Pages expose every item buffer and remain valid until their
+completion is freed, even after advancing or freeing the cursor.
+Empty pages are not End. Results are unordered and not a transactional snapshot.
+
+Durable checkpoints and resume are unsupported for both selection modes;
+an unsupported checkpoint does not stop live iteration. The Rust SDK uses the
+same plan, with an explicit `collect_all` helper for callers willing to buffer
+all results in memory.
 
 ## Building
 
@@ -203,6 +230,68 @@ submission now returns an explicit error for unsupported checkpoints or Items
 payloads instead of silently returning incomplete output. Feed kinds passed to
 the singleton entry point use the feed path and its guards. Normal point
 operations and representable raw feed responses keep their existing behavior.
+
+---
+
+## Fault injection
+
+Native hosts can install the driver's existing fault-injection rules when they
+construct driver options. Existing callers keep using
+`cosmos_driver_options_config_t` and `cosmos_driver_options_build`; the additive
+surface is `cosmos_driver_options_config_v2_t` plus
+`cosmos_driver_options_build_v2`.
+
+Initialize every v2 record with its default function:
+
+```c
+cosmos_fault_injection_rule_t rule = cosmos_fault_injection_rule_default();
+cosmos_fault_injection_condition_t condition =
+    cosmos_fault_injection_condition_default();
+cosmos_fault_injection_result_t result =
+    cosmos_fault_injection_result_default();
+
+rule.id = SV("throttle-reads");
+condition.operation_type =
+    COSMOS_FAULT_INJECTION_OPERATION_TYPE_READ_ITEM;
+result.custom_status_code = 429;
+result.custom_sub_status = 3200;
+result.retry_after_ms = 0;
+rule.condition = &condition;
+rule.result = &result;
+rule.hit_limit = 1;
+
+cosmos_driver_options_config_v2_t config =
+    cosmos_driver_options_config_v2_default();
+config.fault_injection_rules = &rule;
+config.fault_injection_rules_len = 1;
+config.fault_injection_rule_stride = sizeof(rule);
+
+cosmos_driver_options_t *options = NULL;
+cosmos_status_code_t status =
+    cosmos_driver_options_build_v2(account, &config, &options);
+```
+
+Condition fields match the operation/resource pair, region, container id, and
+Gateway/GatewayV2 transport. Results support the driver's predefined HTTP and
+transport failures, custom HTTP status/substatus, response headers and body,
+retry-after, delay, probability, hit limit, start delay, and expiration.
+Custom responses take precedence over predefined errors. Values of `-1` mean
+"unset" for optional signed fields; zero remains a configured value.
+
+All records are size/version-prefixed, and the rule array is explicitly
+strided. A v1 host sets each record to ABI version 1 and uses
+`sizeof(cosmos_fault_injection_rule_t)` as the stride. The input records and
+every pointer reachable from them are borrowed only for
+`cosmos_driver_options_build_v2`: the function validates and copies rule ids,
+strings, headers, and body bytes before returning. The resulting options handle
+owns the rules and is freed with `cosmos_driver_options_free`. Driver creation
+clones rule ownership, so the host may free the options immediately after
+creating the driver. There are no independently allocated rule handles and no
+additional rule free function.
+
+Faults enter below retry/failover. Consequently, a retryable injected response
+may be consumed by normal driver retries, and hit limits count transport
+attempts rather than top-level submissions.
 
 ---
 
