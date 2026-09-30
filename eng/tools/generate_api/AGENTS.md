@@ -14,7 +14,7 @@
 ## Scope
 
 - This tool lives under `eng/tools/generate_api`.
-- Run the CLI from the repo root.
+- Run the CLI from the repo root, or pass `--root <repo>` when invoking it from elsewhere.
 - Keep this file current as design behavior or integration points change.
 - Keep this file concise for LLMs but still easy for humans to review. Prefer short bullets and only enough detail to preserve intent.
 - Keep `README.md` focused on basic intent and usage: what the tool does, how to call it, what it writes, and where it is called from under `eng/pipelines/`. Keep deeper extraction rendering and ordering rules here.
@@ -24,6 +24,7 @@
 The tool exposes:
 
 - `--manifest-path <path/to/Cargo.toml>`
+- `--root <path/to/repo>` optional; defaults to the current directory
 - `--format <markdown|apiview>` default `markdown`
 - `--review` emits Markdown review sidecars and is valid only with `markdown`
 - `--check` compares generated content with existing files without writing; missing files pass
@@ -44,6 +45,7 @@ Behavior:
 
 - Standalone bin crate in the `eng/tools` workspace
 - Uses `eng/tools/rust-toolchain.toml` toolchain `nightly-2026-04-14`
+- API Review Hub builds the tool once from `<ApiReviewSourceDir>/eng/tools/Cargo.toml`, stages the executable in `<ApiReviewToolingDir>`, and invokes it with `--root <ApiReviewSourceDir>`
 - Keep rustdoc schema compatibility logic isolated from the tool-owned model and renderers
 - Current deps: `rustdoc-types`, `serde`, `serde_json`, `clap`, `sha2`
 - Add common dependencies to the `eng/tools` workspace using versions already used by the repository
@@ -317,6 +319,13 @@ Current API review caller chain under `eng/pipelines/`:
 5. `eng/scripts/Pack-Crates.ps1`
 
 `pack.yml` also runs the shared `create-apireview` step. `Pack-Crates.ps1` currently generates the artifact that step consumes. If pipeline adoption changes update this caller chain instead of adding a second path.
+
+### API Review Hub integration
+
+- `eng/scripts/Resolve-ApiReviewHubRustToolchain.ps1` normalizes ARH `rustVersion` inputs through `eng/scripts/Language-Settings.ps1`, including metadata values such as `1.97.0-nightly`.
+- `eng/scripts/Build-ApiReviewHubTool.ps1` builds `generate_api`, stages its executable, and publishes that path for later ARH steps.
+- `eng/scripts/Export-API.ps1 -Review` is the ARH entrypoint for Markdown review generation. It forwards `-OutputDir` and `-WorkingDir`, uses `-ToolPath` when available, and falls back to `cargo run`.
+- The built binary still runs from the checked-out source repo root and uses the toolchain pinned by `eng/tools/rust-toolchain.toml` for rustdoc extraction.
 
 ## Rustdoc / librustdoc alignment
 

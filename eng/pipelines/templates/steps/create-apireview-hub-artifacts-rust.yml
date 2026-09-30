@@ -1,0 +1,48 @@
+# Generate one Rust API review artifact bundle for one ref. This template
+# supplies Rust-specific generation and delegates shared artifact validation
+# and metadata writing to the base API Review Hub artifact template.
+parameters:
+  - name: requestMode
+    type: string
+  - name: operationId
+    type: string
+  - name: packageName
+    type: string
+  - name: ref
+    type: string
+  - name: kind
+    type: string
+  - name: outputDir
+    type: string
+  - name: workingDir
+    type: string
+  - name: rustVersion
+    type: string
+    default: nightly
+steps:
+  - template: /eng/common/pipelines/templates/steps/create-apireview-hub-artifacts-base.yml
+    parameters:
+      requestMode: ${{ parameters.requestMode }}
+      operationId: ${{ parameters.operationId }}
+      packageName: ${{ parameters.packageName }}
+      ref: ${{ parameters.ref }}
+      kind: ${{ parameters.kind }}
+      outputDir: ${{ parameters.outputDir }}
+      workingDir: ${{ parameters.workingDir }}
+      sourceDir: $(ApiReviewSourceDir)
+      language: rust
+      repositoryFullName: $(ApiReviewRepositoryFullName)
+      generationSteps:
+        - task: PowerShell@2
+          displayName: Generate ${{ parameters.kind }} Rust API review bundle
+          inputs:
+            pwsh: true
+            filePath: $(Build.SourcesDirectory)/eng/scripts/Export-API.ps1
+            arguments: >
+              -PackageName '${{ parameters.packageName }}'
+              -WorkspacePath '$(ApiReviewSourceDir)/Cargo.toml'
+              -OutputDir '${{ parameters.outputDir }}'
+              -WorkingDir '${{ parameters.workingDir }}'
+              -ToolPath '$(ApiReviewRustToolPath)'
+              -RustToolchain '$(ApiReviewRustToolchain)'
+              -Review

@@ -17,12 +17,27 @@ param(
   [Parameter(ParameterSetName = 'ManifestDir')]
   [string[]] $ManifestDir,
 
+  [string] $WorkspacePath,
+
+  [ValidateNotNullOrEmpty()]
+  [string] $ToolPath,
+
+  [ValidateNotNullOrEmpty()]
+  [string] $RustToolchain = 'nightly',
+
   [switch] $Check,
+
+  [switch] $Review,
 
   [Parameter(ParameterSetName = 'PackageName')]
   [Parameter(ParameterSetName = 'ManifestDir')]
   [ValidateNotNullOrEmpty()]
-  [string] $OutputPath
+  [string] $OutputDir,
+
+  [Parameter(ParameterSetName = 'PackageName')]
+  [Parameter(ParameterSetName = 'ManifestDir')]
+  [ValidateNotNullOrEmpty()]
+  [string] $WorkingDir
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,35 +45,14 @@ Set-StrictMode -Version 2.0
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'shared', 'common.ps1'))
+. ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'shared', 'ApiReviewHub.ps1'))
 
-function Get-PackagesToExport(
-  [string] $SelectedPackageInfoDirectory
+function Get-OutputDir(
+  $Package,
+  [string] $SelectedOutputDir
 ) {
-  if ($OutputPath -and @($PackageName).Count -gt 1) {
-    LogError '-OutputPath can only be used with a single -PackageName value.'
-    exit 1
-  }
-
-  if ($OutputPath -and @($ManifestDir).Count -gt 1) {
-    LogError '-OutputPath can only be used with a single -ManifestDir value.'
-    exit 1
-  }
-
-  return Get-CargoSelectedPackages `
-    -PackageName $PackageName `
-    -ManifestDir $ManifestDir `
-    -PackageInfoDirectory $SelectedPackageInfoDirectory
-}
-
-function Get-OutputDirectory(
-  $Package
-) {
-  if ($OutputPath) {
-    if ([System.IO.Path]::IsPathRooted($OutputPath)) {
-      return $OutputPath
-    }
-
-    return [System.IO.Path]::Combine($PWD.Path, $OutputPath)
+  if ($SelectedOutputDir) {
+    return $SelectedOutputDir
   }
 
   return Split-Path -Path $Package.manifest_path -Parent
@@ -71,12 +65,12 @@ function Get-RepoRelativePath(
 }
 
 function Get-MissingRequiredApiFiles(
-  [string] $OutputDirectory
+  [string] $SelectedOutputDir
 ) {
   $requiredFiles = @('api.md')
   return @(
     foreach ($fileName in $requiredFiles) {
-      $path = [System.IO.Path]::Combine($OutputDirectory, $fileName)
+      $path = [System.IO.Path]::Combine($SelectedOutputDir, $fileName)
       if (!(Test-Path -Path $path -PathType Leaf)) {
         $fileName
       }
@@ -85,13 +79,14 @@ function Get-MissingRequiredApiFiles(
 }
 
 function Get-GenerateApiArguments(
-  $Package
+  $Package,
+  [string] $SourceDir,
+  [string] $SelectedOutputDir,
+  [string] $SelectedWorkingDir
 ) {
   $arguments = @(
-    'run',
-    '--manifest-path',
-    ([System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'generate_api', 'Cargo.toml')),
-    '--',
+    '--root',
+    $SourceDir,
     '--manifest-path',
     $Package.manifest_path
   )
@@ -100,33 +95,128 @@ function Get-GenerateApiArguments(
     $arguments += '--check'
   }
 
-  if ($OutputPath) {
-    $arguments += @('--output-dir', (Get-OutputDirectory -Package $Package))
+  if ($SelectedOutputDir) {
+    $arguments += @('--output-dir', (Get-OutputDir -Package $Package -SelectedOutputDir $SelectedOutputDir))
+  }
+
+  if ($SelectedWorkingDir) {
+    $arguments += @('--working-dir', $SelectedWorkingDir)
+  }
+
+  if ($Review) {
+    $arguments += '--review'
   }
 
   return $arguments
 }
 
+function Get-GenerateApiInvocation(
+  $Package,
+  [string] $SourceDir,
+  [string] $ResolvedToolPath,
+  [string] $FallbackRustToolchain,
+  [string] $SelectedOutputDir,
+  [string] $SelectedWorkingDir
+) {
+  $arguments = Get-GenerateApiArguments `
+    -Package $Package `
+    -SourceDir $SourceDir `
+    -SelectedOutputDir $SelectedOutputDir `
+    -SelectedWorkingDir $SelectedWorkingDir
+  if ($ResolvedToolPath) {
+    return [PSCustomObject]@{
+      FilePath     = $ResolvedToolPath
+      ArgumentList = $arguments
+    }
+  }
+
+  $cargoArguments = @()
+  if ($FallbackRustToolchain) {
+    $cargoArguments += "+$FallbackRustToolchain"
+  }
+
+  $cargoArguments += @(
+    'run',
+    '--manifest-path',
+    ([System.IO.Path]::Combine($SourceDir, 'eng', 'tools', 'Cargo.toml')),
+    '-p',
+    'generate_api',
+    '--'
+  ) + $arguments
+
+  return [PSCustomObject]@{
+    FilePath     = 'cargo'
+    ArgumentList = $cargoArguments
+  }
+}
+
 function Get-RegenerateCommand(
-  $Package
+  $Package,
+  [string] $SelectedOutputDir,
+  [string] $SelectedWorkingDir
 ) {
   $generateApiManifestPath = [System.IO.Path]::Combine($RepoRoot, 'eng', 'tools', 'generate_api', 'Cargo.toml')
-  $command = 'cargo run --manifest-path "{0}" -- --manifest-path "{1}"' -f `
-    (Get-RepoRelativePath -Path $generateApiManifestPath),
-    (Get-RepoRelativePath -Path $Package.manifest_path)
-  if ($OutputPath) {
-    $command += ' --output-dir "{0}"' -f (Get-OutputDirectory -Package $Package)
+  $command = 'cargo run --manifest-path "{0}" -- --root "{1}" --manifest-path "{2}"' -f `
+  (Get-RepoRelativePath -Path $generateApiManifestPath),
+  $RepoRoot,
+  (Get-RepoRelativePath -Path $Package.manifest_path)
+  if ($SelectedOutputDir) {
+    $command += ' --output-dir "{0}"' -f (Get-OutputDir -Package $Package -SelectedOutputDir $SelectedOutputDir)
+  }
+
+  if ($SelectedWorkingDir) {
+    $command += ' --working-dir "{0}"' -f $SelectedWorkingDir
+  }
+
+  if ($Review) {
+    $command += ' --review'
   }
 
   return $command
 }
 
-$packageInfoPath = $PackageInfoDirectory
-if ($PackageInfoDirectory -and !(Test-Path -Path $PackageInfoDirectory -PathType Container)) {
-  $packageInfoPath = $null
+if ($OutputDir -and @($PackageName).Count -gt 1) {
+  LogError '-OutputDir can only be used with a single -PackageName value.'
+  exit 1
 }
 
-$packages = Get-PackagesToExport -SelectedPackageInfoDirectory $packageInfoPath
+if ($OutputDir -and @($ManifestDir).Count -gt 1) {
+  LogError '-OutputDir can only be used with a single -ManifestDir value.'
+  exit 1
+}
+
+if ([string]::IsNullOrWhiteSpace($WorkspacePath)) {
+  $WorkspacePath = ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml'))
+}
+
+$workspace = Get-CargoWorkspaceInfo -WorkspacePath $WorkspacePath
+$sourceDir = $workspace.WorkspaceDir
+
+$packageInfoDir = $PackageInfoDirectory
+if ($PackageInfoDirectory -and !(Test-Path -Path $PackageInfoDirectory -PathType Container)) {
+  $packageInfoDir = $null
+}
+
+$packages = Get-CargoSelectedPackages `
+  -PackageName $PackageName `
+  -ManifestDir $ManifestDir `
+  -PackageInfoDirectory $packageInfoDir `
+  -WorkspacePath $workspace.ManifestPath
+
+$resolvedOutputDir = if ($OutputDir) {
+  [System.IO.Path]::Combine($PWD.Path, $OutputDir)
+}
+$resolvedWorkingDir = if ($WorkingDir) {
+  [System.IO.Path]::Combine($PWD.Path, $WorkingDir)
+}
+
+$resolvedToolPath = if ($ToolPath) { [System.IO.Path]::GetFullPath($ToolPath) } else { $null }
+$fallbackRustToolchain = $null
+if ($resolvedToolPath -and !(Test-Path -Path $resolvedToolPath -PathType Leaf)) {
+  LogWarning "Expected generate_api executable at '$resolvedToolPath'. Falling back to 'cargo run'."
+  $resolvedToolPath = $null
+  $fallbackRustToolchain = Resolve-ApiReviewHubRustToolchain -Toolchain $RustToolchain -ExecuteDir $sourceDir
+}
 
 foreach ($package in $packages) {
   if (!(Test-CargoPackagePublishable $package)) {
@@ -136,14 +226,14 @@ foreach ($package in $packages) {
 
   Write-Host "$($Check ? 'Checking' : 'Exporting') API files for '$($package.name)'"
   if ($Check) {
-    $outputDirectory = Get-OutputDirectory -Package $package
-    $missingFiles = Get-MissingRequiredApiFiles -OutputDirectory $outputDirectory
+    $packageOutputDir = Get-OutputDir -Package $package -SelectedOutputDir $resolvedOutputDir
+    $missingFiles = Get-MissingRequiredApiFiles -SelectedOutputDir $packageOutputDir
     if ($missingFiles) {
       LogError @"
 API files are missing for '$($package.name)': $($missingFiles -join ', ').
 
 Regenerate them locally with:
-    $(Get-RegenerateCommand -Package $package)
+    $(Get-RegenerateCommand -Package $package -SelectedOutputDir $resolvedOutputDir -SelectedWorkingDir $resolvedWorkingDir)
 
 Then add api.md in a new commit to this pull request.
 "@
@@ -151,10 +241,17 @@ Then add api.md in a new commit to this pull request.
     }
   }
 
+  $invocation = Get-GenerateApiInvocation `
+    -Package $package `
+    -SourceDir $sourceDir `
+    -ResolvedToolPath $resolvedToolPath `
+    -FallbackRustToolchain $fallbackRustToolchain `
+    -SelectedOutputDir $resolvedOutputDir `
+    -SelectedWorkingDir $resolvedWorkingDir
   $process = Start-PipedProcess `
-    -FilePath 'cargo' `
-    -ArgumentList (Get-GenerateApiArguments -Package $package) `
-    -WorkingDirectory $RepoRoot `
+    -FilePath $invocation.FilePath `
+    -ArgumentList $invocation.ArgumentList `
+    -WorkingDirectory $sourceDir `
     -GroupOutput `
     -DoNotExitOnFailedExitCode
   if ($process.ExitCode) {
@@ -163,7 +260,7 @@ Then add api.md in a new commit to this pull request.
 API files are out of date for '$($package.name)'.
 
 Regenerate them locally with:
-    $(Get-RegenerateCommand -Package $package)
+    $(Get-RegenerateCommand -Package $package -SelectedOutputDir $resolvedOutputDir -SelectedWorkingDir $resolvedWorkingDir)
 
 Then add api.md in a new commit to this pull request.
 "@
