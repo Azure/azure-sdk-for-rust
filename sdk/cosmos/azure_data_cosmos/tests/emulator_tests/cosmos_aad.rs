@@ -23,7 +23,6 @@ use super::framework;
 
 use azure_core::http::StatusCode;
 use azure_core::Uuid;
-use azure_data_cosmos::clients::ContainerClient;
 use azure_data_cosmos::feed::FeedScope;
 use azure_data_cosmos::models::ContainerProperties;
 use azure_data_cosmos::{CosmosError, CosmosStatus, PartitionKey, Query};
@@ -39,10 +38,10 @@ const COSMOS_AAD_SCOPE: &str = "https://cosmos.azure.com/.default";
 const QUERY_READINESS_TIMEOUT: Duration = Duration::from_secs(30);
 const QUERY_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
 
-async fn retry_query_readiness<F, Fut>(mut probe: F) -> azure_data_cosmos::Result<()>
+async fn retry_query_readiness<T, F, Fut>(mut query: F) -> azure_data_cosmos::Result<T>
 where
     F: FnMut() -> Fut,
-    Fut: Future<Output = azure_data_cosmos::Result<()>>,
+    Fut: Future<Output = azure_data_cosmos::Result<T>>,
 {
     let deadline = tokio::time::Instant::now() + QUERY_READINESS_TIMEOUT;
     let mut last_error = None;
@@ -50,8 +49,8 @@ where
         if tokio::time::Instant::now() >= deadline {
             break;
         }
-        match tokio::time::timeout_at(deadline, probe()).await {
-            Ok(Ok(())) => return Ok(()),
+        match tokio::time::timeout_at(deadline, query()).await {
+            Ok(Ok(value)) => return Ok(value),
             Ok(Err(error)) if framework::test_client::rbac_name_based_data_not_ready(&error) => {
                 println!("waiting for AAD query authorization: {error}");
                 last_error = Some(error);
@@ -67,35 +66,9 @@ where
     Err(last_error.unwrap_or_else(|| {
         CosmosError::builder()
             .with_status(CosmosStatus::new(StatusCode::RequestTimeout))
-            .with_message("AAD query readiness probe timed out after 30 seconds")
+            .with_message("AAD query timed out after 30 seconds")
             .build()
     }))
-}
-
-async fn probe_query_ready(
-    container: &ContainerClient,
-    partition_key: &str,
-) -> azure_data_cosmos::Result<()> {
-    let query = Query::from("SELECT * FROM c WHERE c.id = @id")
-        .with_parameter("@id", &Uuid::new_v4().to_string())?;
-    retry_query_readiness(|| async {
-        let mut pages = container
-            .query_items::<serde_json::Value>(
-                query.clone(),
-                FeedScope::partition(PartitionKey::from(partition_key.to_owned())),
-                None,
-            )
-            .await?
-            .into_pages();
-        while let Some(page) = pages.try_next().await? {
-            assert!(
-                page.into_items().is_empty(),
-                "readiness probe returned an item"
-            );
-        }
-        Ok(())
-    })
-    .await
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -182,19 +155,22 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
             assert_eq!(replace.status(), StatusCode::Ok);
 
             // Query via AAD, scoped to the item's partition.
-            // Item readiness does not establish the separate executeQuery permission.
-            probe_query_ready(&aad_container, &pk).await?;
+            // A successful probe cannot guarantee authorization of the next query request.
+            // Retry the read-only query, not its result assertions or the preceding writes.
             let query =
                 Query::from("SELECT * FROM c WHERE c.id = @id").with_parameter("@id", &item_id)?;
-            let found: Vec<AadTestItem> = aad_container
-                .query_items::<AadTestItem>(
-                    query,
-                    FeedScope::partition(PartitionKey::from(&pk)),
-                    None,
-                )
-                .await?
-                .try_collect()
-                .await?;
+            let found: Vec<AadTestItem> = retry_query_readiness(|| async {
+                aad_container
+                    .query_items::<AadTestItem>(
+                        query.clone(),
+                        FeedScope::partition(PartitionKey::from(&pk)),
+                        None,
+                    )
+                    .await?
+                    .try_collect()
+                    .await
+            })
+            .await?;
             assert_eq!(found.len(), 1, "query should return exactly the one item");
             assert_eq!(found[0], item);
 
@@ -269,9 +245,10 @@ pub async fn aad_read_container_metadata() -> Result<(), Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
-    use super::{retry_query_readiness, QUERY_READINESS_TIMEOUT};
+    use super::{retry_query_readiness, AadTestItem, QUERY_READINESS_TIMEOUT};
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{CosmosError, CosmosStatus};
+    use futures::{stream, TryStreamExt};
     use std::{cell::Cell, future::pending, time::Duration};
 
     fn error(status: StatusCode, sub_status: u16) -> CosmosError {
@@ -300,10 +277,35 @@ mod tests {
     }
 
     #[tokio::test(start_paused = true)]
+    async fn query_readiness_discards_partial_results_before_retry() {
+        let item = AadTestItem {
+            id: "item".into(),
+            partition_key: "pk".into(),
+            value: 2,
+        };
+        let attempts = Cell::new(0);
+        let start = tokio::time::Instant::now();
+        let found = retry_query_readiness(|| async {
+            attempts.set(attempts.get() + 1);
+            let mut results = vec![Ok(item.clone())];
+            if attempts.get() == 1 {
+                results.push(Err(error(StatusCode::Forbidden, 5302)));
+            }
+            stream::iter(results).try_collect::<Vec<_>>().await
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(attempts.get(), 2);
+        assert_eq!(start.elapsed(), Duration::from_secs(1));
+        assert_eq!(found, vec![item]);
+    }
+
+    #[tokio::test(start_paused = true)]
     async fn query_readiness_preserves_persistent_authorization_failure() {
         let start = tokio::time::Instant::now();
         let attempts = Cell::new(0);
-        let failure = retry_query_readiness(|| {
+        let failure = retry_query_readiness::<(), _, _>(|| {
             attempts.set(attempts.get() + 1);
             async { Err(error(StatusCode::Forbidden, 5302)) }
         })
@@ -331,7 +333,7 @@ mod tests {
         ] {
             let start = tokio::time::Instant::now();
             let attempts = Cell::new(0);
-            let failure = retry_query_readiness(|| {
+            let failure = retry_query_readiness::<(), _, _>(|| {
                 attempts.set(attempts.get() + 1);
                 async { Err(error(status, sub_status)) }
             })
@@ -346,7 +348,9 @@ mod tests {
     #[tokio::test(start_paused = true)]
     async fn query_readiness_bounds_hanging_requests() {
         let start = tokio::time::Instant::now();
-        let failure = retry_query_readiness(pending).await.unwrap_err();
+        let failure = retry_query_readiness::<(), _, _>(pending)
+            .await
+            .unwrap_err();
         assert_eq!(failure.status().status_code(), StatusCode::RequestTimeout);
         assert_eq!(start.elapsed(), QUERY_READINESS_TIMEOUT);
     }
