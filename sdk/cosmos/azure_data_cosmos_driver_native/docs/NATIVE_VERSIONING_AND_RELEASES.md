@@ -86,6 +86,8 @@ finalizes that version's `CHANGELOG.md` section. Follow the existing Cosmos
 
 A release cannot use an `(Unreleased)` entry. The released heading, Cargo
 version, runtime version, header version, and tag must agree.
+Follow [the native driver release guide](RELEASE_GUIDE.md) to date the entry,
+tag the exact merge commit, and run the publish pipeline.
 
 ## Source tag
 

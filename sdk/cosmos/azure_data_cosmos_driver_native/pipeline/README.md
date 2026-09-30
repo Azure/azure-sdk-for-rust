@@ -94,6 +94,7 @@ libraries for .NET, Java, and Python remain outside the release matrix.
 | `native-driver-build-job.yml` | Runs one generated target row with the appropriate pool, image, Rust setup, and linker. |
 | `../docs/NATIVE_SUPPLY_CHAIN.md` | Explains how the artifacts are built and verified. |
 | `../docs/NATIVE_VERSIONING_AND_RELEASES.md` | Defines native SemVer, FFI compatibility, release identity, and host-SDK propagation. |
+| `../docs/RELEASE_GUIDE.md` | Provides the operator runbook for tagging and publishing a native release. |
 
 ## Production flow
 
@@ -147,8 +148,10 @@ compatible artifacts; the Microsoft Rust policy applies only at the governed
 production build and publication boundaries.
 
 The native-driver pipeline is not part of the automatic pull-request pipeline.
-Authorized reviewers can run its registered pipeline definition against a pull
-request with an `/azp run` comment.
+Authorized reviewers can use `/azp run` on a pull request to validate it. Final
+publication requires a separate manual run of the registered pipeline using the
+immutable native release tag as the source ref. See the
+[release guide](../docs/RELEASE_GUIDE.md).
 
 The publication stage runs only after a successful manual build of an
 `azure_data_cosmos_driver_native@X.Y.Z` tag. Before building, the pipeline

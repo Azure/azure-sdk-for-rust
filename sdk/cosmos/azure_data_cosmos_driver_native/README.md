@@ -17,6 +17,8 @@ project and architecture context.
 The native SemVer and C FFI compatibility policy, implemented Rust release
 gates, and proposed downstream and host-SDK propagation model are documented in
 [Native driver versioning and releases](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/docs/NATIVE_VERSIONING_AND_RELEASES.md).
+Release operators should follow the
+[native driver release guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/docs/RELEASE_GUIDE.md).
 
 ## What this crate ships
 
