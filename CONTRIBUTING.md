@@ -35,6 +35,8 @@ For comprehensive guidance on how AI agents should interact with this repository
 
 The post-triage issue investigator uses service and crate documentation to explain reports and suggest next steps for maintainers. It does not implement fixes, assign a coding agent, or create pull requests. Generated-client changes still belong in the TypeSpec specification or emitter, as described below.
 
+Automatic handoff runs in a separate workflow after successful triage and is disabled unless the repository variable `RUST_ISSUE_INVESTIGATION_ENABLED` is set to `true`. It checks the persisted triage outputs and current labels before dispatching. Handoff and investigation failures are reported in their own runs; they do not change the existing triage workflow's result or outputs. Maintainers can also dispatch the investigation manually.
+
 Keep reusable investigation context in `sdk/<service>/known-behaviors.md` or `sdk/<service>/<crate>/known-behaviors.md`; [Key Vault's context](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/known-behaviors.md) is an example. Explain the behavior, its limits, and authoritative documentation links. The investigator also reads any available `TROUBLESHOOTING.md`, README, and CHANGELOG at those scopes. Context is advisory evidence, not an automatic-closure rule: match the exact operation and corroborate the report before concluding it is service-controlled.
 
 ## Generated code

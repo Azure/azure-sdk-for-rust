@@ -1,0 +1,125 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+name: Issue Investigation Handoff
+
+on:
+  workflow_run:
+    workflows: [Agentic Triage]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  dispatch:
+    if: >-
+      vars.RUST_ISSUE_INVESTIGATION_ENABLED == 'true'
+      && github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'issues'
+      && github.event.workflow_run.head_repository.full_name == github.repository
+      && github.event.workflow_run.head_branch == github.event.repository.default_branch
+    runs-on: ubuntu-slim
+    timeout-minutes: 3
+    permissions:
+      actions: write
+      issues: read
+    steps:
+      - name: Download completed triage outputs
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: safe-outputs-items
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/issue-investigation-handoff
+      - name: Dispatch investigation after persisted triage
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          TRIAGE_OUTPUT_DIRECTORY: ${{ runner.temp }}/issue-investigation-handoff
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const source = context.payload.workflow_run;
+            const repository = `${context.repo.owner}/${context.repo.repo}`;
+            const { data: workflow } = await github.rest.actions.getWorkflow({
+              ...context.repo,
+              workflow_id: source.workflow_id,
+            });
+            if (workflow.path !== '.github/workflows/issue-triage.lock.yml') {
+              throw new Error('Unexpected source workflow for investigation handoff');
+            }
+            const outputPath = path.join(process.env.TRIAGE_OUTPUT_DIRECTORY, 'safe-output-items.jsonl');
+            if (!fs.existsSync(outputPath)) {
+              core.info('Triage applied no recorded outputs; no investigation requested');
+              return;
+            }
+            const records = fs.readFileSync(outputPath, 'utf8').split(/\r?\n/)
+              .filter(line => line.trim()).map(line => JSON.parse(line));
+            const comments = records.filter(record => record.type === 'add_comment');
+            if (!comments.length) {
+              core.info('Triage produced no comment; no investigation requested');
+              return;
+            }
+            if (comments.length > 2) {
+              throw new Error('Unexpected triage comment count');
+            }
+            const issueNumber = comments[0].number;
+            if (!Number.isSafeInteger(issueNumber) || issueNumber <= 0) {
+              throw new Error('Invalid issue number in completed triage outputs');
+            }
+            const server = new URL(context.serverUrl);
+            let analysisFound = false;
+            for (const record of comments) {
+              if (typeof record.repo !== 'string' || record.repo.toLowerCase() !== repository.toLowerCase()
+                  || record.number !== issueNumber) {
+                throw new Error('Triage output does not target one issue in this repository');
+              }
+              const url = new URL(record.url);
+              const expectedPath = `/${repository}/issues/${issueNumber}`;
+              const id = /^#issuecomment-(\d+)$/.exec(url.hash);
+              if (url.origin !== server.origin || url.pathname.toLowerCase() !== expectedPath.toLowerCase()
+                  || !id || !Number.isSafeInteger(Number(id[1])) || Number(id[1]) <= 0) {
+                throw new Error('Invalid comment reference in completed triage outputs');
+              }
+              const { data: comment } = await github.rest.issues.getComment({
+                ...context.repo,
+                comment_id: Number(id[1]),
+              });
+              const expectedIssuePath = `/repos/${repository}/issues/${issueNumber}`;
+              if (new URL(comment.issue_url).pathname.toLowerCase() !== expectedIssuePath.toLowerCase()) {
+                throw new Error('Persisted comment belongs to a different issue');
+              }
+              const body = comment.body || '';
+              if (/^##[^\r\n]*\bAgentic Issue Triage\b/m.test(body)
+                  && body.includes(`id: ${source.id}, workflow_id: issue-triage`)) {
+                analysisFound = true;
+              }
+            }
+            if (!analysisFound) {
+              core.info('No analysis comment from this triage run; no investigation requested');
+              return;
+            }
+            const { data: issue } = await github.rest.issues.get({
+              ...context.repo,
+              issue_number: issueNumber,
+            });
+            const blocked = new Set(['needs-triage', 'needs-team-triage', 'issue-addressed', 'needs-author-feedback']);
+            const labels = issue.labels;
+            if (!Array.isArray(labels) || labels.some(label => typeof label !== 'object' || label === null
+                || typeof label.name !== 'string' || typeof label.color !== 'string')) {
+              throw new Error('Incomplete persisted label metadata');
+            }
+            const countColor = color => labels.filter(label => label.color.replace(/^#/, '').toLowerCase() === color).length;
+            if (issue.pull_request || issue.state !== 'open' || countColor('e99695') !== 1
+                || countColor('ffeb77') !== 1 || labels.some(label => blocked.has(label.name))) {
+              core.info('Persisted issue is not ready for investigation');
+              return;
+            }
+            await github.rest.actions.createWorkflowDispatch({
+              ...context.repo,
+              workflow_id: 'issue-investigation.lock.yml',
+              ref: context.payload.repository.default_branch,
+              inputs: { issue_number: String(issueNumber) },
+            });
+            core.info(`Investigation dispatched for issue #${issueNumber}`);
