@@ -2,6 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+$script:DefaultCargoWorkspacePath = ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml'))
+
 function Get-ActiveRustToolchain(
   [string]$ExecutePath
 ) {
@@ -31,8 +33,21 @@ function Test-IsNightlyRustToolchain(
   return (Get-ResolvedRustToolchain -Toolchain $Toolchain -ExecutePath $ExecutePath) -match '^nightly(?:$|[-])'
 }
 
-function Get-CargoMetadata() {
-  cargo metadata --no-deps --format-version 1 --manifest-path "$RepoRoot/Cargo.toml" | ConvertFrom-Json -Depth 100 -AsHashtable
+function Get-CargoWorkspaceInfo(
+  [string] $WorkspacePath = $script:DefaultCargoWorkspacePath
+) {
+  $manifestPath = Get-NormalizedCargoManifestPath -ManifestPath $WorkspacePath
+  return [PSCustomObject]@{
+    ManifestPath = $manifestPath
+    WorkspaceDir = Split-Path -Path $manifestPath -Parent
+  }
+}
+
+function Get-CargoMetadata(
+  [string] $WorkspacePath = $script:DefaultCargoWorkspacePath
+) {
+  $workspaceInfo = Get-CargoWorkspaceInfo -WorkspacePath $WorkspacePath
+  cargo metadata --no-deps --format-version 1 --manifest-path "$($workspaceInfo.ManifestPath)" | ConvertFrom-Json -Depth 100 -AsHashtable
 }
 
 function Test-ShouldPackDependency(
@@ -49,8 +64,10 @@ function Test-ShouldPackDependency(
   return $dependency['kind'] -ne 'dev'
 }
 
-function Get-CargoPackages() {
-  $metadata = Get-CargoMetadata
+function Get-CargoPackages(
+  [string] $WorkspacePath = $script:DefaultCargoWorkspacePath
+) {
+  $metadata = Get-CargoMetadata -WorkspacePath $WorkspacePath
 
   # Path based non-dev dependencies are assumed to be unreleased package
   # versions. In non-release builds these should be packed as well.
@@ -82,11 +99,6 @@ function Get-PackagesFromPackageInfo($packageInfoDirectory) {
   }
 
   return $packages
-}
-
-function Get-PackageNamesFromPackageInfo($packageInfoDirectory) {
-  $packages = Get-PackagesFromPackageInfo($packageInfoDirectory)
-  $packages.name
 }
 
 function Get-CanaryPackageNames() {
@@ -138,6 +150,7 @@ function Get-CargoManifestPaths(
   [string[]] $PackageName,
   [string[]] $ManifestDir,
   [string] $PackageInfoDirectory,
+  [string] $WorkspacePath = $script:DefaultCargoWorkspacePath,
   [switch] $Workspace,
   $WorkspacePackages = $null
 ) {
@@ -151,8 +164,10 @@ function Get-CargoManifestPaths(
     }
 
     if (!$WorkspacePackages) {
-      $WorkspacePackages = Get-CargoPackages
+      $WorkspacePackages = Get-CargoPackages -WorkspacePath $WorkspacePath
     }
+
+    $workspaceInfo = Get-CargoWorkspaceInfo -WorkspacePath $WorkspacePath
 
     return @(
       foreach ($packageInfo in (Get-PackagesFromPackageInfo $PackageInfoDirectory)) {
@@ -161,7 +176,7 @@ function Get-CargoManifestPaths(
         if ($directoryPathProperty -and $directoryPathProperty.Value) {
           $directoryPath = $directoryPathProperty.Value
           if (![System.IO.Path]::IsPathRooted($directoryPath)) {
-            $directoryPath = [System.IO.Path]::Combine($RepoRoot, $directoryPath)
+            $directoryPath = [System.IO.Path]::Combine($workspaceInfo.WorkspaceDir, $directoryPath)
           }
           Resolve-CargoManifestPath -ManifestDir $directoryPath
         }
@@ -178,7 +193,7 @@ function Get-CargoManifestPaths(
 
   if ($PackageName) {
     if (!$WorkspacePackages) {
-      $WorkspacePackages = Get-CargoPackages
+      $WorkspacePackages = Get-CargoPackages -WorkspacePath $WorkspacePath
     }
 
     return @(
@@ -190,20 +205,21 @@ function Get-CargoManifestPaths(
   }
 
   if ($Workspace -or (!$PackageName -and !$ManifestDir -and !$PackageInfoDirectory)) {
-    return @([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml'))
+    $workspaceInfo = Get-CargoWorkspaceInfo -WorkspacePath $WorkspacePath
+    return @($workspaceInfo.ManifestPath)
   }
 }
 
 function Get-CargoPackagesFromManifestPaths(
   [string[]] $ManifestPath,
+  [string] $WorkspacePath = $script:DefaultCargoWorkspacePath,
   $WorkspacePackages = $null
 ) {
   if (!$WorkspacePackages) {
-    $WorkspacePackages = Get-CargoPackages
+    $WorkspacePackages = Get-CargoPackages -WorkspacePath $WorkspacePath
   }
 
-  $workspaceManifestPath = Get-NormalizedCargoManifestPath `
-    -ManifestPath ([System.IO.Path]::Combine($RepoRoot, 'Cargo.toml'))
+  $workspaceInfo = Get-CargoWorkspaceInfo -WorkspacePath $WorkspacePath
   $packagesByManifestPath = @{}
   foreach ($workspacePackage in $WorkspacePackages) {
     $normalizedPackagePath = Get-NormalizedCargoManifestPath -ManifestPath $workspacePackage.manifest_path
@@ -213,7 +229,7 @@ function Get-CargoPackagesFromManifestPaths(
 
   foreach ($path in $ManifestPath) {
     $normalizedPath = Get-NormalizedCargoManifestPath -ManifestPath $path
-    if ($normalizedPath -eq $workspaceManifestPath) {
+    if ($normalizedPath -eq $workspaceInfo.ManifestPath) {
       $packages += $WorkspacePackages
       continue
     }
@@ -232,9 +248,10 @@ function Get-CargoSelectedPackages(
   [string[]] $PackageName,
   [string[]] $ManifestDir,
   [string] $PackageInfoDirectory,
+  [string] $WorkspacePath = $script:DefaultCargoWorkspacePath,
   [switch] $Workspace
 ) {
-  $workspacePackages = Get-CargoPackages
+  $workspacePackages = Get-CargoPackages -WorkspacePath $WorkspacePath
   if ($Workspace -or (!$PackageName -and !$ManifestDir -and !$PackageInfoDirectory)) {
     return $workspacePackages
   }
@@ -243,11 +260,13 @@ function Get-CargoSelectedPackages(
     -PackageName $PackageName `
     -ManifestDir $ManifestDir `
     -PackageInfoDirectory $PackageInfoDirectory `
+    -WorkspacePath $WorkspacePath `
     -Workspace:$Workspace `
     -WorkspacePackages $workspacePackages
 
   return Get-CargoPackagesFromManifestPaths `
     -ManifestPath $manifestPaths `
+    -WorkspacePath $WorkspacePath `
     -WorkspacePackages $workspacePackages
 }
 

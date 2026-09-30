@@ -41,9 +41,19 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
   --check
 ```
 
+To invoke the tool from outside the repository, pass the repository root explicitly:
+
+```sh
+cargo run --manifest-path /path/to/azure-sdk-for-rust/eng/tools/Cargo.toml -p generate_api -- \
+  --root /path/to/azure-sdk-for-rust \
+  --manifest-path /path/to/azure-sdk-for-rust/sdk/core/azure_core/Cargo.toml \
+  --output /tmp/generate_api/azure_core
+```
+
 ### Arguments
 
 - `--manifest-path <path>`: path to the target crate's `Cargo.toml`
+- `--root <path>`: optional repository root; defaults to the current directory
 - `--format <markdown|apiview>`: optional output format to generate; defaults to `markdown`
 - `--review`: emit Markdown review sidecars; valid only with `--format markdown`
 - `--check`: compare generated content with existing output files without writing them
@@ -117,6 +127,33 @@ From that path:
 For local testing, `Pack-Crates.ps1 -APIReview` temporarily switches to Markdown review generation
 and writes the review artifacts into each crate root directory. Pipelines do not set `-APIReview`
 today.
+
+### API Review Hub
+
+Rust API Review Hub uses repo-local PowerShell scripts rather than invoking `generate_api` inline
+from YAML:
+
+1. `eng/pipelines/templates/jobs/apireview-hub-job-rust.yml` resolves the requested Rust version
+  through `eng/scripts/Resolve-ApiReviewHubRustToolchain.ps1`, which maps aliases and metadata
+  values such as `1.97.0-nightly` back to the repository-managed channels from
+  `eng/scripts/Language-Settings.ps1`.
+2. The same job calls `eng/scripts/Build-ApiReviewHubTool.ps1`, which builds
+  `eng/tools/generate_api` from the checked-out source repository, copies the built executable
+  into the API Review Hub tooling directory, and publishes that staged executable path for later
+  steps.
+3. `eng/pipelines/templates/steps/create-apireview-hub-artifacts-rust.yml` then calls
+  `eng/scripts/Export-API.ps1` with `-WorkspacePath`, `-OutputDir`, `-WorkingDir`, `-Review`, and
+  the staged `-ToolPath` for each requested package/ref bundle. Review state is written under
+  `<working>/state`.
+4. In that mode, `Export-API.ps1` runs the staged `generate_api` executable directly with
+  `--root <ApiReviewSourceDir>`. If the executable is unavailable, it falls back to
+  `cargo +<resolved-toolchain> run --manifest-path <ApiReviewSourceDir>/eng/tools/Cargo.toml -p generate_api ...`.
+
+The ARH scripts no longer copy a tooling workspace. They build once from the checked-out source
+repo, then invoke the staged binary with `--root` so `generate_api` still reads and writes through
+that repo's `target/doc` layout. The executable itself still uses the toolchain pinned by
+`eng/tools/rust-toolchain.toml` when it invokes `cargo rustdoc` and records the resulting rustc
+release in `api.metadata.yml`.
 
 ## Toolchain
 
