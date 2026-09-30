@@ -12,10 +12,26 @@ fn defaults_to_markdown_format() {
     ]);
 
     assert_eq!(args.format, OutputFormat::Markdown);
+    assert_eq!(args.root, None);
     assert!(!args.review);
     assert!(!args.check);
     assert_eq!(args.output_dir, None);
     assert_eq!(args.working_dir, None);
+}
+
+#[test]
+fn accepts_explicit_root() {
+    let args = Args::parse_from([
+        "generate_api",
+        "--root",
+        "/repo",
+        "--manifest-path",
+        "sdk/core/azure_core/Cargo.toml",
+        "--output",
+        "/tmp/generate_api",
+    ]);
+
+    assert_eq!(args.root, Some(std::path::PathBuf::from("/repo")));
 }
 
 #[test]
@@ -143,6 +159,7 @@ fn rejects_working_directory_without_review() {
 fn defaults_working_directory_to_output_directory() {
     let request = Request::try_from(Args {
         manifest_path: PathBuf::from("sdk/core/azure_core/Cargo.toml"),
+        root: None,
         format: OutputFormat::Markdown,
         review: true,
         check: false,
@@ -161,6 +178,7 @@ fn defaults_working_directory_to_output_directory() {
 fn defaults_output_and_working_directory_to_crate_directory() {
     let request = Request::try_from(Args {
         manifest_path: PathBuf::from("sdk/core/azure_core/Cargo.toml"),
+        root: None,
         format: OutputFormat::Markdown,
         review: true,
         check: false,
