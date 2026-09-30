@@ -4,7 +4,7 @@
 
 ### Bugs Fixed
 
-- A receive no longer charges its wait for an event to the recovery budget. The `RetryOptions::max_total_elapsed` time now starts at the first failure, so a partition that waited longer than the limit before a recoverable error, such as a dropped session, now recovers instead of returning the error. The terminal recovery warning now reports the stop reason, the retry count and elapsed time with their limits, the receive wait, and the connection and partition IDs.
+- A receive no longer charges its wait for an event to the recovery budget. `RetryOptions::max_total_elapsed` now counts only recovery work for a receive, so a partition that waited longer than the limit before a recoverable error, such as a dropped session, now recovers instead of returning the error. A receive link that fails after a healthy wait of at least 10 seconds now starts a new recovery with a new retry count, like an empty receive in the .NET SDK. The terminal recovery warning now reports the stop reason, the retry count and elapsed time with their limits, the receive wait, and the connection and partition IDs.
 
 ## 0.17.0 (2026-09-14)
 

@@ -9,6 +9,7 @@ use rand::random;
 use std::{
     fmt::Debug,
     pin::Pin,
+    sync::{Mutex, PoisonError},
     time::{Duration as StdDuration, Instant},
 };
 use tracing::{debug, info, warn};
@@ -47,9 +48,10 @@ pub struct RetryOptions {
 
     /// The maximum total elapsed time for retries (Default is 60s).
     ///
-    /// For send, management, and authorization operations, the time starts
-    /// with the first attempt. For a receive, the time starts at the first
-    /// failure, so the wait for an event before that failure does not count.
+    /// A receive counts only recovery actions, backoff, and link attach, and
+    /// not the wait for an event. A receive link that fails after a long
+    /// healthy wait starts a new recovery with a new retry count and budget.
+    /// Other operations count all time from the first attempt.
     pub max_total_elapsed: Duration,
 
     /// The maximum number of retries (Default is 5).
@@ -86,16 +88,41 @@ impl RecoveryClock for SystemClock {
     }
 }
 
-/// When the elapsed-time budget (`RetryOptions::max_total_elapsed`) of a
-/// recovery loop starts.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub(crate) enum BudgetStart {
-    /// The budget includes the first attempt. Send, management, and
-    /// authorization operations use this.
-    OperationStart,
-    /// The budget starts when the first failure occurs. A receive uses this,
-    /// because its first attempt can wait for an event without limit.
-    FirstFailure,
+/// The delivery wait that proves a receive link healthy. It replaces the .NET
+/// rule that an empty receive resets the retry count. It is much longer than
+/// an attach round trip, so a broken link stays in one episode, and much
+/// shorter than the default 60 s budget.
+pub(crate) const HEALTHY_WAIT: StdDuration = StdDuration::from_secs(10);
+
+/// The attempt calls [`DeliveryWait::start`] after its link is attached. The
+/// budget does not count the time after that mark.
+pub(crate) struct DeliveryWait<'a, K> {
+    clock: &'a K,
+    started: Mutex<Option<Instant>>,
+}
+
+impl<'a, K: RecoveryClock> DeliveryWait<'a, K> {
+    pub(crate) fn new(clock: &'a K) -> Self {
+        Self {
+            clock,
+            started: Mutex::new(None),
+        }
+    }
+
+    pub(crate) fn clock(&self) -> &'a K {
+        self.clock
+    }
+
+    pub(crate) fn start(&self) {
+        *self.started.lock().unwrap_or_else(PoisonError::into_inner) = Some(self.clock.now());
+    }
+
+    fn take(&self) -> Option<Instant> {
+        self.started
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take()
+    }
 }
 
 /// The decision that ended a recovery loop with an error.
@@ -129,7 +156,9 @@ pub(crate) struct RecoveryLogContext<'a> {
 
 /// The per-operation settings of [`recover_with_policy`].
 pub(crate) struct RecoveryPolicy<'a, K> {
-    pub budget_start: BudgetStart,
+    /// `None` charges all time. A receive sets it, so the budget does not
+    /// count the waits for a delivery.
+    pub delivery_wait: Option<&'a DeliveryWait<'a, K>>,
     pub log_context: RecoveryLogContext<'a>,
     pub clock: &'a K,
 }
@@ -138,23 +167,29 @@ pub(crate) struct RecoveryPolicy<'a, K> {
 ///
 /// The durations in the events have these meanings:
 ///
-/// * `receive_wait_elapsed`: for [`BudgetStart::FirstFailure`] only, the time
-///   from the start of the operation to the first failure. It is not charged
-///   to the budget.
-/// * `recovery_elapsed`: the time charged to `max_total_elapsed`. It starts at
-///   the first failure for [`BudgetStart::FirstFailure`] and at the start of
-///   the operation for [`BudgetStart::OperationStart`]. It includes recovery
-///   actions, backoff, and the retried attempts.
+/// * `receive_wait_elapsed`: receive only. The delivery wait in the episode,
+///   which is not charged.
+/// * `recovery_elapsed`: the time charged to `max_total_elapsed`: all time in
+///   the episode less `receive_wait_elapsed`.
+///
+/// A receive that fails after [`HEALTHY_WAIT`] starts a new episode.
 struct Episode<'a> {
     options: &'a RetryOptions,
     log_context: RecoveryLogContext<'a>,
     max_total_elapsed: StdDuration,
     retries_attempted: u32,
+    start: Instant,
     receive_wait_elapsed: Option<StdDuration>,
     recovery_elapsed: StdDuration,
 }
 
 impl Episode<'_> {
+    fn update(&mut self, now: Instant) {
+        self.recovery_elapsed = now
+            .saturating_duration_since(self.start)
+            .saturating_sub(self.receive_wait_elapsed.unwrap_or_default());
+    }
+
     fn stop<E: Debug>(&self, stop_reason: StopReason, err: &E) {
         warn!(
             connection_id = self.log_context.connection_id.map(display),
@@ -169,6 +204,19 @@ impl Episode<'_> {
             "Operation recovery stopped, returning error."
         );
     }
+}
+
+fn backoff_delay(options: &RetryOptions, retries_attempted: u32) -> Duration {
+    let sleep_ms = options.initial_delay.whole_milliseconds() as u64 * 2u64.pow(retries_attempted)
+        + u64::from(random::<u8>());
+    let sleep_ms = sleep_ms.min(
+        options
+            .max_delay
+            .whole_milliseconds()
+            .try_into()
+            .unwrap_or(u64::MAX),
+    );
+    Duration::milliseconds(sleep_ms as i64)
 }
 
 /// Executes an operation with exponential backoff.
@@ -209,7 +257,7 @@ where
         recover_operation,
         context,
         RecoveryPolicy {
-            budget_start: BudgetStart::OperationStart,
+            delivery_wait: None,
             log_context: RecoveryLogContext::default(),
             clock: &SystemClock,
         },
@@ -221,7 +269,7 @@ where
 ///
 /// On failure, the loop checks the retry count and the elapsed-time budget
 /// before it classifies the error, then retries or recovers. It logs one
-/// warning with a `stop_reason` when it returns an error.
+/// warning with a `stop_reason` when it returns an error. See [`Episode`].
 pub(crate) async fn recover_with_policy<F, Fut, T, E, C, K>(
     operation: F,
     options: &RetryOptions,
@@ -241,23 +289,46 @@ where
     let log_context = policy.log_context;
     let mut current_delay = options.initial_delay;
 
-    let operation_start = clock.now();
-    let mut budget_start = match policy.budget_start {
-        BudgetStart::OperationStart => Some(operation_start),
-        BudgetStart::FirstFailure => None,
-    };
     let mut episode = Episode {
         options,
         log_context,
         // A negative limit converts to zero, so the budget stays exhausted as before.
         max_total_elapsed: StdDuration::try_from(options.max_total_elapsed).unwrap_or_default(),
         retries_attempted: 0,
-        receive_wait_elapsed: None,
+        start: clock.now(),
+        receive_wait_elapsed: policy.delivery_wait.map(|_| StdDuration::ZERO),
         recovery_elapsed: StdDuration::ZERO,
     };
 
     loop {
-        let err = match operation().await {
+        let result = operation().await;
+        let now = clock.now();
+        let wait_start = policy.delivery_wait.and_then(DeliveryWait::take);
+        let waited = wait_start.map_or(StdDuration::ZERO, |start| {
+            now.saturating_duration_since(start)
+        });
+        let mut new_episode = false;
+        if let (Err(_), Some(wait_start)) = (&result, wait_start) {
+            if waited >= HEALTHY_WAIT && episode.retries_attempted > 0 {
+                info!(
+                    connection_id = log_context.connection_id.map(display),
+                    partition_id = log_context.partition_id.map(display),
+                    retries_attempted = episode.retries_attempted,
+                    healthy_wait = ?waited,
+                    "Receive link failed after a healthy wait, starting a new recovery episode."
+                );
+                episode.retries_attempted = 0;
+                episode.start = wait_start;
+                episode.receive_wait_elapsed = Some(StdDuration::ZERO);
+                new_episode = true;
+            }
+        }
+        if let Some(total) = episode.receive_wait_elapsed.as_mut() {
+            *total += waited;
+        }
+        episode.update(now);
+
+        let err = match result {
             Ok(result) => {
                 if episode.retries_attempted > 0 {
                     info!(
@@ -265,7 +336,7 @@ where
                         partition_id = log_context.partition_id.map(display),
                         retries_attempted = episode.retries_attempted,
                         receive_wait_elapsed = episode.receive_wait_elapsed.map(debug),
-                        recovery_elapsed = ?clock.now().saturating_duration_since(budget_start.unwrap_or(operation_start)),
+                        recovery_elapsed = ?episode.recovery_elapsed,
                         "Operation succeeded after retries."
                     );
                 }
@@ -274,12 +345,6 @@ where
             Err(err) => err,
         };
 
-        let now = clock.now();
-        let budget_started = *budget_start.get_or_insert_with(|| {
-            episode.receive_wait_elapsed = Some(now.saturating_duration_since(operation_start));
-            now
-        });
-        episode.recovery_elapsed = now.saturating_duration_since(budget_started);
         debug!(
             connection_id = log_context.connection_id.map(display),
             partition_id = log_context.partition_id.map(display),
@@ -301,17 +366,7 @@ where
         let error_category = categorize_error(&err);
         match error_category {
             ErrorRecoveryAction::RetryAction => {
-                let sleep_ms = options.initial_delay.whole_milliseconds() as u64
-                    * 2u64.pow(episode.retries_attempted)
-                    + u64::from(random::<u8>());
-                let sleep_ms = sleep_ms.min(
-                    options
-                        .max_delay
-                        .whole_milliseconds()
-                        .try_into()
-                        .unwrap_or(u64::MAX),
-                );
-                let sleep_duration = Duration::milliseconds(sleep_ms as i64);
+                let sleep_duration = backoff_delay(options, episode.retries_attempted);
 
                 debug!(
                     connection_id = log_context.connection_id.map(display),
@@ -354,6 +409,11 @@ where
                     episode.stop(StopReason::RecoveryUnavailable, &err);
                     return Err(err);
                 };
+                // Reconnects have no backoff. A new episode waits one backoff
+                // step, so a link that fails after each healthy wait is slow.
+                if new_episode {
+                    clock.sleep(backoff_delay(options, 0)).await;
+                }
                 match recover_operation(context, error_category.clone()).await {
                     Ok(()) => {
                         info!(
@@ -364,8 +424,7 @@ where
                         );
                     }
                     Err(recovery_err) => {
-                        episode.recovery_elapsed =
-                            clock.now().saturating_duration_since(budget_started);
+                        episode.update(clock.now());
                         episode.stop(StopReason::RecoveryFailed, &recovery_err);
                         return Err(recovery_err);
                     }
@@ -471,10 +530,18 @@ pub(crate) mod test_support {
 
     /// Runs `future` with only WARN and higher enabled and returns the log text.
     pub(crate) async fn capture_warnings<Fut: Future>(future: Fut) -> (Fut::Output, String) {
+        capture_logs(Level::WARN, future).await
+    }
+
+    /// Runs `future` with `level` and higher enabled and returns the log text.
+    pub(crate) async fn capture_logs<Fut: Future>(
+        level: Level,
+        future: Fut,
+    ) -> (Fut::Output, String) {
         let buffer = SharedBuffer(Arc::new(Mutex::new(Vec::new())));
         let writer = buffer.clone();
         let subscriber = tracing_subscriber::fmt()
-            .with_max_level(Level::WARN)
+            .with_max_level(level)
             .with_ansi(false)
             .without_time()
             .with_writer(move || writer.clone())
@@ -645,21 +712,26 @@ mod tests {
 
     /// Fails the first attempt after a 120 s wait and succeeds after that.
     async fn slow_first_failure(
-        budget_start: BudgetStart,
+        receive: bool,
         recover: RecoveryOperation<Counter, String>,
     ) -> (result::Result<usize, String>, usize, String) {
         let clock = ManualClock::new();
+        let wait = DeliveryWait::new(&*clock);
         let attempts = AtomicUsize::new(0);
         let recoveries = Counter::default();
         let (result, logs) = capture_warnings(recover_with_policy(
             || {
                 let attempt = attempts.fetch_add(1, Ordering::SeqCst);
-                let clock = clock.clone();
+                if receive {
+                    wait.start();
+                }
+                if attempt == 0 {
+                    clock.advance(StdDuration::from_secs(120));
+                }
                 async move {
                     if attempt > 0 {
                         return Ok(attempt);
                     }
-                    clock.advance(StdDuration::from_secs(120));
                     Err(String::from("link closed"))
                 }
             },
@@ -668,7 +740,7 @@ mod tests {
             Some(recover),
             Some(recoveries.clone()),
             RecoveryPolicy {
-                budget_start,
+                delivery_wait: receive.then_some(&wait),
                 log_context: RecoveryLogContext::default(),
                 clock: &*clock,
             },
@@ -681,8 +753,7 @@ mod tests {
     // first attempt counts, so a slow attempt that fails stops at once.
     #[tokio::test]
     async fn operation_start_budget_includes_first_attempt() {
-        let (result, recoveries, logs) =
-            slow_first_failure(BudgetStart::OperationStart, count_recovery).await;
+        let (result, recoveries, logs) = slow_first_failure(false, count_recovery).await;
         assert_eq!(result.unwrap_err(), "link closed");
         assert_eq!(recoveries, 0);
         let warning = stop_warning(&logs);
@@ -697,16 +768,15 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn first_failure_budget_excludes_first_attempt() {
-        let (result, recoveries, _) =
-            slow_first_failure(BudgetStart::FirstFailure, count_recovery).await;
+    async fn receive_budget_excludes_delivery_wait() {
+        let (result, recoveries, _) = slow_first_failure(true, count_recovery).await;
         assert_eq!(result.unwrap(), 1);
         assert_eq!(recoveries, 1);
     }
 
     #[tokio::test]
     async fn failed_recovery_action_is_the_stop_reason() {
-        let (result, _, logs) = slow_first_failure(BudgetStart::FirstFailure, fail_recovery).await;
+        let (result, _, logs) = slow_first_failure(true, fail_recovery).await;
         assert_eq!(result.unwrap_err(), "reconnect failed");
         let warning = stop_warning(&logs);
         assert!(warning.contains("stop_reason=recovery_failed"), "{warning}");

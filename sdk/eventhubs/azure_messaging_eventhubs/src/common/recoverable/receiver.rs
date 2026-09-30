@@ -3,7 +3,7 @@
 
 use super::RecoverableConnection;
 use crate::common::retry::{
-    recover_with_policy, BudgetStart, ErrorRecoveryAction, RecoveryClock, RecoveryLogContext,
+    recover_with_policy, DeliveryWait, ErrorRecoveryAction, RecoveryClock, RecoveryLogContext,
     RecoveryOperation, RecoveryPolicy, SystemClock,
 };
 use azure_core::{error::ErrorKind as AzureErrorKind, http::Url, time::Duration};
@@ -45,8 +45,11 @@ impl RecoverableReceiver {
         }
     }
 
-    /// Attaches the receiver if needed, then waits for one delivery.
-    async fn receive_once(&self) -> Result<azure_core_amqp::AmqpDelivery> {
+    /// Attaches the receiver if needed, marks `wait`, then waits for one delivery.
+    async fn receive_once(
+        &self,
+        wait: &DeliveryWait<'_, SystemClock>,
+    ) -> Result<azure_core_amqp::AmqpDelivery> {
         trace!(source_url = %self.source_url, "Starting receive_delivery operation.");
         let receiver = {
             let connection = self
@@ -67,6 +70,7 @@ impl RecoverableReceiver {
                 .await
                 .map_err(Self::ensure_receiver_error)?
         };
+        wait.start();
         if let Some(delivery_timeout) = self.timeout {
             select! {
                 delivery = receiver.receive_delivery().fuse() => Ok(delivery),
@@ -81,16 +85,15 @@ impl RecoverableReceiver {
 
     /// Runs `attempt` under the receive recovery policy.
     ///
-    /// The elapsed-time budget starts at the first failure, so the wait for an
-    /// event before that failure does not use it. Each call is a new recovery
-    /// episode with a new budget. Tests call this directly to control the
+    /// The budget does not count the time after an attempt marks `wait`. Each
+    /// call is a new recovery episode. Tests call this directly to control the
     /// attempt, the recovery action, and the clock.
     async fn receive_with_recovery<T, F, Fut, C, K>(
         &self,
         attempt: F,
         recover: RecoveryOperation<C, AmqpError>,
         context: C,
-        clock: &K,
+        wait: &DeliveryWait<'_, K>,
     ) -> Result<T>
     where
         F: Fn() -> Fut,
@@ -111,12 +114,12 @@ impl RecoverableReceiver {
             Some(recover),
             Some(context),
             RecoveryPolicy {
-                budget_start: BudgetStart::FirstFailure,
+                delivery_wait: Some(wait),
                 log_context: RecoveryLogContext {
                     connection_id: Some(&self.connection_id),
                     partition_id: Some(&self.partition_id),
                 },
-                clock,
+                clock: wait.clock(),
             },
         )
         .await
@@ -186,15 +189,16 @@ impl AmqpReceiverApis for RecoverableReceiver {
     // error spam; carry only the partition source URL for correlation.
     #[instrument(level = "trace", skip_all, fields(source_url = %self.source_url))]
     async fn receive_delivery(&self) -> Result<azure_core_amqp::AmqpDelivery> {
+        let wait = DeliveryWait::new(&SystemClock);
         self.receive_with_recovery(
-            || self.receive_once(),
+            || self.receive_once(&wait),
             |connection: Weak<RecoverableConnection>, reason| {
                 Box::pin(RecoverableConnection::recover_from_error(
                     connection, reason,
                 ))
             },
             self.recoverable_connection.clone(),
-            &SystemClock,
+            &wait,
         )
         .await
     }
@@ -216,7 +220,10 @@ impl AmqpReceiverApis for RecoverableReceiver {
 mod tests {
     use super::*;
     use crate::{
-        common::retry::test_support::{capture_warnings, stop_warning, ManualClock},
+        common::retry::{
+            test_support::{capture_logs, stop_warning, ManualClock},
+            HEALTHY_WAIT,
+        },
         error::{find_link_stolen, ErrorKind},
         RetryOptions,
     };
@@ -230,11 +237,11 @@ mod tests {
         pin::Pin,
         sync::{
             atomic::{AtomicUsize, Ordering},
-            Arc,
+            Arc, Mutex,
         },
-        time::Duration as StdDuration,
+        time::{Duration as StdDuration, Instant},
     };
-    use tracing::Instrument;
+    use tracing::{Instrument, Level};
 
     fn stolen() -> AmqpError {
         AmqpError::from(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
@@ -314,20 +321,34 @@ mod tests {
         Deliver,
         LinkClosed,
         Stolen,
+        AttachFailed,
+    }
+
+    /// One scripted attempt: attach time, then delivery wait, then outcome.
+    type Step = (StdDuration, StdDuration, Outcome);
+
+    fn secs(secs: u64) -> StdDuration {
+        StdDuration::from_secs(secs)
+    }
+
+    fn link_closed() -> AmqpError {
+        AmqpError::from(AmqpErrorKind::LinkClosedByRemote(Box::new(
+            std::io::Error::other("closed"),
+        )))
     }
 
     #[derive(Clone)]
     struct FakeRecovery {
         clock: Arc<ManualClock>,
         cost: StdDuration,
-        count: Arc<AtomicUsize>,
+        started: Arc<Mutex<Vec<Instant>>>,
     }
 
     fn fake_recover(
         recovery: FakeRecovery,
         _: ErrorRecoveryAction,
     ) -> Pin<Box<dyn Future<Output = Result<()>> + Send>> {
-        recovery.count.fetch_add(1, Ordering::SeqCst);
+        recovery.started.lock().unwrap().push(recovery.clock.now());
         recovery.clock.advance(recovery.cost);
         Box::pin(async { Ok(()) })
     }
@@ -365,47 +386,63 @@ mod tests {
                 recovery: FakeRecovery {
                     clock: ManualClock::new(),
                     cost: recovery_cost,
-                    count: Arc::default(),
+                    started: Arc::default(),
                 },
             }
         }
 
         fn recoveries(&self) -> usize {
-            self.recovery.count.load(Ordering::SeqCst)
+            self.recovery.started.lock().unwrap().len()
         }
 
-        /// Runs one `receive_with_recovery` call. `script` maps the attempt
-        /// index to the seconds the attempt waits and its outcome. A delivery
+        fn recovery_gaps(&self) -> Vec<StdDuration> {
+            let started = self.recovery.started.lock().unwrap();
+            started.windows(2).map(|w| w[1] - w[0]).collect()
+        }
+
+        /// `script` maps each attempt index to its [`Step`]. A delivery
         /// returns its attempt index.
-        async fn receive(
+        async fn receive_with_logs(
             &self,
-            script: impl Fn(usize) -> (u64, Outcome),
+            level: Level,
+            script: impl Fn(usize) -> Step,
         ) -> (Result<usize>, usize, String) {
             let attempts = AtomicUsize::new(0);
             let clock = &self.recovery.clock;
-            let (result, logs) = capture_warnings(self.receiver.receive_with_recovery(
-                || {
-                    let attempt = attempts.fetch_add(1, Ordering::SeqCst);
-                    let (wait, outcome) = script(attempt);
-                    clock.advance(StdDuration::from_secs(wait));
-                    async move {
-                        match outcome {
-                            Outcome::Deliver => Ok(attempt),
-                            Outcome::LinkClosed => {
-                                Err(AmqpError::from(AmqpErrorKind::LinkClosedByRemote(
-                                    Box::new(std::io::Error::other("closed")),
-                                )))
-                            }
-                            Outcome::Stolen => Err(stolen()),
+            let wait = DeliveryWait::new(&**clock);
+            let (result, logs) = capture_logs(
+                level,
+                self.receiver.receive_with_recovery(
+                    || {
+                        let attempt = attempts.fetch_add(1, Ordering::SeqCst);
+                        let (attach, delivery_wait, outcome) = script(attempt);
+                        clock.advance(attach);
+                        if !matches!(outcome, Outcome::AttachFailed) {
+                            wait.start();
+                            clock.advance(delivery_wait);
                         }
-                    }
-                },
-                fake_recover,
-                self.recovery.clone(),
-                &**clock,
-            ))
+                        async move {
+                            match outcome {
+                                Outcome::Deliver => Ok(attempt),
+                                Outcome::LinkClosed => Err(link_closed()),
+                                Outcome::Stolen => Err(stolen()),
+                                Outcome::AttachFailed => {
+                                    Err(RecoverableReceiver::ensure_receiver_error(link_closed()))
+                                }
+                            }
+                        }
+                    },
+                    fake_recover,
+                    self.recovery.clone(),
+                    &wait,
+                ),
+            )
             .await;
             (result, attempts.load(Ordering::SeqCst), logs)
+        }
+
+        async fn receive(&self, script: impl Fn(usize) -> Step) -> (Result<usize>, usize, String) {
+            self.receive_with_logs(Level::WARN, script).await
         }
     }
 
@@ -420,11 +457,11 @@ mod tests {
     // budget, so the receive returned the error without a recovery.
     #[tokio::test]
     async fn long_wait_then_recoverable_error_recovers() {
-        let harness = Harness::new(RetryOptions::default(), StdDuration::from_secs(1));
+        let harness = Harness::new(RetryOptions::default(), secs(1));
         let (result, attempts, logs) = harness
             .receive(|attempt| match attempt {
-                0 => (120, Outcome::LinkClosed),
-                _ => (0, Outcome::Deliver),
+                0 => (secs(0), secs(120), Outcome::LinkClosed),
+                _ => (secs(0), secs(0), Outcome::Deliver),
             })
             .await;
         assert_eq!(result.unwrap(), 1);
@@ -444,7 +481,9 @@ mod tests {
     #[tokio::test]
     async fn long_wait_then_delivery_succeeds() {
         let harness = Harness::new(RetryOptions::default(), StdDuration::ZERO);
-        let (result, attempts, logs) = harness.receive(|_| (600, Outcome::Deliver)).await;
+        let (result, attempts, logs) = harness
+            .receive(|_| (secs(0), secs(600), Outcome::Deliver))
+            .await;
         assert_eq!(result.unwrap(), 0);
         assert_eq!((attempts, harness.recoveries()), (1, 0));
         assert!(logs.is_empty(), "{logs}");
@@ -454,12 +493,12 @@ mod tests {
     // that span is off, so the warning must carry the identifiers itself.
     #[tokio::test]
     async fn repeated_failures_exhaust_elapsed_budget() {
-        let harness = Harness::new(RetryOptions::default(), StdDuration::from_secs(25));
+        let harness = Harness::new(RetryOptions::default(), secs(25));
         let span = tracing::debug_span!("stream_events", connection_id = "span-conn");
         let (result, attempts, logs) = harness
             .receive(|attempt| match attempt {
-                0 => (120, Outcome::LinkClosed),
-                _ => (0, Outcome::LinkClosed),
+                0 => (secs(0), secs(120), Outcome::LinkClosed),
+                _ => (secs(0), secs(0), Outcome::LinkClosed),
             })
             .instrument(span)
             .await;
@@ -489,8 +528,10 @@ mod tests {
             max_retries: 2,
             ..Default::default()
         };
-        let harness = Harness::new(options, StdDuration::from_secs(1));
-        let (result, attempts, logs) = harness.receive(|_| (0, Outcome::LinkClosed)).await;
+        let harness = Harness::new(options, secs(1));
+        let (result, attempts, logs) = harness
+            .receive(|_| (secs(0), secs(0), Outcome::LinkClosed))
+            .await;
         assert!(result.is_err());
         assert_eq!((attempts, harness.recoveries()), (3, 2));
         assert_fields(
@@ -511,7 +552,9 @@ mod tests {
             ..Default::default()
         };
         let harness = Harness::new(options, StdDuration::ZERO);
-        let (result, attempts, logs) = harness.receive(|_| (120, Outcome::LinkClosed)).await;
+        let (result, attempts, logs) = harness
+            .receive(|_| (secs(0), secs(120), Outcome::LinkClosed))
+            .await;
         assert!(result.is_err());
         assert_eq!((attempts, harness.recoveries()), (1, 0));
         assert_fields(
@@ -529,7 +572,9 @@ mod tests {
     #[tokio::test]
     async fn non_recoverable_error_returns_without_recovery() {
         let harness = Harness::new(RetryOptions::default(), StdDuration::ZERO);
-        let (result, attempts, logs) = harness.receive(|_| (5, Outcome::Stolen)).await;
+        let (result, attempts, logs) = harness
+            .receive(|_| (secs(0), secs(5), Outcome::Stolen))
+            .await;
         let error = result.unwrap_err();
         assert!(find_link_stolen(&error).is_some(), "{error}");
         assert_eq!((attempts, harness.recoveries()), (1, 0));
@@ -547,16 +592,175 @@ mod tests {
     // once if it inherited the 50 s that the first one charged.
     #[tokio::test]
     async fn later_receive_gets_a_fresh_budget() {
-        let harness = Harness::new(RetryOptions::default(), StdDuration::from_secs(50));
+        let harness = Harness::new(RetryOptions::default(), secs(50));
         let script = |attempt| match attempt {
-            0 => (0, Outcome::LinkClosed),
-            _ => (0, Outcome::Deliver),
+            0 => (secs(0), secs(0), Outcome::LinkClosed),
+            _ => (secs(0), secs(0), Outcome::Deliver),
         };
         assert_eq!(harness.receive(script).await.0.unwrap(), 1);
-        harness.recovery.clock.advance(StdDuration::from_secs(30));
+        harness.recovery.clock.advance(secs(30));
         let (result, _, logs) = harness.receive(script).await;
         assert_eq!(result.unwrap(), 1);
         assert_eq!(harness.recoveries(), 2);
         assert!(!logs.contains("Operation recovery stopped"), "{logs}");
+    }
+
+    // Before the fix, two 9 s retried waits used up a 5 s budget.
+    #[tokio::test]
+    async fn retried_waits_do_not_use_budget() {
+        let options = RetryOptions {
+            max_total_elapsed: azure_core::time::Duration::seconds(5),
+            ..Default::default()
+        };
+        let harness = Harness::new(options, secs(1));
+        let (result, attempts, logs) = harness
+            .receive(|attempt| match attempt {
+                0..=3 => (secs(0), HEALTHY_WAIT - secs(1), Outcome::LinkClosed),
+                _ => (secs(0), secs(0), Outcome::Deliver),
+            })
+            .await;
+        assert_eq!(result.unwrap(), 4);
+        assert_eq!((attempts, harness.recoveries()), (5, 4));
+        assert!(!logs.contains("Operation recovery stopped"), "{logs}");
+    }
+
+    #[tokio::test]
+    async fn reattach_and_recovery_time_exhaust_budget() {
+        let harness = Harness::new(RetryOptions::default(), secs(1));
+        let (result, attempts, logs) = harness
+            .receive(|attempt| match attempt {
+                0 => (secs(20), secs(0), Outcome::LinkClosed),
+                _ => (secs(20), secs(0), Outcome::AttachFailed),
+            })
+            .await;
+        assert!(result.is_err());
+        // Charged time at each failure: 20 s, 41 s, and 62 s.
+        assert_eq!((attempts, harness.recoveries()), (3, 2));
+        assert_fields(
+            stop_warning(&logs),
+            &[
+                "stop_reason=elapsed_budget_exhausted",
+                "retries_attempted=2",
+                "receive_wait_elapsed=0ns",
+                "recovery_elapsed=62s",
+            ],
+        );
+    }
+
+    // Like an empty receive in .NET, a healthy wait resets the retry count.
+    #[tokio::test]
+    async fn healthy_wait_resets_retry_count() {
+        let options = RetryOptions {
+            max_retries: 2,
+            ..Default::default()
+        };
+        let harness = Harness::new(options, secs(1));
+        let (result, attempts, logs) = harness
+            .receive(|attempt| match attempt {
+                0..=5 => (secs(1), HEALTHY_WAIT, Outcome::LinkClosed),
+                _ => (secs(1), secs(0), Outcome::Deliver),
+            })
+            .await;
+        assert_eq!(result.unwrap(), 6);
+        assert_eq!((attempts, harness.recoveries()), (7, 6));
+        assert!(!logs.contains("Operation recovery stopped"), "{logs}");
+    }
+
+    #[tokio::test]
+    async fn failures_before_healthy_wait_exhaust_retries() {
+        let options = RetryOptions {
+            max_retries: 3,
+            ..Default::default()
+        };
+        let harness = Harness::new(options, secs(1));
+        let (result, attempts, logs) = harness
+            .receive(|attempt| match attempt {
+                0 => (secs(0), secs(120), Outcome::LinkClosed),
+                1 => (secs(1), secs(0), Outcome::AttachFailed),
+                20.. => (secs(0), secs(0), Outcome::Deliver),
+                _ => (
+                    secs(1),
+                    HEALTHY_WAIT - StdDuration::from_millis(1),
+                    Outcome::LinkClosed,
+                ),
+            })
+            .await;
+        assert!(result.is_err());
+        assert_eq!((attempts, harness.recoveries()), (4, 3));
+        assert_fields(
+            stop_warning(&logs),
+            &["stop_reason=retries_exhausted", "retries_attempted=3"],
+        );
+    }
+
+    // Link reconnects have no backoff, so without the backoff step on a new
+    // episode this link would reconnect once per `HEALTHY_WAIT`.
+    #[tokio::test]
+    async fn new_episode_waits_a_backoff_step_before_reconnect() {
+        let options = RetryOptions {
+            initial_delay: azure_core::time::Duration::seconds(20),
+            ..Default::default()
+        };
+        let harness = Harness::new(options, StdDuration::ZERO);
+        let (result, _, _) = harness
+            .receive(|attempt| match attempt {
+                0..=4 => (secs(0), HEALTHY_WAIT, Outcome::LinkClosed),
+                _ => (secs(0), secs(0), Outcome::Deliver),
+            })
+            .await;
+        assert_eq!(result.unwrap(), 5);
+        let gaps = harness.recovery_gaps();
+        assert_eq!(gaps.len(), 4);
+        for gap in gaps {
+            assert!(gap >= HEALTHY_WAIT + secs(20), "{gap:?}");
+        }
+    }
+
+    #[tokio::test]
+    async fn logs_report_charged_time_and_new_episode() {
+        let options = RetryOptions {
+            initial_delay: azure_core::time::Duration::seconds(1),
+            max_delay: azure_core::time::Duration::seconds(1),
+            max_retries: 1,
+            ..Default::default()
+        };
+        let harness = Harness::new(options, secs(2));
+        let (result, attempts, logs) = harness
+            .receive_with_logs(Level::INFO, |attempt| match attempt {
+                0 => (secs(3), secs(100), Outcome::LinkClosed),
+                1 => (secs(3), HEALTHY_WAIT, Outcome::LinkClosed),
+                _ => (secs(3), secs(4), Outcome::LinkClosed),
+            })
+            .await;
+        assert!(result.is_err());
+        assert_eq!(attempts, 3);
+        let reset = logs
+            .lines()
+            .find(|line| line.contains("starting a new recovery episode"))
+            .expect("no new episode event");
+        assert_fields(
+            reset,
+            &[
+                "INFO",
+                "connection_id=conn-1",
+                "partition_id=7",
+                "retries_attempted=1",
+                "healthy_wait=10s",
+            ],
+        );
+        // The new episode charges 1 s backoff, 2 s recovery, and 3 s attach.
+        assert_fields(
+            stop_warning(&logs),
+            &[
+                "stop_reason=retries_exhausted",
+                "retries_attempted=1",
+                "max_retries=1",
+                "receive_wait_elapsed=14s",
+                "recovery_elapsed=6s",
+                "max_total_elapsed=60s",
+                "connection_id=conn-1",
+                "partition_id=7",
+            ],
+        );
     }
 }

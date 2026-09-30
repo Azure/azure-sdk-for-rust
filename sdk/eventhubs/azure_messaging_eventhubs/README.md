@@ -418,10 +418,15 @@ stopped, returning error.`, with these fields:
   `retries_exhausted`, `non_recoverable`, `recovery_failed`, or `recovery_unavailable`.
 - `retries_attempted` and `max_retries` - the retries that ran and the configured limit.
 - `recovery_elapsed` and `max_total_elapsed` - the time charged to the elapsed-time budget and
-  its configured limit. For a receive, this time starts at the first failure. For other
-  operations, it starts with the first attempt.
-- `receive_wait_elapsed` - receive only: the time that the receive waited for an event before the
-  first failure. This time is not charged to the budget.
+  its configured limit. For a receive, only recovery work counts: recovery actions, backoff, and
+  link attach. For other operations, all time from the first attempt counts.
+- `receive_wait_elapsed` - receive only: the total time in the current recovery episode that the
+  receive waited for an event on an attached link. This time is not charged to the budget.
+
+When a receive link fails after it waited at least 10 seconds for an event, the link was healthy,
+so the SDK starts a new recovery episode with a new retry count and a new budget. It logs this at
+`info` as `Receive link failed after a healthy wait, starting a new recovery episode.`, with
+`connection_id`, `partition_id`, the previous `retries_attempted`, and the `healthy_wait`.
 - `connection_id` and `partition_id` - the receiver that stopped, present on receive events at
   every level.
 - `err` - the error that the operation returns.
