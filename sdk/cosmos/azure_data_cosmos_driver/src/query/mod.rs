@@ -28,15 +28,18 @@ pub(crate) use parser::parse;
 /// advertises to the Cosmos DB Gateway via
 /// `x-ms-cosmos-supported-query-features`.
 ///
-/// Advertises `Distinct,MultipleOrderBy,NonStreamingOrderBy,OffsetAndLimit,OrderBy,Top`.
-/// The production
-/// pipeline supports streaming single- and multi-column `ORDER BY` rewrites
+/// Advertises `Distinct`, `HybridSearch`, `MultipleOrderBy`,
+/// `NonStreamingOrderBy`, `OffsetAndLimit`, `OrderBy`, `Top`, and
+/// `WeightedRankFusion`. The production pipeline supports streaming
+/// single- and multi-column `ORDER BY` rewrites
 /// (`OrderBy,MultipleOrderBy`) and the result-window rewrite shapes
 /// `OffsetAndLimit,Top` through [`driver::dataflow::SkipTake`]. Advertising
 /// these lets the Gateway return the per-partition rewritten query the
 /// client-side pipeline needs, including for combined `ORDER BY … OFFSET/LIMIT`
 /// and `ORDER BY … TOP` queries. `NonStreamingOrderBy` enables finite-window
 /// plans that require the fully buffered ordered merge pipeline.
+/// `HybridSearch` and `WeightedRankFusion` enable the bounded ranked full-text
+/// and hybrid search pipeline.
 ///
 /// Other advanced rewrite shapes (Aggregate, CompositeAggregate, CountIf,
 /// DCount, GroupBy, MultipleAggregates, NonValueAggregate) remain

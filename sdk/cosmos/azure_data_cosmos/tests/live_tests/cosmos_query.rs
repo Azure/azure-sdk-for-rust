@@ -95,74 +95,74 @@ async fn live_ranked_full_text_and_hybrid_search() -> Result<(), Box<dyn Error>>
                     .with_max_item_count(MaxItemCountHint::Limit(
                         std::num::NonZeroU32::new(1).unwrap(),
                     ));
-            for (sql, scope, scope_option, expected) in [
-                (
-                    "SELECT TOP 3 * FROM c ORDER BY RANK FullTextScore(c.text, @term)",
-                    FeedScope::full_container(),
-                    FullTextScoreScope::Global,
-                    &["two", "one", "three"][..],
-                ),
-                (
-                    "SELECT TOP 3 * FROM c ORDER BY RANK RRF(FullTextScore(c.text, @term), FullTextScore(c.text, @second), [2, 1])",
-                    FeedScope::full_container(),
-                    FullTextScoreScope::Global,
-                    &["two", "one", "three"],
-                ),
-                (
-                    "SELECT TOP 3 * FROM c ORDER BY RANK RRF(VectorDistance(c.embedding, @vector), FullTextScore(c.text, @term), [2, 1])",
-                    FeedScope::full_container(),
-                    FullTextScoreScope::Global,
-                    &["one", "two", "three"],
-                ),
-                (
-                    "SELECT TOP 2 * FROM c ORDER BY RANK FullTextScore(c.text, @term)",
-                    FeedScope::partition("a"),
-                    FullTextScoreScope::Local,
-                    &["one", "three"],
-                ),
-                (
-                    "SELECT TOP 2 * FROM c ORDER BY RANK FullTextScore(c.text, @term)",
-                    FeedScope::partition("a"),
-                    FullTextScoreScope::Global,
-                    &["one", "three"],
-                ),
-                (
-                    "SELECT * FROM c ORDER BY RANK FullTextScore(c.text, @term) OFFSET 1 LIMIT 2",
-                    FeedScope::full_container(),
-                    FullTextScoreScope::Global,
-                    &["one", "three"],
-                ),
-                (
-                    "SELECT TOP @bound * FROM c ORDER BY RANK FullTextScore(c.text, @term)",
-                    FeedScope::full_container(),
-                    FullTextScoreScope::Global,
-                    &["two", "one", "three"],
-                ),
-            ] {
-                let query = Query::from(sql)
-                    .with_parameter("@term", "bicycle")?
-                    .with_parameter("@second", "blue")?
-                    .with_parameter("@vector", vec![0.0_f32, 0.0])?
-                    .with_parameter("@bound", 3)?;
-                let mut pages = container
-                    .query_items::<SearchDocument>(
-                        query,
-                        scope,
-                        Some(options.clone().with_full_text_score_scope(scope_option)),
-                    )
-                    .await?
-                    .into_pages();
-                assert!(pages.to_continuation_token().is_err());
-                let mut ids = Vec::new();
-                while let Some(page) = pages.next().await {
-                    ids.extend(page?.into_items().into_iter().map(|item| item.id));
+                for (sql, scope, scope_option, expected) in [
+                    (
+                        "SELECT TOP 3 * FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+                        FeedScope::full_container(),
+                        FullTextScoreScope::Global,
+                        &["two", "one", "three"][..],
+                    ),
+                    (
+                        "SELECT TOP 3 * FROM c ORDER BY RANK RRF(FullTextScore(c.text, @term), FullTextScore(c.text, @second), [2, 1])",
+                        FeedScope::full_container(),
+                        FullTextScoreScope::Global,
+                        &["two", "one", "three"],
+                    ),
+                    (
+                        "SELECT TOP 3 * FROM c ORDER BY RANK RRF(VectorDistance(c.embedding, @vector), FullTextScore(c.text, @term), [2, 1])",
+                        FeedScope::full_container(),
+                        FullTextScoreScope::Global,
+                        &["one", "two", "three"],
+                    ),
+                    (
+                        "SELECT TOP 2 * FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+                        FeedScope::partition("a"),
+                        FullTextScoreScope::Local,
+                        &["one", "three"],
+                    ),
+                    (
+                        "SELECT TOP 2 * FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+                        FeedScope::partition("a"),
+                        FullTextScoreScope::Global,
+                        &["one", "three"],
+                    ),
+                    (
+                        "SELECT * FROM c ORDER BY RANK FullTextScore(c.text, @term) OFFSET 1 LIMIT 2",
+                        FeedScope::full_container(),
+                        FullTextScoreScope::Global,
+                        &["one", "three"],
+                    ),
+                    (
+                        "SELECT TOP @bound * FROM c ORDER BY RANK FullTextScore(c.text, @term)",
+                        FeedScope::full_container(),
+                        FullTextScoreScope::Global,
+                        &["two", "one", "three"],
+                    ),
+                ] {
+                    let query = Query::from(sql)
+                        .with_parameter("@term", "bicycle")?
+                        .with_parameter("@second", "blue")?
+                        .with_parameter("@vector", vec![0.0_f32, 0.0])?
+                        .with_parameter("@bound", 3)?;
+                    let mut pages = container
+                        .query_items::<SearchDocument>(
+                            query,
+                            scope,
+                            Some(options.clone().with_full_text_score_scope(scope_option)),
+                        )
+                        .await?
+                        .into_pages();
+                    assert!(pages.to_continuation_token().is_err());
+                    let mut ids = Vec::new();
+                    while let Some(page) = pages.next().await {
+                        ids.extend(page?.into_items().into_iter().map(|item| item.id));
+                    }
+                    assert_eq!(
+                        ids.iter().map(String::as_str).collect::<Vec<_>>(),
+                        expected,
+                        "ranked query mismatch with binary={binary}: {sql}"
+                    );
                 }
-                assert_eq!(
-                    ids.iter().map(String::as_str).collect::<Vec<_>>(),
-                    expected,
-                    "ranked query mismatch with binary={binary}: {sql}"
-                );
-            }
             }
             for (sql, expected) in [
                 (
@@ -179,7 +179,10 @@ async fn live_ranked_full_text_and_hybrid_search() -> Result<(), Box<dyn Error>>
                     .query_items::<serde_json::Value>(
                         query,
                         FeedScope::full_container(),
-                        Some(QueryOptions::default().with_query_plan_mode(QueryPlanMode::GatewayOnly)),
+                        Some(
+                            QueryOptions::default()
+                                .with_query_plan_mode(QueryPlanMode::GatewayOnly),
+                        ),
                     )
                     .await?
                     .into_pages();

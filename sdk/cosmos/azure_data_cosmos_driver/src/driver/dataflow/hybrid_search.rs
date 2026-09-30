@@ -316,6 +316,7 @@ pub(crate) struct HybridSearch {
     next_component: usize,
     rows: HashMap<String, RankedRow>,
     candidate_count: usize,
+    component_limits: Vec<usize>,
     max_candidates: usize,
     skip: usize,
     take: usize,
@@ -391,27 +392,32 @@ impl HybridSearch {
         } else {
             info.component_weights.clone()
         };
-        let max_candidates =
-            info.component_query_infos
-                .iter()
-                .try_fold(0_u64, |total, query| {
-                    let bound = match (query.top, query.limit) {
-                        (Some(top), Some(limit)) => top.min(limit),
-                        (Some(top), None) => top,
-                        (None, Some(limit)) => limit,
-                        (None, None) => {
-                            return Err(invalid_plan(
-                                "hybrid search component query has no finite candidate limit",
-                            ));
-                        }
-                    };
-                    total
-                        .checked_add(bound)
-                        .ok_or_else(|| invalid_plan("hybrid search candidate bound is too large"))
-                })?;
-        let max_candidates = usize::try_from(max_candidates)
-            .ok()
-            .and_then(|count| count.checked_mul(targets.len()))
+        let component_limits: Vec<usize> = info
+            .component_query_infos
+            .iter()
+            .map(|query| {
+                let bound = match (query.top, query.limit) {
+                    (Some(top), Some(limit)) => top.min(limit),
+                    (Some(top), None) => top,
+                    (None, Some(limit)) => limit,
+                    (None, None) => {
+                        return Err(invalid_plan(
+                            "hybrid search component query has no finite candidate limit",
+                        ));
+                    }
+                };
+                usize::try_from(bound)
+                    .map_err(|_| invalid_plan("hybrid search candidate bound is too large"))
+            })
+            .collect::<crate::error::Result<_>>()?;
+        let max_candidates = component_limits
+            .iter()
+            .try_fold(0_usize, |total, bound| {
+                total
+                    .checked_add(*bound)
+                    .ok_or_else(|| invalid_plan("hybrid search candidate bound is too large"))
+            })?
+            .checked_mul(targets.len())
             .ok_or_else(|| invalid_plan("hybrid search candidate bound is too large"))?;
         let statistics_child = if info.requires_global_statistics {
             let container = operation
@@ -460,6 +466,7 @@ impl HybridSearch {
             next_component: 0,
             rows: HashMap::new(),
             candidate_count: 0,
+            component_limits,
             max_candidates,
             skip,
             take,
@@ -536,6 +543,17 @@ impl HybridSearch {
                 }
             }
         }
+        Ok(())
+    }
+
+    fn account_for_split_children(&mut self, count: usize) -> crate::error::Result<()> {
+        let additional = count
+            .checked_mul(self.component_limits[self.next_component])
+            .ok_or_else(|| invalid_plan("hybrid search candidate bound is too large"))?;
+        self.max_candidates = self
+            .max_candidates
+            .checked_add(additional)
+            .ok_or_else(|| invalid_plan("hybrid search candidate bound is too large"))?;
         Ok(())
     }
 
@@ -632,11 +650,16 @@ impl PipelineNode for HybridSearch {
             if self.component_child.is_none() {
                 self.start_component()?;
             }
-            let child = self
-                .component_child
-                .as_mut()
-                .expect("component initialized");
-            match child.next_page(context).await? {
+            let (result, spawned_children) = {
+                let child = self
+                    .component_child
+                    .as_mut()
+                    .expect("component initialized");
+                let result = child.next_page(context).await?;
+                (result, child.take_spawned_children())
+            };
+            self.account_for_split_children(spawned_children)?;
+            match result {
                 PageResult::Page {
                     response,
                     is_terminal,
@@ -706,14 +729,16 @@ mod tests {
     use crate::{
         driver::dataflow::{
             mocks::{
-                epk_range_target, response_with_charge, MockRequestExecutor, NoopTopologyProvider,
+                epk_range_target, gone_error, response_with_charge, response_with_continuation,
+                MockRequestExecutor, MockTopologyProvider, NoopTopologyProvider,
             },
             query_plan::QueryInfo,
-            PipelineContext,
+            PartitionRoutingRefresh, PipelineContext, ResolvedRange,
         },
         models::{
-            AccountReference, ContainerProperties, ContainerReference, MaxItemCountHint,
-            PartitionKeyDefinition, SystemProperties,
+            effective_partition_key::EffectivePartitionKey, AccountReference, ContainerProperties,
+            ContainerReference, FeedRange, MaxItemCountHint, PartitionKeyDefinition,
+            SystemProperties,
         },
     };
     use serde_json::{json, Value};
@@ -766,6 +791,20 @@ mod tests {
             take: Some(2),
             requires_global_statistics: true,
         }
+    }
+
+    fn single_component_plan() -> HybridSearchQueryInfo {
+        let mut info = plan();
+        info.component_query_infos = vec![QueryInfo {
+            top: Some(2),
+            rewritten_query: Some("SELECT TOP 2 c FROM c".to_owned()),
+            ..Default::default()
+        }];
+        info.component_weights.clear();
+        info.skip = Some(0);
+        info.take = Some(2);
+        info.requires_global_statistics = false;
+        info
     }
 
     fn page(documents: Value, charge: f64) -> crate::models::CosmosResponse {
@@ -869,6 +908,103 @@ mod tests {
         assert!(query.contains("15 > 0"));
         assert!(query.contains("ARRAY_LENGTH([3])"));
         assert_eq!(component["parameters"][0]["value"], "rust");
+    }
+
+    #[tokio::test]
+    async fn allows_candidates_from_split_children_after_parent_emits_results() {
+        let target = epk_range_target().unwrap();
+        let mut node = HybridSearch::new(
+            operation(),
+            &single_component_plan(),
+            vec![target],
+            vec![],
+            FullTextScoreScope::Local,
+            0,
+            2,
+        )
+        .unwrap();
+        let row =
+            |id, score| json!({"_rid": id, "componentScores": [score], "payload": {"id": id}});
+        let parent = response_with_continuation(
+            &serde_json::to_vec(&json!({"Documents": [row("a", 0.9)]})).unwrap(),
+            Some("resume"),
+        );
+        let mut executor = MockRequestExecutor::new(vec![
+            Ok(parent),
+            Err(gone_error()),
+            Ok(page(json!([row("b", 0.8), row("c", 0.7)]), 1.0)),
+            Ok(page(json!([row("d", 0.6), row("e", 0.5)]), 1.0)),
+        ]);
+        let middle = EffectivePartitionKey::try_from("40").unwrap();
+        let end = EffectivePartitionKey::try_from("80").unwrap();
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            ResolvedRange {
+                partition_key_range_id: "1".to_owned(),
+                parents: vec!["0".to_owned()],
+                range: FeedRange::new(EffectivePartitionKey::MIN, middle.clone()).unwrap(),
+            },
+            ResolvedRange {
+                partition_key_range_id: "2".to_owned(),
+                parents: vec!["0".to_owned()],
+                range: FeedRange::new(middle, end).unwrap(),
+            },
+        ])]);
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap() else {
+            panic!("expected first ranked page");
+        };
+        assert_eq!(ids(&response), ["a"]);
+        let PageResult::Page {
+            response,
+            is_terminal,
+        } = node.next_page(&mut context).await.unwrap()
+        else {
+            panic!("expected second ranked page");
+        };
+        assert_eq!(ids(&response), ["b"]);
+        assert!(is_terminal);
+        assert_eq!(node.candidate_count, 5);
+        assert_eq!(node.max_candidates, 6);
+        assert_eq!(
+            executor.continuation_calls,
+            [
+                None,
+                Some("resume".to_owned()),
+                Some("resume".to_owned()),
+                Some("resume".to_owned())
+            ]
+        );
+        assert_eq!(
+            topology.refresh_calls,
+            [PartitionRoutingRefresh::ForceRefresh]
+        );
+    }
+
+    #[test]
+    fn rejects_excess_candidates_without_a_split() {
+        let mut node = HybridSearch::new(
+            operation(),
+            &single_component_plan(),
+            vec![epk_range_target().unwrap()],
+            vec![],
+            FullTextScoreScope::Local,
+            0,
+            2,
+        )
+        .unwrap();
+        let response = page(
+            json!([
+                {"_rid":"a", "componentScores":[0.9], "payload":{"id":"a"}},
+                {"_rid":"b", "componentScores":[0.8], "payload":{"id":"b"}},
+                {"_rid":"c", "componentScores":[0.7], "payload":{"id":"c"}}
+            ]),
+            1.0,
+        );
+        assert_eq!(
+            node.collect_results(response.body()).unwrap_err().status(),
+            status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
+        );
     }
 
     #[test]

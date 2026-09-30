@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `FullTextScoreScope` and client-side ranked full-text and weighted hybrid query execution with bounded result windows.
+- Added `FullTextScoreScope` and client-side ranked full-text and weighted hybrid query execution with bounded result windows. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
 
 ## 1.0.0-beta.1 (2026-09-28)
 
