@@ -12,6 +12,7 @@ keywords = ["sdk", "cloud", "rest", "iot"]
 categories = ["api-bindings"]
 edition.workspace = true
 rust-version.workspace = true
+exclude.workspace = true
 
 [dependencies]
 async-lock.workspace = true

@@ -11,6 +11,7 @@ documentation = "https://docs.rs/azure_identity"
 keywords = ["sdk", "cloud", "rest", "iot"]
 categories = ["api-bindings"]
 edition.workspace = true
+exclude.workspace = true
 
 [dependencies]
 async-lock.workspace = true

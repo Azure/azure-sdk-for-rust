@@ -12,6 +12,7 @@ keywords = ["sdk", "cloud", "tracing", "observability"]
 categories = ["api-bindings", "development-tools::debugging"]
 edition.workspace = true
 rust-version.workspace = true
+exclude.workspace = true
 
 [features]
 default = ["azure_core/default"]
