@@ -35,7 +35,7 @@ For comprehensive guidance on how AI agents should interact with this repository
 
 The post-triage issue investigator uses service and crate documentation to explain reports and suggest next steps for maintainers. It does not implement fixes, assign a coding agent, or create pull requests. Generated-client changes still belong in the TypeSpec specification or emitter, as described below.
 
-Keep reusable investigation context in `sdk/<service>/known-behaviors.md` or `sdk/<service>/<crate>/known-behaviors.md`; [Key Vault's context](sdk/keyvault/known-behaviors.md) is an example. Explain the behavior, its limits, and authoritative documentation links. The investigator also reads any available `TROUBLESHOOTING.md`, README, and CHANGELOG at those scopes. Context is advisory evidence, not an automatic-closure rule: match the exact operation and corroborate the report before concluding it is service-controlled.
+Keep reusable investigation context in `sdk/<service>/known-behaviors.md` or `sdk/<service>/<crate>/known-behaviors.md`; [Key Vault's context](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/keyvault/known-behaviors.md) is an example. Explain the behavior, its limits, and authoritative documentation links. The investigator also reads any available `TROUBLESHOOTING.md`, README, and CHANGELOG at those scopes. Context is advisory evidence, not an automatic-closure rule: match the exact operation and corroborate the report before concluding it is service-controlled.
 
 ## Generated code
 
