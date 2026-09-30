@@ -1,5 +1,16 @@
 # Release History
 
+## 1.2.0-beta.3 (Unreleased)
+
+### Breaking Changes
+
+- Updated `fe2o3-amqp` to 0.18. A build that selects its TLS stack through a direct `fe2o3-amqp` dependency must now name version 0.18.
+
+### Bugs Fixed
+
+- A message that is larger than the link allows now reports `AmqpErrorCondition::LinkPayloadSizeExceeded`. The sender rejects it before it sends a frame, and the receiver rejects the delivery and keeps the link open.
+- A send no longer hangs when the peer settles the delivery at once. The fix comes from `fe2o3-amqp` 0.18.2.
+
 ## 1.2.0-beta.2 (2026-09-14)
 
 ### Breaking Changes

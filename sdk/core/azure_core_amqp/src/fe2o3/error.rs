@@ -130,6 +130,9 @@ impl From<AmqpDescribedError> for fe2o3_amqp_types::definitions::Error {
 impl From<fe2o3_amqp::link::DetachError> for AmqpError {
     fn from(e: fe2o3_amqp::link::DetachError) -> Self {
         match e {
+            // fe2o3-amqp 0.18 deprecates this variant, but `Sender::on_detach`
+            // still produces it.
+            #[allow(deprecated)]
             fe2o3_amqp::link::DetachError::DetachedByRemote => {
                 Self::from(AmqpErrorKind::LinkDetachedByRemote(Box::new(e)))
             }
@@ -145,6 +148,17 @@ impl From<fe2o3_amqp::link::DetachError> for AmqpError {
             _ => Self::from(AmqpErrorKind::DetachError(Box::new(e))),
         }
     }
+}
+
+/// Reports a message that is larger than the link allows with the
+/// `amqp:link:message-size-exceeded` condition, as go-amqp does.
+pub(crate) fn message_size_exceeded(e: fe2o3_amqp::link::MessageSizeExceeded) -> AmqpError {
+    AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+        AmqpErrorCondition::LinkPayloadSizeExceeded,
+        Some(e.to_string()),
+        Default::default(),
+    ))
+    .into()
 }
 
 impl From<fe2o3_amqp::link::LinkStateError> for AmqpError {

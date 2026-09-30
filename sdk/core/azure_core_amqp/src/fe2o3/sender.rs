@@ -231,6 +231,9 @@ impl From<fe2o3_amqp::link::SendError> for AmqpError {
             fe2o3_amqp::link::SendError::IllegalDeliveryState => {
                 AmqpErrorKind::IllegalDeliveryState.into()
             }
+            fe2o3_amqp::link::SendError::MessageSizeExceeded(exceeded) => {
+                super::error::message_size_exceeded(exceeded)
+            }
             fe2o3_amqp::link::SendError::MessageEncodeError => {
                 AmqpError::from(AmqpErrorKind::TransportImplementationError(Box::new(e)))
             }
@@ -244,7 +247,8 @@ impl From<fe2o3_amqp::link::SenderAttachError> for AmqpError {
             fe2o3_amqp::link::SenderAttachError::RemoteClosedWithError(e) => {
                 AmqpErrorKind::AmqpDescribedError(e.into()).into()
             }
-            fe2o3_amqp::link::SenderAttachError::IllegalSessionState
+            fe2o3_amqp::link::SenderAttachError::SessionStopped(_)
+            | fe2o3_amqp::link::SenderAttachError::SessionNotMapped
             | fe2o3_amqp::link::SenderAttachError::IllegalState => {
                 AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
             }
@@ -254,7 +258,6 @@ impl From<fe2o3_amqp::link::SenderAttachError> for AmqpError {
             | fe2o3_amqp::link::SenderAttachError::ExpectImmediateDetach
             | fe2o3_amqp::link::SenderAttachError::IncomingTargetIsNone
             | fe2o3_amqp::link::SenderAttachError::SndSettleModeNotSupported
-            | fe2o3_amqp::link::SenderAttachError::RcvSettleModeNotSupported
             | fe2o3_amqp::link::SenderAttachError::TargetAddressIsNoneWhenDynamicIsTrue
             | fe2o3_amqp::link::SenderAttachError::SourceAddressIsSomeWhenDynamicIsTrue
             | fe2o3_amqp::link::SenderAttachError::DynamicNodePropertiesIsSomeWhenDynamicIsFalse => {
@@ -295,6 +298,24 @@ mod tests {
                 "com.microsoft:epoch"
             )),
             Some(&fe2o3_amqp_types::primitives::Value::Long(3))
+        );
+    }
+
+    #[test]
+    fn send_message_size_exceeded_reports_payload_size_condition() {
+        let send_error = fe2o3_amqp::link::SendError::MessageSizeExceeded(
+            fe2o3_amqp::link::MessageSizeExceeded {
+                size: 2048,
+                max_size: 1024,
+            },
+        );
+        let error = AmqpError::from(send_error);
+        let AmqpErrorKind::AmqpDescribedError(described) = error.kind() else {
+            panic!("an oversized message must report a described error");
+        };
+        assert_eq!(
+            described.condition,
+            crate::error::AmqpErrorCondition::LinkPayloadSizeExceeded
         );
     }
 }
