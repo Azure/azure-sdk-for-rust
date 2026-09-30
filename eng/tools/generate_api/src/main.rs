@@ -35,10 +35,8 @@ fn run() -> Result<(), String> {
     ));
 
     let loaded_package = driver::load_model(&request)?;
-    let output_dir = request
-        .output_dir
-        .as_deref()
-        .unwrap_or(&loaded_package.package_dir);
+    let output_dir = request.output_dir(&loaded_package.package_dir);
+    let working_dir = request.working_dir(&loaded_package.package_dir);
     let model = &loaded_package.model;
     let output_path = output::output_path(output_dir, request.format);
     diagnostics::info(format!("Generating file: {}", output_path.display()));
@@ -79,7 +77,7 @@ fn run() -> Result<(), String> {
                 let patch = render::patch::render(&lines, file_name);
                 save_or_check(&request, &patch_path, &patch)?;
 
-                let version_path = output::state_file_path(output_dir, cli::VERSION_FILE_NAME);
+                let version_path = output::state_file_path(working_dir, cli::VERSION_FILE_NAME);
                 save_or_check(
                     &request,
                     &version_path,
@@ -87,7 +85,7 @@ fn run() -> Result<(), String> {
                 )?;
 
                 let package_relative_path =
-                    output::state_file_path(output_dir, cli::PACKAGE_RELATIVE_PATH_FILE_NAME);
+                    output::state_file_path(working_dir, cli::PACKAGE_RELATIVE_PATH_FILE_NAME);
                 save_or_check(
                     &request,
                     &package_relative_path,

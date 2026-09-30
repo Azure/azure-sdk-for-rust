@@ -22,16 +22,51 @@ use azure_core::http::StatusCode;
 use azure_core::Uuid;
 use azure_data_cosmos::feed::FeedScope;
 use azure_data_cosmos::models::ContainerProperties;
-use azure_data_cosmos::{PartitionKey, Query};
+use azure_data_cosmos::{CosmosError, CosmosStatus, PartitionKey, Query};
 use framework::{
     probe_data_plane_ready, read_item_with_readiness_retry, TestClient, TestRunContext,
 };
 use futures::TryStreamExt;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
+use std::{error::Error, future::Future, time::Duration};
 
 /// The scope the Cosmos driver requests when acquiring an AAD token.
 const COSMOS_AAD_SCOPE: &str = "https://cosmos.azure.com/.default";
+const QUERY_READINESS_TIMEOUT: Duration = Duration::from_secs(30);
+const QUERY_READINESS_RETRY_DELAY: Duration = Duration::from_secs(1);
+
+async fn retry_query_readiness<T, F, Fut>(mut query: F) -> azure_data_cosmos::Result<T>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = azure_data_cosmos::Result<T>>,
+{
+    let deadline = tokio::time::Instant::now() + QUERY_READINESS_TIMEOUT;
+    let mut last_error = None;
+    loop {
+        if tokio::time::Instant::now() >= deadline {
+            break;
+        }
+        match tokio::time::timeout_at(deadline, query()).await {
+            Ok(Ok(value)) => return Ok(value),
+            Ok(Err(error)) if framework::test_client::rbac_name_based_data_not_ready(&error) => {
+                println!("waiting for AAD query authorization: {error}");
+                last_error = Some(error);
+            }
+            Ok(Err(error)) => return Err(error),
+            Err(_) => break,
+        }
+        tokio::time::sleep_until(
+            (tokio::time::Instant::now() + QUERY_READINESS_RETRY_DELAY).min(deadline),
+        )
+        .await;
+    }
+    Err(last_error.unwrap_or_else(|| {
+        CosmosError::builder()
+            .with_status(CosmosStatus::new(StatusCode::RequestTimeout))
+            .with_message("AAD query timed out after 30 seconds")
+            .build()
+    }))
+}
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 struct AadTestItem {
@@ -113,17 +148,22 @@ pub async fn aad_item_crud_roundtrip() -> Result<(), Box<dyn Error>> {
             assert_eq!(replace.status(), StatusCode::Ok);
 
             // Query via AAD, scoped to the item's partition.
+            // A successful probe cannot guarantee authorization of the next query request.
+            // Retry the read-only query, not its result assertions or the preceding writes.
             let query =
                 Query::from("SELECT * FROM c WHERE c.id = @id").with_parameter("@id", &item_id)?;
-            let found: Vec<AadTestItem> = aad_container
-                .query_items::<AadTestItem>(
-                    query,
-                    FeedScope::partition(PartitionKey::from(&pk)),
-                    None,
-                )
-                .await?
-                .try_collect()
-                .await?;
+            let found: Vec<AadTestItem> = retry_query_readiness(|| async {
+                aad_container
+                    .query_items::<AadTestItem>(
+                        query.clone(),
+                        FeedScope::partition(PartitionKey::from(&pk)),
+                        None,
+                    )
+                    .await?
+                    .try_collect()
+                    .await
+            })
+            .await?;
             assert_eq!(found.len(), 1, "query should return exactly the one item");
             assert_eq!(found[0], item);
 
@@ -194,4 +234,117 @@ pub async fn aad_read_container_metadata() -> Result<(), Box<dyn Error>> {
         None,
     )
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{retry_query_readiness, AadTestItem, QUERY_READINESS_TIMEOUT};
+    use azure_core::http::StatusCode;
+    use azure_data_cosmos::{CosmosError, CosmosStatus};
+    use futures::{stream, TryStreamExt};
+    use std::{cell::Cell, future::pending, time::Duration};
+
+    fn error(status: StatusCode, sub_status: u16) -> CosmosError {
+        CosmosError::builder()
+            .with_status(CosmosStatus::new(status).with_sub_status(sub_status))
+            .with_message("query authorization failure")
+            .build()
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn query_readiness_retries_transient_authorization() {
+        let attempts = Cell::new(0);
+        retry_query_readiness(|| {
+            attempts.set(attempts.get() + 1);
+            async {
+                if attempts.get() < 3 {
+                    Err(error(StatusCode::Forbidden, 5302))
+                } else {
+                    Ok(())
+                }
+            }
+        })
+        .await
+        .unwrap();
+        assert_eq!(attempts.get(), 3);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn query_readiness_discards_partial_results_before_retry() {
+        let item = AadTestItem {
+            id: "item".into(),
+            partition_key: "pk".into(),
+            value: 2,
+        };
+        let attempts = Cell::new(0);
+        let start = tokio::time::Instant::now();
+        let found = retry_query_readiness(|| async {
+            attempts.set(attempts.get() + 1);
+            let mut results = vec![Ok(item.clone())];
+            if attempts.get() == 1 {
+                results.push(Err(error(StatusCode::Forbidden, 5302)));
+            }
+            stream::iter(results).try_collect::<Vec<_>>().await
+        })
+        .await
+        .unwrap();
+
+        assert_eq!(attempts.get(), 2);
+        assert_eq!(start.elapsed(), Duration::from_secs(1));
+        assert_eq!(found, vec![item]);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn query_readiness_preserves_persistent_authorization_failure() {
+        let start = tokio::time::Instant::now();
+        let attempts = Cell::new(0);
+        let failure = retry_query_readiness::<(), _, _>(|| {
+            attempts.set(attempts.get() + 1);
+            async { Err(error(StatusCode::Forbidden, 5302)) }
+        })
+        .await
+        .unwrap_err();
+        assert_eq!(
+            failure.status(),
+            error(StatusCode::Forbidden, 5302).status()
+        );
+        assert_eq!(
+            failure.to_string(),
+            error(StatusCode::Forbidden, 5302).to_string()
+        );
+        assert_eq!(start.elapsed(), QUERY_READINESS_TIMEOUT);
+        assert_eq!(attempts.get(), 30);
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn query_readiness_does_not_retry_other_errors() {
+        for (status, sub_status) in [
+            (StatusCode::Forbidden, 5301),
+            (StatusCode::Forbidden, 0),
+            (StatusCode::Unauthorized, 0),
+            (StatusCode::BadRequest, 0),
+        ] {
+            let start = tokio::time::Instant::now();
+            let attempts = Cell::new(0);
+            let failure = retry_query_readiness::<(), _, _>(|| {
+                attempts.set(attempts.get() + 1);
+                async { Err(error(status, sub_status)) }
+            })
+            .await
+            .unwrap_err();
+            assert_eq!(failure.status(), error(status, sub_status).status());
+            assert_eq!(attempts.get(), 1);
+            assert_eq!(start.elapsed(), Duration::ZERO);
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn query_readiness_bounds_hanging_requests() {
+        let start = tokio::time::Instant::now();
+        let failure = retry_query_readiness::<(), _, _>(pending)
+            .await
+            .unwrap_err();
+        assert_eq!(failure.status().status_code(), StatusCode::RequestTimeout);
+        assert_eq!(start.elapsed(), QUERY_READINESS_TIMEOUT);
+    }
 }
