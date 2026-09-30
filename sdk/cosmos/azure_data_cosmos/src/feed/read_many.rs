@@ -178,11 +178,17 @@ impl<T: DeserializeOwned + Send + 'static> Stream for ReadManyIterator<T> {
 }
 
 /// All collected read-many items and their aggregate operation metadata.
-#[derive(SafeDebug)]
 pub struct ReadManyResponse<T> {
     items: Vec<T>,
     request_charge: RequestCharge,
     diagnostics: Option<Arc<DiagnosticsContext>>,
+}
+
+// SafeDebug's debug feature formats T without generating a bound; keep items redacted.
+impl<T> std::fmt::Debug for ReadManyResponse<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ReadManyResponse").finish_non_exhaustive()
+    }
 }
 
 impl<T> ReadManyResponse<T> {
@@ -201,5 +207,28 @@ impl<T> ReadManyResponse<T> {
     /// Returns aggregate diagnostics, or `None` when no requests were needed.
     pub fn diagnostics(&self) -> Option<Arc<DiagnosticsContext>> {
         self.diagnostics.clone()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ReadManyResponse, RequestCharge};
+
+    #[test]
+    fn response_debug_supports_non_debug_items_without_exposing_contents() {
+        struct Item;
+        let opaque = ReadManyResponse {
+            items: vec![Item],
+            request_charge: RequestCharge::default(),
+            diagnostics: None,
+        };
+        assert_eq!(format!("{opaque:?}"), "ReadManyResponse { .. }");
+
+        let sensitive = ReadManyResponse {
+            items: vec!["private item content"],
+            request_charge: RequestCharge::default(),
+            diagnostics: None,
+        };
+        assert_eq!(format!("{sensitive:?}"), "ReadManyResponse { .. }");
     }
 }

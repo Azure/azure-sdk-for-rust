@@ -1268,7 +1268,6 @@ pub mod feed {
         type Item = Result<QueryFeedPage<T>, CosmosError>;
         fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<<Self as >::Item>>;
     }
-    #[derive(Debug)]
     pub struct ReadManyResponse<T> {
     }
     impl<T> ReadManyResponse<T> {
@@ -1276,6 +1275,9 @@ pub mod feed {
         pub fn into_items(self) -> Vec<T>;
         pub fn items(&self) -> &[T];
         pub fn request_charge(&self) -> RequestCharge;
+    }
+    impl<T> Debug for ReadManyResponse<T> {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
     }
     #[derive(Clone)]
     #[non_exhaustive]
