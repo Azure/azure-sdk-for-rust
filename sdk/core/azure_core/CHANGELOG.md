@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- `check_success` would fail when error message contained escape sequences like CRLF ([#5364](https://github.com/Azure/azure-sdk-for-rust/pull/5364))
+
 ### Other Changes
 
 ## 1.2.0-beta.1 (2026-09-04)
@@ -20,7 +22,6 @@
 
 ### Bugs Fixed
 
-- `check_status` would fail when error message contained escape sequences like CRLF ([#5364](https://github.com/Azure/azure-sdk-for-rust/pull/5364))
 - Updated `typespec_client_core` so dropping a sleep future created by the standard (non-`tokio`) async runtime promptly cancels its worker thread.
 
 ### Other Changes
