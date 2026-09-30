@@ -71,7 +71,7 @@ pub(crate) async fn build(
     let mut children: Vec<Box<dyn PipelineNode>> = Vec::new();
     for (index, identities) in groups {
         let range = &ranges[index];
-        if identities.len() == 1 && filter.is_none() {
+        if identities.len() == 1 && filter.is_none() && !container.is_by_rid() {
             if let (pk, Some(id)) = &identities[0] {
                 let item = ItemReference::from_name(container, pk.clone(), id.clone());
                 let mut read = CosmosOperation::read_item(item)

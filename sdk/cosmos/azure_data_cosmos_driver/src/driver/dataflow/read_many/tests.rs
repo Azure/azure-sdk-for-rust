@@ -49,6 +49,45 @@ fn full_range() -> ResolvedRange {
 }
 
 #[tokio::test]
+async fn rid_addressed_singletons_use_queries_with_or_without_filters() {
+    for filter in [None, Some("true".parse().unwrap())] {
+        let operation = Arc::new(CosmosOperation::read_many(
+            container().into_rid_addressed(),
+            ReadManySelection::Items(vec![("pk".into(), "item".into())]),
+            filter,
+        ));
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![full_range()])]);
+        let mut pipeline = build(
+            operation.clone(),
+            operation.read_many.as_ref().unwrap(),
+            &mut topology,
+        )
+        .await
+        .unwrap();
+        let mut executor = MockRequestExecutor::new(vec![Ok(response(
+            br#"{"Documents":[{"id":"item","pk":"pk"}]}"#,
+        ))]);
+        let mut context = PipelineContext::new(&mut executor, None);
+        let page = pipeline.next_page(&mut context).await.unwrap().unwrap();
+        assert_eq!(
+            page.into_body().into_items::<Value>().unwrap(),
+            vec![json!({"id":"item","pk":"pk"})]
+        );
+        assert!(pipeline.next_page(&mut context).await.unwrap().is_none());
+        let body: Value = serde_json::from_slice(
+            executor.query_bodies[0]
+                .as_ref()
+                .expect("RID container must use a query"),
+        )
+        .unwrap();
+        assert_eq!(
+            body["parameters"],
+            json!([{"name":"@__read_many_0","value":"item"},{"name":"@__read_many_1","value":"pk"}])
+        );
+    }
+}
+
+#[tokio::test]
 async fn batches_queries_instead_of_issuing_point_reads() {
     let items = (0..MAX_BATCH_SELECTIONS + 1)
         .map(|i| ("pk".into(), format!("d{i}")))

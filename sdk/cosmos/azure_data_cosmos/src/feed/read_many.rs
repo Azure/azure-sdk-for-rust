@@ -127,13 +127,10 @@ impl<T: DeserializeOwned + Send + 'static> ReadManyIterator<T> {
                 .set_collection_deadline(std::time::Instant::now() + timeout)?;
         }
         let mut items = Vec::new();
-        let mut request_charge = RequestCharge::default();
         let mut diagnostics: Option<Arc<DiagnosticsContext>> = None;
         while let Some(page) = self.pages.next().await {
             match page {
                 Ok(page) => {
-                    request_charge = request_charge
-                        + page.headers().request_charge().copied().unwrap_or_default();
                     diagnostics = merge_diagnostics(diagnostics, Some(page.diagnostics()));
                     items.extend(page.into_items());
                 }
@@ -150,7 +147,10 @@ impl<T: DeserializeOwned + Send + 'static> ReadManyIterator<T> {
         }
         Ok(ReadManyResponse {
             items,
-            request_charge,
+            request_charge: diagnostics
+                .as_ref()
+                .map(|context| context.total_request_charge())
+                .unwrap_or_default(),
             diagnostics,
         })
     }
