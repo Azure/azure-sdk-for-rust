@@ -320,12 +320,17 @@ mod tests {
     enum Outcome {
         Deliver,
         LinkClosed,
+        IdleTimeout,
+        SessionDropped,
+        ServerBusy,
         Stolen,
         AttachFailed,
     }
 
     /// One scripted attempt: attach time, then delivery wait, then outcome.
     type Step = (StdDuration, StdDuration, Outcome);
+
+    const LONG_RECEIVE_WAIT: StdDuration = StdDuration::new(335, 991_427_228);
 
     fn secs(secs: u64) -> StdDuration {
         StdDuration::from_secs(secs)
@@ -342,13 +347,15 @@ mod tests {
         clock: Arc<ManualClock>,
         cost: StdDuration,
         started: Arc<Mutex<Vec<Instant>>>,
+        actions: Arc<Mutex<Vec<ErrorRecoveryAction>>>,
     }
 
     fn fake_recover(
         recovery: FakeRecovery,
-        _: ErrorRecoveryAction,
+        action: ErrorRecoveryAction,
     ) -> Pin<Box<dyn Future<Output = Result<()>> + Send>> {
         recovery.started.lock().unwrap().push(recovery.clock.now());
+        recovery.actions.lock().unwrap().push(action);
         recovery.clock.advance(recovery.cost);
         Box::pin(async { Ok(()) })
     }
@@ -388,6 +395,7 @@ mod tests {
                     clock: ManualClock::new(),
                     cost: recovery_cost,
                     started: Arc::default(),
+                    actions: Arc::default(),
                 },
             }
         }
@@ -408,36 +416,78 @@ mod tests {
             level: Level,
             script: impl Fn(usize) -> Step,
         ) -> (Result<usize>, usize, String) {
+            self.receive_with_budget(level, script, true).await
+        }
+
+        async fn receive_with_budget(
+            &self,
+            level: Level,
+            script: impl Fn(usize) -> Step,
+            exclude_delivery_wait: bool,
+        ) -> (Result<usize>, usize, String) {
             let attempts = AtomicUsize::new(0);
             let clock = &self.recovery.clock;
             let wait = DeliveryWait::new(&**clock);
-            let (result, logs) = capture_logs(
-                level,
-                self.receiver.receive_with_recovery(
-                    || {
-                        let attempt = attempts.fetch_add(1, Ordering::SeqCst);
-                        let (attach, delivery_wait, outcome) = script(attempt);
-                        clock.advance(attach);
-                        if !matches!(outcome, Outcome::AttachFailed) {
-                            wait.start();
-                            clock.advance(delivery_wait);
+            let attempt = || {
+                let attempt = attempts.fetch_add(1, Ordering::SeqCst);
+                let (attach, delivery_wait, outcome) = script(attempt);
+                clock.advance(attach);
+                if !matches!(outcome, Outcome::AttachFailed) {
+                    wait.start();
+                    clock.advance(delivery_wait);
+                }
+                async move {
+                    match outcome {
+                        Outcome::Deliver => Ok(attempt),
+                        Outcome::LinkClosed => Err(link_closed()),
+                        Outcome::IdleTimeout => Err(AmqpErrorKind::IdleTimeoutElapsed(Box::new(
+                            fe2o3_amqp::transport::Error::IdleTimeoutElapsed,
+                        ))
+                        .into()),
+                        Outcome::SessionDropped => Err(AmqpErrorKind::LinkStateError(Box::new(
+                            fe2o3_amqp::link::LinkStateError::IllegalSessionState,
+                        ))
+                        .into()),
+                        Outcome::ServerBusy => {
+                            Err(AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
+                                AmqpErrorCondition::ServerBusyError,
+                                None,
+                                Default::default(),
+                            ))
+                            .into())
                         }
-                        async move {
-                            match outcome {
-                                Outcome::Deliver => Ok(attempt),
-                                Outcome::LinkClosed => Err(link_closed()),
-                                Outcome::Stolen => Err(stolen()),
-                                Outcome::AttachFailed => {
-                                    Err(RecoverableReceiver::ensure_receiver_error(link_closed()))
-                                }
-                            }
+                        Outcome::Stolen => Err(stolen()),
+                        Outcome::AttachFailed => {
+                            Err(RecoverableReceiver::ensure_receiver_error(link_closed()))
                         }
-                    },
-                    fake_recover,
-                    self.recovery.clone(),
-                    &wait,
-                ),
-            )
+                    }
+                }
+            };
+            let (result, logs) = capture_logs(level, async {
+                if exclude_delivery_wait {
+                    self.receiver
+                        .receive_with_recovery(attempt, fake_recover, self.recovery.clone(), &wait)
+                        .await
+                } else {
+                    // Control for the old receive policy: charge the entire attempt.
+                    recover_with_policy(
+                        attempt,
+                        &self._connection.retry_options,
+                        RecoverableReceiver::should_retry_receive_operation,
+                        Some(fake_recover),
+                        Some(self.recovery.clone()),
+                        RecoveryPolicy {
+                            delivery_wait: None,
+                            log_context: RecoveryLogContext {
+                                connection_id: Some(&self.receiver.connection_id),
+                                partition_id: Some(&self.receiver.partition_id),
+                            },
+                            clock: &**clock,
+                        },
+                    )
+                    .await
+                }
+            })
             .await;
             (result, attempts.load(Ordering::SeqCst), logs)
         }
@@ -488,6 +538,199 @@ mod tests {
         assert_eq!(result.unwrap(), 0);
         assert_eq!((attempts, harness.recoveries()), (1, 0));
         assert!(logs.is_empty(), "{logs}");
+    }
+
+    #[tokio::test]
+    async fn observed_long_wait_recovers_after_idle_timeout_or_session_drop() {
+        for (outcome, action) in [
+            (
+                Outcome::IdleTimeout,
+                ErrorRecoveryAction::ReconnectConnection,
+            ),
+            (Outcome::SessionDropped, ErrorRecoveryAction::ReconnectLink),
+        ] {
+            let script = |attempt| match attempt {
+                0 => (secs(0), LONG_RECEIVE_WAIT, outcome),
+                _ => (secs(0), secs(0), Outcome::Deliver),
+            };
+            let baseline = Harness::new(RetryOptions::default(), secs(1));
+            let (result, attempts, logs) = baseline
+                .receive_with_budget(Level::WARN, script, false)
+                .await;
+            assert!(result.is_err());
+            assert_eq!((attempts, baseline.recoveries()), (1, 0));
+            assert_fields(
+                stop_warning(&logs),
+                &[
+                    "stop_reason=elapsed_budget_exhausted",
+                    "retries_attempted=0",
+                    "max_retries=8",
+                    "recovery_elapsed=335.991427228s",
+                    "max_total_elapsed=60s",
+                ],
+            );
+
+            let fixed = Harness::new(RetryOptions::default(), secs(1));
+            assert_eq!(
+                fixed._connection.retry_options.max_total_elapsed,
+                Duration::seconds(60)
+            );
+            let started = fixed.recovery.clock.now();
+            let (result, attempts, logs) = fixed.receive(script).await;
+            assert_eq!(result.unwrap(), 1);
+            assert_eq!((attempts, fixed.recoveries()), (2, 1));
+            assert_eq!(*fixed.recovery.actions.lock().unwrap(), vec![action]);
+            assert_eq!(
+                fixed.recovery.clock.now() - started,
+                LONG_RECEIVE_WAIT + secs(1)
+            );
+            assert!(!logs.contains("Operation recovery stopped"), "{logs}");
+            assert_fields(
+                &logs,
+                &[
+                    "Error requires recovery",
+                    "retries_attempted=0",
+                    "receive_wait_elapsed=335.991427228s",
+                    "recovery_elapsed=0ns",
+                ],
+            );
+        }
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn healthy_pending_receive_outlives_producer_deadline() {
+        let harness = Harness::new(RetryOptions::default(), secs(1));
+        let clock = &*harness.recovery.clock;
+        let wait = DeliveryWait::new(clock);
+        let delivered = async_lock::OnceCell::new();
+        let receive = harness.receiver.receive_with_recovery(
+            || async {
+                wait.start();
+                Ok(*delivered.wait().await)
+            },
+            fake_recover,
+            harness.recovery.clone(),
+            &wait,
+        );
+        futures::pin_mut!(receive);
+        assert!(futures::poll!(&mut receive).is_pending());
+        clock.advance(LONG_RECEIVE_WAIT);
+        tokio::time::advance(LONG_RECEIVE_WAIT).await;
+        assert!(
+            futures::poll!(&mut receive).is_pending(),
+            "a healthy receive must remain pending past the producer deadline"
+        );
+        delivered.get_or_init(|| async { 42 }).await;
+        assert_eq!(receive.await.unwrap(), 42);
+        assert_eq!(harness.recoveries(), 0);
+    }
+
+    #[tokio::test]
+    async fn long_wait_leaves_preparation_recovery_and_backoff_chargeable() {
+        let options = RetryOptions {
+            initial_delay: Duration::seconds(4),
+            max_delay: Duration::seconds(4),
+            ..Default::default()
+        };
+        let harness = Harness::new(options, secs(5));
+        let started = harness.recovery.clock.now();
+        let (result, attempts, logs) = harness
+            .receive(|attempt| match attempt {
+                0 => (secs(3), LONG_RECEIVE_WAIT, Outcome::IdleTimeout),
+                1 => (secs(7), secs(0), Outcome::ServerBusy),
+                2..=5 => (secs(7), secs(0), Outcome::AttachFailed),
+                _ => panic!("active recovery time must exhaust the budget before another attempt"),
+            })
+            .await;
+        let error = result.unwrap_err();
+        assert_eq!(
+            RecoverableReceiver::should_retry_receive_operation(&error),
+            ErrorRecoveryAction::ReconnectLink
+        );
+        assert!(matches!(error.kind(), AmqpErrorKind::AzureCore(_)));
+        assert_eq!((attempts, harness.recoveries()), (6, 4));
+        // 38 s preparation + 20 s recovery + 4 s capped backoff. The long wait is excluded.
+        assert_eq!(
+            harness.recovery.clock.now() - started,
+            LONG_RECEIVE_WAIT + secs(62)
+        );
+        assert_fields(
+            stop_warning(&logs),
+            &[
+                "stop_reason=elapsed_budget_exhausted",
+                "retries_attempted=5",
+                "max_retries=8",
+                "receive_wait_elapsed=335.991427228s",
+                "recovery_elapsed=62s",
+                "max_total_elapsed=60s",
+            ],
+        );
+    }
+
+    #[tokio::test]
+    async fn long_wait_preserves_retry_limits_and_terminal_errors() {
+        for max_retries in [0, 2] {
+            let harness = Harness::new(
+                RetryOptions {
+                    max_retries,
+                    ..Default::default()
+                },
+                secs(1),
+            );
+            let (result, attempts, logs) = harness
+                .receive(|attempt| {
+                    assert!(
+                        attempt <= usize::try_from(max_retries).unwrap(),
+                        "receive exceeded its retry limit"
+                    );
+                    (
+                        secs(0),
+                        if attempt == 0 {
+                            LONG_RECEIVE_WAIT
+                        } else {
+                            secs(0)
+                        },
+                        Outcome::SessionDropped,
+                    )
+                })
+                .await;
+            let error = result.unwrap_err();
+            let AmqpErrorKind::LinkStateError(source) = error.kind() else {
+                panic!("the terminal receive must retain its session-dropped error: {error:?}");
+            };
+            assert!(matches!(
+                source.downcast_ref::<fe2o3_amqp::link::LinkStateError>(),
+                Some(fe2o3_amqp::link::LinkStateError::IllegalSessionState)
+            ));
+            assert_eq!(attempts, usize::try_from(max_retries + 1).unwrap());
+            assert_eq!(harness.recoveries(), usize::try_from(max_retries).unwrap());
+            assert_fields(
+                stop_warning(&logs),
+                &[
+                    "stop_reason=retries_exhausted",
+                    "receive_wait_elapsed=335.991427228s",
+                ],
+            );
+        }
+
+        let harness = Harness::new(RetryOptions::default(), secs(1));
+        let (result, attempts, logs) = harness
+            .receive(|attempt| {
+                assert_eq!(attempt, 0, "a terminal receive error must not retry");
+                (secs(0), LONG_RECEIVE_WAIT, Outcome::Stolen)
+            })
+            .await;
+        assert!(find_link_stolen(&result.unwrap_err()).is_some());
+        assert_eq!((attempts, harness.recoveries()), (1, 0));
+        assert_fields(
+            stop_warning(&logs),
+            &[
+                "stop_reason=non_recoverable",
+                "retries_attempted=0",
+                "receive_wait_elapsed=335.991427228s",
+                "recovery_elapsed=0ns",
+            ],
+        );
     }
 
     // The stream enters a DEBUG span with the receiver identifiers. At WARN
