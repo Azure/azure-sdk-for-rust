@@ -201,14 +201,14 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientThroughputPollerIncomplete = 20304,
     /// `CLIENT_TOPOLOGY_RESOLUTION_FAILED` (20305).
     CosmosSubStatusClientTopologyResolutionFailed = 20305,
+    /// `SERVICE_RETURNED_OBJECT_WITHOUT_RID` (20306).
+    CosmosSubStatusServiceReturnedObjectWithoutRid = 20306,
     /// `CLIENT_READ_SESSION_NOT_AVAILABLE` (20310).
     CosmosSubStatusClientReadSessionNotAvailable = 20310,
     /// `CLIENT_WRITE_FORBIDDEN` (20311).
     CosmosSubStatusClientWriteForbidden = 20311,
     /// `CLIENT_DATABASE_ACCOUNT_NOT_FOUND` (20312).
     CosmosSubStatusClientDatabaseAccountNotFound = 20312,
-    /// `SERVICE_RETURNED_OBJECT_WITHOUT_RID` (20306).
-    CosmosSubStatusServiceReturnedObjectWithoutRid = 20306,
     /// `CLIENT_FFI_NULL_ARGUMENT` (20350).
     CosmosSubStatusClientFfiNullArgument = 20350,
     /// `CLIENT_FFI_INVALID_UTF8` (20351).
@@ -350,10 +350,10 @@ const _: () = {
         CosmosSubStatusServiceReturnedOfferWithoutId => SERVICE_RETURNED_OFFER_WITHOUT_ID,
         CosmosSubStatusClientThroughputPollerIncomplete => CLIENT_THROUGHPUT_POLLER_INCOMPLETE,
         CosmosSubStatusClientTopologyResolutionFailed => CLIENT_TOPOLOGY_RESOLUTION_FAILED,
+        CosmosSubStatusServiceReturnedObjectWithoutRid => SERVICE_RETURNED_OBJECT_WITHOUT_RID,
         CosmosSubStatusClientReadSessionNotAvailable => CLIENT_READ_SESSION_NOT_AVAILABLE,
         CosmosSubStatusClientWriteForbidden => CLIENT_WRITE_FORBIDDEN,
         CosmosSubStatusClientDatabaseAccountNotFound => CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
-        CosmosSubStatusServiceReturnedObjectWithoutRid => SERVICE_RETURNED_OBJECT_WITHOUT_RID,
         CosmosSubStatusClientFfiNullArgument => CLIENT_FFI_NULL_ARGUMENT,
         CosmosSubStatusClientFfiInvalidUtf8 => CLIENT_FFI_INVALID_UTF8,
         CosmosSubStatusClientFfiInvalidHeader => CLIENT_FFI_INVALID_HEADER,
