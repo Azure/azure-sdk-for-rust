@@ -11,6 +11,13 @@ use std::sync::Arc;
 #[options(layers(runtime, account, operation))]
 pub struct ConditionalOptions {
     #[cfg(any())]
+    #[option(skip)]
+    pub disabled_state: Option<UndefinedWhenDisabled>,
+
+    #[option(skip)]
+    pub state: Option<String>,
+
+    #[cfg(any())]
     #[option(env = "AZURE_COSMOS_DISABLED_FIELD", overridable)]
     pub disabled: Option<UndefinedWhenDisabled>,
 
@@ -26,14 +33,18 @@ fn conditional_fields_gate_all_generated_members() {
         _ => panic!("unexpected environment variable: {key}"),
     });
     assert_eq!(env.enabled, Some(3));
+    assert!(env.state.is_none());
     let override_options = ConditionalOptions::from_env_override_vars(|key| {
         assert_eq!(key, "AZURE_COSMOS_ENABLED_FIELD_OVERRIDE");
         Ok("4".to_string())
     });
     assert_eq!(override_options.enabled, Some(4));
+    assert!(override_options.state.is_none());
 
     let runtime = Arc::new(ConditionalOptionsBuilder::new().with_enabled(5).build());
     let operation = ConditionalOptions::default();
+    assert!(runtime.state.is_none());
+    assert!(operation.state.is_none());
     assert!(operation.enabled.is_none());
     let view =
         ConditionalOptionsView::new(Some(Arc::new(env)), Some(runtime), None, Some(&operation));

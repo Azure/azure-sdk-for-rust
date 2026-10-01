@@ -5,7 +5,7 @@
 //!
 //! Owns both a Tokio multi-threaded [`Runtime`] (so the wrapper can drive
 //! `async fn` driver code from synchronous FFI entry points) and an
-//! `Arc<CosmosDriverRuntime>` (so cached drivers, container caches, and the
+//! `Arc<CosmosDriverRuntime>` (so transport resources and the
 //! account-metadata cache stay alive for the lifetime of the handle).
 //!
 //! The runtime pairs the wrapper-side Tokio runtime with the driver runtime
@@ -35,7 +35,7 @@ use crate::runtime_builder::RuntimeBuildError;
 ///   `block_on(...)` driver builder construction at FFI-call time and to
 ///   spawn the per-operation tasks that drive submits.
 /// - `driver` — the underlying `azure_data_cosmos_driver` runtime that owns
-///   the per-account driver registry, container cache, account-metadata
+///   the account-metadata
 ///   cache, HTTP transport factory, and so on. Cloning the `Arc` is cheap
 ///   and is how the driver / account surfaces hand out handles.
 pub struct RuntimeContext {

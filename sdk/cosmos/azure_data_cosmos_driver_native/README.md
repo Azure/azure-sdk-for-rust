@@ -14,6 +14,12 @@ binding language.
 See the [Cosmos SDK project documentation](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/README.md) for the broader
 project and architecture context.
 
+The native SemVer and C FFI compatibility policy, implemented Rust release
+gates, and proposed downstream and host-SDK propagation model are documented in
+[Native driver versioning and releases](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/docs/NATIVE_VERSIONING_AND_RELEASES.md).
+Release operators should follow the
+[native driver release guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/docs/RELEASE_GUIDE.md).
+
 ## What this crate ships
 
 - A `cdylib` + `staticlib` named `azurecosmosdriver`
@@ -40,7 +46,7 @@ for the full design.
 | Resource-token authentication | ⏳ follow-up |
 | Sync driver creation (`_blocking`) | ✅ |
 | Async driver creation (`_submit`) | ✅ |
-| Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`) | ⏳ needs driver-side `was_cached` signal |
+| Same-endpoint clients sharing cached container references | ✅ runtime-owned container cache |
 | Sync + async `resolve_container` | ✅ |
 | Single + hierarchical partition keys | ✅ |
 | Item-CRUD operations (read / create / upsert / replace / delete) | ✅ |
@@ -85,6 +91,65 @@ same plan, with an explicit `collect_all` helper for callers willing to buffer
 all results in memory.
 
 ## Building
+
+Version **0.2.0** is a breaking C ABI revision. Check `cosmos_version()` against
+`AZURECOSMOSDRIVER_H_VERSION` before any layout-sensitive call, including options
+returned by value. Rebuild host bindings and vendor the generated header together
+with the matching library; do not mix 0.1.x headers and 0.2.x libraries.
+
+### Operation defaults and admission snapshots
+
+The same `cosmos_operation_options_t` supplies request, driver and runtime defaults.
+Initialize it with `cosmos_operation_options_default()`, not zero initialization:
+negative numeric values inherit, while zero retry counts and durations are explicit.
+Retry counts and throughput buckets accept the complete `uint32_t` range through
+checked `int64_t` fields. Non-NULL, zero-length regions/headers clear inherited
+collections. Throughput and throttle members inherit independently; binary flags
+replace their whole group. Hedging environment overrides retain driver precedence.
+
+Set `cosmos_runtime_options_t.operation_options` during construction or atomically
+replace the complete runtime group with `cosmos_runtime_set_operation_options`.
+NULL resets the defaults; rejected updates do not change them. Inputs are copied.
+
+Before lazy initialization, call `cosmos_operation_options_snapshot_create` with
+the runtime, client defaults and request overrides. It returns a resolved timeout
+in milliseconds (-1 if absent) and an owned snapshot. Put the handle in
+`cosmos_operation_request_t.options_snapshot`; the shared fields in `request.options`
+are then ignored, but its query-plan mode still applies. Submit copies the snapshot,
+so it may be freed immediately afterward. A driver from another runtime is rejected.
+All native retries and client-side patch stages retain the same configuration
+generation, including unset values and environment overrides.
+Account metadata refreshes triggered during recovery also retain the admitted
+throttle retry count and wait budget, including regional and HTTP-version fallback.
+Independently scheduled background refreshes use current runtime defaults.
+
+Cursor requests can carry the same admission snapshot in their common operation
+fields. The cursor retains it across opening and page requests: the original
+deadline includes time the host spends between pages, rather than restarting
+for each page. A snapshot from another runtime is rejected before admission.
+
+The snapshot starts its deadline at capture, deducting time spent in host
+initialization before execution; it never restarts the full budget at submit.
+Rust clamps configured latency below one second. Hosts may impose a stricter
+context deadline independently. Bootstrap/metadata initialization remains separate
+work, governed by the host's same deadline and the driver's metadata policy.
+
+Endpoint-unavailability TTL is resolved per operation during routing without
+mutating shared cooldown settings. The existing TTL environment variable is
+captured at runtime construction; background probes retain their construction policy.
+
+Drivers sharing a runtime reuse its container-reference cache, including name/RID
+lookups and recreation refreshes. Cached references retain the credentials used
+to create them, so same-account clients on one runtime must use compatible
+credentials. Use separate runtimes when credential isolation is required.
+
+Host-requested cancellation is not supported: dropping an in-flight driver future
+can discard its diagnostics. The CANCELLED outcome and handle-state values remain
+reserved. Hosts must retain operation cookies and drain terminal completions even
+if their own callers stop waiting. Admission deadlines remain enforced separately;
+an admission timeout does not guarantee partial driver diagnostics.
+
+### Commands
 
 ```bash
 # Rust side (produces the cdylib / staticlib and regenerates the header).
@@ -511,6 +576,7 @@ internal static class Cosmos
         public StringView patch_tracking_id;              // UUID, NULL/0 = generate
         public ushort    patch_tracking_capacity;          // 0 = driver default
         public uint      patch_tracking_retention_seconds; // 0 = driver default
+        public IntPtr    options_snapshot;                 // NULL = no admission snapshot
     }
 
     // A drained completion. All pointers are borrowed until free_completions.
@@ -815,7 +881,8 @@ public final class CosmosSample {
         STRING_VIEW.withName("patch_tracking_id"),
         JAVA_SHORT.withName("patch_tracking_capacity"),
         MemoryLayout.paddingLayout(2),
-        JAVA_INT.withName("patch_tracking_retention_seconds"));
+        JAVA_INT.withName("patch_tracking_retention_seconds"),
+        ADDRESS.withName("options_snapshot"));
 
     // Layout of cosmos_completion_t. Pointers and intptr_t/uintptr_t are 8 bytes.
     static final GroupLayout COMPLETION = MemoryLayout.structLayout(
@@ -1380,6 +1447,7 @@ class CosmosOperationRequest(ctypes.Structure):
         ("patch_tracking_id", CosmosStringView),
         ("patch_tracking_capacity", ctypes.c_uint16),
         ("patch_tracking_retention_seconds", ctypes.c_uint32),
+        ("options_snapshot", void_p),
     ]
 
 
@@ -1621,11 +1689,10 @@ if __name__ == "__main__":
    retry storm the per-attempt list can be a compacted subset — `is_compacted`
    / `retained_request_count` report that, while `request_count` and
    `total_request_charge` stay exact.
-7. **Single-runtime caching.** Drivers are cached by endpoint URL on the
-   `cosmos_runtime_t` that created them. Multiple `cosmos_runtime_t`
-   instances do **not** share their caches — see
-   [section 4.4.1 in the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md)
-   for the full contract.
+7. **Shared runtime caches.** Every construction creates a fresh driver, but
+   container references, account metadata and runtime transport resources are
+   shared. Cached container references can reuse another same-account client's
+   credentials; use separate runtimes when that is not intended.
 
 ## Repository archaeology — files removed by PR #4103
 
