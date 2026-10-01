@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+// cspell:ignore sasl
+
 use super::{
     recover_azure_operation, AmqpError, AmqpMessage, AmqpSendOutcome, AmqpSenderApis,
     ErrorRecoveryAction, RecoverableConnection, RecoverableSender, SenderInvalidated,
