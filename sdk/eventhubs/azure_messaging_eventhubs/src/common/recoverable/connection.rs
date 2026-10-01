@@ -144,6 +144,11 @@ pub(crate) struct RecoverableConnection {
     // cheaper than the bookkeeping of per-type counters.
     generation: AtomicU64,
 
+    // One persistent notification per recovery generation. Hold this lock
+    // through invalidation so subscribers capture an even generation and its
+    // matching notification together. The notification stays set for old users.
+    sender_invalidation: AsyncMutex<Arc<OnceCell<()>>>,
+
     #[cfg(test)]
     forced_error: Mutex<Option<AmqpError>>,
 
@@ -311,6 +316,7 @@ impl RecoverableConnection {
                 mgmt_client: RwLock::new(Arc::new(OnceCell::new())),
                 authorizer,
                 generation: AtomicU64::new(0),
+                sender_invalidation: AsyncMutex::new(Arc::new(OnceCell::new())),
                 #[cfg(test)]
                 forced_error: Mutex::new(None),
                 #[cfg(test)]
@@ -426,6 +432,10 @@ impl RecoverableConnection {
         // open a second connection to the service after the application closed
         // the client.
         self.closed.store(true, Ordering::Release);
+        {
+            let invalidated = self.sender_invalidation.lock().await;
+            invalidated.get_or_init(|| async {}).await;
+        }
 
         self.authorizer.stop_refresh_task().await;
 
@@ -689,6 +699,18 @@ impl RecoverableConnection {
     /// accept that attach.
     pub(crate) fn generation_is_current(&self, captured: u64) -> bool {
         captured.is_multiple_of(2) && self.current_generation() == captured
+    }
+
+    pub(super) async fn sender_invalidation(
+        &self,
+    ) -> azure_core_amqp::Result<(u64, Arc<OnceCell<()>>)> {
+        let invalidated = self.sender_invalidation.lock().await;
+        if self.closed.load(Ordering::Acquire) {
+            return Err(AmqpError::with_message(
+                "The client that owns this connection is closed.",
+            ));
+        }
+        Ok((self.current_generation(), invalidated.clone()))
     }
 
     /// Resolves the per-path cell for `key`, prepares its dependencies, then
@@ -1181,6 +1203,7 @@ impl RecoverableConnection {
     /// is not enough.
     async fn apply_recovery_plan(&self, plan: RecoveryPlan) {
         let connection_id = self.get_connection_id();
+        let mut invalidated = self.sender_invalidation.lock().await;
 
         // A plan that invalidates anything brackets the invalidation with a
         // generation bump: one before it touches the connection or any cache, and
@@ -1217,6 +1240,7 @@ impl RecoverableConnection {
 
         if invalidates {
             self.generation.fetch_add(1, Ordering::AcqRel);
+            invalidated.get_or_init(|| async {}).await;
         }
 
         if plan.drop_connection {
@@ -1258,6 +1282,7 @@ impl RecoverableConnection {
         // Closing bump. See the comment above the opening one.
         if invalidates {
             self.generation.fetch_add(1, Ordering::AcqRel);
+            *invalidated = Arc::new(OnceCell::new());
         }
     }
 
@@ -1562,6 +1587,95 @@ mod tests {
         Arc,
     };
     use tokio::sync::Notify;
+
+    fn connection_for_sender_invalidation() -> Arc<RecoverableConnection> {
+        RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            AmqpTransport::default(),
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        )
+    }
+
+    #[tokio::test]
+    async fn sender_invalidation_persists_for_late_waiters() {
+        let connection = connection_for_sender_invalidation();
+        let (_, original) = connection.sender_invalidation().await.unwrap();
+        for action in [
+            ErrorRecoveryAction::ReconnectLink,
+            ErrorRecoveryAction::ReconnectSession,
+            ErrorRecoveryAction::ReconnectConnection,
+        ] {
+            let (generation, previous) = connection.sender_invalidation().await.unwrap();
+            connection
+                .apply_recovery_plan(RecoveryPlan::for_action(&action).unwrap())
+                .await;
+            let (next_generation, next) = connection.sender_invalidation().await.unwrap();
+            assert_eq!(next_generation, generation + 2);
+            assert!(previous.get().is_some());
+            assert!(next.get().is_none());
+            assert!(!Arc::ptr_eq(&previous, &next));
+        }
+        assert!(futures::poll!(Box::pin(original.wait())).is_ready());
+    }
+
+    #[tokio::test]
+    async fn sender_subscription_waits_until_invalidation_finishes() {
+        let connection = connection_for_sender_invalidation();
+        let (_, previous) = connection.sender_invalidation().await.unwrap();
+        let sessions = connection.session_instances.write().await;
+        let recovery = connection.apply_recovery_plan(
+            RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectConnection).unwrap(),
+        );
+        futures::pin_mut!(recovery);
+        assert!(futures::poll!(&mut recovery).is_pending());
+        assert!(previous.get().is_some());
+        assert_eq!(connection.generation(), 1);
+
+        let subscription = connection.sender_invalidation();
+        futures::pin_mut!(subscription);
+        assert!(futures::poll!(&mut subscription).is_pending());
+        drop(sessions);
+        recovery.await;
+        let (generation, next) = subscription.await.unwrap();
+        assert_eq!(generation, 2);
+        assert!(next.get().is_none());
+    }
+
+    #[tokio::test]
+    async fn concurrent_sender_invalidations_keep_generation_odd_during_teardown() {
+        let connection = connection_for_sender_invalidation();
+        let sessions = connection.session_instances.write().await;
+        let plan = RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectConnection).unwrap();
+        let first = connection.apply_recovery_plan(plan);
+        let second = connection.apply_recovery_plan(plan);
+        futures::pin_mut!(first, second);
+        assert!(futures::poll!(&mut first).is_pending());
+        assert!(futures::poll!(&mut second).is_pending());
+        assert_eq!(connection.generation(), 1);
+        drop(sessions);
+        futures::join!(first, second);
+        assert_eq!(connection.generation(), 4);
+        assert!(connection
+            .sender_invalidation()
+            .await
+            .unwrap()
+            .1
+            .get()
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn close_notifies_senders_and_rejects_new_subscriptions() {
+        let connection = connection_for_sender_invalidation();
+        let (_, invalidated) = connection.sender_invalidation().await.unwrap();
+        connection.close_connection().await.unwrap();
+        assert!(invalidated.get().is_some());
+        assert!(connection.sender_invalidation().await.is_err());
+    }
 
     // A close does not need exclusive ownership of the connection.
     //

@@ -153,6 +153,10 @@ There are two mechanisms used to send events to an Event Hub instance. The first
 sends individual messages to the Event Hub, the second uses a "batch" operation to
 send multiple messages in a single network request to the service.
 
+When a peer operation invalidates a connection, pending sends retry with the current connection.
+These retries use the configured limits and backoff. A lost acknowledgement can cause duplicate
+events, because the service can accept a send before the client detects the failure.
+
 #### Send events directly to the Event Hub
 
 ```rust no_run
@@ -427,6 +431,7 @@ When a receive link fails after it waited at least 10 seconds for an event, the 
 so the SDK starts a new recovery episode with a new retry count and a new budget. It logs this at
 `info` as `Receive link failed after a healthy wait, starting a new recovery episode.`, with
 `connection_id`, `partition_id`, the previous `retries_attempted`, and the `healthy_wait`.
+
 - `connection_id` and `partition_id` - the receiver that stopped, present on receive events at
   every level.
 - `err` - the error that the operation returns.

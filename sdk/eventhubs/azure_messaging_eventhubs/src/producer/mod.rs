@@ -172,6 +172,8 @@ impl ProducerClient {
 
     /// Sends an event to the Event Hub.
     ///
+    /// Recovery can resend the event if its acknowledgement is lost. The service can receive duplicate events.
+    ///
     /// # Arguments
     /// * `event` - The event data to send.
     /// * `options` - The options to use when sending the event.
@@ -201,6 +203,8 @@ impl ProducerClient {
     }
 
     /// Sends an AMQP message to the Event Hub.
+    ///
+    /// Recovery can resend the message if its acknowledgement is lost. The service can receive duplicate messages.
     ///
     /// # Arguments
     /// * `message` - The event to send.
@@ -363,6 +367,8 @@ impl ProducerClient {
     }
 
     /// Submits a batch of events to the Event Hub.
+    ///
+    /// Recovery can resend the batch if its acknowledgement is lost. The service can receive duplicate events.
     ///
     /// # Arguments
     ///
