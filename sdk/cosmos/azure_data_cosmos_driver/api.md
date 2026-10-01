@@ -737,6 +737,7 @@ pub mod error {
         pub const CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE: crate::error::CosmosStatus = _;
         pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: crate::error::CosmosStatus = _;
         pub const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: crate::error::CosmosStatus = _;
+        pub const CLIENT_DATABASE_ACCOUNT_NOT_FOUND: crate::error::CosmosStatus = _;
         pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: crate::error::CosmosStatus = _;
         pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: crate::error::CosmosStatus = CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
         pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: crate::error::CosmosStatus = _;
@@ -823,6 +824,7 @@ pub mod error {
             pub const CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH: crate::error::SubStatusCode = _;
             pub const CLIENT_CPU_OVERLOAD: crate::error::SubStatusCode = _;
             pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: crate::error::SubStatusCode = _;
+            pub const CLIENT_DATABASE_ACCOUNT_NOT_FOUND: crate::error::SubStatusCode = _;
             pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: crate::error::SubStatusCode = _;
             pub const CLIENT_DRIVER_NOT_INITIALIZED: crate::error::SubStatusCode = _;
             pub const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: crate::error::SubStatusCode = _;

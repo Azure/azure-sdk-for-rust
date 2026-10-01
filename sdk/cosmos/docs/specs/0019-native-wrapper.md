@@ -589,9 +589,10 @@ Rationale:
 
 ### 3.5 Error model
 
-Terminal service 404/1002 and 403/3 failures use the driver's synthetic
-503/20310 (`CLIENT_READ_SESSION_NOT_AVAILABLE`) and 503/20311
-(`CLIENT_WRITE_FORBIDDEN`) classifications. Native packed status, rich error
+Terminal service 404/1002, 403/3, and 403/1008 failures use the driver's synthetic
+503/20310 (`CLIENT_READ_SESSION_NOT_AVAILABLE`), 503/20311
+(`CLIENT_WRITE_FORBIDDEN`), and 503/20312 (`CLIENT_DATABASE_ACCOUNT_NOT_FOUND`)
+classifications. Native packed status, rich error
 fields, completion substatus headers, and operation diagnostics use the new
 pair. `is_from_wire` is false for these wrappers, even though their original
 source carries a wire response. When rich details are enabled, the native

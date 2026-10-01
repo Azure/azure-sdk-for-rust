@@ -55,9 +55,9 @@ pub use backtrace::__bench as backtrace_bench;
 /// Underlying errors (transport, credential, deserialization, …) are
 /// reachable via [`std::error::Error::source`].
 ///
-/// Terminal service 404/1002 and 403/3 failures surface as synthetic 503/20310
-/// and 503/20311 errors after retries and recovery. Their source retains the
-/// original error and wire response. Operation diagnostics report the 503,
+/// Terminal service 404/1002, 403/3, and 403/1008 failures surface as synthetic
+/// 503/20310, 503/20311, and 503/20312 errors after retries and recovery.
+/// Their source retains the original error and wire response. Operation diagnostics report the 503,
 /// while individual request attempts retain their original status.
 ///
 /// `CosmosError` is `Clone` (a cheap `Arc` refcount bump) so callers can pass
@@ -165,6 +165,10 @@ impl CosmosError {
             status_codes::WRITE_FORBIDDEN => (
                 status_codes::CLIENT_WRITE_FORBIDDEN,
                 "no eligible write region accepted the operation after recovery",
+            ),
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND => (
+                status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+                "account routing could not be recovered",
             ),
             _ => return self,
         };
@@ -1143,6 +1147,11 @@ mod tests {
                 status_codes::CLIENT_WRITE_FORBIDDEN,
                 "ClientWriteForbidden",
             ),
+            (
+                status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+                status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+                "ClientDatabaseAccountNotFound",
+            ),
         ] {
             let id = PatchTrackingId::from(uuid::Uuid::from_u128(42));
             let original = CosmosError::builder()
@@ -1205,6 +1214,7 @@ mod tests {
         for status in [
             status_codes::READ_SESSION_NOT_AVAILABLE,
             status_codes::WRITE_FORBIDDEN,
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND,
         ] {
             let original = CosmosError::builder().with_status(status).build();
             let wrapped = original.into_public_error();
@@ -1231,7 +1241,8 @@ mod tests {
             CosmosStatus::new(StatusCode::NotFound),
             CosmosStatus::new(StatusCode::NotFound).with_sub_status(0),
             CosmosStatus::new(StatusCode::Forbidden),
-            CosmosStatus::new(StatusCode::Forbidden).with_sub_status(1008),
+            CosmosStatus::new(StatusCode::Forbidden).with_sub_status(1009),
+            CosmosStatus::new(StatusCode::Gone).with_sub_status(1008),
             CosmosStatus::new(StatusCode::Gone).with_sub_status(1002),
             CosmosStatus::new(StatusCode::ServiceUnavailable),
             CosmosStatus::new(StatusCode::RequestTimeout)

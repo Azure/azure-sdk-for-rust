@@ -273,9 +273,10 @@ pub struct CosmosCompletion {
     /// The host's opaque pointer-sized cookie, round-tripped verbatim from
     /// submit; the wrapper never dereferences it.
     pub user_data: isize,
-    /// Wire HTTP status code, or `0` when there is no wire response.
+    /// Effective HTTP status code, or `0` when absent or error details are suppressed.
     pub http_status_code: u16,
-    /// `1` iff an error completion originated from a service wire response.
+    /// `1` for a direct wire error; `0` for synthetic errors or suppressed details.
+    /// Synthetic wrappers can still retain original response metadata.
     pub is_from_wire: u8,
     /// Borrowed error message (NUL-terminated UTF-8), or NULL on a non-error
     /// completion / when error details are suppressed.
@@ -1551,6 +1552,7 @@ mod tests {
         for original_status in [
             status_codes::READ_SESSION_NOT_AVAILABLE,
             status_codes::WRITE_FORBIDDEN,
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND,
         ] {
             let error = crate::error::tests::fault_injected_error(original_status).await;
             let status = error.status();

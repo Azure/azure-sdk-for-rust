@@ -366,6 +366,7 @@ pub mod error {
         CosmosSubStatusClientTopologyResolutionFailed = 20305,
         CosmosSubStatusClientReadSessionNotAvailable = 20310,
         CosmosSubStatusClientWriteForbidden = 20311,
+        CosmosSubStatusClientDatabaseAccountNotFound = 20312,
         CosmosSubStatusServiceReturnedObjectWithoutRid = 20306,
         CosmosSubStatusClientFfiNullArgument = 20350,
         CosmosSubStatusClientFfiInvalidUtf8 = 20351,

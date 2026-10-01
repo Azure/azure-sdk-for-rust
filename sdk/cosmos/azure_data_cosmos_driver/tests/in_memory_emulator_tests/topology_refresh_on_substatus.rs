@@ -312,6 +312,20 @@ async fn read_item_403_1008_triggers_refresh_and_cross_region_retry() {
         .await
         .expect("post-fix: refresh + cross-region retry must succeed")
         .expect("read returns a response body");
+    assert!(response.status().is_success());
+    assert_eq!(
+        response.diagnostics().effective_status(),
+        Some(response.status())
+    );
+    assert_eq!(
+        response
+            .diagnostics()
+            .requests()
+            .iter()
+            .filter(|request| request.status().is_database_account_not_found())
+            .count(),
+        1
+    );
 
     assert!(
         rule.hit_count() >= 1,
@@ -455,10 +469,16 @@ async fn all_regions_403_1008_bounded_retries_then_bubble_up() {
     let status = err.status();
     assert_eq!(
         status,
-        azure_data_cosmos_driver::error::status_codes::DATABASE_ACCOUNT_NOT_FOUND,
-        "1008 exhausted-budget bubble-up must surface the original status unchanged; \
+        status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+        "1008 exhausted-budget failure must surface a synthetic 503; \
          observed status={status:?}",
     );
+    assert_wrapped_diagnostics(
+        &err,
+        status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+        status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+    );
+    assert_eq!(east_rule.hit_count() + west_rule.hit_count(), 7);
 
     let diagnostics = err
         .diagnostics()
@@ -946,51 +966,62 @@ async fn transient_session_fault_recovers_without_wrapper() {
     );
 }
 
-#[tokio::test]
+#[tokio::test(start_paused = true)]
 async fn faulted_feed_page_reports_wrapped_status_and_original_attempts() {
-    let east = region_fault_rule(
-        "feed-east",
-        FaultOperationType::QueryItem,
-        Region::EAST_US,
-        FaultInjectionErrorType::ReadSessionNotAvailable,
-        None,
-    );
-    let west = region_fault_rule(
-        "feed-west",
-        FaultOperationType::QueryItem,
-        Region::WEST_US,
-        FaultInjectionErrorType::ReadSessionNotAvailable,
-        None,
-    );
-    let (driver, _) = build_driver_with_faults(
-        WriteMode::Multi,
-        HostRecorder::new(),
-        vec![east.clone(), west.clone()],
-    )
-    .await;
-    let container = driver
-        .resolve_container(DB_NAME, COLL_NAME, OperationOptions::default())
-        .await
-        .unwrap();
-    let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
-        .with_body(br#"{"query":"SELECT * FROM c","parameters":[]}"#.to_vec());
-    let options = OperationOptionsBuilder::new()
-        .with_hedging_enabled(false)
-        .build();
-    let mut plan = driver
-        .plan_operation(operation, &options, None, &PlanOptions::default())
-        .await
-        .unwrap();
-    let error = driver
-        .execute_plan(&mut plan, Some(container), options)
-        .await
-        .unwrap_err();
-    assert_wrapped_diagnostics(
-        &error,
-        status_codes::READ_SESSION_NOT_AVAILABLE,
-        status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
-    );
-    assert_eq!(east.hit_count() + west.hit_count(), 3);
+    for (fault, original, wrapped, attempts) in [
+        (
+            FaultInjectionErrorType::ReadSessionNotAvailable,
+            status_codes::READ_SESSION_NOT_AVAILABLE,
+            status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+            3,
+        ),
+        (
+            FaultInjectionErrorType::DatabaseAccountNotFound,
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+            status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+            5,
+        ),
+    ] {
+        let east = region_fault_rule(
+            "feed-east",
+            FaultOperationType::QueryItem,
+            Region::EAST_US,
+            fault,
+            None,
+        );
+        let west = region_fault_rule(
+            "feed-west",
+            FaultOperationType::QueryItem,
+            Region::WEST_US,
+            fault,
+            None,
+        );
+        let (driver, _) = build_driver_with_faults(
+            WriteMode::Multi,
+            HostRecorder::new(),
+            vec![east.clone(), west.clone()],
+        )
+        .await;
+        let container = driver
+            .resolve_container(DB_NAME, COLL_NAME, OperationOptions::default())
+            .await
+            .unwrap();
+        let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
+            .with_body(br#"{"query":"SELECT * FROM c","parameters":[]}"#.to_vec());
+        let options = OperationOptionsBuilder::new()
+            .with_hedging_enabled(false)
+            .build();
+        let mut plan = driver
+            .plan_operation(operation, &options, None, &PlanOptions::default())
+            .await
+            .unwrap();
+        let error = driver
+            .execute_plan(&mut plan, Some(container), options)
+            .await
+            .unwrap_err();
+        assert_wrapped_diagnostics(&error, original, wrapped);
+        assert_eq!(east.hit_count() + west.hit_count(), attempts);
+    }
 }
 
 #[tokio::test(start_paused = true)]
@@ -1008,6 +1039,18 @@ async fn faulted_patch_helpers_preserve_tracking_and_logical_diagnostics() {
             FaultInjectionErrorType::WriteForbidden,
             status_codes::WRITE_FORBIDDEN,
             status_codes::CLIENT_WRITE_FORBIDDEN,
+        ),
+        (
+            FaultOperationType::ReadItem,
+            FaultInjectionErrorType::DatabaseAccountNotFound,
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+            status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+        ),
+        (
+            FaultOperationType::ReplaceItem,
+            FaultInjectionErrorType::DatabaseAccountNotFound,
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+            status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
         ),
     ] {
         let east = region_fault_rule("patch-east", op, Region::EAST_US, fault, None);
@@ -1062,50 +1105,57 @@ async fn faulted_patch_helpers_preserve_tracking_and_logical_diagnostics() {
 }
 
 #[tokio::test]
-async fn deadline_during_write_forbidden_faults_is_not_wrapped() {
-    let east = region_fault_rule(
-        "deadline-east",
-        FaultOperationType::CreateItem,
-        Region::EAST_US,
+async fn deadline_during_topology_faults_is_not_wrapped() {
+    for fault in [
         FaultInjectionErrorType::WriteForbidden,
-        None,
-    );
-    let west = region_fault_rule(
-        "deadline-west",
-        FaultOperationType::CreateItem,
-        Region::WEST_US,
-        FaultInjectionErrorType::WriteForbidden,
-        None,
-    );
-    let (driver, _) = build_driver_with_faults(
-        WriteMode::Multi,
-        HostRecorder::new(),
-        vec![east.clone(), west.clone()],
-    )
-    .await;
-    let container = driver
-        .resolve_container(DB_NAME, COLL_NAME, OperationOptions::default())
-        .await
-        .unwrap();
-    let operation = CosmosOperation::create_item(ItemReference::from_name(
-        &container,
-        PartitionKey::from(PK_VALUE),
-        "deadline",
-    ))
-    .with_body(br#"{"id":"deadline","pk":"pk1"}"#.to_vec());
-    let options = OperationOptionsBuilder::new()
-        .with_end_to_end_latency_policy(EndToEndOperationLatencyPolicy::new(Duration::from_secs(1)))
-        .build();
-    let error = driver
-        .execute_singleton_operation(operation, options)
-        .await
-        .unwrap_err();
-    assert_eq!(
-        error.status(),
-        CosmosStatus::new(azure_core::http::StatusCode::RequestTimeout)
-            .with_sub_status(status_codes::substatus::CLIENT_OPERATION_TIMEOUT.value())
-    );
-    assert!(east.hit_count() + west.hit_count() > 0);
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+    ] {
+        let east = region_fault_rule(
+            "deadline-east",
+            FaultOperationType::CreateItem,
+            Region::EAST_US,
+            fault,
+            None,
+        );
+        let west = region_fault_rule(
+            "deadline-west",
+            FaultOperationType::CreateItem,
+            Region::WEST_US,
+            fault,
+            None,
+        );
+        let (driver, _) = build_driver_with_faults(
+            WriteMode::Multi,
+            HostRecorder::new(),
+            vec![east.clone(), west.clone()],
+        )
+        .await;
+        let container = driver
+            .resolve_container(DB_NAME, COLL_NAME, OperationOptions::default())
+            .await
+            .unwrap();
+        let operation = CosmosOperation::create_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from(PK_VALUE),
+            "deadline",
+        ))
+        .with_body(br#"{"id":"deadline","pk":"pk1"}"#.to_vec());
+        let options = OperationOptionsBuilder::new()
+            .with_end_to_end_latency_policy(EndToEndOperationLatencyPolicy::new(
+                Duration::from_secs(1),
+            ))
+            .build();
+        let error = driver
+            .execute_singleton_operation(operation, options)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            error.status(),
+            CosmosStatus::new(azure_core::http::StatusCode::RequestTimeout)
+                .with_sub_status(status_codes::substatus::CLIENT_OPERATION_TIMEOUT.value())
+        );
+        assert!(east.hit_count() + west.hit_count() > 0);
+    }
 }
 
 /// **403/1008 — backend-driven failover honors caller `excluded_regions`.**
@@ -1159,6 +1209,12 @@ async fn create_item_403_1008_retry_honors_excluded_region() {
         "with West excluded and East persistently returning 403/1008, the operation \
          must bubble up rather than crossing into the excluded region; got {result:?}",
     );
+    assert_wrapped_diagnostics(
+        &result.unwrap_err(),
+        status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+        status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+    );
+    assert_eq!(rule.hit_count(), 5);
     assert!(rule.hit_count() >= 1, "fault rule must fire on East US");
 
     let hosts = recorder.data_plane_hosts();

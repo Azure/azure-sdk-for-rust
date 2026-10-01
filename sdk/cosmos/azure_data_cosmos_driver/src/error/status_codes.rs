@@ -584,6 +584,14 @@ pub const CLIENT_WRITE_FORBIDDEN: CosmosStatus = CosmosStatus {
     sub_status: Some(substatus::CLIENT_WRITE_FORBIDDEN),
 };
 
+/// Account routing could not be recovered (HTTP 503, sub-status 20312).
+///
+/// Wraps a terminal service 403/1008; the original error remains its source.
+pub const CLIENT_DATABASE_ACCOUNT_NOT_FOUND: CosmosStatus = CosmosStatus {
+    status_code: StatusCode::ServiceUnavailable,
+    sub_status: Some(substatus::CLIENT_DATABASE_ACCOUNT_NOT_FOUND),
+};
+
 /// 410 / 20300 — the supplied session-token feed ranges contain no
 /// overlap with the target feed range (partition has split / merged).
 pub const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: CosmosStatus = CosmosStatus {
@@ -666,6 +674,8 @@ pub mod substatus {
     pub const CLIENT_READ_SESSION_NOT_AVAILABLE: SubStatusCode = SubStatusCode::new(20310);
     /// Terminal write-region rejection (20311), paired with HTTP 503.
     pub const CLIENT_WRITE_FORBIDDEN: SubStatusCode = SubStatusCode::new(20311);
+    /// Terminal account-routing failure (20312), paired with HTTP 503.
+    pub const CLIENT_DATABASE_ACCOUNT_NOT_FOUND: SubStatusCode = SubStatusCode::new(20312);
 
     use crate::error::SubStatusCode;
 

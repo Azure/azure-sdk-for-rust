@@ -108,6 +108,7 @@ exactly these terminal service conditions:
 | --- | --- | --- |
 | 404/1002 | 503/20310 | `CLIENT_READ_SESSION_NOT_AVAILABLE` |
 | 403/3 | 503/20311 | `CLIENT_WRITE_FORBIDDEN` |
+| 403/1008 | 503/20312 | `CLIENT_DATABASE_ACCOUNT_NOT_FOUND` |
 
 The wrapper is synthetic (`response() == None`, `is_from_wire() == false`).
 Its immediate `std::error::Error::source()` is the original `CosmosError`,
@@ -119,7 +120,7 @@ JSON include the recorded operation status at the top level.
 
 This mapping does not change retry budgets, session tokens, hedging, container
 recreation, or PATCH recovery. Internal helper operations retain unwrapped
-errors until the logical operation finishes. Other pairs, including 403/1008,
+errors until the logical operation finishes. Other pairs, including 410/1008,
 plain 404, 410/1002, existing 503s, and deadline errors, are unchanged. Statuses
 embedded in successful batch or distributed-transaction bodies are not rewritten.
 

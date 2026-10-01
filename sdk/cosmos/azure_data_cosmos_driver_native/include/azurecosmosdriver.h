@@ -759,6 +759,10 @@ enum cosmos_sub_status_t
    */
   COSMOS_SUB_STATUS_CLIENT_WRITE_FORBIDDEN = 20311,
   /**
+   * `CLIENT_DATABASE_ACCOUNT_NOT_FOUND` (20312).
+   */
+  COSMOS_SUB_STATUS_CLIENT_DATABASE_ACCOUNT_NOT_FOUND = 20312,
+  /**
    * `SERVICE_RETURNED_OBJECT_WITHOUT_RID` (20306).
    */
   COSMOS_SUB_STATUS_SERVICE_RETURNED_OBJECT_WITHOUT_RID = 20306,
@@ -1110,7 +1114,7 @@ typedef struct cosmos_string_view_t {
  * field is **owned**; free the whole struct — and its strings — with
  * [`cosmos_error_free`]. A `NULL` pointer field means that field was absent.
  *
- * Synthetic 503/20310 and 503/20311 wrappers retain metadata from the original
+ * Synthetic 503/20310, 503/20311, and 503/20312 wrappers retain metadata from the original
  * service response, but report `is_from_wire == 0`.
  */
 typedef struct cosmos_error_t {
@@ -1334,11 +1338,12 @@ typedef struct cosmos_completion_t {
    */
   intptr_t user_data;
   /**
-   * Wire HTTP status code, or `0` when there is no wire response.
+   * Effective HTTP status code, or `0` when absent or error details are suppressed.
    */
   uint16_t http_status_code;
   /**
-   * `1` iff an error completion originated from a service wire response.
+   * `1` for a direct wire error; `0` for synthetic errors or suppressed details.
+   * Synthetic wrappers can still retain original response metadata.
    */
   uint8_t is_from_wire;
   /**

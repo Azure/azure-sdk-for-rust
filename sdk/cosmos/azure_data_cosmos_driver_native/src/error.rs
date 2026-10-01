@@ -205,6 +205,8 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientReadSessionNotAvailable = 20310,
     /// `CLIENT_WRITE_FORBIDDEN` (20311).
     CosmosSubStatusClientWriteForbidden = 20311,
+    /// `CLIENT_DATABASE_ACCOUNT_NOT_FOUND` (20312).
+    CosmosSubStatusClientDatabaseAccountNotFound = 20312,
     /// `SERVICE_RETURNED_OBJECT_WITHOUT_RID` (20306).
     CosmosSubStatusServiceReturnedObjectWithoutRid = 20306,
     /// `CLIENT_FFI_NULL_ARGUMENT` (20350).
@@ -350,6 +352,7 @@ const _: () = {
         CosmosSubStatusClientTopologyResolutionFailed => CLIENT_TOPOLOGY_RESOLUTION_FAILED,
         CosmosSubStatusClientReadSessionNotAvailable => CLIENT_READ_SESSION_NOT_AVAILABLE,
         CosmosSubStatusClientWriteForbidden => CLIENT_WRITE_FORBIDDEN,
+        CosmosSubStatusClientDatabaseAccountNotFound => CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
         CosmosSubStatusServiceReturnedObjectWithoutRid => SERVICE_RETURNED_OBJECT_WITHOUT_RID,
         CosmosSubStatusClientFfiNullArgument => CLIENT_FFI_NULL_ARGUMENT,
         CosmosSubStatusClientFfiInvalidUtf8 => CLIENT_FFI_INVALID_UTF8,
@@ -546,7 +549,7 @@ impl CosmosErrorCode {
 /// field is **owned**; free the whole struct — and its strings — with
 /// [`cosmos_error_free`]. A `NULL` pointer field means that field was absent.
 ///
-/// Synthetic 503/20310 and 503/20311 wrappers retain metadata from the original
+/// Synthetic 503/20310, 503/20311, and 503/20312 wrappers retain metadata from the original
 /// service response, but report `is_from_wire == 0`.
 #[repr(C)]
 pub struct CosmosError {
@@ -653,7 +656,7 @@ impl CosmosError {
     }
 }
 
-/// Keeps wire details for the two synthetic terminal-service wrappers.
+/// Keeps wire details for synthetic terminal-service wrappers.
 pub(crate) fn original_response(
     error: &DriverCosmosError,
 ) -> Option<&azure_data_cosmos_driver::models::CosmosResponse> {
@@ -665,6 +668,7 @@ pub(crate) fn original_response(
     let original_status = match error.status() {
         status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE => status_codes::READ_SESSION_NOT_AVAILABLE,
         status_codes::CLIENT_WRITE_FORBIDDEN => status_codes::WRITE_FORBIDDEN,
+        status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND => status_codes::DATABASE_ACCOUNT_NOT_FOUND,
         _ => return None,
     };
     let source = error.source()?.downcast_ref::<DriverCosmosError>()?;
@@ -791,6 +795,7 @@ pub(crate) mod tests {
         for (source_status, expected) in [
             (status_codes::READ_SESSION_NOT_AVAILABLE, (503, 20310)),
             (status_codes::WRITE_FORBIDDEN, (503, 20311)),
+            (status_codes::DATABASE_ACCOUNT_NOT_FOUND, (503, 20312)),
         ] {
             let error = fault_injected_error(source_status).await;
             let raw = CosmosError::into_raw(error);

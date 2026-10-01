@@ -45,6 +45,7 @@ async fn wrapped_faults_survive_cursor_error_delivery() {
     for source_status in [
         status_codes::READ_SESSION_NOT_AVAILABLE,
         status_codes::WRITE_FORBIDDEN,
+        status_codes::DATABASE_ACCOUNT_NOT_FOUND,
     ] {
         let error = crate::error::tests::fault_injected_error(source_status).await;
         let expected = CosmosStatusCode::from_status(error.status());

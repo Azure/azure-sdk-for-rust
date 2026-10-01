@@ -6,7 +6,7 @@
 
 ### Breaking Changes
 
-- Terminal service 404/1002 and 403/3 errors now surface as synthetic 503/20310 and 503/20311 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
+- Terminal service 404/1002, 403/3, and 403/1008 errors now surface as synthetic 503/20310, 503/20311, and 503/20312 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
 
 ### Bugs Fixed
 

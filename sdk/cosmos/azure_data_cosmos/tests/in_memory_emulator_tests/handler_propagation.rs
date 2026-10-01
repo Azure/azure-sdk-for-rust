@@ -115,6 +115,18 @@ async fn handler_observes_wrapped_faults_with_original_attempts() {
             status_codes::WRITE_FORBIDDEN,
             status_codes::CLIENT_WRITE_FORBIDDEN,
         ),
+        (
+            FaultOperationType::ReadItem,
+            FaultInjectionErrorType::DatabaseAccountNotFound,
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+            status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+        ),
+        (
+            FaultOperationType::CreateItem,
+            FaultInjectionErrorType::DatabaseAccountNotFound,
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+            status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+        ),
     ] {
         let emulator = Arc::new(InMemoryEmulatorHttpClient::new(
             VirtualAccountConfig::new(vec![VirtualRegion::new(
