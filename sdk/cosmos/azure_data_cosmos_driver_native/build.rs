@@ -116,6 +116,10 @@ fn generate_c_header() {
             "cursor_completion_backing_t".into(),
         ),
         ("RuntimeContext".into(), "runtime_t".into()),
+        (
+            "OperationOptionsSnapshot".into(),
+            "operation_options_snapshot_t".into(),
+        ),
         ("CosmosDriver".into(), "driver_t".into()),
         ("DriverHandle".into(), "driver_t".into()),
         ("AccountReference".into(), "account_ref_t".into()),

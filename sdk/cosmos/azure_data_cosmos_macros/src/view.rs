@@ -54,6 +54,7 @@ pub fn generate_view(input: &OptionsInput) -> Result<TokenStream> {
     let accessors = input
         .fields
         .iter()
+        .filter(|field| !field.skip)
         .map(|field| {
             let cfg_attrs = &field.cfg_attrs;
             let accessor = generate_accessor(field, layers)?;

@@ -39,7 +39,7 @@ use crate::{
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
-        PartitionTopologyCacheMode, PlanOptions, ResolvedThroughputControl,
+        PartitionTopologyCacheMode, PlanOptions, ResolvedThroughputControl, ThrottlingRetryOptions,
     },
     ActivityId, CosmosResponse, DiagnosticsContext,
 };
@@ -538,6 +538,7 @@ impl CosmosDriver {
         version: TransportHttpVersion,
         client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
+        throttling: Option<&ThrottlingRetryOptions>,
     ) -> crate::error::Result<(super::cache::AccountProperties, CosmosTransport)> {
         let endpoint = AccountEndpoint::from(account);
         let (transport, metadata_transport) = Self::build_metadata_transport_for_version(
@@ -555,6 +556,7 @@ impl CosmosDriver {
             &user_agent,
             client_id,
             fault_injection_enabled,
+            throttling,
         )
         .await?;
         Ok((props, transport))
@@ -576,6 +578,7 @@ impl CosmosDriver {
         >,
         client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
+        throttling: Option<&ThrottlingRetryOptions>,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let user_agent = Self::user_agent_header(runtime.user_agent());
@@ -604,6 +607,7 @@ impl CosmosDriver {
             &user_agent,
             client_id,
             fault_injection_enabled,
+            throttling,
         )
         .await
     }
@@ -699,6 +703,7 @@ impl CosmosDriver {
                 TransportHttpVersion::Http11,
                 client_id,
                 fault_injection_enabled,
+                None,
             )
             .await?;
             return Ok((TransportHttpVersion::Http11, props));
@@ -716,6 +721,7 @@ impl CosmosDriver {
             },
             client_id,
             fault_injection_enabled,
+            None,
         )
         .await
         {
@@ -746,6 +752,7 @@ impl CosmosDriver {
                     TransportHttpVersion::Http11,
                     client_id,
                     fault_injection_enabled,
+                    None,
                 )
                 .await?;
                 Ok((TransportHttpVersion::Http11, props))
@@ -834,6 +841,10 @@ impl CosmosDriver {
     /// design (the driver / operation pipeline does not yet exist at bootstrap, nor for
     /// the 5-minute background refresh callback) but still produces a `DiagnosticsContext`
     /// matching the data-plane shape so error consumers see the same fields.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "metadata requests carry identity, diagnostics and an optional pinned retry policy"
+    )]
     async fn fetch_account_properties_with_transport(
         runtime: &CosmosDriverRuntime,
         transport: &super::transport::adaptive_transport::AdaptiveTransport,
@@ -842,6 +853,7 @@ impl CosmosDriver {
         user_agent: &azure_core::http::headers::HeaderValue,
         client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
+        throttling: Option<&ThrottlingRetryOptions>,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let endpoint = AccountEndpoint::from(account);
         let endpoint_url = endpoint.join_path("/");
@@ -874,30 +886,26 @@ impl CosmosDriver {
         // budget the metadata pipeline uses (previously bootstrap had no 429
         // retry at all).
         let mut connectivity_retry_count = 0_u32;
-        // Resolve the caller-configured throttle limits the same way the
-        // metadata operation pipeline does, falling back to the metadata class
-        // defaults. This is a static helper that only receives the runtime, so
-        // only the runtime-level layers apply: the client-wide default set via
-        // `with_default_operation_options` (which takes precedence) and the
-        // environment (`AZURE_COSMOS_MAX_THROTTLE_RETRY_COUNT`). Without this a
-        // caller that disabled retries (`max_retry_count = 0`) would still see
-        // the nine-retry metadata default here, inconsistent with normal
-        // metadata operations. The per-retry delay cap has no caller override
-        // and stays at the metadata class default, matching the pipeline.
-        let bootstrap_options = OperationOptionsView::new(
-            Some(Arc::clone(runtime.env_operation_options())),
-            Some(runtime.default_operation_options()),
-            None,
-            None,
-        );
-        let throttling_retry_options = bootstrap_options.throttling_retry_options();
+        // Some(empty) pins absent fields too; only standalone bootstrap/background
+        // requests may resolve the current runtime generation.
+        let throttling_retry_options = throttling.cloned().unwrap_or_else(|| {
+            let view = OperationOptionsView::new(
+                Some(Arc::clone(runtime.env_operation_options())),
+                Some(runtime.default_operation_options()),
+                None,
+                None,
+            );
+            let throttling = view.throttling_retry_options();
+            ThrottlingRetryOptions {
+                max_retry_count: throttling.max_retry_count().copied(),
+                max_retry_wait_time: throttling.max_retry_wait_time().copied(),
+            }
+        });
         let max_throttle_attempts = throttling_retry_options
-            .max_retry_count()
-            .copied()
+            .max_retry_count
             .unwrap_or(METADATA_MAX_THROTTLE_ATTEMPTS);
         let max_throttle_wait_time = throttling_retry_options
-            .max_retry_wait_time()
-            .copied()
+            .max_retry_wait_time
             .unwrap_or(METADATA_MAX_THROTTLE_WAIT);
         let mut throttle = ThrottleRetryState::with_limits(
             max_throttle_attempts,
@@ -1183,6 +1191,7 @@ impl CosmosDriver {
             &self.client_id,
             None,
             fault_injection_enabled,
+            None,
         )
         .await
     }
@@ -1219,6 +1228,7 @@ impl CosmosDriver {
         client_id: &azure_core::http::headers::HeaderValue,
         previous_props: Option<Arc<super::cache::AccountProperties>>,
         fault_injection_enabled: bool,
+        throttling: Option<&ThrottlingRetryOptions>,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let current_transport = transport_holder.load_full();
         let current_version = current_transport.negotiated_version();
@@ -1234,6 +1244,7 @@ impl CosmosDriver {
             &user_agent_header,
             client_id,
             fault_injection_enabled,
+            throttling,
         )
         .await
         {
@@ -1247,6 +1258,7 @@ impl CosmosDriver {
                     &endpoint,
                     client_id,
                     fault_injection_enabled,
+                    throttling,
                 )
                 .await;
                 Ok(props)
@@ -1262,6 +1274,7 @@ impl CosmosDriver {
                     error,
                     client_id,
                     fault_injection_enabled,
+                    throttling,
                 )
                 .await
                 {
@@ -1278,6 +1291,7 @@ impl CosmosDriver {
                             primary_error,
                             previous_props,
                             fault_injection_enabled,
+                            throttling,
                         )
                         .await
                     }
@@ -1302,6 +1316,7 @@ impl CosmosDriver {
         primary_error: crate::error::CosmosError,
         previous_props: Option<Arc<super::cache::AccountProperties>>,
         fault_injection_enabled: bool,
+        throttling: Option<&ThrottlingRetryOptions>,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         let Some(cached_props) = previous_props else {
             return Err(primary_error);
@@ -1350,6 +1365,7 @@ impl CosmosDriver {
                 &user_agent,
                 client_id,
                 fault_injection_enabled,
+                throttling,
             )
             .await
             {
@@ -1391,6 +1407,7 @@ impl CosmosDriver {
         endpoint: &AccountEndpoint,
         client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
+        throttling: Option<&ThrottlingRetryOptions>,
     ) {
         if !matches!(current_version, TransportHttpVersion::Http11)
             || !runtime.connection_pool().is_http2_allowed()
@@ -1409,6 +1426,7 @@ impl CosmosDriver {
             },
             client_id,
             fault_injection_enabled,
+            throttling,
         )
         .await
         {
@@ -1458,6 +1476,7 @@ impl CosmosDriver {
         error: crate::error::CosmosError,
         client_id: &azure_core::http::headers::HeaderValue,
         fault_injection_enabled: bool,
+        throttling: Option<&ThrottlingRetryOptions>,
     ) -> crate::error::Result<super::cache::AccountProperties> {
         if Self::should_downgrade_http2(
             current_version,
@@ -1481,6 +1500,7 @@ impl CosmosDriver {
                 fallback_version,
                 client_id,
                 fault_injection_enabled,
+                throttling,
             )
             .await?;
 
@@ -1740,7 +1760,8 @@ impl CosmosDriver {
         #[cfg(not(feature = "fault_injection"))]
         let fault_injection_for_callback = false;
         let refresh_callback = Arc::new(
-            move |previous_props: Option<Arc<super::cache::AccountProperties>>| {
+            move |previous_props: Option<Arc<super::cache::AccountProperties>>,
+                  throttling: Option<ThrottlingRetryOptions>| {
                 let runtime = Arc::clone(&runtime_for_callback);
                 let account = account_for_callback.clone();
                 let transport_holder = Arc::clone(&transport_for_callback);
@@ -1759,6 +1780,7 @@ impl CosmosDriver {
                             &client_id,
                             previous_props,
                             fault_injection_enabled,
+                            throttling.as_ref(),
                         )
                         .await
                     });
@@ -1774,13 +1796,8 @@ impl CosmosDriver {
             .or(runtime
                 .default_operation_options()
                 .endpoint_unavailability_ttl)
-            .unwrap_or_else(|| {
-                std::env::var("AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS")
-                    .ok()
-                    .and_then(|v| v.parse::<u64>().ok())
-                    .map(Duration::from_millis)
-                    .unwrap_or(Duration::from_secs(60))
-            });
+            .or(runtime.env_operation_options().endpoint_unavailability_ttl)
+            .unwrap_or(Duration::from_secs(60));
 
         // Wire the Gateway 2.0 connectivity probe. Before routing data-plane
         // traffic to a thin-client proxy endpoint, the store issues a
@@ -2219,6 +2236,9 @@ impl CosmosDriver {
         &self,
         operation_options: &'a OperationOptions,
     ) -> OperationOptionsView<'a> {
+        if let Some(snapshot) = operation_options.resolution_snapshot_view() {
+            return snapshot;
+        }
         OperationOptionsView::new_with_override(
             Some(Arc::clone(self.runtime.env_override_operation_options())),
             Some(Arc::clone(self.runtime.env_operation_options())),
@@ -5599,6 +5619,7 @@ mod tests {
             &TEST_CLIENT_ID,
             None,
             false,
+            None,
         )
         .await
         .unwrap();
@@ -5643,6 +5664,7 @@ mod tests {
             &TEST_CLIENT_ID,
             None,
             false,
+            None,
         )
         .await
         .unwrap();
@@ -5688,6 +5710,7 @@ mod tests {
             &TEST_CLIENT_ID,
             None,
             false,
+            None,
         )
         .await
         .unwrap();
@@ -5925,6 +5948,7 @@ mod tests {
             &TEST_CLIENT_ID,
             Some(multi_region_previous_props()),
             false,
+            None,
         )
         .await;
 
@@ -5968,6 +5992,7 @@ mod tests {
             &TEST_CLIENT_ID,
             Some(multi_region_previous_props()),
             false,
+            None,
         )
         .await;
 
@@ -6006,6 +6031,7 @@ mod tests {
             &TEST_CLIENT_ID,
             None,
             false,
+            None,
         )
         .await;
 
@@ -6034,6 +6060,7 @@ mod tests {
             &user_agent,
             &client_id,
             false,
+            None,
         )
         .await
         .expect_err(
@@ -6091,6 +6118,136 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn operation_account_refresh_retains_admitted_throttle_policy() {
+        #[derive(Debug, Default)]
+        struct RecoveryClient {
+            operation_calls: std::sync::atomic::AtomicUsize,
+            refresh_calls: Mutex<std::collections::HashMap<String, usize>>,
+        }
+
+        #[async_trait]
+        impl TransportClient for RecoveryClient {
+            async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+                let mut headers = Headers::new();
+                if request.url.path() == "/dbs/db" {
+                    if self.operation_calls.fetch_add(1, Ordering::SeqCst) == 0 {
+                        headers.insert(
+                            azure_core::http::headers::HeaderName::from_static("x-ms-substatus"),
+                            azure_core::http::headers::HeaderValue::from_static("1008"),
+                        );
+                        return Ok(HttpResponse {
+                            status: 403,
+                            headers,
+                            body: Vec::new(),
+                        });
+                    }
+                    return Ok(HttpResponse {
+                        status: 200,
+                        headers,
+                        body: b"{}".to_vec(),
+                    });
+                }
+                if request.url.path() == "/" && self.operation_calls.load(Ordering::SeqCst) > 0 {
+                    *self
+                        .refresh_calls
+                        .lock()
+                        .unwrap()
+                        .entry(request.url.host_str().unwrap().to_owned())
+                        .or_default() += 1;
+                    headers.insert(
+                        azure_core::http::headers::HeaderName::from_static("x-ms-retry-after-ms"),
+                        azure_core::http::headers::HeaderValue::from_static("1"),
+                    );
+                    return Ok(HttpResponse {
+                        status: 429,
+                        headers,
+                        body: Vec::new(),
+                    });
+                }
+                Ok(HttpResponse {
+                    status: 200,
+                    headers,
+                    body: ACCOUNT_PROPERTIES_PAYLOAD.as_bytes().to_vec(),
+                })
+            }
+        }
+        #[derive(Debug)]
+        struct RecoveryFactory(Arc<RecoveryClient>);
+        impl HttpClientFactory for RecoveryFactory {
+            fn build(
+                &self,
+                _: &ConnectionPoolOptions,
+                _: HttpClientConfig,
+            ) -> crate::error::Result<Arc<dyn TransportClient>> {
+                Ok(self.0.clone())
+            }
+        }
+
+        let client = Arc::new(RecoveryClient::default());
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_http_client_factory(Arc::new(RecoveryFactory(Arc::clone(&client))))
+            .with_connection_pool(
+                ConnectionPoolOptions::builder()
+                    .with_is_http2_allowed(false)
+                    .build()
+                    .unwrap(),
+            )
+            .with_default_operation_options(
+                OperationOptionsBuilder::new()
+                    .with_throttling_retry_options(
+                        ThrottlingRetryOptionsBuilder::new()
+                            .with_max_retry_count(0)
+                            .build(),
+                    )
+                    .build(),
+            )
+            .build()
+            .await
+            .unwrap();
+        let account = signed_test_account("https://test.documents.azure.com:443/");
+        let driver = runtime
+            .create_driver(DriverOptions::builder(account.clone()).build())
+            .await
+            .unwrap();
+        let admitted = OperationOptions {
+            hedging_enabled: Some(false),
+            ..Default::default()
+        }
+        .with_resolution_snapshot(
+            Arc::clone(runtime.env_override_operation_options()),
+            Arc::clone(runtime.env_operation_options()),
+            runtime.default_operation_options(),
+            Arc::clone(driver.options.operation_options()),
+        );
+        runtime.set_default_operation_options(
+            OperationOptionsBuilder::new()
+                .with_throttling_retry_options(
+                    ThrottlingRetryOptionsBuilder::new()
+                        .with_max_retry_count(9)
+                        .build(),
+                )
+                .build(),
+        );
+        let response = driver
+            .execute_singleton_operation(
+                CosmosOperation::read_database(DatabaseReference::from_name(account, "db")),
+                admitted,
+            )
+            .await
+            .unwrap();
+        assert!(response.status().is_success());
+        assert_eq!(client.operation_calls.load(Ordering::SeqCst), 2);
+        assert_eq!(
+            *client.refresh_calls.lock().unwrap(),
+            std::collections::HashMap::from([
+                ("test.documents.azure.com".to_owned(), 1),
+                ("test-westus2.documents.azure.com".to_owned(), 1),
+            ]),
+            "both primary and regional refreshes must preserve the admitted zero-retry policy"
+        );
+    }
+
+    #[tokio::test]
     async fn fetch_account_properties_retries_on_throttle_then_succeeds() {
         // Returns 429 (with x-ms-retry-after-ms) on the first attempt, then 200.
         // Bootstrap must retry the throttle instead of surfacing it.
@@ -6143,6 +6300,7 @@ mod tests {
             &user_agent,
             &TEST_CLIENT_ID,
             false,
+            None,
         )
         .await
         .expect("bootstrap must retry the 429 and then succeed");
@@ -6212,6 +6370,7 @@ mod tests {
             &user_agent,
             &TEST_CLIENT_ID,
             false,
+            None,
         )
         .await
         .expect_err("disabled throttle retries must surface the 429");
@@ -6307,6 +6466,7 @@ mod tests {
             &user_agent,
             &TEST_CLIENT_ID,
             false,
+            None,
         )
         .await
     }
@@ -6333,6 +6493,7 @@ mod tests {
             &user_agent,
             &TEST_CLIENT_ID,
             false,
+            None,
         )
         .await
         .expect("not-sent connectivity failures should be retried");
@@ -6362,6 +6523,7 @@ mod tests {
             &user_agent,
             &TEST_CLIENT_ID,
             false,
+            None,
         )
         .await
         .expect_err("connectivity failures should surface after retry budget exhaustion");
@@ -6749,6 +6911,7 @@ mod tests {
             &user_agent,
             &TEST_CLIENT_ID,
             false,
+            None,
         )
         .await
         .expect_err("transport-layer failure must surface as an error");
@@ -6821,6 +6984,7 @@ mod tests {
             &user_agent,
             &TEST_CLIENT_ID,
             false,
+            None,
         )
         .await
         .expect_err("sign_request failure must surface as an error");
@@ -6961,6 +7125,7 @@ mod tests {
             &user_agent,
             &client_id,
             false,
+            None,
         )
         .await;
 

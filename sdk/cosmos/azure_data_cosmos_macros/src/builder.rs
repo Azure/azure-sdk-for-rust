@@ -22,20 +22,24 @@ pub fn generate_builder(input: &OptionsInput) -> Result<TokenStream> {
     });
 
     // Setter methods: each takes the inner type and wraps in Some.
-    let setters = input.fields.iter().map(|field| {
-        let cfg_attrs = &field.cfg_attrs;
-        let field_name = &field.ident;
-        let setter_name = format_ident!("with_{}", field_name);
-        let inner_type = &field.inner_type;
-        quote! {
-            #(#cfg_attrs)*
-            /// Sets this field on the builder.
-            #vis fn #setter_name(mut self, value: #inner_type) -> Self {
-                self.#field_name = Some(value);
-                self
+    let setters = input
+        .fields
+        .iter()
+        .filter(|field| !field.skip)
+        .map(|field| {
+            let cfg_attrs = &field.cfg_attrs;
+            let field_name = &field.ident;
+            let setter_name = format_ident!("with_{}", field_name);
+            let inner_type = &field.inner_type;
+            quote! {
+                #(#cfg_attrs)*
+                /// Sets this field on the builder.
+                #vis fn #setter_name(mut self, value: #inner_type) -> Self {
+                    self.#field_name = Some(value);
+                    self
+                }
             }
-        }
-    });
+        });
 
     // Build method: constructs the original struct.
     let build_fields = input.fields.iter().map(|field| {

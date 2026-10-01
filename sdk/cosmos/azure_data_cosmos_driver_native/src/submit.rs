@@ -38,6 +38,7 @@ use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosStatusCode};
 use crate::op_request::{build_request, CosmosOperationRequest};
+use crate::options_snapshot::OperationOptionsSnapshot;
 use crate::runtime::RuntimeContext;
 
 /// Send-safe encoding of the opaque `user_data` cookie round-tripped
@@ -361,6 +362,14 @@ fn submit_operation_with_builder(
         }
     };
 
+    if built
+        .snapshot
+        .as_ref()
+        .is_some_and(|snapshot| !snapshot.matches_driver(&driver_arc))
+    {
+        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        return std::ptr::null_mut();
+    }
     let (ctx, op_handle) = match pre_flight_spawn(queue, user_data) {
         Ok(pair) => pair,
         Err(code) => {
@@ -371,6 +380,7 @@ fn submit_operation_with_builder(
 
     let runtime = Arc::clone(ctx.queue.runtime());
     let crate::op_request::BuiltRequest {
+        snapshot,
         operation,
         options,
         patch_tracking_id,
@@ -384,7 +394,7 @@ fn submit_operation_with_builder(
     spawn_oneshot(
         ctx,
         runtime,
-        async move {
+        OperationOptionsSnapshot::execute(snapshot, async move {
             // Plan with the inbound continuation, then execute a single
             // page. Mirrors `CosmosDriver::execute_operation` but threads
             // the continuation token through the planner and retains the
@@ -424,7 +434,7 @@ fn submit_operation_with_builder(
                 return Err(crate::cursor::legacy_representation_error());
             }
             Ok((page, next))
-        },
+        }),
         |(page, next): (Option<CosmosResponse>, Option<String>)| SuccessKind::Response {
             response: page.map(Box::new),
             next_continuation: next,
@@ -502,6 +512,14 @@ fn submit_singleton_operation_with_builder(
         }
     };
 
+    if built
+        .snapshot
+        .as_ref()
+        .is_some_and(|snapshot| !snapshot.matches_driver(&driver_arc))
+    {
+        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        return std::ptr::null_mut();
+    }
     let (ctx, op_handle) = match pre_flight_spawn(queue, user_data) {
         Ok(pair) => pair,
         Err(code) => {
@@ -513,6 +531,7 @@ fn submit_singleton_operation_with_builder(
     let runtime = Arc::clone(ctx.queue.runtime());
     // `continuation` is intentionally dropped: singletons do not paginate.
     let crate::op_request::BuiltRequest {
+        snapshot,
         operation,
         options,
         patch_tracking_id,
@@ -525,11 +544,11 @@ fn submit_singleton_operation_with_builder(
     spawn_oneshot(
         ctx,
         runtime,
-        async move {
+        OperationOptionsSnapshot::execute(snapshot, async move {
             driver_arc
                 .execute_singleton_operation(operation, options)
                 .await
-        },
+        }),
         |response: CosmosResponse| SuccessKind::Response {
             response: Some(Box::new(response)),
             next_continuation: None,

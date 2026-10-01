@@ -33,6 +33,7 @@ pub mod error;
 pub mod fault_injection;
 pub mod feed_range;
 pub mod op_request;
+pub mod options_snapshot;
 pub mod partition_key;
 pub mod response_header;
 pub mod runtime;
