@@ -6,13 +6,13 @@
 
 ### Breaking Changes
 
-- Terminal service 404/1002 and 403/3 errors now surface as synthetic 503/20310 and 503/20311 errors, retaining the original wire error in `source()`.
+- Terminal service 404/1002 and 403/3 errors now surface as synthetic 503/20310 and 503/20311 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
 
 ### Bugs Fixed
 
 ### Other Changes
 
-- Diagnostics JSON now includes the recorded operation-level status separately from unchanged per-attempt statuses.
+- Diagnostics JSON now includes the recorded operation-level status separately from unchanged per-attempt statuses. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
 
 ## 1.0.0-beta.1 (2026-09-28)
 
