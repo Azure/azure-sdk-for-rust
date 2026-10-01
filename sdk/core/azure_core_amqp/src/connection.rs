@@ -133,6 +133,17 @@ impl AmqpConnectionApis for AmqpConnection {
 }
 
 impl AmqpConnection {
+    /// Terminates the transport without waiting for the peer to close it.
+    ///
+    /// Use this method to retire a failed connection when graceful shutdown cannot
+    /// finish. Pending operations fail. An opened connection cannot reopen.
+    /// An interrupted send can have reached the peer without an acknowledgement.
+    /// Calling this method before opening a connection has no effect.
+    pub fn abort(&self) {
+        #[cfg(feature = "fe2o3_amqp")]
+        self.implementation.abort();
+    }
+
     /// Creates a new instance of `AmqpConnection`.
     pub fn new() -> Self {
         Self {

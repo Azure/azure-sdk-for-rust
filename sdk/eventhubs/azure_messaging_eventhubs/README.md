@@ -153,6 +153,14 @@ There are two mechanisms used to send events to an Event Hub instance. The first
 sends individual messages to the Event Hub, the second uses a "batch" operation to
 send multiple messages in a single network request to the service.
 
+When a connection or session closes, pending sends retry with the current connection. Peer-triggered invalidation also wakes pending sends.
+These retries use the configured limits and backoff. A lost acknowledgement can cause duplicate
+events, because the service can accept a send before the client detects the failure.
+
+`RetryOptions::max_total_elapsed` bounds each send and sender metadata request, including authorization, attachment, recovery, and backoff. The default remains 60 seconds. Expiry returns an I/O timeout and retires the transport used by the failed attempt. A later call can reconnect. An outage longer than the budget produces a terminal error; increasing the budget does not guarantee recovery.
+
+A deadline runs independently of AMQP reads and writes. It does not limit a healthy receiver's wait for an event. The client terminates retired transports without waiting for a graceful close handshake.
+
 #### Send events directly to the Event Hub
 
 ```rust no_run
@@ -410,6 +418,34 @@ Events follow a consistent level policy so you can pick the verbosity you need:
 - `debug` - per-operation bookkeeping, error classification decisions, retry chatter, and internal
   map updates.
 - `trace` - very-high-frequency or per-message detail, including the hot send path.
+
+When a retried operation returns an error, the SDK logs one `warn` event, `Operation recovery
+stopped, returning error.`, with these fields:
+
+- `stop_reason` - the decision that ended recovery: `elapsed_budget_exhausted`,
+  `retries_exhausted`, `non_recoverable`, `recovery_failed`, or `recovery_unavailable`.
+- `retries_attempted` and `max_retries` - the retries that ran and the configured limit.
+- `recovery_elapsed` and `max_total_elapsed` - the time charged to the elapsed-time budget and
+  its configured limit. For a receive, only recovery work counts: recovery actions, backoff, and
+  link attach. For other operations, all time from the first attempt counts.
+- `receive_wait_elapsed` - receive only: the total time in the current recovery episode that the
+  receive waited for an event on an attached link. This time is not charged to the budget.
+
+When a receive link fails after it waited at least 10 seconds for an event, the link was healthy,
+so the SDK starts a new recovery episode with a new retry count and a new budget. It logs this at
+`info` as `Receive link failed after a healthy wait, starting a new recovery episode.`, with
+`connection_id`, `partition_id`, the previous `retries_attempted`, and the `healthy_wait`.
+
+- `connection_id` and `partition_id` - the receiver that stopped, present on receive events at
+  every level.
+- `err` - the error that the operation returns.
+
+### Link attachment during recovery
+
+Connection recovery can replace a session while a sender or receiver prepares
+to attach. The SDK checks that preparation still belongs to the current recovery
+generation before attaching the link. Superseded preparation restarts against the
+current session, avoiding a duplicate link-name attachment on that session.
 
 ## Contributing
 

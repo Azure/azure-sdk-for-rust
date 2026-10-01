@@ -3,20 +3,67 @@
 
 use crate::{
     connection::AmqpConnection,
-    error::{AmqpErrorKind, Result},
+    error::{AmqpDescribedError, AmqpErrorKind, Result},
+    fe2o3::transport::{AbortOnDrop, Closed, Transport},
     session::{AmqpSessionApis, AmqpSessionOptions},
     AmqpError,
 };
 use std::{
     borrow::BorrowMut,
+    future::{poll_fn, Future},
+    io,
+    pin::pin,
     sync::{Arc, OnceLock},
 };
-use tokio::sync::Mutex;
+use tokio::{net::TcpStream, sync::Mutex};
 use tracing::{debug, trace};
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct Fe2o3AmqpSession {
     session: OnceLock<Arc<Mutex<fe2o3_amqp::session::SessionHandle<()>>>>,
+    monitor: OnceLock<Arc<SessionMonitor>>,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct SessionClosed {
+    connection: Arc<Closed>,
+    session: Arc<Closed>,
+    error: Arc<OnceLock<AmqpDescribedError>>,
+    transport: Transport<TcpStream>,
+}
+
+impl SessionClosed {
+    pub fn guard(&self) -> AbortOnDrop<TcpStream> {
+        self.transport.guard()
+    }
+
+    pub async fn run<T>(&self, operation: impl Future<Output = Result<T>>) -> Result<T> {
+        tokio::select! {
+            biased;
+            result = operation => result,
+            _ = self.connection.wait() => Err(AmqpErrorKind::ConnectionDropped(Box::new(
+                io::Error::new(io::ErrorKind::ConnectionAborted, "AMQP connection closed"),
+            )).into()),
+            _ = self.session.wait() => Err(match self.error.get() {
+                Some(error) => AmqpErrorKind::AmqpDescribedError(error.clone()).into(),
+                None => AmqpErrorKind::SessionClosedByRemote(Box::new(
+                    io::Error::new(io::ErrorKind::ConnectionAborted, "AMQP session ended"),
+                )).into(),
+            }),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct SessionMonitor {
+    closed: SessionClosed,
+    task: tokio::task::JoinHandle<()>,
+}
+
+impl Drop for SessionMonitor {
+    fn drop(&mut self) {
+        self.task.abort();
+    }
 }
 
 impl Drop for Fe2o3AmqpSession {
@@ -29,6 +76,7 @@ impl Fe2o3AmqpSession {
     pub fn new() -> Self {
         Self {
             session: OnceLock::new(),
+            monitor: OnceLock::new(),
         }
     }
 
@@ -39,6 +87,13 @@ impl Fe2o3AmqpSession {
             .get()
             .ok_or_else(Self::session_not_set)?
             .clone())
+    }
+
+    pub fn closed(&self) -> Result<SessionClosed> {
+        self.monitor
+            .get()
+            .map(|monitor| monitor.closed.clone())
+            .ok_or_else(Self::session_not_set)
     }
 
     fn session_already_attached() -> AmqpError {
@@ -59,6 +114,8 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         connection: &AmqpConnection,
         options: Option<AmqpSessionOptions>,
     ) -> Result<()> {
+        let transport = connection.implementation.transport()?;
+        let connection_closed = connection.implementation.closed()?;
         let mut connection = connection
             .implementation
             .get()
@@ -101,12 +158,45 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
                 session_builder = session_builder.buffer_size(buffer_size);
             }
         }
+        let guard = transport.guard();
         let session = session_builder
             .begin(connection.borrow_mut())
             .await
-            .map_err(AmqpError::from)?;
+            .map_err(AmqpError::from);
+        guard.disarm();
+        let session = session?;
+        let session = Arc::new(Mutex::new(session));
         self.session
-            .set(Arc::new(Mutex::new(session)))
+            .set(session.clone())
+            .map_err(|_| Self::could_not_set_session())?;
+        let closed = SessionClosed {
+            connection: connection_closed,
+            session: Arc::default(),
+            error: Arc::default(),
+            transport,
+        };
+        let notification = closed.session.clone();
+        let error = closed.error.clone();
+        let task = tokio::spawn(async move {
+            let mut lock = Box::pin(session.clone().lock_owned());
+            // Register the outcome waker, then release the handle between polls.
+            // Keeping the mutex guard while waiting would prevent link attachment.
+            let result = poll_fn(|cx| {
+                let mut handle = std::task::ready!(lock.as_mut().poll(cx));
+                let result = pin!(handle.on_end()).poll(cx);
+                drop(handle);
+                lock = Box::pin(session.clone().lock_owned());
+                result
+            })
+            .await;
+            if let Err(fe2o3_amqp::session::Error::RemoteEndedWithError(reason)) = result {
+                // Preserve terminal protocol conditions for every waiter.
+                let _ = error.set(reason.into());
+            }
+            notification.close();
+        });
+        self.monitor
+            .set(Arc::new(SessionMonitor { closed, task }))
             .map_err(|_| Self::could_not_set_session())?;
         Ok(())
     }
@@ -122,8 +212,9 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             trace!("Session already ended, returning.");
             return Ok(());
         }
-        session.end().await.map_err(AmqpError::from)?;
-        Ok(())
+        let result = session.end().await.map_err(AmqpError::from);
+        self.closed()?.session.close();
+        result
     }
 }
 
