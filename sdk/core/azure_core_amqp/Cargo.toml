@@ -39,6 +39,7 @@ typespec_macros.workspace = true
 [dev-dependencies]
 fe2o3-amqp = { workspace = true, features = ["acceptor"] }
 serde_json.workspace = true
+tokio = { workspace = true, features = ["test-util"] }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 
 [features]
