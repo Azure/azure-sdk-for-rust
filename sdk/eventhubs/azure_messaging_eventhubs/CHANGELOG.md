@@ -2,6 +2,10 @@
 
 ## 0.18.0 (Unreleased)
 
+### Features Added
+
+- Added `ConsumerClientBuilder::with_idle_timeout` and `ProducerClientBuilder::with_idle_timeout` to configure the AMQP connection idle timeout and enable peer heartbeat negotiation.
+
 ### Bugs Fixed
 
 - Producer sends and sender metadata waits now enforce `RetryOptions::max_total_elapsed` while preparation, transport I/O, recovery, or backoff is pending; expiry returns an I/O timeout and retires the captured connection.

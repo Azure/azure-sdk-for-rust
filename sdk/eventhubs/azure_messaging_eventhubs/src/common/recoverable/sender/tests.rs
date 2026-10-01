@@ -153,7 +153,7 @@ async fn pending_sends_recover(invalidate_from_peer: bool, count: usize, blackho
         });
 
         let connection = RecoverableConnection::new(
-            url.clone(), None, None, AmqpTransport::Tcp, Arc::new(MockCredential),
+            url.clone(), None, None, AmqpTransport::Tcp, None, Arc::new(MockCredential),
             RetryOptions { max_total_elapsed: azure_core::time::Duration::seconds(3), ..Default::default() }, None,
         );
         connection.authorizer.disable_authorization().unwrap();
@@ -279,6 +279,7 @@ fn connection_with_options(options: RetryOptions) -> Arc<RecoverableConnection> 
         None,
         None,
         AmqpTransport::Tcp,
+        None,
         Arc::new(MockCredential),
         options,
         None,
@@ -396,6 +397,7 @@ async fn deadline_retires_pending_sends_and_subsequent_call_reconnects() {
             None,
             None,
             AmqpTransport::Tcp,
+            None,
             Arc::new(MockCredential),
             RetryOptions {
                 max_total_elapsed: azure_core::time::Duration::milliseconds(500),
@@ -510,6 +512,7 @@ async fn deadline_cancels_open_session_attach_and_cbs_preparation() {
                 None,
                 None,
                 AmqpTransport::Tcp,
+                None,
                 Arc::new(MockCredential),
                 RetryOptions {
                     max_total_elapsed: azure_core::time::Duration::milliseconds(500),

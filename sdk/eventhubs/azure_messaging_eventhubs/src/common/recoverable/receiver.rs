@@ -367,6 +367,7 @@ mod tests {
                 Some(String::from("conn-1")),
                 None,
                 AmqpTransport::default(),
+                None,
                 Arc::new(MockCredential),
                 retry_options,
                 None,

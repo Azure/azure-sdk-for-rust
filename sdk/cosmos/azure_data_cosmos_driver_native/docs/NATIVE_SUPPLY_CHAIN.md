@@ -300,9 +300,12 @@ Microsoft Rust from an internal feed. An owner must rerun the five active
 targets after the toolchain identity fixes. Windows AMD64 GNU is deferred from
 the active matrix and is tracked separately before it is re-added.
 
-The publication stage runs only for a successful non-pull-request build of
-`refs/heads/main`. It uses the existing Azure SDK Automation GitHub App to clone
-the downstream repository and open a draft pull request.
+The publication stage runs only for a successful manual build of an annotated
+`azure_data_cosmos_driver_native@X.Y.Z` tag. The pipeline validates that the
+Cargo, header, changelog, tag, and built source commit agree. Before `1.0.0`, a
+patch release must also preserve the C FFI header apart from its version macro.
+It uses the existing Azure SDK Automation GitHub App to clone the downstream
+repository and open a draft pull request.
 `Prepare-GoDriverPullRequest.ps1` verifies every checksum, requires all six
 evidence bundle files, ignores other `_manifest` files during export, and
 replaces the pipeline-owned `linux`, `darwin`, and filtered

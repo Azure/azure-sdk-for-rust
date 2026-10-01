@@ -15,6 +15,7 @@ use crate::{
 use azure_core::{
     error::{Error, ErrorKind as AzureErrorKind},
     http::Url,
+    time::Duration,
     Uuid,
 };
 use azure_core_amqp::{
@@ -108,6 +109,7 @@ impl ProducerClient {
         custom_endpoint: Option<Url>,
         cbs_token_type: Option<&'static str>,
         transport: AmqpTransport,
+        idle_timeout: Option<Duration>,
     ) -> Self {
         Self {
             connection: RecoverableConnection::new(
@@ -115,6 +117,7 @@ impl ProducerClient {
                 application_id,
                 custom_endpoint,
                 transport,
+                idle_timeout,
                 credential,
                 retry_options,
                 cbs_token_type,
@@ -605,11 +608,11 @@ pub mod builders {
         common::{
             connection_string::{resolve_eventhub, ConnectionString},
             sas_credential::SasCredential,
-            SAS_TOKEN_TYPE,
+            validate_idle_timeout, SAS_TOKEN_TYPE,
         },
         Result, RetryOptions,
     };
-    use azure_core::{http::Url, Error};
+    use azure_core::{http::Url, time::Duration, Error};
     use azure_core_amqp::AmqpTransport;
     use std::sync::Arc;
 
@@ -643,6 +646,9 @@ pub mod builders {
 
         /// The transport used to communicate with the Event Hub.
         transport: Option<AmqpTransport>,
+
+        /// The AMQP connection idle timeout.
+        idle_timeout: Option<Duration>,
     }
 
     impl ProducerClientBuilder {
@@ -710,10 +716,31 @@ pub mod builders {
             self
         }
 
+        /// Sets the AMQP connection idle timeout.
+        ///
+        /// The connection reports an idle timeout when it receives no AMQP frames
+        /// within this duration. Setting the timeout also advertises it to the
+        /// service so that the peers can negotiate heartbeats. The duration must
+        /// contain between 1 and [`u32::MAX`] whole milliseconds.
+        pub fn with_idle_timeout(mut self, idle_timeout: Duration) -> Self {
+            self.idle_timeout = Some(idle_timeout);
+            self
+        }
+
         /// Returns the AMQP transport this builder opens the connection with.
         /// Shared by every `open` path so they cannot drift apart.
         pub(crate) fn transport(&self) -> AmqpTransport {
             self.transport.unwrap_or_default()
+        }
+
+        /// Returns the AMQP connection idle timeout configured on this builder.
+        #[cfg(test)]
+        pub(crate) fn idle_timeout(&self) -> Option<Duration> {
+            self.idle_timeout
+        }
+
+        pub(crate) fn validate(&self) -> Result<()> {
+            validate_idle_timeout(self.idle_timeout)
         }
 
         /// Opens the connection to the Event Hub.
@@ -732,6 +759,7 @@ pub mod builders {
             eventhub: &str,
             credential: Arc<dyn azure_core::credentials::TokenCredential>,
         ) -> Result<ProducerClient> {
+            self.validate()?;
             let transport = self.transport();
             let url = format!("amqps://{}/{}", fully_qualified_namespace, eventhub);
             let url = Url::parse(&url).map_err(azure_core::Error::from)?;
@@ -750,6 +778,7 @@ pub mod builders {
                 custom_endpoint,
                 None,
                 transport,
+                self.idle_timeout,
             );
 
             // Open a connection to the Event Hub to ensure that the client is ready to send messages.
@@ -799,6 +828,7 @@ pub mod builders {
             connection_string: &str,
             eventhub: Option<&str>,
         ) -> Result<ProducerClient> {
+            self.validate()?;
             let transport = self.transport();
             let connection_string: ConnectionString = connection_string.parse()?;
             let eventhub = resolve_eventhub(&connection_string, eventhub)?;
@@ -827,6 +857,7 @@ pub mod builders {
                 custom_endpoint,
                 Some(SAS_TOKEN_TYPE),
                 transport,
+                self.idle_timeout,
             );
 
             client.ensure_connection().await?;
@@ -853,6 +884,41 @@ mod tests {
                 .transport(),
             AmqpTransport::Tcp
         );
+    }
+
+    #[test]
+    fn builder_sets_idle_timeout() {
+        let idle_timeout = Duration::seconds(60);
+        assert_eq!(
+            ProducerClient::builder()
+                .with_idle_timeout(idle_timeout)
+                .idle_timeout(),
+            Some(idle_timeout)
+        );
+    }
+
+    #[test]
+    fn builder_validates_idle_timeout() {
+        assert!(ProducerClient::builder()
+            .with_idle_timeout(Duration::milliseconds(1))
+            .validate()
+            .is_ok());
+        assert!(ProducerClient::builder()
+            .with_idle_timeout(Duration::milliseconds(i64::from(u32::MAX)))
+            .validate()
+            .is_ok());
+
+        for invalid in [
+            Duration::milliseconds(-1),
+            Duration::ZERO,
+            Duration::nanoseconds(1),
+            Duration::milliseconds(i64::from(u32::MAX) + 1),
+        ] {
+            assert!(ProducerClient::builder()
+                .with_idle_timeout(invalid)
+                .validate()
+                .is_err());
+        }
     }
 
     #[recorded::test(live)]

@@ -15,9 +15,8 @@
 //
 // `cosmos_driver_get_or_create_blocking` is not exercised here because
 // it touches the network. The emulator-backed scenario (stand up a driver,
-// free it, recreate it, observe the cached instance, observe the
-// OPTIONS_IGNORED_ON_CACHE_HIT advisory) is intentionally deferred to a
-// CI-side integration test once the advisory itself lands. The Rust-side
+// free it, recreate it, and verify independent credentials/defaults) belongs
+// in the network integration suite. The Rust-side
 // integration test `blocking_against_invalid_endpoint` (marked
 // `#[ignore]`) exercises the failure path manually.
 
@@ -154,6 +153,14 @@ static int test_driver_options_build_happy_path(void) {
     cfg.preferred_regions_len = 2;
     cosmos_operation_options_t operation_options = cosmos_operation_options_default();
     operation_options.query_plan_mode = COSMOS_QUERY_PLAN_MODE_GATEWAY_ONLY;
+    operation_options.max_failover_retry_count = UINT32_MAX;
+    operation_options.max_session_retry_count = UINT32_MAX;
+    operation_options.throughput_bucket = UINT32_MAX;
+    operation_options.priority_level = 2;
+    operation_options.max_throttle_retry_count = 0;
+    operation_options.max_throttle_retry_wait_time_ms = 0;
+    operation_options.hedging_enabled = 1;
+    operation_options.availability_strategy = 1;
     cfg.operation_options = &operation_options;
 
     cosmos_driver_options_t *opts = NULL;

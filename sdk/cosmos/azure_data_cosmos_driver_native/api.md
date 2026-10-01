@@ -507,8 +507,8 @@ pub mod op_request {
         pub content_response_on_write: i32,
         pub patch_strategy: i32,
         pub session_capturing_disabled: i8,
-        pub max_failover_retry_count: i32,
-        pub max_session_retry_count: i32,
+        pub max_failover_retry_count: i64,
+        pub max_session_retry_count: i64,
         pub end_to_end_timeout_ms: i64,
         pub endpoint_unavailability_ttl_ms: i64,
         pub excluded_regions: *const crate::string::CosmosStringView,
@@ -518,6 +518,13 @@ pub mod op_request {
         pub binary_encoding_enabled: i8,
         pub binary_encoding_request_text_response: i8,
         pub query_plan_mode: i32,
+        pub throughput_bucket: i64,
+        pub priority_level: i32,
+        pub max_throttle_retry_count: i64,
+        pub max_throttle_retry_wait_time_ms: i64,
+        pub hedging_enabled: i8,
+        pub availability_strategy: i32,
+        pub hedge_threshold_ms: i64,
     }
     #[repr(C)]
     pub struct CosmosOperationRequest {
@@ -547,6 +554,7 @@ pub mod op_request {
         pub patch_tracking_id: crate::string::CosmosStringView,
         pub patch_tracking_capacity: u16,
         pub patch_tracking_retention_seconds: u32,
+        pub options_snapshot: *const crate::options_snapshot::OperationOptionsSnapshot,
     }
     pub struct OptOf;
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -616,6 +624,17 @@ pub mod op_request {
         CosmosReadConsistencyStrategySession = 3,
         CosmosReadConsistencyStrategyGlobalStrong = 4,
         CosmosReadConsistencyStrategyLatestCommitted = 5,
+    }
+}
+pub mod options_snapshot {
+    #[no_mangle]
+    pub unsafe extern "C" fn cosmos_operation_options_snapshot_create(runtime: *const crate::runtime::RuntimeContext, client_options: *const crate::op_request::CosmosOperationOptions, request_options: *const crate::op_request::CosmosOperationOptions, out_snapshot: *mut *mut OperationOptionsSnapshot, out_timeout_ms: *mut i64) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub unsafe extern "C" fn cosmos_operation_options_snapshot_free(snapshot: *mut OperationOptionsSnapshot);
+    #[no_mangle]
+    pub unsafe extern "C" fn cosmos_runtime_set_operation_options(runtime: *const crate::runtime::RuntimeContext, options: *const crate::op_request::CosmosOperationOptions) -> crate::error::CosmosStatusCode;
+    #[derive(Clone)]
+    pub struct OperationOptionsSnapshot {
     }
 }
 pub mod partition_key {
@@ -736,6 +755,7 @@ pub mod runtime_builder {
         pub user_agent_suffix: crate::string::CosmosStringView,
         pub wrapping_sdk_identifier: crate::string::CosmosStringView,
         pub cpu_refresh_interval_ms: u64,
+        pub operation_options: *const crate::op_request::CosmosOperationOptions,
     }
 }
 #[attr = MacroUse {arguments:UseAll}]

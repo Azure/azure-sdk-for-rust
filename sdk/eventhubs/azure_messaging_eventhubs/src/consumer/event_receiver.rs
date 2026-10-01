@@ -389,6 +389,7 @@ mod tests {
             None,
             None,
             Default::default(),
+            None,
             Arc::new(azure_core_test::credentials::MockCredential),
             Default::default(),
             None,
