@@ -39,7 +39,7 @@ jobs:
             arguments: >
               -Toolchain '${{ parameters.rustVersion }}'
 
-        - template: /eng/pipelines/templates/steps/use-rust.yml@self
+        - template: /eng/pipelines/templates/steps/use-rust.yml
           parameters:
             Toolchain: $(ApiReviewRustToolchain)
 
