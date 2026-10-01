@@ -37,6 +37,15 @@ use tokio::{
 
 #[tokio::test]
 async fn session_end_wakes_every_send_and_metadata_waiter() {
+    session_end_wakes_waiters(false).await;
+}
+
+#[tokio::test]
+async fn session_end_preserves_terminal_protocol_condition() {
+    session_end_wakes_waiters(true).await;
+}
+
+async fn session_end_wakes_waiters(with_error: bool) {
     timeout(Duration::from_secs(5), async {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
@@ -74,7 +83,20 @@ async fn session_end_wakes_every_send_and_metadata_waiter() {
                 });
             }
             peer_end.notified().await;
-            session.end().await.unwrap();
+            if with_error {
+                session
+                    .end_with_error(fe2o3_amqp::types::definitions::Error::new(
+                        fe2o3_amqp::types::definitions::ErrorCondition::Custom(
+                            "amqp:unauthorized-access".into(),
+                        ),
+                        None,
+                        None,
+                    ))
+                    .await
+                    .unwrap();
+            } else {
+                session.end().await.unwrap();
+            }
             pending::<()>().await;
             drop((links, connection));
         });
@@ -109,10 +131,18 @@ async fn session_end_wakes_every_send_and_metadata_waiter() {
         tokio::task::yield_now().await;
         end.notify_one();
         while let Some(result) = sends.join_next().await {
-            assert!(matches!(
-                result.unwrap().err().unwrap().kind(),
-                AmqpErrorKind::SessionClosedByRemote(_)
-            ));
+            let error = result.unwrap().err().unwrap();
+            if with_error {
+                assert!(
+                    matches!(error.kind(), AmqpErrorKind::AmqpDescribedError(error)
+                    if error.condition == crate::error::AmqpErrorCondition::UnauthorizedAccess)
+                );
+            } else {
+                assert!(matches!(
+                    error.kind(),
+                    AmqpErrorKind::SessionClosedByRemote(_)
+                ));
+            }
         }
         // The mutex may become available before the closure notification.
         // Either metadata or its session error must return promptly.

@@ -3,7 +3,7 @@
 
 use crate::{
     connection::AmqpConnection,
-    error::{AmqpErrorKind, Result},
+    error::{AmqpDescribedError, AmqpErrorKind, Result},
     fe2o3::transport::{AbortOnDrop, Closed, Transport},
     session::{AmqpSessionApis, AmqpSessionOptions},
     AmqpError,
@@ -14,7 +14,6 @@ use std::{
     io,
     pin::pin,
     sync::{Arc, OnceLock},
-    task::Poll,
 };
 use tokio::{net::TcpStream, sync::Mutex};
 use tracing::{debug, trace};
@@ -29,6 +28,7 @@ pub(crate) struct Fe2o3AmqpSession {
 pub(crate) struct SessionClosed {
     connection: Arc<Closed>,
     session: Arc<Closed>,
+    error: Arc<OnceLock<AmqpDescribedError>>,
     transport: Transport<TcpStream>,
 }
 
@@ -44,9 +44,12 @@ impl SessionClosed {
             _ = self.connection.wait() => Err(AmqpErrorKind::ConnectionDropped(Box::new(
                 io::Error::new(io::ErrorKind::ConnectionAborted, "AMQP connection closed"),
             )).into()),
-            _ = self.session.wait() => Err(AmqpErrorKind::SessionClosedByRemote(Box::new(
-                io::Error::new(io::ErrorKind::ConnectionAborted, "AMQP session ended"),
-            )).into()),
+            _ = self.session.wait() => Err(match self.error.get() {
+                Some(error) => AmqpErrorKind::AmqpDescribedError(error.clone()).into(),
+                None => AmqpErrorKind::SessionClosedByRemote(Box::new(
+                    io::Error::new(io::ErrorKind::ConnectionAborted, "AMQP session ended"),
+                )).into(),
+            }),
         }
     }
 }
@@ -169,25 +172,27 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         let closed = SessionClosed {
             connection: connection_closed,
             session: Arc::default(),
+            error: Arc::default(),
             transport,
         };
         let notification = closed.session.clone();
+        let error = closed.error.clone();
         let task = tokio::spawn(async move {
             let mut lock = Box::pin(session.clone().lock_owned());
             // Register the outcome waker, then release the handle between polls.
             // Keeping the mutex guard while waiting would prevent link attachment.
-            poll_fn(|cx| {
+            let result = poll_fn(|cx| {
                 let mut handle = std::task::ready!(lock.as_mut().poll(cx));
-                let result = if handle.is_ended() {
-                    Poll::Ready(())
-                } else {
-                    pin!(handle.on_end()).poll(cx).map(|_| ())
-                };
+                let result = pin!(handle.on_end()).poll(cx);
                 drop(handle);
                 lock = Box::pin(session.clone().lock_owned());
                 result
             })
             .await;
+            if let Err(fe2o3_amqp::session::Error::RemoteEndedWithError(reason)) = result {
+                // Preserve terminal protocol conditions for every waiter.
+                let _ = error.set(reason.into());
+            }
             notification.close();
         });
         self.monitor
