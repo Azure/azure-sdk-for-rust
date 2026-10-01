@@ -364,6 +364,8 @@ pub mod error {
         CosmosSubStatusServiceReturnedOfferWithoutId = 20303,
         CosmosSubStatusClientThroughputPollerIncomplete = 20304,
         CosmosSubStatusClientTopologyResolutionFailed = 20305,
+        CosmosSubStatusClientReadSessionNotAvailable = 20310,
+        CosmosSubStatusClientWriteForbidden = 20311,
         CosmosSubStatusServiceReturnedObjectWithoutRid = 20306,
         CosmosSubStatusClientFfiNullArgument = 20350,
         CosmosSubStatusClientFfiInvalidUtf8 = 20351,

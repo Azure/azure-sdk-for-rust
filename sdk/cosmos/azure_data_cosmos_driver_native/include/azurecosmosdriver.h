@@ -751,6 +751,14 @@ enum cosmos_sub_status_t
    */
   COSMOS_SUB_STATUS_CLIENT_TOPOLOGY_RESOLUTION_FAILED = 20305,
   /**
+   * `CLIENT_READ_SESSION_NOT_AVAILABLE` (20310).
+   */
+  COSMOS_SUB_STATUS_CLIENT_READ_SESSION_NOT_AVAILABLE = 20310,
+  /**
+   * `CLIENT_WRITE_FORBIDDEN` (20311).
+   */
+  COSMOS_SUB_STATUS_CLIENT_WRITE_FORBIDDEN = 20311,
+  /**
    * `SERVICE_RETURNED_OBJECT_WITHOUT_RID` (20306).
    */
   COSMOS_SUB_STATUS_SERVICE_RETURNED_OBJECT_WITHOUT_RID = 20306,
@@ -1101,6 +1109,9 @@ typedef struct cosmos_string_view_t {
  * Mirrors the inline error fields of `cosmos_completion_t`. Every pointer
  * field is **owned**; free the whole struct — and its strings — with
  * [`cosmos_error_free`]. A `NULL` pointer field means that field was absent.
+ *
+ * Synthetic 503/20310 and 503/20311 wrappers retain metadata from the original
+ * service response, but report `is_from_wire == 0`.
  */
 typedef struct cosmos_error_t {
   /**
@@ -1109,8 +1120,7 @@ typedef struct cosmos_error_t {
    */
   cosmos_status_code_t status;
   /**
-   * Wire HTTP status code (always populated, including for synthetic
-   * errors).
+   * Effective HTTP status code, including synthetic error classifications.
    */
   uint16_t http_status_code;
   /**
@@ -1118,7 +1128,7 @@ typedef struct cosmos_error_t {
    */
   int32_t sub_status;
   /**
-   * `1` iff the error originated from a service wire response.
+   * `1` for a direct wire error; `0` for synthetic errors and wrappers.
    */
   uint8_t is_from_wire;
   /**

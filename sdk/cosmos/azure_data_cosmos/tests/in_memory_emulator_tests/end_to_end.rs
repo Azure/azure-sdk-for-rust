@@ -140,20 +140,15 @@ fn make_stale_session_token(token: &str) -> String {
 
 fn assert_read_session_not_available(err: &azure_data_cosmos::CosmosError, label: &str) {
     assert_eq!(
-        err.status().status_code(),
-        StatusCode::NotFound,
-        "{label}: stale session read should return 404",
-    );
-    assert_eq!(
-        err.status().sub_status().map(|s| s.value()),
-        Some(1002),
-        "{label}: stale session read should surface substatus 1002",
+        err.status(),
+        azure_data_cosmos_driver::error::status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+        "{label}: terminal session failure should be wrapped as 503/20310",
     );
 }
 
 /// Asserts a stale-session read was rejected on the real backend, tolerating a
 /// documented gateway-implementation divergence: classic gateway returns
-/// 404 / sub-status 1002 (ReadSessionNotAvailable), while the Gateway 2.0
+/// 404/1002 (wrapped as 503/20310), while the Gateway 2.0
 /// thin-client path surfaces the backend's structural session-token rejection
 /// as 400 BadRequest ("Session token specified is invalid."). A bumped-LSN
 /// token only trips the soft path on the shared backend; GW2 instead rejects
@@ -161,14 +156,10 @@ fn assert_read_session_not_available(err: &azure_data_cosmos::CosmosError, label
 /// cannot be satisfied" signals, so accept either.
 fn assert_stale_session_rejected(err: &azure_data_cosmos::CosmosError, label: &str) {
     match err.status().status_code() {
-        StatusCode::NotFound => assert_eq!(
-            err.status().sub_status().map(|s| s.value()),
-            Some(1002),
-            "{label}: 404 stale session read should surface substatus 1002",
-        ),
+        StatusCode::ServiceUnavailable => assert_read_session_not_available(err, label),
         StatusCode::BadRequest => {}
         other => panic!(
-            "{label}: stale session read should return 404/1002 or 400 BadRequest, got {other:?}",
+            "{label}: stale session read should return 503/20310 or 400 BadRequest, got {other:?}",
         ),
     }
 }

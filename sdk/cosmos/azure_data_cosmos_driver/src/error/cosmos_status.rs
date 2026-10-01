@@ -540,6 +540,8 @@ impl SubStatusCode {
             20307 => Some("ClientQueryPlanRangeNotCoveredByTopology"),
             20308 => Some("ServiceOrderByEnvelopeInvalid"),
             20309 => Some("ServiceQueryPlanOrderByMissingRewrittenQuery"),
+            20310 => Some("ClientReadSessionNotAvailable"),
+            20311 => Some("ClientWriteForbidden"),
 
             // Native FFI wrapper pre-flight / plumbing codes (20350-20399)
             20350 => Some("ClientFfiNullArgument"),

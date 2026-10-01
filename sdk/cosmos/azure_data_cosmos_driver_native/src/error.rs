@@ -22,7 +22,10 @@
 //!   through the synchronous `out_error` slots and freed with
 //!   [`cosmos_error_free`].
 
-use std::ffi::{c_char, CString};
+use std::{
+    error::Error as _,
+    ffi::{c_char, CString},
+};
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::error::{
@@ -198,6 +201,10 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientThroughputPollerIncomplete = 20304,
     /// `CLIENT_TOPOLOGY_RESOLUTION_FAILED` (20305).
     CosmosSubStatusClientTopologyResolutionFailed = 20305,
+    /// `CLIENT_READ_SESSION_NOT_AVAILABLE` (20310).
+    CosmosSubStatusClientReadSessionNotAvailable = 20310,
+    /// `CLIENT_WRITE_FORBIDDEN` (20311).
+    CosmosSubStatusClientWriteForbidden = 20311,
     /// `SERVICE_RETURNED_OBJECT_WITHOUT_RID` (20306).
     CosmosSubStatusServiceReturnedObjectWithoutRid = 20306,
     /// `CLIENT_FFI_NULL_ARGUMENT` (20350).
@@ -341,6 +348,8 @@ const _: () = {
         CosmosSubStatusServiceReturnedOfferWithoutId => SERVICE_RETURNED_OFFER_WITHOUT_ID,
         CosmosSubStatusClientThroughputPollerIncomplete => CLIENT_THROUGHPUT_POLLER_INCOMPLETE,
         CosmosSubStatusClientTopologyResolutionFailed => CLIENT_TOPOLOGY_RESOLUTION_FAILED,
+        CosmosSubStatusClientReadSessionNotAvailable => CLIENT_READ_SESSION_NOT_AVAILABLE,
+        CosmosSubStatusClientWriteForbidden => CLIENT_WRITE_FORBIDDEN,
         CosmosSubStatusServiceReturnedObjectWithoutRid => SERVICE_RETURNED_OBJECT_WITHOUT_RID,
         CosmosSubStatusClientFfiNullArgument => CLIENT_FFI_NULL_ARGUMENT,
         CosmosSubStatusClientFfiInvalidUtf8 => CLIENT_FFI_INVALID_UTF8,
@@ -536,17 +545,19 @@ impl CosmosErrorCode {
 /// Mirrors the inline error fields of `cosmos_completion_t`. Every pointer
 /// field is **owned**; free the whole struct — and its strings — with
 /// [`cosmos_error_free`]. A `NULL` pointer field means that field was absent.
+///
+/// Synthetic 503/20310 and 503/20311 wrappers retain metadata from the original
+/// service response, but report `is_from_wire == 0`.
 #[repr(C)]
 pub struct CosmosError {
     /// Packed 32-bit status (`(http << 16) | sub_status`). See
     /// [`CosmosStatusCode`].
     pub status: CosmosStatusCode,
-    /// Wire HTTP status code (always populated, including for synthetic
-    /// errors).
+    /// Effective HTTP status code, including synthetic error classifications.
     pub http_status_code: u16,
     /// Cosmos sub-status code, or `-1` when absent.
     pub sub_status: i32,
-    /// `1` iff the error originated from a service wire response.
+    /// `1` for a direct wire error; `0` for synthetic errors and wrappers.
     pub is_from_wire: u8,
     /// Retry-after hint in milliseconds, or `-1` when absent.
     pub retry_after_ms: i64,
@@ -603,7 +614,7 @@ impl CosmosError {
             .backtrace()
             .and_then(|bt| to_cstring(bt.as_ref().to_string()));
 
-        let (activity_id, session_token, etag, retry_after_ms) = match err.response() {
+        let (activity_id, session_token, etag, retry_after_ms) = match original_response(&err) {
             Some(resp) => {
                 let headers = resp.headers();
                 (
@@ -640,6 +651,26 @@ impl CosmosError {
             backtrace: cstring_into_raw(backtrace),
         }))
     }
+}
+
+/// Keeps wire details for the two synthetic terminal-service wrappers.
+pub(crate) fn original_response(
+    error: &DriverCosmosError,
+) -> Option<&azure_data_cosmos_driver::models::CosmosResponse> {
+    use azure_data_cosmos_driver::error::status_codes;
+
+    if let Some(response) = error.response() {
+        return Some(response);
+    }
+    let original_status = match error.status() {
+        status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE => status_codes::READ_SESSION_NOT_AVAILABLE,
+        status_codes::CLIENT_WRITE_FORBIDDEN => status_codes::WRITE_FORBIDDEN,
+        _ => return None,
+    };
+    let source = error.source()?.downcast_ref::<DriverCosmosError>()?;
+    (source.status() == original_status)
+        .then(|| source.response())
+        .flatten()
 }
 
 /// Frees a `cosmos_error_t *` obtained from a synchronous `out_error` slot,
@@ -693,8 +724,100 @@ pub extern "C" fn cosmos_set_backtrace_options(
 // ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
+    use azure_data_cosmos_driver::{
+        error::status_codes,
+        fault_injection::{
+            CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
+            FaultInjectionRuleBuilder, FaultOperationType,
+        },
+        in_memory_emulator::{InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion},
+        models::AccountReference,
+        options::{DriverOptions, OperationOptions},
+    };
+    use std::{ffi::CStr, sync::Arc};
+
+    pub(crate) async fn fault_injected_error(status: CosmosStatus) -> DriverCosmosError {
+        let response = CustomResponseBuilder::new(status.status_code())
+            .with_sub_status(status.sub_status().unwrap().value())
+            .with_header("x-ms-activity-id", "11111111-1111-1111-1111-111111111111")
+            .with_header("x-ms-session-token", "0:-1#1")
+            .with_header("etag", "\"original-etag\"")
+            .with_header("x-ms-retry-after-ms", "17")
+            .with_header("x-ms-request-charge", "2.5")
+            .with_body(br#"{"code":"Injected","message":"original failure"}"#.to_vec())
+            .build();
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "terminal-metadata",
+                FaultInjectionResultBuilder::new()
+                    .with_custom_response(response)
+                    .build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::MetadataReadContainer)
+                    .build(),
+            )
+            .build(),
+        );
+        let url = azure_core::http::Url::parse("https://eastus.emulator.local").unwrap();
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(
+            VirtualAccountConfig::new(vec![VirtualRegion::new("East US", url.clone())]).unwrap(),
+        ));
+        let runtime = emulator
+            .runtime_builder_with_fault_rules(vec![rule.clone()])
+            .build()
+            .await
+            .unwrap();
+        let driver = runtime
+            .create_driver(
+                DriverOptions::builder(AccountReference::with_master_key(url, "ZW11bGF0b3Ita2V5"))
+                    .build(),
+            )
+            .await
+            .unwrap();
+        let error = driver
+            .resolve_container("testdb", "testcoll", OperationOptions::default())
+            .await
+            .unwrap_err();
+        assert!(rule.hit_count() > 0);
+        error
+    }
+
+    #[tokio::test]
+    async fn wrapped_service_error_retains_native_wire_details() {
+        for (source_status, expected) in [
+            (status_codes::READ_SESSION_NOT_AVAILABLE, (503, 20310)),
+            (status_codes::WRITE_FORBIDDEN, (503, 20311)),
+        ] {
+            let error = fault_injected_error(source_status).await;
+            let raw = CosmosError::into_raw(error);
+            // SAFETY: the freshly allocated error owns these strings until freed below.
+            unsafe {
+                let error = &*raw;
+                assert_eq!(unpack(error.status), expected);
+                assert_eq!(error.http_status_code, expected.0);
+                assert_eq!(error.sub_status, i32::from(expected.1));
+                assert_eq!(error.is_from_wire, 0);
+                assert_eq!(error.retry_after_ms, 17);
+                assert_eq!(
+                    CStr::from_ptr(error.activity_id).to_str().unwrap(),
+                    "11111111-1111-1111-1111-111111111111"
+                );
+                assert_eq!(
+                    CStr::from_ptr(error.session_token).to_str().unwrap(),
+                    "0:-1#1"
+                );
+                assert_eq!(
+                    CStr::from_ptr(error.etag).to_str().unwrap(),
+                    "\"original-etag\""
+                );
+            }
+            cosmos_error_free(raw);
+        }
+    }
 
     /// Decodes a packed status back into `(http, sub)`. A `sub` of `0` means the
     /// operation had no sub-status.

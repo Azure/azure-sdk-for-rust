@@ -13,6 +13,7 @@
 //!
 //! See [`super::validation`] for the header/body comparison rules.
 
+use azure_data_cosmos_driver::error::status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE;
 use azure_data_cosmos_driver::models::{
     CosmosOperation, DatabaseReference, ItemReference, PartitionKey, ResponseBody,
 };
@@ -502,7 +503,7 @@ async fn replace_item_through_driver() {
 }
 
 #[tokio::test]
-async fn read_with_stale_session_token_returns_404_1002() {
+async fn read_with_stale_session_token_returns_wrapped_503() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
     // We first do a write to get a real session token (with the correct PKRange
@@ -596,15 +597,9 @@ async fn read_with_stale_session_token_returns_404_1002() {
 
     let emu_err = emu_err.expect_err("Emulator should return an error for stale session read");
     assert_eq!(
-        Some(emu_err.status().status_code()),
-        Some(azure_core::http::StatusCode::NotFound),
-        "Emulator error should be HTTP 404",
-    );
-    let error_code = emu_err.status().sub_status().map(|s| s.value().to_string());
-    assert_eq!(
-        error_code.as_deref(),
-        Some("1002"),
-        "Emulator error should have substatus 1002",
+        emu_err.status(),
+        CLIENT_READ_SESSION_NOT_AVAILABLE,
+        "terminal session failure should be wrapped",
     );
 
     // ── Real account (if available) ──────────────────────────────
@@ -641,23 +636,14 @@ async fn read_with_stale_session_token_returns_404_1002() {
             .await;
 
         let real_err = real_err.expect_err("Real should return an error for stale session read");
-        // The read targets a nonexistent item, so it returns HTTP 404 on every
-        // consistency level. Under Session the seed-derived token's bumped LSN
-        // additionally trips the soft 404 / sub-status 1002 (ReadSessionNotAvailable)
-        // path (asserted below); Eventual/Strong ignore the token entirely.
-        assert_eq!(
-            real_err.status().status_code(),
-            azure_core::http::StatusCode::NotFound,
-            "Real stale session read should return HTTP 404",
-        );
-        // Substatus 1002 is only produced under Session consistency; on
-        // Eventual/Strong accounts the stale token is ignored and the missing
-        // item surfaces as a plain 404/0. Only assert 1002 on Session accounts.
+        // Session failures are wrapped; other consistency levels ignore the
+        // stale token and return the missing item's ordinary 404.
         if DualBackend::real_account_uses_session_consistency() {
+            assert_eq!(real_err.status(), CLIENT_READ_SESSION_NOT_AVAILABLE,);
+        } else {
             assert_eq!(
-                real_err.status().sub_status().map(|s| s.value()),
-                Some(1002),
-                "Real 404 stale session read should surface substatus 1002",
+                real_err.status().status_code(),
+                azure_core::http::StatusCode::NotFound
             );
         }
     }
@@ -953,8 +939,8 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .await
         .expect_err("paused satellite should not observe the hub write yet");
     assert_eq!(
-        Some(west_read_before_resume.status().status_code()),
-        Some(azure_core::http::StatusCode::NotFound),
+        west_read_before_resume.status(),
+        CLIENT_READ_SESSION_NOT_AVAILABLE,
         "read should fail while West US replication is paused",
     );
 

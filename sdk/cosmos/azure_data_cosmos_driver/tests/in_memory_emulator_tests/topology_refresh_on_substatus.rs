@@ -5,13 +5,14 @@
 
 #![cfg(feature = "fault_injection")]
 
-use std::sync::Arc;
 use std::time::Duration;
+use std::{error::Error as _, sync::Arc};
 
 use azure_core::http::Url;
 
 use azure_data_cosmos_driver::diagnostics::PipelineKind;
 use azure_data_cosmos_driver::driver::CosmosDriver;
+use azure_data_cosmos_driver::error::{status_codes, CosmosError, CosmosStatus};
 use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
     FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
@@ -21,9 +22,17 @@ use azure_data_cosmos_driver::in_memory_emulator::{
     VirtualRegion, WriteMode,
 };
 use azure_data_cosmos_driver::models::{
-    AccountReference, CosmosOperation, ItemReference, PartitionKey,
+    AccountReference, CosmosOperation, FeedRange, ItemReference, PartitionKey,
 };
-use azure_data_cosmos_driver::options::{DriverOptions, ExcludedRegions, OperationOptions, Region};
+use azure_data_cosmos_driver::options::{
+    DiagnosticsVerbosity, DriverOptions, EndToEndOperationLatencyPolicy, ExcludedRegions,
+    OperationOptions, OperationOptionsBuilder, PlanOptions, Region,
+};
+#[cfg(feature = "preview_patch")]
+use azure_data_cosmos_driver::{
+    models::{PatchInstructions, PatchOperation, PatchTrackingId},
+    options::PatchStrategy,
+};
 
 use super::host_recorder::HostRecorder;
 
@@ -35,6 +44,72 @@ const WEST_HOST: &str = "westus.emulator.local";
 const DB_NAME: &str = "testdb";
 const COLL_NAME: &str = "testcoll";
 const PK_VALUE: &str = "pk1";
+
+fn assert_wrapped_diagnostics(
+    error: &CosmosError,
+    original_status: CosmosStatus,
+    status: CosmosStatus,
+) {
+    assert_eq!(error.status(), status);
+    assert!(error.response().is_none());
+    assert!(!error.is_from_wire());
+    let source = error
+        .source()
+        .unwrap()
+        .downcast_ref::<CosmosError>()
+        .unwrap();
+    assert_eq!(source.status(), original_status);
+    assert!(source.response().is_some());
+    let diagnostics = error.diagnostics().unwrap();
+    let original = source.diagnostics().unwrap();
+    assert_eq!(diagnostics.status(), Some(&status));
+    assert_eq!(diagnostics.effective_status(), Some(status));
+    assert_eq!(diagnostics.activity_id(), original.activity_id());
+    assert_eq!(diagnostics.duration(), original.duration());
+    assert_eq!(
+        diagnostics.total_request_charge(),
+        original.total_request_charge()
+    );
+    assert_eq!(diagnostics.request_count(), original.request_count());
+    assert!(diagnostics.request_count() > 0);
+    for verbosity in [
+        DiagnosticsVerbosity::Detailed,
+        DiagnosticsVerbosity::Summary,
+    ] {
+        let json = diagnostics.to_json_string(Some(verbosity));
+        let mut actual: serde_json::Value = serde_json::from_str(json).unwrap();
+        let mut expected: serde_json::Value =
+            serde_json::from_str(original.to_json_string(Some(verbosity))).unwrap();
+        assert_eq!(actual["status"], status.to_string());
+        assert_eq!(expected["status"], original_status.to_string());
+        expected["status"] = status.to_string().into();
+        // CPU snapshots are sampled at serialization, not at operation completion.
+        actual.as_object_mut().unwrap().remove("system_usage");
+        expected.as_object_mut().unwrap().remove("system_usage");
+        assert_eq!(actual, expected);
+        println!("WRAPPED_DIAGNOSTICS {verbosity:?} {json}");
+    }
+    let detailed: serde_json::Value =
+        serde_json::from_str(diagnostics.to_json_string(Some(DiagnosticsVerbosity::Detailed)))
+            .unwrap();
+    let failed: Vec<_> = detailed["requests"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|request| {
+            request["pipeline_type"] == "data_plane"
+                && !request["status"].as_str().unwrap().starts_with('2')
+        })
+        .collect();
+    assert!(!failed.is_empty());
+    for request in failed {
+        assert_eq!(request["status"], original_status.to_string());
+        assert!(!request["fault_injection_evaluations"]
+            .as_array()
+            .unwrap()
+            .is_empty());
+    }
+}
 
 /// Builds a two-region in-memory emulator wired through fault injection.
 async fn build_driver_with_faults(
@@ -542,10 +617,16 @@ async fn all_regions_403_3_bounded_retries_then_bubble_up() {
     let status = err.status();
     assert_eq!(
         status,
-        azure_data_cosmos_driver::error::status_codes::WRITE_FORBIDDEN,
-        "403/3 exhausted-budget bubble-up must surface the original status unchanged; \
+        status_codes::CLIENT_WRITE_FORBIDDEN,
+        "403/3 exhausted-budget failure must surface a synthetic 503; \
          observed status={status:?}",
     );
+    assert_wrapped_diagnostics(
+        &err,
+        status_codes::WRITE_FORBIDDEN,
+        status_codes::CLIENT_WRITE_FORBIDDEN,
+    );
+    assert_eq!(east.hit_count() + west.hit_count(), 5);
 
     let diagnostics = err
         .diagnostics()
@@ -759,6 +840,11 @@ async fn write_403_3_retry_honors_excluded_region() {
          must bubble up rather than crossing into the excluded region; got {result:?}",
     );
     assert!(rule.hit_count() >= 1, "fault rule must fire on East US");
+    assert_wrapped_diagnostics(
+        &result.unwrap_err(),
+        status_codes::WRITE_FORBIDDEN,
+        status_codes::CLIENT_WRITE_FORBIDDEN,
+    );
 
     let hosts = recorder.data_plane_hosts();
     assert!(
@@ -766,6 +852,260 @@ async fn write_403_3_retry_honors_excluded_region() {
         "no data-plane request may reach West US (the excluded region) \
          during 403/3 retries; observed hosts={hosts:?}",
     );
+}
+
+#[tokio::test]
+async fn exhausted_session_faults_wrap_only_final_error() {
+    for (mode, hedging_enabled, expected_attempts) in [
+        (WriteMode::Single, false, 3),
+        (WriteMode::Multi, false, 3),
+        (WriteMode::Single, true, 4),
+        (WriteMode::Multi, true, 5),
+    ] {
+        let east = region_fault_rule(
+            "session-east",
+            FaultOperationType::ReadItem,
+            Region::EAST_US,
+            FaultInjectionErrorType::ReadSessionNotAvailable,
+            None,
+        );
+        let west = region_fault_rule(
+            "session-west",
+            FaultOperationType::ReadItem,
+            Region::WEST_US,
+            FaultInjectionErrorType::ReadSessionNotAvailable,
+            None,
+        );
+        let (driver, _) =
+            build_driver_with_faults(mode, HostRecorder::new(), vec![east.clone(), west.clone()])
+                .await;
+        seed_item_via_driver(&driver, "session-item").await;
+        let container = driver
+            .resolve_container(DB_NAME, COLL_NAME, OperationOptions::default())
+            .await
+            .unwrap();
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from(PK_VALUE),
+            "session-item",
+        ));
+        let error = driver
+            .execute_operation(
+                operation,
+                OperationOptionsBuilder::new()
+                    .with_hedging_enabled(hedging_enabled)
+                    .build(),
+            )
+            .await
+            .unwrap_err();
+        assert_wrapped_diagnostics(
+            &error,
+            status_codes::READ_SESSION_NOT_AVAILABLE,
+            status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+        );
+        assert_eq!(east.hit_count() + west.hit_count(), expected_attempts);
+        let diagnostics = error.diagnostics().unwrap();
+        assert_eq!(
+            diagnostics
+                .requests()
+                .iter()
+                .filter(|request| request.pipeline_type() == PipelineKind::DataPlane)
+                .count(),
+            expected_attempts as usize
+        );
+    }
+}
+
+#[tokio::test]
+async fn transient_session_fault_recovers_without_wrapper() {
+    let east = region_fault_rule(
+        "session-once",
+        FaultOperationType::ReadItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::ReadSessionNotAvailable,
+        Some(1),
+    );
+    let (driver, _) =
+        build_driver_with_faults(WriteMode::Multi, HostRecorder::new(), vec![east.clone()]).await;
+    seed_item_via_driver(&driver, "session-recovery").await;
+    let response = read_item(&driver, "session-recovery")
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(response.status().is_success());
+    assert_eq!(east.hit_count(), 1);
+    let diagnostics = response.diagnostics();
+    assert_eq!(diagnostics.effective_status(), Some(response.status()));
+    assert_eq!(
+        diagnostics
+            .requests()
+            .iter()
+            .filter(|request| request.status().is_read_session_not_available())
+            .count(),
+        1
+    );
+}
+
+#[tokio::test]
+async fn faulted_feed_page_reports_wrapped_status_and_original_attempts() {
+    let east = region_fault_rule(
+        "feed-east",
+        FaultOperationType::QueryItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::ReadSessionNotAvailable,
+        None,
+    );
+    let west = region_fault_rule(
+        "feed-west",
+        FaultOperationType::QueryItem,
+        Region::WEST_US,
+        FaultInjectionErrorType::ReadSessionNotAvailable,
+        None,
+    );
+    let (driver, _) = build_driver_with_faults(
+        WriteMode::Multi,
+        HostRecorder::new(),
+        vec![east.clone(), west.clone()],
+    )
+    .await;
+    let container = driver
+        .resolve_container(DB_NAME, COLL_NAME, OperationOptions::default())
+        .await
+        .unwrap();
+    let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
+        .with_body(br#"{"query":"SELECT * FROM c","parameters":[]}"#.to_vec());
+    let options = OperationOptionsBuilder::new()
+        .with_hedging_enabled(false)
+        .build();
+    let mut plan = driver
+        .plan_operation(operation, &options, None, &PlanOptions::default())
+        .await
+        .unwrap();
+    let error = driver
+        .execute_plan(&mut plan, Some(container), options)
+        .await
+        .unwrap_err();
+    assert_wrapped_diagnostics(
+        &error,
+        status_codes::READ_SESSION_NOT_AVAILABLE,
+        status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+    );
+    assert_eq!(east.hit_count() + west.hit_count(), 3);
+}
+
+#[tokio::test(start_paused = true)]
+#[cfg(feature = "preview_patch")]
+async fn faulted_patch_helpers_preserve_tracking_and_logical_diagnostics() {
+    for (op, fault, original, wrapped) in [
+        (
+            FaultOperationType::ReadItem,
+            FaultInjectionErrorType::ReadSessionNotAvailable,
+            status_codes::READ_SESSION_NOT_AVAILABLE,
+            status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+        ),
+        (
+            FaultOperationType::ReplaceItem,
+            FaultInjectionErrorType::WriteForbidden,
+            status_codes::WRITE_FORBIDDEN,
+            status_codes::CLIENT_WRITE_FORBIDDEN,
+        ),
+    ] {
+        let east = region_fault_rule("patch-east", op, Region::EAST_US, fault, None);
+        let west = region_fault_rule("patch-west", op, Region::WEST_US, fault, None);
+        let (driver, _) = build_driver_with_faults(
+            WriteMode::Multi,
+            HostRecorder::new(),
+            vec![east.clone(), west.clone()],
+        )
+        .await;
+        seed_item_via_driver(&driver, "patch-item").await;
+        let container = driver
+            .resolve_container(DB_NAME, COLL_NAME, OperationOptions::default())
+            .await
+            .unwrap();
+        let id: PatchTrackingId = "00000000-0000-0000-0000-00000000002a".parse().unwrap();
+        let operation = CosmosOperation::patch_item(ItemReference::from_name(
+            &container,
+            PartitionKey::from(PK_VALUE),
+            "patch-item",
+        ))
+        .with_patch_tracking_id(id)
+        .with_body(
+            serde_json::to_vec(&PatchInstructions::from(vec![PatchOperation::increment(
+                "/value", 1i64,
+            )]))
+            .unwrap(),
+        );
+        let options = OperationOptionsBuilder::new()
+            .with_patch_strategy(PatchStrategy::ClientSide)
+            .with_hedging_enabled(false)
+            .build();
+        let error = driver
+            .execute_singleton_operation(operation, options)
+            .await
+            .unwrap_err();
+        assert_wrapped_diagnostics(&error, original, wrapped);
+        assert_eq!(error.patch_tracking_id(), Some(id));
+        assert_eq!(
+            error.diagnostics().unwrap().operation_name(),
+            Some("patch_item")
+        );
+        assert_eq!(
+            east.hit_count() + west.hit_count(),
+            if original == status_codes::READ_SESSION_NOT_AVAILABLE {
+                3
+            } else {
+                5
+            }
+        );
+    }
+}
+
+#[tokio::test]
+async fn deadline_during_write_forbidden_faults_is_not_wrapped() {
+    let east = region_fault_rule(
+        "deadline-east",
+        FaultOperationType::CreateItem,
+        Region::EAST_US,
+        FaultInjectionErrorType::WriteForbidden,
+        None,
+    );
+    let west = region_fault_rule(
+        "deadline-west",
+        FaultOperationType::CreateItem,
+        Region::WEST_US,
+        FaultInjectionErrorType::WriteForbidden,
+        None,
+    );
+    let (driver, _) = build_driver_with_faults(
+        WriteMode::Multi,
+        HostRecorder::new(),
+        vec![east.clone(), west.clone()],
+    )
+    .await;
+    let container = driver
+        .resolve_container(DB_NAME, COLL_NAME, OperationOptions::default())
+        .await
+        .unwrap();
+    let operation = CosmosOperation::create_item(ItemReference::from_name(
+        &container,
+        PartitionKey::from(PK_VALUE),
+        "deadline",
+    ))
+    .with_body(br#"{"id":"deadline","pk":"pk1"}"#.to_vec());
+    let options = OperationOptionsBuilder::new()
+        .with_end_to_end_latency_policy(EndToEndOperationLatencyPolicy::new(Duration::from_secs(1)))
+        .build();
+    let error = driver
+        .execute_singleton_operation(operation, options)
+        .await
+        .unwrap_err();
+    assert_eq!(
+        error.status(),
+        CosmosStatus::new(azure_core::http::StatusCode::RequestTimeout)
+            .with_sub_status(status_codes::substatus::CLIENT_OPERATION_TIMEOUT.value())
+    );
+    assert!(east.hit_count() + west.hit_count() > 0);
 }
 
 /// **403/1008 — backend-driven failover honors caller `excluded_regions`.**

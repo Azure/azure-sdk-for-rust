@@ -1504,7 +1504,9 @@ impl CosmosDriver {
         let operation = CosmosOperation::read_container_by_name(db_ref, container_name.to_owned())
             .with_absolute_deadline(absolute_deadline);
 
-        let container_result = self.execute_singleton_operation(operation, options).await?;
+        let container_result = self
+            .execute_singleton_operation_inner(operation, options)
+            .await?;
         let container_headers = container_result.headers().clone();
         let container_diagnostics = container_result.diagnostics();
         let container_props: ContainerProperties =
@@ -1607,7 +1609,7 @@ impl CosmosDriver {
         );
 
         let container_result = self
-            .execute_singleton_operation(
+            .execute_singleton_operation_inner(
                 CosmosOperation::read_container_by_rid(
                     self.account().clone(),
                     db_rid.as_str().to_owned(),
@@ -2127,6 +2129,12 @@ impl CosmosDriver {
     /// Callers may invoke it again to retry if the initial attempt failed
     /// (the result is idempotent).
     pub async fn initialize(&self) -> crate::error::Result<()> {
+        self.initialize_inner()
+            .await
+            .map_err(crate::error::CosmosError::into_public_error)
+    }
+
+    async fn initialize_inner(&self) -> crate::error::Result<()> {
         let account = self.options.account();
         let account_endpoint = AccountEndpoint::from(account);
 
@@ -2565,6 +2573,16 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
+        self.execute_operation_inner(operation, options)
+            .await
+            .map_err(crate::error::CosmosError::into_public_error)
+    }
+
+    async fn execute_operation_inner(
+        &self,
+        operation: CosmosOperation,
+        options: OperationOptions,
+    ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
         // PATCH runs either as one server-side request or through the tracked
         // Read-Modify-Write loop. The client-side arm re-enters this method for
         // its helper Read/Replace operations, so boxing fixes the recursive
@@ -2661,7 +2679,7 @@ impl CosmosDriver {
                     Some(binary),
                 )
                 .await?;
-            self.execute_plan(&mut plan, container, options).await
+            self.execute_plan_inner(&mut plan, container, options).await
         })
         .await
     }
@@ -2897,13 +2915,23 @@ impl CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<crate::models::CosmosResponse> {
+        self.execute_singleton_operation_inner(operation, options)
+            .await
+            .map_err(crate::error::CosmosError::into_public_error)
+    }
+
+    pub(crate) async fn execute_singleton_operation_inner(
+        &self,
+        operation: CosmosOperation,
+        options: OperationOptions,
+    ) -> crate::error::Result<crate::models::CosmosResponse> {
         debug_assert!(
             !operation.operation_type().is_feed(),
             "execute_singleton_operation should only be used for operations that return a single result, but '{} {}' is a feed operation",
             operation.operation_type(),
             operation.resource_type()
         );
-        match self.execute_operation(operation, options).await {
+        match self.execute_operation_inner(operation, options).await {
             Ok(Some(r)) => Ok(r),
             Ok(None) => {
                 if cfg!(debug_assertions) {
@@ -2923,6 +2951,17 @@ impl CosmosDriver {
     /// Executes a preview distributed transaction through the Gateway coordinator.
     #[cfg(feature = "preview_dtx")]
     pub async fn execute_distributed_transaction(
+        &self,
+        request: crate::models::DistributedTransactionRequest,
+        options: OperationOptions,
+    ) -> crate::error::Result<crate::models::DistributedTransactionResponse> {
+        self.execute_distributed_transaction_inner(request, options)
+            .await
+            .map_err(crate::error::CosmosError::into_public_error)
+    }
+
+    #[cfg(feature = "preview_dtx")]
+    async fn execute_distributed_transaction_inner(
         &self,
         mut request: crate::models::DistributedTransactionRequest,
         mut options: OperationOptions,
@@ -3019,7 +3058,7 @@ impl CosmosDriver {
 
         loop {
             let response = self
-                .execute_singleton_operation(operation.clone(), options.clone())
+                .execute_singleton_operation_inner(operation.clone(), options.clone())
                 .await?;
             let status = response.status();
             let headers = response.headers().clone();
@@ -3139,6 +3178,17 @@ impl CosmosDriver {
         container: Option<ContainerReference>,
         options: OperationOptions,
     ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
+        self.execute_plan_inner(plan, container, options)
+            .await
+            .map_err(crate::error::CosmosError::into_public_error)
+    }
+
+    async fn execute_plan_inner(
+        &self,
+        plan: &mut OperationPlan,
+        container: Option<ContainerReference>,
+        options: OperationOptions,
+    ) -> crate::error::Result<Option<crate::models::CosmosResponse>> {
         Box::pin(async move {
             if !self.initialized.load(Ordering::Acquire) {
                 let endpoint = AccountEndpoint::from(self.options.account());
@@ -3213,7 +3263,7 @@ impl CosmosDriver {
             let plan_options = plan.plan_options.clone();
             let operation = operation.with_absolute_deadline(absolute_deadline);
             *plan = self
-                .plan_operation(operation, &options, None, &plan_options)
+                .plan_operation_resolved(operation, &options, None, &plan_options, None)
                 .await?;
             plan.clear_execution_deadlines();
             plan.container_recreation_recovery_attempted = true;
@@ -3692,6 +3742,7 @@ impl CosmosDriver {
     ) -> crate::error::Result<Option<ContainerReference>> {
         self.refresh_container_if_recreated_with_deadline(previous, options, None)
             .await
+            .map_err(crate::error::CosmosError::into_public_error)
     }
 
     async fn refresh_container_if_recreated_with_deadline(
@@ -3839,6 +3890,17 @@ impl CosmosDriver {
         container_name: &str,
         operation_options: OperationOptions,
     ) -> crate::error::Result<ContainerReference> {
+        self.resolve_container_by_name_inner(db_name, container_name, operation_options)
+            .await
+            .map_err(crate::error::CosmosError::into_public_error)
+    }
+
+    async fn resolve_container_by_name_inner(
+        &self,
+        db_name: &str,
+        container_name: &str,
+        operation_options: OperationOptions,
+    ) -> crate::error::Result<ContainerReference> {
         let endpoint = self.account().endpoint().as_str().to_owned();
         let db_name_owned = db_name.to_owned();
         let container_name_owned = container_name.to_owned();
@@ -3880,6 +3942,16 @@ impl CosmosDriver {
     /// loaded. The returned [`ContainerReference`] is RID-addressed (it carries no
     /// database name).
     pub async fn resolve_container_by_rid(
+        &self,
+        container_rid: &str,
+        operation_options: OperationOptions,
+    ) -> crate::error::Result<ContainerReference> {
+        self.resolve_container_by_rid_inner(container_rid, operation_options)
+            .await
+            .map_err(crate::error::CosmosError::into_public_error)
+    }
+
+    async fn resolve_container_by_rid_inner(
         &self,
         container_rid: &str,
         operation_options: OperationOptions,
@@ -3991,6 +4063,7 @@ impl CosmosDriver {
         // point. Boxed to keep this wrapper's future pointer-sized.
         Box::pin(self.plan_operation_resolved(operation, options, continuation, plan_options, None))
             .await
+            .map_err(crate::error::CosmosError::into_public_error)
     }
 
     /// [`plan_operation`](Self::plan_operation) with an optional caller-resolved

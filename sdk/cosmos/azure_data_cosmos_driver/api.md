@@ -768,6 +768,7 @@ pub mod error {
         pub const CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES: crate::error::CosmosStatus = _;
         pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: crate::error::CosmosStatus = _;
         pub const CLIENT_QUERY_REWRITE_BODY_INVALID: crate::error::CosmosStatus = _;
+        pub const CLIENT_READ_SESSION_NOT_AVAILABLE: crate::error::CosmosStatus = _;
         pub const CLIENT_REQUEST_URL_MISSING_HOST: crate::error::CosmosStatus = _;
         pub const CLIENT_REQUEST_URL_MISSING_KNOWN_PORT: crate::error::CosmosStatus = _;
         pub const CLIENT_REQWEST_FEATURE_REQUIRED: crate::error::CosmosStatus = _;
@@ -782,6 +783,7 @@ pub mod error {
         pub const CLIENT_UNKNOWN_PRIORITY_LEVEL: crate::error::CosmosStatus = _;
         pub const CLIENT_UNSUPPORTED_QUERY_FEATURE: crate::error::CosmosStatus = _;
         pub const CLIENT_USER_AGENT_SUFFIX_INVALID: crate::error::CosmosStatus = _;
+        pub const CLIENT_WRITE_FORBIDDEN: crate::error::CosmosStatus = _;
         pub const COMPLETING_PARTITION_MIGRATION: crate::error::CosmosStatus = _;
         pub const COMPLETING_SPLIT: crate::error::CosmosStatus = _;
         pub const CROSS_PARTITION_QUERY_NOT_SERVABLE: crate::error::CosmosStatus = _;
@@ -857,6 +859,7 @@ pub mod error {
             pub const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: crate::error::SubStatusCode = _;
             pub const CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT: crate::error::SubStatusCode = _;
             pub const CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES: crate::error::SubStatusCode = _;
+            pub const CLIENT_READ_SESSION_NOT_AVAILABLE: crate::error::SubStatusCode = _;
             pub const CLIENT_REQUEST_URL_MISSING_HOST: crate::error::SubStatusCode = _;
             pub const CLIENT_REQUEST_URL_MISSING_KNOWN_PORT: crate::error::SubStatusCode = _;
             pub const CLIENT_REQWEST_FEATURE_REQUIRED: crate::error::SubStatusCode = _;
@@ -871,6 +874,7 @@ pub mod error {
             pub const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: crate::error::SubStatusCode = _;
             pub const CLIENT_UNKNOWN_PRIORITY_LEVEL: crate::error::SubStatusCode = _;
             pub const CLIENT_UNSUPPORTED_QUERY_FEATURE: crate::error::SubStatusCode = _;
+            pub const CLIENT_WRITE_FORBIDDEN: crate::error::SubStatusCode = _;
             pub const COLLECTION_CREATE_IN_PROGRESS: crate::error::SubStatusCode = _;
             pub const COLLECTION_RID_MISMATCH: crate::error::SubStatusCode = _;
             pub const COMPLETING_PARTITION_MIGRATION: crate::error::SubStatusCode = _;

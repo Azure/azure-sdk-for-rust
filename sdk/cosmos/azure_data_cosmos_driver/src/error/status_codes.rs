@@ -568,6 +568,22 @@ pub const CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE: CosmosStatus = Cosm
 
 // SDK-detected service contract violations (HTTP varies, sub-status 20300-20349)
 
+/// Session consistency could not be satisfied after recovery (HTTP 503, sub-status 20310).
+///
+/// Wraps a terminal service 404/1002; the original error remains its source.
+pub const CLIENT_READ_SESSION_NOT_AVAILABLE: CosmosStatus = CosmosStatus {
+    status_code: StatusCode::ServiceUnavailable,
+    sub_status: Some(substatus::CLIENT_READ_SESSION_NOT_AVAILABLE),
+};
+
+/// No eligible write region accepted the operation after recovery (HTTP 503, sub-status 20311).
+///
+/// Wraps a terminal service 403/3; the original error remains its source.
+pub const CLIENT_WRITE_FORBIDDEN: CosmosStatus = CosmosStatus {
+    status_code: StatusCode::ServiceUnavailable,
+    sub_status: Some(substatus::CLIENT_WRITE_FORBIDDEN),
+};
+
 /// 410 / 20300 — the supplied session-token feed ranges contain no
 /// overlap with the target feed range (partition has split / merged).
 pub const CLIENT_NO_OVERLAPPING_FEED_RANGES_FOR_SESSION_TOKEN: CosmosStatus = CosmosStatus {
@@ -646,6 +662,11 @@ pub const SERVICE_RETURNED_OBJECT_WITHOUT_RID: CosmosStatus = CosmosStatus {
 
 /// Raw sub-status codes used independently of a combined [`CosmosStatus`].
 pub mod substatus {
+    /// Terminal read-session failure (20310), paired with HTTP 503.
+    pub const CLIENT_READ_SESSION_NOT_AVAILABLE: SubStatusCode = SubStatusCode::new(20310);
+    /// Terminal write-region rejection (20311), paired with HTTP 503.
+    pub const CLIENT_WRITE_FORBIDDEN: SubStatusCode = SubStatusCode::new(20311);
+
     use crate::error::SubStatusCode;
 
     /// Unknown sub-status code (0).
