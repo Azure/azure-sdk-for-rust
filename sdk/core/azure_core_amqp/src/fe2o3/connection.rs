@@ -4,7 +4,10 @@
 use crate::{
     connection::{AmqpConnectionApis, AmqpConnectionOptions, AmqpTransport},
     error::{AmqpErrorKind, Result},
-    fe2o3::error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError, Fe2o3TransportError},
+    fe2o3::{
+        error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError, Fe2o3TransportError},
+        transport::{Closed, Transport},
+    },
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
     AmqpError,
 };
@@ -12,24 +15,49 @@ use azure_core::http::Url;
 use fe2o3_amqp::connection::ConnectionHandle;
 #[cfg(feature = "fe2o3_amqp_rustls")]
 use rustls_platform_verifier::ConfigVerifierExt;
-use std::{borrow::BorrowMut, sync::OnceLock};
-use tokio::sync::Mutex;
+use std::{
+    borrow::BorrowMut,
+    sync::{Arc, OnceLock},
+};
+use tokio::{net::TcpStream, sync::Mutex};
 use tracing::{debug, warn};
 
 #[derive(Debug, Default)]
 pub(crate) struct Fe2o3AmqpConnection {
     connection: OnceLock<Mutex<ConnectionHandle<()>>>,
+    transport: OnceLock<Transport<TcpStream>>,
 }
 
 impl Fe2o3AmqpConnection {
     pub fn new() -> Self {
         Self {
             connection: OnceLock::new(),
+            transport: OnceLock::new(),
         }
     }
 
     pub fn get(&self) -> &OnceLock<Mutex<ConnectionHandle<()>>> {
         &self.connection
+    }
+
+    pub fn closed(&self) -> Result<Arc<Closed>> {
+        self.transport
+            .get()
+            .map(|transport| transport.closed.clone())
+            .ok_or_else(Self::connection_not_set)
+    }
+
+    pub fn transport(&self) -> Result<Transport<TcpStream>> {
+        self.transport
+            .get()
+            .cloned()
+            .ok_or_else(Self::connection_not_set)
+    }
+
+    pub fn abort(&self) {
+        if let Some(transport) = self.transport.get() {
+            transport.abort();
+        }
     }
 
     fn connection_not_set() -> AmqpError {
@@ -42,6 +70,7 @@ impl Fe2o3AmqpConnection {
 
 impl Drop for Fe2o3AmqpConnection {
     fn drop(&mut self) {
+        self.abort();
         debug!("Dropping Fe2o3AmqpConnection.");
     }
 }
@@ -135,18 +164,50 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 AmqpTransport::Tcp => {
                     // `custom_endpoint` redirects the socket to a proxy while the
                     // AMQP `hostname` stays the real service host.
-                    if let Some(custom_endpoint) = options.custom_endpoint {
-                        endpoint = custom_endpoint;
+                    if let Some(custom_endpoint) = options.custom_endpoint.as_ref() {
+                        endpoint = custom_endpoint.clone();
                         builder = builder.hostname(url.host_str());
                     }
 
                     // Use the operating system trust store for rustls. Other TLS stacks
                     // selected through `fe2o3-amqp` keep their default connector.
                     #[cfg(feature = "fe2o3_amqp_rustls")]
-                    let builder = builder.rustls_connector(platform_verifier_connector()?);
+                    let mut builder = builder.rustls_connector(platform_verifier_connector()?);
 
+                    builder = builder
+                        .scheme(endpoint.scheme())
+                        .hostname(if options.custom_endpoint.is_some() {
+                            url.host_str()
+                        } else {
+                            endpoint.host_str()
+                        })
+                        .sasl_hostname(endpoint.host_str())
+                        .domain(endpoint.domain());
+                    if let Ok(profile) = fe2o3_amqp::sasl_profile::SaslProfile::try_from(&endpoint)
+                    {
+                        builder = builder.sasl_profile(profile);
+                    }
+                    let port = endpoint
+                        .port()
+                        .or_else(|| match endpoint.scheme() {
+                            "amqp" => Some(5672),
+                            "amqps" => Some(5671),
+                            _ => None,
+                        })
+                        .ok_or_else(|| AmqpError::with_message("AMQP endpoint has no port"))?;
+                    let host = endpoint
+                        .host_str()
+                        .ok_or_else(|| AmqpError::with_message("AMQP endpoint has no host"))?;
+                    // Tokio resolves names off the operation's executor thread.
+                    let socket = TcpStream::connect((host.trim_matches(['[', ']']), port))
+                        .await
+                        .map_err(azure_core::Error::from)?;
+                    let (transport, stream) = Transport::new(socket);
+                    self.transport
+                        .set(transport)
+                        .map_err(|_| Self::connection_already_set())?;
                     builder
-                        .open(endpoint)
+                        .open_with_stream(stream)
                         .await
                         .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?
                 }

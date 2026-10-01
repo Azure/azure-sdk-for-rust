@@ -426,7 +426,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "1.2.0-beta.2"
+version = "1.2.0-beta.3"
 dependencies = [
  "async-trait",
  "azure_core 1.2.0-beta.1",
@@ -797,7 +797,7 @@ dependencies = [
  "async-stream",
  "async-trait",
  "azure_core 1.2.0-beta.1",
- "azure_core_amqp 1.2.0-beta.2",
+ "azure_core_amqp 1.2.0-beta.3",
  "azure_core_test 0.2.0",
  "azure_identity 1.1.0-beta.1",
  "azure_messaging_eventhubs",

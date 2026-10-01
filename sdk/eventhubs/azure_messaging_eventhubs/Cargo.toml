@@ -21,13 +21,13 @@ async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
 azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default-features = false }
-# Unreleased: the WebSocket withdrawal requires azure_core_amqp 1.2.0-beta.2.
+# Unreleased: transport retirement requires azure_core_amqp 1.2.0-beta.3.
 # Keep local core dependencies aligned for the types exchanged between crates.
 # `default-features = false` so that the `default` feature below is what selects
 # the TLS stack, in the same shape as `azure_core` above. With the default
 # features on here, a consumer that turns them off could not drop the rustls
 # stack to bring their own.
-azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.2.0-beta.2", default-features = false }
+azure_core_amqp = { path = "../../core/azure_core_amqp", version = "1.2.0-beta.3", default-features = false }
 base64.workspace = true
 futures.workspace = true
 hmac.workspace = true
@@ -60,7 +60,7 @@ azure_storage_blob = { path = "../../storage/azure_storage_blob" }
 criterion.workspace = true
 fe2o3-amqp = { workspace = true, features = ["acceptor", "tracing"] }
 include-file.workspace = true
-tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "test-util"] }
 tracing-subscriber = { workspace = true, features = ["env-filter", "fmt"] }
 
 [features]

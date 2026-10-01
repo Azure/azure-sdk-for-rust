@@ -4,6 +4,8 @@
 
 ### Bugs Fixed
 
+- Producer sends and sender metadata waits now enforce `RetryOptions::max_total_elapsed` while preparation, transport I/O, recovery, or backoff is pending; expiry returns an I/O timeout and retires the captured connection.
+- Connection recovery and client close now terminate failed transports without waiting for graceful shutdown, and cancelled recovery leaves generation state usable.
 - Sends waiting for settlement now retry when a peer invalidates their connection, session, or link. These retries use the configured limits and backoff. A lost acknowledgement can cause duplicate events.
 - A receive no longer charges its wait for an event to the recovery budget. `RetryOptions::max_total_elapsed` now counts only recovery work for a receive, so a partition that waited longer than the limit before a recoverable error, such as a dropped session, now recovers instead of returning the error. A receive link that fails after a healthy wait of at least 10 seconds now starts a new recovery with a new retry count, like an empty receive in the .NET SDK. The terminal recovery warning now reports the stop reason, the retry count and elapsed time with their limits, the receive wait, and the connection and partition IDs.
 

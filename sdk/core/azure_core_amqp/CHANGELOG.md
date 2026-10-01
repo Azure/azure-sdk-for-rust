@@ -1,5 +1,16 @@
 # Release History
 
+## 1.2.0-beta.3 (Unreleased)
+
+### Features Added
+
+- Added `AmqpConnection::abort()` to terminate a failed transport without waiting for a close handshake.
+
+### Bugs Fixed
+
+- Pending sends and sender metadata waits now return when their connection or session closes.
+- Dropping a connection now releases its socket even when an AMQP write is blocked; cancelling session, sender, or CBS preparation retires the transport used by that preparation.
+
 ## 1.2.0-beta.2 (2026-09-14)
 
 ### Breaking Changes

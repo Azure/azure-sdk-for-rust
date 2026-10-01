@@ -153,9 +153,13 @@ There are two mechanisms used to send events to an Event Hub instance. The first
 sends individual messages to the Event Hub, the second uses a "batch" operation to
 send multiple messages in a single network request to the service.
 
-When a peer operation invalidates a connection, pending sends retry with the current connection.
+When a connection or session closes, pending sends retry with the current connection. Peer-triggered invalidation also wakes pending sends.
 These retries use the configured limits and backoff. A lost acknowledgement can cause duplicate
 events, because the service can accept a send before the client detects the failure.
+
+`RetryOptions::max_total_elapsed` bounds each send and sender metadata request, including authorization, attachment, recovery, and backoff. The default remains 60 seconds. Expiry returns an I/O timeout and retires the transport used by the failed attempt. A later call can reconnect. An outage longer than the budget produces a terminal error; increasing the budget does not guarantee recovery.
+
+A deadline runs independently of AMQP reads and writes. It does not limit a healthy receiver's wait for an event. The client terminates retired transports without waiting for a graceful close handshake.
 
 #### Send events directly to the Event Hub
 

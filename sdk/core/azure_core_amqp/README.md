@@ -27,6 +27,14 @@ azure_core_amqp = { version = "1.2.0-beta.2", default-features = false, features
 fe2o3-amqp = { version = "0.16", features = ["native-tls"] }
 ```
 
+## Transport lifetime
+
+`AmqpConnection::abort()` terminates an opened transport without waiting for the peer's close handshake. Dropping the connection also releases its socket. Use `abort()` to retire a failed transport when an operation deadline expires.
+
+Pending sends and sender metadata waits return when their connection or session closes. A lost acknowledgement leaves delivery uncertain. Sending the message again can produce duplicate messages.
+
+Cancelling session creation, sender attachment, CBS attachment, or an active CBS authorization retires the transport used by that operation. This releases partially attached resources and wakes other operations on the same connection. Normal receive waiting has no additional deadline.
+
 ## Testing the AMQP Client
 
 The AMQP package is tested using the standard `cargo test` command line:

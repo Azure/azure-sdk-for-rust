@@ -52,6 +52,13 @@ pub struct RetryOptions {
     /// not the wait for an event. A receive link that fails after a long
     /// healthy wait starts a new recovery with a new retry count and budget.
     /// Other operations count all time from the first attempt.
+    ///
+    /// Sends and sender metadata requests enforce this limit while an operation
+    /// is pending, including authorization, link attachment, recovery, and backoff.
+    /// Expiry retires the affected transport and returns an I/O error with a
+    /// [`std::io::ErrorKind::TimedOut`] cause. A timed-out send can have reached the
+    /// service without an acknowledgement. Retrying it can produce duplicate events.
+    /// A receive's normal wait for an event has no producer deadline.
     pub max_total_elapsed: Duration,
 
     /// The maximum number of retries (Default is 5).

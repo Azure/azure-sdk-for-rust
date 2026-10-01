@@ -23,9 +23,9 @@ use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
     AmqpClaimsBasedSecurity, AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError,
-    AmqpManagement, AmqpManagementApis, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions,
-    AmqpSender, AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource,
-    AmqpSymbol, AmqpTransport,
+    AmqpManagement, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, AmqpSender,
+    AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource, AmqpSymbol,
+    AmqpTransport,
 };
 #[cfg(test)]
 use std::sync::Mutex;
@@ -110,6 +110,7 @@ pub(crate) struct RecoverableConnection {
     // `NotAllowed`. This lock keeps them in sequence. See `lock_claims_based_security`.
     cbs_lock: AsyncMutex<()>,
     connections: AsyncMutex<Option<Arc<AmqpConnection>>>,
+    connection_open: AsyncMutex<()>,
 
     // Set by `close_connection` and never cleared. The client that owns this
     // object is not the only holder: a public handle such as `EventReceiver`
@@ -310,6 +311,7 @@ impl RecoverableConnection {
                 retry_options,
                 cbs_lock: AsyncMutex::new(()),
                 connections: AsyncMutex::new(None),
+                connection_open: AsyncMutex::new(()),
                 session_instances: RwLock::new(HashMap::new()),
                 sender_instances: RwLock::new(HashMap::new()),
                 receiver_instances: RwLock::new(HashMap::new()),
@@ -338,7 +340,6 @@ impl RecoverableConnection {
     }
 
     /// Reports whether `close_connection` has run on this object.
-    #[cfg(test)]
     pub(crate) fn is_closed(&self) -> bool {
         self.closed.load(Ordering::Acquire)
     }
@@ -437,107 +438,12 @@ impl RecoverableConnection {
             invalidated.get_or_init(|| async {}).await;
         }
 
+        self.apply_recovery_plan(
+            RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectConnection)
+                .expect("connection recovery has a plan"),
+        )
+        .await;
         self.authorizer.stop_refresh_task().await;
-
-        // Swap the cell out under the write lock, then detach without holding
-        // it. The guard is a separate binding so the lock scope is visible and
-        // a debugger can read it.
-        let mut cell_slot = self.mgmt_client.write().await;
-        let management_cell = std::mem::replace(&mut *cell_slot, Arc::new(OnceCell::new()));
-        drop(cell_slot);
-        if let Some(Some(management_client)) = Arc::try_unwrap(management_cell)
-            .ok()
-            .map(OnceCell::into_inner)
-        {
-            trace!("Closing management client for {}.", self.url);
-            if let Ok(management_client) = Arc::try_unwrap(management_client) {
-                trace!("Detaching management client for {}.", self.url);
-                management_client.detach().await?;
-            } else {
-                trace!(
-                    "Failed to detach management client for {}, references exist.",
-                    self.url
-                );
-            }
-        }
-
-        let mut sender_instances = self.sender_instances.write().await;
-        for (path, GenerationalCell { cell, .. }) in sender_instances.drain() {
-            trace!("Detaching sender for path {}.", path);
-            let Some(sender) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
-                trace!(
-                    "Failed to detach sender for path {}, references exist.",
-                    path
-                );
-                continue;
-            };
-            if let Ok(sender) = Arc::try_unwrap(sender) {
-                trace!("Detaching sender for path {}.", path);
-                sender.detach().await?;
-            } else {
-                trace!(
-                    "Failed to detach sender for path {}, references exist.",
-                    path
-                );
-            }
-        }
-
-        let mut receiver_instances = self.receiver_instances.write().await;
-        for (source_url, GenerationalCell { cell, .. }) in receiver_instances.drain() {
-            trace!("Detaching receiver for source URL {}.", source_url);
-            let Some(receiver) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
-                trace!(
-                    "Failed to detach receiver for source URL {}, references exist.",
-                    source_url
-                );
-                continue;
-            };
-            if let Ok(receiver) = Arc::try_unwrap(receiver) {
-                trace!("Detaching receiver for source URL {}.", source_url);
-                receiver.detach().await?;
-            } else {
-                trace!(
-                    "Failed to detach receiver for source URL {}, references exist.",
-                    source_url
-                );
-            }
-        }
-
-        let mut session_instances = self.session_instances.write().await;
-        for (session_id, GenerationalCell { cell, .. }) in session_instances.drain() {
-            trace!("Detaching session for ID {}.", session_id);
-            let Some(session) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
-                trace!(
-                    "Failed to detach session for ID {}, references exist.",
-                    session_id
-                );
-                continue;
-            };
-            if let Ok(session) = Arc::try_unwrap(session) {
-                session.end().await?;
-            } else {
-                trace!(
-                    "Failed to detach session for ID {}, references exist.",
-                    session_id
-                );
-            }
-        }
-
-        if let Some(connection) = self.connections.lock().await.take() {
-            trace!("Closing connection for {}.", self.url);
-            if let Ok(connection) = Arc::try_unwrap(connection) {
-                trace!(
-                    "No references, actually closing connection for {}.",
-                    self.url
-                );
-                connection.close().await?;
-            } else {
-                trace!(
-                    "Failed to close connection for {}, references exist.",
-                    self.url
-                );
-            }
-        }
         info!(
             connection_id = %self.get_connection_id(),
             url = %self.url,
@@ -559,25 +465,40 @@ impl RecoverableConnection {
     /// first operation is performed.
     ///
     pub(crate) async fn ensure_connection(&self) -> azure_core_amqp::Result<Arc<AmqpConnection>> {
-        let mut connection = self.connections.lock().await;
-        // Read the flag under the lock. `close_connection` sets it before it
-        // takes this lock, so a caller that gets here first has its connection
-        // closed by the close that waits behind it, and a caller that gets here
-        // after the close sees the flag. A check before the lock would leave a
-        // window where a caller reads the flag, loses its thread for the whole
-        // close, and then opens a connection that nothing closes.
-        if self.closed.load(Ordering::Acquire) {
-            return Err(AmqpError::with_message(
-                "The client that owns this connection is closed.",
-            ));
+        for _ in 0..MAX_GENERATION_RETRIES {
+            {
+                let connection = self.connections.lock().await;
+                if self.closed.load(Ordering::Acquire) {
+                    return Err(AmqpError::with_message(
+                        "The client that owns this connection is closed.",
+                    ));
+                }
+                if let Some(connection) = connection.as_ref() {
+                    return Ok(connection.clone());
+                }
+            }
+            let _opening = self.connection_open.lock().await;
+            let (generation, _) = self.sender_invalidation().await?;
+            if let Some(connection) = self.connections.lock().await.as_ref() {
+                return Ok(connection.clone());
+            }
+            let created = self.create_connection().await?;
+            let mut connection = self.connections.lock().await;
+            if self.closed.load(Ordering::Acquire) {
+                created.abort();
+                return Err(AmqpError::with_message(
+                    "The client that owns this connection is closed.",
+                ));
+            }
+            if self.generation_is_current(generation) {
+                *connection = Some(created.clone());
+                return Ok(created);
+            }
+            created.abort();
         }
-        if connection.is_none() {
-            *connection = Some(self.create_connection().await?);
-        }
-        if let Some(connection) = connection.as_ref() {
-            return Ok(connection.clone());
-        }
-        Err(AmqpError::with_message("Missing Connection."))
+        Err(AmqpError::with_message(
+            "Connection preparation exceeded the generation retry limit.",
+        ))
     }
 
     /// Creates a new management client for the Event Hubs service.
@@ -602,9 +523,7 @@ impl RecoverableConnection {
     ///
     /// This sender integrates retry operations into the send operation.
     pub(crate) async fn get_sender(self: &Arc<Self>, path: Url) -> Result<RecoverableSender> {
-        // Ensure we can create a sender for the Event Hub path.
-        self.ensure_sender(&path).await?;
-
+        // Sender preparation belongs to the operation's retry and deadline scope.
         Ok(RecoverableSender::new(Arc::downgrade(self), path))
     }
 
@@ -692,11 +611,8 @@ impl RecoverableConnection {
     /// * `captured` still equals the current generation, so no recovery has started
     ///   since.
     ///
-    /// Testing the parity matters on its own. `apply_recovery_plan` releases every
-    /// lock it takes, so it can stall between its two bumps under contention; a slow
-    /// path that captured an odd generation there has time to finish a whole attach
-    /// and test its capture while the value is still unchanged. Equality alone would
-    /// accept that attach.
+    /// Initializers on another executor thread can observe the odd interval.
+    /// Equality alone would accept a capture from that interval.
     pub(crate) fn generation_is_current(&self, captured: u64) -> bool {
         captured.is_multiple_of(2) && self.current_generation() == captured
     }
@@ -1199,39 +1115,38 @@ impl RecoverableConnection {
     /// mid-attach captured a generation from inside or before that bracket, so
     /// `generation_is_current` rejects it on completion and the slow path discards
     /// its result instead of caching a resource bound to the connection this
-    /// recovery just tore down. The body explains why one bump on either side alone
-    /// is not enough.
+    /// recovery just tore down. All lock acquisition precedes the first mutation.
     async fn apply_recovery_plan(&self, plan: RecoveryPlan) {
+        self.apply_recovery_plan_for_generation(plan, None).await;
+    }
+
+    pub(super) async fn recover_generation(&self, generation: u64, reason: ErrorRecoveryAction) {
+        if let Some(plan) = RecoveryPlan::for_action(&reason) {
+            self.apply_recovery_plan_for_generation(plan, Some(generation))
+                .await;
+        }
+    }
+
+    async fn apply_recovery_plan_for_generation(
+        &self,
+        plan: RecoveryPlan,
+        generation: Option<u64>,
+    ) {
         let connection_id = self.get_connection_id();
         let mut invalidated = self.sender_invalidation.lock().await;
-
-        // A plan that invalidates anything brackets the invalidation with a
-        // generation bump: one before it touches the connection or any cache, and
-        // one after the last of them. The generation is therefore odd for exactly
-        // the span in which this connection's state is inconsistent, which is the
-        // sequence-lock rule `generation_is_current` tests (#4454).
-        //
-        // Both bumps are needed, and so is the parity test:
-        //
-        // * Without the closing bump, a slow path that captured the old generation
-        //   can clone the connection, attach, and test its capture before the single
-        //   bump lands. The generation still matches, so it caches and returns a
-        //   resource bound to the connection this recovery drops a moment later.
-        // * Without the opening bump, a slow path can capture the new generation and
-        //   *then* clone the old connection, which `connections` still holds. Its
-        //   post-init test matches too, so the same stale resource reaches the
-        //   caller. The token cache has the same shape: a reader that runs after the
-        //   bump and before `clear()` gets a token that was authorized on the CBS
-        //   link of the connection being dropped.
-        // * Without the parity test, a slow path that captured a generation between
-        //   the two bumps is accepted for as long as this function has not reached
-        //   the closing one. Every lock below is released before the next is taken,
-        //   so a contended recovery can stall here long enough for that slow path to
-        //   finish a whole attach against the connection being dropped.
-        //
-        // A task that captures the final, even generation started after the last
-        // invalidation, so it finds an empty cache and builds against the new
-        // connection.
+        if generation.is_some_and(|generation| !self.generation_is_current(generation)) {
+            return;
+        }
+        // Acquire every cache lock before changing the generation. No await after
+        // the first mutation means cancellation cannot leave a half-cleared cache.
+        let mut connection = self.connections.lock().await;
+        let mut scopes = self.authorizer.lock_scopes().await;
+        let mut sessions = self.session_instances.write().await;
+        let mut senders = self.sender_instances.write().await;
+        let mut receivers = self.receiver_instances.write().await;
+        let mut management = self.mgmt_client.write().await;
+        // Preserve the sequence-lock guard for initializers on other threads.
+        // The odd interval has no suspension point, so cancellation cannot split it.
         let invalidates = plan.drop_connection
             || plan.clear_authorizer
             || plan.clear_sessions
@@ -1239,33 +1154,32 @@ impl RecoverableConnection {
             || plan.clear_receivers;
 
         if invalidates {
-            self.generation.fetch_add(1, Ordering::AcqRel);
             invalidated.get_or_init(|| async {}).await;
+            self.generation.fetch_add(1, Ordering::AcqRel);
         }
 
         if plan.drop_connection {
-            self.connections.lock().await.take();
+            if let Some(connection) = connection.take() {
+                connection.abort();
+            }
             debug!(connection_id = %connection_id, "Recovery: dropped AMQP connection.");
         }
 
         if plan.clear_authorizer {
-            self.authorizer.clear().await;
+            scopes.clear();
             debug!(connection_id = %connection_id, "Recovery: cleared authorizer tokens.");
         }
         if plan.clear_sessions {
-            let mut sessions = self.session_instances.write().await;
             let count = sessions.len();
             sessions.clear();
             debug!(connection_id = %connection_id, count, "Recovery: cleared cached sessions.");
         }
         if plan.clear_senders {
-            let mut senders = self.sender_instances.write().await;
             let count = senders.len();
             senders.clear();
             debug!(connection_id = %connection_id, count, "Recovery: cleared cached senders.");
         }
         if plan.clear_receivers {
-            let mut receivers = self.receiver_instances.write().await;
             let count = receivers.len();
             receivers.clear();
             debug!(connection_id = %connection_id, count, "Recovery: cleared cached receivers.");
@@ -1275,7 +1189,7 @@ impl RecoverableConnection {
             // write lock is held only for the pointer swap, never across a build,
             // so this never waits for a management-client build in flight (which,
             // on the CBS failure path, runs on this very task).
-            *self.mgmt_client.write().await = Arc::new(OnceCell::new());
+            *management = Arc::new(OnceCell::new());
             debug!(connection_id = %connection_id, "Recovery: dropped management client.");
         }
 
@@ -1632,8 +1546,8 @@ mod tests {
         );
         futures::pin_mut!(recovery);
         assert!(futures::poll!(&mut recovery).is_pending());
-        assert!(previous.get().is_some());
-        assert_eq!(connection.generation(), 1);
+        assert!(previous.get().is_none());
+        assert_eq!(connection.generation(), 0);
 
         let subscription = connection.sender_invalidation();
         futures::pin_mut!(subscription);
@@ -1646,7 +1560,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn concurrent_sender_invalidations_keep_generation_odd_during_teardown() {
+    async fn concurrent_sender_invalidations_wait_before_mutating_generation() {
         let connection = connection_for_sender_invalidation();
         let sessions = connection.session_instances.write().await;
         let plan = RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectConnection).unwrap();
@@ -1655,7 +1569,7 @@ mod tests {
         futures::pin_mut!(first, second);
         assert!(futures::poll!(&mut first).is_pending());
         assert!(futures::poll!(&mut second).is_pending());
-        assert_eq!(connection.generation(), 1);
+        assert_eq!(connection.generation(), 0);
         drop(sessions);
         futures::join!(first, second);
         assert_eq!(connection.generation(), 4);
@@ -1675,6 +1589,40 @@ mod tests {
         connection.close_connection().await.unwrap();
         assert!(invalidated.get().is_some());
         assert!(connection.sender_invalidation().await.is_err());
+    }
+
+    #[tokio::test]
+    async fn cancelled_recovery_leaves_generation_and_notifications_usable() {
+        let connection = connection_for_sender_invalidation();
+        let (_, notification) = connection.sender_invalidation().await.unwrap();
+        let sessions = connection.session_instances.write().await;
+        let mut recovery =
+            Box::pin(connection.recover_generation(0, ErrorRecoveryAction::ReconnectConnection));
+        assert!(futures::poll!(&mut recovery).is_pending());
+        drop(recovery);
+        assert_eq!(connection.generation(), 0);
+        assert!(notification.get().is_none());
+        drop(sessions);
+        let mut tasks = tokio::task::JoinSet::new();
+        for _ in 0..30 {
+            let connection = connection.clone();
+            tasks.spawn(async move {
+                connection
+                    .recover_generation(0, ErrorRecoveryAction::ReconnectConnection)
+                    .await
+            });
+        }
+        while let Some(result) = tasks.join_next().await {
+            result.unwrap();
+        }
+        assert_eq!(connection.generation(), 2);
+        assert!(notification.get().is_some());
+        let (_, replacement) = connection.sender_invalidation().await.unwrap();
+        connection
+            .recover_generation(0, ErrorRecoveryAction::ReconnectConnection)
+            .await;
+        assert_eq!(connection.generation(), 2);
+        assert!(replacement.get().is_none());
     }
 
     // A close does not need exclusive ownership of the connection.
@@ -1848,7 +1796,7 @@ mod tests {
         authorization
             .await
             .expect("authorize_path task panicked")
-            .expect("authorize_path returned an error");
+            .expect_err("closing the connection cancels authorization");
 
         assert_eq!(
             credential.requests.load(Ordering::SeqCst),
@@ -2014,9 +1962,8 @@ mod tests {
     // post-init check would then match and hand the caller a resource bound to the
     // connection this recovery is dropping.
     //
-    // The token cache's write lock is the seam. Holding it stops the recovery inside
-    // `authorizer.clear()`, which is after the opening bump and before the closing
-    // one, so the test can capture the generation a racing slow path would see.
+    // The token cache's write lock stops recovery before any mutation. A caller
+    // that captures this state must see a different generation after recovery.
     #[tokio::test]
     async fn recovery_generation_differs_for_a_mid_recovery_capture() {
         let url = Url::parse("amqps://example.com").unwrap();
@@ -2033,19 +1980,18 @@ mod tests {
 
         let scopes = connection.authorizer.lock_scopes_for_test().await;
 
-        let recovery = {
-            let connection = connection.clone();
-            tokio::spawn(async move { connection.simulate_reconnect().await })
-        };
-
-        // Wait for the opening bump. The recovery then blocks on the guard above.
-        while connection.generation() == 0 {
-            tokio::task::yield_now().await;
-        }
+        let recovery = connection.simulate_reconnect();
+        futures::pin_mut!(recovery);
+        assert!(futures::poll!(&mut recovery).is_pending());
+        assert_eq!(
+            connection.generation(),
+            0,
+            "blocked recovery leaves the state unchanged"
+        );
         let captured_mid_recovery = connection.generation();
 
         drop(scopes);
-        recovery.await.expect("recovery task panicked");
+        recovery.await;
 
         assert_ne!(
             connection.generation(),
@@ -2104,10 +2050,8 @@ mod tests {
     // rejected on parity alone, without waiting for the recovery to end.
     //
     // Equality against the captured value cannot catch this case: the generation
-    // has not moved since the capture. `apply_recovery_plan` releases each lock
-    // before it takes the next, so a contended recovery can stall between its bumps
-    // long enough for a slow path to finish attaching to the connection it is
-    // dropping. The test parks the generation mid-recovery to hold that state open.
+    // has not moved since the capture. The test holds the odd interval open to
+    // represent an initializer that runs on another executor thread.
     #[tokio::test]
     async fn generation_captured_mid_recovery_is_never_current() {
         let url = Url::parse("amqps://example.com").unwrap();

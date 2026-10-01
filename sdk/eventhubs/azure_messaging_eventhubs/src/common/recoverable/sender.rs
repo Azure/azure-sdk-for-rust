@@ -14,7 +14,10 @@ use futures::{pin_mut, select_biased, FutureExt};
 use std::{
     fmt,
     future::Future,
-    sync::{Arc, Weak},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc, Weak,
+    },
 };
 use tracing::{instrument, warn};
 
@@ -76,7 +79,85 @@ impl RecoverableSender {
         }
     }
 
-    async fn with_current_sender<F, Fut, T>(&self, operation: F) -> Result<T>
+    async fn recover<F, Fut, T>(&self, operation: F) -> Result<T>
+    where
+        F: Fn(Arc<AtomicU64>) -> Fut,
+        Fut: Future<Output = Result<T>>,
+    {
+        let connection = self
+            .recoverable_connection
+            .upgrade()
+            .ok_or_else(|| AmqpError::with_message("Missing connection"))?;
+        let generation = Arc::new(AtomicU64::new(connection.generation()));
+        let started = std::time::Instant::now();
+        let budget = std::time::Duration::try_from(connection.retry_options.max_total_elapsed)
+            .unwrap_or_default();
+        let result = {
+            let retries = recover_azure_operation(
+                || operation(generation.clone()),
+                &connection.retry_options,
+                Self::should_retry_send_operation,
+                Some(
+                    |(connection, generation): (Arc<RecoverableConnection>, Arc<AtomicU64>),
+                     reason| {
+                        Box::pin(async move {
+                            connection
+                                .recover_generation(generation.load(Ordering::Acquire), reason)
+                                .await;
+                            Ok(())
+                        })
+                    },
+                ),
+                Some((connection.clone(), generation.clone())),
+            )
+            .fuse();
+            let deadline = azure_core::sleep(
+                connection
+                    .retry_options
+                    .max_total_elapsed
+                    .max(azure_core::time::Duration::ZERO),
+            )
+            .fuse();
+            pin_mut!(retries, deadline);
+            select_biased! {
+                result = retries => Some(result),
+                _ = deadline => None,
+            }
+        };
+        if let Some(result) = result.filter(|result| result.is_ok() || started.elapsed() < budget) {
+            if let Err(error) = &result {
+                connection
+                    .recover_generation(
+                        generation.load(Ordering::Acquire),
+                        Self::should_retry_send_operation(error),
+                    )
+                    .await;
+            }
+            return result;
+        }
+        // The operation future has dropped its preparation and sender locks.
+        // A stale deadline must leave a peer's replacement connection intact.
+        connection
+            .recover_generation(
+                generation.load(Ordering::Acquire),
+                ErrorRecoveryAction::ReconnectConnection,
+            )
+            .await;
+        warn!(
+            connection_id = %connection.get_connection_id(),
+            path = %self.path,
+            stop_reason = "elapsed_budget_exhausted",
+            max_total_elapsed = ?connection.retry_options.max_total_elapsed,
+            "Producer operation deadline elapsed."
+        );
+        Err(azure_core::Error::from(std::io::Error::new(
+            std::io::ErrorKind::TimedOut,
+            "Event Hubs producer operation exceeded max_total_elapsed. Delivery may have occurred.",
+        ))
+        .into())
+    }
+
+    async fn with_current_sender<F, Fut, T>(&self, captured: &AtomicU64, operation: F) -> Result<T>
     where
         F: FnOnce(Arc<AmqpSender>) -> Fut,
         Fut: Future<Output = Result<T>>,
@@ -91,6 +172,7 @@ impl RecoverableSender {
         connection.get_forced_error()?;
 
         let (generation, invalidated) = connection.sender_invalidation().await?;
+        captured.store(generation, Ordering::Release);
         // Preparation can run CBS recovery on this task. Let it finish before
         // racing the transport operation against the peer's notification.
         let sender = connection.ensure_sender(&self.path).await.map_err(|e| {
@@ -129,13 +211,13 @@ impl AmqpSenderApis for RecoverableSender {
         M: Into<AmqpMessage> + std::fmt::Debug + Send,
     {
         let message_arc = Arc::new(message.into());
-        let outcome = recover_azure_operation(
-            move || {
+        let outcome = self
+            .recover(move |generation| {
                 let options = options.clone();
                 let path = self.path.clone();
                 let message_clone = message_arc.clone();
                 async move {
-                    self.with_current_sender(|sender| async move {
+                    self.with_current_sender(&generation, |sender| async move {
                         let outcome = sender.send_ref(message_clone.as_ref(), options).await?;
                         // We want to handle retries on the outcome - for instance, if we're throttled, the server rejects the send operation.
                         match outcome {
@@ -165,28 +247,8 @@ impl AmqpSenderApis for RecoverableSender {
                     })
                     .await
                 }
-            },
-            &self
-                .recoverable_connection
-                .upgrade()
-                .ok_or_else(|| {
-                    AmqpError::from(azure_core::Error::with_message(
-                        AzureErrorKind::Other,
-                        "Missing connection",
-                    ))
-                })?
-                .retry_options,
-            Self::should_retry_send_operation,
-            Some(move |connection: Weak<RecoverableConnection>, reason| {
-                let connection = connection.clone();
-                Box::pin(async move {
-                    // Use the static method from RecoverableConnection to recover from the error.
-                    RecoverableConnection::recover_from_error(connection, reason).await
-                })
-            }),
-            Some(self.recoverable_connection.clone()),
-        )
-        .await?;
+            })
+            .await?;
         Ok(outcome)
     }
 
@@ -220,32 +282,14 @@ impl AmqpSenderApis for RecoverableSender {
     }
 
     async fn max_message_size(&self) -> Result<Option<u64>> {
-        let max_message_size = recover_azure_operation(
-            || async move {
-                self.with_current_sender(|sender| async move { sender.max_message_size().await })
-                    .await
-            },
-            &self
-                .recoverable_connection
-                .upgrade()
-                .ok_or_else(|| {
-                    AmqpError::from(azure_core::Error::with_message(
-                        AzureErrorKind::Other,
-                        "Missing connection",
-                    ))
-                })?
-                .retry_options,
-            Self::should_retry_send_operation,
-            Some(move |connection: Weak<RecoverableConnection>, reason| {
-                let connection = connection.clone();
-                Box::pin(async move {
-                    // Use the static method from RecoverableConnection to recover from the error.
-                    RecoverableConnection::recover_from_error(connection, reason).await
+        let max_message_size = self
+            .recover(|generation| async move {
+                self.with_current_sender(&generation, |sender| async move {
+                    sender.max_message_size().await
                 })
-            }),
-            Some(self.recoverable_connection.clone()),
-        )
-        .await?;
+                .await
+            })
+            .await?;
         Ok(max_message_size)
     }
 }
