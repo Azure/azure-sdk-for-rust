@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `ConsumerClientBuilder::with_idle_timeout` and `ProducerClientBuilder::with_idle_timeout` to configure the AMQP connection idle timeout and enable peer heartbeat negotiation.
+- Added `ConsumerClientBuilder::with_idle_timeout` and `ProducerClientBuilder::with_idle_timeout` to configure the AMQP connection idle timeout and enable peer heartbeat negotiation. The timeout defaults to 60 seconds, matching the .NET Event Hubs SDK.
 
 ## 0.17.0 (2026-09-14)
 

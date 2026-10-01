@@ -45,6 +45,9 @@ use tracing::{debug, info, instrument, trace, warn};
 /// scenarios for high availability.
 const GEODR_REPLICATION_CAPABILITY: &str = "com.microsoft.georeplication";
 
+/// The default AMQP connection idle timeout, matching the .NET Event Hubs SDK.
+const DEFAULT_IDLE_TIMEOUT: Duration = Duration::seconds(60);
+
 /// The recoverable connection is responsible for managing the connection to the Event Hubs service.
 /// It also handles authorization and connection recovery.
 ///
@@ -835,7 +838,7 @@ impl RecoverableConnection {
             desired_capabilities: Some(vec![GEODR_REPLICATION_CAPABILITY.into()]),
             custom_endpoint: self.custom_endpoint.clone(),
             transport: Some(self.transport),
-            idle_timeout: self.idle_timeout,
+            idle_timeout: Some(self.idle_timeout.unwrap_or(DEFAULT_IDLE_TIMEOUT)),
             ..Default::default()
         }
     }
@@ -2250,21 +2253,26 @@ mod tests {
     }
 
     #[test]
-    fn connection_options_carry_the_idle_timeout() {
-        let idle_timeout = Duration::seconds(60);
-        let connection_manager = RecoverableConnection::new(
-            Url::parse("amqps://example.com").unwrap(),
-            None,
-            None,
-            AmqpTransport::Tcp,
-            Some(idle_timeout),
-            Arc::new(MockCredential),
-            Default::default(),
-            None,
-        );
+    fn connection_options_resolve_the_idle_timeout() {
+        for (idle_timeout, expected) in [
+            (None, Duration::seconds(60)),
+            (Some(Duration::seconds(30)), Duration::seconds(30)),
+            (Some(Duration::seconds(120)), Duration::seconds(120)),
+        ] {
+            let connection_manager = RecoverableConnection::new(
+                Url::parse("amqps://example.com").unwrap(),
+                None,
+                None,
+                AmqpTransport::Tcp,
+                idle_timeout,
+                Arc::new(MockCredential),
+                Default::default(),
+                None,
+            );
 
-        let options = connection_manager.connection_options();
-        assert_eq!(options.idle_timeout, Some(idle_timeout));
+            let options = connection_manager.connection_options();
+            assert_eq!(options.idle_timeout, Some(expected));
+        }
     }
 
     #[test]
