@@ -84,11 +84,13 @@ fe2o3_amqp = [
 # This feature needs `fe2o3-amqp` 0.16 or later. The rustls backend of 0.14 was
 # built on `ring`, which `deny.toml` bans (#4189).
 #
-# There is no matching native-tls feature, because `fe2o3-amqp` accepts one TLS
-# stack only and reports `TlsConnectorNotFound` at run time when both are on.
-# Two features that cannot both be on would break `--all-features`. To use
-# another stack, turn off the default features, name `fe2o3_amqp`, and take a
-# direct dependency on `fe2o3-amqp` with the stack you want. Cargo unifies the
+# There is no matching native-tls feature. This rustls feature supplies an
+# explicit connector, so rustls remains selected even when both `fe2o3-amqp`
+# TLS features are enabled. Without an explicit connector, `fe2o3-amqp` 0.18
+# selects native-tls when both are enabled.
+#
+# To use native-tls, turn off the default features, name `fe2o3_amqp`, and take
+# a direct dependency on `fe2o3-amqp` with native-tls enabled. Cargo unifies the
 # features, and nothing pulls rustls in:
 #
 #   azure_core_amqp = { version = "...", default-features = false, features = [

@@ -486,6 +486,13 @@ mod tests {
             described.condition,
             crate::error::AmqpErrorCondition::LinkPayloadSizeExceeded
         );
+        let description = described
+            .description
+            .as_deref()
+            .expect("an oversized delivery must report its size and the link maximum");
+        assert!(description.contains("2048"));
+        assert!(description.contains("1024"));
+        assert!(described.info.is_empty());
     }
 
     // fe2o3-amqp 0.17 replaced `IllegalSessionState` with `SessionStopped`.

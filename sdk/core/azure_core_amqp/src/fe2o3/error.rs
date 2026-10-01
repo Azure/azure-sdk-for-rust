@@ -155,7 +155,10 @@ impl From<fe2o3_amqp::link::DetachError> for AmqpError {
 pub(crate) fn message_size_exceeded(e: fe2o3_amqp::link::MessageSizeExceeded) -> AmqpError {
     AmqpErrorKind::AmqpDescribedError(AmqpDescribedError::new(
         AmqpErrorCondition::LinkPayloadSizeExceeded,
-        Some(e.to_string()),
+        Some(format!(
+            "message size {} bytes exceeds the link maximum of {} bytes",
+            e.size, e.max_size
+        )),
         Default::default(),
     ))
     .into()
