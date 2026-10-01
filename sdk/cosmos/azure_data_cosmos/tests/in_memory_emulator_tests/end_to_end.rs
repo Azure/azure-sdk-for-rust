@@ -213,8 +213,8 @@ async fn create_container_if_needed(
 
 /// Reads an item, retrying transient regional failover errors a bounded number
 /// of times. A forced failover can first exhaust the SDK's `503` budget on the
-/// unavailable region, then reach a satellite that returns `404/1002` until it
-/// catches up to the write's session token. Logs every attempt so CI shows
+/// unavailable region, then see `503/20310` while a satellite catches up to the
+/// write's session token. Logs every attempt so CI shows
 /// whether routing or replication convergence delayed the successful read.
 #[cfg(feature = "fault_injection")]
 fn is_transient_failover_status(status: CosmosStatus) -> bool {
@@ -241,8 +241,8 @@ async fn read_item_with_failover_retry(
             }
             Err(e) => {
                 let is_503 = e.status().status_code() == StatusCode::ServiceUnavailable;
-                let is_session_unavailable = e.status().status_code() == StatusCode::NotFound
-                    && e.status().sub_status() == Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE);
+                let is_session_unavailable = e.status()
+                    == azure_data_cosmos_driver::error::status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE;
                 eprintln!(
                     "[{label}] read_item attempt {attempt}/{MAX_ATTEMPTS} failed \
                      (is_503={is_503}, is_session_unavailable={is_session_unavailable}): {e}",
@@ -341,6 +341,9 @@ fn transient_failover_status_is_scoped_to_503_and_404_1002() {
     assert!(is_transient_failover_status(CosmosStatus::new(
         StatusCode::ServiceUnavailable
     )));
+    assert!(is_transient_failover_status(
+        azure_data_cosmos_driver::error::status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE
+    ));
     assert!(is_transient_failover_status(
         CosmosStatus::new(StatusCode::NotFound).with_sub_status(
             azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE
