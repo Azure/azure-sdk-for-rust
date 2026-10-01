@@ -244,6 +244,7 @@ pub mod builders {
         pub fn with_application_id(self, application_id: String) -> Self;
         pub fn with_consumer_group(self, consumer_group: String) -> Self;
         pub fn with_custom_endpoint(self, endpoint: String) -> Self;
+        pub fn with_idle_timeout(self, idle_timeout: Duration) -> Self;
         pub fn with_instance_id(self, instance_id: String) -> Self;
         pub fn with_retry_options(self, retry_options: RetryOptions) -> Self;
         pub fn with_transport(self, transport: AmqpTransport) -> Self;
@@ -268,6 +269,7 @@ pub mod builders {
         pub async fn open_with_connection_string(self, connection_string: &str, eventhub: Option<&str>) -> Result<ProducerClient>;
         pub fn with_application_id(self, application_id: String) -> Self;
         pub fn with_custom_endpoint(self, endpoint: String) -> Self;
+        pub fn with_idle_timeout(self, idle_timeout: Duration) -> Self;
         pub fn with_retry_options(self, retry_options: RetryOptions) -> Self;
         pub fn with_transport(self, transport: AmqpTransport) -> Self;
     }

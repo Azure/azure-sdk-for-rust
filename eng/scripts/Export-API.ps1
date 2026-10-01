@@ -101,7 +101,7 @@ function Get-GenerateApiArguments(
   }
 
   if ($OutputPath) {
-    $arguments += @('--output', (Get-OutputDirectory -Package $Package))
+    $arguments += @('--output-dir', (Get-OutputDirectory -Package $Package))
   }
 
   return $arguments
@@ -115,7 +115,7 @@ function Get-RegenerateCommand(
     (Get-RepoRelativePath -Path $generateApiManifestPath),
     (Get-RepoRelativePath -Path $Package.manifest_path)
   if ($OutputPath) {
-    $command += ' --output "{0}"' -f (Get-OutputDirectory -Package $Package)
+    $command += ' --output-dir "{0}"' -f (Get-OutputDirectory -Package $Package)
   }
 
   return $command

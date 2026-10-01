@@ -472,6 +472,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
         )
     }
 

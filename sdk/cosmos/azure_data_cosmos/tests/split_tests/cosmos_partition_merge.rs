@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 //! Opt-in live validation for the Azure Cosmos DB partition merge preview.
+//! Starts with multiple partitions so merge coverage does not depend on a prior split.
 
 use super::{
     cosmos_change_feed_split::drain_changes,
-    cosmos_query_split::force_split_and_wait,
     framework::{MockItem, TestClient, TestOptions},
 };
 use azure_data_cosmos::{
@@ -190,7 +190,7 @@ async fn routing_query_and_point_in_time_feed_survive_merge() -> Result<(), Box<
                     properties,
                     Some(
                         CreateContainerOptions::default()
-                            .with_throughput(ThroughputProperties::manual(1000)),
+                            .with_throughput(ThroughputProperties::manual(13000)),
                     ),
                 )
                 .await?;
@@ -211,10 +211,16 @@ async fn routing_query_and_point_in_time_feed_survive_merge() -> Result<(), Box<
                 }
             }
 
-            let partitions_before = container.read_feed_ranges(None).await?.len();
-            let partitions_after_split =
-                force_split_and_wait(&container, partitions_before).await?;
-            assert!(partitions_after_split > partitions_before);
+            let partitions_before_merge = container
+                .read_feed_ranges(Some(
+                    ReadFeedRangesOptions::default().with_force_refresh(true),
+                ))
+                .await?
+                .len();
+            assert!(
+                partitions_before_merge > 1,
+                "13,000 RU/s must provision multiple physical partitions before merging"
+            );
 
             let mut pages = container
                 .query_items::<MockItem>(
@@ -261,7 +267,7 @@ async fn routing_query_and_point_in_time_feed_survive_merge() -> Result<(), Box<
                     ))
                     .await?
                     .len();
-                if count < partitions_after_split {
+                if count < partitions_before_merge {
                     break;
                 }
                 if tokio::time::Instant::now() >= merge_deadline {

@@ -19,7 +19,17 @@ To write Markdown API review artifacts to a different directory:
 ```sh
 cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
   --manifest-path sdk/core/azure_core/Cargo.toml \
-  --output target/generate_api/azure_core \
+  --output-dir target/generate_api/azure_core \
+  --review
+```
+
+To keep `api.*` files in one directory but write review state under a different working directory:
+
+```sh
+cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
+  --manifest-path sdk/core/azure_core/Cargo.toml \
+  --output-dir target/generate_api/azure_core \
+  --working-dir target/generate_api/work/azure_core \
   --review
 ```
 
@@ -37,7 +47,9 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 - `--format <markdown|apiview>`: optional output format to generate; defaults to `markdown`
 - `--review`: emit Markdown review sidecars; valid only with `--format markdown`
 - `--check`: compare generated content with existing output files without writing them
-- `--output <dir>`: directory where generated files are written; defaults to the crate directory
+- `--output-dir <dir>`: directory where generated files are written; defaults to the crate directory
+- `--working-dir <dir>`: optional directory for Markdown review state; defaults to the resolved
+  `--output-dir` and is valid only with `--format markdown --review`
 
 ### Outputs
 
@@ -45,7 +57,7 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
 - `--format markdown --review` also writes `api.metadata.yml`, `api.md.map`, and
   `api.documentation.patch`
 - `--format markdown --review` writes `state/version.txt` and
-  `state/package-relative-path.txt`
+  `state/package-relative-path.txt` under the working directory
 - `--format apiview` writes `apiview.json`
 - `--check` succeeds when output files are absent or match after normalizing line endings; a mismatch
   writes an error to stderr and exits with code `1`
@@ -80,8 +92,10 @@ location within an unchanged repository directory structure; the source paths wi
 to resolve relative to `api.md.map` or a custom map path. Keep the `sources` entries unchanged in
 all cases.
 
-For Markdown review output, the `state` directory contains the crate version in `version.txt` and
-the repository-relative crate directory in `package-relative-path.txt`.
+For Markdown review output, the `state` directory under the resolved working directory contains the
+crate version in `version.txt` and the repository-relative crate directory in
+`package-relative-path.txt`. If `--working-dir` is omitted, it defaults to `--output-dir`; if
+`--output-dir` is also omitted, both directories default to the crate directory.
 
 ## Workflow
 
