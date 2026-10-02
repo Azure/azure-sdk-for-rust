@@ -505,6 +505,7 @@ impl SubStatusCode {
             20126 => Some("ClientNonStreamingOrderByWindowTooLarge"),
             20127 => Some("ClientPartitionKeyNumberNonFinite"),
             20128 => Some("ClientUserAgentSuffixInvalid"),
+            20129 => Some("ClientUserAgentPropertyInvalid"),
             20150 => Some("ClientDuplicateFaultInjectionRuleId"),
             20153 => Some("ClientHttpClientConstructionFailed"),
             20154 => Some("ClientReqwestFeatureRequired"),
@@ -1060,7 +1061,7 @@ mod tests {
         }
         assert_eq!(
             CosmosStatus::new(StatusCode::BadRequest)
-                .with_sub_status(20129)
+                .with_sub_status(20130)
                 .name(),
             None
         );
@@ -1078,6 +1079,11 @@ mod tests {
                 20128,
                 crate::error::status_codes::CLIENT_USER_AGENT_SUFFIX_INVALID,
                 "ClientUserAgentSuffixInvalid",
+            ),
+            (
+                20129,
+                crate::error::status_codes::CLIENT_USER_AGENT_PROPERTY_INVALID,
+                "ClientUserAgentPropertyInvalid",
             ),
         ] {
             let status = CosmosStatus::new(StatusCode::BadRequest).with_sub_status(code);

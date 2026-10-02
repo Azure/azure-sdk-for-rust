@@ -4,7 +4,11 @@
 
 ### Features Added
 
+- Added `UserAgentProperty` and `CosmosDriverRuntimeBuilder::with_user_agent_property` so wrapping SDKs can add validated `key=value` entries (for example a language runtime version such as `rt=.NET 8.0.1`; values may contain spaces but never `;`, `(`, or `)`) to the `User-Agent` metadata segment.
+
 ### Breaking Changes
+
+- Changed the `User-Agent` header to a compact, parsable format used by every Cosmos SDK: `{sdk}/{version} (drv={driver}; {os}; {arch}; {rustc}[; ft={B64}][; {key}={value}]...) [{suffix}]`. The first metadata entry is always `drv=<driver version>`; cross-SDK feature flags move from the trailing `|F<HEX>` token to an `ft=<B64>` entry (the flag bits as a big-endian integer with leading zero bytes removed, base64url-encoded without padding, e.g. `ft=Eg` for 0x12); the product token is the wrapping SDK identifier if set, otherwise `azsdk-rust-cosmos-driver/{version}`. Whitespace, parentheses, and `;` in a wrapping SDK identifier are now replaced with `_`, truncation to the 255-character limit never breaks the parenthesized segment, and the suffix is never altered or truncated. The first `)` marks the end of the SDK-provided portion.
 
 ### Bugs Fixed
 

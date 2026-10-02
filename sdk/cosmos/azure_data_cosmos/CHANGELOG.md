@@ -6,6 +6,8 @@
 
 ### Breaking Changes
 
+- Changed the `User-Agent` header format to `azsdk-rust-cosmos/{sdk-version} (drv={driver-version}; {os}; {arch}; {rustc}[; ft={B64}]) [{suffix}]`, replacing the separate `azsdk-rust-cosmos-driver/{version} {os}/{arch} rustc/{version}` tokens and the trailing `|F<HEX>` feature-flag token.
+
 ### Bugs Fixed
 
 ### Other Changes
