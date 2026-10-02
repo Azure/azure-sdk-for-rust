@@ -35,7 +35,7 @@ jobs:
           displayName: Resolve Rust API review toolchain
           inputs:
             pwsh: true
-            filePath: $(Build.SourcesDirectory)/eng/scripts/Resolve-ApiReviewHubRustToolchain.ps1
+            filePath: $(LanguageRepo)/eng/scripts/Resolve-ApiReviewHubRustToolchain.ps1
             arguments: >
               -Toolchain '${{ parameters.rustVersion }}'
 
@@ -47,7 +47,7 @@ jobs:
           displayName: Build Rust API review tooling
           inputs:
             pwsh: true
-            filePath: $(Build.SourcesDirectory)/eng/scripts/Build-ApiReviewHubTool.ps1
+            filePath: $(LanguageRepo)/eng/scripts/Build-ApiReviewHubTool.ps1
             arguments: >
               -SourceDir '$(ApiReviewSourceDir)'
               -ToolDir '$(ApiReviewToolingDir)'
