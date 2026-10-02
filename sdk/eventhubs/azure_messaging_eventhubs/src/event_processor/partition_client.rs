@@ -8,10 +8,14 @@ use crate::{
     processor::CheckpointStore,
     EventHubsError, EventReceiver,
 };
+use azure_core::Uuid;
 use futures::Stream;
 use std::{
     pin::Pin,
-    sync::{Arc, OnceLock, Weak},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, OnceLock, Weak,
+    },
 };
 use tracing::{debug, trace, warn};
 
@@ -21,14 +25,17 @@ use tracing::{debug, trace, warn};
 /// and managing the lifecycle of the client for a specific partition.
 ///
 /// Stream termination is the only revocation signal: when the partition is
-/// reassigned (or the broker disconnects the receiver via epoch), `stream_events()`
-/// resolves with `EventHubsError::ConsumerDisconnected`. Re-acquire via
-/// [`EventProcessor::next_partition_client`](crate::EventProcessor::next_partition_client).
+/// reassigned, the processor shuts down, or the broker disconnects the receiver
+/// via epoch, [`stream_events()`](Self::stream_events) yields
+/// [`ErrorKind::ConsumerDisconnected`]. Reacquire a client via
+/// [`EventProcessor::next_partition_client()`](crate::EventProcessor::next_partition_client).
 pub struct PartitionClient {
     partition_id: String,
+    client_id: Uuid,
     checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
     client_details: ConsumerClientDetails,
     event_receiver: OnceLock<EventReceiver>,
+    closed: AtomicBool,
     consumers: Weak<ProcessorConsumersMap>,
 }
 
@@ -45,9 +52,11 @@ impl PartitionClient {
     ) -> Self {
         Self {
             partition_id,
+            client_id: Uuid::new_v4(),
             checkpoint_store,
             client_details,
             event_receiver: OnceLock::new(),
+            closed: AtomicBool::new(false),
             consumers,
         }
     }
@@ -64,6 +73,7 @@ impl PartitionClient {
     /// Called by load-balancer reconciliation as a backstop for the
     /// broker-initiated disconnect path. Idempotent.
     pub(crate) async fn request_close_receiver(&self) {
+        self.closed.store(true, Ordering::Release);
         if let Some(receiver) = self.event_receiver.get() {
             if let Err(e) = receiver.request_close().await {
                 warn!(
@@ -73,6 +83,14 @@ impl PartitionClient {
                 );
             }
         }
+    }
+
+    pub(crate) fn client_id(&self) -> &Uuid {
+        &self.client_id
+    }
+
+    pub(crate) fn is_closed(&self) -> bool {
+        self.closed.load(Ordering::Acquire)
     }
 
     /// Receives events from the partition.
@@ -136,7 +154,7 @@ impl PartitionClient {
                 partition_id = %self.partition_id,
                 "Removing client for partition from the consumers map."
             );
-            consumers.remove_partition_client(&self.partition_id)?;
+            consumers.remove_partition_client(&self)?;
         }
         Ok(())
     }
