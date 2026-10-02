@@ -10,6 +10,7 @@
 #[cfg(feature = "arrow")]
 mod arrow;
 pub(crate) mod buffers;
+mod cache;
 pub mod clients;
 #[allow(unused_imports)]
 mod generated;
@@ -21,4 +22,7 @@ pub use clients::*;
 pub use parsers::*;
 mod logging;
 pub mod models;
+mod session;
 pub use models::error::{Result, StorageError};
+pub use session::options::{SessionMode, SessionOptions};
+pub use session::provider::{ContainerSessionProvider, SessionProvider};
