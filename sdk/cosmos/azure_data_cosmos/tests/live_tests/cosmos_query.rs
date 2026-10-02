@@ -30,6 +30,7 @@ async fn live_distinct_admission_and_per_query_options() -> Result<(), Box<dyn E
         async |run_context, db_client| {
             println!("Live DISTINCT test database: {}", run_context.db_name());
             test_data::create_container_with_items(
+                run_context,
                 db_client,
                 test_data::generate_mock_items(4, 3),
                 None,

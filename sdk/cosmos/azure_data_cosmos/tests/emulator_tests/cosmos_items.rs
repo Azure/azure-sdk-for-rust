@@ -156,51 +156,84 @@ async fn create_v1_container(
 ) -> Result<ContainerClient, Box<dyn Error>> {
     let db_client = run_context.create_db().await?;
     let container_id = format!("Container-V1-{}", Uuid::new_v4());
-    let connection_string = framework::resolve_connection_string()
-        .ok_or("Cosmos connection string is not configured")?;
-    let account = DriverAccountReference::with_master_key(
-        connection_string.account_endpoint().parse::<url::Url>()?,
-        connection_string.account_key().clone(),
-    );
-    let runtime = CosmosDriverRuntime::builder()
-        .with_connection_pool(
-            ConnectionPoolOptions::builder()
-                .with_server_certificate_validation(
-                    ServerCertificateValidation::RequiredUnlessEmulator,
-                )
-                .build()?,
-        )
-        .build()
-        .await?;
-    let driver = runtime
-        .create_driver(DriverOptions::builder(account.clone()).build())
-        .await?;
-    let database = DatabaseReference::from_name(
-        account,
-        db_client
+    if let Some(arm_client) = run_context.arm_client() {
+        #[derive(Serialize)]
+        #[serde(rename_all = "camelCase")]
+        struct V1Container<'a> {
+            id: &'a str,
+            partition_key: V1PartitionKey<'a>,
+        }
+
+        #[derive(Serialize)]
+        struct V1PartitionKey<'a> {
+            paths: [&'a str; 1],
+            kind: &'a str,
+        }
+
+        let database_name = db_client
             .name()
-            .expect("emulator database is name-addressed")
-            .to_string(),
-    );
-    let body = format!(
-        r#"{{"id":"{container_id}","partitionKey":{{"paths":["/partition_key"],"kind":"Hash"}}}}"#
-    );
-    let response = driver
-        .execute_singleton_operation(
-            CosmosOperation::create_container(database).with_body(body.into_bytes()),
-            DriverOperationOptions::default(),
-        )
-        .await?;
-    if !response.status().is_success() {
-        return Err(format!(
-            "failed to create version-less V1 container: {}",
-            response.status()
-        )
-        .into());
+            .ok_or("ARM-backed resource management requires a name-addressed database")?;
+        let resource = V1Container {
+            id: &container_id,
+            partition_key: V1PartitionKey {
+                paths: ["/partition_key"],
+                kind: "Hash",
+            },
+        };
+        arm_client
+            .create_or_update_container(database_name, &container_id, &resource, None)
+            .await?;
+    } else {
+        let connection_string = framework::resolve_connection_string()
+            .ok_or("Cosmos connection string is not configured")?;
+        let account = DriverAccountReference::with_master_key(
+            connection_string.account_endpoint().parse::<url::Url>()?,
+            connection_string.account_key().clone(),
+        );
+        let runtime = CosmosDriverRuntime::builder()
+            .with_connection_pool(
+                ConnectionPoolOptions::builder()
+                    .with_server_certificate_validation(
+                        ServerCertificateValidation::RequiredUnlessEmulator,
+                    )
+                    .build()?,
+            )
+            .build()
+            .await?;
+        let driver = runtime
+            .create_driver(DriverOptions::builder(account.clone()).build())
+            .await?;
+        let database = DatabaseReference::from_name(
+            account,
+            db_client
+                .name()
+                .expect("emulator database is name-addressed")
+                .to_string(),
+        );
+        let body = format!(
+            r#"{{"id":"{container_id}","partitionKey":{{"paths":["/partition_key"],"kind":"Hash"}}}}"#
+        );
+        let response = driver
+            .execute_singleton_operation(
+                CosmosOperation::create_container(database).with_body(body.into_bytes()),
+                DriverOperationOptions::default(),
+            )
+            .await?;
+        if !response.status().is_success() {
+            return Err(format!(
+                "failed to create version-less V1 container: {}",
+                response.status()
+            )
+            .into());
+        }
     }
     let container_client = db_client.container_client(&container_id, None).await?;
 
     let body = container_client.read(None).await?.into_body().single()?;
+    if run_context.arm_client().is_some() {
+        framework::probe_data_plane_ready("version-less V1 container", &container_client, 1)
+            .await?;
+    }
     let raw: serde_json::Value = serde_json::from_slice(&body)?;
     assert!(
         raw["partitionKey"].get("version").is_none(),
