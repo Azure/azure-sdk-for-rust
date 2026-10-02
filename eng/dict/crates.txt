@@ -40,6 +40,7 @@ azure_storage_common
 azure_storage_queue
 backtrace
 base64
+bitflags
 bytes
 cargo_metadata
 clap
