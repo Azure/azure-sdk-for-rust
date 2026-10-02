@@ -8,7 +8,7 @@
 
 ### Bugs Fixed
 
-- `EventProcessor::shutdown` now closes issued partition receivers and releases this instance's ownership records; `close` uses the same stop path. ([#5096](https://github.com/Azure/azure-sdk-for-rust/issues/5096))
+- `EventProcessor::shutdown` now cancels pending partition reads and releases this instance's ownership records; restarting issues fresh clients, and `close` uses the same stop path. ([#5096](https://github.com/Azure/azure-sdk-for-rust/issues/5096))
 
 ## 0.17.0 (2026-09-14)
 
