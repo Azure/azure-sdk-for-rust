@@ -46,7 +46,7 @@ extends:
           internalModuleProxy:
             enabled: true
     settings:
-      networkIsolationPolicy: Permissive, CFSClean
+      networkIsolationPolicy: Permissive, CFSClean, CFSClean2
       skipBuildTagsForGitHubPullRequests: true
       # only enable autoBaseline for the internal build of rust-core on main branch
       featureFlags:
