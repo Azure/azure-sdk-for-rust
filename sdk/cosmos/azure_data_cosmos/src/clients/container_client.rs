@@ -4,12 +4,15 @@
 use crate::{
     clients::ClientContext,
     diagnostics::CosmosOperationContext,
-    feed::{ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator},
+    feed::{
+        ChangeFeedPageIterator, FeedRange, FeedScope, QueryItemIterator, ReadManyIterator,
+        ReadManySelection,
+    },
     models::{BatchResponse, ChangeFeedItem, ItemResponse, TransactionalBatch},
     options::{
         BatchOptions, BinaryEncodingOptions, ChangeFeedMode, ChangeFeedOptions,
         ChangeFeedStartFrom, ItemReadOptions, ItemWriteOptions, OperationOptions, Precondition,
-        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, SessionToken,
+        QueryOptions, ReadContainerOptions, ReadFeedRangesOptions, ReadManyOptions, SessionToken,
     },
     PartitionKey, Query, ResourceIdentity,
 };
@@ -41,6 +44,85 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
+    /// Reads selected items or complete logical partitions as unordered pages.
+    ///
+    /// Duplicate selections are removed. Missing or filtered-out items are
+    /// omitted. A filter only narrows the selection; use [`Self::query_items()`]
+    /// for container-wide queries. Hierarchical partition selections require
+    /// complete keys. Item keys missing only a final `/id` component are completed
+    /// from the supplied id.
+    ///
+    /// Queries consume RUs and may span multiple service requests. There is no
+    /// cross-partition snapshot or durable resume. Use
+    /// [`ReadManyIterator::collect_all()`] before iteration to aggregate results.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid selections, unbound filter parameters,
+    /// excessive fan-out, or planning failures. Request and deserialization
+    /// failures are returned while consuming pages.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// # async fn example(container: azure_data_cosmos::clients::ContainerClient) -> azure_data_cosmos::Result<()> {
+    /// use azure_data_cosmos::{feed::{ReadManyFilter, ReadManySelection}, options::ReadManyOptions};
+    /// let filter = "c.active = @active".parse::<ReadManyFilter>()?
+    ///     .with_parameter("@active", true)?;
+    /// let response = container.read_many::<serde_json::Value>(
+    ///     ReadManySelection::Partitions(vec!["tenant-1".into()]),
+    ///     Some(ReadManyOptions::default().with_filter(filter)),
+    /// ).await?.collect_all().await?;
+    /// println!("Found {} items", response.items().len());
+    /// # Ok(()) }
+    /// ```
+    pub async fn read_many<T: DeserializeOwned + Send + 'static>(
+        &self,
+        selection: ReadManySelection,
+        options: Option<ReadManyOptions>,
+    ) -> crate::Result<ReadManyIterator<T>> {
+        let options = options.unwrap_or_default();
+        let plan_options = crate::options::FeedOptions {
+            max_fan_out: options.max_fan_out,
+            ..Default::default()
+        }
+        .to_plan_options();
+        let (operation_options, _) =
+            resolve_binary_encoding(options.operation, &self.context.binary_encoding);
+        let timeout = self
+            .context
+            .driver
+            .operation_options_view(&operation_options)
+            .end_to_end_latency_policy()
+            .map(|policy| policy.timeout());
+        let mut operation = CosmosOperation::read_many(
+            self.container_ref.clone(),
+            selection.into_driver(),
+            options.filter.map(|filter| filter.0),
+        );
+        if let Some(token) = options.session_token {
+            operation = operation.with_session_token(token);
+        }
+        if let Some(hint) = options.max_item_count {
+            operation = operation.with_max_item_count(hint);
+        }
+        let plan = self
+            .context
+            .driver
+            .plan_operation(operation, &operation_options, None, &plan_options)
+            .await?;
+        let pages = QueryItemIterator::new(
+            self.context.driver.clone(),
+            Some(self.container_ref.clone()),
+            plan,
+            operation_options,
+            self.context.diagnostics_handlers.clone(),
+            self.operation_context("read_many"),
+        )
+        .into_pages();
+        Ok(ReadManyIterator::new(pages, timeout))
+    }
+
     /// Returns the resolved [`ContainerReference`] for the container this client is attached to.
     #[cfg(feature = "preview_dtx")]
     pub(crate) fn container_reference(&self) -> &ContainerReference {

@@ -306,6 +306,23 @@ pub struct QueryPageIterator<T: Send> {
 }
 
 impl<T: Send + DeserializeOwned + 'static> QueryPageIterator<T> {
+    pub(crate) fn set_collection_deadline(
+        &mut self,
+        deadline: std::time::Instant,
+    ) -> crate::Result<()> {
+        if let PageSource::Live(state) = &mut self.source {
+            let state = state.as_mut().get_mut();
+            let plan = state.plan.take().ok_or_else(|| {
+                crate::CosmosError::builder()
+                    .with_status(azure_data_cosmos_driver::error::status_codes::CLIENT_BAD_REQUEST)
+                    .with_message("cannot collect while a page is in flight")
+                    .build()
+            })?;
+            state.plan = Some(plan.with_execution_deadline(deadline));
+        }
+        Ok(())
+    }
+
     /// Captures the current iterator position as a [`ContinuationToken`].
     ///
     /// Pass the returned token to a subsequent
@@ -392,6 +409,58 @@ mod tests {
             .map(|r| r.unwrap())
             .collect();
         assert_eq!(items, vec![1, 2, 3, 4, 5, 6]);
+    }
+
+    #[tokio::test]
+    async fn read_many_collection_includes_charged_retry_attempts() {
+        use azure_core::http::StatusCode;
+        use azure_data_cosmos_driver::{
+            diagnostics::RequestDiagnostics, models::CosmosResponseHeaders, CosmosStatus,
+            RequestCharge,
+        };
+        use std::time::{Duration, Instant};
+
+        let now = Instant::now();
+        let requests = [
+            (
+                CosmosStatus::new(StatusCode::NotFound).with_sub_status(1002),
+                2.0,
+            ),
+            (CosmosStatus::new(StatusCode::Ok), 3.0),
+        ]
+        .into_iter()
+        .map(|(status, charge)| {
+            RequestDiagnostics::for_testing(
+                "https://test.documents.azure.com",
+                None,
+                status,
+                RequestCharge::new(charge),
+                now,
+                now,
+            )
+        })
+        .collect();
+        let diagnostics = Arc::new(DiagnosticsContext::for_testing_with_requests(
+            ActivityId::new_uuid(),
+            Duration::ZERO,
+            Some(CosmosStatus::new(StatusCode::Ok)),
+            Some("read_many"),
+            requests,
+        ));
+        let mut headers = CosmosResponseHeaders::default();
+        headers.request_charge = Some(RequestCharge::new(3.0));
+        let page =
+            QueryFeedPage::new_for_testing(vec![1], ResponseHeaders::from(headers), diagnostics);
+        let pages = synthetic_item_iter(vec![Ok(page)]).into_pages();
+        let response = crate::feed::ReadManyIterator::new(pages, None)
+            .collect_all()
+            .await
+            .unwrap();
+        assert_eq!(response.request_charge().value(), 5.0);
+        assert_eq!(
+            response.request_charge(),
+            response.diagnostics().unwrap().total_request_charge()
+        );
     }
 
     #[tokio::test]

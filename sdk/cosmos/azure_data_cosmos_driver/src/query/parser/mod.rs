@@ -51,6 +51,31 @@ pub fn parse(sql: &str) -> Result<SqlProgram, ParseError> {
     Ok(program)
 }
 
+pub(crate) fn parse_predicate(sql: &str) -> Result<SqlScalarExpression, ParseError> {
+    let mut parser = Parser::new(sql);
+    let mut lexer = Lexer::new(sql);
+    for index in 0..=256 {
+        let token = lexer.next_token();
+        if token.kind == TokenKind::Eof {
+            break;
+        }
+        if index == 256 {
+            return Err(parser.error("read-many filters support at most 256 tokens".into()));
+        }
+        if token.kind == TokenKind::StringLiteral && token.text.contains('\\') {
+            return Err(parser.error(
+                "use a parameter or JSON double-quoted string for escaped filter values".into(),
+            ));
+        }
+    }
+    let expression = parser.parse_scalar_expression()?;
+    parser.check_pending_lex_error()?;
+    if !parser.at_eof() {
+        return Err(parser.error("expected one complete filter predicate".into()));
+    }
+    Ok(expression)
+}
+
 // Maximum subquery / parenthesis nesting depth. Each level walks through the
 // ~14-stage precedence ladder in `parse_scalar_expression`, so each nested
 // level consumes roughly 14 stack frames. 32 keeps the worst-case stack
@@ -896,6 +921,13 @@ impl<'a> Parser<'a> {
     /// Primary expressions: literals, identifiers, function calls, parenthesized, array/object constructors
     fn parse_primary_expression(&mut self) -> Result<SqlScalarExpression, ParseError> {
         let expr = match self.current.kind {
+            // Cosmos scalar strings and bracketed property names may use double quotes.
+            TokenKind::Identifier if self.current.text.starts_with('"') => {
+                let value = serde_json::from_str::<String>(self.current.text)
+                    .map_err(|_| self.error("invalid double-quoted string".into()))?;
+                self.advance();
+                SqlScalarExpression::Literal(SqlLiteral::String(value))
+            }
             // String literal
             TokenKind::StringLiteral => {
                 let s = extract_string_content(self.current.text);
