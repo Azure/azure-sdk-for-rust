@@ -51,6 +51,6 @@ jobs:
             arguments: >
               -SourceDir '$(ApiReviewSourceDir)'
               -ToolDir '$(ApiReviewToolingDir)'
-              -ToolRef '${{ parameters.toolRef }}'
+              -ToolRef 'HEAD'
               -RustToolchain '$(ApiReviewRustToolchain)'
       steps: ${{ parameters.steps }}
