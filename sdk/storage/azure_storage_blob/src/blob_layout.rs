@@ -317,7 +317,7 @@ impl RefreshableValue for CachedLayout {
 ///
 /// The layout is fetched on first use rather than up front, and refreshed in the
 /// background before it goes stale so range requests keep routing without blocking.
-pub(crate) fn layout_cache(
+pub(crate) fn build_layout_cache(
     client: Arc<BlobClient>,
     context: Context<'static>,
     layout_options: BlobClientGetLayoutOptions<'static>,
@@ -957,7 +957,7 @@ mod tests {
     fn cached_layout_client(
         transport: Arc<dyn HttpClient>,
     ) -> AutoRefreshingCache<(), CachedLayout> {
-        layout_cache(
+        build_layout_cache(
             Arc::new(layout_client(transport)),
             Context::new(),
             BlobClientGetLayoutOptions::default(),

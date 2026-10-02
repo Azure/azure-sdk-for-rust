@@ -4,7 +4,7 @@
 pub use crate::generated::clients::BlobClient;
 
 use crate::{
-    blob_layout::{layout_cache, CachedLayout, LayoutEndpoint},
+    blob_layout::{build_layout_cache, CachedLayout, LayoutEndpoint},
     cache::AutoRefreshingCache,
     generated::{
         clients::BlobClient as GeneratedBlobClient,
@@ -439,11 +439,8 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
             layout_options.if_match = etag_lock.cloned();
         }
         let context = self.options.method_options.context.clone().into_owned();
-        let _ = self.layout_cache.set(layout_cache(
-            Arc::clone(&self.client),
-            context,
-            layout_options,
-        ));
+        self.layout_cache
+            .get_or_init(|| build_layout_cache(Arc::clone(&self.client), context, layout_options));
         Ok(())
     }
 }
