@@ -140,20 +140,15 @@ fn make_stale_session_token(token: &str) -> String {
 
 fn assert_read_session_not_available(err: &azure_data_cosmos::CosmosError, label: &str) {
     assert_eq!(
-        err.status().status_code(),
-        StatusCode::NotFound,
-        "{label}: stale session read should return 404",
-    );
-    assert_eq!(
-        err.status().sub_status().map(|s| s.value()),
-        Some(1002),
-        "{label}: stale session read should surface substatus 1002",
+        err.status(),
+        azure_data_cosmos_driver::error::status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+        "{label}: terminal session failure should be wrapped as 503/20310",
     );
 }
 
 /// Asserts a stale-session read was rejected on the real backend, tolerating a
 /// documented gateway-implementation divergence: classic gateway returns
-/// 404 / sub-status 1002 (ReadSessionNotAvailable), while the Gateway 2.0
+/// 404/1002 (wrapped as 503/20310), while the Gateway 2.0
 /// thin-client path surfaces the backend's structural session-token rejection
 /// as 400 BadRequest ("Session token specified is invalid."). A bumped-LSN
 /// token only trips the soft path on the shared backend; GW2 instead rejects
@@ -161,14 +156,10 @@ fn assert_read_session_not_available(err: &azure_data_cosmos::CosmosError, label
 /// cannot be satisfied" signals, so accept either.
 fn assert_stale_session_rejected(err: &azure_data_cosmos::CosmosError, label: &str) {
     match err.status().status_code() {
-        StatusCode::NotFound => assert_eq!(
-            err.status().sub_status().map(|s| s.value()),
-            Some(1002),
-            "{label}: 404 stale session read should surface substatus 1002",
-        ),
+        StatusCode::ServiceUnavailable => assert_read_session_not_available(err, label),
         StatusCode::BadRequest => {}
         other => panic!(
-            "{label}: stale session read should return 404/1002 or 400 BadRequest, got {other:?}",
+            "{label}: stale session read should return 503/20310 or 400 BadRequest, got {other:?}",
         ),
     }
 }
@@ -222,8 +213,8 @@ async fn create_container_if_needed(
 
 /// Reads an item, retrying transient regional failover errors a bounded number
 /// of times. A forced failover can first exhaust the SDK's `503` budget on the
-/// unavailable region, then reach a satellite that returns `404/1002` until it
-/// catches up to the write's session token. Logs every attempt so CI shows
+/// unavailable region, then see `503/20310` while a satellite catches up to the
+/// write's session token. Logs every attempt so CI shows
 /// whether routing or replication convergence delayed the successful read.
 #[cfg(feature = "fault_injection")]
 fn is_transient_failover_status(status: CosmosStatus) -> bool {
@@ -250,8 +241,8 @@ async fn read_item_with_failover_retry(
             }
             Err(e) => {
                 let is_503 = e.status().status_code() == StatusCode::ServiceUnavailable;
-                let is_session_unavailable = e.status().status_code() == StatusCode::NotFound
-                    && e.status().sub_status() == Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE);
+                let is_session_unavailable = e.status()
+                    == azure_data_cosmos_driver::error::status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE;
                 eprintln!(
                     "[{label}] read_item attempt {attempt}/{MAX_ATTEMPTS} failed \
                      (is_503={is_503}, is_session_unavailable={is_session_unavailable}): {e}",
@@ -350,6 +341,9 @@ fn transient_failover_status_is_scoped_to_503_and_404_1002() {
     assert!(is_transient_failover_status(CosmosStatus::new(
         StatusCode::ServiceUnavailable
     )));
+    assert!(is_transient_failover_status(
+        azure_data_cosmos_driver::error::status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE
+    ));
     assert!(is_transient_failover_status(
         CosmosStatus::new(StatusCode::NotFound).with_sub_status(
             azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE

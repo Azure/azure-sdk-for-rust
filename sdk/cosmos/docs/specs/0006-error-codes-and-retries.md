@@ -99,6 +99,31 @@ the server path.
 
 ## Status Code Handling
 
+### Terminal customer-visible errors
+
+After internal retries and recovery finish, the public driver boundary wraps
+exactly these terminal service conditions:
+
+| Service status | Public status | Constant |
+| --- | --- | --- |
+| 404/1002 | 503/20310 | `CLIENT_READ_SESSION_NOT_AVAILABLE` |
+| 403/3 | 503/20311 | `CLIENT_WRITE_FORBIDDEN` |
+| 403/1008 | 503/20312 | `CLIENT_DATABASE_ACCOUNT_NOT_FOUND` |
+
+The wrapper is synthetic (`response() == None`, `is_from_wire() == false`).
+Its immediate `std::error::Error::source()` is the original `CosmosError`,
+including its response body, headers, status, diagnostics, and underlying
+cause. PATCH tracking identity and the originating backtrace are retained.
+Operation diagnostics report the public 503 pair; per-attempt records retain
+their original service statuses. Detailed, summary, and truncated-summary
+JSON include the recorded operation status at the top level.
+
+This mapping does not change retry budgets, session tokens, hedging, container
+recreation, or PATCH recovery. Internal helper operations retain unwrapped
+errors until the logical operation finishes. Other pairs, including 410/1008,
+plain 404, 410/1002, existing 503s, and deadline errors, are unchanged. Statuses
+embedded in successful batch or distributed-transaction bodies are not rewritten.
+
 ### Non-Retryable (Abort Immediately)
 
 | Status | Substatus | Meaning             | Action |
@@ -154,7 +179,7 @@ Outside these explicit exceptions, excluded regions remain a hard per-operation 
 | Single-write | Session retry to write region (hub region)         | 2 attempts                           |
 | Multi-write  | Session retry, advance through preferred endpoints | `preferred_endpoints.len()` attempts |
 
-The session token is preserved on all retry attempts — it is never cleared to allow stale reads, as that would violate the customer's chosen consistency guarantees. When all session retries are exhausted, the 404/1002 error is surfaced to the caller.
+The session token is preserved on all retry attempts — it is never cleared to allow stale reads, as that would violate the customer's chosen consistency guarantees. After session retries and container-recreation recovery finish, a terminal 404/1002 is wrapped as 503/20310 at the public boundary.
 
 ### 408 — Request Timeout
 

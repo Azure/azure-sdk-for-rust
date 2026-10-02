@@ -7,6 +7,7 @@
 
 use crate::framework::DriverTestClient;
 use azure_data_cosmos_driver::diagnostics::TransportKind;
+use azure_data_cosmos_driver::error::{status_codes, CosmosError};
 use azure_data_cosmos_driver::fault_injection::*;
 use azure_data_cosmos_driver::options::{
     OperationOptions, OperationOptionsBuilder, Region, ThrottlingRetryOptionsBuilder,
@@ -542,10 +543,36 @@ pub async fn gateway_v2_read_session_not_available_remote_preferred() -> Result<
             .create_item(&container, "item1", "pk1", item_json)
             .await?;
 
-        let read_result = context.read_item(&container, "item1", "pk1").await;
-        assert!(
-            read_result.is_err(),
-            "Read should fail when 404/1002 fires on every attempt"
+        let error = context
+            .read_item(&container, "item1", "pk1")
+            .await
+            .expect_err("persistent 404/1002 must surface as a wrapped session failure");
+        let error = error
+            .downcast_ref::<CosmosError>()
+            .expect("the test harness must retain the typed Cosmos error");
+        assert_eq!(
+            error.status(),
+            status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE
+        );
+        let source = error
+            .source()
+            .unwrap()
+            .downcast_ref::<CosmosError>()
+            .unwrap();
+        assert_eq!(source.status(), status_codes::READ_SESSION_NOT_AVAILABLE);
+        assert_eq!(
+            error.diagnostics().unwrap().effective_status(),
+            Some(error.status())
+        );
+        assert_eq!(
+            error
+                .diagnostics()
+                .unwrap()
+                .requests()
+                .last()
+                .unwrap()
+                .status(),
+            &source.status()
         );
 
         // TODO: once diagnostics record metadata-cache hits, assert

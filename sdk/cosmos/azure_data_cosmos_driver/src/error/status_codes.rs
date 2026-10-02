@@ -620,6 +620,22 @@ pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: CosmosStatus = CosmosStatus {
     sub_status: Some(SubStatusCode::new(20305)),
 };
 
+/// 500 / 20306 — the service returned a resource read response
+/// without the `_rid` system property, violating its own contract.
+pub const SERVICE_RETURNED_OBJECT_WITHOUT_RID: CosmosStatus = CosmosStatus {
+    status_code: StatusCode::InternalServerError,
+    sub_status: Some(SubStatusCode::new(20306)),
+};
+
+/// 500 / 20307 — a topology range resolved for a query-plan EPK
+/// range did not overlap that range, a `resolve_ranges` contract
+/// violation. Returned instead of panicking the query worker (see
+/// issue #4574).
+pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: CosmosStatus = CosmosStatus {
+    status_code: StatusCode::InternalServerError,
+    sub_status: Some(SubStatusCode::new(20307)),
+};
+
 /// 500 / 20308 — a rewritten-query result item didn't match the
 /// expected envelope shape.
 pub const SERVICE_ORDER_BY_ENVELOPE_INVALID: CosmosStatus = CosmosStatus {
@@ -634,20 +650,28 @@ pub const SERVICE_QUERY_PLAN_ORDER_BY_MISSING_REWRITTEN_QUERY: CosmosStatus = Co
     sub_status: Some(SubStatusCode::new(20309)),
 };
 
-/// 500 / 20307 — a topology range resolved for a query-plan EPK
-/// range did not overlap that range, a `resolve_ranges` contract
-/// violation. Returned instead of panicking the query worker (see
-/// issue #4574).
-pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: CosmosStatus = CosmosStatus {
-    status_code: StatusCode::InternalServerError,
-    sub_status: Some(SubStatusCode::new(20307)),
+/// Session consistency could not be satisfied after recovery (HTTP 503, sub-status 20310).
+///
+/// Wraps a terminal service 404/1002; the original error remains its source.
+pub const CLIENT_READ_SESSION_NOT_AVAILABLE: CosmosStatus = CosmosStatus {
+    status_code: StatusCode::ServiceUnavailable,
+    sub_status: Some(substatus::CLIENT_READ_SESSION_NOT_AVAILABLE),
 };
 
-/// 500 / 20306 — the service returned a resource read response
-/// without the `_rid` system property, violating its own contract.
-pub const SERVICE_RETURNED_OBJECT_WITHOUT_RID: CosmosStatus = CosmosStatus {
-    status_code: StatusCode::InternalServerError,
-    sub_status: Some(SubStatusCode::new(20306)),
+/// No eligible write region accepted the operation after recovery (HTTP 503, sub-status 20311).
+///
+/// Wraps a terminal service 403/3; the original error remains its source.
+pub const CLIENT_WRITE_FORBIDDEN: CosmosStatus = CosmosStatus {
+    status_code: StatusCode::ServiceUnavailable,
+    sub_status: Some(substatus::CLIENT_WRITE_FORBIDDEN),
+};
+
+/// Account routing could not be recovered (HTTP 503, sub-status 20312).
+///
+/// Wraps a terminal service 403/1008; the original error remains its source.
+pub const CLIENT_DATABASE_ACCOUNT_NOT_FOUND: CosmosStatus = CosmosStatus {
+    status_code: StatusCode::ServiceUnavailable,
+    sub_status: Some(substatus::CLIENT_DATABASE_ACCOUNT_NOT_FOUND),
 };
 
 /// Raw sub-status codes used independently of a combined [`CosmosStatus`].
@@ -945,12 +969,6 @@ pub mod substatus {
     /// (20303). A broken server invariant — the SDK cannot issue a
     /// follow-up replace without the offer id. Paired with HTTP 500.
     pub const SERVICE_RETURNED_OFFER_WITHOUT_ID: SubStatusCode = SubStatusCode::new(20303);
-    /// The service returned a resource read response without the `_rid`
-    /// system property (20306). A broken server invariant — the SDK
-    /// relies on `_rid` to address downstream operations (e.g.
-    /// resolving a throughput offer for the resource). Paired with
-    /// HTTP 500.
-    pub const SERVICE_RETURNED_OBJECT_WITHOUT_RID: SubStatusCode = SubStatusCode::new(20306);
     /// The async throughput-replace poller's underlying stream ended
     /// without yielding any response (20304). Paired with HTTP 408
     /// because the throughput-replace operation has no service SLA on
@@ -965,6 +983,18 @@ pub mod substatus {
     /// has no routing information for the operation. Paired with HTTP
     /// 503 — an internal client-side condition, not a transport failure.
     pub const CLIENT_TOPOLOGY_RESOLUTION_FAILED: SubStatusCode = SubStatusCode::new(20305);
+    /// The service returned a resource read response without the `_rid`
+    /// system property (20306). A broken server invariant — the SDK
+    /// relies on `_rid` to address downstream operations (e.g.
+    /// resolving a throughput offer for the resource). Paired with
+    /// HTTP 500.
+    pub const SERVICE_RETURNED_OBJECT_WITHOUT_RID: SubStatusCode = SubStatusCode::new(20306);
+    /// Terminal read-session failure (20310), paired with HTTP 503.
+    pub const CLIENT_READ_SESSION_NOT_AVAILABLE: SubStatusCode = SubStatusCode::new(20310);
+    /// Terminal write-region rejection (20311), paired with HTTP 503.
+    pub const CLIENT_WRITE_FORBIDDEN: SubStatusCode = SubStatusCode::new(20311);
+    /// Terminal account-routing failure (20312), paired with HTTP 503.
+    pub const CLIENT_DATABASE_ACCOUNT_NOT_FOUND: SubStatusCode = SubStatusCode::new(20312);
     /// A mutator or second submit was attempted on a wrapper operation handle
     /// already consumed by an earlier successful submit (20354). Paired with
     /// HTTP 400.
