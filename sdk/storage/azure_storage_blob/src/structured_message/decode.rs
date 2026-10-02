@@ -347,6 +347,89 @@ mod tests {
             .is_err());
     }
 
+    #[tokio::test]
+    async fn test_detect_bad_segment_checksum() {
+        const SEG_LEN: usize = 512;
+        let data = random::<[u8; SEG_LEN]>().to_vec();
+        let mut structured_body =
+            encode_bytes_in_structured_message(data.clone().into(), 1024).concat();
+        let tamper_idx = smv1::StreamHeader::LENGTH + smv1::SegmentHeader::LENGTH + SEG_LEN - 2;
+        structured_body[tamper_idx] = !structured_body[tamper_idx];
+
+        assert!(pin!(decode(BytesStream::new(structured_body)))
+            .map_ok(|bytes| bytes.to_vec())
+            .try_concat()
+            .await
+            .is_err());
+    }
+
+    #[tokio::test]
+    async fn test_detect_bad_stream_checksum() {
+        let data = random::<[u8; 1024]>().to_vec();
+        let mut structured_body =
+            encode_bytes_in_structured_message(data.clone().into(), 1024).concat();
+        let tamper_idx = structured_body.len() - 2;
+        structured_body[tamper_idx] = !structured_body[tamper_idx];
+
+        assert!(pin!(decode(BytesStream::new(structured_body)))
+            .map_ok(|bytes| bytes.to_vec())
+            .try_concat()
+            .await
+            .is_err());
+    }
+
+    #[tokio::test]
+    async fn test_valid_message_truncated() {
+        let data = random::<[u8; 1024]>().to_vec();
+        // encode message with multiple uneven segments
+        let seg_1_len: usize = data.len() / 2 + 11;
+        let structured_body =
+            encode_bytes_in_structured_message(data.clone().into(), seg_1_len).concat();
+
+        for truncated_len in [
+            structured_body.len() - 1,  // off by 1 errors
+            structured_body.len() - 5,  // cut off mid overall crc
+            structured_body.len() - 8,  // cut off overall crc
+            structured_body.len() - 11, // cut off mid segment crc
+            structured_body.len() - 16, // cut off segment crc
+            structured_body.len() - 50, // cut off mid segment content
+            smv1::StreamHeader::LENGTH + smv1::SegmentHeader::LENGTH + seg_1_len + 8, // cut off between segments
+            smv1::StreamHeader::LENGTH + smv1::SegmentHeader::LENGTH, // cut off after segment header
+            smv1::StreamHeader::LENGTH + smv1::SegmentHeader::LENGTH - 1, // cut off mid segment header
+            smv1::StreamHeader::LENGTH,     // cut off after stream header
+            smv1::StreamHeader::LENGTH - 1, // cut off mid stream header
+        ] {
+            let mut truncated_body = structured_body.clone();
+            truncated_body.truncate(truncated_len);
+
+            assert!(
+                pin!(decode(BytesStream::new(truncated_body)))
+                    .map_ok(|bytes| bytes.to_vec())
+                    .try_concat()
+                    .await
+                    .is_err(),
+                "Failed for truncated length: {}",
+                truncated_len
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_valid_message_plus_extra() {
+        let data = random::<[u8; 1024]>().to_vec();
+        // encode message with multiple uneven segments
+        let seg_1_len: usize = data.len() / 2 + 11;
+        let mut structured_body =
+            encode_bytes_in_structured_message(data.clone().into(), seg_1_len).concat();
+        structured_body.extend_from_slice(&[0]);
+
+        assert!(pin!(decode(BytesStream::new(structured_body)))
+            .map_ok(|bytes| bytes.to_vec())
+            .try_concat()
+            .await
+            .is_err(),);
+    }
+
     fn crc_inline(data: &[u8]) -> u64 {
         let mut digest = Digest::new(CrcAlgorithm::Crc64Nvme);
         digest.update(&data);
