@@ -387,11 +387,11 @@ async fn shared_provider_reuses_session_across_clients(
         &mut provider_options.client_options,
     );
     provider_options.client_options.transport = Some(transport.clone());
-    let provider: Arc<dyn SessionProvider> = ContainerSessionProvider::new(
+    let provider: Arc<dyn SessionProvider> = Arc::new(ContainerSessionProvider::new(
         &Url::parse(&endpoint)?,
         recording.credential(),
         Some(provider_options),
-    )?;
+    )?);
 
     // Two independent clients share the one provider (and its cache).
     let client1 = shared_provider_client(

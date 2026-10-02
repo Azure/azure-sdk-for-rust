@@ -25,11 +25,10 @@ pub struct PageBlobClientOptions {
 
 impl Default for PageBlobClientOptions {
     fn default() -> Self {
-        let generated = crate::generated::clients::PageBlobClientOptions::default();
         Self {
-            client_options: generated.client_options,
+            client_options: ClientOptions::default(),
             session_options: None,
-            version: generated.version,
+            version: crate::generated::clients::PageBlobClientOptions::default().version,
         }
     }
 }

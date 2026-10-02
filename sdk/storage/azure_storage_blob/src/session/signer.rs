@@ -79,23 +79,25 @@ fn string_to_sign(request: &Request, account: &str) -> String {
         Some(value) => value,
     };
 
-    format!(
-        "{verb}\n{content_encoding}\n{content_language}\n{content_length}\n{content_md5}\n{content_type}\n{date}\n{if_modified_since}\n{if_match}\n{if_none_match}\n{if_unmodified_since}\n{range}\n{canonicalized_headers}{canonicalized_resource}",
-        verb = request.method().as_str(),
-        content_encoding = header(&CONTENT_ENCODING),
-        content_language = header(&CONTENT_LANGUAGE),
-        content_length = content_length,
-        content_md5 = header(&CONTENT_MD5),
-        content_type = header(&CONTENT_TYPE),
-        date = "",
-        if_modified_since = header(&IF_MODIFIED_SINCE),
-        if_match = header(&IF_MATCH),
-        if_none_match = header(&IF_NONE_MATCH),
-        if_unmodified_since = header(&IF_UNMODIFIED_SINCE),
-        range = header(&RANGE),
-        canonicalized_headers = canonicalized_headers(request),
-        canonicalized_resource = canonicalized_resource(request, account),
-    )
+    let mut result = [
+        request.method().as_str(),
+        header(&CONTENT_ENCODING),
+        header(&CONTENT_LANGUAGE),
+        content_length,
+        header(&CONTENT_MD5),
+        header(&CONTENT_TYPE),
+        "",
+        header(&IF_MODIFIED_SINCE),
+        header(&IF_MATCH),
+        header(&IF_NONE_MATCH),
+        header(&IF_UNMODIFIED_SINCE),
+        header(&RANGE),
+    ]
+    .join("\n");
+    result.push('\n');
+    result.push_str(&canonicalized_headers(request));
+    result.push_str(&canonicalized_resource(request, account));
+    result
 }
 
 /// Builds the canonicalized headers: every `x-ms-*` header, lowercased, sorted

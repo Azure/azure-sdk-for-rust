@@ -108,25 +108,6 @@ impl SessionTokenInfo {
     }
 }
 
-#[cfg(test)]
-impl SessionTokenInfo {
-    /// Builds a usable session for tests.
-    pub(crate) fn for_test(token: &str, key: &str, expires_on: OffsetDateTime) -> Self {
-        Self {
-            session_token: Some(token.into()),
-            session_key: Some(key.into()),
-            expires_on,
-            refresh_on: expires_on,
-            is_fallback_to_bearer: false,
-        }
-    }
-
-    /// Builds a fallback-to-bearer sentinel for tests.
-    pub(crate) fn fallback_for_test(expires_on: OffsetDateTime) -> Self {
-        Self::fallback_to_bearer(Duration::seconds(0), expires_on)
-    }
-}
-
 impl RefreshableValue for SessionTokenInfo {
     fn refresh_on(&self) -> OffsetDateTime {
         self.refresh_on
@@ -161,7 +142,7 @@ mod sealed {
 /// Provides and caches session tokens used to authenticate eligible blob download requests.
 ///
 /// This trait is sealed and cannot be implemented outside this crate. Construct a
-/// provider with [`ContainerSessionProvider::new`] and assign it to
+/// provider with [`ContainerSessionProvider::new`], wrap it in an [`Arc`], and assign it to
 /// [`SessionOptions::session_provider`](crate::SessionOptions) to share one
 /// session cache across multiple clients.
 #[async_trait]
@@ -194,9 +175,10 @@ impl ContainerSessionProvider {
     /// Creates a provider that mints and caches per-container session tokens.
     ///
     /// Sessions are minted against the blob service endpoint derived from
-    /// `service_url` (container, blob, and query stripped). Assign the returned
-    /// provider to [`SessionOptions::session_provider`](crate::SessionOptions) to
-    /// share one session cache across multiple clients.
+    /// `service_url` (container, blob, and query stripped). Wrap the returned
+    /// provider in an [`Arc`] and assign it to
+    /// [`SessionOptions::session_provider`](crate::SessionOptions) to share one
+    /// session cache across multiple clients.
     ///
     /// # Arguments
     ///
@@ -207,19 +189,18 @@ impl ContainerSessionProvider {
         service_url: &Url,
         credential: Arc<dyn TokenCredential>,
         options: Option<BlobServiceClientOptions>,
-    ) -> Result<Arc<Self>> {
+    ) -> Result<Self> {
         let endpoint = service_endpoint(service_url);
         let service_client = Arc::new(BlobServiceClient::new(endpoint, Some(credential), options)?);
-        let acquire_client = service_client.clone();
         let acquire: AcquireFn<String, SessionTokenInfo> = Arc::new(move |container| {
-            let service_client = acquire_client.clone();
+            let service_client = service_client.clone();
             Box::pin(
                 async move { acquire_session(&service_client, &container, REFRESH_BUFFER).await },
             )
         });
-        Ok(Arc::new(Self {
+        Ok(Self {
             sessions: AutoRefreshingCache::new(acquire, BACKGROUND_ACQUIRE_TIMEOUT),
-        }))
+        })
     }
 }
 
@@ -342,6 +323,25 @@ fn has_operation_query(url: &Url) -> bool {
         .any(|(name, _)| name.eq_ignore_ascii_case("comp") || name.eq_ignore_ascii_case("restype"))
 }
 
+#[cfg(test)]
+impl SessionTokenInfo {
+    /// Builds a usable session for tests.
+    pub(crate) fn for_test(token: &str, key: &str, expires_on: OffsetDateTime) -> Self {
+        Self {
+            session_token: Some(token.into()),
+            session_key: Some(key.into()),
+            expires_on,
+            refresh_on: expires_on,
+            is_fallback_to_bearer: false,
+        }
+    }
+
+    /// Builds a fallback-to-bearer sentinel for tests.
+    pub(crate) fn fallback_for_test(expires_on: OffsetDateTime) -> Self {
+        Self::fallback_to_bearer(Duration::seconds(0), expires_on)
+    }
+}
+
 /// A configurable [`SessionProvider`] test double, shared by the policy and
 /// client-wiring tests. Has an internal counting mechanism to be used for test assertions.
 #[cfg(test)]
@@ -449,12 +449,14 @@ mod tests {
             ..Default::default()
         };
         let credential: Arc<dyn TokenCredential> = MockCredential::new().unwrap();
-        ContainerSessionProvider::new(
-            &Url::parse("https://myaccount.blob.core.windows.net/").unwrap(),
-            credential,
-            Some(options),
+        Arc::new(
+            ContainerSessionProvider::new(
+                &Url::parse("https://myaccount.blob.core.windows.net/").unwrap(),
+                credential,
+                Some(options),
+            )
+            .unwrap(),
         )
-        .unwrap()
     }
 
     #[test]

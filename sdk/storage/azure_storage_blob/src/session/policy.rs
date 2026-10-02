@@ -53,14 +53,12 @@ impl SessionAuthenticationPolicy {
     /// authorization header.
     fn sign_request(&self, request: &mut Request, session: &SessionTokenInfo) -> Result<()> {
         let (token, key) = session.credentials().ok_or_else(|| {
-            Error::with_message(ErrorKind::Other, "Session is missing credentials.")
+            Error::with_message(ErrorKind::Credential, "Session is missing credentials.")
         })?;
 
         // x-ms-date participates in the string-to-sign, so set it before signing.
         request.insert_header(MS_DATE, to_rfc7231(&OffsetDateTime::now_utc()));
         let signature = signer::sign(request, &self.account, key)?;
-        // `authorization` is not in the logging allowlist, so the session token
-        // and signature are redacted by the logging policy.
         request.insert_header(AUTHORIZATION, format!("Session {token}:{signature}"));
         Ok(())
     }
@@ -88,19 +86,26 @@ impl Policy for SessionAuthenticationPolicy {
         self.sign_request(request, &session)?;
         let response = next[0].send(ctx, request, &next[1..]).await?;
 
-        // On 401, drop the session, then retry exactly once with bearer auth.
+        // On 401, drop the session, then reacquire and retry exactly once.
         if response.status() == StatusCode::Unauthorized {
             clear_session_headers(request);
             self.provider.invalidate_session(request, &session).await;
             request.body_mut().reset().await?;
-            return self.fallback.send(ctx, request, next).await;
+
+            let session = self.provider.get_session(request).await?;
+            if session.is_fallback_to_bearer() {
+                return self.fallback.send(ctx, request, next).await;
+            }
+
+            self.sign_request(request, &session)?;
+            return next[0].send(ctx, request, &next[1..]).await;
         }
 
         Ok(response)
     }
 }
 
-/// Removes the headers set while signing so a subsequent bearer attempt starts clean.
+/// Removes the headers set while signing so a subsequent authentication attempt starts clean.
 fn clear_session_headers(request: &mut Request) {
     request.headers_mut().remove(AUTHORIZATION);
     request.headers_mut().remove(MS_DATE);
@@ -240,14 +245,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn unauthorized_invalidates_and_retries_once_with_bearer() {
+    async fn unauthorized_invalidates_and_retries_once_with_session() {
         let provider = Arc::new(StubSessionProvider::new(valid_session(), true));
         let transport = CapturingTransport::new(vec![
             response(StatusCode::Unauthorized),
             response(StatusCode::Ok),
         ]);
 
-        let (status, seen, invalidated) = run(provider, transport).await;
+        let (status, seen, invalidated) = run(provider.clone(), transport).await;
 
         assert_eq!(status, StatusCode::Ok);
         assert_eq!(seen.len(), 2, "expected exactly one retry");
@@ -256,9 +261,10 @@ mod tests {
             "first attempt should use a session token"
         );
         assert!(
-            seen[1].as_deref().unwrap().starts_with("Bearer "),
-            "retry should use bearer authentication"
+            seen[1].as_deref().unwrap().starts_with("Session "),
+            "retry should use a reacquired session token"
         );
+        assert_eq!(provider.get_calls(), 2);
         assert_eq!(invalidated, 1);
     }
 }

@@ -50,12 +50,11 @@ pub struct SessionOptions {
     /// the account name cannot be derived.
     pub account_name: Option<String>,
 
-    /// An explicit session provider to share across clients.
+    /// A shared session provider.
     ///
-    /// Construct one with
-    /// [`ContainerSessionProvider::new`](crate::ContainerSessionProvider::new) to
-    /// reuse a single session cache across multiple clients. When unset, each
-    /// client creates its own per-container provider.
+    /// Wrap [`ContainerSessionProvider::new`](crate::ContainerSessionProvider::new)
+    /// in an [`Arc`] to reuse its session cache across clients. When unset, each
+    /// client uses its own provider.
     pub session_provider: Option<Arc<dyn SessionProvider>>,
 }
 

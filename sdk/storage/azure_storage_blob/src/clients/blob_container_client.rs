@@ -36,11 +36,10 @@ pub struct BlobContainerClientOptions {
 
 impl Default for BlobContainerClientOptions {
     fn default() -> Self {
-        let generated = crate::generated::clients::BlobContainerClientOptions::default();
         Self {
-            client_options: generated.client_options,
+            client_options: ClientOptions::default(),
             session_options: None,
-            version: generated.version,
+            version: crate::generated::clients::BlobContainerClientOptions::default().version,
         }
     }
 }

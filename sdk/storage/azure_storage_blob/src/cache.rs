@@ -155,14 +155,18 @@ where
         // inserted this key before we acquired the write lock, so check again.
         self.items
             .write()
-            .unwrap()
+            .unwrap_or_else(|error| error.into_inner())
             .entry(key.clone())
             .or_insert_with(|| Arc::new(CacheItem::new()))
             .clone()
     }
 
     fn find_entry(&self, key: &K) -> Option<Arc<CacheItem<V>>> {
-        self.items.read().unwrap().get(key).cloned()
+        self.items
+            .read()
+            .unwrap_or_else(|error| error.into_inner())
+            .get(key)
+            .cloned()
     }
 
     /// Returns a usable value, acquiring or refreshing as needed. Blocks on a

@@ -159,8 +159,11 @@ fn build_auth_policies(
                 session_options: None,
                 version: version.to_string(),
             };
-            let provider: Arc<dyn SessionProvider> =
-                ContainerSessionProvider::new(endpoint, credential, Some(service_options))?;
+            let provider: Arc<dyn SessionProvider> = Arc::new(ContainerSessionProvider::new(
+                endpoint,
+                credential,
+                Some(service_options),
+            )?);
             provider
         }
     };

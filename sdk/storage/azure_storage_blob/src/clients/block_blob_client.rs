@@ -38,11 +38,10 @@ pub struct BlockBlobClientOptions {
 
 impl Default for BlockBlobClientOptions {
     fn default() -> Self {
-        let generated = crate::generated::clients::BlockBlobClientOptions::default();
         Self {
-            client_options: generated.client_options,
+            client_options: ClientOptions::default(),
             session_options: None,
-            version: generated.version,
+            version: crate::generated::clients::BlockBlobClientOptions::default().version,
         }
     }
 }
