@@ -89,12 +89,31 @@ fn assert_recreation_signal(error: &CosmosError) {
                 StatusCode::BadRequest,
                 Some(azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
             ) | (
-                StatusCode::NotFound,
-                Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE)
+                StatusCode::ServiceUnavailable,
+                Some(azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_READ_SESSION_NOT_AVAILABLE)
             ) | (StatusCode::Gone, Some(azure_data_cosmos_driver::error::status_codes::substatus::NAME_CACHE_STALE))
         ),
         "expected a container recreation signal, got {status}"
     );
+}
+
+#[test]
+fn recreation_signal_accepts_wrapped_session_failure() {
+    let error = CosmosError::builder()
+        .with_status(
+            azure_data_cosmos_driver::error::status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+        )
+        .build();
+    assert_recreation_signal(&error);
+}
+
+#[test]
+#[should_panic(expected = "expected a container recreation signal")]
+fn recreation_signal_rejects_unrelated_service_unavailable() {
+    let error = CosmosError::builder()
+        .with_status(azure_data_cosmos_driver::error::status_codes::TRANSPORT_IO_FAILED)
+        .build();
+    assert_recreation_signal(&error);
 }
 
 #[tokio::test]

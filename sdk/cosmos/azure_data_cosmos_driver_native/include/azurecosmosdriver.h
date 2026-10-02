@@ -11,7 +11,7 @@
 
 // Specifies the version of azurecosmosdriver this header file was generated from.
 // This should match the version of libazurecosmosdriver you are linking against.
-#define AZURECOSMOSDRIVER_H_VERSION "0.1.0"
+#define AZURECOSMOSDRIVER_H_VERSION "0.2.0"
 
 // Packed-status helpers (see cosmos_status_code_t). Emitted as macros so
 // they keep the SCREAMING_SNAKE_CASE spelling shared with the
@@ -755,6 +755,18 @@ enum cosmos_sub_status_t
    */
   COSMOS_SUB_STATUS_SERVICE_RETURNED_OBJECT_WITHOUT_RID = 20306,
   /**
+   * `CLIENT_READ_SESSION_NOT_AVAILABLE` (20310).
+   */
+  COSMOS_SUB_STATUS_CLIENT_READ_SESSION_NOT_AVAILABLE = 20310,
+  /**
+   * `CLIENT_WRITE_FORBIDDEN` (20311).
+   */
+  COSMOS_SUB_STATUS_CLIENT_WRITE_FORBIDDEN = 20311,
+  /**
+   * `CLIENT_DATABASE_ACCOUNT_NOT_FOUND` (20312).
+   */
+  COSMOS_SUB_STATUS_CLIENT_DATABASE_ACCOUNT_NOT_FOUND = 20312,
+  /**
    * `CLIENT_FFI_NULL_ARGUMENT` (20350).
    */
   COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT = 20350,
@@ -1031,6 +1043,11 @@ typedef struct cosmos_feed_range_t cosmos_feed_range_t;
 typedef struct cosmos_operation_handle_t cosmos_operation_handle_t;
 
 /**
+ * Opaque admission snapshot. Owned by the host until freed; submits clone it.
+ */
+typedef struct cosmos_operation_options_snapshot_t cosmos_operation_options_snapshot_t;
+
+/**
  * The C ABI handle for an immutable partition key (`cosmos_partition_key_t`).
  *
  * Owned by the SDK via `Box` single-ownership; freed with
@@ -1052,7 +1069,7 @@ typedef struct cosmos_partition_key_t cosmos_partition_key_t;
  *   `block_on(...)` driver builder construction at FFI-call time and to
  *   spawn the per-operation tasks that drive submits.
  * - `driver` — the underlying `azure_data_cosmos_driver` runtime that owns
- *   the per-account driver registry, container cache, account-metadata
+ *   the account-metadata
  *   cache, HTTP transport factory, and so on. Cloning the `Arc` is cheap
  *   and is how the driver / account surfaces hand out handles.
  */
@@ -1101,6 +1118,9 @@ typedef struct cosmos_string_view_t {
  * Mirrors the inline error fields of `cosmos_completion_t`. Every pointer
  * field is **owned**; free the whole struct — and its strings — with
  * [`cosmos_error_free`]. A `NULL` pointer field means that field was absent.
+ *
+ * Synthetic 503/20310, 503/20311, and 503/20312 wrappers retain metadata from the original
+ * service response, but report `is_from_wire == 0`.
  */
 typedef struct cosmos_error_t {
   /**
@@ -1109,8 +1129,7 @@ typedef struct cosmos_error_t {
    */
   cosmos_status_code_t status;
   /**
-   * Wire HTTP status code (always populated, including for synthetic
-   * errors).
+   * Effective HTTP status code, including synthetic error classifications.
    */
   uint16_t http_status_code;
   /**
@@ -1118,7 +1137,7 @@ typedef struct cosmos_error_t {
    */
   int32_t sub_status;
   /**
-   * `1` iff the error originated from a service wire response.
+   * `1` for a direct wire error; `0` for synthetic errors and wrappers.
    */
   uint8_t is_from_wire;
   /**
@@ -1324,11 +1343,12 @@ typedef struct cosmos_completion_t {
    */
   intptr_t user_data;
   /**
-   * Wire HTTP status code, or `0` when there is no wire response.
+   * Effective HTTP status code, or `0` when absent or error details are suppressed.
    */
   uint16_t http_status_code;
   /**
-   * `1` iff an error completion originated from a service wire response.
+   * `1` for a direct wire error; `0` for synthetic errors or suppressed details.
+   * Synthetic wrappers can still retain original response metadata.
    */
   uint8_t is_from_wire;
   /**
@@ -1548,11 +1568,11 @@ typedef struct cosmos_operation_options_t {
   /**
    * Max region-failover retries. `< 0` = unset.
    */
-  int32_t max_failover_retry_count;
+  int64_t max_failover_retry_count;
   /**
    * Max session-consistency retries on 404/1002. `< 0` = unset.
    */
-  int32_t max_session_retry_count;
+  int64_t max_session_retry_count;
   /**
    * End-to-end timeout (milliseconds). `< 0` = unset.
    */
@@ -1563,7 +1583,7 @@ typedef struct cosmos_operation_options_t {
   int64_t endpoint_unavailability_ttl_ms;
   /**
    * Excluded regions — array of counted UTF-8 region ids.
-   * NULL / `0` length = unset; non-NULL with `0` length is rejected.
+   * NULL / `0` length = unset; non-NULL with `0` length clears exclusions.
    */
   const struct cosmos_string_view_t *excluded_regions;
   /**
@@ -1630,6 +1650,36 @@ typedef struct cosmos_operation_options_t {
    * values to be rejected before materializing the enum.
    */
   int32_t query_plan_mode;
+  /**
+   * Throughput bucket. `< 0` inherits; otherwise must fit `u32`.
+   */
+  int64_t throughput_bucket;
+  /**
+   * Priority level: `0` inherits, `1` High, `2` Low.
+   */
+  int32_t priority_level;
+  /**
+   * Throttling retry count. `< 0` inherits; otherwise must fit `u32`.
+   */
+  int64_t max_throttle_retry_count;
+  /**
+   * Cumulative throttle retry wait per transport invocation, in milliseconds.
+   * `< 0` inherits; `0` explicitly disables waiting.
+   */
+  int64_t max_throttle_retry_wait_time_ms;
+  /**
+   * Hedging master switch: `0` inherits, `1` false, `2` true.
+   */
+  int8_t hedging_enabled;
+  /**
+   * Availability strategy: `0` inherits, `1` disabled, `2` hedging.
+   */
+  int32_t availability_strategy;
+  /**
+   * Positive hedge threshold in milliseconds for strategy `2`.
+   * Must be negative (unset) for any other strategy.
+   */
+  int64_t hedge_threshold_ms;
 } cosmos_operation_options_t;
 
 /**
@@ -1774,6 +1824,11 @@ typedef struct cosmos_operation_request_t {
    * evict an entry earlier. `0` = use the driver default.
    */
   uint32_t patch_tracking_retention_seconds;
+  /**
+   * Optional admission snapshot. Overrides the shared fields in `options`;
+   * `options.query_plan_mode` remains per submit. Borrowed only until submit returns.
+   */
+  const struct cosmos_operation_options_snapshot_t *options_snapshot;
 } cosmos_operation_request_t;
 
 /**
@@ -2072,6 +2127,10 @@ typedef struct cosmos_runtime_options_t {
    * `1000`–`60000`). `0` = unset.
    */
   uint64_t cpu_refresh_interval_ms;
+  /**
+   * Runtime operation defaults, copied during construction. NULL inherits.
+   */
+  const struct cosmos_operation_options_t *operation_options;
 } cosmos_runtime_options_t;
 
 #ifdef __cplusplus
@@ -2571,9 +2630,8 @@ cosmos_status_code_t cosmos_diagnostics_to_json(const struct cosmos_diagnostics_
                                                 uintptr_t *out_len);
 
 /**
- * Frees a driver handle. Drops the FFI-side `Arc` reference; the
- * underlying driver remains alive in the runtime's cache until the
- * owning `cosmos_runtime_t` is freed (spec section 4.4.1). NULL is a no-op.
+ * Frees a driver handle. In-flight operations retain their own references.
+ * Other drivers on the same runtime are unaffected. NULL is a no-op.
  */
 void cosmos_driver_free(struct cosmos_driver_t *driver);
 
@@ -2581,23 +2639,14 @@ void cosmos_driver_free(struct cosmos_driver_t *driver);
  * Synchronously gets or creates the driver for the supplied account.
  *
  * Bridges
- * `CosmosDriverRuntime::get_or_create_driver` through the wrapper's
+ * `CosmosDriverRuntime::create_driver` through the wrapper's
  * own multi-threaded Tokio runtime via `block_on`. Suitable for
  * startup-time initialization; for runtime use prefer the async
  * `_submit` variant.
  *
- * # Cache behavior (spec section 4.4.1)
- *
- * - The runtime caches drivers by endpoint URL. A second call with the
- *   same endpoint returns the cached driver and **silently ignores**
- *   `options`.
- * - Two `AccountReference`s with the same endpoint but different
- *   credentials collide in the cache — first credential wins.
- * - Cache eviction happens only when the owning `cosmos_runtime_t` is
- *   freed; freeing a `cosmos_driver_t` does not evict.
- *
- * The cache-hit advisory described in spec Section 4.4.1 is not emitted
- * today — see the module-level `Cache-hit advisory` note for the rationale.
+ * Each call creates a fresh driver with its own account options. Cached container
+ * references can reuse credentials from another same-account driver on this runtime.
+ * No cache-hit advisory is emitted.
  *
  * # Parameters
  *
@@ -2753,6 +2802,49 @@ void cosmos_feed_range_free(struct cosmos_feed_range_t *fr);
  * sentinels.
  */
 struct cosmos_operation_options_t cosmos_operation_options_default(void);
+
+/**
+ * Atomically replaces runtime operation defaults. NULL resets all defaults.
+ *
+ * All pointers must remain valid for this call. Input arrays and strings are
+ * copied; invalid options leave the previous defaults unchanged.
+ *
+ * # Safety
+ *
+ * The runtime and any non-NULL options and borrowed arrays must be live.
+ */
+cosmos_status_code_t cosmos_runtime_set_operation_options(const struct cosmos_runtime_t *runtime,
+                                                          const struct cosmos_operation_options_t *options);
+
+/**
+ * Captures all configuration layers and starts the logical-operation budget.
+ *
+ * `client_options` and `request_options` may be NULL to inherit. Outputs are
+ * required. On success `out_timeout_ms` is the resolved Rust timeout (including
+ * its minimum clamp), or -1 when unset. A snapshot keeps its runtime generation
+ * through initialization, retries and patch stages; it must be submitted to a
+ * driver from this runtime. Invalid inputs do not modify outputs.
+ *
+ * # Safety
+ *
+ * Handles, option structs and their arrays must be valid for this call; output
+ * pointers must be writable. The host owns the returned snapshot.
+ */
+cosmos_status_code_t cosmos_operation_options_snapshot_create(const struct cosmos_runtime_t *runtime,
+                                                              const struct cosmos_operation_options_t *client_options,
+                                                              const struct cosmos_operation_options_t *request_options,
+                                                              struct cosmos_operation_options_snapshot_t **out_snapshot,
+                                                              int64_t *out_timeout_ms);
+
+/**
+ * Frees a snapshot. NULL is a no-op; already-submitted operations retain a copy.
+ *
+ * # Safety
+ *
+ * The pointer must be NULL or a live snapshot returned by snapshot creation,
+ * not concurrently borrowed by another call.
+ */
+void cosmos_operation_options_snapshot_free(struct cosmos_operation_options_snapshot_t *snapshot);
 
 /**
  * Creates an immutable partition key from an inline component array in a

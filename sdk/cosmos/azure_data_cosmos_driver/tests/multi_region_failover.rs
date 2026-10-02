@@ -11,9 +11,8 @@
 //! `AZURE_COSMOS_CONNECTION_STRING` exported by the bicep template; if it is unset
 //! the tests skip cleanly via `DriverTestClient::run_with_*`.
 
-use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::driver::CosmosDriverRuntime;
-use azure_data_cosmos_driver::error::CosmosError;
+use azure_data_cosmos_driver::error::{status_codes, CosmosError, CosmosStatus};
 use azure_data_cosmos_driver::fault_injection::{
     FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
     FaultInjectionRule, FaultInjectionRuleBuilder, FaultOperationType,
@@ -25,7 +24,6 @@ use azure_data_cosmos_driver::models::{ContainerReference, DatabaseReference};
 use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::options::OperationOptions;
 use azure_data_cosmos_driver::options::{ExcludedRegions, OperationOptionsBuilder, Region};
-use azure_data_cosmos_driver::SubStatusCode;
 use serde::Serialize;
 use std::error::Error;
 use std::sync::Arc;
@@ -79,32 +77,28 @@ fn build_account_metadata_fault_rule(
     )
 }
 
-/// Asserts the error preserves the upstream HTTP status and is NOT relabeled as
-/// `SERIALIZATION_RESPONSE_BODY_INVALID` — the pre-fix bug shape for non-2xx bodies.
-fn assert_preserves_upstream_status(
+/// Checks the public wrapper and original wire error, rather than a serde failure.
+fn assert_wrapped_metadata_error(
     err: &CosmosError,
-    expected_status: StatusCode,
-    expected_sub_status: Option<SubStatusCode>,
+    expected_source: CosmosStatus,
+    expected_public: CosmosStatus,
 ) {
-    let status = err.status();
-    assert_ne!(
-        status,
-        azure_data_cosmos_driver::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
-        "error must preserve the upstream HTTP status, not be \
-         relabeled as SERIALIZATION_RESPONSE_BODY_INVALID. Got: {err:?}"
-    );
+    assert_eq!(err.status(), expected_public);
+    assert!(err.response().is_none());
+    let source = err.source().unwrap().downcast_ref::<CosmosError>().unwrap();
+    assert_eq!(source.status(), expected_source);
+    assert_eq!(source.response().unwrap().status(), expected_source);
+    let diagnostics = err.diagnostics().unwrap();
+    assert_eq!(diagnostics.effective_status(), Some(expected_public));
     assert_eq!(
-        status.status_code(),
-        expected_status,
-        "expected the injected upstream status to be preserved. Got: {err:?}"
+        source.diagnostics().unwrap().effective_status(),
+        Some(expected_source)
     );
-    if let Some(expected_sub) = expected_sub_status {
-        assert_eq!(
-            status.sub_status(),
-            Some(expected_sub),
-            "expected the injected sub-status to be preserved. Got: {err:?}"
-        );
-    }
+    assert!(!diagnostics.requests().is_empty());
+    assert!(diagnostics
+        .requests()
+        .iter()
+        .all(|request| request.status() == &expected_source));
 }
 
 /// Builds a fresh `CosmosDriverRuntime` (no FI applied — FI is per-driver).
@@ -115,14 +109,13 @@ async fn build_runtime() -> Arc<CosmosDriverRuntime> {
         .expect("runtime should be created")
 }
 
-/// Installs a persistent metadata fault, calls `create_driver`, and asserts the surfaced
-/// error preserves `(expected_status, expected_sub_status)` and the rule fired at least once.
+/// Injects a metadata failure and verifies its wrapper, source, and rule hits.
 async fn run_metadata_fault_test(
     account: AccountReference,
     rule_id: &str,
     error_type: FaultInjectionErrorType,
-    expected_status: StatusCode,
-    expected_sub_status: Option<SubStatusCode>,
+    expected_source: CosmosStatus,
+    expected_public: CosmosStatus,
 ) {
     let rule = build_account_metadata_fault_rule(rule_id, error_type);
     let runtime = build_runtime().await;
@@ -137,7 +130,7 @@ async fn run_metadata_fault_test(
         .await
         .expect_err("create_driver must fail under a persistent metadata fault");
 
-    assert_preserves_upstream_status(&err, expected_status, expected_sub_status);
+    assert_wrapped_metadata_error(&err, expected_source, expected_public);
     assert!(
         rule.hit_count() > 0,
         "MetadataReadDatabaseAccount fault should have been hit at least once"
@@ -158,16 +151,15 @@ fn resolve_account_or_skip(test_name: &str) -> Option<AccountReference> {
     }
 }
 
-/// 403 WriteForbidden on GET / must surface as upstream HTTP status, not a serde failure.
-/// Pins the per-error-type slice of the account-metadata parser invariant.
+/// Metadata 403/3 is wrapped as 503/20311, retaining the original wire failure.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
     ignore = "requires test_category 'multi_write'"
 )]
-async fn write_forbidden_on_metadata_preserves_upstream_status() {
+async fn write_forbidden_on_metadata_preserves_source_status() {
     let Some(account) =
-        resolve_account_or_skip("write_forbidden_on_metadata_preserves_upstream_status")
+        resolve_account_or_skip("write_forbidden_on_metadata_preserves_source_status")
     else {
         return;
     };
@@ -176,22 +168,21 @@ async fn write_forbidden_on_metadata_preserves_upstream_status() {
         account,
         "multi-region-write-forbidden",
         FaultInjectionErrorType::WriteForbidden,
-        StatusCode::Forbidden,
-        Some(azure_data_cosmos_driver::error::status_codes::substatus::WRITE_FORBIDDEN),
+        status_codes::WRITE_FORBIDDEN,
+        status_codes::CLIENT_WRITE_FORBIDDEN,
     )
     .await;
 }
 
-/// 404/1002 ReadSessionNotAvailable on GET / must surface as upstream HTTP status, not a serde failure.
-/// Pins the per-error-type slice of the account-metadata parser invariant.
+/// Metadata 404/1002 is wrapped as 503/20310, retaining the original wire failure.
 #[tokio::test]
 #[cfg_attr(
     not(test_category = "multi_write"),
     ignore = "requires test_category 'multi_write'"
 )]
-async fn session_not_available_on_metadata_preserves_upstream_status() {
+async fn session_not_available_on_metadata_preserves_source_status() {
     let Some(account) =
-        resolve_account_or_skip("session_not_available_on_metadata_preserves_upstream_status")
+        resolve_account_or_skip("session_not_available_on_metadata_preserves_source_status")
     else {
         return;
     };
@@ -200,8 +191,30 @@ async fn session_not_available_on_metadata_preserves_upstream_status() {
         account,
         "multi-region-read-session-not-available",
         FaultInjectionErrorType::ReadSessionNotAvailable,
-        StatusCode::NotFound,
-        Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
+        status_codes::READ_SESSION_NOT_AVAILABLE,
+        status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+    )
+    .await;
+}
+
+/// Metadata 403/1008 is wrapped as 503/20312, retaining the original wire failure.
+#[tokio::test]
+#[cfg_attr(
+    not(test_category = "multi_write"),
+    ignore = "requires test_category 'multi_write'"
+)]
+async fn account_not_found_on_metadata_preserves_source_status() {
+    let Some(account) =
+        resolve_account_or_skip("account_not_found_on_metadata_preserves_source_status")
+    else {
+        return;
+    };
+    run_metadata_fault_test(
+        account,
+        "multi-region-account-not-found",
+        FaultInjectionErrorType::DatabaseAccountNotFound,
+        status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+        status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
     )
     .await;
 }

@@ -372,7 +372,7 @@ dependencies = [
 
 [[package]]
 name = "azure_core"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
@@ -397,8 +397,8 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "typespec 1.2.0-beta.1",
- "typespec_client_core 1.2.0-beta.1",
+ "typespec 1.2.0-beta.2",
+ "typespec_client_core 1.2.0-beta.2",
  "ureq",
 ]
 
@@ -426,26 +426,26 @@ dependencies = [
 
 [[package]]
 name = "azure_core_amqp"
-version = "1.2.0-beta.2"
+version = "1.2.0-beta.3"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
- "fe2o3-amqp 0.16.2",
- "fe2o3-amqp-cbs 0.16.0",
- "fe2o3-amqp-ext 0.16.0",
- "fe2o3-amqp-management 0.16.0",
- "fe2o3-amqp-types 0.16.0",
+ "azure_core 1.2.0-beta.2",
+ "fe2o3-amqp 0.18.2",
+ "fe2o3-amqp-cbs 0.18.0",
+ "fe2o3-amqp-ext 0.18.0",
+ "fe2o3-amqp-management 0.18.0",
+ "fe2o3-amqp-types 0.18.0",
  "rustls",
  "rustls-platform-verifier",
  "serde",
- "serde_amqp 0.16.0",
+ "serde_amqp 0.18.0",
  "serde_bytes",
  "serde_json",
  "tokio",
  "tokio-rustls",
  "tracing",
  "tracing-subscriber",
- "typespec 1.2.0-beta.1",
+ "typespec 1.2.0-beta.2",
  "typespec_macros 1.0.0",
 ]
 
@@ -454,7 +454,7 @@ name = "azure_core_examples"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "base64",
  "futures",
  "serde",
@@ -487,12 +487,12 @@ dependencies = [
 
 [[package]]
 name = "azure_core_opentelemetry"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
  "azure_core_test_macros 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "opentelemetry",
  "opentelemetry_sdk",
  "tokio",
@@ -505,10 +505,10 @@ name = "azure_core_test"
 version = "0.2.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_examples",
  "azure_core_test_macros 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "clap",
  "dotenvy",
  "flate2",
@@ -659,7 +659,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver_native"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "azure_core 1.1.0",
@@ -779,11 +779,11 @@ dependencies = [
 
 [[package]]
 name = "azure_identity"
-version = "1.1.0-beta.1"
+version = "1.1.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_examples",
  "azure_core_test 0.2.0",
  "clap",
@@ -811,16 +811,16 @@ dependencies = [
  "async-lock",
  "async-stream",
  "async-trait",
- "azure_core 1.2.0-beta.1",
- "azure_core_amqp 1.2.0-beta.2",
+ "azure_core 1.2.0-beta.2",
+ "azure_core_amqp 1.2.0-beta.3",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_messaging_eventhubs",
  "azure_messaging_eventhubs_checkpointstore_blob",
  "azure_storage_blob",
  "base64",
  "criterion",
- "fe2o3-amqp 0.16.2",
+ "fe2o3-amqp 0.18.2",
  "futures",
  "hmac",
  "include-file",
@@ -839,10 +839,10 @@ name = "azure_messaging_eventhubs_checkpointstore_blob"
 version = "0.11.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_opentelemetry",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_messaging_eventhubs",
  "azure_storage_blob",
  "futures",
@@ -886,9 +886,9 @@ version = "1.1.0-beta.2"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_security_keyvault_keys",
  "azure_security_keyvault_test",
  "futures",
@@ -908,9 +908,9 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_security_keyvault_test",
  "clap",
  "criterion",
@@ -932,9 +932,9 @@ version = "1.1.0-beta.1"
 dependencies = [
  "async-lock",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_security_keyvault_test",
  "clap",
  "futures",
@@ -953,7 +953,7 @@ name = "azure_security_keyvault_test"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "tokio",
 ]
 
@@ -963,9 +963,9 @@ version = "1.2.0-beta.1"
 dependencies = [
  "async-stream",
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_storage_common",
  "azure_storage_sas",
  "bytes",
@@ -987,7 +987,7 @@ dependencies = [
 name = "azure_storage_common"
 version = "1.1.0-beta.1"
 dependencies = [
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "serde",
  "serde_json",
  "time",
@@ -998,9 +998,9 @@ name = "azure_storage_queue"
 version = "1.2.0-beta.1"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_storage_common",
  "azure_storage_sas",
  "futures",
@@ -1014,7 +1014,7 @@ dependencies = [
 name = "azure_storage_sas"
 version = "1.1.0-beta.1"
 dependencies = [
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_storage_common",
  "base64",
  "hmac",
@@ -1029,7 +1029,7 @@ name = "azure_storage_stress"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
  "bytes",
  "clap",
@@ -1048,9 +1048,9 @@ name = "azure_storage_stress_blob"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "azure_core 1.2.0-beta.1",
+ "azure_core 1.2.0-beta.2",
  "azure_core_test 0.2.0",
- "azure_identity 1.1.0-beta.1",
+ "azure_identity 1.1.0-beta.2",
  "azure_storage_blob",
  "azure_storage_stress",
  "bytes",
@@ -1736,19 +1736,19 @@ dependencies = [
 
 [[package]]
 name = "fe2o3-amqp"
-version = "0.16.2"
+version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecb58316db8a0de7e0c08603a15a8b95dcff2d48c571699fd4cf5859e090936b"
+checksum = "ff7b603be595828b418b4f69a111d19adb55ec4dd7e8b0e8b9e63295150af945"
 dependencies = [
  "bytes",
- "fe2o3-amqp-types 0.16.0",
+ "fe2o3-amqp-types 0.18.0",
  "futures-util",
  "getrandom 0.4.3",
  "parking_lot",
  "pin-project-lite",
  "rustls",
  "serde",
- "serde_amqp 0.16.0",
+ "serde_amqp 0.18.0",
  "serde_bytes",
  "slab",
  "thiserror",
@@ -1775,12 +1775,12 @@ dependencies = [
 
 [[package]]
 name = "fe2o3-amqp-cbs"
-version = "0.16.0"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc7df6781f8e68441039978dfccfb207abcb21c12cecc06d7012944c98b5af50"
+checksum = "aba27aa79b79e44a0365b7e30b232276efb3297253368bd303a9f19eea2e184f"
 dependencies = [
- "fe2o3-amqp 0.16.2",
- "fe2o3-amqp-management 0.16.0",
+ "fe2o3-amqp 0.18.2",
+ "fe2o3-amqp-management 0.18.0",
  "trait-variant",
 ]
 
@@ -1796,12 +1796,12 @@ dependencies = [
 
 [[package]]
 name = "fe2o3-amqp-ext"
-version = "0.16.0"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ab270e0b2e2a991a7b5809df3d250f24066e3ad3b9f68c31c91a695c36b9435"
+checksum = "fd3252c335fc2cc9d92da592b114912b7b40b511f04758c726cc9d93a52549a6"
 dependencies = [
- "fe2o3-amqp-types 0.16.0",
- "serde_amqp 0.16.0",
+ "fe2o3-amqp-types 0.18.0",
+ "serde_amqp 0.18.0",
 ]
 
 [[package]]
@@ -1818,12 +1818,12 @@ dependencies = [
 
 [[package]]
 name = "fe2o3-amqp-management"
-version = "0.16.0"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1fe67bcc1831af0046d2b56615845b887d3e89a5827990dceb259b82316385a"
+checksum = "7141df54f8a0d418bc102b5aa0dd0b3dfcac6520f4a59fa393e1faaed8e38d1b"
 dependencies = [
- "fe2o3-amqp 0.16.2",
- "fe2o3-amqp-types 0.16.0",
+ "fe2o3-amqp 0.18.2",
+ "fe2o3-amqp-types 0.18.0",
  "serde",
  "thiserror",
 ]
@@ -1843,13 +1843,13 @@ dependencies = [
 
 [[package]]
 name = "fe2o3-amqp-types"
-version = "0.16.0"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63a759b57e923ff56dde0935a479be557b8681095e190f0cdf2a2777e8060cfd"
+checksum = "647fe7665ea8a44b95570287a5e8b1ed2f59bc5720afdc8c2b00c9fe6b27a6d6"
 dependencies = [
  "ordered-float",
  "serde",
- "serde_amqp 0.16.0",
+ "serde_amqp 0.18.0",
  "serde_bytes",
  "serde_repr",
 ]
@@ -3734,9 +3734,9 @@ dependencies = [
 
 [[package]]
 name = "serde_amqp"
-version = "0.16.0"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "110918b753cd22eaeb30632c7b73cc548b2a6258ec07a2bd5ea8ebf6365f8d69"
+checksum = "733df19246e5e2dd2b8030cbabc70e51d8f66e275eee91a94ccc1df7300e2317"
 dependencies = [
  "bytes",
  "indexmap 2.14.0",
@@ -4591,7 +4591,7 @@ dependencies = [
 
 [[package]]
 name = "typespec"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "base64",
  "bytes",
@@ -4630,7 +4630,7 @@ dependencies = [
 
 [[package]]
 name = "typespec_client_core"
-version = "1.2.0-beta.1"
+version = "1.2.0-beta.2"
 dependencies = [
  "async-trait",
  "base64",
@@ -4650,7 +4650,7 @@ dependencies = [
  "tokio-util",
  "tracing",
  "tracing-subscriber",
- "typespec 1.2.0-beta.1",
+ "typespec 1.2.0-beta.2",
  "typespec_macros 1.0.0",
  "url",
  "uuid",
@@ -4679,7 +4679,7 @@ dependencies = [
  "serde_json",
  "syn 2.0.119",
  "tokio",
- "typespec_client_core 1.2.0-beta.1",
+ "typespec_client_core 1.2.0-beta.2",
 ]
 
 [[package]]

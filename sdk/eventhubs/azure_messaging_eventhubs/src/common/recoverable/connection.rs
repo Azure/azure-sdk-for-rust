@@ -80,6 +80,7 @@ pub(crate) struct RecoverableConnection {
     application_id: Option<String>,
     custom_endpoint: Option<Url>,
     transport: AmqpTransport,
+    idle_timeout: Option<Duration>,
     // The management client is a single cached instance, held in a `OnceCell`
     // for the same reason the per-path caches are: the expensive build (connect
     // + session begin + CBS authorize + link attach) must not run while a lock
@@ -280,11 +281,13 @@ impl RecoverableConnection {
     /// Creates a recoverable connection. `cbs_token_type` is `None` for
     /// JWT/Entra credentials and `Some("servicebus.windows.net:sastoken")` for
     /// SAS (connection-string) credentials.
+    #[allow(clippy::too_many_arguments, reason = "private API")]
     pub fn new(
         url: Url,
         application_id: Option<String>,
         custom_endpoint: Option<Url>,
         transport: AmqpTransport,
+        idle_timeout: Option<Duration>,
         credential: Arc<dyn TokenCredential>,
         retry_options: RetryOptions,
         cbs_token_type: Option<&'static str>,
@@ -302,6 +305,7 @@ impl RecoverableConnection {
                 connection_name,
                 custom_endpoint,
                 transport,
+                idle_timeout,
                 retry_options,
                 cbs_lock: AsyncMutex::new(()),
                 connections: AsyncMutex::new(None),
@@ -831,6 +835,7 @@ impl RecoverableConnection {
             desired_capabilities: Some(vec![GEODR_REPLICATION_CAPABILITY.into()]),
             custom_endpoint: self.custom_endpoint.clone(),
             transport: Some(self.transport),
+            idle_timeout: self.idle_timeout,
             ..Default::default()
         }
     }
@@ -1542,6 +1547,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1611,6 +1617,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             credential.clone(),
             Default::default(),
             None,
@@ -1679,6 +1686,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             credential.clone(),
             Default::default(),
             None,
@@ -1725,6 +1733,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1749,6 +1758,7 @@ mod tests {
             Some(app_id.clone()),
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1770,6 +1780,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1791,6 +1802,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1846,6 +1858,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1876,6 +1889,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1921,6 +1935,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -1967,6 +1982,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -2023,6 +2039,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -2127,6 +2144,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -2177,6 +2195,7 @@ mod tests {
             None,
             Some(custom_endpoint.clone()),
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -2197,6 +2216,7 @@ mod tests {
             None,
             None,
             AmqpTransport::Tcp,
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -2217,6 +2237,7 @@ mod tests {
             None,
             Some(custom_endpoint.clone()),
             AmqpTransport::Tcp,
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -2226,6 +2247,24 @@ mod tests {
         assert_eq!(options.transport, Some(AmqpTransport::Tcp));
         assert_eq!(options.custom_endpoint, Some(custom_endpoint.clone()));
         assert!(options.properties.is_some());
+    }
+
+    #[test]
+    fn connection_options_carry_the_idle_timeout() {
+        let idle_timeout = Duration::seconds(60);
+        let connection_manager = RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            AmqpTransport::Tcp,
+            Some(idle_timeout),
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
+
+        let options = connection_manager.connection_options();
+        assert_eq!(options.idle_timeout, Some(idle_timeout));
     }
 
     #[test]
@@ -2592,6 +2631,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -2669,6 +2709,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,
@@ -2719,6 +2760,7 @@ mod tests {
             None,
             None,
             AmqpTransport::default(),
+            None,
             Arc::new(MockCredential),
             Default::default(),
             None,

@@ -11,6 +11,7 @@ use crate::{
     cursor_request::{build_cursor_request, CosmosCursorRequest},
     driver::DriverHandle,
     error::{CosmosErrorCode, CosmosStatusCode, COSMOS_STATUS_SUCCESS},
+    options_snapshot::OperationOptionsSnapshot,
     runtime::RuntimeContext,
     safety::MutexExt,
     string::CosmosStringView,
@@ -78,6 +79,7 @@ struct CursorInner {
     driver: Arc<CosmosDriver>,
     container: Option<ContainerReference>,
     options: OperationOptions,
+    snapshot: Option<OperationOptionsSnapshot>,
     state: Mutex<CursorState>,
 }
 
@@ -413,6 +415,13 @@ pub extern "C" fn cosmos_cursor_open_submit(
             .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidArgument)?;
         // SAFETY: request follows the versioned prefix and counted input contracts.
         let built = unsafe { build_cursor_request(request)? };
+        if built
+            .snapshot
+            .as_ref()
+            .is_some_and(|snapshot| !snapshot.matches_driver(&driver.inner))
+        {
+            return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        }
         cursor_queue.admit(None)?;
         Ok::<_, CosmosErrorCode>((queue, driver, built))
     };
@@ -431,6 +440,7 @@ pub extern "C" fn cosmos_cursor_open_submit(
     let op = unsafe { Arc::clone(&(*handle).inner) };
     let runtime = Arc::clone(queue.runtime());
     runtime.tokio.spawn(async move {
+        let snapshot = built.snapshot.clone();
         let work = async {
             let container = built.operation.container().cloned();
             let plan = driver
@@ -447,6 +457,7 @@ pub extern "C" fn cosmos_cursor_open_submit(
                 driver: Arc::clone(&driver.inner),
                 container,
                 options: built.options,
+                snapshot: built.snapshot,
                 state: Mutex::new(CursorState {
                     plan: Some(plan),
                     busy: false,
@@ -455,7 +466,7 @@ pub extern "C" fn cosmos_cursor_open_submit(
                 }),
             })))
         };
-        let result = run(work).await;
+        let result = run(OperationOptionsSnapshot::execute(snapshot, work)).await;
         if let Some(cursor_queue) = &queue.cursor {
             cursor_queue.publish(Delivery {
                 result,
@@ -531,11 +542,14 @@ fn submit_cursor(
             if cursor.state.lock_recover().exhausted {
                 return Ok(ResultData::End);
             }
-            cursor
-                .driver
-                .execute_plan(plan, cursor.container.clone(), cursor.options.clone())
-                .await
-                .map(|page| page.map_or(ResultData::End, |page| ResultData::Page(Box::new(page))))
+            OperationOptionsSnapshot::execute(
+                cursor.snapshot.clone(),
+                cursor
+                    .driver
+                    .execute_plan(plan, cursor.container.clone(), cursor.options.clone()),
+            )
+            .await
+            .map(|page| page.map_or(ResultData::End, |page| ResultData::Page(Box::new(page))))
         };
         let result = run(work).await;
         {

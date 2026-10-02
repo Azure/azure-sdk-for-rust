@@ -49,9 +49,8 @@ const AUTH_MODE_ENV_VAR: &str = "AZURE_COSMOS_AUTH_MODE";
 const TEST_MODE_ENV_VAR: &str = "AZURE_COSMOS_TEST_MODE";
 
 /// Environment variable exposing the real account's configured default
-/// consistency level (emitted by the test-resources deployment). Substatus
-/// `1002` (ReadSessionNotAvailable) is only produced under Session
-/// consistency, so consistency-sensitive assertions consult this.
+/// consistency level (emitted by the test-resources deployment).
+/// This describes the default, not how a backend handles an explicit session token.
 const DEFAULT_CONSISTENCY_ENV_VAR: &str = "AZURE_COSMOS_DEFAULT_CONSISTENCY";
 
 /// Gateway URL used by the in-memory emulator.
@@ -151,8 +150,8 @@ impl DualBackend {
 
     /// Whether the configured real account uses Session default consistency.
     ///
-    /// Substatus `1002` (ReadSessionNotAvailable) is only produced under Session
-    /// consistency; Eventual/Strong reads never emit it. Reads
+    /// A non-Session default does not guarantee that explicit session tokens
+    /// are ignored. Reads
     /// [`DEFAULT_CONSISTENCY_ENV_VAR`], defaulting to `true` when unset (local
     /// dev accounts and the Session CI legs are Session; the Eventual/Strong
     /// legs set it explicitly).

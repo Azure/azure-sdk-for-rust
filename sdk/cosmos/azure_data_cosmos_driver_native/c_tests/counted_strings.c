@@ -8,9 +8,9 @@
 #if UINTPTR_MAX == UINT64_MAX
 _Static_assert(sizeof(cosmos_string_view_t) == 16, "counted view layout");
 _Static_assert(sizeof(cosmos_header_kv_t) == 32, "header pair layout");
-_Static_assert(sizeof(cosmos_runtime_options_t) == 64, "runtime layout");
-_Static_assert(sizeof(cosmos_operation_options_t) == 80, "operation options layout");
-_Static_assert(sizeof(cosmos_operation_request_t) == 224, "request layout");
+_Static_assert(sizeof(cosmos_runtime_options_t) == 72, "runtime layout");
+_Static_assert(sizeof(cosmos_operation_options_t) == 136, "operation options layout");
+_Static_assert(sizeof(cosmos_operation_request_t) == 232, "request layout");
 _Static_assert(offsetof(cosmos_operation_request_t, item_id) == 32, "item view offset");
 _Static_assert(offsetof(cosmos_operation_request_t, session_token) == 112, "session view offset");
 _Static_assert(offsetof(cosmos_operation_request_t, patch_tracking_id) == 200, "tracking view offset");

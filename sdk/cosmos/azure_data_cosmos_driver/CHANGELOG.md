@@ -6,9 +6,16 @@
 
 ### Breaking Changes
 
+- Terminal service 404/1002, 403/3, and 403/1008 errors now surface as synthetic 503/20310, 503/20311, and 503/20312 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
+
 ### Bugs Fixed
 
+- Preserve admitted throttle retry settings during operation-triggered account metadata refresh, including regional and HTTP-version recovery paths. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
+- Honor per-operation endpoint unavailability TTL and runtime TTL updates during routing without changing sibling operations' cooldown intervals. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
+
 ### Other Changes
+
+- Diagnostics JSON now includes the recorded operation-level status separately from unchanged per-attempt statuses. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
 
 ## 1.0.0-beta.1 (2026-09-28)
 
