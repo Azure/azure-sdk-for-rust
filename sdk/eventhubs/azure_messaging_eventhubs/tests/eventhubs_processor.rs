@@ -401,6 +401,30 @@ async fn receive_events_from_processor(ctx: TestContext) -> Result<()> {
         }
     }
 
+    // Shutdown must stop delivery on a partition client that the application
+    // still holds. This block runs before the `Arc::try_unwrap` below, so the
+    // stream borrow ends first.
+    {
+        info!("Shutting down the processor");
+        processor.shutdown().await?;
+
+        let mut stream = std::pin::pin!(partition_client.stream_events());
+        let item = tokio::time::timeout(std::time::Duration::from_secs(30), stream.next())
+            .await
+            .expect("the retained partition client must stop delivering within 30s of shutdown");
+        match item {
+            Some(Err(e)) => assert!(
+                matches!(e.kind, ErrorKind::ConsumerDisconnected(_)),
+                "expected ConsumerDisconnected after shutdown, got {:?}",
+                e.kind
+            ),
+            Some(Ok(_)) => {
+                panic!("the retained partition client delivered an event after shutdown")
+            }
+            None => panic!("the retained partition client ended without an error after shutdown"),
+        }
+    }
+
     if let Ok(partition_client) = Arc::try_unwrap(partition_client) {
         info!("All references to partition client dropped");
         partition_client.close().await?;
