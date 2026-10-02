@@ -11,9 +11,8 @@ parameters:
   - name: repositoryOwner
     type: string
     default: Azure
-  - name: toolRef
+  - name: languageRepoResource
     type: string
-    default: main
   - name: rustVersion
     type: string
     default: nightly
@@ -28,6 +27,7 @@ jobs:
       displayName: Create Rust API review artifacts
       poolName: ${{ parameters.poolName }}
       imageOverride: ${{ parameters.imageOverride }}
+      languageRepoResource: ${{ parameters.languageRepoResource }}
       sourceRepositoryFullName: ${{ format('{0}/azure-sdk-for-rust', parameters.repositoryOwner) }}
       sourceCheckoutDir: $(Pipeline.Workspace)/apireview/source
       setupSteps:
