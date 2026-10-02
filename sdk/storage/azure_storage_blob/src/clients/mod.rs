@@ -18,6 +18,7 @@ use std::{
 };
 
 use crate::{
+    blob_layout::LayoutRoutingPolicy,
     logging::apply_storage_logging_defaults,
     session::{
         options::SessionOptions,
@@ -40,19 +41,24 @@ pub use blob_service_client::{BlobServiceClient, BlobServiceClientOptions};
 pub use block_blob_client::{BlockBlobClient, BlockBlobClientOptions};
 pub use page_blob_client::{PageBlobClient, PageBlobClientOptions};
 
-/// The OAuth scope used for Entra ID authentication against Storage.
-const STORAGE_SCOPE: &str = "https://storage.azure.com/.default";
-
-/// Applies Storage defaults: a transport that does not transparently decompress
-/// blob content, and the Storage logging allow lists.
+/// Applies defaults shared by every client.
+///
+/// Derived clients reuse their parent's pipeline rather than rebuilding it, so
+/// anything added here must be valid for all client types.
 fn apply_client_defaults(options: &mut ClientOptions) {
     if options.transport.is_none() {
         options.transport = Some(Transport::new(new_http_client(Some(HttpClientOptions {
             automatic_decompression: false,
         }))));
     }
+    options
+        .per_call_policies
+        .push(Arc::new(LayoutRoutingPolicy));
     apply_storage_logging_defaults(options);
 }
+
+/// The OAuth scope used for Entra ID authentication against Storage.
+const STORAGE_SCOPE: &str = "https://storage.azure.com/.default";
 
 /// Builds a client pipeline, sharing the configured transport with the session
 /// provider so session creation and authenticated requests use the same network context.
