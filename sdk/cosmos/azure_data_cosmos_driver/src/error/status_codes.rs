@@ -394,6 +394,12 @@ pub const CLIENT_USER_AGENT_SUFFIX_INVALID: CosmosStatus = CosmosStatus {
     sub_status: Some(SubStatusCode::new(20128)),
 };
 
+/// 400 / 20129 — a user-agent property key or value is invalid or reserved.
+pub const CLIENT_USER_AGENT_PROPERTY_INVALID: CosmosStatus = CosmosStatus {
+    status_code: StatusCode::BadRequest,
+    sub_status: Some(SubStatusCode::new(20129)),
+};
+
 /// 500 / 20217 — a `DISTINCT` node was asked to forward a partition split,
 /// which would discard its deduplication state.
 pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = CosmosStatus {

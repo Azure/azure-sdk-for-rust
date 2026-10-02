@@ -48,7 +48,7 @@ pub(crate) use env_parsing::parse_duration_millis_from_env;
 pub use hedging::{
     HedgingOptions, HedgingOptionsBuilder, DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS,
 };
-pub use identity::{CorrelationId, UserAgentSuffix, WorkloadId};
+pub use identity::{CorrelationId, UserAgentProperty, UserAgentSuffix, WorkloadId};
 pub use operation_options::{
     OperationOptions, OperationOptionsBuilder, OperationOptionsView, ThrottlingRetryOptions,
     ThrottlingRetryOptionsBuilder, ThrottlingRetryOptionsView, ThroughputControlOptions,
