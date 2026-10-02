@@ -94,7 +94,7 @@ impl SubOperationDispatcher for CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<CosmosResponse> {
-        CosmosDriver::execute_singleton_operation(self, operation, options).await
+        CosmosDriver::execute_singleton_operation_inner(self, operation, options).await
     }
 
     async fn canonicalize_operation_container(

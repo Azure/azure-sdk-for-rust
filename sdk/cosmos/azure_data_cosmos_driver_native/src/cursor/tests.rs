@@ -36,6 +36,44 @@ use std::{
     time::Duration,
 };
 
+#[tokio::test]
+async fn wrapped_faults_survive_cursor_error_delivery() {
+    use super::Delivery;
+    use crate::error::CosmosStatusCode;
+    use azure_data_cosmos_driver::error::status_codes;
+
+    for source_status in [
+        status_codes::READ_SESSION_NOT_AVAILABLE,
+        status_codes::WRITE_FORBIDDEN,
+        status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+    ] {
+        let error = crate::error::tests::fault_injected_error(source_status).await;
+        let expected = CosmosStatusCode::from_status(error.status());
+        let request_count = error.diagnostics().unwrap().request_count();
+        for include_details in [false, true] {
+            let operation = OperationHandle::allocate();
+            let completion = Delivery {
+                result: Err(error.clone()),
+                cursor: None,
+                op: OperationHandle::inner_arc(operation).unwrap(),
+                user_data: 42,
+            }
+            .transfer(include_details);
+            // SAFETY: transfer returned a live owned completion, freed below.
+            let common = unsafe { &(*completion).common };
+            assert_eq!(common.status, expected);
+            assert_eq!(common.is_from_wire, 0);
+            assert!(cosmos_diagnostics_is_failure(common.diagnostics));
+            assert_eq!(
+                cosmos_diagnostics_request_count(common.diagnostics) as usize,
+                request_count
+            );
+            cosmos_cursor_completion_free(completion);
+            cosmos_operation_handle_free(operation);
+        }
+    }
+}
+
 #[test]
 fn only_legacy_representation_errors_recommend_cursor_migration() {
     for code in [

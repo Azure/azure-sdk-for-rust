@@ -13,7 +13,7 @@ use azure_core::http::Context;
 use azure_data_cosmos::diagnostics::{
     CosmosOperationContext, DiagnosticsContext, DiagnosticsHandler,
 };
-use azure_data_cosmos::options::Region;
+use azure_data_cosmos::options::{DiagnosticsVerbosity, Region};
 use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, CosmosClientBuilder, CosmosRuntimeBuilder,
     FeedScope, Query, RoutingStrategy,
@@ -52,6 +52,7 @@ struct CountingHandler {
     total: AtomicUsize,
     failures: AtomicUsize,
     last_op: Mutex<Option<ObservedOp>>,
+    last_diagnostics: Mutex<Option<serde_json::Value>>,
 }
 
 impl CountingHandler {
@@ -72,14 +73,14 @@ impl CountingHandler {
 
 impl DiagnosticsHandler for CountingHandler {
     fn handle(&self, diagnostics: &DiagnosticsContext, cx: &Context<'_>) {
+        *self.last_diagnostics.lock().unwrap() = Some(
+            serde_json::from_str(diagnostics.to_json_string(Some(DiagnosticsVerbosity::Detailed)))
+                .unwrap(),
+        );
         self.total.fetch_add(1, Ordering::SeqCst);
         if diagnostics.is_failure() {
             self.failures.fetch_add(1, Ordering::SeqCst);
         }
-        // Capture the SDK-supplied operation identity carried on the pipeline
-        // context so a test can assert the WS8 `db.*` wiring (operation name,
-        // database, container) actually reaches handlers. Store the observed
-        // value verbatim (including `None`) so missing wiring is detectable.
         let observed = cx.value::<CosmosOperationContext>().map(|op| ObservedOp {
             operation_name: op.operation_name().map(str::to_owned),
             database_name: op.database_name().map(str::to_owned),
@@ -89,6 +90,140 @@ impl DiagnosticsHandler for CountingHandler {
     }
 }
 
+#[cfg(feature = "fault_injection")]
+#[tokio::test(start_paused = true)]
+async fn handler_observes_wrapped_faults_with_original_attempts() {
+    use azure_data_cosmos_driver::{
+        error::status_codes,
+        fault_injection::{
+            FaultInjectionConditionBuilder, FaultInjectionErrorType, FaultInjectionResultBuilder,
+            FaultInjectionRuleBuilder, FaultOperationType,
+        },
+    };
+    use std::error::Error as _;
+
+    for (operation, fault, original_status, public_status) in [
+        (
+            FaultOperationType::ReadItem,
+            FaultInjectionErrorType::ReadSessionNotAvailable,
+            status_codes::READ_SESSION_NOT_AVAILABLE,
+            status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+        ),
+        (
+            FaultOperationType::CreateItem,
+            FaultInjectionErrorType::WriteForbidden,
+            status_codes::WRITE_FORBIDDEN,
+            status_codes::CLIENT_WRITE_FORBIDDEN,
+        ),
+        (
+            FaultOperationType::ReadItem,
+            FaultInjectionErrorType::DatabaseAccountNotFound,
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+            status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+        ),
+        (
+            FaultOperationType::CreateItem,
+            FaultInjectionErrorType::DatabaseAccountNotFound,
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+            status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+        ),
+    ] {
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(
+            VirtualAccountConfig::new(vec![VirtualRegion::new(
+                "East US",
+                azure_core::http::Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
+            )])
+            .unwrap()
+            .with_consistency(ConsistencyLevel::Session),
+        ));
+        emulator.store().create_database("wrapped-db");
+        emulator.store().create_container(
+            "wrapped-db",
+            "items",
+            serde_json::from_value(serde_json::json!({"paths":["/pk"],"kind":"Hash","version":2}))
+                .unwrap(),
+        );
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "sdk-terminal",
+                FaultInjectionResultBuilder::new().with_error(fault).build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(operation)
+                    .build(),
+            )
+            .build(),
+        );
+        let runtime = CosmosRuntimeBuilder::from(
+            emulator.runtime_builder_with_fault_rules(vec![rule.clone()]),
+        )
+        .build()
+        .await
+        .unwrap();
+        let handler = Arc::new(CountingHandler::default());
+        let client = CosmosClientBuilder::new()
+            .with_runtime(runtime)
+            .with_diagnostics_handler(handler.clone())
+            .build(
+                AccountReference::with_authentication_key(
+                    EMULATOR_GATEWAY_URL.parse::<AccountEndpoint>().unwrap(),
+                    azure_core::credentials::Secret::new("dGVzdGtleQ=="),
+                ),
+                RoutingStrategy::ProximityTo(Region::EAST_US),
+            )
+            .await
+            .unwrap();
+        let container = client
+            .database_client("wrapped-db")
+            .container_client("items", None)
+            .await
+            .unwrap();
+        let failures_before = handler.failures();
+        let error = if operation == FaultOperationType::ReadItem {
+            container.read_item("pk1", "doc", None).await.unwrap_err()
+        } else {
+            container
+                .create_item(
+                    "pk1",
+                    "doc",
+                    &TestDoc {
+                        id: "doc".into(),
+                        pk: "pk1".into(),
+                        value: 1,
+                    },
+                    None,
+                )
+                .await
+                .unwrap_err()
+        };
+        assert_eq!(error.status(), public_status);
+        assert_eq!(
+            error
+                .source()
+                .unwrap()
+                .downcast_ref::<azure_data_cosmos::CosmosError>()
+                .unwrap()
+                .status(),
+            original_status
+        );
+        assert_eq!(handler.failures(), failures_before + 1);
+        let diagnostics = handler.last_diagnostics.lock().unwrap();
+        let json = diagnostics.as_ref().unwrap();
+        assert_eq!(json["status"], public_status.to_string());
+        let attempts: Vec<_> = json["requests"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|request| request["pipeline_type"] == "data_plane")
+            .collect();
+        assert_eq!(attempts.len(), rule.hit_count() as usize);
+        assert!(!attempts.is_empty());
+        for attempt in attempts {
+            assert_eq!(attempt["status"], original_status.to_string());
+        }
+    }
+}
 /// Builds an emulator-backed SDK client with `handler` registered and provisions
 /// an empty `(database, container)` keyed on `/pk`.
 async fn setup() -> (CosmosClient, Arc<CountingHandler>, String, String) {
