@@ -1,0 +1,57 @@
+# Rust job wrapper for API Review Hub requests. This file owns Rust-specific
+# setup and delegates shared job boilerplate to the base API Review Hub job.
+# The caller supplies the create/update orchestration steps.
+parameters:
+  - name: poolName
+    type: string
+    default: azsdk-pool
+  - name: imageOverride
+    type: string
+    default: ubuntu-24.04
+  - name: repositoryOwner
+    type: string
+    default: Azure
+  - name: languageRepoResource
+    type: string
+  - name: rustVersion
+    type: string
+    default: nightly
+  - name: steps
+    type: stepList
+    default: []
+
+jobs:
+  - template: /eng/common/pipelines/templates/jobs/apireview-hub-job-base.yml
+    parameters:
+      jobName: CreateRustApiReviewArtifacts
+      displayName: Create Rust API review artifacts
+      poolName: ${{ parameters.poolName }}
+      imageOverride: ${{ parameters.imageOverride }}
+      languageRepoResource: ${{ parameters.languageRepoResource }}
+      sourceRepositoryFullName: ${{ format('{0}/azure-sdk-for-rust', parameters.repositoryOwner) }}
+      sourceCheckoutDir: $(Pipeline.Workspace)/apireview/source
+      setupSteps:
+        - task: PowerShell@2
+          displayName: Resolve Rust API review toolchain
+          inputs:
+            pwsh: true
+            filePath: $(LanguageRepo)/eng/scripts/Resolve-ApiReviewHubRustToolchain.ps1
+            arguments: >
+              -Toolchain '${{ parameters.rustVersion }}'
+
+        - template: /eng/pipelines/templates/steps/use-rust.yml
+          parameters:
+            SourcesDir: $(LanguageRepo)
+            Toolchain: $(ApiReviewRustToolchain)
+
+        - task: PowerShell@2
+          displayName: Build Rust API review tooling
+          inputs:
+            pwsh: true
+            filePath: $(LanguageRepo)/eng/scripts/Build-ApiReviewHubTool.ps1
+            arguments: >
+              -SourceDir '$(ApiReviewSourceDir)'
+              -ToolDir '$(ApiReviewToolingDir)'
+              -ToolRef 'HEAD'
+              -RustToolchain '$(ApiReviewRustToolchain)'
+      steps: ${{ parameters.steps }}

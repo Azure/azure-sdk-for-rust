@@ -4,6 +4,7 @@
   "cSpell.enabled": true,
   "editor.formatOnSave": true,
   "files.associations": {
+    "ARCHITECTS": "ignore",
     "CODEOWNERS": "ignore"
   },
   "github.copilot.chat.commitMessageGeneration.instructions": [

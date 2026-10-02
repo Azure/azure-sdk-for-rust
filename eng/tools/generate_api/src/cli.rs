@@ -15,6 +15,10 @@ struct Args {
     #[arg(long, value_name = "PATH")]
     manifest_path: PathBuf,
 
+    /// Path to the repository root. Defaults to the current directory.
+    #[arg(long, value_name = "PATH")]
+    root: Option<PathBuf>,
+
     /// Output format to generate. Defaults to markdown.
     #[arg(long, value_enum, default_value_t = OutputFormat::Markdown)]
     format: OutputFormat,
@@ -39,6 +43,7 @@ struct Args {
 #[derive(Debug, Clone)]
 pub(crate) struct Request {
     pub(crate) manifest_path: PathBuf,
+    pub(crate) root: Option<PathBuf>,
     pub(crate) format: OutputFormat,
     pub(crate) review: bool,
     pub(crate) check: bool,
@@ -103,6 +108,7 @@ impl TryFrom<Args> for Request {
 
         Ok(Self {
             manifest_path: args.manifest_path,
+            root: args.root,
             format: args.format,
             review: args.review,
             check: args.check,
