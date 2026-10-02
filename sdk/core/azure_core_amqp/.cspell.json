@@ -4,9 +4,13 @@
   ],
   "ignoreWords": [
     "amqps",
+    "cfsclean",
+    "configfile",
+    "JOBID",
     "mgmt",
     "sasl",
     "sastoken",
+    "setvariable",
     "smalluint",
     "smallulong"
   ]
