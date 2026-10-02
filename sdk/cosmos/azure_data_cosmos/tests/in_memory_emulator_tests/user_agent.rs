@@ -473,7 +473,8 @@ async fn user_agent_suffix_appears_on_metadata_requests() {
 }
 
 /// Verifies that the SDK-owned wrapping identifier `azsdk-rust-cosmos/<ver>`
-/// is prepended to the driver's own identifier on every captured request,
+/// leads the User-Agent (with the driver version in the metadata segment) on
+/// every captured request,
 /// regardless of whether a [`UserAgentSuffix`] is configured. This lets
 /// telemetry distinguish between callers using `azure_data_cosmos` and
 /// callers driving `azure_data_cosmos_driver` directly.
@@ -482,10 +483,7 @@ async fn wrapping_sdk_identifier_appears_on_all_requests() {
     // `env!("CARGO_PKG_VERSION")` here is the version of `azure_data_cosmos`,
     // which is exactly what `cosmos_client_builder` reports to the driver via
     // `with_wrapping_sdk_identifier`.
-    let expected_prefix = format!(
-        "azsdk-rust-cosmos/{} azsdk-rust-cosmos-driver/",
-        env!("CARGO_PKG_VERSION"),
-    );
+    let expected_prefix = format!("azsdk-rust-cosmos/{} (drv=", env!("CARGO_PKG_VERSION"));
 
     for suffix in [
         None,
@@ -525,14 +523,14 @@ async fn wrapping_sdk_identifier_appears_on_all_requests() {
 /// Expected cross-SDK feature-flag token on the wire for the emulator's
 /// default client configuration: per-partition circuit breaker (PPCB, bit
 /// `0x2`, enabled by default) OR HTTP/2 (bit `0x10`, the connection-pool
-/// default) == `0x12`, encoded as `|F12`.
+/// default) == `0x12`, encoded as `ft=Eg` (the single byte `0x12` in base64url).
 ///
 /// This is the Rust side of the cross-SDK `User-Agent` feature-flag contract
 /// (see `UserAgentFeatureFlags` in `azure_data_cosmos_driver`).
-const EXPECTED_FEATURE_TOKEN: &str = "|F12";
+const EXPECTED_FEATURE_TOKEN: &str = "ft=Eg";
 
-/// Verifies that the cross-SDK feature-flag token (`|F<HEX>`) is advertised in
-/// the `User-Agent` header on data-plane requests, so backend telemetry can
+/// Verifies that the cross-SDK feature-flag entry (`ft=<B64>`) is advertised in
+/// the `User-Agent` metadata segment on data-plane requests, so backend telemetry can
 /// bucket Rust traffic by enabled client feature.
 #[tokio::test]
 async fn user_agent_advertises_feature_flags_on_the_wire() {
@@ -564,7 +562,7 @@ async fn user_agent_advertises_feature_flags_on_the_wire() {
         .filter(|s| {
             !s.user_agent
                 .as_deref()
-                .is_some_and(|ua| ua.ends_with(EXPECTED_FEATURE_TOKEN))
+                .is_some_and(|ua| ua.ends_with(&format!("; {EXPECTED_FEATURE_TOKEN})")))
         })
         .map(|s| (s.method, s.url.as_str(), s.user_agent.as_deref()))
         .collect();
@@ -575,12 +573,11 @@ async fn user_agent_advertises_feature_flags_on_the_wire() {
     );
 }
 
-/// Verifies that when a [`UserAgentSuffix`] is configured, the feature-flag
-/// token is appended *after* the suffix with no separating space — matching
-/// the .NET/Java `userAgent + "|F" + hex` encoding — so both the operator
-/// suffix and the feature bitmask survive on the wire.
+/// Verifies that when a [`UserAgentSuffix`] is configured, it follows the
+/// closing parenthesis of the metadata segment, so both the operator suffix and
+/// the feature bitmask survive on the wire.
 #[tokio::test]
-async fn user_agent_appends_feature_token_after_suffix_on_the_wire() {
+async fn user_agent_places_suffix_after_metadata_segment_on_the_wire() {
     const SUFFIX: &str = "myapp-westus2";
 
     let observer = RecordingObserver::new();
@@ -604,7 +601,7 @@ async fn user_agent_appends_feature_token_after_suffix_on_the_wire() {
             .collect::<Vec<_>>(),
     );
 
-    let expected_tail = format!("{SUFFIX}{EXPECTED_FEATURE_TOKEN}");
+    let expected_tail = format!("; {EXPECTED_FEATURE_TOKEN}) {SUFFIX}");
     let missing: Vec<_> = data_plane
         .iter()
         .filter(|s| {
@@ -621,11 +618,11 @@ async fn user_agent_appends_feature_token_after_suffix_on_the_wire() {
     );
 }
 
-/// Negative control: the feature-flag token must be a genuine, separately
-/// computed artifact — assert that the default `User-Agent` (no suffix) ends
-/// with exactly one `|F` token and nothing trails it.
+/// Negative control: the feature-flag entry must be a genuine, separately
+/// computed artifact — assert that the default `User-Agent` (no suffix) has
+/// exactly one `ft=` entry, in the metadata segment, and nothing trails it.
 #[tokio::test]
-async fn feature_flag_token_is_the_trailing_user_agent_segment() {
+async fn feature_flags_entry_is_the_last_metadata_entry() {
     let observer = RecordingObserver::new();
     let emulator = build_emulator(observer.clone());
 
@@ -644,13 +641,14 @@ async fn feature_flag_token_is_the_trailing_user_agent_segment() {
             .user_agent
             .as_deref()
             .expect("data-plane request carried a User-Agent");
-        // Exactly one feature token, and it is the final segment.
         assert_eq!(
-            ua.matches("|F").count(),
+            ua.matches("; ft=").count(),
             1,
-            "expected exactly one feature-flag token in {ua:?}",
+            "expected exactly one feature-flag entry in {ua:?}",
         );
-        let token = &ua[ua.rfind("|F").unwrap()..];
-        assert_eq!(token, EXPECTED_FEATURE_TOKEN, "unexpected token in {ua:?}");
+        assert!(
+            ua.ends_with(&format!("; {EXPECTED_FEATURE_TOKEN})")),
+            "unexpected tail in {ua:?}",
+        );
     }
 }
