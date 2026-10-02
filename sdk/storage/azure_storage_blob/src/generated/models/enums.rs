@@ -559,6 +559,9 @@ pub enum StorageErrorCode {
     /// Empty metadata key.
     EmptyMetadataKey,
 
+    /// Feature is not enabled.
+    FeatureNotEnabled,
+
     /// Feature version mismatch.
     FeatureVersionMismatch,
 

@@ -11,7 +11,9 @@
 
 use crate::{
     cache::{AcquireFn, AutoRefreshingCache, RefreshableValue},
-    models::{AuthenticationType, CreateSessionConfiguration, CreateSessionResponse},
+    models::{
+        AuthenticationType, CreateSessionConfiguration, CreateSessionResponse, StorageErrorCode,
+    },
     BlobServiceClient, BlobServiceClientOptions,
 };
 use async_trait::async_trait;
@@ -34,8 +36,6 @@ const REFRESH_BUFFER: Duration = Duration::seconds(30);
 const BACKGROUND_ACQUIRE_TIMEOUT: Duration = Duration::seconds(30);
 /// How long a fallback-to-bearer sentinel is cached after a fallback-eligible failure.
 const FALLBACK_COOLDOWN: Duration = Duration::minutes(5);
-/// Storage error code indicating the session feature is not enabled for the account.
-const FEATURE_NOT_ENABLED: &str = "FeatureNotEnabled";
 
 /// A cached session, or a sentinel indicating that callers should fall back to
 /// bearer authentication for the duration of the cooldown.
@@ -288,7 +288,8 @@ fn fallback_cooldown(error: &Error) -> Option<Duration> {
     let status = error.http_status()?;
     let feature_not_enabled = matches!(
         error.kind(),
-        ErrorKind::HttpResponse { error_code: Some(code), .. } if code == FEATURE_NOT_ENABLED
+        ErrorKind::HttpResponse { error_code: Some(code), .. }
+            if code == StorageErrorCode::FeatureNotEnabled.as_ref()
     );
     let eligible = status.is_server_error()
         || status == StatusCode::Forbidden
@@ -466,7 +467,7 @@ mod tests {
         assert!(fallback_cooldown(&http_error(StatusCode::Forbidden, None)).is_some());
         assert!(fallback_cooldown(&http_error(
             StatusCode::BadRequest,
-            Some(FEATURE_NOT_ENABLED)
+            Some(StorageErrorCode::FeatureNotEnabled.as_ref())
         ))
         .is_some());
 
