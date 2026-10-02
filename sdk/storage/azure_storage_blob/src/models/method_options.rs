@@ -81,7 +81,7 @@ pub struct BlobClientDownloadOptions<'a> {
     /// Setting this disables automatic layout lookup: the blob's layout is not fetched
     /// and [`layout_aware_routing`](Self::layout_aware_routing) is ignored. To choose an
     /// endpoint, enumerate the pages returned by
-    /// [`BlobClient::get_layout()`](crate::BlobClient::get_layout) and select the endpoint
+    /// [`BlobClient::list_layout()`](crate::BlobClient::list_layout) and select the endpoint
     /// whose layout range covers the offset of the requested [`range`](Self::range).
     ///
     /// Because the endpoint applies to every request the download issues, set a

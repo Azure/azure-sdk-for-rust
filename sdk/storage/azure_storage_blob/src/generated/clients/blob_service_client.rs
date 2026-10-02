@@ -11,7 +11,6 @@ use crate::generated::models::{
     BlobServiceProperties, FilteredBlobResponse, KeyInfo, ListContainersResponse,
     StorageServiceStats,
 };
-// use crate::SessionOptions;
 use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
@@ -28,7 +27,6 @@ use azure_storage_common::models::UserDelegationKey;
 pub struct BlobServiceClient {
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
-    // pub(crate) session_options: Option<SessionOptions>,
     pub(crate) version: String,
 }
 
@@ -37,8 +35,6 @@ pub struct BlobServiceClient {
 pub struct BlobServiceClientOptions {
     /// Allows customization of the client.
     pub client_options: ClientOptions,
-    // /// Options for session token authentication.
-    // pub session_options: Option<SessionOptions>,
     /// Specifies the version of the operation to use for this request.
     pub version: String,
 }
@@ -464,7 +460,6 @@ impl Default for BlobServiceClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            // session_options: None,
             version: String::from(DEFAULT_VERSION),
         }
     }

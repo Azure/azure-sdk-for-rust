@@ -454,7 +454,7 @@ async fn test_download_layout_endpoint_selected_by_caller() -> Result<(), Box<dy
         "https://acct.blob.core.windows.net/container/blob",
     )?;
 
-    let mut pages = blob_client.get_layout(None)?;
+    let mut pages = blob_client.list_layout(None)?;
     let layout = pages
         .try_next()
         .await?

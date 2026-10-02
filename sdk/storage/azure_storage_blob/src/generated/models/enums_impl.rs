@@ -1252,6 +1252,7 @@ impl<'a> From<&'a StorageErrorCode> for &'a str {
             StorageErrorCode::CopyAcrossAccountsNotSupported => "CopyAcrossAccountsNotSupported",
             StorageErrorCode::CopyIdMismatch => "CopyIdMismatch",
             StorageErrorCode::EmptyMetadataKey => "EmptyMetadataKey",
+            StorageErrorCode::FeatureNotEnabled => "FeatureNotEnabled",
             StorageErrorCode::FeatureVersionMismatch => "FeatureVersionMismatch",
             StorageErrorCode::IncrementalCopyBlobMismatch => "IncrementalCopyBlobMismatch",
             StorageErrorCode::IncrementalCopyOfEarlierSnapshotNotAllowed => {
@@ -1417,6 +1418,7 @@ impl FromStr for StorageErrorCode {
             "CopyAcrossAccountsNotSupported" => StorageErrorCode::CopyAcrossAccountsNotSupported,
             "CopyIdMismatch" => StorageErrorCode::CopyIdMismatch,
             "EmptyMetadataKey" => StorageErrorCode::EmptyMetadataKey,
+            "FeatureNotEnabled" => StorageErrorCode::FeatureNotEnabled,
             "FeatureVersionMismatch" => StorageErrorCode::FeatureVersionMismatch,
             "IncrementalCopyBlobMismatch" => StorageErrorCode::IncrementalCopyBlobMismatch,
             "IncrementalCopyOfEarlierSnapshotNotAllowed" => {
@@ -1581,6 +1583,7 @@ impl AsRef<str> for StorageErrorCode {
             StorageErrorCode::CopyAcrossAccountsNotSupported => "CopyAcrossAccountsNotSupported",
             StorageErrorCode::CopyIdMismatch => "CopyIdMismatch",
             StorageErrorCode::EmptyMetadataKey => "EmptyMetadataKey",
+            StorageErrorCode::FeatureNotEnabled => "FeatureNotEnabled",
             StorageErrorCode::FeatureVersionMismatch => "FeatureVersionMismatch",
             StorageErrorCode::IncrementalCopyBlobMismatch => "IncrementalCopyBlobMismatch",
             StorageErrorCode::IncrementalCopyOfEarlierSnapshotNotAllowed => {
@@ -1759,6 +1762,7 @@ impl Display for StorageErrorCode {
             }
             StorageErrorCode::CopyIdMismatch => f.write_str("CopyIdMismatch"),
             StorageErrorCode::EmptyMetadataKey => f.write_str("EmptyMetadataKey"),
+            StorageErrorCode::FeatureNotEnabled => f.write_str("FeatureNotEnabled"),
             StorageErrorCode::FeatureVersionMismatch => f.write_str("FeatureVersionMismatch"),
             StorageErrorCode::IncrementalCopyBlobMismatch => {
                 f.write_str("IncrementalCopyBlobMismatch")

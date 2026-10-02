@@ -3,12 +3,12 @@
 
 //! An auto-refreshing cache with single-flight foreground acquisition.
 //!
-//! One cache instance holds one value. It acquires the value on first use,
-//! reuses it until a refresh window opens, then proactively refreshes it in the
-//! background while still serving the current value. Concurrent foreground
-//! callers share a single acquisition, so a cold or expired cache issues one
-//! foreground acquire even when callers race. A background refresh that fails or
-//! times out keeps the current value and defers the next attempt.
+//! A cache holds independently refreshed values by key. It acquires a value on
+//! first use, reuses it until a refresh window opens, then proactively refreshes
+//! it in the background while still serving the current value. Concurrent
+//! foreground callers for the same key share a single acquisition. A background
+//! refresh that fails or times out keeps the current value and defers the next
+//! attempt.
 
 use azure_core::{
     async_runtime::get_async_runtime,
@@ -19,15 +19,19 @@ use futures::{
     future::{self, BoxFuture, Either},
     lock::Mutex,
 };
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
+use std::{
+    collections::HashMap,
+    hash::Hash,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, RwLock,
+    },
 };
 
 /// A cached value that knows when it should be refreshed and when it expires.
-pub(crate) trait ExpiringValue: Clone + Send + Sync + 'static {
+pub(crate) trait RefreshableValue: Clone + Send + Sync + 'static {
     /// The time at which a proactive background refresh should begin. The
-    /// value remains usable until [`expires_on`](ExpiringValue::expires_on).
+    /// value remains usable until [`expires_on`](RefreshableValue::expires_on).
     fn refresh_on(&self) -> OffsetDateTime;
 
     /// The time at which the value is no longer usable and must be
@@ -47,14 +51,14 @@ pub(crate) trait ExpiringValue: Clone + Send + Sync + 'static {
 }
 
 /// A factory that asynchronously acquires a fresh value.
-pub(crate) type AcquireFn<T> = Arc<dyn Fn() -> BoxFuture<'static, Result<T>> + Send + Sync>;
+pub(crate) type AcquireFn<K, V> = Arc<dyn Fn(K) -> BoxFuture<'static, Result<V>> + Send + Sync>;
 
 /// A clock, injected so tests can control the passage of time.
 type ClockFn = Arc<dyn Fn() -> OffsetDateTime + Send + Sync>;
 
 /// What to do with the currently cached value given the current time.
 #[derive(Debug, PartialEq, Eq)]
-enum Decision {
+enum CacheItemState {
     /// Before the refresh window opens; use the value as-is.
     Fresh,
     /// The refresh window is open, but the value remains usable; serve it and
@@ -64,18 +68,18 @@ enum Decision {
     Expired,
 }
 
-fn decide<T: ExpiringValue>(value: &T, now: OffsetDateTime) -> Decision {
+fn state<T: RefreshableValue>(value: &T, now: OffsetDateTime) -> CacheItemState {
     if now >= value.expires_on() {
-        Decision::Expired
+        CacheItemState::Expired
     } else if now < value.refresh_on() {
-        Decision::Fresh
+        CacheItemState::Fresh
     } else {
-        Decision::Stale
+        CacheItemState::Stale
     }
 }
 
 /// The outcome of one bounded background refresh attempt.
-enum Refreshed<T> {
+enum RefreshedState<T> {
     /// The acquire completed successfully.
     Value(T),
     /// The acquire returned an error.
@@ -84,32 +88,48 @@ enum Refreshed<T> {
     TimedOut,
 }
 
-struct Shared<T> {
+struct CacheItem<T> {
     value: Mutex<Option<T>>,
     refreshing: AtomicBool,
-    acquire: AcquireFn<T>,
-    background_timeout: Duration,
-    clock: ClockFn,
 }
 
-/// An auto-refreshing cache with single-flight foreground acquisition.
-pub(crate) struct AutoRefreshingCache<T> {
-    shared: Arc<Shared<T>>,
-}
-
-impl<T> Clone for AutoRefreshingCache<T> {
-    fn clone(&self) -> Self {
+impl<T> CacheItem<T> {
+    fn new() -> Self {
         Self {
-            shared: self.shared.clone(),
+            value: Mutex::new(None),
+            refreshing: AtomicBool::new(false),
         }
     }
 }
 
-impl<T: ExpiringValue + PartialEq> AutoRefreshingCache<T> {
+/// A keyed auto-refreshing cache with per-key single-flight acquisition.
+pub(crate) struct AutoRefreshingCache<K, V> {
+    items: Arc<RwLock<HashMap<K, Arc<CacheItem<V>>>>>,
+    acquire: AcquireFn<K, V>,
+    background_timeout: Duration,
+    clock: ClockFn,
+}
+
+impl<K, V> Clone for AutoRefreshingCache<K, V> {
+    fn clone(&self) -> Self {
+        Self {
+            items: self.items.clone(),
+            acquire: self.acquire.clone(),
+            background_timeout: self.background_timeout,
+            clock: self.clock.clone(),
+        }
+    }
+}
+
+impl<K, V> AutoRefreshingCache<K, V>
+where
+    K: Clone + Eq + Hash + Send + Sync + 'static,
+    V: RefreshableValue + PartialEq,
+{
     /// Creates a cache that acquires values with `acquire`. Background refreshes
     /// run for at most `background_timeout`, which doubles as the backoff applied
     /// after one fails.
-    pub(crate) fn new(acquire: AcquireFn<T>, background_timeout: Duration) -> Self {
+    pub(crate) fn new(acquire: AcquireFn<K, V>, background_timeout: Duration) -> Self {
         Self::with_clock(
             acquire,
             background_timeout,
@@ -117,48 +137,64 @@ impl<T: ExpiringValue + PartialEq> AutoRefreshingCache<T> {
         )
     }
 
-    fn with_clock(acquire: AcquireFn<T>, background_timeout: Duration, clock: ClockFn) -> Self {
+    fn with_clock(acquire: AcquireFn<K, V>, background_timeout: Duration, clock: ClockFn) -> Self {
         Self {
-            shared: Arc::new(Shared {
-                value: Mutex::new(None),
-                refreshing: AtomicBool::new(false),
-                acquire,
-                background_timeout,
-                clock,
-            }),
+            items: Arc::new(RwLock::new(HashMap::new())),
+            acquire,
+            background_timeout,
+            clock,
         }
+    }
+
+    fn get_or_create_entry(&self, key: &K) -> Arc<CacheItem<V>> {
+        if let Some(item) = self.find_entry(key) {
+            return item;
+        }
+
+        // The initial lookup released its read lock. Another thread may have
+        // inserted this key before we acquired the write lock, so check again.
+        self.items
+            .write()
+            .unwrap_or_else(|error| error.into_inner())
+            .entry(key.clone())
+            .or_insert_with(|| Arc::new(CacheItem::new()))
+            .clone()
+    }
+
+    fn find_entry(&self, key: &K) -> Option<Arc<CacheItem<V>>> {
+        self.items
+            .read()
+            .unwrap_or_else(|error| error.into_inner())
+            .get(key)
+            .cloned()
     }
 
     /// Returns a usable value, acquiring or refreshing as needed. Blocks on a
     /// foreground acquire, and surfaces its error, only when no unexpired value
     /// is cached.
-    pub(crate) async fn get(&self) -> Result<T> {
-        let now = (self.shared.clock)();
-        {
-            let guard = self.shared.value.lock().await;
-            if let Some(value) = guard.as_ref() {
-                match decide(value, now) {
-                    Decision::Fresh => return Ok(value.clone()),
-                    Decision::Stale => {
-                        let current = value.clone();
-                        drop(guard);
-                        self.trigger_background_refresh(current.clone());
-                        return Ok(current);
-                    }
-                    Decision::Expired => {}
+    pub(crate) async fn get(&self, key: &K) -> Result<V> {
+        let item = self.get_or_create_entry(key);
+        let current = item.value.lock().await.clone();
+        if let Some(value) = current {
+            match state(&value, (self.clock)()) {
+                CacheItemState::Fresh => return Ok(value),
+                CacheItemState::Stale => {
+                    self.trigger_background_refresh(key.clone(), item, value.clone());
+                    return Ok(value);
                 }
+                CacheItemState::Expired => {}
             }
         }
-        self.acquire_foreground().await
+        self.acquire_foreground(key, item).await
     }
 
     /// Clears the cached value, but only if it still equals `current`, so a
     /// concurrent refresh that already replaced it is not clobbered.
-    pub(crate) async fn invalidate_if_current(&self, current: &T)
-    where
-        T: PartialEq,
-    {
-        let mut guard = self.shared.value.lock().await;
+    pub(crate) async fn invalidate_if_current(&self, key: &K, current: &V) {
+        let Some(item) = self.find_entry(key) else {
+            return;
+        };
+        let mut guard = item.value.lock().await;
         if guard.as_ref() == Some(current) {
             *guard = None;
         }
@@ -167,14 +203,14 @@ impl<T: ExpiringValue + PartialEq> AutoRefreshingCache<T> {
     /// Acquires under the value lock so concurrent callers coalesce onto a
     /// single acquisition (single-flight). A caller that loses the race sees the
     /// value the winner stored and returns it without acquiring again.
-    async fn acquire_foreground(&self) -> Result<T> {
-        let mut guard = self.shared.value.lock().await;
+    async fn acquire_foreground(&self, key: &K, item: Arc<CacheItem<V>>) -> Result<V> {
+        let mut guard = item.value.lock().await;
         if let Some(value) = guard.as_ref() {
-            if decide(value, (self.shared.clock)()) != Decision::Expired {
+            if state(value, (self.clock)()) != CacheItemState::Expired {
                 return Ok(value.clone());
             }
         }
-        let value = (self.shared.acquire)().await?;
+        let value = (self.acquire)(key.clone()).await?;
         *guard = Some(value.clone());
         Ok(value)
     }
@@ -182,37 +218,39 @@ impl<T: ExpiringValue + PartialEq> AutoRefreshingCache<T> {
     /// Spawns at most one background refresh, publishing its result only if the
     /// cache still holds `current`. A non-replacing value, a failure, or a timeout
     /// all retain `current` and only move its next refresh time.
-    fn trigger_background_refresh(&self, current: T) {
+    fn trigger_background_refresh(&self, key: K, item: Arc<CacheItem<V>>, current: V) {
         // Atomically claim the single background-refresh slot.
-        if self.shared.refreshing.swap(true, Ordering::AcqRel) {
+        if item.refreshing.swap(true, Ordering::AcqRel) {
             return;
         }
-        let shared = self.shared.clone();
+        let cache = self.clone();
         // Detached from the requesting caller; completion is bounded by the timeout.
         let _refresh = get_async_runtime().spawn(Box::pin(async move {
-            let acquire = (shared.acquire)();
-            let timeout = get_async_runtime().sleep(shared.background_timeout);
+            let acquire = (cache.acquire)(key);
+            let timeout = get_async_runtime().sleep(cache.background_timeout);
             let refreshed = match future::select(acquire, timeout).await {
-                Either::Left((Ok(value), _)) => Refreshed::Value(value),
-                Either::Left((Err(_), _)) => Refreshed::Failed,
-                Either::Right(_) => Refreshed::TimedOut,
+                Either::Left((Ok(value), _)) => RefreshedState::Value(value),
+                Either::Left((Err(_), _)) => RefreshedState::Failed,
+                Either::Right(_) => RefreshedState::TimedOut,
             };
-            let now = (shared.clock)();
-            let mut guard = shared.value.lock().await;
+            let now = (cache.clock)();
+            let mut guard = item.value.lock().await;
             // Publish only if no foreground acquisition or invalidation replaced `current`.
             if guard.as_ref() == Some(&current) {
                 *guard = Some(match refreshed {
-                    Refreshed::Value(value) if value.replaces_current() => value,
+                    RefreshedState::Value(value) if value.replaces_current() => value,
                     // Keep `current`, deferring the next attempt to whichever expires first.
-                    Refreshed::Value(value) => {
+                    RefreshedState::Value(value) => {
                         current.with_refresh_on(value.expires_on().min(current.expires_on()))
                     }
                     // The elapsed timeout already served as the backoff.
-                    Refreshed::TimedOut => current.with_refresh_on(now),
-                    Refreshed::Failed => current.with_refresh_on(now + shared.background_timeout),
+                    RefreshedState::TimedOut => current.with_refresh_on(now),
+                    RefreshedState::Failed => {
+                        current.with_refresh_on(now + cache.background_timeout)
+                    }
                 });
             }
-            shared.refreshing.store(false, Ordering::Release);
+            item.refreshing.store(false, Ordering::Release);
         }));
     }
 }
@@ -234,6 +272,7 @@ mod tests {
     const REFRESH_AFTER: i64 = 100;
     const EXPIRE_AFTER: i64 = 200;
     const BACKGROUND_TIMEOUT: i64 = 30;
+    const KEY: usize = 1;
 
     #[derive(Clone, Debug, PartialEq)]
     struct TestValue {
@@ -243,7 +282,7 @@ mod tests {
         replaces_current: bool,
     }
 
-    impl ExpiringValue for TestValue {
+    impl RefreshableValue for TestValue {
         fn refresh_on(&self) -> OffsetDateTime {
             self.refresh_on
         }
@@ -273,7 +312,7 @@ mod tests {
     }
 
     impl Harness {
-        fn new() -> (Self, AutoRefreshingCache<TestValue>) {
+        fn new() -> (Self, AutoRefreshingCache<usize, TestValue>) {
             let offset = Arc::new(AtomicI64::new(0));
             let count = Arc::new(AtomicUsize::new(0));
 
@@ -282,7 +321,7 @@ mod tests {
 
             let acquire_offset = offset.clone();
             let acquire_count = count.clone();
-            let acquire: AcquireFn<TestValue> = Arc::new(move || {
+            let acquire: AcquireFn<usize, TestValue> = Arc::new(move |_| {
                 let now = at(acquire_offset.load(Ordering::SeqCst));
                 let id = acquire_count.fetch_add(1, Ordering::SeqCst) + 1;
                 Box::pin(async move {
@@ -339,10 +378,10 @@ mod tests {
         offset: Arc<AtomicI64>,
         count: Arc<AtomicUsize>,
         receivers: Vec<oneshot::Receiver<TestValue>>,
-    ) -> AutoRefreshingCache<TestValue> {
+    ) -> AutoRefreshingCache<usize, TestValue> {
         let clock: ClockFn = Arc::new(move || at(offset.load(Ordering::SeqCst)));
         let receivers = Arc::new(StdMutex::new(VecDeque::from(receivers)));
-        let acquire: AcquireFn<TestValue> = Arc::new(move || {
+        let acquire: AcquireFn<usize, TestValue> = Arc::new(move |_| {
             count.fetch_add(1, Ordering::SeqCst);
             let receiver = receivers.lock().unwrap().pop_front().unwrap();
             Box::pin(async move { Ok(receiver.await.unwrap()) })
@@ -354,18 +393,19 @@ mod tests {
     fn failing_cache(
         offset: Arc<AtomicI64>,
         count: Arc<AtomicUsize>,
-    ) -> AutoRefreshingCache<TestValue> {
+    ) -> AutoRefreshingCache<usize, TestValue> {
         let clock: ClockFn = Arc::new(move || at(offset.load(Ordering::SeqCst)));
-        let acquire: AcquireFn<TestValue> = Arc::new(move || {
+        let acquire: AcquireFn<usize, TestValue> = Arc::new(move |_| {
             count.fetch_add(1, Ordering::SeqCst);
             Box::pin(async { Err(Error::with_message(ErrorKind::Other, "acquire failed")) })
         });
         AutoRefreshingCache::with_clock(acquire, Duration::seconds(BACKGROUND_TIMEOUT), clock)
     }
 
-    async fn await_refresh(cache: &AutoRefreshingCache<TestValue>) {
+    async fn await_refresh(cache: &AutoRefreshingCache<usize, TestValue>, key: usize) {
+        let item = cache.get_or_create_entry(&key);
         for _ in 0..200 {
-            if !cache.shared.refreshing.load(Ordering::Acquire) {
+            if !item.refreshing.load(Ordering::Acquire) {
                 return;
             }
             tokio::task::yield_now().await;
@@ -374,23 +414,23 @@ mod tests {
     }
 
     #[test]
-    fn decide_classifies_by_time() {
+    fn state_classifies_by_time() {
         let v = value(1, 100, 200);
-        assert_eq!(decide(&v, at(50)), Decision::Fresh);
-        assert_eq!(decide(&v, at(150)), Decision::Stale);
-        assert_eq!(decide(&v, at(250)), Decision::Expired);
+        assert_eq!(state(&v, at(50)), CacheItemState::Fresh);
+        assert_eq!(state(&v, at(150)), CacheItemState::Stale);
+        assert_eq!(state(&v, at(250)), CacheItemState::Expired);
     }
 
     #[tokio::test]
     async fn cold_get_acquires_once_then_reuses() {
         let (harness, cache) = Harness::new();
 
-        let first = cache.get().await.unwrap();
+        let first = cache.get(&KEY).await.unwrap();
         assert_eq!(first.id, 1);
         assert_eq!(harness.acquire_count(), 1);
 
         // Before the refresh window opens: no new acquire.
-        let second = cache.get().await.unwrap();
+        let second = cache.get(&KEY).await.unwrap();
         assert_eq!(second.id, 1);
         assert_eq!(harness.acquire_count(), 1);
     }
@@ -399,7 +439,7 @@ mod tests {
     async fn concurrent_cold_gets_acquire_once() {
         let (harness, cache) = Harness::new();
 
-        let gets = (0..8).map(|_| cache.get());
+        let gets = (0..8).map(|_| cache.get(&KEY));
         let results = future::join_all(gets).await;
 
         for result in results {
@@ -412,10 +452,10 @@ mod tests {
     async fn expired_value_reacquires_in_foreground() {
         let (harness, cache) = Harness::new();
 
-        assert_eq!(cache.get().await.unwrap().id, 1);
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 1);
         harness.advance(EXPIRE_AFTER + 1);
 
-        assert_eq!(cache.get().await.unwrap().id, 2);
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 2);
         assert_eq!(harness.acquire_count(), 2);
     }
 
@@ -423,17 +463,17 @@ mod tests {
     async fn stale_value_serves_current_and_refreshes_in_background() {
         let (harness, cache) = Harness::new();
 
-        assert_eq!(cache.get().await.unwrap().id, 1);
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 1);
 
         // Enter the refresh window (past refresh_on, before expires_on).
         harness.advance(REFRESH_AFTER + 1);
 
         // The stale value is served immediately.
-        assert_eq!(cache.get().await.unwrap().id, 1);
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 1);
 
         // The background refresh eventually acquires a new value.
         await_count(&harness, 2).await;
-        assert_eq!(cache.get().await.unwrap().id, 2);
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 2);
     }
 
     #[tokio::test]
@@ -447,9 +487,9 @@ mod tests {
             count.clone(),
             vec![background_receiver, foreground_receiver],
         );
-        *cache.shared.value.lock().await = Some(value(1, 100, 200));
+        *cache.get_or_create_entry(&KEY).value.lock().await = Some(value(1, 100, 200));
 
-        assert_eq!(cache.get().await.unwrap().id, 1);
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 1);
         while count.load(Ordering::SeqCst) < 1 {
             tokio::task::yield_now().await;
         }
@@ -457,7 +497,7 @@ mod tests {
         offset.store(201, Ordering::SeqCst);
         let foreground = tokio::spawn({
             let cache = cache.clone();
-            async move { cache.get().await.unwrap() }
+            async move { cache.get(&KEY).await.unwrap() }
         });
         while count.load(Ordering::SeqCst) < 2 {
             tokio::task::yield_now().await;
@@ -466,8 +506,8 @@ mod tests {
         assert_eq!(foreground.await.unwrap().id, 3);
 
         background_sender.send(value(2, 250, 350)).unwrap();
-        await_refresh(&cache).await;
-        assert_eq!(cache.get().await.unwrap().id, 3);
+        await_refresh(&cache, KEY).await;
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 3);
     }
 
     #[tokio::test]
@@ -481,23 +521,23 @@ mod tests {
             count.clone(),
             vec![fallback_receiver, next_receiver],
         );
-        *cache.shared.value.lock().await = Some(value(1, 100, 200));
+        *cache.get_or_create_entry(&KEY).value.lock().await = Some(value(1, 100, 200));
 
-        assert_eq!(cache.get().await.unwrap().id, 1);
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 1);
         while count.load(Ordering::SeqCst) < 1 {
             tokio::task::yield_now().await;
         }
         let mut fallback = value(2, 180, 180);
         fallback.replaces_current = false;
         fallback_sender.send(fallback).unwrap();
-        await_refresh(&cache).await;
+        await_refresh(&cache, KEY).await;
 
         offset.store(179, Ordering::SeqCst);
-        assert_eq!(cache.get().await.unwrap().id, 1);
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 1);
         assert_eq!(count.load(Ordering::SeqCst), 1);
 
         offset.store(181, Ordering::SeqCst);
-        assert_eq!(cache.get().await.unwrap().id, 1);
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 1);
         while count.load(Ordering::SeqCst) < 2 {
             tokio::task::yield_now().await;
         }
@@ -508,14 +548,15 @@ mod tests {
         let offset = Arc::new(AtomicI64::new(150));
         let count = Arc::new(AtomicUsize::new(0));
         let cache = failing_cache(offset.clone(), count.clone());
-        *cache.shared.value.lock().await = Some(value(1, 100, 200));
+        *cache.get_or_create_entry(&KEY).value.lock().await = Some(value(1, 100, 200));
 
         // Stale: the current value is served and a background refresh is spawned.
-        assert_eq!(cache.get().await.unwrap().id, 1);
-        await_refresh(&cache).await;
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 1);
+        await_refresh(&cache, KEY).await;
 
         {
-            let guard = cache.shared.value.lock().await;
+            let item = cache.get_or_create_entry(&KEY);
+            let guard = item.value.lock().await;
             let held = guard
                 .as_ref()
                 .expect("a failed refresh must retain the current value");
@@ -527,12 +568,12 @@ mod tests {
 
         // Inside the backoff window: no new acquire.
         offset.store(150 + BACKGROUND_TIMEOUT - 1, Ordering::SeqCst);
-        assert_eq!(cache.get().await.unwrap().id, 1);
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 1);
         assert_eq!(count.load(Ordering::SeqCst), 1);
 
         // Past it: one more attempt is allowed.
         offset.store(150 + BACKGROUND_TIMEOUT + 1, Ordering::SeqCst);
-        assert_eq!(cache.get().await.unwrap().id, 1);
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 1);
         while count.load(Ordering::SeqCst) < 2 {
             tokio::task::yield_now().await;
         }
@@ -542,18 +583,77 @@ mod tests {
     async fn invalidate_if_current_only_clears_matching_value() {
         let (harness, cache) = Harness::new();
 
-        let first = cache.get().await.unwrap();
+        let first = cache.get(&KEY).await.unwrap();
         assert_eq!(first.id, 1);
 
         // A stale, non-matching handle must not clear the cache.
         let stale = value(99, 100, 200);
-        cache.invalidate_if_current(&stale).await;
-        assert_eq!(cache.get().await.unwrap().id, 1);
+        cache.invalidate_if_current(&KEY, &stale).await;
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 1);
         assert_eq!(harness.acquire_count(), 1);
 
         // The matching handle clears it, forcing a re-acquire.
-        cache.invalidate_if_current(&first).await;
-        assert_eq!(cache.get().await.unwrap().id, 2);
+        cache.invalidate_if_current(&KEY, &first).await;
+        assert_eq!(cache.get(&KEY).await.unwrap().id, 2);
         assert_eq!(harness.acquire_count(), 2);
+    }
+
+    #[tokio::test]
+    async fn different_keys_cache_independent_values() {
+        let count = Arc::new(AtomicUsize::new(0));
+        let acquire_count = count.clone();
+        let acquire: AcquireFn<usize, TestValue> = Arc::new(move |key| {
+            acquire_count.fetch_add(1, Ordering::SeqCst);
+            Box::pin(async move { Ok(value(key, 100, 200)) })
+        });
+        let cache = AutoRefreshingCache::with_clock(
+            acquire,
+            Duration::seconds(BACKGROUND_TIMEOUT),
+            Arc::new(|| at(0)),
+        );
+
+        assert_eq!(cache.get(&1).await.unwrap().id, 1);
+        assert_eq!(cache.get(&2).await.unwrap().id, 2);
+        assert_eq!(cache.get(&1).await.unwrap().id, 1);
+        assert_eq!(count.load(Ordering::SeqCst), 2);
+    }
+
+    #[tokio::test]
+    async fn different_keys_acquire_concurrently() {
+        let (first_sender, first_receiver) = oneshot::channel();
+        let (second_sender, second_receiver) = oneshot::channel();
+        let count = Arc::new(AtomicUsize::new(0));
+        let receivers = Arc::new(StdMutex::new(HashMap::from([
+            (1, first_receiver),
+            (2, second_receiver),
+        ])));
+        let acquire_count = count.clone();
+        let acquire: AcquireFn<usize, TestValue> = Arc::new(move |key| {
+            acquire_count.fetch_add(1, Ordering::SeqCst);
+            let receiver = receivers.lock().unwrap().remove(&key).unwrap();
+            Box::pin(async move { Ok(receiver.await.unwrap()) })
+        });
+        let cache = AutoRefreshingCache::with_clock(
+            acquire,
+            Duration::seconds(BACKGROUND_TIMEOUT),
+            Arc::new(|| at(0)),
+        );
+
+        let first = tokio::spawn({
+            let cache = cache.clone();
+            async move { cache.get(&1).await.unwrap() }
+        });
+        let second = tokio::spawn({
+            let cache = cache.clone();
+            async move { cache.get(&2).await.unwrap() }
+        });
+        while count.load(Ordering::SeqCst) < 2 {
+            tokio::task::yield_now().await;
+        }
+
+        first_sender.send(value(1, 100, 200)).unwrap();
+        second_sender.send(value(2, 100, 200)).unwrap();
+        assert_eq!(first.await.unwrap().id, 1);
+        assert_eq!(second.await.unwrap().id, 2);
     }
 }

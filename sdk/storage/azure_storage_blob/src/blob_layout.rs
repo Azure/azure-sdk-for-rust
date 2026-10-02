@@ -23,10 +23,10 @@ use azure_core::{
 use futures::StreamExt as _;
 
 use crate::{
-    cache::{AcquireFn, AutoRefreshingCache, ExpiringValue},
+    cache::{AcquireFn, AutoRefreshingCache, RefreshableValue},
     generated::{
         clients::BlobClient,
-        models::{BlobClientGetLayoutOptions, BlobLayout},
+        models::{BlobClientListLayoutOptions, BlobLayout},
     },
 };
 
@@ -227,12 +227,12 @@ fn parse_endpoint_authority(endpoint: &str) -> Option<(String, Option<u16>)> {
 pub(crate) async fn fetch_layout(
     client: &BlobClient,
     context: &Context<'_>,
-    options: &BlobClientGetLayoutOptions<'_>,
+    options: &BlobClientListLayoutOptions<'_>,
 ) -> Result<Option<Layout>> {
     let mut layout = Layout::default();
     let mut options = options.clone();
     options.method_options.context = context.clone().into_owned();
-    let mut pages = client.get_layout(Some(options))?;
+    let mut pages = client.list_layout(Some(options))?;
 
     while let Some(response) = pages.next().await {
         let response = match response {
@@ -296,7 +296,7 @@ impl CachedLayout {
     }
 }
 
-impl ExpiringValue for CachedLayout {
+impl RefreshableValue for CachedLayout {
     fn refresh_on(&self) -> OffsetDateTime {
         self.refresh_on
     }
@@ -320,9 +320,9 @@ impl ExpiringValue for CachedLayout {
 pub(crate) fn layout_cache(
     client: Arc<BlobClient>,
     context: Context<'static>,
-    layout_options: BlobClientGetLayoutOptions<'static>,
-) -> AutoRefreshingCache<CachedLayout> {
-    let acquire: AcquireFn<CachedLayout> = Arc::new(move || {
+    layout_options: BlobClientListLayoutOptions<'static>,
+) -> AutoRefreshingCache<(), CachedLayout> {
+    let acquire: AcquireFn<(), CachedLayout> = Arc::new(move |_| {
         let client = Arc::clone(&client);
         let context = context.clone();
         let layout_options = layout_options.clone();
@@ -337,9 +337,11 @@ pub(crate) fn layout_cache(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::generated::{
-        clients::BlobClientOptions,
-        models::{BlobLayoutEndpoint, BlobLayoutEndpoints, BlobLayoutRange, BlobLayoutRanges},
+    use crate::{
+        generated::models::{
+            BlobLayoutEndpoint, BlobLayoutEndpoints, BlobLayoutRange, BlobLayoutRanges,
+        },
+        BlobClientOptions,
     };
     use azure_core::{
         http::{
@@ -738,7 +740,7 @@ mod tests {
         let layout = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientGetLayoutOptions::default(),
+            &BlobClientListLayoutOptions::default(),
         )
         .await
         .unwrap()
@@ -783,7 +785,7 @@ mod tests {
         let layout = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientGetLayoutOptions {
+            &BlobClientListLayoutOptions {
                 if_match: Some(Etag::from("etag-1")),
                 ..Default::default()
             },
@@ -807,7 +809,7 @@ mod tests {
     // Once the emitter is fixed, this test should be changed to assert the corrected empty or
     // optional result generated for a successful 204 response.
     #[tokio::test]
-    async fn generated_get_layout_fails_to_deserialize_valid_no_content_response() {
+    async fn generated_list_layout_fails_to_deserialize_valid_no_content_response() {
         let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(|_req| {
             async move {
                 Ok(AsyncRawResponse::from_bytes(
@@ -820,7 +822,7 @@ mod tests {
         }));
 
         let client = layout_client(mock);
-        let mut pages = client.get_layout(None).unwrap();
+        let mut pages = client.list_layout(None).unwrap();
 
         let error = pages
             .next()
@@ -851,7 +853,7 @@ mod tests {
         let result = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientGetLayoutOptions::default(),
+            &BlobClientListLayoutOptions::default(),
         )
         .await
         .unwrap();
@@ -875,7 +877,7 @@ mod tests {
         let result = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientGetLayoutOptions::default(),
+            &BlobClientListLayoutOptions::default(),
         )
         .await
         .unwrap();
@@ -899,7 +901,7 @@ mod tests {
         let result = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientGetLayoutOptions::default(),
+            &BlobClientListLayoutOptions::default(),
         )
         .await
         .unwrap();
@@ -923,7 +925,7 @@ mod tests {
         let result = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientGetLayoutOptions::default(),
+            &BlobClientListLayoutOptions::default(),
         )
         .await;
         assert!(result.is_err());
@@ -952,11 +954,13 @@ mod tests {
         assert_eq!(cached.expires_on(), now + LAYOUT_TTL);
     }
 
-    fn cached_layout_client(transport: Arc<dyn HttpClient>) -> AutoRefreshingCache<CachedLayout> {
+    fn cached_layout_client(
+        transport: Arc<dyn HttpClient>,
+    ) -> AutoRefreshingCache<(), CachedLayout> {
         layout_cache(
             Arc::new(layout_client(transport)),
             Context::new(),
-            BlobClientGetLayoutOptions::default(),
+            BlobClientListLayoutOptions::default(),
         )
     }
 
@@ -973,7 +977,7 @@ mod tests {
             .boxed()
         }));
 
-        let cached = cached_layout_client(mock).get().await.unwrap();
+        let cached = cached_layout_client(mock).get(&()).await.unwrap();
         let layout = cached.layout().expect("routing should be available");
         assert_eq!(
             layout.ideal_endpoint(0),
@@ -1002,8 +1006,8 @@ mod tests {
         }));
 
         let cache = cached_layout_client(mock);
-        assert!(cache.get().await.unwrap().layout().is_some());
-        assert!(cache.get().await.unwrap().layout().is_some());
+        assert!(cache.get(&()).await.unwrap().layout().is_some());
+        assert!(cache.get(&()).await.unwrap().layout().is_some());
         assert_eq!(calls.load(Ordering::SeqCst), 1);
     }
 
@@ -1024,9 +1028,9 @@ mod tests {
         }));
 
         let cache = cached_layout_client(mock);
-        assert!(cache.get().await.unwrap().layout().is_none());
+        assert!(cache.get(&()).await.unwrap().layout().is_none());
         // The declined layout is cached, so the download stops re-asking.
-        assert!(cache.get().await.unwrap().layout().is_none());
+        assert!(cache.get(&()).await.unwrap().layout().is_none());
         assert_eq!(calls.load(Ordering::SeqCst), 1);
     }
 
@@ -1043,6 +1047,6 @@ mod tests {
             .boxed()
         }));
 
-        assert!(cached_layout_client(mock).get().await.is_err());
+        assert!(cached_layout_client(mock).get(&()).await.is_err());
     }
 }

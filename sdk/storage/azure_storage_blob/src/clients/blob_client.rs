@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-pub use crate::generated::clients::{BlobClient, BlobClientOptions};
+pub use crate::generated::clients::BlobClient;
 
 use crate::{
     blob_layout::{layout_cache, CachedLayout, LayoutEndpoint},
     cache::AutoRefreshingCache,
     generated::{
         clients::BlobClient as GeneratedBlobClient,
-        models::{BlobClientDownloadInternalOptions, BlobClientGetLayoutOptions},
+        models::{BlobClientDownloadInternalOptions, BlobClientListLayoutOptions},
     },
     models::{
         BlobClientDownloadIntoResult, BlobClientDownloadOptions, BlobClientDownloadResult,
@@ -16,16 +16,16 @@ use crate::{
         LayoutAwareRouting, StorageErrorCode,
     },
     partitioned_transfer::{self, PartitionedDownloadBehavior},
-    AppendBlobClient, BlockBlobClient, PageBlobClient,
+    AppendBlobClient, BlockBlobClient, PageBlobClient, SessionOptions,
 };
 use async_trait::async_trait;
 use azure_core::{
     credentials::TokenCredential,
     error::ErrorKind,
+    fmt::SafeDebug,
     http::{
-        headers::Headers,
-        policies::{auth::BearerTokenAuthorizationPolicy, Policy},
-        AsyncRawResponse, Etag, NoFormat, Pipeline, RequestContent, StatusCode, Url, UrlExt,
+        headers::Headers, AsyncRawResponse, ClientOptions, Etag, NoFormat, RequestContent,
+        StatusCode, Url, UrlExt,
     },
     tracing, Bytes, Result,
 };
@@ -33,6 +33,27 @@ use std::{
     ops::Range,
     sync::{Arc, OnceLock},
 };
+
+/// Options used when creating a [`BlobClient`].
+#[derive(Clone, SafeDebug)]
+pub struct BlobClientOptions {
+    /// Allows customization of the client.
+    pub client_options: ClientOptions,
+    /// Options for session token authentication.
+    pub session_options: Option<SessionOptions>,
+    /// Specifies the version of the operation to use for requests.
+    pub version: String,
+}
+
+impl Default for BlobClientOptions {
+    fn default() -> Self {
+        Self {
+            client_options: ClientOptions::default(),
+            session_options: None,
+            version: crate::generated::clients::BlobClientOptions::default().version,
+        }
+    }
+}
 
 impl BlobClient {
     /// Creates a new BlobClient from a blob URL.
@@ -53,40 +74,23 @@ impl BlobClient {
         if blob_url.cannot_be_a_base() {
             return Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::Other,
-                format!("{blob_url} is not a valid base URL"),
+                format!("{blob_url} is not a valid base URL."),
             ));
         }
 
         let mut options = options.unwrap_or_default();
-        super::apply_client_defaults(&mut options.client_options);
-
-        let mut per_retry_policies: Vec<Arc<dyn Policy>> = Vec::default();
-        if let Some(token_credential) = credential {
-            if !blob_url.scheme().starts_with("https") {
-                return Err(azure_core::Error::with_message(
-                    azure_core::error::ErrorKind::Other,
-                    format!("{blob_url} must use https"),
-                ));
-            }
-            per_retry_policies.push(Arc::new(BearerTokenAuthorizationPolicy::new(
-                token_credential,
-                vec!["https://storage.azure.com/.default"],
-            )));
-        }
-
-        let pipeline = Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            options.client_options.clone(),
-            Vec::default(),
-            per_retry_policies,
-            None,
-        );
+        let pipeline = super::build_pipeline(
+            &blob_url,
+            credential,
+            options.session_options.as_ref(),
+            &mut options.client_options,
+            &options.version,
+        )?;
 
         Ok(Self {
             endpoint: blob_url,
-            version: options.version,
             pipeline,
+            version: options.version,
         })
     }
 
@@ -332,7 +336,7 @@ struct BlobClientDownloadBehavior<'a> {
     layout_endpoint: Option<String>,
     /// The caller-requested range, which `options.range` does not retain because it is rewritten for each partition.
     requested_range: Option<HttpRange>,
-    layout_cache: OnceLock<AutoRefreshingCache<CachedLayout>>,
+    layout_cache: OnceLock<AutoRefreshingCache<(), CachedLayout>>,
 }
 
 impl<'a> BlobClientDownloadBehavior<'a> {
@@ -365,15 +369,15 @@ impl<'a> BlobClientDownloadBehavior<'a> {
         let (Some(cache), Some(range)) = (self.layout_cache.get(), range) else {
             return Ok(None);
         };
-        let cached = cache.get().await?;
+        let cached = cache.get(&()).await?;
         Ok(cached
             .layout()
             .and_then(|layout| layout.ideal_endpoint(range.start as i64))
             .map(str::to_owned))
     }
 
-    fn layout_options(&self) -> BlobClientGetLayoutOptions<'static> {
-        BlobClientGetLayoutOptions {
+    fn layout_options(&self) -> BlobClientListLayoutOptions<'static> {
+        BlobClientListLayoutOptions {
             encryption_algorithm: self.options.encryption_algorithm,
             encryption_key: self.options.encryption_key.clone(),
             encryption_key_sha256: self.options.encryption_key_sha256.clone(),

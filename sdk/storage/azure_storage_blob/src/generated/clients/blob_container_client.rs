@@ -22,7 +22,6 @@ use crate::generated::models::{
     BlobContainerClientSetMetadataOptions, CreateSessionConfiguration, CreateSessionResponse,
     FilteredBlobResponse, ListBlobsHierarchicalResponse, ListBlobsResponse, SignedIdentifiers,
 };
-// use crate::SessionOptions;
 use azure_core::{
     error::CheckSuccessOptions,
     fmt::SafeDebug,
@@ -41,7 +40,6 @@ use std::collections::HashMap;
 pub struct BlobContainerClient {
     pub(crate) endpoint: Url,
     pub(crate) pipeline: Pipeline,
-    // pub(crate) session_options: Option<SessionOptions>,
     pub(crate) version: String,
 }
 
@@ -50,8 +48,6 @@ pub struct BlobContainerClient {
 pub struct BlobContainerClientOptions {
     /// Allows customization of the client.
     pub client_options: ClientOptions,
-    // /// Options for session token authentication.
-    // pub session_options: Option<SessionOptions>,
     /// Specifies the version of the operation to use for this request.
     pub version: String,
 }
@@ -1405,7 +1401,6 @@ impl Default for BlobContainerClientOptions {
     fn default() -> Self {
         Self {
             client_options: ClientOptions::default(),
-            // session_options: None,
             version: String::from(DEFAULT_VERSION),
         }
     }
