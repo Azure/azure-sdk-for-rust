@@ -58,10 +58,10 @@
 ####################
 
 # PRLabel: %Cosmos
-/sdk/cosmos/             @Azure/azure-cosmos-rust-sdk
+/sdk/cosmos/             @Azure/azure-cosmos-sdk
 
 # PRLabel: %Cosmos
-/samples/cosmos/         @Azure/azure-cosmos-rust-sdk
+/samples/cosmos/         @Azure/azure-cosmos-sdk
 
 # ServiceLabel: %Cosmos
 # ServiceOwners: @Pilchie
