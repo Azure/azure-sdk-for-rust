@@ -33,7 +33,7 @@ updated `main` and reviewed independently after its predecessor merges.
 - Exercise driver behavior implicitly through the supported Rust SDK surface.
 - Cover positive and negative operation behavior, configuration precedence,
   consistency, retries, fault injection, availability, topology transitions,
-  split/merge, partition migration, and diagnostics.
+  split/merge, and diagnostics.
 - Run deterministic behavior against the hosted emulator through Gateway V1
   and Gateway V2.
 - Validate service fidelity through targeted and eventually comprehensive live
@@ -57,6 +57,9 @@ updated `main` and reviewed independently after its predecessor merges.
 - The suite does not standardize incidental timing, opaque IDs, exact request
   charge, error text, or serialized diagnostics.
 - Cross-language reuse does not require identical source implementations.
+- Physical partition migration and replica-address relocation are Direct-mode
+  concerns. They are not simulated as Gateway behavior; add that coverage only
+  with a Direct transport and address resolver.
 
 ## Test architecture
 
@@ -325,24 +328,17 @@ five account consistency levels. Key authentication is exercised by these
 hosted runs; Entra ID cannot be faithfully validated by the unauthenticated
 hosted emulator and remains covered by the live AAD pipeline.
 
-### PR4 — Dynamic topology and availability
+### Dynamic topology and availability
+
+**Status:** Implemented for deterministic hosted-emulator validation through
+Gateway V1 and Gateway V2. Dynamic Azure Live execution remains deferred to
+future live-test work because account and partition transitions cannot be safely
+synchronized in the shared live pipelines.
 
 Scope:
 
-- TODO: before adding PR4 topology profiles, validate each profile's
-  `client.routing` value against the routing strategy implemented by its test fixture so a profile
-  change cannot silently exercise a different routing mode. Scenarios that intentionally cover
-  multiple source-owned strategies, such as preferred-region plus account-order routing, must
-  declare that override explicitly instead of weakening validation globally;
-- TODO: generalize replication helpers before PR4 adds alternate region layouts or partition-key
-  values. `wait_for_item_replication` currently reads partition key `"A"` while excluding East US,
-  and current pause callers target West US. These are accepted PR3 constraints because every
-  applicable profile and caller has that shape. PR4 fixtures must instead derive the write region,
-  alternate read region, and partition key from the selected profile/scenario, or fail setup with
-  an explicit unsupported-topology error;
 - runtime region add, remove, offline, online, and recovery;
 - write-region failover and failback;
-- deterministic partition migration simulation;
 - physical partition split and merge;
 - manually controlled transition phases;
 - operations issued before, during, and after each transition;
@@ -357,6 +353,27 @@ Scope:
 Dynamic controls are invoked through the hosted emulator management API.
 Equivalent live scenarios are added only where Azure can expose the transition
 safely and repeatably.
+
+The `dynamicTopology` profile uses a three-region, single-write Session account
+with per-partition failover enabled and a PPCB-configured runtime. Its source-native
+scenarios cover region offline/online and remove/re-add recovery, phased write-region
+failover/failback, replication pause/resume, manually phased partition split and
+merge, partition-scoped circuit breaking and failback, hedging during a
+region transition, and query/change-feed continuation across replacement ranges.
+The fixture validates profile routing against each constructed client; scenarios
+that intentionally test a second strategy use an explicit routing override. Replica
+convergence helpers accept the partition key, target region, and configured region
+set rather than assuming the PR3 East US/West US topology.
+
+Hosted runtime region addition is intentionally limited to re-adding a region whose
+network listeners were bound when the emulator process started. The data-plane host
+keeps those listeners alive while the virtual region is retired, matching the stale
+endpoint window and allowing deterministic remove/re-add tests without dynamically
+opening ports during a run. Physical partition migration is intentionally excluded:
+Gateway V1/V2 do not resolve backend replica addresses, while peer SDK migration
+recovery is owned by Direct-mode address caches. The split/merge scenarios retain
+the actual Gateway-visible `410/1007` and partition-range refresh contracts without
+relabeling them as migration.
 
 ### PR5 — Full matrix, live enforcement, and promotion
 

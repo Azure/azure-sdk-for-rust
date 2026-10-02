@@ -187,6 +187,41 @@
       "id": "resilience.transport-retry",
       "test": "resilience_transient_retries::response_timeout_is_retried_with_attempt_history",
       "status": "active"
+    },
+    {
+      "id": "resilience.partition-circuit-breaker",
+      "test": "resilience_topology::partition_breaker_avoids_then_probes_recovered_region",
+      "status": "active"
+    },
+    {
+      "id": "resilience.hedging-topology",
+      "test": "resilience_topology::hedge_completes_while_preferred_region_transitions_offline",
+      "status": "active"
+    },
+    {
+      "id": "topology.region-lifecycle",
+      "test": "topology_region_lifecycle::preferred_region_recovers_across_offline_remove_and_readd",
+      "status": "active"
+    },
+    {
+      "id": "topology.write-failover",
+      "test": "topology_write_failover::writes_follow_phased_failover_and_failback",
+      "status": "active"
+    },
+    {
+      "id": "topology.replication-pause-resume",
+      "test": "topology_replication::paused_replica_converges_without_loss_or_duplication",
+      "status": "active"
+    },
+    {
+      "id": "topology.partition-split-merge",
+      "test": "topology_partition_transitions::manual_split_and_merge_preserve_point_state",
+      "status": "active"
+    },
+    {
+      "id": "topology.continuation-transitions",
+      "test": "topology_continuations::query_and_change_feed_resume_across_split_and_merge",
+      "status": "active"
     }
   ]
 }
