@@ -26,7 +26,7 @@ use crate::{
     cache::{AcquireFn, AutoRefreshingCache, RefreshableValue},
     generated::{
         clients::BlobClient,
-        models::{BlobClientListLayoutOptions, BlobLayout},
+        models::{BlobClientGetLayoutOptions, BlobLayout},
     },
 };
 
@@ -227,12 +227,12 @@ fn parse_endpoint_authority(endpoint: &str) -> Option<(String, Option<u16>)> {
 pub(crate) async fn fetch_layout(
     client: &BlobClient,
     context: &Context<'_>,
-    options: &BlobClientListLayoutOptions<'_>,
+    options: &BlobClientGetLayoutOptions<'_>,
 ) -> Result<Option<Layout>> {
     let mut layout = Layout::default();
     let mut options = options.clone();
     options.method_options.context = context.clone().into_owned();
-    let mut pages = client.list_layout(Some(options))?;
+    let mut pages = client.get_layout(Some(options))?;
 
     while let Some(response) = pages.next().await {
         let response = match response {
@@ -320,7 +320,7 @@ impl RefreshableValue for CachedLayout {
 pub(crate) fn layout_cache(
     client: Arc<BlobClient>,
     context: Context<'static>,
-    layout_options: BlobClientListLayoutOptions<'static>,
+    layout_options: BlobClientGetLayoutOptions<'static>,
 ) -> AutoRefreshingCache<(), CachedLayout> {
     let acquire: AcquireFn<(), CachedLayout> = Arc::new(move |_| {
         let client = Arc::clone(&client);
@@ -740,7 +740,7 @@ mod tests {
         let layout = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientListLayoutOptions::default(),
+            &BlobClientGetLayoutOptions::default(),
         )
         .await
         .unwrap()
@@ -785,7 +785,7 @@ mod tests {
         let layout = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientListLayoutOptions {
+            &BlobClientGetLayoutOptions {
                 if_match: Some(Etag::from("etag-1")),
                 ..Default::default()
             },
@@ -809,7 +809,7 @@ mod tests {
     // Once the emitter is fixed, this test should be changed to assert the corrected empty or
     // optional result generated for a successful 204 response.
     #[tokio::test]
-    async fn generated_list_layout_fails_to_deserialize_valid_no_content_response() {
+    async fn generated_get_layout_fails_to_deserialize_valid_no_content_response() {
         let mock: Arc<dyn HttpClient> = Arc::new(MockHttpClient::new(|_req| {
             async move {
                 Ok(AsyncRawResponse::from_bytes(
@@ -822,7 +822,7 @@ mod tests {
         }));
 
         let client = layout_client(mock);
-        let mut pages = client.list_layout(None).unwrap();
+        let mut pages = client.get_layout(None).unwrap();
 
         let error = pages
             .next()
@@ -853,7 +853,7 @@ mod tests {
         let result = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientListLayoutOptions::default(),
+            &BlobClientGetLayoutOptions::default(),
         )
         .await
         .unwrap();
@@ -877,7 +877,7 @@ mod tests {
         let result = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientListLayoutOptions::default(),
+            &BlobClientGetLayoutOptions::default(),
         )
         .await
         .unwrap();
@@ -901,7 +901,7 @@ mod tests {
         let result = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientListLayoutOptions::default(),
+            &BlobClientGetLayoutOptions::default(),
         )
         .await
         .unwrap();
@@ -925,7 +925,7 @@ mod tests {
         let result = fetch_layout(
             &client,
             &Context::new(),
-            &BlobClientListLayoutOptions::default(),
+            &BlobClientGetLayoutOptions::default(),
         )
         .await;
         assert!(result.is_err());
@@ -960,7 +960,7 @@ mod tests {
         layout_cache(
             Arc::new(layout_client(transport)),
             Context::new(),
-            BlobClientListLayoutOptions::default(),
+            BlobClientGetLayoutOptions::default(),
         )
     }
 

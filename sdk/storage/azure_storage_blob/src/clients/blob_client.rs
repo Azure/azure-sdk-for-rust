@@ -8,7 +8,7 @@ use crate::{
     cache::AutoRefreshingCache,
     generated::{
         clients::BlobClient as GeneratedBlobClient,
-        models::{BlobClientDownloadInternalOptions, BlobClientListLayoutOptions},
+        models::{BlobClientDownloadInternalOptions, BlobClientGetLayoutOptions},
     },
     models::{
         BlobClientDownloadIntoResult, BlobClientDownloadOptions, BlobClientDownloadResult,
@@ -376,8 +376,8 @@ impl<'a> BlobClientDownloadBehavior<'a> {
             .map(str::to_owned))
     }
 
-    fn layout_options(&self) -> BlobClientListLayoutOptions<'static> {
-        BlobClientListLayoutOptions {
+    fn layout_options(&self) -> BlobClientGetLayoutOptions<'static> {
+        BlobClientGetLayoutOptions {
             encryption_algorithm: self.options.encryption_algorithm,
             encryption_key: self.options.encryption_key.clone(),
             encryption_key_sha256: self.options.encryption_key_sha256.clone(),
