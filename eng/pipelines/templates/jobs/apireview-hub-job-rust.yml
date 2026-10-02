@@ -41,6 +41,7 @@ jobs:
 
         - template: /eng/pipelines/templates/steps/use-rust.yml
           parameters:
+            SourcesDir: $(LanguageRepo)
             Toolchain: $(ApiReviewRustToolchain)
 
         - task: PowerShell@2

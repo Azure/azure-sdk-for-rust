@@ -23,6 +23,9 @@ parameters:
     type: boolean
     # RustInstaller@1 handles installation for Microsoft Rust consumers.
     default: true
+  - name: SourcesDir
+    type: string
+    default: $(Build.SourcesDirectory)
 
 steps:
 # `variables/rust.yml` relocates CARGO_HOME off the OS volume. Cargo finds its own
@@ -45,7 +48,7 @@ steps:
 
       $configPath = ([System.IO.Path]::Combine($cargoHome, 'config.toml'))
       Copy-Item `
-        -Path '$(Build.SourcesDirectory)/eng/templates/config.toml.template' `
+        -Path '${{ parameters.SourcesDir }}/eng/templates/config.toml.template' `
         -Destination $configPath `
         -Force
 
@@ -81,7 +84,7 @@ steps:
     displayName: "Use Rust ${{ parameters.Toolchain }}"
     inputs:
       pwsh: true
-      filePath: $(Build.SourcesDirectory)/eng/scripts/Use-Rust.ps1
+      filePath: ${{ parameters.SourcesDir }}/eng/scripts/Use-Rust.ps1
       arguments: >
         -Toolchain '${{ parameters.Toolchain }}'
         -MaxAttempts ${{ parameters.MaxAttempts }}
