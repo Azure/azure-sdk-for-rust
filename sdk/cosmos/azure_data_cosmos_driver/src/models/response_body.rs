@@ -7,12 +7,136 @@
 //! single-payload responses (point reads/writes, batches) and feed-style
 //! responses (Query / ChangeFeed) that carry one element per document.
 
+use std::ops::Range;
+
 use azure_core::{fmt::SafeDebug, Bytes};
 use serde::de::DeserializeOwned;
 
+/// A document backed by its original binary page or a standalone body.
+///
+/// A binary page's value bytes may contain references to strings elsewhere in
+/// the [`source_page()`](Self::source_page). The
+/// [`value_range()`](Self::value_range) is an absolute byte range within that
+/// page; its slice might decode incorrectly without the rest of the page.
+/// Use [`deserialize()`](Self::deserialize) for typed values, or
+/// [`to_standalone()`](Self::to_standalone) for an independent byte buffer.
+#[derive(Clone, SafeDebug)]
+pub struct ItemView {
+    source_page: Bytes,
+    value_range: Range<usize>,
+}
+
+impl ItemView {
+    pub(crate) fn standalone(bytes: Bytes) -> Self {
+        Self {
+            value_range: 0..bytes.len(),
+            source_page: bytes,
+        }
+    }
+
+    pub(crate) fn from_binary_page(
+        page: Bytes,
+        value_range: Range<usize>,
+    ) -> crate::error::Result<Self> {
+        if !crate::binary_json::is_binary(&page)
+            || value_range.start == 0
+            || value_range.start > value_range.end
+            || page.get(value_range.clone()).is_none()
+        {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("binary item range lies outside its source page")
+                .build());
+        }
+        Ok(Self {
+            source_page: page,
+            value_range,
+        })
+    }
+
+    /// Returns the full source buffer, including any string targets outside
+    /// this item's value range.
+    ///
+    /// For standalone items, the source is the item itself, in text or binary.
+    pub fn source_page(&self) -> &[u8] {
+        &self.source_page
+    }
+
+    /// Returns this item's absolute byte offsets within
+    /// [`source_page()`](Self::source_page), with an exclusive end.
+    pub fn value_range(&self) -> Range<usize> {
+        self.value_range.clone()
+    }
+
+    /// Returns the original value bytes.
+    ///
+    /// A binary value may refer outside this slice. Keep the source page when
+    /// decoding it, or call [`to_standalone()`](Self::to_standalone).
+    pub fn raw_value(&self) -> &[u8] {
+        &self.source_page[self.value_range.clone()]
+    }
+
+    pub(crate) fn is_page_backed(&self) -> bool {
+        self.value_range.start != 0
+    }
+
+    /// Returns a standalone document.
+    ///
+    /// A standalone item returns a shared clone of its original buffer. A
+    /// page-backed item is decoded in context and re-encoded with a binary
+    /// preamble. Its value is preserved, but its encoding can differ from the
+    /// original bytes; use [`raw_value()`](Self::raw_value) for exact bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns a response-body error if the binary item cannot be decoded.
+    pub fn to_standalone(&self) -> crate::error::Result<Bytes> {
+        if !self.is_page_backed() {
+            return Ok(self.source_page.clone());
+        }
+        let mut value =
+            crate::binary_json::reader::decode_at(&self.source_page, self.value_range.clone())
+                .map_err(|e| invalid_body_error("failed to materialize binary item", e))?;
+        crate::binary_json::normalize_integral_floats(&mut value);
+        Ok(Bytes::from(crate::binary_json::encode(&value)))
+    }
+
+    /// Deserializes an item using the whole source page for binary references.
+    ///
+    /// # Errors
+    ///
+    /// Returns a response-body error if the item is invalid or `T` rejects it.
+    pub fn deserialize<T: DeserializeOwned>(&self) -> crate::error::Result<T> {
+        if !self.is_page_backed() {
+            return deserialize_response(&self.source_page, "failed to deserialize feed item");
+        }
+        match crate::binary_json::de::from_slice_at(&self.source_page, self.value_range.clone()) {
+            Ok(value) => Ok(value),
+            Err(crate::binary_json::BinaryError::Custom(message))
+                if message.starts_with("duplicate field ") =>
+            {
+                let standalone = self.to_standalone()?;
+                deserialize_response(&standalone, "failed to deserialize feed item")
+            }
+            Err(e) => Err(invalid_body_error("failed to deserialize feed item", e)),
+        }
+    }
+
+    pub(crate) fn decoded_value(&self) -> crate::error::Result<serde_json::Value> {
+        if !self.is_page_backed() {
+            return deserialize_response(&self.source_page, "failed to decode feed item");
+        }
+        let mut value =
+            crate::binary_json::reader::decode_at(&self.source_page, self.value_range.clone())
+                .map_err(|e| invalid_body_error("failed to decode feed item", e))?;
+        crate::binary_json::normalize_integral_floats(&mut value);
+        Ok(value)
+    }
+}
+
 /// The body of a [`CosmosResponse`](super::CosmosResponse).
 ///
-/// Explicitly distinguishes between the three response shapes the driver
+/// Explicitly distinguishes between the four response shapes the driver
 /// returns:
 ///
 /// * [`ResponseBody::NoPayload`] — the service returned no body (e.g. HTTP
@@ -24,6 +148,8 @@ use serde::de::DeserializeOwned;
 ///   for feed responses (Query / ChangeFeed) where the driver pipeline splits
 ///   the `Documents` array once via zero-copy [`Bytes::slice`](bytes::Bytes::slice)
 ///   so the SDK never needs to re-parse the envelope.
+/// * [`ResponseBody::ContextualItems`] — documents with their complete binary
+///   source pages, needed when a value refers to a string outside its span.
 ///
 /// The payload variants carry shared ownership via reference-counted
 /// [`bytes::Bytes`].
@@ -38,6 +164,10 @@ pub enum ResponseBody {
 
     /// A list of per-document slices produced by the feed/query pipeline.
     Items(Vec<Bytes>),
+
+    /// Original page-backed documents (and any standalone items interleaved
+    /// with them) in the order returned by the query pipeline.
+    ContextualItems(Vec<ItemView>),
 }
 
 impl ResponseBody {
@@ -70,29 +200,48 @@ impl ResponseBody {
         Self::Items(items)
     }
 
+    pub(crate) fn from_item_views(items: Vec<ItemView>) -> Self {
+        if items.iter().any(ItemView::is_page_backed) {
+            Self::ContextualItems(items)
+        } else {
+            Self::Items(items.into_iter().map(|item| item.source_page).collect())
+        }
+    }
+
     /// Returns `true` if the body carries no readable content.
     ///
     /// * [`NoPayload`](Self::NoPayload) is always empty.
     /// * [`Bytes`](Self::Bytes) is empty when the single buffer has zero bytes.
     /// * [`Items`](Self::Items) is empty when the feed envelope contains zero
     ///   documents.
+    /// * [`ContextualItems`](Self::ContextualItems) is empty when it contains
+    ///   no item views.
     pub fn is_empty(&self) -> bool {
         match self {
             Self::NoPayload => true,
             Self::Bytes(b) => b.is_empty(),
             Self::Items(items) => items.is_empty(),
+            Self::ContextualItems(items) => items.is_empty(),
         }
     }
 
-    /// Returns the single payload, or an error if the body is a feed
-    /// [`Items`](Self::Items) response. A [`NoPayload`](Self::NoPayload) body
-    /// yields an empty [`Bytes`].
+    /// Returns the single payload, or an error if the body is a feed response.
+    /// A [`NoPayload`](Self::NoPayload) body yields an empty [`Bytes`].
     ///
     /// Used by single-document response paths (point reads/writes, batch, etc.).
     pub fn single(self) -> crate::error::Result<Bytes> {
         match self {
             Self::NoPayload => Ok(Bytes::new()),
             Self::Bytes(b) => Ok(b),
+            Self::ContextualItems(items) => Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::CosmosStatus::new(
+                    azure_core::http::StatusCode::BadRequest,
+                ))
+                .with_message(format!(
+                    "expected single response body, found feed response with {} item(s)",
+                    items.len()
+                ))
+                .build()),
             Self::Items(items) => Err(crate::error::CosmosError::builder()
                 .with_status(crate::error::CosmosStatus::new(
                     azure_core::http::StatusCode::BadRequest,
@@ -105,18 +254,24 @@ impl ResponseBody {
         }
     }
 
-    /// Returns the per-item raw buffers of a feed response, or wraps a
+    /// Returns standalone per-item raw buffers of a feed response, or wraps a
     /// single-payload body as a one-element vector. A
     /// [`NoPayload`](Self::NoPayload) body yields an empty `Vec`.
     ///
-    /// This is the raw-bytes counterpart to
-    /// [`into_items`](Self::into_items); use it when callers want to decode
-    /// each item themselves instead of going through JSON.
+    /// For [`ContextualItems`](Self::ContextualItems), each binary item is
+    /// decoded in its full source page and re-encoded. These buffers are
+    /// independently decodable but not byte-identical to the original
+    /// document; use the views for exact source bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if a contextual item cannot be materialized.
     pub fn items(self) -> crate::error::Result<Vec<Bytes>> {
         match self {
             Self::NoPayload => Ok(Vec::new()),
             Self::Bytes(b) => Ok(vec![b]),
             Self::Items(items) => Ok(items),
+            Self::ContextualItems(items) => items.iter().map(ItemView::to_standalone).collect(),
         }
     }
 
@@ -138,8 +293,9 @@ impl ResponseBody {
     /// Deserializes every item in a feed response, or the single payload, as
     /// type `T`. A [`NoPayload`](Self::NoPayload) body yields an empty `Vec`.
     ///
-    /// Each buffer is decoded transparently as either Cosmos binary JSON or
-    /// UTF-8 text JSON (auto-detected by the `0x80` preamble).
+    /// Each standalone buffer is decoded as Cosmos binary JSON or UTF-8 text
+    /// JSON (detected by the `0x80` preamble). Contextual binary items use the
+    /// complete source page for reference strings.
     pub fn into_items<T: DeserializeOwned>(self) -> crate::error::Result<Vec<T>> {
         match self {
             Self::NoPayload => Ok(Vec::new()),
@@ -158,6 +314,7 @@ impl ResponseBody {
                 // so it must re-prefix per document first.
                 .map(|b| deserialize_response(&b, "failed to deserialize feed item"))
                 .collect(),
+            Self::ContextualItems(items) => items.iter().map(ItemView::deserialize).collect(),
         }
     }
 
@@ -202,6 +359,21 @@ impl ResponseBody {
                     .collect::<crate::error::Result<Vec<_>>>()?;
                 Ok(Self::Items(converted))
             }
+            Self::ContextualItems(items) => {
+                let converted = items
+                    .iter()
+                    .map(|item| {
+                        if item.is_page_backed() {
+                            serde_json::to_vec(&item.decoded_value()?)
+                                .map(Bytes::from)
+                                .map_err(|e| invalid_body_error("failed to transcode item", e))
+                        } else {
+                            convert(&item.source_page)
+                        }
+                    })
+                    .collect::<crate::error::Result<Vec<_>>>()?;
+                Ok(Self::Items(converted))
+            }
         }
     }
 
@@ -226,6 +398,11 @@ impl ResponseBody {
             Self::Items(items) => items
                 .into_iter()
                 .map(convert)
+                .collect::<crate::error::Result<Vec<_>>>()
+                .map(Self::Items),
+            Self::ContextualItems(items) => items
+                .iter()
+                .map(ItemView::to_standalone)
                 .collect::<crate::error::Result<Vec<_>>>()
                 .map(Self::Items),
         }

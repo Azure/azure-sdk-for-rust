@@ -7,7 +7,7 @@ use super::{
     binary_heap,
     order_by::compare_key_tuples,
     query_plan::SortOrder,
-    query_response::{parse_envelope_page, EnvelopeRow, PageAggregator},
+    query_response::{parse_envelope_page, EnvelopePayload, EnvelopeRow, PageAggregator},
     PageResult, PipelineContext, PipelineNode, PipelineNodeState,
 };
 use crate::{
@@ -15,7 +15,6 @@ use crate::{
     models::{FeedRange, MaxItemCountHint, SessionToken},
 };
 use async_trait::async_trait;
-use serde_json::value::RawValue;
 use std::{cmp::Ordering, collections::VecDeque, mem, sync::Arc};
 
 const DEFAULT_PAGE_SIZE: usize = 100;
@@ -36,7 +35,7 @@ pub(crate) struct NonStreamingOrderedMerge {
     emit_binary: bool,
     retained: Vec<RetainedRow>,
     next_ordinal: u64,
-    results: VecDeque<Box<RawValue>>,
+    results: VecDeque<EnvelopePayload>,
     aggregator: Option<PageAggregator>,
     session_token: Option<SessionToken>,
     buffering_complete: bool,
@@ -262,6 +261,7 @@ mod tests {
         models::ResponseBody,
     };
     use serde_json::json;
+    use serde_json::value::RawValue;
 
     fn envelope(rows: &[(&str, f64, &str)]) -> Vec<u8> {
         serde_json::to_vec(&json!({
@@ -649,7 +649,7 @@ mod tests {
                     OrderByItem::String("a".to_owned()),
                 ],
                 rid: "left".to_owned(),
-                payload: RawValue::from_string("{}".to_owned()).unwrap(),
+                payload: EnvelopePayload::Text(RawValue::from_string("{}".to_owned()).unwrap()),
             },
             ordinal: 0,
         };
@@ -660,7 +660,7 @@ mod tests {
                     OrderByItem::String("b".to_owned()),
                 ],
                 rid: "right".to_owned(),
-                payload: RawValue::from_string("{}".to_owned()).unwrap(),
+                payload: EnvelopePayload::Text(RawValue::from_string("{}".to_owned()).unwrap()),
             },
             ordinal: 1,
         };

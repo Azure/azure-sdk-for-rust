@@ -312,6 +312,36 @@ pub(crate) fn response(body: &[u8]) -> CosmosResponse {
     response_with_continuation(body, None)
 }
 
+pub(crate) fn binary_order_by_pages(
+    fan_out: usize,
+    items_per_page: usize,
+    payload_size: usize,
+) -> Vec<bytes::Bytes> {
+    let data = "x".repeat(payload_size);
+    (0..fan_out)
+        .map(|partition| {
+            let documents: Vec<_> = (0..items_per_page)
+                .map(|item| {
+                    let rank = item * fan_out + partition;
+                    serde_json::json!({
+                        "_rid": format!("rid-{rank}"),
+                        "orderByItems": [{"item": rank}],
+                        "payload": {
+                            "id": rank,
+                            "data": data,
+                        },
+                    })
+                })
+                .collect();
+            bytes::Bytes::from(crate::binary_json::encode(&serde_json::json!({
+                "_rid": "root",
+                "_count": documents.len(),
+                "Documents": documents,
+            })))
+        })
+        .collect()
+}
+
 /// Creates a test response with the given body and optional continuation token.
 pub(crate) fn response_with_continuation(
     body: &[u8],

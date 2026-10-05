@@ -1271,7 +1271,8 @@ typedef struct cosmos_response_header_t {
  *   response headers.
  * - The planner-derived `next_continuation` — distinct from the
  *   `x-ms-continuation` server header, which sits in the header list.
- * - The `body` bytes and the degenerate `driver` / `container` owned
+ * - The `body` bytes (a standalone first item for feed responses) and the
+ *   degenerate `driver` / `container` owned
  *   side-payloads.
  *
  * The degenerate driver-creation and container-resolution completions
@@ -1351,7 +1352,9 @@ typedef struct cosmos_completion_t {
    */
   uintptr_t headers_len;
   /**
-   * Borrowed response body bytes, or NULL when the body is empty.
+   * Borrowed response body bytes, or NULL when the body is empty. For feed
+   * responses, this is the first item in standalone form. Use
+   * `cosmos_completion_item_page` to inspect each item's original page.
    */
   const uint8_t *body;
   /**
@@ -2063,6 +2066,44 @@ void cosmos_bytes_free(struct cosmos_bytes_t bytes);
  * begins, so it is available on the completion regardless of outcome.
  */
 const char *cosmos_completion_patch_tracking_id(const struct cosmos_completion_t *completion);
+
+/**
+ * Returns the number of items addressable through
+ * `cosmos_completion_item_page`.
+ *
+ * A nonempty single-body response counts as one item. NULL, no-payload, and
+ * freed completion records count as zero. The count excludes later feed
+ * pages. A non-NULL `completion` must point to a completion record returned
+ * by the queue whose storage is still allocated.
+ */
+uintptr_t cosmos_completion_item_count(const struct cosmos_completion_t *completion);
+
+/**
+ * Borrows the original page and absolute byte range of an item.
+ *
+ * For a contextual binary item, `out_page` includes the binary preamble and
+ * reference targets outside the item. `out_item_offset` and `out_item_len`
+ * identify the value within that page; the value slice may not be
+ * independently decodable. For standalone feed items and nonempty
+ * single-body responses, the page is the item itself, starting at offset
+ * zero. Returned page pointers remain valid until the completion is freed.
+ *
+ * A non-NULL `completion` must point to a completion record returned by the
+ * queue whose storage is still allocated. Non-NULL outputs must point to
+ * writable slots.
+ *
+ * # Errors
+ *
+ * Returns an invalid-argument status for NULL output slots, a NULL or freed
+ * completion record, or an out-of-range `item_index`. Non-NULL outputs are
+ * reset to NULL/zero on failure.
+ */
+cosmos_status_code_t cosmos_completion_item_page(const struct cosmos_completion_t *completion,
+                                                 uintptr_t item_index,
+                                                 const uint8_t **out_page,
+                                                 uintptr_t *out_page_len,
+                                                 uintptr_t *out_item_offset,
+                                                 uintptr_t *out_item_len);
 
 /**
  * Create a completion queue bound to `runtime`. Returns NULL if `runtime`

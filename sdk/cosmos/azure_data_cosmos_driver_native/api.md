@@ -41,6 +41,10 @@ pub mod bytes {
 }
 pub mod completion {
     #[no_mangle]
+    pub extern "C" fn cosmos_completion_item_count(completion: *const CosmosCompletion) -> usize;
+    #[no_mangle]
+    pub extern "C" fn cosmos_completion_item_page(completion: *const CosmosCompletion, item_index: usize, out_page: *mut *const u8, out_page_len: *mut usize, out_item_offset: *mut usize, out_item_len: *mut usize) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
     pub extern "C" fn cosmos_completion_patch_tracking_id(completion: *const CosmosCompletion) -> *const std::ffi::c_char;
     #[no_mangle]
     pub extern "C" fn cosmos_completion_queue_create(runtime: *const crate::runtime::RuntimeContext, options: *const CosmosCompletionQueueOptions) -> *mut CompletionQueue;
@@ -285,14 +289,12 @@ pub mod error {
         CosmosSubStatusClientQueryPlanInvalidTopOffsetLimit = 20114,
         CosmosSubStatusClientContinuationTokenNonQueryOperation = 20117,
         CosmosSubStatusClientDuplicateFaultInjectionRuleId = 20150,
-        CosmosSubStatusClientThroughputControlGroupNotRegistered = 20152,
         CosmosSubStatusClientHttpClientConstructionFailed = 20153,
         CosmosSubStatusClientReqwestFeatureRequired = 20154,
         CosmosSubStatusClientRequestUrlMissingHost = 20155,
         CosmosSubStatusClientRequestUrlMissingKnownPort = 20156,
         CosmosSubStatusClientImdsHttpClientConstructionFailed = 20157,
         CosmosSubStatusClientImdsReqwestFeatureRequired = 20158,
-        CosmosSubStatusClientPartitionKeyRangeCacheRequired = 20159,
         CosmosSubStatusClientContinuationTokenFetchInFlight = 20200,
         CosmosSubStatusClientTopologyProviderMissing = 20201,
         CosmosSubStatusClientDriverNotInitialized = 20202,
@@ -450,7 +452,6 @@ pub mod op_request {
         pub max_session_retry_count: i32,
         pub end_to_end_timeout_ms: i64,
         pub endpoint_unavailability_ttl_ms: i64,
-        pub throughput_control_group: crate::string::CosmosStringView,
         pub excluded_regions: *const crate::string::CosmosStringView,
         pub excluded_regions_len: usize,
         pub custom_headers: *const CosmosHeaderKv,

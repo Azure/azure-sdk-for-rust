@@ -45,13 +45,10 @@ tracing.workspace = true
 
 [dev-dependencies]
 # Path-only — the driver crate is not (yet) a workspace dependency.
-# `__internal_mocking` backs the driver mocking helpers used by the wrapper's
-# tests; `__internal_test_diagnostics_construction` unlocks the driver's hidden
-# `DiagnosticsContext`/`RequestDiagnostics` test constructors so the diagnostics
-# accessors can be exercised against populated data without a live service.
-# Both are dev-only, internal, unstable features never enabled for the shipped
-# `cdylib`/`staticlib`.
-azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.8.0", default-features = false, features = ["__internal_mocking", "__internal_test_diagnostics_construction"] }
+# Internal, unstable features used only by Rust tests. The in-memory emulator
+# is also enabled by `test-abi` to exercise binary pages through the C tests;
+# production builds do not enable that feature.
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "0.8.0", default-features = false, features = ["__internal_mocking", "__internal_test_diagnostics_construction", "__internal_in_memory_emulator"] }
 azure_core = { workspace = true, default-features = false }
 tokio = { workspace = true, features = ["rt-multi-thread", "sync", "time", "macros", "test-util"] }
 
@@ -60,11 +57,13 @@ cbindgen = "0.29.2"
 
 [features]
 # Compiles the `__test_only_*` C-ABI helpers that back the `c_tests/`
-# end-to-end suite. Off by default — production `cdylib` / `staticlib`
-# builds do not expose these symbols. Enabled by the CMake C-test build
-# (`corrosion_import_crate(FEATURES test-abi)`); Rust integration tests
-# and normal consumer builds must not enable it.
-test-abi = ["azure_data_cosmos_driver/__internal_mocking"]
+# end-to-end suite, including an in-memory ORDER BY page fixture. Off by
+# default — production builds do not expose these symbols or the emulator.
+# Enabled by the CMake C-test build (`corrosion_import_crate(FEATURES test-abi)`).
+test-abi = [
+    "azure_data_cosmos_driver/__internal_mocking",
+    "azure_data_cosmos_driver/__internal_in_memory_emulator",
+]
 
 [lints]
 workspace = true

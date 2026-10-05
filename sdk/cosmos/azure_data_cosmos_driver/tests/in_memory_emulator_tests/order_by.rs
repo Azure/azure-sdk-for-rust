@@ -26,9 +26,11 @@ use azure_data_cosmos_driver::in_memory_emulator::{
 };
 use azure_data_cosmos_driver::models::{
     CosmosOperation, FeedRange, ItemReference, MaxItemCountHint, PartitionKey,
-    PartitionKeyDefinition,
+    PartitionKeyDefinition, ResponseBody,
 };
-use azure_data_cosmos_driver::options::{DriverOptions, OperationOptions, PlanOptions};
+use azure_data_cosmos_driver::options::{
+    BinaryEncodingOptions, DriverOptions, OperationOptions, OperationOptionsBuilder, PlanOptions,
+};
 
 const GATEWAY_URL: &str = "https://eastus.emulator.local";
 
@@ -73,6 +75,86 @@ async fn setup() -> (
         .await
         .expect("driver initializes against the emulator");
     (emulator, driver)
+}
+
+#[tokio::test]
+async fn binary_order_by_preserves_page_backed_items_across_physical_ranges() {
+    let (_emulator, driver) = setup().await;
+    let container = driver
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
+        .await
+        .unwrap();
+    for i in 0..12 {
+        let id = format!("binary-{i}");
+        let pk = format!("pk-{i}");
+        let item_ref =
+            ItemReference::from_name(&container, PartitionKey::from(pk.clone()), id.clone());
+        let body = serde_json::json!({"id": id, "pk": pk, "rank": 11 - i});
+        driver
+            .execute_singleton_operation(
+                CosmosOperation::create_item(item_ref)
+                    .with_body(serde_json::to_vec(&body).unwrap()),
+                OperationOptions::default(),
+            )
+            .await
+            .unwrap();
+    }
+
+    let options = OperationOptionsBuilder::new()
+        .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(true))
+        .build();
+    for (query, expected) in [
+        (
+            "SELECT * FROM c ORDER BY c.rank",
+            (0..12).collect::<Vec<_>>(),
+        ),
+        (
+            "SELECT * FROM c ORDER BY c.rank OFFSET 3 LIMIT 4",
+            (3..7).collect::<Vec<_>>(),
+        ),
+    ] {
+        let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
+            .with_body(
+                serde_json::to_vec(&serde_json::json!({"query": query, "parameters": []})).unwrap(),
+            )
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(2).unwrap()));
+        let mut plan = Box::pin(
+            driver
+                .plan_operation(operation, &options, None, &PlanOptions::default())
+                .await
+                .unwrap(),
+        );
+
+        let mut ranks = Vec::new();
+        while let Some(response) = driver
+            .execute_plan(&mut plan, Some(container.clone()), options.clone())
+            .await
+            .unwrap()
+        {
+            if response.body().is_empty() {
+                continue;
+            }
+            let ResponseBody::ContextualItems(items) = response.into_body() else {
+                panic!("binary ORDER BY should retain backend page context");
+            };
+            assert!(items.len() <= 2);
+            for item in items {
+                let range = item.value_range();
+                assert_eq!(item.raw_value(), &item.source_page()[range]);
+                assert!(azure_data_cosmos_driver::binary_json::is_binary(
+                    item.source_page()
+                ));
+                let value: serde_json::Value = item.deserialize().unwrap();
+                let standalone = item.to_standalone().unwrap();
+                assert_eq!(
+                    azure_data_cosmos_driver::binary_json::decode(&standalone).unwrap(),
+                    value
+                );
+                ranks.push(value["rank"].as_i64().unwrap());
+            }
+        }
+        assert_eq!(ranks, expected);
+    }
 }
 
 #[tokio::test]

@@ -191,6 +191,7 @@ fn spawn_oneshot<Fut, R>(
                     ctx.op_inner.clone(),
                     response.map(|b| *b),
                     next_continuation,
+                    ctx.include_error_details,
                 ),
                 SuccessKind::Driver(driver) => {
                     PendingCompletion::ok_driver(user_data, ctx.op_inner.clone(), driver)

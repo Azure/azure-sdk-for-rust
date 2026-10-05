@@ -320,6 +320,7 @@ fn generate_c_header() {
             // double-prefixing it into `cosmos_COSMOS_STATUS_SUCCESS`.
             exclude: vec![
                 "__test_only_enqueue_ok_completion_with_all_value_kinds".into(),
+                "__test_only_enqueue_ordered_item_page_fixture".into(),
                 "__test_only_create_fault_injection_fixture".into(),
                 "COSMOS_STATUS_SUCCESS".into(),
                 "COSMOS_FAULT_INJECTION_ABI_VERSION_1".into(),

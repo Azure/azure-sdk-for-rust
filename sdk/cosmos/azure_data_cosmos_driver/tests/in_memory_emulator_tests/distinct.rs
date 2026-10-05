@@ -448,6 +448,10 @@ fn documents_of(
                 super::parse_json_body(item).expect("item should parse as text or binary JSON")
             })
             .collect(),
+        ResponseBody::ContextualItems(items) => items
+            .iter()
+            .map(|item| item.deserialize().expect("page-backed item should decode"))
+            .collect(),
         ResponseBody::Bytes(bytes) => {
             let value =
                 super::parse_json_body(&bytes).expect("page should parse as text or binary JSON");
@@ -492,10 +496,14 @@ async fn drain_query_with_options(
             ResponseBody::Items(items) => items
                 .iter()
                 .all(|item| azure_data_cosmos_driver::binary_json::is_binary(item)),
+            ResponseBody::ContextualItems(items) => items
+                .iter()
+                .all(|item| azure_data_cosmos_driver::binary_json::is_binary(item.source_page())),
             ResponseBody::NoPayload => false,
         };
         let has_payload = !matches!(response.body(), ResponseBody::NoPayload)
-            && !matches!(response.body(), ResponseBody::Items(items) if items.is_empty());
+            && !matches!(response.body(), ResponseBody::Items(items) if items.is_empty())
+            && !matches!(response.body(), ResponseBody::ContextualItems(items) if items.is_empty());
         if has_payload {
             formats.push(is_binary);
         }

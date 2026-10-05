@@ -50,6 +50,10 @@ _Static_assert(offsetof(cosmos_completion_t, backing) == 104, "backing offset");
 // so the auto-discovered CMake target can link against it.
 extern cosmos_status_code_t
 __test_only_enqueue_ok_completion_with_all_value_kinds(cosmos_completion_queue_t *queue);
+extern cosmos_status_code_t __test_only_enqueue_ordered_item_page_fixture(
+    cosmos_completion_queue_t *queue, uint8_t binary_enabled,
+    cosmos_bytes_t *out_expected_page, const uint8_t **out_source_page,
+    uintptr_t *out_item_offset, uintptr_t *out_item_len);
 
 // Small helper: build a runtime + queue, or return non-zero on failure so
 // the caller can SKIP cleanly (mirrors the pattern in `submit_and_response.c`).
@@ -206,6 +210,140 @@ cleanup:
     return result;
 }
 
+static int test_completion_item_page_accessors_reject_missing_items(void)
+{
+    int result = TEST_PASS;
+    cosmos_completion_t completion = {0};
+    const uint8_t *page = (const uint8_t *)(uintptr_t)1;
+    size_t page_len = 1, offset = 1, item_len = 1;
+
+    ASSERT(cosmos_completion_item_count(NULL) == 0, "NULL has no items");
+    ASSERT(cosmos_completion_item_count(&completion) == 0, "empty completion has no items");
+    cosmos_status_code_t status = cosmos_completion_item_page(
+        &completion, 0, &page, &page_len, &offset, &item_len);
+    ASSERT(status != COSMOS_STATUS_SUCCESS, "missing item returns an error");
+    ASSERT(page == NULL && page_len == 0 && offset == 0 && item_len == 0,
+           "failed lookup clears every output");
+    status = cosmos_completion_item_page(&completion, 0, NULL, &page_len, &offset, &item_len);
+    ASSERT(status != COSMOS_STATUS_SUCCESS, "NULL output returns an error");
+
+    return result;
+}
+
+static int check_ordered_item_pages(bool binary)
+{
+    int result = TEST_PASS;
+    cosmos_runtime_t *runtime = NULL;
+    cosmos_completion_queue_t *cq = NULL;
+    cosmos_completion_t out = {0};
+    cosmos_bytes_t expected_page = {0};
+    const uint8_t *original_page = NULL, *page = NULL, *second_page = NULL;
+    uintptr_t expected_offset = 0, expected_item_len = 0;
+    uintptr_t page_len = 0, offset = 0, item_len = 0;
+    uintptr_t second_page_len = 0, second_offset = 0, second_item_len = 0;
+    size_t drained = 0;
+    bool live_completion = false;
+
+    if (make_runtime_and_cq(&runtime, &cq) != 0) {
+        printf("    SKIP: could not build runtime/cq in this environment\n");
+        return TEST_SKIP;
+    }
+    cosmos_status_code_t status = __test_only_enqueue_ordered_item_page_fixture(
+        cq, (uint8_t)binary, &expected_page, &original_page,
+        &expected_offset, &expected_item_len);
+    REQUIRE(status == COSMOS_STATUS_SUCCESS, "ordered item fixture enqueued (rc=%d)", (int)status);
+
+    drained = cosmos_completion_queue_wait(cq, &out, 1, 100);
+    live_completion = drained == 1;
+    REQUIRE(live_completion, "drained ordered item completion");
+    REQUIRE(out.outcome == COSMOS_COMPLETION_OUTCOME_OK, "ordered item outcome is OK");
+    REQUIRE(cosmos_completion_item_count(&out) == 2, "two ordered items addressable");
+
+    status = cosmos_completion_item_page(&out, 0, &page, &page_len, &offset, &item_len);
+    REQUIRE(status == COSMOS_STATUS_SUCCESS, "first page accessor succeeds");
+    REQUIRE(page != NULL && expected_page.ptr != NULL, "source and snapshot have bytes");
+    REQUIRE(page == original_page, "page pointer is the original driver source");
+    REQUIRE(page_len == expected_page.len && page_len > 0, "page length matches independent snapshot");
+    ASSERT(memcmp(page, expected_page.ptr, page_len) == 0, "page bytes match original source");
+    REQUIRE(offset <= page_len && item_len <= page_len - offset, "first absolute range fits page");
+    ASSERT(offset == expected_offset && item_len == expected_item_len,
+           "first absolute offset and length match driver item range");
+    if (binary) {
+        ASSERT(page[0] == 0x80 && offset > 0, "binary page retains preamble before item");
+        REQUIRE(out.body != NULL && out.body_len > 0, "legacy body is materialized");
+        ASSERT(out.body != page && out.body[0] == 0x80,
+               "legacy binary body is standalone, not the original page");
+    } else {
+        ASSERT(page[0] == '{' && offset == 0 && item_len == page_len,
+               "text item is its own zero-offset page");
+        ASSERT(out.body == page && out.body_len == page_len, "legacy text body shares first item");
+    }
+
+    status = cosmos_completion_item_page(
+        &out, 1, &second_page, &second_page_len, &second_offset, &second_item_len);
+    REQUIRE(status == COSMOS_STATUS_SUCCESS && second_page != NULL && second_page_len > 0,
+            "second item is addressable");
+    REQUIRE(second_offset <= second_page_len &&
+                second_item_len <= second_page_len - second_offset,
+            "second absolute range fits its page");
+    ASSERT(second_page[0] == (binary ? 0x80 : '{'), "second page has expected encoding");
+    ASSERT(binary ? second_offset > 0 : (second_offset == 0 && second_item_len == second_page_len),
+           "second item has expected range shape");
+
+    cosmos_completion_queue_free(cq);
+    cq = NULL;
+    cosmos_runtime_free(runtime);
+    runtime = NULL;
+    ASSERT(cosmos_completion_item_count(&out) == 2, "items outlive queue and runtime");
+    const uint8_t *retained_page = NULL;
+    uintptr_t retained_len = 0, retained_offset = 0, retained_item_len = 0;
+    status = cosmos_completion_item_page(
+        &out, 0, &retained_page, &retained_len, &retained_offset, &retained_item_len);
+    REQUIRE(status == COSMOS_STATUS_SUCCESS && retained_page == page,
+            "source page pointer survives until completion free");
+    ASSERT(retained_len == page_len && retained_offset == offset && retained_item_len == item_len &&
+               memcmp(retained_page, expected_page.ptr, page_len) == 0,
+           "source bytes and range survive queue/runtime free");
+
+    cosmos_completion_queue_free_completions(&out, 1);
+    live_completion = false;
+    ASSERT(cosmos_completion_item_count(&out) == 0, "freed completion has no items");
+    page = (const uint8_t *)(uintptr_t)1;
+    page_len = offset = item_len = 1;
+    status = cosmos_completion_item_page(&out, 0, &page, &page_len, &offset, &item_len);
+    ASSERT(status != COSMOS_STATUS_SUCCESS && page == NULL &&
+               page_len == 0 && offset == 0 && item_len == 0,
+           "freed completion rejects access and clears outputs");
+
+cleanup:
+    if (live_completion) {
+        cosmos_completion_queue_free_completions(&out, 1);
+    }
+    if (expected_page.ptr != NULL) {
+        cosmos_bytes_free(expected_page);
+    }
+    if (cq != NULL) {
+        cosmos_completion_queue_free(cq);
+    }
+    if (runtime != NULL) {
+        cosmos_runtime_free(runtime);
+    }
+    return result;
+}
+
+static int test_completion_item_page_binary(void)
+{
+    return check_ordered_item_pages(true);
+}
+
+static int test_completion_item_page_text(void)
+{
+    return check_ordered_item_pages(false);
+}
+
 TEST_SUITE_BEGIN("completion_headers_abi")
     TEST_REGISTER(completion_headers_dispatch_by_kind)
+    TEST_REGISTER(completion_item_page_accessors_reject_missing_items)
+    TEST_REGISTER(completion_item_page_binary)
+    TEST_REGISTER(completion_item_page_text)
 TEST_SUITE_END("completion_headers_abi")

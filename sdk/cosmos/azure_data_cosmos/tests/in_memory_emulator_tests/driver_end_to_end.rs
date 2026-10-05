@@ -35,7 +35,9 @@ fn body_json(response: &CosmosResponse) -> serde_json::Value {
             parse_body_json(b).expect("response body should parse as text or binary JSON")
         }
         ResponseBody::NoPayload => panic!("expected single Bytes body, got no payload"),
-        ResponseBody::Items(_) => panic!("expected single Bytes body, got feed response"),
+        ResponseBody::Items(_) | ResponseBody::ContextualItems(_) => {
+            panic!("expected single Bytes body, got feed response")
+        }
     }
 }
 

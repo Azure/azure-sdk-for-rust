@@ -61,7 +61,7 @@ FFI hosts set the equivalent flat fields on the C ABI `cosmos_operation_options_
 When `binary_encoding.enabled` is set, the driver owns the wire format both ways — the request side in `execute_operation`, the response side in `execute_plan`:
 
 * **Request** (`apply_request_binary_encoding`) — transcodes a **text** request body to Cosmos binary JSON via `binary_json::transcode_to_binary` (`serde_json::from_slice` → `encode`). An **already-binary** or empty body passes through unchanged, so a caller that pre-encoded pays nothing. Response negotiation is a separate step (`apply_response_negotiation`) and advertises `CosmosBinary`.
-* **Response** (when `request_text_response` is set) — transcodes the binary response back to text JSON via `binary_json::transcode_to_text` (`decode` → `serde_json::to_vec`). The wire stays binary in both directions. This lives in `execute_plan`, which **every** operation type funnels through — point ops, queries, and change feed alike — so the contract holds uniformly. A page that is already text transcodes as a refcount clone, so plans that never negotiated binary pay nothing. Note this is a genuine transcode on the query passthrough path: a plain `SELECT * FROM c` forwards the service's binary page verbatim, so nothing has converted it before `execute_plan` sees it. Only pages the pipeline synthesized (`ORDER BY`, `OFFSET`/`LIMIT`) are already text by then.
+* **Response** (when `request_text_response` is set) — transcodes the binary response back to text JSON via `binary_json::transcode_to_text` (`decode` → `serde_json::to_vec`). The wire stays binary in both directions. This lives in `execute_plan`, which **every** operation type funnels through — point ops, queries, and change feed alike — so the contract holds uniformly. A page that is already text transcodes as a refcount clone, so plans that never negotiated binary pay nothing. A plain `SELECT * FROM c` forwards the service's binary page verbatim and incurs a full transcode; `ORDER BY` selects and converts only emitted items into text before `execute_plan`.
 
 This keeps transcoding in the **driver** (not the backend) and, because it is schema-agnostic, lets a text-only FFI host get an efficient binary wire without encoding anything on its side. Note the two transcodes are independently controlled: enabling binary buys the request-side transcode unconditionally, but the host still receives **binary** responses unless it also sets `request_text_response`.
 
@@ -83,11 +83,12 @@ A query advertises an **accept-list** and lets the service choose, preserving
 .NET's safety valve: a service version or query shape that cannot produce binary
 answers in text and the query still succeeds. Nothing downstream requires the
 format to be uniform across a result set — the pipeline paths that reparse a page
-sniff the `0x80` preamble per page (`normalize_page_body`) and the emitted
-encoding is a property of the operation (`emits_binary_payload`), not of any
-absorbed page, so a merge over mixed binary and text source pages already
-normalizes them. `Distinct` and `SkipTake` share the same binary-aware feed
-splitter, so their composed pipeline also normalizes each source page once.
+sniff the `0x80` preamble per page. An `ORDER BY` merge scans binary page
+structure, reads only ordering metadata, and retains each payload's source
+page and absolute span; it parses text pages as text. The emitted encoding is
+a property of the operation (`emits_binary_payload`), not of any absorbed page.
+`Distinct` and `SkipTake` preserve page-backed items from an ordered merge.
+Their raw-feed path still shares the binary-to-text feed splitter.
 Point ops force `CosmosBinary` — a single body with no pipeline behind it has
 nothing to gain from a per-response choice. Both constants are documented in
 `driver/cosmos_driver.rs`.
@@ -104,14 +105,11 @@ fallback is not free and it is not only a diagnosability gap:
   divergence (#5028) that motivated this feature. Typed deserialization into an
   integer field can then fail.
 
-That second cost applies to **every** query shape, not just the ones that reparse
-pages. `normalize_page_body` is reached from `parse_envelope_page` (the
-`ORDER BY` merge) and the feed splitter shared by `Distinct` and `SkipTake`; a
-plain `SELECT * FROM c` hands the service's page back untouched. On the merge
-path the page is not rescued either: `normalize_page_body` is a no-op on text,
-and `build_page` re-encodes through `serde_json`, so the value has already lost
-its integer tag. Point ops are unaffected, since they demand `CosmosBinary`
-outright.
+That second cost applies to **every** query shape. The `ORDER BY` merge parses
+a text fallback page as text and encodes only selected rows, so an integer tag
+absent on the wire cannot be recovered. A plain `SELECT * FROM c` hands the
+service's page back untouched. Point ops are unaffected, since they demand
+`CosmosBinary` outright.
 
 The request `Content-Type` stays `application/json`; the service detects the binary body from its first byte.
 
@@ -285,7 +283,8 @@ The request-side gate is absent — a query spec is not a document, so the body
 stays text and only the **response** is negotiated. Three things then vary that a
 point op never has to consider: the service *chooses* the page format, the plan
 shape decides whether a page is reparsed or forwarded untouched, and
-`emits_binary_payload` decides whether pipeline-synthesized pages are re-encoded.
+`emits_binary_payload` decides whether selected items are returned as binary
+views (or standalone binary buffers for text-origin rows) versus text.
 
 ```mermaid
 flowchart TD
@@ -304,12 +303,14 @@ flowchart TD
 
     page_binary --> plan_shape
     page_text --> plan_shape{"plan shape?"}
-    plan_shape -->|"ORDER BY / OFFSET / LIMIT"| normalize["normalize_page_body<br/>(sniffs 0x80 per page)"]
+    plan_shape -->|"ORDER BY"| ordered_scan["scan binary envelope / parse text envelope<br/>retain binary payload spans"]
+    plan_shape -->|"raw OFFSET / LIMIT"| normalize["normalize_page_body<br/>(sniffs 0x80 per page)"]
     plan_shape -->|"plain SELECT (passthrough)"| passthrough["service page forwarded<br/>unchanged — still binary"]
 
+    ordered_scan --> emit_binary
     normalize --> emit_binary{"emit_binary?"}
-    emit_binary -->|true| re_encode["re-encode items to binary"]
-    emit_binary -->|false| keep_text["keep as text"]
+    emit_binary -->|true| re_encode["keep binary views / encode text survivors"]
+    emit_binary -->|false| keep_text["convert binary survivors to text"]
 
     re_encode --> execute_plan
     keep_text --> execute_plan
@@ -408,8 +409,8 @@ Three things differ from the point op. The request body is always text
 is negotiated. The header is an **accept-list**, so the service's choice is a real
 branch. And `request_text_response` changes the work the pipeline does, not just
 the final hop: it flips `emit_binary` on the nodes that synthesize pages, so
-`ORDER BY` and `OFFSET`/`LIMIT` skip re-encoding every item to binary only for the
-driver to decode it straight back.
+`ORDER BY` and `OFFSET`/`LIMIT` skip re-encoding emitted items to binary only
+for the driver to decode them straight back.
 
 ```mermaid
 sequenceDiagram
@@ -437,19 +438,21 @@ sequenceDiagram
         Svc-->>DRV: page (text) — accept-list safety valve
     end
 
-    alt pipeline reparses pages (merge / SkipTake)
+    alt ORDER BY merge
+        DRV->>PIPE: scan binary envelopes or parse text envelopes
+    else raw SkipTake without ORDER BY
         DRV->>PIPE: normalize_page_body (sniffs 0x80 per page)
     else passthrough (no ORDER BY, no OFFSET/LIMIT)
         Note over DRV: service page forwarded unchanged
     end
 
     alt request_text_response = false
-        Note over PIPE: emit_binary = true<br/>re-encodes items to binary
-        PIPE-->>DRV: binary items
-        DRV-->>SDK: binary items
-        SDK->>Cod: from_slice::<T> per item
+        Note over PIPE: emit_binary = true<br/>binary-source items retain page context
+        PIPE-->>DRV: binary views or standalone items
+        DRV-->>SDK: binary views or standalone items
+        SDK->>Cod: deserialize with page context or from_slice::<T>
     else request_text_response = true
-        Note over PIPE: emit_binary = false<br/>no re-encode
+        Note over PIPE: emit_binary = false<br/>convert only selected binary items
         PIPE-->>DRV: text items
         DRV->>Cod: transcode_to_text
         alt page came from the pipeline (text)
@@ -625,13 +628,13 @@ non-binary work · **N/A** out of scope by design.
 | Change feed / `ReadFeed` | No | No | capable, unused | **N/A** — backend does not honor the header |
 | Transactional `batch` / `bulk` / stored procedures / control-plane | No | No | — | **N/A** — deferred by spec |
 
-### Pending work
+### Follow-up work and completed optimization
 
 | # | Item | Why it matters | Size |
 |---|---|---|---|
-| 1 | **`parse_envelope_page` on binary (perf + fidelity)** — see below | Efficiency and byte fidelity only; no correctness gap | Medium–Large |
+| 1 | **Binary-aware `parse_envelope_page`** — see below | Implemented: preserves binary payload spans without whole-page transcoding on ORDER BY | Done |
 | 2 | **`delete` negotiation** — add to `supports_binary_response` to match .NET | Wire-scope parity; low impact (no request body, usually no response body) | Small |
-| 3 | **Cross-implementation vectors** — validate against captured real .NET / Java binary output | Our encoder emits none of the compact forms (reference dedup, system strings), so emulator-based tests never exercise them. A slice-based reader would pass every test we have and still corrupt real service data. | Medium |
+| 3 | **Cross-implementation vectors** — validate against captured real .NET / Java binary output | The synthetic regression covers page-relative references, but the encoder still emits none of the compact service forms, and live cross-implementation output remains unverified. | Medium |
 | 4 | **Aggregate / GROUP BY** | **Blocked, not pending.** The cross-partition engine does not support these shapes in either encoding. Whoever builds the engine owns the binary path with it — ideally on a format-agnostic value model (like .NET's `CosmosElement`) so binary is inherent, not retrofitted. | — |
 
 > **Gateway 2.0 / thin client** binary response negotiation is now **Done**: the
@@ -640,13 +643,15 @@ non-binary work · **N/A** out of scope by design.
 > Byte flags), so point item ops and `query_items` receive `0x80`-prefixed
 > binary responses on Gateway 2.0 accounts just as on the standard gateway.
 
-#### Detail: item 1, binary-aware `parse_envelope_page`
+#### Binary-aware `ORDER BY` envelopes
 
-A binary page is currently transcoded roughly three times per document: whole-page
-binary&rarr;text, `serde_json` envelope parse, then a per-item text&rarr;binary
-re-encode in `build_page`. A binary-aware reader would decode only `orderByItems` /
-`_rid` and keep each payload as a **view** — the refcounted page `Bytes` plus an
-offset — so emitted items are the service's original bytes.
+Previously, an `ORDER BY` binary page was converted to text, parsed again as
+JSON, and its selected payloads re-encoded. The binary cursor now scans the
+entire page to validate structure, reads only `_rid` and `orderByItems` into
+merge metadata, and retains each payload as a `ResponseBody::ContextualItems`
+view: the original shared page `Bytes` and an absolute value range. Thus
+discarded payloads are validated but never transcoded. An emitted binary
+view's raw value bytes match the service's original span exactly.
 
 > **Do not slice a document out and re-prefix it with `0x80`.** Reference strings
 > (`STR_R1`-`STR_R4`) resolve against *absolute page offsets* (see
@@ -655,13 +660,13 @@ offset — so emitted items are the service's original bytes.
 > returning wrong text rather than erroring, whenever the target bytes happen to
 > start with a string marker.
 
-A view keeps the page alive, and `Reader::new(buf, offset)` already reads from an
-arbitrary start. Trade-off: a buffered row pins its whole source page (peak
-retention ~ `fan_out x page_size`). ORDER BY gains most, because the merge fetches
-from every partition but emits a subset — today every fetched page is transcoded in
-full even when a `TOP` discards it. Blast radius is `ResponseBody::Items` (driver
-public API, also consumed by the native FFI crate) plus a `build_page` restructure,
-since merged rows span multiple source pages.
+A view keeps its full page alive so a buffered row can pin more bytes than its
+own payload (up to one page per distinct backing retained across the fan-out).
+`ItemView::deserialize` resolves references in that page; `to_standalone` and
+`ResponseBody::items` decode and re-encode on demand when a caller needs an
+independent binary buffer. That buffer preserves the value, not the source's
+binary representation. The SDK uses contextual typed decoding directly, and
+the native legacy completion body remains standalone.
 
 Note also that the emitted encoding follows the **negotiated operation**, not the
 bytes of any absorbed page, so on a binary-negotiated query the items sourced from
@@ -677,10 +682,11 @@ per-document binary that `into_items` auto-detects by preamble. Any future split
 must keep that invariant: slicing a single-preamble envelope without re-encoding per
 document yields preamble-less sub-documents misrouted to the text path.
 
-The split/encode order matters as much as the encoding itself. `SkipTake` splits,
-applies its window, and only then encodes the survivors — so a document the window
-discards costs no transcode, and cannot fail a query it contributes nothing to. A
-splitter that encodes at split time pays for every document the page carried.
+The split/encode order matters as much as the encoding itself. Raw-feed `SkipTake`
+decodes a binary page to text, applies its window, and only then re-encodes the
+survivors — so a document the window discards still costs part of the page
+decode but costs no standalone re-encoding. For `ORDER BY`, it receives
+already-split views instead and drops items before any materialization.
 
 ---
 

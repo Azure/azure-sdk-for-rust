@@ -380,18 +380,14 @@ fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> Cosm
 /// emits binary items, so each is transcoded to text before parsing — mirroring
 /// the SDK's per-slice format-agnostic decode.
 fn ids_in_page(page: &CosmosResponse) -> Vec<String> {
-    let items = match page.body() {
-        crate::models::ResponseBody::Items(items) => items.clone(),
-        crate::models::ResponseBody::NoPayload => Vec::new(),
-        crate::models::ResponseBody::Bytes(_) => panic!("expected Items body"),
-    };
+    assert!(!matches!(
+        page.body(),
+        crate::models::ResponseBody::Bytes(_)
+    ));
+    let items: Vec<serde_json::Value> = page.body().clone().into_items().unwrap();
     items
         .iter()
-        .map(|item| {
-            let text = crate::binary_json::transcode_to_text(item).unwrap();
-            let value: serde_json::Value = serde_json::from_slice(&text).unwrap();
-            value["id"].as_str().unwrap().to_owned()
-        })
+        .map(|item| item["id"].as_str().unwrap().to_owned())
         .collect()
 }
 
@@ -405,6 +401,9 @@ fn page_is_binary(page: &CosmosResponse) -> bool {
         }
         crate::models::ResponseBody::NoPayload => true,
         crate::models::ResponseBody::Bytes(b) => crate::binary_json::is_binary(b),
+        crate::models::ResponseBody::ContextualItems(items) => items
+            .iter()
+            .all(|item| crate::binary_json::is_binary(item.source_page())),
     }
 }
 

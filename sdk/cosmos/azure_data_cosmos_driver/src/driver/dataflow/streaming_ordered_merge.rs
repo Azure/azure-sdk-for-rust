@@ -57,7 +57,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use crate::models::{CosmosOperation, FeedRange, MaxItemCountHint, SessionToken};
+use crate::models::{CosmosOperation, FeedRange, ItemView, MaxItemCountHint, SessionToken};
 
 use super::binary_heap;
 use super::order_by::{
@@ -586,7 +586,7 @@ impl PipelineNode for StreamingOrderedMerge {
         let mut head_heap = self.build_head_heap();
 
         let cap = self.max_item_count();
-        let mut items: Vec<bytes::Bytes> = Vec::new();
+        let mut items: Vec<ItemView> = Vec::new();
 
         while items.len() < cap {
             let Some(winner) = binary_heap::pop_by(&mut head_heap, |left, right| {
@@ -1056,6 +1056,8 @@ fn build_value_boundary_child(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{collections::HashMap, hint::black_box, num::NonZeroU32, time::Instant};
+
     use crate::driver::dataflow::mocks::{self, MockLeaf};
     use crate::models::effective_partition_key::EffectivePartitionKey;
 
@@ -1213,19 +1215,14 @@ mod tests {
     }
 
     fn ids(response: &crate::models::CosmosResponse) -> Vec<String> {
-        // The merge now emits a pre-split `Items` body: each item is one
-        // document payload (`{"id": ...}`), read directly without an envelope.
-        let items = match response.body() {
-            crate::models::ResponseBody::Items(items) => items.clone(),
-            crate::models::ResponseBody::NoPayload => Vec::new(),
-            crate::models::ResponseBody::Bytes(_) => panic!("expected Items body"),
-        };
+        assert!(!matches!(
+            response.body(),
+            crate::models::ResponseBody::Bytes(_)
+        ));
+        let items: Vec<serde_json::Value> = response.body().clone().into_items().unwrap();
         items
             .iter()
-            .map(|item| {
-                let value: serde_json::Value = serde_json::from_slice(item).unwrap();
-                value["id"].as_str().unwrap().to_owned()
-            })
+            .map(|item| item["id"].as_str().unwrap().to_owned())
             .collect()
     }
 
@@ -1236,6 +1233,94 @@ mod tests {
             children,
             "test-fingerprint".to_owned(),
         )
+    }
+
+    #[tokio::test]
+    #[ignore = "run explicitly to characterize selective binary ORDER BY merging"]
+    async fn measure_binary_order_by_selective_streaming_merge() {
+        const FAN_OUT: usize = 16;
+        const ITEMS_PER_PAGE: usize = 100;
+        const ROUNDS: usize = 40;
+        const SKIP: u64 = 20;
+        const TAKE: u64 = 10;
+
+        let pages = mocks::binary_order_by_pages(FAN_OUT, ITEMS_PER_PAGE, 1024);
+        let source_bytes: usize = pages.iter().map(bytes::Bytes::len).sum();
+        let operation = mocks::operation()
+            .with_supported_serialization_formats("CosmosBinary")
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(30).unwrap()));
+
+        let start = Instant::now();
+        let mut peak_retained_output_page_bytes = 0;
+        for _ in 0..ROUNDS {
+            let children: Vec<_> = pages
+                .iter()
+                .enumerate()
+                .map(|(partition, page)| {
+                    let min = if partition == 0 {
+                        String::new()
+                    } else {
+                        format!("{partition:X}0")
+                    };
+                    let max = if partition + 1 == FAN_OUT {
+                        "FF".to_owned()
+                    } else {
+                        format!("{:X}0", partition + 1)
+                    };
+                    ChildStream::fresh(
+                        range(&min, &max).unwrap(),
+                        Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                            response: mocks::response(page),
+                            is_terminal: true,
+                        })])),
+                    )
+                })
+                .collect();
+            let merge = StreamingOrderedMerge::new(
+                Arc::new(operation.clone()),
+                vec![SortOrder::Ascending],
+                children,
+                "baseline-fingerprint".to_owned(),
+            );
+            let mut node =
+                super::super::skip_take::SkipTake::new(Box::new(merge), SKIP, Some(TAKE), true);
+            let mut executor = mocks::NoopRequestExecutor;
+            let mut topology = mocks::NoopTopologyProvider;
+            let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+            let PageResult::Page {
+                response,
+                is_terminal,
+            } = node.next_page(&mut context).await.unwrap()
+            else {
+                panic!("expected a page from the selective merge");
+            };
+            assert!(is_terminal);
+            let crate::models::ResponseBody::ContextualItems(views) = response.body() else {
+                panic!("binary ORDER BY survivors must retain their original pages");
+            };
+            let mut retained = HashMap::new();
+            for view in views {
+                retained.insert(view.source_page().as_ptr(), view.source_page().len());
+                assert_eq!(view.raw_value(), &view.source_page()[view.value_range()]);
+            }
+            assert_eq!(retained.len(), TAKE as usize);
+            peak_retained_output_page_bytes =
+                peak_retained_output_page_bytes.max(retained.values().sum());
+            let items: Vec<serde_json::Value> = response.body().clone().into_items().unwrap();
+            let ranks: Vec<_> = items
+                .iter()
+                .map(|item| item["id"].as_u64().unwrap())
+                .collect();
+            assert_eq!(ranks, (SKIP..SKIP + TAKE).collect::<Vec<_>>());
+            black_box(items);
+        }
+        let elapsed = start.elapsed();
+        println!(
+            "ORDER BY selective merge: fan_out={FAN_OUT} items_per_page={ITEMS_PER_PAGE} \
+             source_bytes={source_bytes} skip={SKIP} take={TAKE} rounds={ROUNDS} \
+             peak_retained_output_page_bytes={peak_retained_output_page_bytes} elapsed_ms={:.2}",
+            elapsed.as_secs_f64() * 1000.0,
+        );
     }
 
     async fn next_page(node: &mut StreamingOrderedMerge) -> PageResult {

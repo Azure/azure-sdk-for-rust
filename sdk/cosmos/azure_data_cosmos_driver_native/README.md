@@ -51,7 +51,7 @@ for the full design.
 | `cosmos_submit_operation` (feeds + pagination)                                  | ✅                                                                                       |
 | Response status / RU / body / activity-id / session-token / etag / continuation | ✅                                                                                       |
 | Pagination (read-feeds + query result sets)                                     | ⏳ planned                                                                               |
-| Multi-part response body iteration                                              | ⏳ planned                                                                               |
+| Multi-part response body iteration                                              | ✅ via `cosmos_completion_item_count` / `cosmos_completion_item_page`                    |
 | Diagnostics accessors                                                           | ⏳ planned                                                                               |
 | Patch instruction builder                                                       | ⏳ planned                                                                               |
 | Transactional batch sub-operation builder                                       | ⏳ planned                                                                               |
@@ -275,6 +275,12 @@ below for the production-shape guidance.
 >   `headers` array. All borrowed output data remains valid until
 >   `cosmos_completion_queue_free_completions`. The examples print status/body;
 >   inspect the response-header value's discriminant before reading its union.
+>   For feeds, `body` / `body_len` remain a standalone copy of the first item.
+>   Call `cosmos_completion_item_count` and `cosmos_completion_item_page` to
+>   access each item's full source page and absolute value offset/length.
+>   Binary values can reference data elsewhere in their page, so copy the
+>   **whole page**, not just the value slice, before freeing the completion.
+>   Single-body and standalone feed items use offset zero.
 
 ### .NET (C# 12 / .NET 8+)
 

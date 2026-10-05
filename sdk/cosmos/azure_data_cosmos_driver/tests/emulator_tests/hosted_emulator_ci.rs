@@ -566,6 +566,9 @@ async fn driver_recovers_stale_routing_after_merge() -> TestResult {
                         queried_ids.insert(value["id"].as_str().unwrap().to_owned());
                     }
                 }
+                ResponseBody::ContextualItems(_) => {
+                    panic!("a text-requested response must not contain binary item views");
+                }
                 ResponseBody::Bytes(body) => {
                     let value: serde_json::Value = serde_json::from_slice(&body)?;
                     for item in value["Documents"].as_array().unwrap() {

@@ -309,8 +309,8 @@ impl ResponseSnapshot {
             // coverage and we decide how to stitch the per-document slices
             // into a comparable snapshot, fail loudly rather than silently
             // dropping the body and letting tests pass on a regression.
-            ResponseBody::Items(_) => panic!(
-                "ResponseSnapshot::capture: received Items response body but the validation \
+            ResponseBody::Items(_) | ResponseBody::ContextualItems(_) => panic!(
+                "ResponseSnapshot::capture: received feed response body but the validation \
                  framework currently only supports single-payload responses. Add feed-aware \
                  body comparison before exercising this path."
             ),

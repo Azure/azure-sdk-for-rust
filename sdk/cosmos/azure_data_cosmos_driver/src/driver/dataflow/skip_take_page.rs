@@ -34,14 +34,14 @@ use serde::Deserialize;
 use serde_json::value::RawValue;
 
 /// The result of applying skip/take to a page's documents.
-pub(crate) struct SkipTakeOutcome {
+pub(crate) struct SkipTakeOutcome<T> {
     /// Number of documents dropped to satisfy the outstanding `OFFSET`.
     pub dropped: u64,
     /// Number of documents kept (equal to `items.len()`).
     pub emitted: u64,
     /// The surviving per-document payloads, each an unmodified slice of the
     /// normalized page bytes.
-    pub items: Vec<Bytes>,
+    pub items: Vec<T>,
 }
 
 /// Incoming page envelope. Only `Documents` is retained; every document is kept
@@ -63,8 +63,8 @@ struct RawQueryPage<'a> {
 /// negotiated: a binary envelope is decoded to text so the `Documents` array
 /// can be split, and each surviving document is re-encoded later by
 /// [`encode_items`] — after the skip/take window has discarded the documents
-/// this page does not contribute, so no discarded document costs a transcode or
-/// can fail the query.
+/// this page does not contribute. The whole binary page is still decoded here,
+/// but no discarded document is re-encoded as a standalone item.
 ///
 /// When the page arrived as text each payload is a zero-copy
 /// [`slice_ref`](bytes::Bytes::slice_ref) of `body`.
@@ -147,7 +147,11 @@ pub(crate) fn encode_items(
 /// Drops up to `skip` documents from `items`, then keeps up to `take`
 /// (`None` = unbounded) of the remainder, returning the surviving slices and
 /// the counts consumed. Each surviving [`Bytes`] is returned unmodified.
-pub(crate) fn skip_take_items(items: Vec<Bytes>, skip: u64, take: Option<u64>) -> SkipTakeOutcome {
+pub(crate) fn skip_take_items<T>(
+    items: Vec<T>,
+    skip: u64,
+    take: Option<u64>,
+) -> SkipTakeOutcome<T> {
     let available = items.len() as u64;
     let dropped = skip.min(available);
     let remaining = available - dropped;
@@ -157,8 +161,11 @@ pub(crate) fn skip_take_items(items: Vec<Bytes>, skip: u64, take: Option<u64>) -
     };
 
     let start = dropped as usize;
-    let end = start + emitted as usize;
-    let kept: Vec<Bytes> = items[start..end].to_vec();
+    let kept = items
+        .into_iter()
+        .skip(start)
+        .take(emitted as usize)
+        .collect();
 
     SkipTakeOutcome {
         dropped,

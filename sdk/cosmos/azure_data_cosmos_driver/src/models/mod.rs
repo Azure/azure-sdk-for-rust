@@ -87,7 +87,7 @@ pub use resource_reference::{DatabaseReference, ItemReference};
 pub use resource_reference::{
     PartitionKeyRangeReference, StoredProcedureReference, TriggerReference, UdfReference,
 };
-pub use response_body::ResponseBody;
+pub use response_body::{ItemView, ResponseBody};
 pub use session_token_segment::SessionTokenSegment;
 pub use user_agent::UserAgent;
 pub(crate) use user_agent::{normalize_wrapping_sdk_identifier, UserAgentFeatureFlags};

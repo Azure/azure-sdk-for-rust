@@ -18,17 +18,17 @@
 //! node only has to reconcile the child's documents into the final global
 //! window. It does that by splitting each page's `Documents` into per-document
 //! slices (see [`super::skip_take_page`]), dropping/truncating that list, and
-//! emitting the survivors as a [`ResponseBody::Items`] body — no envelope is
-//! re-serialized. It stops early once `take` is satisfied, so a `TOP n` query
+//! emitting the survivors as pre-split items — no envelope is re-serialized.
+//! Binary items from an ordered merge retain their original page and offsets.
+//! It stops early once `take` is satisfied, so a `TOP n` query
 //! never drains partitions it doesn't need.
 
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use bytes::Bytes;
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{CosmosResponse, FeedRange, RequestCharge, ResponseBody};
+use crate::models::{CosmosResponse, FeedRange, ItemView, RequestCharge, ResponseBody};
 
 use super::{skip_take_page, PageResult, PipelineContext, PipelineNode, PipelineNodeState};
 
@@ -104,13 +104,12 @@ impl SkipTake {
     /// Rebuilds a response around the surviving per-document `items`, preserving
     /// status and headers (with `x-ms-item-count` updated to `emitted`), and
     /// folding in any request charge and diagnostics accumulated from suppressed
-    /// (fully-skipped) pages. The body is emitted as [`ResponseBody::Items`] so
-    /// the calling SDK reads each document directly without re-parsing an
-    /// envelope.
+    /// (fully-skipped) pages. The body carries pre-split standalone or
+    /// contextual items so the SDK need not re-parse an envelope.
     fn rebuild(
         &mut self,
         response: &CosmosResponse,
-        items: Vec<Bytes>,
+        items: Vec<ItemView>,
         emitted: u64,
     ) -> CosmosResponse {
         let mut headers = response.headers().clone();
@@ -122,7 +121,7 @@ impl SkipTake {
             headers.request_charge = Some(base + self.suppressed_charge);
         }
         let rebuilt = CosmosResponse::new(
-            ResponseBody::from_items(items),
+            ResponseBody::from_item_views(items),
             headers,
             response.status(),
             response.diagnostics(),
@@ -199,12 +198,21 @@ impl SkipTake {
         response: CosmosResponse,
         is_terminal: bool,
     ) -> crate::error::Result<Option<PageResult>> {
-        // Split the child's page into per-document slices. An ordered merge
-        // hands us pre-split `Items`; a raw backend feed page arrives as
-        // `Bytes` and is split as text, then re-encoded below.
+        // An ordered merge hands us pre-split items. A raw backend feed page
+        // arrives as `Bytes` and is split as text, then re-encoded below.
         let (items, needs_encode) = match response.body() {
-            ResponseBody::Items(items) => (items.clone(), false),
-            ResponseBody::Bytes(b) => (skip_take_page::split_feed_envelope(b)?, true),
+            ResponseBody::Items(items) => (
+                items.iter().cloned().map(ItemView::standalone).collect(),
+                false,
+            ),
+            ResponseBody::ContextualItems(items) => (items.clone(), false),
+            ResponseBody::Bytes(b) => (
+                skip_take_page::split_feed_envelope(b)?
+                    .into_iter()
+                    .map(ItemView::standalone)
+                    .collect(),
+                true,
+            ),
             ResponseBody::NoPayload => (Vec::new(), false),
         };
 
@@ -214,7 +222,15 @@ impl SkipTake {
         // Encode only the survivors: a document the window discards must not be
         // able to fail the query.
         let emitted_items = if needs_encode {
-            skip_take_page::encode_items(outcome.items, self.emit_binary)?
+            let standalone = outcome
+                .items
+                .iter()
+                .map(ItemView::to_standalone)
+                .collect::<crate::error::Result<Vec<_>>>()?;
+            skip_take_page::encode_items(standalone, self.emit_binary)?
+                .into_iter()
+                .map(ItemView::standalone)
+                .collect()
         } else {
             outcome.items
         };
@@ -397,6 +413,10 @@ mod tests {
             ResponseBody::Items(items) => items.clone(),
             ResponseBody::NoPayload => Vec::new(),
             ResponseBody::Bytes(_) => panic!("expected Items body"),
+            ResponseBody::ContextualItems(items) => items
+                .iter()
+                .map(|item| item.to_standalone().unwrap())
+                .collect(),
         };
         items
             .iter()

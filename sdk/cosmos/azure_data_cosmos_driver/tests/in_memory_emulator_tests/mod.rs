@@ -310,6 +310,10 @@ pub fn page_document_values(
             .iter()
             .map(|b| parse_json_body(b).expect("item should parse as text or binary JSON"))
             .collect(),
+        ResponseBody::ContextualItems(items) => items
+            .iter()
+            .map(|item| item.deserialize().expect("page-backed item should decode"))
+            .collect(),
         ResponseBody::Bytes(b) => {
             let value = parse_json_body(&b).expect("page should parse as text or binary JSON");
             value["Documents"].as_array().cloned().unwrap_or_default()

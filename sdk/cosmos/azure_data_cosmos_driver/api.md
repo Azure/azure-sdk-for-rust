@@ -1835,6 +1835,16 @@ pub mod models {
         pub fn resource_link(&self) -> &str;
         pub fn rid(&self) -> Option<&str>;
     }
+    #[derive(Clone, Debug)]
+    pub struct ItemView {
+    }
+    impl ItemView {
+        pub fn deserialize<T: DeserializeOwned>(&self) -> crate::error::Result<T>;
+        pub fn raw_value(&self) -> &[u8];
+        pub fn source_page(&self) -> &[u8];
+        pub fn to_standalone(&self) -> crate::error::Result<Bytes>;
+        pub fn value_range(&self) -> Range<usize>;
+    }
     #[derive(Clone, Debug, Default, serde::Serialize)]
     #[non_exhaustive]
     #[serde(rename_all = "camelCase")]
@@ -2404,6 +2414,7 @@ pub mod models {
         NoPayload,
         Bytes(azure_core::Bytes),
         Items(Vec<azure_core::Bytes>),
+        ContextualItems(Vec<ItemView>),
     }
     impl ResponseBody {
         pub fn empty() -> Self;
