@@ -144,4 +144,22 @@ mod tests {
             .query_predicate()
             .is_err());
     }
+
+    #[test]
+    fn object_property_escapes_preserve_decoded_names() {
+        for (source, expected) in [
+            (r#"({"\u0061": true})["a"]"#, r#"{"a": true}["a"]"#),
+            (r#"({"a\"b": true})["a\"b"]"#, r#"{"a\"b": true}["a\"b"]"#),
+            (r#"({"a\\b": true})["a\\b"]"#, r#"{"a\\b": true}["a\\b"]"#),
+        ] {
+            assert_eq!(
+                source
+                    .parse::<ReadManyFilter>()
+                    .unwrap()
+                    .query_predicate()
+                    .unwrap(),
+                expected
+            );
+        }
+    }
 }

@@ -161,6 +161,186 @@ fn only_legacy_representation_errors_recommend_cursor_migration() {
     }
 }
 
+#[test]
+fn read_many_rejects_invalid_inputs_without_admitting_work() {
+    let fixture = Fixture::new(1);
+    let component = CosmosPartitionKeyComponent {
+        kind: 0,
+        value: CosmosPartitionKeyComponentValue {
+            string_value: view(b"pk-0"),
+        },
+    };
+    let invalid = CosmosErrorCode::CosmosErrorCodeInvalidOptionValue;
+    let argument = CosmosErrorCode::CosmosErrorCodeInvalidArgument;
+    let cases = [
+        ("short prefix", invalid),
+        ("short record", invalid),
+        ("unknown version", invalid),
+        ("reserved", invalid),
+        ("selection kind", invalid),
+        ("resume", invalid),
+        ("identities null count", argument),
+        ("identities overflow", argument),
+        ("parameters null count", argument),
+        ("parameters overflow", argument),
+        ("key null count", argument),
+        (
+            "key too long",
+            CosmosErrorCode::CosmosErrorCodeTooManyPartitionKeyComponents,
+        ),
+        ("missing item id", argument),
+        ("partition with item id", invalid),
+        (
+            "invalid filter UTF-8",
+            CosmosErrorCode::CosmosErrorCodeInvalidUtf8,
+        ),
+        ("invalid predicate", invalid),
+        ("parameters without filter", invalid),
+        ("invalid parameter JSON", invalid),
+        ("duplicate parameter", invalid),
+        ("unused parameter", invalid),
+        ("mixed selection fields", invalid),
+    ];
+    for (case, expected) in cases {
+        let mut identity = CosmosReadManyIdentity {
+            partition_key: &component,
+            partition_key_len: 1,
+            item_id: view(b"d0"),
+        };
+        let mut parameters = [
+            CosmosReadManyParameter {
+                name: view(b"@min"),
+                json_value: view(b"1"),
+            },
+            CosmosReadManyParameter {
+                name: view(b"@min"),
+                json_value: view(b"2"),
+            },
+        ];
+        let mut storage = MaybeUninit::<CosmosReadManyRequest>::uninit();
+        // SAFETY: init receives writable storage for the complete record.
+        unsafe {
+            cosmos_read_many_request_init(storage.as_mut_ptr());
+        }
+        // SAFETY: init initialized every field.
+        let mut request = unsafe { storage.assume_init() };
+        request.operation.container = fixture.container;
+        request.selection_kind = 1;
+        request.identities = &identity;
+        request.identities_len = 1;
+        request.filter = view(b"c.rank >= @min");
+        request.parameters = parameters.as_ptr();
+        request.parameters_len = 1;
+        match case {
+            "short prefix" => request.struct_size_bytes = 4,
+            "short record" => request.struct_size_bytes -= 1,
+            "unknown version" => request.abi_version = 2,
+            "reserved" => request.reserved[0] = 1,
+            "selection kind" => request.selection_kind = 3,
+            "resume" => request.operation.continuation_token = view(b"token"),
+            "identities null count" => request.identities = ptr::null(),
+            "identities overflow" => request.identities_len = usize::MAX,
+            "parameters null count" => request.parameters = ptr::null(),
+            "parameters overflow" => request.parameters_len = usize::MAX,
+            "key null count" => identity.partition_key = ptr::null(),
+            "key too long" => identity.partition_key_len = 4,
+            "missing item id" => identity.item_id = Default::default(),
+            "partition with item id" => request.selection_kind = 2,
+            "invalid filter UTF-8" => request.filter = view(b"\xff"),
+            "invalid predicate" => request.filter = view(b"true) OR true"),
+            "parameters without filter" => request.filter = Default::default(),
+            "invalid parameter JSON" => parameters[0].json_value = view(b"{"),
+            "duplicate parameter" => request.parameters_len = 2,
+            "unused parameter" => parameters[0].name = view(b"@unused"),
+            "mixed selection fields" => request.operation.item_id = view(b"d0"),
+            _ => unreachable!(),
+        }
+        // Keep pointers tied to the final mutated input records.
+        if !matches!(case, "identities null count") {
+            request.identities = &identity;
+        }
+        if case != "parameters null count" {
+            request.parameters = parameters.as_ptr();
+        }
+        let mut status = COSMOS_STATUS_SUCCESS;
+        // SAFETY: all readable inputs are live; invalid counts must be rejected before access.
+        let operation = unsafe {
+            cosmos_read_many_open_submit(fixture.driver, &request, fixture.queue, 0, &mut status)
+        };
+        assert!(operation.is_null(), "{case} was admitted");
+        assert_eq!(status, expected.as_status_code(), "{case}");
+        let mut result = ptr::null_mut();
+        let mut count = 0;
+        assert_eq!(
+            cosmos_cursor_queue_wait(fixture.queue, &mut result, 1, 0, &mut count),
+            COSMOS_STATUS_SUCCESS
+        );
+        assert_eq!(count, 0, "{case} queued a completion");
+    }
+    // A valid open still fits the one-slot queue after all rejected submissions.
+    let mut request = fixture.request();
+    let body = br#"{"query":"SELECT * FROM c"}"#;
+    request.operation.body = body.as_ptr();
+    request.operation.body_len = body.len();
+    let cursor = fixture.open(&request);
+    cosmos_cursor_free(cursor);
+}
+
+#[test]
+fn read_many_versioned_extension_requires_zero_bytes() {
+    #[repr(C)]
+    struct Extended {
+        request: CosmosReadManyRequest,
+        extension: [u8; 8],
+    }
+    let fixture = Fixture::new(1);
+    for extension in [[1; 8], [0; 8]] {
+        let mut storage = MaybeUninit::<CosmosReadManyRequest>::uninit();
+        // SAFETY: output storage is full-size and writable.
+        unsafe {
+            cosmos_read_many_request_init(storage.as_mut_ptr());
+        }
+        // SAFETY: request is completely initialized.
+        let mut input = Extended {
+            request: unsafe { storage.assume_init() },
+            extension,
+        };
+        input.request.struct_size_bytes = std::mem::size_of::<Extended>() as u32;
+        input.request.operation.container = fixture.container;
+        input.request.selection_kind = 2;
+        let mut status = COSMOS_STATUS_SUCCESS;
+        // SAFETY: Extended backs every declared byte; no nested input arrays.
+        let operation = unsafe {
+            cosmos_read_many_open_submit(
+                fixture.driver,
+                &input.request,
+                fixture.queue,
+                0,
+                &mut status,
+            )
+        };
+        if extension[0] != 0 {
+            assert!(operation.is_null());
+            assert_eq!(
+                status,
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code()
+            );
+        } else {
+            assert_eq!(status, COSMOS_STATUS_SUCCESS);
+            let opened = fixture.receive(operation);
+            // SAFETY: opened is an owned live completion.
+            assert_eq!(unsafe { (*opened).common.status }, COSMOS_STATUS_SUCCESS);
+            let cursor = cosmos_cursor_completion_take_cursor(opened);
+            cosmos_cursor_completion_free(opened);
+            let end = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+            // SAFETY: end is an owned live completion.
+            assert_eq!(unsafe { (*end).result_kind }, 4);
+            cosmos_cursor_completion_free(end);
+            cosmos_cursor_free(cursor);
+        }
+    }
+}
+
 struct Fixture {
     runtime: *mut RuntimeContext,
     driver: *mut DriverHandle,

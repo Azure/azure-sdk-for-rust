@@ -22,6 +22,13 @@ use serde_json::{json, Value};
 use std::{num::NonZeroU32, sync::Arc};
 
 async fn container(definition: PartitionKeyDefinition) -> ContainerClient {
+    container_with_emulator(definition, 4).await.0
+}
+
+async fn container_with_emulator(
+    definition: PartitionKeyDefinition,
+    partitions: u32,
+) -> (ContainerClient, Arc<InMemoryEmulatorHttpClient>) {
     let endpoint = "https://eastus.emulator.local";
     let emulator = Arc::new(InMemoryEmulatorHttpClient::new(
         VirtualAccountConfig::new(vec![VirtualRegion::new(
@@ -36,7 +43,7 @@ async fn container(definition: PartitionKeyDefinition) -> ContainerClient {
         "items",
         definition,
         ContainerConfig::new()
-            .with_partition_count(4)
+            .with_partition_count(partitions)
             .build()
             .unwrap(),
     );
@@ -56,11 +63,12 @@ async fn container(definition: PartitionKeyDefinition) -> ContainerClient {
         )
         .await
         .unwrap();
-    client
+    let container = client
         .database_client("read-many")
         .container_client("items", None)
         .await
-        .unwrap()
+        .unwrap();
+    (container, emulator)
 }
 
 async fn seed() -> ContainerClient {
@@ -89,6 +97,58 @@ fn identities(items: Vec<Value>) -> Vec<(String, String)> {
         .collect::<Vec<_>>();
     result.sort();
     result
+}
+
+#[tokio::test]
+async fn read_many_populated_split_after_first_page_has_no_loss_or_duplicates() {
+    let definition = PartitionKeyDefinition::new(vec!["/pk".into()]);
+    for select_items in [true, false] {
+        let (container, emulator) = container_with_emulator(definition.clone(), 1).await;
+        let mut selections = Vec::new();
+        let mut expected = Vec::new();
+        for i in 0..32 {
+            let pk = format!("pk-{i}");
+            for selected in [true, false] {
+                let id = format!("{}-{i}", if selected { "selected" } else { "excluded" });
+                container
+                    .create_item(
+                        pk.clone(),
+                        &id,
+                        &json!({"id":id,"pk":pk,"selected":selected}),
+                        None,
+                    )
+                    .await
+                    .unwrap();
+                if selected {
+                    selections.push((pk.clone().into(), id.clone()));
+                    expected.push((pk.clone(), id));
+                }
+            }
+        }
+        expected.sort();
+        let selection = if select_items {
+            ReadManySelection::Items(selections)
+        } else {
+            ReadManySelection::Partitions(selections.into_iter().map(|(key, _)| key).collect())
+        };
+        let options = ReadManyOptions::default()
+            .with_filter("c.selected = true".parse().unwrap())
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(3).unwrap()));
+        let mut pages = container
+            .read_many::<Value>(selection, Some(options))
+            .await
+            .unwrap();
+        let first = pages.next().await.unwrap().unwrap().into_items();
+        assert_eq!(first.len(), 3);
+        let store = emulator.store();
+        store.split_partition("read-many", "items", 0, std::time::Duration::ZERO);
+        store.wait_for_split("read-many", "items", 0).await;
+        let mut actual = first;
+        while let Some(page) = pages.next().await {
+            actual.extend(page.unwrap().into_items());
+        }
+        assert_eq!(identities(actual), expected, "select_items={select_items}");
+    }
 }
 
 #[tokio::test]
@@ -308,6 +368,125 @@ async fn read_many_null_and_undefined_keys_are_distinct() {
 struct RequiredNumber {
     #[serde(rename = "value")]
     _value: u64,
+}
+
+#[tokio::test]
+async fn read_many_undefined_keys_include_empty_objects_without_including_null() {
+    for hierarchical in [false, true] {
+        let definition = if hierarchical {
+            serde_json::from_value(
+                json!({"paths":["/pk","/tenant"],"kind":"MultiHash","version":2}),
+            )
+            .unwrap()
+        } else {
+            PartitionKeyDefinition::new(vec!["/pk".into()])
+        };
+        let (container, _) = container_with_emulator(definition, 1).await;
+        let key = |component| {
+            if hierarchical {
+                PartitionKey::from((component, "tenant"))
+            } else {
+                PartitionKey::from(component)
+            }
+        };
+        let undefined = key(PartitionKeyValue::UNDEFINED);
+        let null = key(PartitionKeyValue::NULL);
+        for (pk, document) in [
+            (undefined.clone(), json!({"id":"missing","tenant":"tenant"})),
+            (
+                undefined.clone(),
+                json!({"id":"object","pk":{},"tenant":"tenant"}),
+            ),
+            (
+                null.clone(),
+                json!({"id":"null","pk":null,"tenant":"tenant"}),
+            ),
+        ] {
+            container
+                .create_item(pk, document["id"].as_str().unwrap(), &document, None)
+                .await
+                .unwrap();
+        }
+        let mut results = Vec::new();
+        for (selection, filter, expected) in [
+            (
+                ReadManySelection::Partitions(vec![undefined.clone()]),
+                None,
+                vec!["missing", "object"],
+            ),
+            (
+                ReadManySelection::Items(vec![(undefined.clone(), "object".into())]),
+                None,
+                vec!["object"],
+            ),
+            (
+                ReadManySelection::Items(vec![(undefined.clone(), "object".into())]),
+                Some("true"),
+                vec!["object"],
+            ),
+            (
+                ReadManySelection::Items(vec![
+                    (undefined.clone(), "missing".into()),
+                    (undefined.clone(), "object".into()),
+                ]),
+                None,
+                vec!["missing", "object"],
+            ),
+            (
+                ReadManySelection::Partitions(vec![null]),
+                None,
+                vec!["null"],
+            ),
+        ] {
+            let options =
+                filter.map(|text| ReadManyOptions::default().with_filter(text.parse().unwrap()));
+            let response = container
+                .read_many::<Value>(selection, options)
+                .await
+                .unwrap()
+                .collect_all()
+                .await
+                .unwrap();
+            let mut actual = response
+                .items()
+                .iter()
+                .map(|item| item["id"].as_str().unwrap().to_owned())
+                .collect::<Vec<_>>();
+            actual.sort();
+            assert_eq!(actual, expected);
+            results.push(actual);
+        }
+        assert_eq!(
+            results[1], results[2],
+            "filtered and unfiltered identity results must agree"
+        );
+    }
+}
+
+#[tokio::test]
+async fn read_many_object_filter_keys_keep_escape_semantics() {
+    let container = seed().await;
+    let expected = (0..5)
+        .map(|i| ("one".to_owned(), format!("d{i}")))
+        .collect::<Vec<_>>();
+    for predicate in [
+        r#"({"\u0061": true})["a"]"#,
+        r#"({"a\"b": true})["a\"b"]"#,
+        r#"({"a\\b": true})["a\\b"]"#,
+    ] {
+        let options = ReadManyOptions::default().with_filter(predicate.parse().unwrap());
+        let response = container
+            .read_many::<Value>(
+                ReadManySelection::Partitions(vec!["one".into()]),
+                Some(options),
+            )
+            .await
+            .unwrap()
+            .collect_all()
+            .await
+            .unwrap();
+        assert_eq!(identities(response.into_items()), expected, "{predicate}");
+    }
 }
 
 #[tokio::test]

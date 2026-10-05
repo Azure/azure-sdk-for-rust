@@ -225,7 +225,8 @@ fn query_body(
         for (selector, value) in selectors.iter().zip(key.values()) {
             terms.push(match value.query_value()? {
                 Some(value) => format!("{selector} = {}", bind(value)),
-                None => format!("NOT IS_DEFINED({selector})"),
+                // Empty objects are the only valid object-valued partition keys.
+                None => format!("(NOT IS_DEFINED({selector}) OR IS_OBJECT({selector}))"),
             });
         }
         predicates.push(format!("({})", terms.join(" AND ")));

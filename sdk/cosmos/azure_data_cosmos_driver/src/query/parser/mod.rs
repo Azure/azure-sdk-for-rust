@@ -1162,6 +1162,12 @@ impl<'a> Parser<'a> {
 
     fn parse_object_property(&mut self) -> Result<SqlObjectProperty, ParseError> {
         let name = match self.current.kind {
+            TokenKind::Identifier if self.current.text.starts_with('"') => {
+                let name = serde_json::from_str::<String>(self.current.text)
+                    .map_err(|_| self.error("invalid double-quoted object property".into()))?;
+                self.advance();
+                name
+            }
             TokenKind::StringLiteral => {
                 let s = extract_string_content(self.current.text);
                 self.advance();

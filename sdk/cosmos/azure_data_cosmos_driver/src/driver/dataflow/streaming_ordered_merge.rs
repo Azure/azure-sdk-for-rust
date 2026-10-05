@@ -439,13 +439,17 @@ impl StreamingOrderedMerge {
                 FillOutcome::SplitRequired { replacements } => {
                     split_retries += 1;
                     if split_retries > MAX_SPLIT_RETRIES {
-                        return Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED)
-                            .with_message(format!(
-                                "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
+                        return Err(replacements.into_error(
+                            crate::error::CosmosError::builder()
+                                .with_status(
+                                    crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED,
+                                )
+                                .with_message(format!(
+                                    "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in StreamingOrderedMerge"
-                            ))
-                            .build());
+                                ))
+                                .build(),
+                        ));
                     }
                     self.handle_split(idx, replacements)?;
                     topology_changed = true;

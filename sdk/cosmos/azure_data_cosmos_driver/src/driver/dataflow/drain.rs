@@ -85,13 +85,17 @@ impl PipelineNode for SequentialDrain {
                     if split_retries > MAX_SPLIT_RETRIES {
                         // This should be ridiculously rare.
                         // The topology provider already waits for splits to converge before returning.
-                        return Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED)
-                            .with_message(format!(
-                                "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
+                        return Err(replacements.into_error(
+                            crate::error::CosmosError::builder()
+                                .with_status(
+                                    crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED,
+                                )
+                                .with_message(format!(
+                                    "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in SequentialDrain"
-                            ))
-                            .build());
+                                ))
+                                .build(),
+                        ));
                     }
 
                     // Remove the split child and splice in replacements at the front.

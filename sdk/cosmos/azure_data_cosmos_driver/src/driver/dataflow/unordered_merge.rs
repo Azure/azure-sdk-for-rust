@@ -133,15 +133,17 @@ impl UnorderedMerge {
                     PageResult::SplitRequired { replacements } => {
                         split_retries += 1;
                         if split_retries > MAX_SPLIT_RETRIES {
-                            return Err(crate::error::CosmosError::builder()
-                                .with_status(
-                                    crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED,
-                                )
-                                .with_message(format!(
-                                    "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
+                            return Err(replacements.into_error(
+                                crate::error::CosmosError::builder()
+                                    .with_status(
+                                        crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED,
+                                    )
+                                    .with_message(format!(
+                                        "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                      while priming UnorderedMerge children"
-                                ))
-                                .build());
+                                    ))
+                                    .build(),
+                            ));
                         }
                         // Splice the replacement ranges in place and re-prime
                         // from the first replacement (same index).
@@ -238,13 +240,17 @@ impl PipelineNode for UnorderedMerge {
                 PageResult::SplitRequired { replacements } => {
                     split_retries += 1;
                     if split_retries > MAX_SPLIT_RETRIES {
-                        return Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED)
-                            .with_message(format!(
-                                "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
+                        return Err(replacements.into_error(
+                            crate::error::CosmosError::builder()
+                                .with_status(
+                                    crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED,
+                                )
+                                .with_message(format!(
+                                    "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in UnorderedMerge"
-                            ))
-                            .build());
+                                ))
+                                .build(),
+                        ));
                     }
 
                     // Remove the split child and splice in replacements.

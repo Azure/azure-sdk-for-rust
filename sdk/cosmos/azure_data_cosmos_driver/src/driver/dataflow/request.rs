@@ -442,6 +442,18 @@ impl Request {
                         continuation,
                     )
                     .await
+                    .map_err(|error| {
+                        let mut sources = std::mem::take(&mut self.prior_diagnostics);
+                        sources.extend(prior_diagnostics.clone());
+                        sources.extend(error.diagnostics());
+                        let mut builder = crate::CosmosErrorBuilder::from_error(error);
+                        if let Some(diagnostics) =
+                            crate::DiagnosticsContext::aggregate_sub_operations(&sources)
+                        {
+                            builder = builder.with_diagnostics(Arc::new(diagnostics));
+                        }
+                        builder.build()
+                    })
                     .map(|response| {
                         tracing::trace!(
                             target = ?self.target,
@@ -467,8 +479,21 @@ impl Request {
                     .owned_range()
                     .expect("effective partition key range target must have an owned range")
                     .clone();
-                self.split_for_topology_change(context, &range, prior_diagnostics)
-                    .await
+                let result = self
+                    .split_for_topology_change(context, &range, prior_diagnostics.clone())
+                    .await;
+                result.map_err(|error| {
+                    let mut sources = std::mem::take(&mut self.prior_diagnostics);
+                    sources.extend(prior_diagnostics);
+                    sources.extend(error.diagnostics());
+                    let mut builder = crate::CosmosErrorBuilder::from_error(error);
+                    if let Some(diagnostics) =
+                        crate::DiagnosticsContext::aggregate_sub_operations(&sources)
+                    {
+                        builder = builder.with_diagnostics(Arc::new(diagnostics));
+                    }
+                    builder.build()
+                })
             }
         }
     }
@@ -533,8 +558,11 @@ impl Request {
             })
             .collect::<crate::error::Result<Vec<_>>>()?;
 
+        let mut rejection_diagnostics = self.prior_diagnostics.clone();
+        rejection_diagnostics.extend(prior);
         Ok(PageResult::SplitRequired {
-            replacements: super::node::SplitReplacements::try_tiling(range, replacement_nodes)?,
+            replacements: super::node::SplitReplacements::try_tiling(range, replacement_nodes)?
+                .with_rejection_diagnostics(rejection_diagnostics),
         })
     }
 }
