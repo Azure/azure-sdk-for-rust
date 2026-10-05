@@ -37,7 +37,7 @@ steps:
           displayName: Generate ${{ parameters.kind }} Rust API review bundle
           inputs:
             pwsh: true
-            filePath: $(Build.SourcesDirectory)/eng/scripts/Export-API.ps1
+            filePath: $(LanguageRepo)/eng/scripts/Export-API.ps1
             arguments: >
               -PackageName '${{ parameters.packageName }}'
               -WorkspacePath '$(ApiReviewSourceDir)/Cargo.toml'
