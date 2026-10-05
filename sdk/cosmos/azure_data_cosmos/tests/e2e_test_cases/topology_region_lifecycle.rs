@@ -6,8 +6,9 @@ use std::time::Duration;
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
     options::{ItemReadOptions, OperationOptions, Region},
-    RoutingStrategy, SubStatusCode,
+    RoutingStrategy,
 };
+use azure_data_cosmos_driver::error::status_codes::substatus;
 
 use crate::e2e_test_cases::{
     fixture::{build_client_with_defaults, ClientSetup, E2eTest, TestResult},
@@ -111,7 +112,7 @@ async fn preferred_region_recovers_across_offline_remove_and_readd() -> TestResu
                 assert!(removed_diagnostics.requests().iter().any(|request| {
                     request.status().status_code() == StatusCode::Forbidden
                         && request.status().sub_status()
-                            == Some(SubStatusCode::DATABASE_ACCOUNT_NOT_FOUND)
+                            == Some(substatus::DATABASE_ACCOUNT_NOT_FOUND)
                 }));
 
                 manager.add("North Europe").await?;

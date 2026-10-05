@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos::{options::Region, RoutingStrategy, SubStatusCode};
+use azure_data_cosmos::{options::Region, RoutingStrategy};
+use azure_data_cosmos_driver::error::status_codes::substatus;
 
 use crate::e2e_test_cases::{
     fixture::{build_client_with_defaults, ClientSetup, E2eTest, TestResult},
@@ -143,13 +144,13 @@ fn assert_transition_error(error: &azure_data_cosmos::CosmosError) {
     assert_eq!(error.status().status_code(), StatusCode::Gone);
     assert_eq!(
         error.status().sub_status(),
-        Some(SubStatusCode::COMPLETING_SPLIT)
+        Some(substatus::COMPLETING_SPLIT)
     );
     let diagnostics = error
         .diagnostics()
         .expect("transition error must retain diagnostics");
     assert!(diagnostics.requests().iter().all(|request| {
         request.status().status_code() == StatusCode::Gone
-            && request.status().sub_status() == Some(SubStatusCode::COMPLETING_SPLIT)
+            && request.status().sub_status() == Some(substatus::COMPLETING_SPLIT)
     }));
 }

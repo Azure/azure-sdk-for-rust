@@ -2,7 +2,8 @@
 // Licensed under the MIT License.
 
 use azure_core::http::StatusCode;
-use azure_data_cosmos::{options::Region, RoutingStrategy, SubStatusCode};
+use azure_data_cosmos::{options::Region, RoutingStrategy};
+use azure_data_cosmos_driver::error::status_codes::substatus;
 
 use crate::e2e_test_cases::{
     fixture::{build_client_with_defaults, ClientSetup, E2eTest, TestResult},
@@ -68,7 +69,7 @@ async fn writes_follow_phased_failover_and_failback() -> TestResult {
                 assert!(failover.diagnostics().requests().iter().any(|request| {
                     request.region() == Some(&Region::new("East US"))
                         && request.status().status_code() == StatusCode::Forbidden
-                        && request.status().sub_status() == Some(SubStatusCode::WRITE_FORBIDDEN)
+                        && request.status().sub_status() == Some(substatus::WRITE_FORBIDDEN)
                 }));
                 assert_eq!(
                     failover
@@ -128,7 +129,7 @@ async fn writes_follow_phased_failover_and_failback() -> TestResult {
                 assert!(failback.diagnostics().requests().iter().any(|request| {
                     request.region() == Some(&Region::new("West US"))
                         && request.status().status_code() == StatusCode::Forbidden
-                        && request.status().sub_status() == Some(SubStatusCode::WRITE_FORBIDDEN)
+                        && request.status().sub_status() == Some(substatus::WRITE_FORBIDDEN)
                 }));
                 assert_eq!(
                     failback
