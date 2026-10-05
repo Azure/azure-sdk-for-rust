@@ -24,7 +24,7 @@ use std::collections::VecDeque;
 #[cfg(test)]
 use std::ffi::c_void;
 use std::ffi::{c_char, CString};
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::atomic::{AtomicI32, AtomicU8, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
@@ -144,7 +144,8 @@ impl CosmosCompletionQueueState {
 /// completion record's borrowed handle.
 pub(crate) struct OperationInner {
     /// Lifecycle state — encoded as one of [`CosmosOperationHandleState`].
-    state: AtomicU8,
+    pub(crate) state: AtomicU8,
+    pub(crate) terminal_status: AtomicI32,
     patch_tracking_id: OnceLock<CString>,
 }
 
@@ -154,6 +155,7 @@ impl OperationInner {
             state: AtomicU8::new(
                 CosmosOperationHandleState::CosmosOperationHandleStateInFlight as u8,
             ),
+            terminal_status: AtomicI32::new(0),
             patch_tracking_id: OnceLock::new(),
         }
     }
@@ -271,9 +273,10 @@ pub struct CosmosCompletion {
     /// The host's opaque pointer-sized cookie, round-tripped verbatim from
     /// submit; the wrapper never dereferences it.
     pub user_data: isize,
-    /// Wire HTTP status code, or `0` when there is no wire response.
+    /// Effective HTTP status code, or `0` when absent or error details are suppressed.
     pub http_status_code: u16,
-    /// `1` iff an error completion originated from a service wire response.
+    /// `1` for a direct wire error; `0` for synthetic errors or suppressed details.
+    /// Synthetic wrappers can still retain original response metadata.
     pub is_from_wire: u8,
     /// Borrowed error message (NUL-terminated UTF-8), or NULL on a non-error
     /// completion / when error details are suppressed.
@@ -396,11 +399,7 @@ fn body_view(response: &CosmosResponse) -> (*const u8, usize) {
         // documented "NULL pointer + 0 length when empty" contract.
         ResponseBody::Bytes(b) if b.is_empty() => (std::ptr::null(), 0),
         ResponseBody::Bytes(b) => (b.as_ptr(), b.len()),
-        ResponseBody::Items(items) => items
-            .first()
-            .filter(|b| !b.is_empty())
-            .map(|b| (b.as_ptr(), b.len()))
-            .unwrap_or((std::ptr::null(), 0)),
+        ResponseBody::Items(_) => (std::ptr::null(), 0),
         ResponseBody::NoPayload => (std::ptr::null(), 0),
     }
 }
@@ -538,7 +537,8 @@ impl PendingCompletion {
             p.backtrace = err
                 .backtrace()
                 .and_then(|bt| to_cstring(bt.as_ref().to_string()));
-            if let Some(resp) = err.response() {
+            if let Some(resp) = crate::error::original_response(&err) {
+                p.response = Some(resp.clone());
                 // Wire response: overlay the effective sub-status onto the
                 // wire headers before synthesis. `err.status().sub_status()`
                 // is authoritative — for a body-attached deserialization
@@ -572,7 +572,7 @@ impl PendingCompletion {
     /// the `#[repr(C)]` completion with borrowed pointers into it plus any
     /// owned side-payload handles. `op_inner` is dropped here (its terminal
     /// state was set at enqueue time).
-    fn into_ffi(self) -> CosmosCompletion {
+    pub(crate) fn into_ffi(self) -> CosmosCompletion {
         let outcome = self.outcome;
         let status = self.status;
         let user_data = self.user_data;
@@ -635,7 +635,7 @@ impl CosmosCompletion {
     /// Frees the backing box and any un-detached owned side-payload handles,
     /// NULLing each reclaimed field so a double free within the same
     /// `free_completions` call is a no-op.
-    fn free_inner(&mut self) {
+    pub(crate) fn free_inner(&mut self) {
         if !self.driver.is_null() {
             crate::driver::cosmos_driver_free(self.driver);
             self.driver = std::ptr::null_mut();
@@ -768,6 +768,7 @@ unsafe fn cqoptions_from_ptr(options: *const CosmosCompletionQueueOptions) -> Cq
 
 /// Internal `Arc`-shared queue state.
 pub(crate) struct CompletionQueueInner {
+    pub(crate) cursor: Option<crate::cursor::CursorQueue>,
     inner: Mutex<QueueInner>,
     /// Signalled whenever a new completion is enqueued.
     data_available: Condvar,
@@ -801,6 +802,9 @@ impl CompletionQueueInner {
     /// admitted-but-undrained ops so the `SHUTDOWN` → `DRAINED` transition
     /// cannot race ahead of an op that is still running.
     pub(crate) fn reserve_in_flight(&self) -> Result<(), CosmosErrorCode> {
+        if self.cursor.is_some() {
+            return Err(CosmosErrorCode::CosmosErrorCodeQueueFormat);
+        }
         let mut guard = self.inner.lock_recover();
         if guard.state != CosmosCompletionQueueState::CosmosCompletionQueueStateRunning {
             return Err(CosmosErrorCode::CosmosErrorCodeQueueShutdown);
@@ -839,8 +843,17 @@ pub struct CompletionQueue {
 
 impl CompletionQueue {
     fn new_raw(runtime: Arc<RuntimeContext>, options: CqOptions) -> *mut Self {
+        Self::new_with_mode(runtime, options, false)
+    }
+
+    pub(crate) fn new_with_mode(
+        runtime: Arc<RuntimeContext>,
+        options: CqOptions,
+        cursor: bool,
+    ) -> *mut Self {
         Box::into_raw(Box::new(CompletionQueue {
             inner: Arc::new(CompletionQueueInner {
+                cursor: cursor.then(|| crate::cursor::CursorQueue::new(options)),
                 inner: Mutex::new(QueueInner {
                     deque: VecDeque::new(),
                     state: CosmosCompletionQueueState::CosmosCompletionQueueStateRunning,
@@ -930,6 +943,12 @@ impl CompletionQueue {
         // from already-admitted in-flight ops: shutdown only blocks *new*
         // submissions, it must never strand work that was already running.
         if guard.state == CosmosCompletionQueueState::CosmosCompletionQueueStateDrained {
+            c.op_inner.terminal_status.store(
+                CosmosErrorCode::CosmosErrorCodeDeliveryLost
+                    .as_status_code()
+                    .0,
+                Ordering::Release,
+            );
             c.op_inner.state.store(next_state as u8, Ordering::Release);
             guard.in_flight = guard.in_flight.saturating_sub(1);
             maybe_mark_drained(&mut guard);
@@ -943,12 +962,21 @@ impl CompletionQueue {
         // advanced to its terminal state so nothing is stranded.
         if inner.options.max_capacity > 0 && guard.deque.len() as u32 >= inner.options.max_capacity
         {
+            c.op_inner.terminal_status.store(
+                CosmosErrorCode::CosmosErrorCodeDeliveryLost
+                    .as_status_code()
+                    .0,
+                Ordering::Release,
+            );
             c.op_inner.state.store(next_state as u8, Ordering::Release);
             guard.in_flight = guard.in_flight.saturating_sub(1);
             maybe_mark_drained(&mut guard);
             return CosmosErrorCode::CosmosErrorCodeQueueFull;
         }
 
+        c.op_inner
+            .terminal_status
+            .store(c.status.0, Ordering::Release);
         c.op_inner.state.store(next_state as u8, Ordering::Release);
         guard.deque.push_back(c);
         inner.data_available.notify_one();
@@ -1001,6 +1029,11 @@ pub extern "C" fn cosmos_completion_queue_free(queue: *mut CompletionQueue) {
         return;
     }
     tracing::trace!(?queue, "freeing cosmos_completion_queue_t");
+    if let Some(inner) = CompletionQueue::inner_arc(queue) {
+        if let Some(cursor) = &inner.cursor {
+            cursor.abandon();
+        }
+    }
     CompletionQueue::drop_raw(queue);
 }
 
@@ -1116,6 +1149,10 @@ pub extern "C" fn cosmos_completion_queue_wait(
         let Some(inner_arc) = CompletionQueue::inner_arc(queue) else {
             return 0;
         };
+        if inner_arc.cursor.is_some() {
+            tracing::error!("legacy completion wait cannot consume a cursor queue; use cosmos_cursor_queue_wait");
+            return 0;
+        }
         let Some(first) = wait_one(&inner_arc, timeout_ms) else {
             return 0;
         };
@@ -1210,6 +1247,10 @@ pub extern "C" fn cosmos_completion_queue_wait_writable(
         return false;
     };
     let inner = &*inner_arc;
+    if inner.cursor.is_some() {
+        tracing::error!("legacy writable wait cannot inspect a cursor queue");
+        return false;
+    }
     if inner.options.max_capacity == 0 {
         // Unbounded — always writable.
         return true;
@@ -1278,6 +1319,10 @@ pub extern "C" fn cosmos_completion_queue_shutdown(queue: *mut CompletionQueue) 
         return;
     };
     let inner = &*inner_arc;
+    if let Some(cursor) = &inner.cursor {
+        cursor.shutdown();
+        return;
+    }
     let mut guard = inner.inner.lock_recover();
     if guard.state == CosmosCompletionQueueState::CosmosCompletionQueueStateRunning {
         guard.state = CosmosCompletionQueueState::CosmosCompletionQueueStateShutdown;
@@ -1297,6 +1342,9 @@ pub extern "C" fn cosmos_completion_queue_state(
     let Some(q) = CompletionQueue::from_ptr(queue) else {
         return CosmosCompletionQueueState::CosmosCompletionQueueStateRunning;
     };
+    if let Some(cursor) = &q.inner.cursor {
+        return cursor.state();
+    }
     let guard = q.inner.inner.lock_recover();
     CosmosCompletionQueueState::from_u8(guard.state as u8)
 }
@@ -1304,6 +1352,16 @@ pub extern "C" fn cosmos_completion_queue_state(
 // ─────────────────────────────────────────────────────────────────────────────
 // FFI: cosmos_operation_handle_*
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// Terminal packed status, including delivery loss after queue abandonment.
+/// Zero means no error observed; inspect the lifecycle separately for completion.
+#[no_mangle]
+pub extern "C" fn cosmos_operation_handle_status(op: *const OperationHandle) -> CosmosStatusCode {
+    OperationHandle::inner_arc(op).map_or(
+        CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code(),
+        |inner| CosmosStatusCode(inner.terminal_status.load(Ordering::Acquire)),
+    )
+}
 
 /// Poll the operation's lifecycle state. Returns `InFlight` if `op` is NULL.
 #[no_mangle]
@@ -1486,6 +1544,79 @@ mod tests {
     use crate::runtime::__test_only_create_default_runtime;
     use std::ffi::CStr;
     use std::mem::MaybeUninit;
+
+    #[tokio::test]
+    async fn wrapped_service_completions_preserve_status_diagnostics_and_body() {
+        use azure_data_cosmos_driver::{error::status_codes, options::DiagnosticsVerbosity};
+
+        for original_status in [
+            status_codes::READ_SESSION_NOT_AVAILABLE,
+            status_codes::WRITE_FORBIDDEN,
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+        ] {
+            let error = crate::error::tests::fault_injected_error(original_status).await;
+            let status = error.status();
+            for include_details in [false, true] {
+                let pending = PendingCompletion::error(
+                    0,
+                    Arc::new(OperationInner::new()),
+                    error.clone(),
+                    include_details,
+                );
+                assert_eq!(pending.status, CosmosStatusCode::from_status(status));
+                assert!(!pending.is_from_wire);
+                let diagnostics = pending.diagnostics.as_ref().unwrap();
+                assert_eq!(diagnostics.effective_status(), Some(status));
+                for verbosity in [
+                    DiagnosticsVerbosity::Detailed,
+                    DiagnosticsVerbosity::Summary,
+                ] {
+                    let json: serde_json::Value =
+                        serde_json::from_str(diagnostics.to_json_string(Some(verbosity))).unwrap();
+                    assert_eq!(json["status"], status.to_string());
+                }
+                if include_details {
+                    assert_eq!(pending.http_status_code, 503);
+                    let response = pending.response.as_ref().unwrap();
+                    assert_eq!(response.status(), original_status);
+                    assert_eq!(response.headers().retry_after_ms, Some(17));
+                    assert!(!response.body().is_empty());
+                    assert!(pending.headers.as_ptr_len().1 > 0);
+                } else {
+                    assert_eq!(pending.http_status_code, 0);
+                    assert!(pending.response.is_none());
+                    assert_eq!(pending.headers.as_ptr_len().1, 0);
+                }
+                let mut completion = pending.into_ffi();
+                assert_eq!(completion.status, CosmosStatusCode::from_status(status));
+                if include_details {
+                    use crate::response_header::{CosmosHeaderId, CosmosValueKind};
+                    // SAFETY: the live completion owns these initialized header entries.
+                    let headers = unsafe {
+                        std::slice::from_raw_parts(completion.headers, completion.headers_len)
+                    };
+                    let substatus = headers
+                        .iter()
+                        .find(|header| header.id == CosmosHeaderId::CosmosHeaderIdSubStatus)
+                        .unwrap();
+                    assert_eq!(substatus.value.kind, CosmosValueKind::I64.0);
+                    // SAFETY: the checked I64 tag selects this union member.
+                    assert_eq!(
+                        unsafe { substatus.value.payload.i64_value },
+                        i64::from(status.sub_status().unwrap().value())
+                    );
+                    let charge = headers
+                        .iter()
+                        .find(|header| header.id == CosmosHeaderId::CosmosHeaderIdRequestCharge)
+                        .unwrap();
+                    assert_eq!(charge.value.kind, CosmosValueKind::F64.0);
+                    // SAFETY: the checked F64 tag selects this union member.
+                    assert_eq!(unsafe { charge.value.payload.f64_value }, 2.5);
+                }
+                cosmos_completion_queue_free_completions(&mut completion, 1);
+            }
+        }
+    }
 
     #[test]
     fn patch_tracking_id_accessor_surfaces_error_identity_without_rich_details() {
@@ -1783,6 +1914,53 @@ mod tests {
     }
 
     #[test]
+    fn legacy_handle_status_reports_errors_and_delivery_loss() {
+        let q = fresh_queue(1, true);
+        let op = __test_only_create_operation_handle();
+        let failed = CosmosErrorCode::CosmosErrorCodeInvalidOptionValue.as_status_code();
+        assert_eq!(
+            __test_only_enqueue_completion(
+                q,
+                op,
+                CosmosCompletionOutcome::CosmosCompletionOutcomeError,
+                failed,
+                std::ptr::null_mut(),
+                Some(
+                    DriverCosmosError::builder()
+                        .with_status(
+                            CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
+                                .to_status()
+                                .unwrap(),
+                        )
+                        .build(),
+                ),
+            ),
+            CosmosErrorCode::CosmosErrorCodeSuccess
+        );
+        assert_eq!(cosmos_operation_handle_status(op), failed);
+        let rejected = __test_only_create_operation_handle();
+        assert_eq!(
+            __test_only_enqueue_completion(
+                q,
+                rejected,
+                CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
+                COSMOS_STATUS_SUCCESS,
+                std::ptr::null_mut(),
+                None,
+            ),
+            CosmosErrorCode::CosmosErrorCodeQueueFull
+        );
+        assert_eq!(
+            cosmos_operation_handle_status(rejected),
+            CosmosErrorCode::CosmosErrorCodeDeliveryLost.as_status_code()
+        );
+        free_one(wait_one_ffi(q, 0).unwrap());
+        cosmos_operation_handle_free(op);
+        cosmos_operation_handle_free(rejected);
+        cosmos_completion_queue_free(q);
+    }
+
+    #[test]
     fn max_capacity_rejects_at_limit() {
         let q = fresh_queue(2, true);
         for _ in 0..2 {
@@ -1977,11 +2155,14 @@ mod tests {
         // `synthesize_response_headers` implementation as the wire
         // overlay, so both branches inherit the assertions below.
         use crate::response_header::{CosmosHeaderId, CosmosValueKind};
-        use azure_data_cosmos_driver::error::{CosmosError, CosmosStatus, SubStatusCode};
+        use azure_data_cosmos_driver::error::{CosmosError, CosmosStatus};
         let q = fresh_queue(0, true);
         let op = __test_only_create_operation_handle();
         let status = CosmosStatus::new(azure_core::http::StatusCode::RequestTimeout)
-            .with_sub_status(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value());
+            .with_sub_status(
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT
+                    .value(),
+            );
         let err = CosmosError::builder()
             .with_status(status)
             .with_message("client-side timeout")
@@ -2009,7 +2190,10 @@ mod tests {
         let sub = unsafe { entries[0].value.payload.i64_value };
         assert_eq!(
             sub,
-            i64::from(SubStatusCode::CLIENT_OPERATION_TIMEOUT.value())
+            i64::from(
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT
+                    .value()
+            )
         );
         free_one(c);
         cosmos_operation_handle_free(op);

@@ -1011,15 +1011,13 @@ fn ensure_region(store: &EmulatorStore, name: &str) -> ApiResult<()> {
 }
 
 fn parse_epk(value: &str) -> ApiResult<Epk> {
-    if value.is_empty()
-        || !value.len().is_multiple_of(2)
-        || !value.bytes().all(|byte| byte.is_ascii_hexdigit())
-    {
+    if value.is_empty() {
         return Err(ApiError::bad_request(
             "epk must be a non-empty, even-length hexadecimal string",
         ));
     }
-    Ok(Epk::from(value))
+    Epk::try_from(value)
+        .map_err(|error| ApiError::bad_request(format!("Invalid split epk: {error}")))
 }
 
 fn validate_progression(
@@ -1403,8 +1401,26 @@ mod tests {
 
     #[test]
     fn custom_epk_rejects_malformed_hex() {
-        assert!(parse_epk("ABC").is_err());
-        assert!(parse_epk("not-hex").is_err());
+        for value in ["", "ABC", "not-hex", "00zz", "é"] {
+            assert!(matches!(
+                parse_epk(value),
+                Err(error) if error.status == StatusCode::BAD_REQUEST
+            ));
+        }
+    }
+
+    #[test]
+    fn custom_epk_preserves_valid_hex() -> ApiResult<()> {
+        for value in [
+            "FF",
+            "ff",
+            "aB12",
+            "010000",
+            "0123456789abcdef0123456789abcdef01ab",
+        ] {
+            assert_eq!(parse_epk(value)?.to_hex(), value.to_ascii_uppercase());
+        }
+        Ok(())
     }
 
     #[test]

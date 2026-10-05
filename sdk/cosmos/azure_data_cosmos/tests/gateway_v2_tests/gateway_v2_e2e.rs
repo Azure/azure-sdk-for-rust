@@ -18,9 +18,10 @@ use azure_data_cosmos::options::{
 };
 use azure_data_cosmos::{
     AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, CosmosStatus, FeedScope, Query,
-    RoutingStrategy, SubStatusCode, TransactionalBatch,
+    RoutingStrategy, TransactionalBatch,
 };
 use azure_data_cosmos_driver::{
+    error::status_codes,
     models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
     options::OperationOptions,
     CosmosDriverRuntime, DriverOptions,
@@ -269,8 +270,8 @@ async fn wait_for_container_metadata_ready(
             && matches!(
                 status.sub_status(),
                 Some(
-                    SubStatusCode::COLLECTION_CREATE_IN_PROGRESS
-                        | SubStatusCode::OWNER_RESOURCE_NOT_FOUND
+                    azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_CREATE_IN_PROGRESS
+                        | azure_data_cosmos_driver::error::status_codes::substatus::OWNER_RESOURCE_NOT_FOUND
                 )
             )
     }
@@ -440,7 +441,7 @@ where
         e.downcast_ref::<azure_data_cosmos::CosmosError>()
             .is_some_and(|ce| {
                 ce.status().status_code() == StatusCode::NotFound
-                    && ce.status().sub_status() == Some(SubStatusCode::OWNER_RESOURCE_NOT_FOUND)
+                    && ce.status().sub_status() == Some(azure_data_cosmos_driver::error::status_codes::substatus::OWNER_RESOURCE_NOT_FOUND)
             })
     }
 
@@ -717,7 +718,7 @@ async fn assert_item_readable_from_region(
         let container = match db_client.container_client(container_name, None).await {
             Ok(container) => container,
             Err(e)
-                if (e.status().status_code() == StatusCode::NotFound
+                if (read_replication_pending(e.status())
                     || (e.status().status_code() == StatusCode::BadRequest
                         && e.status()
                             .sub_status()
@@ -745,7 +746,7 @@ async fn assert_item_readable_from_region(
                 return Ok(());
             }
             Err(e)
-                if (e.status().status_code() == StatusCode::NotFound
+                if (read_replication_pending(e.status())
                     || (e.status().status_code() == StatusCode::BadRequest
                         && e.status()
                             .sub_status()
@@ -2354,10 +2355,7 @@ pub async fn gateway_v2_read_with_non_default_consistency_strategy(
                 drop_database(&client, &db_name).await;
                 return Ok(());
             }
-            Err(e)
-                if e.status().status_code() == StatusCode::NotFound
-                    && attempt + 1 < MAX_ATTEMPTS =>
-            {
+            Err(e) if read_replication_pending(e.status()) && attempt + 1 < MAX_ATTEMPTS => {
                 tokio::time::sleep(POLL_INTERVAL).await;
             }
             Err(e) => {
@@ -2366,6 +2364,29 @@ pub async fn gateway_v2_read_with_non_default_consistency_strategy(
         }
     }
     unreachable!("loop above always returns on the final iteration");
+}
+
+fn read_replication_pending(status: CosmosStatus) -> bool {
+    status.status_code() == StatusCode::NotFound
+        || status == status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE
+}
+
+#[test]
+fn regional_readiness_recognizes_wrapped_session_unavailability() {
+    assert!(read_replication_pending(CosmosStatus::new(
+        StatusCode::NotFound
+    )));
+    assert!(read_replication_pending(
+        status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE
+    ));
+    for status in [
+        CosmosStatus::new(StatusCode::ServiceUnavailable),
+        status_codes::TRANSPORT_IO_FAILED,
+        status_codes::CLIENT_WRITE_FORBIDDEN,
+        status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+    ] {
+        assert!(!read_replication_pending(status), "{status}");
+    }
 }
 
 /// Proves a freshly-provisioned collection is point-readable over Gateway 2.0

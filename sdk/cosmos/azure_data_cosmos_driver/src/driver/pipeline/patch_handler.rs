@@ -94,7 +94,7 @@ impl SubOperationDispatcher for CosmosDriver {
         operation: CosmosOperation,
         options: OperationOptions,
     ) -> crate::error::Result<CosmosResponse> {
-        CosmosDriver::execute_singleton_operation(self, operation, options).await
+        CosmosDriver::execute_singleton_operation_inner(self, operation, options).await
     }
 
     async fn canonicalize_operation_container(
@@ -183,7 +183,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         .is_some_and(Precondition::is_if_none_match)
     {
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_BAD_REQUEST)
+            .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
             .with_message("PATCH supports If-Match preconditions; If-None-Match is read-only")
             .build());
     }
@@ -194,7 +194,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         .ok_or_else(|| missing_body_error("PATCH operation requires a PatchInstructions body"))?;
     let spec: PatchInstructions = serde_json::from_slice(body).map_err(|err| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_REQUEST_BODY_INVALID)
             .with_message("failed to parse PATCH body as PatchInstructions")
             .with_source(err)
             .build()
@@ -346,7 +346,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
             .single()
             .map_err(|err| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("PATCH could not extract Read response body")
                     .with_source(err)
                     .build()
@@ -362,7 +362,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         let mut value: serde_json::Value = serde_json::from_slice(&read_body_bytes)
             .map_err(|err| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message(format!(
                         "PATCH could not deserialize current item body: {err}"
                     ))
@@ -467,7 +467,7 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
         let merged_bytes = serde_json::to_vec(&value)
             .map_err(|err| {
                 crate::error::CosmosError::builder()
-                    .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                    .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                     .with_message("PATCH could not serialize merged item")
                     .with_source(err)
                     .build()
@@ -681,9 +681,10 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
 fn is_container_recreation_error(error: &crate::error::CosmosError) -> bool {
     let status = error.status();
     (status.status_code() == StatusCode::BadRequest
-        && status.sub_status() == Some(crate::models::SubStatusCode::COLLECTION_RID_MISMATCH))
+        && status.sub_status()
+            == Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH))
         || (status.status_code() == StatusCode::Gone
-            && status.sub_status() == Some(crate::models::SubStatusCode::NAME_CACHE_STALE))
+            && status.sub_status() == Some(crate::error::status_codes::substatus::NAME_CACHE_STALE))
         || status.is_read_session_not_available()
 }
 
@@ -820,7 +821,7 @@ async fn verify_committed_patch<D: SubOperationDispatcher + ?Sized>(
     let body = response.into_body().single()?;
     let mut value = serde_json::from_slice::<serde_json::Value>(&body).map_err(|error| {
         crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
             .with_message("PATCH could not deserialize verification Read response body")
             .with_source(error)
             .build()
@@ -1240,7 +1241,6 @@ mod tests {
         PartitionKey, PartitionKeyDefinition, SessionToken, SystemProperties,
     };
     use azure_core::http::Url;
-    use std::borrow::Cow;
 
     fn test_account() -> AccountReference {
         AccountReference::with_master_key(
@@ -1307,7 +1307,7 @@ mod tests {
 
     #[test]
     fn read_sub_op_carries_caller_session_token_for_fallback() {
-        let caller_token = SessionToken(Cow::Owned("0:1#7".into()));
+        let caller_token = SessionToken::new("0:1#7");
         let op = build_read_sub_op(test_item_ref(), Some(caller_token.clone()));
 
         assert_eq!(op.operation_type(), OperationType::Read);
@@ -1327,7 +1327,7 @@ mod tests {
         // SE-004 TOCTOU mitigation: the Replace must commit against the same replica
         // view we just read from, so the session token comes from the Read response,
         // not from the caller's options.
-        let read_response_token = SessionToken(Cow::Owned("0:1#99".into()));
+        let read_response_token = SessionToken::new("0:1#99");
         let etag = Etag::from("\"abc\"");
         let body = b"{\"id\":\"doc1\"}".to_vec();
 
@@ -1437,11 +1437,11 @@ mod tests {
                 handle,
                 "transport failed",
                 request_sent,
-                CosmosStatus::TRANSPORT_IO_FAILED,
+                crate::error::status_codes::TRANSPORT_IO_FAILED,
             );
         }
         let error = crate::error::CosmosError::builder()
-            .with_status(CosmosStatus::TRANSPORT_IO_FAILED)
+            .with_status(crate::error::status_codes::TRANSPORT_IO_FAILED)
             .with_diagnostics(Arc::new(diagnostics.complete()))
             .build();
 
@@ -1459,7 +1459,7 @@ mod tests {
                 .with_message("synthetic")
                 .build(),
             CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
                 .with_message("bad json")
                 .with_source(std::io::Error::new(std::io::ErrorKind::InvalidData, "stub"))
                 .build(),
@@ -1670,7 +1670,7 @@ mod tests {
             err.wire_payload()
                 .map(|p| p.headers())
                 .and_then(|h| h.session_token.as_ref())
-                .map(|t| t.0.as_ref()),
+                .map(SessionToken::as_str),
             Some("0:1#42"),
             "exhaustion error must forward the wrapped 412's session token"
         );
@@ -1916,7 +1916,7 @@ mod tests {
             headers.etag = Some(Etag::from(tag));
         }
         if let Some(token) = session_token {
-            headers.session_token = Some(SessionToken(Cow::Owned(token.into())));
+            headers.session_token = Some(SessionToken::new(token));
         }
         headers.request_charge = Some(RequestCharge::new(1.0));
         let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -1970,7 +1970,7 @@ mod tests {
     ) -> crate::error::CosmosError {
         let mut headers = CosmosResponseHeaders::new();
         if let Some(token) = session_token {
-            headers.session_token = Some(SessionToken(Cow::Owned(token.into())));
+            headers.session_token = Some(SessionToken::new(token));
         }
         // Match the production shape: the operation pipeline's abort
         // branch always promotes the per-attempt `WirePending` error
@@ -2776,7 +2776,7 @@ mod tests {
             crate::error::CosmosError::builder()
                 .with_status(CosmosStatus::from_parts(
                     StatusCode::RequestTimeout,
-                    Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+                    Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
                 ))
                 .with_message("end-to-end operation timeout exceeded")
                 .build()
@@ -2803,7 +2803,7 @@ mod tests {
         assert_eq!(error.status().status_code(), StatusCode::RequestTimeout);
         assert_eq!(
             error.status().sub_status(),
-            Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
         );
         let effective_id = error
             .patch_tracking_id()
@@ -3045,7 +3045,7 @@ mod tests {
 
         assert_eq!(
             error.status(),
-            CosmosStatus::SERIALIZATION_REQUEST_BODY_INVALID
+            crate::error::status_codes::SERIALIZATION_REQUEST_BODY_INVALID
         );
         assert!(dispatcher.calls().is_empty());
     }
@@ -3118,7 +3118,7 @@ mod tests {
 
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+            crate::error::status_codes::CLIENT_BAD_REQUEST
         );
         assert!(dispatcher.calls().is_empty());
     }
@@ -3185,7 +3185,7 @@ mod tests {
             ),
         ]);
 
-        let caller_token = SessionToken(Cow::Owned("0:1#7".into()));
+        let caller_token = SessionToken::new("0:1#7");
         let op = canonical_patch_op().with_session_token(caller_token.clone());
 
         let mut options = OperationOptions::default();
@@ -3237,7 +3237,7 @@ mod tests {
             },
         ]);
 
-        let caller_token = SessionToken(Cow::Owned("0:1#1".into()));
+        let caller_token = SessionToken::new("0:1#1");
         let op = canonical_patch_op().with_session_token(caller_token.clone());
 
         let _resp = execute_with_dispatcher(&dispatcher, op, OperationOptions::default(), None)
@@ -3255,7 +3255,7 @@ mod tests {
         // mitigation, unchanged behavior).
         assert_eq!(calls[1].op_type, OperationType::Replace);
         assert_eq!(
-            calls[1].session_token.as_ref().map(|t| t.0.as_ref()),
+            calls[1].session_token.as_ref().map(SessionToken::as_str),
             Some("0:1#100")
         );
 
@@ -3267,7 +3267,7 @@ mod tests {
         // Attempt 2, Replace: uses Attempt 2 Read's response token.
         assert_eq!(calls[3].op_type, OperationType::Replace);
         assert_eq!(
-            calls[3].session_token.as_ref().map(|t| t.0.as_ref()),
+            calls[3].session_token.as_ref().map(SessionToken::as_str),
             Some("0:1#200")
         );
     }

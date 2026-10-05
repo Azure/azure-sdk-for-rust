@@ -34,6 +34,8 @@ type Result<T> = ::std::result::Result<T, syn::Error>;
 ///
 /// # Field-Level Attributes
 ///
+/// - `#[option(skip)]` — initializes internal `Option<T>` state to `None`
+///   without generating a builder setter or a layered accessor.
 /// - `#[option(env = "AZURE_COSMOS_...")]` — enables environment variable loading.
 /// - `#[option(env = "AZURE_COSMOS_...", overridable)]` — additionally recognizes a
 ///   `{ENV}_OVERRIDE` kill-switch variable that takes precedence over **every**
@@ -55,8 +57,8 @@ type Result<T> = ::std::result::Result<T, syn::Error>;
 /// #[derive(CosmosOptions)]
 /// #[options(layers(runtime, account, operation))]
 /// pub struct RequestOptions {
-///     #[option(env = "AZURE_COSMOS_CONSISTENCY_LEVEL")]
-///     pub consistency_level: Option<ConsistencyLevel>,
+///     #[option(env = "AZURE_COSMOS_READ_CONSISTENCY_STRATEGY")]
+///     pub read_consistency_strategy: Option<ReadConsistencyStrategy>,
 ///
 ///     pub throughput_bucket: Option<usize>,
 ///
@@ -136,7 +138,8 @@ fn generate_default(input: &OptionsInput) -> Result<proc_macro2::TokenStream> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::derive_cosmos_options_impl;
+    use syn::DeriveInput;
 
     #[test]
     fn conditional_field_gates_every_generated_member() {
@@ -155,5 +158,39 @@ mod tests {
             8,
             "builder field, setter, build, new, view, env, override env, and Default must all be gated"
         );
+    }
+
+    #[test]
+    fn skipped_state_has_no_configuration_accessors() {
+        let tokens = derive_cosmos_options_impl(syn::parse_quote! {
+            #[options(layers(runtime, account, operation))]
+            pub struct Options {
+                #[option(skip)]
+                state: Option<String>,
+                #[option(env = "TEST_LIMIT")]
+                pub limit: Option<u32>,
+            }
+        })
+        .unwrap()
+        .to_string();
+        assert!(!tokens.contains("fn with_state"));
+        assert!(!tokens.contains("fn state"));
+        assert!(tokens.contains("state : None"));
+        assert!(tokens.contains("fn with_limit"));
+    }
+
+    #[test]
+    fn skip_rejects_configuration_attributes() {
+        for attribute in [
+            quote::quote!(#[option(skip, env = "TEST_LIMIT")]),
+            quote::quote!(#[option(skip, nested)]),
+            quote::quote!(#[option(skip, merge = "extend")]),
+        ] {
+            let input = syn::parse_quote! {
+                #[options(layers(runtime, operation))]
+                struct Options { #attribute state: Option<String> }
+            };
+            assert!(derive_cosmos_options_impl(input).is_err());
+        }
     }
 }

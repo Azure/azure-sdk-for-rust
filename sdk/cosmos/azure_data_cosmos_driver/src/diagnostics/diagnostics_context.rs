@@ -664,14 +664,14 @@ impl RequestDiagnostics {
     /// Records end-to-end timeout of this request.
     ///
     /// Sets the status to 408 (Request Timeout) with sub-status
-    /// [`SubStatusCode::CLIENT_OPERATION_TIMEOUT`] to indicate an end-to-end
+    /// [`crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT`] to indicate an end-to-end
     /// operation timeout from the client side.
     pub(crate) fn timeout(&mut self) {
         self.completed_at = Some(Instant::now());
         self.timed_out = true;
         self.status = CosmosStatus::from_parts(
             StatusCode::RequestTimeout,
-            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
         );
         self.duration_ms = self
             .completed_at
@@ -1237,6 +1237,8 @@ enum DiagnosticsPayload<'a> {
 #[derive(Serialize)]
 struct DiagnosticsOutput<'a> {
     activity_id: &'a ActivityId,
+    #[serde(flatten)]
+    status: Option<CosmosStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
     patch_tracking_id: Option<&'a PatchTrackingId>,
     total_duration_ms: u64,
@@ -1308,6 +1310,8 @@ struct DeduplicatedGroup {
 #[derive(Serialize)]
 struct TruncatedOutput<'a> {
     activity_id: &'a ActivityId,
+    #[serde(flatten)]
+    status: Option<CosmosStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
     patch_tracking_id: Option<&'a PatchTrackingId>,
     total_duration_ms: u64,
@@ -1919,7 +1923,7 @@ impl DiagnosticsContextBuilder {
     ///
     /// Should be called when a request times out before receiving a response
     /// due to hitting the end-to-end operation timeout. Sets the status to
-    /// 408 (Request Timeout) with sub-status [`SubStatusCode::CLIENT_OPERATION_TIMEOUT`].
+    /// 408 (Request Timeout) with sub-status [`crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT`].
     ///
     /// For transport-level timeouts (connection timeouts, etc.), use
     /// [`fail_transport_request`](Self::fail_transport_request) with the
@@ -3183,6 +3187,12 @@ impl DiagnosticsContext {
         }
     }
 
+    pub(crate) fn clone_with_status(&self, status: CosmosStatus) -> Self {
+        let mut context = self.clone_with_operation_name(self.operation_name.clone());
+        context.status = Some(status);
+        context
+    }
+
     /// Returns `true` when this context represents a finished operation.
     ///
     /// A [`DiagnosticsContext`] is immutable and finalized at construction, so
@@ -3287,6 +3297,9 @@ impl DiagnosticsContext {
 
     /// Serializes diagnostics to a JSON string.
     ///
+    /// The top-level `status`, when recorded, describes the operation outcome.
+    /// Request and region entries retain the original attempt statuses.
+    ///
     /// The result is lazily cached - the first call computes the JSON,
     /// subsequent calls return the cached string (for the same verbosity level).
     ///
@@ -3328,6 +3341,7 @@ impl DiagnosticsContext {
         let system_usage = self.resolve_system_usage();
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
+            status: self.status,
             patch_tracking_id: self.patch_tracking_id.as_ref(),
             total_duration_ms,
             total_request_charge: self.total_request_charge(),
@@ -3366,6 +3380,7 @@ impl DiagnosticsContext {
 
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
+            status: self.status,
             patch_tracking_id: self.patch_tracking_id.as_ref(),
             total_duration_ms,
             total_request_charge: self.total_request_charge(),
@@ -3388,6 +3403,7 @@ impl DiagnosticsContext {
             // Return a truncated indicator
             let truncated = TruncatedOutput {
                 activity_id: &self.activity_id,
+                status: self.status,
                 patch_tracking_id: self.patch_tracking_id.as_ref(),
                 total_duration_ms,
                 request_count: self.request_count(),
@@ -4485,7 +4501,7 @@ mod tests {
             builder.complete_request(
                 handle,
                 StatusCode::TooManyRequests,
-                Some(SubStatusCode::RU_BUDGET_EXCEEDED),
+                Some(crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED),
             );
         });
 
@@ -4552,7 +4568,7 @@ mod tests {
                 builder.complete_request(
                     handle,
                     StatusCode::TooManyRequests,
-                    Some(SubStatusCode::RU_BUDGET_EXCEEDED),
+                    Some(crate::error::status_codes::substatus::RU_BUDGET_EXCEEDED),
                 );
             }
         });
@@ -4616,7 +4632,7 @@ mod tests {
         builder.set_machine_id(Arc::new("uuid_debug-json-machine".to_string()));
         builder.set_operation_status(
             StatusCode::ServiceUnavailable,
-            Some(SubStatusCode::TRANSPORT_GENERATED_503),
+            Some(crate::error::status_codes::substatus::TRANSPORT_GENERATED_503),
         );
         let handle = builder.start_test_request(
             ExecutionContext::Initial,
@@ -4646,7 +4662,7 @@ mod tests {
             handle,
             "503/20011: error sending request for url (https://test.eastus2.documents.azure.com/dbs/db/colls/coll/docs)",
             RequestSentStatus::Unknown,
-            CosmosStatus::TRANSPORT_GENERATED_503,
+            crate::error::status_codes::TRANSPORT_GENERATED_503,
         );
         let ctx = builder.complete();
 
@@ -4659,6 +4675,7 @@ mod tests {
         let actual = normalize_diagnostics_json(&rendered);
         let expected: serde_json::Value = serde_json::json!({
             "activity_id": "debug-json-test",
+            "status": "503/20003 (TransportGenerated503)",
             "total_duration_ms": 0,
             "total_request_charge": 0.0,
             "request_count": 1,
@@ -4800,7 +4817,7 @@ mod tests {
         let mut builder = DiagnosticsContextBuilder::new(ActivityId::new_uuid(), make_options());
         builder.set_operation_status(
             StatusCode::NotFound,
-            Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE),
+            Some(crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE),
         );
         let ctx = builder.complete();
 
@@ -4822,13 +4839,13 @@ mod tests {
             handle,
             "connection refused",
             RequestSentStatus::Unknown,
-            CosmosStatus::TRANSPORT_GENERATED_503,
+            crate::error::status_codes::TRANSPORT_GENERATED_503,
         );
 
         let ctx = builder.complete();
         let requests = ctx.requests();
         let status = requests[0].status();
-        assert_eq!(status, &CosmosStatus::TRANSPORT_GENERATED_503);
+        assert_eq!(status, &crate::error::status_codes::TRANSPORT_GENERATED_503);
         assert_eq!(requests[0].error(), Some("connection refused"));
     }
 
@@ -4848,7 +4865,7 @@ mod tests {
             handle,
             "connection refused",
             RequestSentStatus::Sent,
-            CosmosStatus::TRANSPORT_GENERATED_503,
+            crate::error::status_codes::TRANSPORT_GENERATED_503,
         );
 
         let ctx = builder.complete();
@@ -4906,7 +4923,7 @@ mod tests {
             failed,
             "connection refused",
             RequestSentStatus::Sent,
-            CosmosStatus::TRANSPORT_GENERATED_503,
+            crate::error::status_codes::TRANSPORT_GENERATED_503,
         );
 
         let succeeded = builder.start_test_request(
@@ -6169,6 +6186,7 @@ mod tests {
         let actual = normalize_diagnostics_json(json);
         let expected: serde_json::Value = serde_json::json!({
             "activity_id": "test-no-system-info",
+            "status": "200",
             "total_duration_ms": 0,
             "total_request_charge": 0.0,
             "request_count": 0,
@@ -6195,6 +6213,7 @@ mod tests {
         let actual = normalize_diagnostics_json(json);
         let expected: serde_json::Value = serde_json::json!({
             "activity_id": "test-machine-id",
+            "status": "200",
             "total_duration_ms": 0,
             "total_request_charge": 0.0,
             "request_count": 0,
@@ -6211,6 +6230,7 @@ mod tests {
         let actual_summary = normalize_diagnostics_json(json_summary);
         let expected_summary: serde_json::Value = serde_json::json!({
             "activity_id": "test-machine-id",
+            "status": "200",
             "total_duration_ms": 0,
             "total_request_charge": 0.0,
             "request_count": 0,
@@ -6242,6 +6262,7 @@ mod tests {
         let actual = normalize_diagnostics_json(json);
         let expected: serde_json::Value = serde_json::json!({
             "activity_id": "test-system-usage",
+            "status": "200",
             "total_duration_ms": 0,
             "total_request_charge": 0.0,
             "request_count": 0,
@@ -6286,6 +6307,7 @@ mod tests {
         let actual = normalize_diagnostics_json(json);
         let expected: serde_json::Value = serde_json::json!({
             "activity_id": "test-system-usage-empty",
+            "status": "200",
             "total_duration_ms": 0,
             "total_request_charge": 0.0,
             "request_count": 0,
@@ -6574,6 +6596,61 @@ mod tests {
             u16::from(requests.last().unwrap().status().status_code()),
             429
         );
+    }
+
+    #[test]
+    fn terminal_status_copy_preserves_compacted_attempts_and_cached_output() {
+        let original_status = crate::error::status_codes::READ_SESSION_NOT_AVAILABLE;
+        let public_status = crate::error::status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE;
+        let mut builder = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("session-storm".to_string()),
+            options_with_cap(16),
+        );
+        record_run(
+            &mut builder,
+            ExecutionContext::OperationRetry,
+            "East US",
+            "https://east/",
+            original_status,
+            2.0,
+            1000,
+        );
+        builder.set_operation_status(original_status.status_code(), original_status.sub_status());
+        let original = builder.complete();
+        let cached: Vec<serde_json::Value> = [
+            DiagnosticsVerbosity::Detailed,
+            DiagnosticsVerbosity::Summary,
+        ]
+        .into_iter()
+        .map(|verbosity| serde_json::from_str(original.to_json_string(Some(verbosity))).unwrap())
+        .collect();
+        let wrapped = original.clone_with_status(public_status);
+        assert!(wrapped.compaction().is_some());
+        assert_eq!(wrapped.request_count(), 1000);
+        assert_eq!(wrapped.total_request_charge().value(), 2000.0);
+        assert_eq!(
+            wrapped.retained_request_count(),
+            original.retained_request_count()
+        );
+        for (verbosity, mut expected) in [
+            DiagnosticsVerbosity::Detailed,
+            DiagnosticsVerbosity::Summary,
+        ]
+        .into_iter()
+        .zip(cached)
+        {
+            assert_eq!(
+                serde_json::from_str::<serde_json::Value>(original.to_json_string(Some(verbosity)))
+                    .unwrap(),
+                expected
+            );
+            expected["status"] = public_status.to_string().into();
+            assert_eq!(
+                serde_json::from_str::<serde_json::Value>(wrapped.to_json_string(Some(verbosity)))
+                    .unwrap(),
+                expected
+            );
+        }
     }
 
     #[test]

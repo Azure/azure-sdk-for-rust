@@ -1,7 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::{future::Future, panic::AssertUnwindSafe, sync::OnceLock, time::Duration};
+use std::{
+    error::Error as _, future::Future, panic::AssertUnwindSafe, sync::OnceLock, time::Duration,
+};
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos::{
@@ -11,7 +13,9 @@ use azure_data_cosmos::{
         AvailabilityStrategy, ContentResponseOnWrite, ItemReadOptions, ItemWriteOptions,
         OperationOptions, ReadConsistencyStrategy, Region,
     },
+    CosmosError,
 };
+use azure_data_cosmos_driver::error::status_codes;
 use futures::FutureExt;
 use serde::{Deserialize, Serialize};
 
@@ -284,6 +288,31 @@ impl CapabilityDocument {
 #[serde(rename_all = "camelCase")]
 struct ProtocolCapabilities {
     gateway_v2: bool,
+}
+
+pub(super) fn assert_wrapped_session_failure(error: &CosmosError) {
+    assert_eq!(
+        error.status(),
+        status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE
+    );
+    assert!(error.response().is_none());
+    let source = error
+        .source()
+        .unwrap()
+        .downcast_ref::<CosmosError>()
+        .unwrap();
+    assert_eq!(source.status(), status_codes::READ_SESSION_NOT_AVAILABLE);
+    assert_eq!(source.response().unwrap().status(), source.status());
+    let diagnostics = error.diagnostics().unwrap();
+    assert_eq!(diagnostics.effective_status(), Some(error.status()));
+    assert_eq!(
+        source.diagnostics().unwrap().effective_status(),
+        Some(source.status())
+    );
+    assert_eq!(
+        diagnostics.requests().last().unwrap().status(),
+        &source.status()
+    );
 }
 
 pub(super) fn assert_critical_diagnostics(

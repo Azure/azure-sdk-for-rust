@@ -10,7 +10,7 @@
 //! [`cosmos_runtime_build`], which validates each set field, bridges the
 //! driver-side build through the wrapper's own Tokio runtime, and returns a
 //! fresh `cosmos_runtime_t *`. Complex nested config (`with_client_options` /
-//! `with_connection_pool` / `with_operation_options` /
+//! `with_connection_pool` /
 //! `with_fault_injection_rules`) is
 //! deliberately not surfaced yet — each requires its own flat options struct.
 //!
@@ -21,6 +21,7 @@ use azure_data_cosmos_driver::driver::CosmosDriverRuntimeBuilder;
 use azure_data_cosmos_driver::options::{CorrelationId, UserAgentSuffix, WorkloadId};
 
 use crate::error::{CosmosError, CosmosErrorCode, CosmosStatusCode};
+use crate::op_request::CosmosOperationOptions;
 use crate::runtime::RuntimeContext;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -148,6 +149,8 @@ pub struct CosmosRuntimeOptions {
     /// CPU/memory monitoring refresh interval in milliseconds (valid range
     /// `1000`–`60000`). `0` = unset.
     pub cpu_refresh_interval_ms: u64,
+    /// Runtime operation defaults, copied during construction. NULL inherits.
+    pub operation_options: *const CosmosOperationOptions,
 }
 
 impl CosmosRuntimeOptions {
@@ -163,6 +166,11 @@ impl CosmosRuntimeOptions {
         &self,
         mut builder: CosmosDriverRuntimeBuilder,
     ) -> Result<CosmosDriverRuntimeBuilder, CosmosErrorCode> {
+        if !self.operation_options.is_null() {
+            // SAFETY: options and their borrowed arrays are valid throughout this call.
+            builder = builder
+                .with_default_operation_options(unsafe { (*self.operation_options).to_driver()? });
+        }
         if self.workload_id != 0 {
             let Some(value) = WorkloadId::try_new(self.workload_id) else {
                 return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
@@ -225,6 +233,7 @@ pub extern "C" fn cosmos_runtime_options_default() -> CosmosRuntimeOptions {
         user_agent_suffix: CosmosStringView::default(),
         wrapping_sdk_identifier: CosmosStringView::default(),
         cpu_refresh_interval_ms: 0,
+        operation_options: std::ptr::null(),
     }
 }
 

@@ -23,19 +23,25 @@ pub mod bytes;
 pub mod completion;
 pub mod container_ref;
 pub mod credential;
+pub mod cursor;
+pub mod cursor_request;
 pub mod database_ref;
 pub mod diagnostics;
 pub mod driver;
 pub mod driver_options;
 pub mod error;
+pub mod fault_injection;
 pub mod feed_range;
 pub mod op_request;
+pub mod options_snapshot;
 pub mod partition_key;
 pub mod response_header;
 pub mod runtime;
 pub mod runtime_builder;
 pub(crate) mod safety;
 pub mod submit;
+#[cfg(feature = "test-abi")]
+mod test_abi;
 
 // We want this value to be present as a string in the compiled binary so that
 // build provenance can be recovered from a stripped library. Exposing it as a

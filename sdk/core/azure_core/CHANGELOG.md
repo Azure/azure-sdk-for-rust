@@ -1,5 +1,17 @@
 # Release History
 
+## 1.2.0-beta.2 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+- `check_success` would fail when error message contained escape sequences like CRLF ([#5364](https://github.com/Azure/azure-sdk-for-rust/pull/5364))
+
+### Other Changes
+
 ## 1.2.0-beta.1 (2026-09-04)
 
 ### Features Added

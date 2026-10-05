@@ -19,6 +19,13 @@
 > and the credential bridge's existing counted buffers are unchanged.
 > Binding examples and full allocation/array contracts are maintained in
 > `sdk/cosmos/azure_data_cosmos_driver_native/README.md`.
+>
+> **Retained cursor:** `sdk/cosmos/docs/specs/0029-native-feed-cursor.md`
+> consolidates the unfinished pager design in Phase 8 and open questions 3, 4,
+> 9, and 14. It identifies conflicts with section 4.7's no-wrapper-pager text
+> and defines additive retained-plan paging, complete payload access, and
+> explicit EOF/checkpoint semantics. The `cosmos_cursor_*` exports implement
+> that contract without replacing legacy record layouts.
 
 ---
 
@@ -581,6 +588,18 @@ Rationale:
 **Immutability and thread-safety of value handles.** `cosmos_account_ref_t`, `cosmos_database_ref_t`, `cosmos_container_ref_t`, `cosmos_partition_key_t`, and `cosmos_feed_range_t` are **immutable post-build**. The wrapper exposes no mutator on these handles after the corresponding builder produced them. As a result, `_clone`, accessor reads, and `_free` of *distinct* FFI handles are race-free across threads without external locking — even when the clones alias the same underlying `Arc`. Two threads must still not concurrently `_free` the **same** FFI handle (that's a double-free, not a race).
 
 ### 3.5 Error model
+
+Terminal service 404/1002, 403/3, and 403/1008 failures use the driver's synthetic
+503/20310 (`CLIENT_READ_SESSION_NOT_AVAILABLE`), 503/20311
+(`CLIENT_WRITE_FORBIDDEN`), and 503/20312 (`CLIENT_DATABASE_ACCOUNT_NOT_FOUND`)
+classifications. Native packed status, rich error
+fields, completion substatus headers, and operation diagnostics use the new
+pair. `is_from_wire` is false for these wrappers, even though their original
+source carries a wire response. When rich details are enabled, the native
+wrapper retains that response's body and metadata, including activity ID,
+request charge, retry-after, session token, and ETag where exposed. Individual
+diagnostic attempts retain their service statuses. Diagnostics remain available
+on completions when rich details are disabled. No ABI layout change is required.
 
 The wrapper's error surface is built on two complementary types — a **packed `cosmos_status_code_t`** numeric return value for the C function contract, and a rich `cosmos_error_t` payload that mirrors the driver's `azure_data_cosmos::Error` (introduced in [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442)). Both surfaces are derived from the driver's single canonical `CosmosStatus` taxonomy — there is **no** parallel FFI-specific error enum (this is the unification landed in [#4696](https://github.com/Azure/azure-sdk-for-rust/issues/4696); the authoritative implementation and the crate README's "Error & status model" section describe the same model). Both **must** be exposed because the host SDKs sitting on top of this wrapper need full error fidelity for **diagnosability** and for **routing failure classes into language-native exception types** — they do **not** re-implement retry / throttling / conditional-write recovery (that's the driver's responsibility, by design — see `Architecture.md` (`../Architecture.md`) "Schema-Agnostic Data Plane"). Concretely:
 
@@ -1993,6 +2012,13 @@ the same `CosmosOperation` fields as native Rust callers.
 **Done when:** A `to_json` snapshot can be diff'd against the Rust driver's `DiagnosticsContext::Debug` output and matches structurally.
 
 ### Phase 8 — Pagination (read-feeds & query) *(Goal: handle multi-page responses)*
+
+The historical sketch below is superseded by
+`sdk/cosmos/docs/specs/0029-native-feed-cursor.md`. That specification replaces the
+proposed 404-as-EOF and borrowed-token accessor with explicit End and separate
+checkpoint completions, includes change feed, and preserves existing ABI layouts.
+Use its overlap matrix when reconciling this phase; these are not shipped pager
+symbols; use the additive `cosmos_cursor_*` surface instead.
 
 - Async pager handle: `cosmos_pager_t`, with:
   - `cosmos_driver_submit_pager` → returns `cosmos_operation_handle_t*`; first completion delivers a `cosmos_response_t` from which `cosmos_response_take_pager` extracts the `cosmos_pager_t*`.

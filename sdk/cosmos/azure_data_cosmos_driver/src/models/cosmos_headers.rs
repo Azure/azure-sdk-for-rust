@@ -1611,7 +1611,7 @@ mod tests {
             etag: Some(Etag::from("\"v1\"")),
             continuation: Some("next-page".into()),
             item_count: Some(10),
-            substatus: Some(SubStatusCode::THROTTLE_DUE_TO_SPLIT),
+            substatus: Some(crate::error::status_codes::substatus::THROTTLE_DUE_TO_SPLIT),
             index_metrics: Some("{\"UtilizedSingleIndexes\":[]}".into()),
             query_metrics: Some("totalExecutionTimeInMs=1.23".into()),
             server_duration_ms: Some(4.5),
@@ -1676,7 +1676,12 @@ mod tests {
         // Sub-status is emitted as the bare numeric value.
         assert_eq!(
             raw.get_optional_str(&HeaderName::from_static(response_header_names::SUBSTATUS)),
-            Some(SubStatusCode::THROTTLE_DUE_TO_SPLIT.value().to_string()).as_deref()
+            Some(
+                crate::error::status_codes::substatus::THROTTLE_DUE_TO_SPLIT
+                    .value()
+                    .to_string()
+            )
+            .as_deref()
         );
         // `index_metrics` is base64 of the decoded JSON.
         assert_eq!(

@@ -15,6 +15,16 @@
 //   3. `out_pre_error` is optional (NULL is accepted).
 
 #include "test_common.h"
+#include <stddef.h>
+
+_Static_assert(sizeof(((cosmos_operation_options_t *)0)->max_failover_retry_count) == 8,
+               "ABI 0.2 carries the complete uint32 retry domain");
+#if UINTPTR_MAX == UINT64_MAX
+_Static_assert(sizeof(cosmos_operation_options_t) == 136, "ABI 0.2 options layout");
+_Static_assert(sizeof(cosmos_operation_request_t) == 232, "ABI 0.2 request layout");
+_Static_assert(sizeof(cosmos_runtime_options_t) == 72, "ABI 0.2 runtime layout");
+_Static_assert(offsetof(cosmos_operation_request_t, options_snapshot) == 224, "snapshot offset");
+#endif
 
 // ─────────────────────────────────────────────────────────────────────
 // Section 1 — cosmos_operation_options_default sentinels
@@ -24,6 +34,14 @@ static int test_options_default_is_all_unset(void)
 {
        int result = TEST_PASS;
        cosmos_operation_options_t opts = cosmos_operation_options_default();
+       ASSERT(strcmp(cosmos_version(), AZURECOSMOSDRIVER_H_VERSION) == 0,
+              "loaded library matches generated header");
+       ASSERT(strcmp(AZURECOSMOSDRIVER_H_VERSION, "0.2.0") == 0, "expected breaking ABI version");
+       ASSERT(opts.throughput_bucket == -1 && opts.priority_level == 0, "throughput inherits");
+       ASSERT(opts.max_throttle_retry_count == -1 &&
+              opts.max_throttle_retry_wait_time_ms == -1, "throttling inherits");
+       ASSERT(opts.hedging_enabled == 0 && opts.availability_strategy == 0 &&
+              opts.hedge_threshold_ms == -1, "availability inherits");
 
        ASSERT(COSMOS_READ_CONSISTENCY_STRATEGY_GLOBAL_STRONG == 4,
               "global strong ABI value (=%d)",
@@ -46,9 +64,9 @@ static int test_options_default_is_all_unset(void)
        ASSERT(opts.session_capturing_disabled == 0,
               "session_capturing unset (=%d)", opts.session_capturing_disabled);
        ASSERT(opts.max_failover_retry_count < 0,
-              "max_failover unset (=%d)", opts.max_failover_retry_count);
+              "max_failover unset (=%lld)", (long long)opts.max_failover_retry_count);
        ASSERT(opts.max_session_retry_count < 0,
-              "max_session unset (=%d)", opts.max_session_retry_count);
+              "max_session unset (=%lld)", (long long)opts.max_session_retry_count);
        ASSERT(opts.end_to_end_timeout_ms < 0,
               "e2e timeout unset (=%lld)", (long long)opts.end_to_end_timeout_ms);
        ASSERT(opts.endpoint_unavailability_ttl_ms < 0,

@@ -4,6 +4,7 @@
 //! Operation options that participate in runtime/account/operation resolution.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Duration;
 
 use azure_core::http::headers::{HeaderName, HeaderValue};
@@ -38,6 +39,8 @@ use crate::options::{
 #[options(layers(runtime, account, operation))]
 #[non_exhaustive]
 pub struct OperationOptions {
+    #[option(skip)]
+    pub(crate) resolution_snapshot: Option<Arc<OperationResolutionSnapshot>>,
     /// How PATCH operations are executed.
     ///
     /// `None` inherits from a lower layer (default: [`PatchStrategy::Auto`]).
@@ -83,6 +86,7 @@ pub struct OperationOptions {
     pub max_failover_retry_count: Option<u32>,
 
     /// How long an endpoint is considered unavailable after a failure.
+    #[option(env = "AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS", parser = parse_milliseconds)]
     pub endpoint_unavailability_ttl: Option<Duration>,
 
     /// Disables automatic session token management.
@@ -152,8 +156,14 @@ pub struct OperationOptions {
     /// `Some(true)` forces it on, regardless of the strategy configured here.
     pub availability_strategy: Option<AvailabilityStrategy>,
 
-    // Additional headers beyond those natively supported by the driver.
-    // May be removed in the future as we analyze exactly what options are needed.
+    /// Extra headers for purposes not represented by Cosmos-specific options.
+    ///
+    /// Never use this field to set Cosmos-specific HTTP headers. Gateway V2 may
+    /// ignore these headers.
+    ///
+    /// Use typed SDK options for consistency, session and routing, throughput,
+    /// and other Cosmos settings. Do not reject custom headers at runtime or
+    /// invent a header denylist.
     pub custom_headers: Option<HashMap<HeaderName, HeaderValue>>,
 
     /// Cosmos binary JSON encoding for this operation.
@@ -164,6 +174,55 @@ pub struct OperationOptions {
     /// a lower level (default: binary encoding enabled). See
     /// [`BinaryEncodingOptions`].
     pub binary_encoding: Option<BinaryEncodingOptions>,
+}
+
+#[derive(Debug)]
+pub(crate) struct OperationResolutionSnapshot {
+    env_override: Arc<OperationOptions>,
+    env: Arc<OperationOptions>,
+    runtime: Arc<OperationOptions>,
+    account: Arc<OperationOptions>,
+}
+
+fn parse_milliseconds(value: &str) -> Option<Duration> {
+    value.parse::<u64>().ok().map(Duration::from_millis)
+}
+
+impl OperationOptions {
+    /// Pins the lower configuration layers for this operation and its clones.
+    ///
+    /// Intended for native bindings admitting work before driver initialization.
+    /// Nested fields still resolve independently; unset values cannot observe
+    /// subsequent runtime updates.
+    #[doc(hidden)]
+    pub fn with_resolution_snapshot(
+        mut self,
+        env_override: Arc<OperationOptions>,
+        env: Arc<OperationOptions>,
+        runtime: Arc<OperationOptions>,
+        account: Arc<OperationOptions>,
+    ) -> Self {
+        self.resolution_snapshot = Some(Arc::new(OperationResolutionSnapshot {
+            env_override,
+            env,
+            runtime,
+            account,
+        }));
+        self
+    }
+
+    /// Returns the pinned layered view, when admission captured one.
+    #[doc(hidden)]
+    pub fn resolution_snapshot_view(&self) -> Option<OperationOptionsView<'_>> {
+        let snapshot = self.resolution_snapshot.as_ref()?;
+        Some(OperationOptionsView::new_with_override(
+            Some(Arc::clone(&snapshot.env_override)),
+            Some(Arc::clone(&snapshot.env)),
+            Some(Arc::clone(&snapshot.runtime)),
+            Some(Arc::clone(&snapshot.account)),
+            Some(self),
+        ))
+    }
 }
 
 /// Retry behavior for requests throttled by the service (HTTP 429,
@@ -252,6 +311,81 @@ pub struct ThroughputControlOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn snapshot_preserves_all_layers_and_override_when_cloned_for_patch() {
+        let environment = Arc::new(OperationOptions::from_env_vars(|name| match name {
+            "AZURE_COSMOS_HEDGING_ENABLED" => Ok("true".into()),
+            "AZURE_COSMOS_MAX_SESSION_RETRY_COUNT" => Ok("3".into()),
+            "AZURE_COSMOS_ENDPOINT_UNAVAILABLE_TTL_MS" => Ok("12".into()),
+            _ => Err(std::env::VarError::NotPresent),
+        }));
+        let override_options = Arc::new(OperationOptions::from_env_override_vars(|name| {
+            (name == "AZURE_COSMOS_HEDGING_ENABLED_OVERRIDE")
+                .then(|| "false".into())
+                .ok_or(std::env::VarError::NotPresent)
+        }));
+        let runtime = Arc::new(OperationOptions {
+            read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
+            content_response_on_write: Some(ContentResponseOnWrite::Enabled),
+            max_failover_retry_count: Some(u32::MAX),
+            session_capturing_disabled: Some(true),
+            excluded_regions: Some(ExcludedRegions::new().with_region("East US")),
+            end_to_end_latency_policy: Some(Duration::from_secs(4).into()),
+            #[cfg(feature = "preview_patch")]
+            patch_strategy: Some(PatchStrategy::ServerSide),
+            custom_headers: Some(HashMap::from([(
+                HeaderName::from("x-test"),
+                HeaderValue::from("runtime"),
+            )])),
+            ..Default::default()
+        });
+        let account = Arc::new(OperationOptions {
+            max_session_retry_count: Some(4),
+            #[cfg(feature = "preview_patch")]
+            patch_strategy: Some(PatchStrategy::Auto),
+            ..Default::default()
+        });
+        let request = OperationOptions {
+            hedging_enabled: Some(true),
+            excluded_regions: Some(ExcludedRegions::new()),
+            custom_headers: Some(HashMap::new()),
+            availability_strategy: Some(AvailabilityStrategy::Disabled),
+            ..Default::default()
+        }
+        .with_resolution_snapshot(override_options, environment, runtime, account);
+        let mut patch_read = request.clone();
+        patch_read.read_consistency_strategy = Some(ReadConsistencyStrategy::LatestCommitted);
+        let view = patch_read.resolution_snapshot_view().unwrap();
+        assert_eq!(view.hedging_enabled(), Some(&false));
+        assert_eq!(view.max_failover_retry_count(), Some(&u32::MAX));
+        assert_eq!(view.max_session_retry_count(), Some(&4));
+        assert_eq!(
+            view.endpoint_unavailability_ttl(),
+            Some(&Duration::from_millis(12))
+        );
+        #[cfg(feature = "preview_patch")]
+        assert_eq!(view.patch_strategy(), Some(&PatchStrategy::Auto));
+        assert_eq!(
+            view.read_consistency_strategy(),
+            Some(&ReadConsistencyStrategy::LatestCommitted)
+        );
+        assert_eq!(
+            view.content_response_on_write(),
+            Some(&ContentResponseOnWrite::Enabled)
+        );
+        assert_eq!(view.session_capturing_disabled(), Some(&true));
+        assert_eq!(view.excluded_regions(), Some(&ExcludedRegions::new()));
+        assert!(view.custom_headers().unwrap().is_empty());
+        assert_eq!(
+            view.end_to_end_latency_policy().unwrap().timeout(),
+            Duration::from_secs(4)
+        );
+        assert_eq!(
+            view.availability_strategy(),
+            Some(&AvailabilityStrategy::Disabled)
+        );
+    }
 
     #[test]
     fn default_operation_options() {

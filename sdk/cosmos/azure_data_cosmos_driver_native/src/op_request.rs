@@ -41,8 +41,10 @@ use std::num::{NonZeroU16, NonZeroU32, NonZeroU8};
 use azure_core::http::headers::{HeaderName, HeaderValue};
 use azure_core::http::Etag;
 use azure_data_cosmos_driver::options::{
-    BinaryEncodingOptions, ContentResponseOnWrite, EndToEndOperationLatencyPolicy, ExcludedRegions,
-    OperationOptions, PatchStrategy, QueryPlanMode, ReadConsistencyStrategy, Region,
+    AvailabilityStrategy, BinaryEncodingOptions, ContentResponseOnWrite,
+    EndToEndOperationLatencyPolicy, ExcludedRegions, HedgeThreshold, HedgingStrategy,
+    OperationOptions, PatchStrategy, PriorityLevel, QueryPlanMode, ReadConsistencyStrategy, Region,
+    ThrottlingRetryOptions, ThroughputControlOptions,
 };
 use azure_data_cosmos_driver::{
     models::{
@@ -58,6 +60,7 @@ use crate::container_ref::ContainerRefHandle;
 use crate::database_ref::DatabaseRefHandle;
 use crate::error::CosmosErrorCode;
 use crate::feed_range::FeedRangeHandle;
+use crate::options_snapshot::OperationOptionsSnapshot;
 use crate::partition_key::{CosmosPartitionKeyComponent, PartitionKeyHandle};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -69,13 +72,14 @@ use crate::partition_key::{CosmosPartitionKeyComponent, PartitionKeyHandle};
 ///
 /// - **enum fields** (`*_strategy`, `content_response_on_write`): `0` = unset
 ///   (inherit), any other value = the corresponding driver variant.
-/// - **tri-state bools** (`session_capturing_disabled`): `0` = unset,
-///   `1` = `false`, `2` = `true`.
-/// - **i32 numeric fields** (retry counters): `< 0` = unset,
-///   `>= 0` = the value.
+/// - **tri-state bools** (`session_capturing_disabled`, `hedging_enabled`,
+///   and binary-encoding flags): `0` = unset, `1` = `false`, `2` = `true`.
+/// - **i64 numeric fields** (retry counters/bucket): `< 0` = unset,
+///   `0..=u32::MAX` = the value; larger values are rejected.
 /// - **i64 duration fields** (`*_ms`): `< 0` = unset, `>= 0` = milliseconds.
-/// - **string / array fields** (`excluded_regions`, `custom_headers`):
-///   NULL / length `0` = unset.
+/// - **array fields** (`excluded_regions`, `custom_headers`): NULL with length
+///   `0` = unset (inherit); non-NULL with length `0` clears inherited values.
+///   NULL with a nonzero length is invalid.
 ///
 /// It is a documentation marker only — the fields are plain integers /
 /// pointers so the struct stays `#[repr(C)]`.
@@ -96,12 +100,14 @@ fn decode_tristate_bool(v: i8) -> Result<Option<bool>, CosmosErrorCode> {
     }
 }
 
-/// Decodes an `i32` numeric option (`< 0` = unset) into `Option<u32>`.
-fn decode_opt_u32(v: i32) -> Option<u32> {
+/// Decodes a full-width unsigned option with a signed unset sentinel.
+fn decode_opt_u32(v: i64) -> Result<Option<u32>, CosmosErrorCode> {
     if v < 0 {
-        None
+        Ok(None)
     } else {
-        Some(v as u32)
+        u32::try_from(v)
+            .map(Some)
+            .map_err(|_| CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
     }
 }
 
@@ -317,7 +323,7 @@ pub struct CosmosHeaderKv {
 ///
 /// `headers` must be NULL/0 or point at `len` initialized entries in one allocation.
 /// Each view follows [`CosmosStringView`]'s allocation contract.
-unsafe fn decode_headers(
+pub(crate) unsafe fn decode_headers(
     headers: *const CosmosHeaderKv,
     len: usize,
 ) -> Result<Option<HashMap<HeaderName, HeaderValue>>, CosmosErrorCode> {
@@ -415,15 +421,15 @@ pub struct CosmosOperationOptions {
     /// Disable automatic session token management. Tri-state bool.
     pub session_capturing_disabled: i8,
     /// Max region-failover retries. `< 0` = unset.
-    pub max_failover_retry_count: i32,
+    pub max_failover_retry_count: i64,
     /// Max session-consistency retries on 404/1002. `< 0` = unset.
-    pub max_session_retry_count: i32,
+    pub max_session_retry_count: i64,
     /// End-to-end timeout (milliseconds). `< 0` = unset.
     pub end_to_end_timeout_ms: i64,
     /// Endpoint unavailability TTL (milliseconds). `< 0` = unset.
     pub endpoint_unavailability_ttl_ms: i64,
     /// Excluded regions — array of counted UTF-8 region ids.
-    /// NULL / `0` length = unset; non-NULL with `0` length is rejected.
+    /// NULL / `0` length = unset; non-NULL with `0` length clears exclusions.
     pub excluded_regions: *const CosmosStringView,
     /// Number of entries in `excluded_regions`.
     pub excluded_regions_len: usize,
@@ -478,6 +484,22 @@ pub struct CosmosOperationOptions {
     /// `0` (`Unset`) uses LocalPreferred. Raw `i32` storage allows invalid host
     /// values to be rejected before materializing the enum.
     pub query_plan_mode: i32,
+    /// Throughput bucket. `< 0` inherits; otherwise must fit `u32`.
+    pub throughput_bucket: i64,
+    /// Priority level: `0` inherits, `1` High, `2` Low.
+    pub priority_level: i32,
+    /// Throttling retry count. `< 0` inherits; otherwise must fit `u32`.
+    pub max_throttle_retry_count: i64,
+    /// Cumulative throttle retry wait per transport invocation, in milliseconds.
+    /// `< 0` inherits; `0` explicitly disables waiting.
+    pub max_throttle_retry_wait_time_ms: i64,
+    /// Hedging master switch: `0` inherits, `1` false, `2` true.
+    pub hedging_enabled: i8,
+    /// Availability strategy: `0` inherits, `1` disabled, `2` hedging.
+    pub availability_strategy: i32,
+    /// Positive hedge threshold in milliseconds for strategy `2`.
+    /// Must be negative (unset) for any other strategy.
+    pub hedge_threshold_ms: i64,
 }
 
 impl CosmosOperationOptions {
@@ -506,8 +528,43 @@ impl CosmosOperationOptions {
         CosmosQueryPlanMode::from_i32(self.query_plan_mode)?;
         opts.session_capturing_disabled = decode_tristate_bool(self.session_capturing_disabled)?;
 
-        opts.max_failover_retry_count = decode_opt_u32(self.max_failover_retry_count);
-        opts.max_session_retry_count = decode_opt_u32(self.max_session_retry_count);
+        opts.max_failover_retry_count = decode_opt_u32(self.max_failover_retry_count)?;
+        opts.max_session_retry_count = decode_opt_u32(self.max_session_retry_count)?;
+        let mut throughput = ThroughputControlOptions::default();
+        throughput.throughput_bucket = decode_opt_u32(self.throughput_bucket)?;
+        throughput.priority_level = match self.priority_level {
+            0 => None,
+            1 => Some(PriorityLevel::High),
+            2 => Some(PriorityLevel::Low),
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
+        };
+        if throughput.throughput_bucket.is_some() || throughput.priority_level.is_some() {
+            opts.throughput_control = Some(throughput);
+        }
+        let mut throttling = ThrottlingRetryOptions::default();
+        throttling.max_retry_count = decode_opt_u32(self.max_throttle_retry_count)?;
+        if self.max_throttle_retry_wait_time_ms >= 0 {
+            throttling.max_retry_wait_time = Some(std::time::Duration::from_millis(
+                self.max_throttle_retry_wait_time_ms as u64,
+            ));
+        }
+        if throttling.max_retry_count.is_some() || throttling.max_retry_wait_time.is_some() {
+            opts.throttling_retry_options = Some(throttling);
+        }
+        opts.hedging_enabled = decode_tristate_bool(self.hedging_enabled)?;
+        opts.availability_strategy = match (self.availability_strategy, self.hedge_threshold_ms) {
+            (0, threshold) if threshold < 0 => None,
+            (1, threshold) if threshold < 0 => Some(AvailabilityStrategy::Disabled),
+            (2, threshold) if threshold > 0 => {
+                let threshold =
+                    HedgeThreshold::new(std::time::Duration::from_millis(threshold as u64))
+                        .ok_or(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)?;
+                Some(AvailabilityStrategy::Hedging(HedgingStrategy::new(
+                    threshold,
+                )))
+            }
+            _ => return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue),
+        };
 
         if self.end_to_end_timeout_ms >= 0 {
             let dur = std::time::Duration::from_millis(self.end_to_end_timeout_ms as u64);
@@ -554,8 +611,8 @@ impl CosmosOperationOptions {
 }
 
 /// Decodes a `(ptr, len)` region-id array into an [`ExcludedRegions`].
-/// NULL / `0` length yields `None`. A non-NULL pointer with `0` length is
-/// rejected as a malformed input.
+/// NULL / `0` length yields `None`. A non-NULL pointer with `0` length clears
+/// inherited exclusions.
 ///
 /// # Safety
 ///
@@ -570,9 +627,7 @@ unsafe fn decode_regions(
         return Ok(None);
     }
     if len == 0 {
-        // Non-NULL pointer with zero length is ambiguous; reject it so the
-        // host uses NULL to mean "unset" unambiguously.
-        return Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue);
+        return Ok(Some(ExcludedRegions::new()));
     }
     // SAFETY: caller contract above.
     let slice = unsafe { std::slice::from_raw_parts(regions, len) };
@@ -582,7 +637,7 @@ unsafe fn decode_regions(
         let s = unsafe { required_text(p, CosmosErrorCode::CosmosErrorCodeInvalidOptionValue) }?;
         out.push(Region::from(s));
     }
-    Ok(Some(ExcludedRegions(out)))
+    Ok(Some(out.into_iter().collect()))
 }
 
 /// Returns an all-unset [`CosmosOperationOptions`] by value. The host
@@ -608,6 +663,13 @@ pub extern "C" fn cosmos_operation_options_default() -> CosmosOperationOptions {
         custom_headers_len: 0,
         binary_encoding_enabled: TRISTATE_UNSET,
         binary_encoding_request_text_response: TRISTATE_UNSET,
+        throughput_bucket: -1,
+        priority_level: 0,
+        max_throttle_retry_count: -1,
+        max_throttle_retry_wait_time_ms: -1,
+        hedging_enabled: TRISTATE_UNSET,
+        availability_strategy: 0,
+        hedge_threshold_ms: -1,
     }
 }
 
@@ -854,6 +916,9 @@ pub struct CosmosOperationRequest {
     /// Age-based retention window in whole seconds. Capacity pressure can
     /// evict an entry earlier. `0` = use the driver default.
     pub patch_tracking_retention_seconds: u32,
+    /// Optional admission snapshot. Overrides the shared fields in `options`;
+    /// `options.query_plan_mode` remains per submit. Borrowed only until submit returns.
+    pub options_snapshot: *const OperationOptionsSnapshot,
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -862,6 +927,7 @@ pub struct CosmosOperationRequest {
 
 /// Holds the fully-built driver inputs ready to hand to a driver method.
 pub(crate) struct BuiltRequest {
+    pub(crate) snapshot: Option<OperationOptionsSnapshot>,
     pub(crate) operation: CosmosOperation,
     pub(crate) options: OperationOptions,
     pub(crate) patch_tracking_id: Option<PatchTrackingId>,
@@ -886,6 +952,14 @@ pub(crate) struct BuiltRequest {
 pub(crate) unsafe fn build_request(
     request: *const CosmosOperationRequest,
 ) -> Result<BuiltRequest, CosmosErrorCode> {
+    // SAFETY: forwarded request allocation contract.
+    unsafe { build_request_with_operation(request, None) }
+}
+
+pub(crate) unsafe fn build_request_with_operation(
+    request: *const CosmosOperationRequest,
+    operation: Option<CosmosOperation>,
+) -> Result<BuiltRequest, CosmosErrorCode> {
     if request.is_null() {
         return Err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
     }
@@ -893,7 +967,12 @@ pub(crate) unsafe fn build_request(
     let req = unsafe { &*request };
 
     // SAFETY: request fields satisfy the caller's allocation contract.
-    let operation = unsafe { build_operation(req)? };
+    let operation = match operation {
+        // SAFETY: forwarded request allocation contract.
+        Some(operation) => unsafe { apply_inline_mutators(operation, req)? },
+        // SAFETY: forwarded request allocation contract.
+        None => unsafe { build_operation(req)? },
+    };
     // SAFETY: tracking view satisfies the caller's allocation contract.
     let operation = unsafe {
         apply_patch_tracking_fields(
@@ -905,7 +984,11 @@ pub(crate) unsafe fn build_request(
     }?;
     let (operation, patch_tracking_id) = resolve_patch_tracking_id(operation);
 
-    let options = if req.options.is_null() {
+    // SAFETY: a non-NULL snapshot is a live handle borrowed for this call.
+    let snapshot = unsafe { req.options_snapshot.as_ref() }.cloned();
+    let options = if let Some(snapshot) = &snapshot {
+        snapshot.options.clone()
+    } else if req.options.is_null() {
         OperationOptions::default()
     } else {
         // SAFETY: non-NULL checked; caller guarantees a valid struct.
@@ -931,6 +1014,7 @@ pub(crate) unsafe fn build_request(
     };
 
     Ok(BuiltRequest {
+        snapshot,
         operation,
         options,
         patch_tracking_id,
@@ -1054,9 +1138,9 @@ unsafe fn build_operation(
         }
         K::CosmosOperationKindQueryItems => {
             let container = require_container(req)?;
-            // feed_range is optional; NULL → None (whole-container query).
+            // The driver requires an explicit target for partitioned operations.
             let feed_range = if req.feed_range.is_null() {
-                None
+                Some(azure_data_cosmos_driver::models::FeedRange::full())
             } else {
                 Some(
                     FeedRangeHandle::from_ptr(req.feed_range)
@@ -1403,7 +1487,8 @@ mod tests {
     fn operation_request_abi_layout_is_stable() {
         use std::mem::{offset_of, size_of};
 
-        assert_eq!(size_of::<CosmosOperationRequest>(), 224);
+        assert_eq!(size_of::<CosmosOperationRequest>(), 232);
+        assert_eq!(offset_of!(CosmosOperationRequest, options_snapshot), 224);
         assert_eq!(offset_of!(CosmosOperationRequest, kind), 0);
         assert_eq!(offset_of!(CosmosOperationRequest, account), 8);
         assert_eq!(offset_of!(CosmosOperationRequest, database), 16);
@@ -1519,11 +1604,73 @@ mod tests {
 
     #[test]
     fn opt_u32_treats_negative_as_unset() {
-        assert_eq!(decode_opt_u32(-1), None);
-        assert_eq!(decode_opt_u32(i32::MIN), None);
-        assert_eq!(decode_opt_u32(0), Some(0));
-        assert_eq!(decode_opt_u32(7), Some(7));
-        assert_eq!(decode_opt_u32(i32::MAX), Some(i32::MAX as u32));
+        assert_eq!(decode_opt_u32(-1), Ok(None));
+        assert_eq!(decode_opt_u32(i64::MIN), Ok(None));
+        assert_eq!(decode_opt_u32(0), Ok(Some(0)));
+        assert_eq!(decode_opt_u32(7), Ok(Some(7)));
+        assert_eq!(decode_opt_u32(i64::from(u32::MAX)), Ok(Some(u32::MAX)));
+        assert_eq!(
+            decode_opt_u32(i64::from(u32::MAX) + 1),
+            Err(CosmosErrorCode::CosmosErrorCodeInvalidOptionValue)
+        );
+    }
+
+    #[test]
+    fn flat_groups_preserve_zero_and_validate_discriminants() {
+        let mut options = cosmos_operation_options_default();
+        options.throughput_bucket = 0;
+        options.max_throttle_retry_count = i64::from(u32::MAX);
+        options.max_throttle_retry_wait_time_ms = 0;
+        options.max_failover_retry_count = i64::from(u32::MAX);
+        options.max_session_retry_count = i64::from(u32::MAX);
+        options.hedging_enabled = 1;
+        options.availability_strategy = 2;
+        options.hedge_threshold_ms = 1;
+        // SAFETY: default option arrays are NULL/0.
+        let decoded = unsafe { options.to_driver() }.unwrap();
+        assert_eq!(
+            decoded.throughput_control.unwrap().throughput_bucket,
+            Some(0)
+        );
+        assert_eq!(
+            decoded
+                .throttling_retry_options
+                .as_ref()
+                .unwrap()
+                .max_retry_count,
+            Some(u32::MAX)
+        );
+        assert_eq!(
+            decoded
+                .throttling_retry_options
+                .unwrap()
+                .max_retry_wait_time,
+            Some(std::time::Duration::ZERO)
+        );
+        assert_eq!(decoded.max_failover_retry_count, Some(u32::MAX));
+        assert_eq!(decoded.max_session_retry_count, Some(u32::MAX));
+        assert_eq!(decoded.hedging_enabled, Some(false));
+        for (kind, threshold) in [(0, 1), (1, 0), (2, -1), (2, 0), (3, -1)] {
+            options.availability_strategy = kind;
+            options.hedge_threshold_ms = threshold;
+            // SAFETY: arrays remain NULL/0.
+            assert_eq!(
+                unsafe { options.to_driver() }.unwrap_err(),
+                CosmosErrorCode::CosmosErrorCodeInvalidOptionValue
+            );
+        }
+    }
+
+    #[test]
+    fn explicit_empty_regions_clear_and_null_nonempty_is_rejected() {
+        let region = CosmosStringView::default();
+        // SAFETY: zero length never dereferences this valid pointer.
+        assert_eq!(
+            unsafe { decode_regions(&region, 0) }.unwrap(),
+            Some(ExcludedRegions::new())
+        );
+        // SAFETY: invalid NULL/1 is rejected before any dereference.
+        assert!(unsafe { decode_regions(std::ptr::null(), 1) }.is_err());
     }
 
     #[test]
@@ -1796,7 +1943,7 @@ mod tests {
     fn operation_options_abi_layout_is_stable() {
         use std::mem::{offset_of, size_of};
 
-        assert_eq!(size_of::<CosmosOperationOptions>(), 80);
+        assert_eq!(size_of::<CosmosOperationOptions>(), 136);
         assert_eq!(
             offset_of!(CosmosOperationOptions, read_consistency_strategy),
             0
@@ -1812,16 +1959,40 @@ mod tests {
         );
         assert_eq!(
             offset_of!(CosmosOperationOptions, binary_encoding_enabled),
-            72
+            80
         );
         assert_eq!(
             offset_of!(
                 CosmosOperationOptions,
                 binary_encoding_request_text_response
             ),
-            73
+            81
         );
-        assert_eq!(offset_of!(CosmosOperationOptions, query_plan_mode), 76);
+        assert_eq!(offset_of!(CosmosOperationOptions, query_plan_mode), 84);
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, max_failover_retry_count),
+            16
+        );
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, max_session_retry_count),
+            24
+        );
+        assert_eq!(offset_of!(CosmosOperationOptions, throughput_bucket), 88);
+        assert_eq!(offset_of!(CosmosOperationOptions, priority_level), 96);
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, max_throttle_retry_count),
+            104
+        );
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, max_throttle_retry_wait_time_ms),
+            112
+        );
+        assert_eq!(offset_of!(CosmosOperationOptions, hedging_enabled), 120);
+        assert_eq!(
+            offset_of!(CosmosOperationOptions, availability_strategy),
+            124
+        );
+        assert_eq!(offset_of!(CosmosOperationOptions, hedge_threshold_ms), 128);
     }
 
     #[test]
@@ -2032,7 +2203,13 @@ mod tests {
             );
             assert!(built.options.throughput_control.is_none());
             assert_eq!(
-                built.options.excluded_regions.unwrap().0,
+                built
+                    .options
+                    .excluded_regions
+                    .unwrap()
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>(),
                 vec![Region::from("East US")]
             );
         })

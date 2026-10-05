@@ -1,9 +1,27 @@
 # Release History
 
-## 0.8.0 (Unreleased)
+## 1.0.0-beta.2 (Unreleased)
 
 ### Features Added
 
+### Breaking Changes
+
+- Terminal service 404/1002, 403/3, and 403/1008 errors now surface as synthetic 503/20310, 503/20311, and 503/20312 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
+
+### Bugs Fixed
+
+- Preserve admitted throttle retry settings during operation-triggered account metadata refresh, including regional and HTTP-version recovery paths. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
+- Honor per-operation endpoint unavailability TTL and runtime TTL updates during routing without changing sibling operations' cooldown intervals. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
+
+### Other Changes
+
+- Diagnostics JSON now includes the recorded operation-level status separately from unchanged per-attempt statuses. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
+
+## 1.0.0-beta.1 (2026-09-28)
+
+### Features Added
+
+- Added canonical status constants for native cursor lifecycle and result-delivery errors. ([#5334](https://github.com/Azure/azure-sdk-for-rust/pull/5334))
 - Added per-query `PlanOptions::max_buffered_query_window`, `with_max_buffered_query_window`, and `DEFAULT_MAX_BUFFERED_QUERY_WINDOW` (1000) to cap global OFFSET plus effective take for client-buffered queries, with no opt-out. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Extended Cosmos binary JSON query-page handling to cross-partition `DISTINCT`, including composition with streaming `ORDER BY` and `OFFSET`/`LIMIT`/`TOP`. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 - Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes, and `QueryPlanMode::{LocalPreferred, GatewayOnly}` to select providers per query. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))
@@ -12,6 +30,8 @@
 
 ### Breaking Changes
 
+- Replaced `EffectivePartitionKey` string `From` conversions with strict `TryFrom` conversions and made deserialization reject malformed hexadecimal bounds; `PartitionKeyRange::new` now requires parsed `EffectivePartitionKey` bounds. [#5369](https://github.com/Azure/azure-sdk-for-rust/pull/5369)
+- Moved all `CosmosStatus` constants and the independently used `SubStatusCode` constants to `error::status_codes`; raw substatus constants are under `error::status_codes::substatus`, and constants used only to construct combined statuses were removed. ([#5355](https://github.com/Azure/azure-sdk-for-rust/pull/5355))
 - `UserAgentSuffix` replaces panicking `new` with `TryFrom<String>` and `TryFrom<&str>`, returning a typed `CosmosError` for invalid suffixes. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
 - Replaced panicking partition-key vector and floating-point `From` conversions with typed `TryFrom` errors; infallible key conversions remain unchanged. ([#5345](https://github.com/Azure/azure-sdk-for-rust/pull/5345))
 - Removed throughput-control group registration, group types, and `ThroughputControlOptions::group_name`; direct priority and throughput-bucket options remain available. ([#5343](https://github.com/Azure/azure-sdk-for-rust/pull/5343))
@@ -25,9 +45,12 @@
 - `CosmosRequestHeaders::offer_throughput`, `OfferAutoscaleSettings::max_throughput`, `OfferAutoscaleSettings::new`, `OfferAutoscaleSettings::with_increment_percent`, and `AutoscaleThroughputPolicy::increment_percent` now use `u32` instead of the platform-dependent `usize`, matching the RU/s values Cosmos DB actually returns. ([#5204](https://github.com/Azure/azure-sdk-for-rust/pull/5204))
 - Renamed several types for naming consistency: `diagnostics::PipelineType` is now `diagnostics::PipelineKind` (following the `Kind`-over-`Type` convention), `diagnostics::ProxyConfiguration` is now `diagnostics::ProxyConfig` (matching the `Config` naming used elsewhere), and `in_memory_emulator::RuChargingModel` is now `in_memory_emulator::RequestUnitChargingModel` (expanding the `RU` acronym). The unstable `testing` module (`__internal_mocking` feature) was renamed to `test`. ([#5203](https://github.com/Azure/azure-sdk-for-rust/pull/5203))
 - Moved `OperationOptions::patch_strategy` and its generated builder, view, and environment APIs behind the `preview_patch` feature. Core PATCH execution remains available without the feature. ([#5346](https://github.com/Azure/azure-sdk-for-rust/pull/5346))
+- Made the tuple fields of `SessionToken` and `ExcludedRegions` private. Use `SessionToken::new` and its `From`, `as_str`, `AsRef<str>`, and `Display` implementations, or `ExcludedRegions::new`, `with_region`, `FromIterator`, `iter`, `len`, and `is_empty` instead. ([#5352](https://github.com/Azure/azure-sdk-for-rust/pull/5352))
 
 ### Bugs Fixed
 
+- Account metadata now honors the service-provided `disableCrossRegionalHedging` signal for data-plane and eligible metadata operations, including refresh transitions and omitted-property retention. ([#5350](https://github.com/Azure/azure-sdk-for-rust/pull/5350))
+- Fixed `serde_json::value::RawValue` deserialization on the Cosmos binary JSON path: `binary_json::from_slice` and `ResponseBody::into_single`/`into_items` now render the value's JSON text for a `RawValue` target instead of failing with a misclassified serialization error, so `RawValue` callers keep working now that binary encoding is on by default. ([#5338](https://github.com/Azure/azure-sdk-for-rust/pull/5338))
 - Reconciled dataflow partition-range identity resolution across logical, EPK, sequential, and hedged requests, preserving split-parent session tokens on Gateway 2.0 while keeping logical partition-key wire routing unchanged, and enforcing the end-to-end timeout across planning and first-page execution. ([#5315](https://github.com/Azure/azure-sdk-for-rust/pull/5315))
 - Container recreation now preserves collection RID mismatch errors during cold partition routing and rejects incompatible stale partition keys with a dedicated client substatus. ([#5324](https://github.com/Azure/azure-sdk-for-rust/pull/5324))
 - Gateway 2.0 change feed requests now forward incremental-mode and wire-format-version metadata, so change feeds work over the thin-client transport. ([#5332](https://github.com/Azure/azure-sdk-for-rust/pull/5332))

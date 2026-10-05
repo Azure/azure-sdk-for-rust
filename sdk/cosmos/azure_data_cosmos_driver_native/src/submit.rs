@@ -38,6 +38,7 @@ use crate::driver::DriverHandle;
 use crate::driver_options::DriverOptionsHandle;
 use crate::error::{CosmosErrorCode, CosmosStatusCode};
 use crate::op_request::{build_request, CosmosOperationRequest};
+use crate::options_snapshot::OperationOptionsSnapshot;
 use crate::runtime::RuntimeContext;
 
 /// Send-safe encoding of the opaque `user_data` cookie round-tripped
@@ -186,12 +187,28 @@ fn spawn_oneshot<Fut, R>(
                 SuccessKind::Response {
                     response,
                     next_continuation,
-                } => PendingCompletion::ok_response(
-                    user_data,
-                    ctx.op_inner.clone(),
-                    response.map(|b| *b),
-                    next_continuation,
-                ),
+                } => {
+                    if response.as_ref().is_some_and(|response| {
+                        matches!(
+                            response.body(),
+                            azure_data_cosmos_driver::models::ResponseBody::Items(_)
+                        )
+                    }) {
+                        PendingCompletion::error(
+                            user_data,
+                            ctx.op_inner.clone(),
+                            crate::cursor::legacy_representation_error(),
+                            ctx.include_error_details,
+                        )
+                    } else {
+                        PendingCompletion::ok_response(
+                            user_data,
+                            ctx.op_inner.clone(),
+                            response.map(|b| *b),
+                            next_continuation,
+                        )
+                    }
+                }
                 SuccessKind::Driver(driver) => {
                     PendingCompletion::ok_driver(user_data, ctx.op_inner.clone(), driver)
                 }
@@ -345,6 +362,14 @@ fn submit_operation_with_builder(
         }
     };
 
+    if built
+        .snapshot
+        .as_ref()
+        .is_some_and(|snapshot| !snapshot.matches_driver(&driver_arc))
+    {
+        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        return std::ptr::null_mut();
+    }
     let (ctx, op_handle) = match pre_flight_spawn(queue, user_data) {
         Ok(pair) => pair,
         Err(code) => {
@@ -355,6 +380,7 @@ fn submit_operation_with_builder(
 
     let runtime = Arc::clone(ctx.queue.runtime());
     let crate::op_request::BuiltRequest {
+        snapshot,
         operation,
         options,
         patch_tracking_id,
@@ -368,12 +394,21 @@ fn submit_operation_with_builder(
     spawn_oneshot(
         ctx,
         runtime,
-        async move {
+        OperationOptionsSnapshot::execute(snapshot, async move {
             // Plan with the inbound continuation, then execute a single
             // page. Mirrors `CosmosDriver::execute_operation` but threads
             // the continuation token through the planner and retains the
             // plan so we can mint the next-page token.
             let container = operation.container().cloned();
+            let is_feed = matches!(
+                operation.operation_type(),
+                azure_data_cosmos_driver::models::OperationType::Query
+                    | azure_data_cosmos_driver::models::OperationType::ReadFeed
+            );
+            let server_token_feed = operation.operation_type()
+                == azure_data_cosmos_driver::models::OperationType::ReadFeed
+                && operation.is_trivial()
+                && !operation.is_change_feed();
             let mut plan = Box::pin(driver_arc.plan_operation(
                 operation,
                 &options,
@@ -384,19 +419,22 @@ fn submit_operation_with_builder(
             let page = driver_arc
                 .execute_plan(&mut plan, container, options)
                 .await?;
-            // After a page, snapshot the next-page token from the plan.
-            // Token derivation is best-effort: a failure here (e.g. a
-            // non-query trivial op that doesn't support client tokens)
-            // simply yields no next token rather than failing the page.
-            let next = match page {
-                Some(_) => plan
-                    .to_continuation_token()
-                    .ok()
-                    .map(|t| t.as_str().to_owned()),
-                None => None,
+            let next = match &page {
+                Some(page) if server_token_feed => page.headers().continuation.clone(),
+                Some(_) if is_feed => Some(plan.to_continuation_token()?.as_str().to_owned()),
+                _ => None,
             };
+            // Legacy feeds must fail rather than silently drop multipart payloads.
+            if page.as_ref().is_some_and(|page| {
+                matches!(
+                    page.body(),
+                    azure_data_cosmos_driver::models::ResponseBody::Items(_)
+                )
+            }) {
+                return Err(crate::cursor::legacy_representation_error());
+            }
             Ok((page, next))
-        },
+        }),
         |(page, next): (Option<CosmosResponse>, Option<String>)| SuccessKind::Response {
             response: page.map(Box::new),
             next_continuation: next,
@@ -432,6 +470,12 @@ pub extern "C" fn cosmos_submit_singleton_operation(
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
+    // SAFETY: caller guarantees a complete request or NULL.
+    if unsafe { request.as_ref() }
+        .is_some_and(|request| crate::cursor_request::is_feed_kind(request.kind))
+    {
+        return cosmos_submit_operation(driver, request, queue, user_data, out_pre_error);
+    }
     submit_singleton_operation_with_builder(driver, queue, user_data, out_pre_error, || {
         // SAFETY: caller guarantees the v1 request fields follow their contracts.
         unsafe { build_request(request) }
@@ -468,6 +512,14 @@ fn submit_singleton_operation_with_builder(
         }
     };
 
+    if built
+        .snapshot
+        .as_ref()
+        .is_some_and(|snapshot| !snapshot.matches_driver(&driver_arc))
+    {
+        write_err(CosmosErrorCode::CosmosErrorCodeInvalidArgument);
+        return std::ptr::null_mut();
+    }
     let (ctx, op_handle) = match pre_flight_spawn(queue, user_data) {
         Ok(pair) => pair,
         Err(code) => {
@@ -479,6 +531,7 @@ fn submit_singleton_operation_with_builder(
     let runtime = Arc::clone(ctx.queue.runtime());
     // `continuation` is intentionally dropped: singletons do not paginate.
     let crate::op_request::BuiltRequest {
+        snapshot,
         operation,
         options,
         patch_tracking_id,
@@ -491,11 +544,11 @@ fn submit_singleton_operation_with_builder(
     spawn_oneshot(
         ctx,
         runtime,
-        async move {
+        OperationOptionsSnapshot::execute(snapshot, async move {
             driver_arc
                 .execute_singleton_operation(operation, options)
                 .await
-        },
+        }),
         |response: CosmosResponse| SuccessKind::Response {
             response: Some(Box::new(response)),
             next_continuation: None,

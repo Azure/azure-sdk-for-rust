@@ -133,9 +133,10 @@ fn is_container_recreation_signal(
     };
 
     (status.status_code() == azure_core::http::StatusCode::BadRequest
-        && status.sub_status() == Some(SubStatusCode::COLLECTION_RID_MISMATCH))
+        && status.sub_status()
+            == Some(crate::error::status_codes::substatus::COLLECTION_RID_MISMATCH))
         || (status.status_code() == azure_core::http::StatusCode::Gone
-            && status.sub_status() == Some(SubStatusCode::NAME_CACHE_STALE))
+            && status.sub_status() == Some(crate::error::status_codes::substatus::NAME_CACHE_STALE))
         || (status.is_read_session_not_available() && !retry_state.can_retry_session())
 }
 
@@ -498,6 +499,10 @@ pub(crate) async fn execute_operation_pipeline(
     let mut container_recreation_retry_attempted = false;
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
+    let endpoint_unavailability_ttl = options
+        .endpoint_unavailability_ttl()
+        .copied()
+        .unwrap_or(Duration::from_secs(60));
 
     // Throttle (HTTP 429) retry limits, resolved from the effective operation
     // options. These are the analogs of the .NET SDK's
@@ -583,7 +588,7 @@ pub(crate) async fn execute_operation_pipeline(
         location_snapshot.account.multiple_write_locations_enabled,
         options
             .excluded_regions()
-            .map(|r| r.0.clone())
+            .map(|r| r.iter().cloned().collect())
             .unwrap_or_default(),
         max_failover_retries,
         max_session_retries,
@@ -664,7 +669,7 @@ pub(crate) async fn execute_operation_pipeline(
                 &location,
                 pipeline_type.is_data_plane(),
                 account_name.is_some(),
-                location_state_store.endpoint_unavailability_ttl(),
+                endpoint_unavailability_ttl,
             ),
         };
         let attempt_read_consistency_strategy =
@@ -742,6 +747,7 @@ pub(crate) async fn execute_operation_pipeline(
                 &location.account,
                 &routing,
                 configured_request_timeout,
+                location.cross_region_hedging_disabled,
             )
             .and_then(|upgrade| match hedge_budget.try_admit(pipeline_type) {
                 Some(permit) => Some((upgrade, permit)),
@@ -1103,6 +1109,7 @@ pub(crate) async fn execute_operation_pipeline(
                 operation,
                 options,
                 &location.account,
+                location.cross_region_hedging_disabled,
                 &routing,
                 configured_request_timeout,
                 hedge_budget,
@@ -1131,7 +1138,9 @@ pub(crate) async fn execute_operation_pipeline(
             effects,
         );
         retry_state.pending_write_effects.extend(deferred_effects);
-        location_state_store.apply(&immediate_effects).await;
+        location_state_store
+            .apply_with_options(&immediate_effects, Some(options))
+            .await;
 
         // ── STAGE 7: Act on the control-flow decision ──────────────────
         match action {
@@ -1329,7 +1338,7 @@ pub(crate) async fn execute_operation_pipeline(
                     &location,
                     pipeline_type.is_data_plane(),
                     account_name.is_some(),
-                    location_state_store.endpoint_unavailability_ttl(),
+                    endpoint_unavailability_ttl,
                 );
                 // Re-evaluate hedge eligibility against the *post-advance*
                 // primary. After `advance_to_next_attempt` rotates the
@@ -1345,6 +1354,7 @@ pub(crate) async fn execute_operation_pipeline(
                     &location.account,
                     &primary_routing,
                     configured_request_timeout,
+                    location.cross_region_hedging_disabled,
                 ) {
                     Some(upgrade) => upgrade.secondary_routing,
                     None => {
@@ -2508,7 +2518,7 @@ fn effective_partition_key_for_request(
     let partition_key_definition = container.partition_key_definition();
     if partition_key.values().len() > partition_key_definition.paths().len() {
         return Err(crate::error::CosmosError::builder()
-            .with_status(crate::error::CosmosStatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+            .with_status(crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
             .with_message(
                 "Partition key supplies more components than the container's \
                  partition-key definition declares",
@@ -2548,7 +2558,7 @@ fn build_cosmos_response(
             // This should only be called with a Complete(Success) result.
             // Treat as a programmer-error invariant violation.
             Err(crate::error::CosmosError::builder()
-                .with_status(crate::error::CosmosStatus::CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE)
+                .with_status(crate::error::status_codes::CLIENT_BUILD_RESPONSE_INVOKED_ON_FAILURE)
                 .with_message("build_cosmos_response called with non-success result")
                 .build())
         }
@@ -2579,7 +2589,8 @@ fn should_capture_session_token_from_status(
             }
             if code == azure_core::http::StatusCode::NotFound {
                 // Capture on 404 unless substatus is ReadSessionNotAvailable (1002)
-                return substatus != Some(&SubStatusCode::READ_SESSION_NOT_AVAILABLE);
+                return substatus
+                    != Some(&crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE);
             }
             false
         }
@@ -2850,13 +2861,13 @@ fn enforce_deadline_or_timeout(
 
     diagnostics.set_operation_status(
         azure_core::http::StatusCode::RequestTimeout,
-        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+        Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
     );
     let diagnostics_ctx = Arc::new(diagnostics.complete());
     Err(crate::error::CosmosError::builder()
         .with_status(crate::models::CosmosStatus::from_parts(
             azure_core::http::StatusCode::RequestTimeout,
-            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
         ))
         .with_message(format!(
             "end-to-end operation timeout exceeded ({timeout_duration:?})"
@@ -3259,13 +3270,13 @@ fn finalize_hedge_attempt(
             let mut diagnostics = diagnostics;
             diagnostics.set_operation_status(
                 azure_core::http::StatusCode::RequestTimeout,
-                Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+                Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
             );
             let diagnostics_ctx = Arc::new(diagnostics.complete());
             Err(crate::error::CosmosError::builder()
                 .with_status(crate::models::CosmosStatus::from_parts(
                     azure_core::http::StatusCode::RequestTimeout,
-                    Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+                    Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
                 ))
                 .with_message("deadline exceeded during hedged attempt")
                 .with_diagnostics(diagnostics_ctx)
@@ -3298,6 +3309,7 @@ fn maybe_upgrade_to_hedge<'a>(
     operation: &CosmosOperation,
     options: &OperationOptionsView<'_>,
     account_state: &AccountEndpointState,
+    cross_region_hedging_disabled: bool,
     primary: &RoutingDecision,
     request_timeout: Option<Duration>,
     hedge_budget: &'a HedgeBudget,
@@ -3319,7 +3331,14 @@ fn maybe_upgrade_to_hedge<'a>(
         _ => return (action, None),
     };
 
-    match evaluate_hedge_eligibility(operation, options, account_state, primary, request_timeout) {
+    match evaluate_hedge_eligibility(
+        operation,
+        options,
+        account_state,
+        primary,
+        request_timeout,
+        cross_region_hedging_disabled,
+    ) {
         Some(upgrade) => {
             // Hedge consumes two failover-budget slots on the race
             // (primary + secondary) and a third on BothTransient
@@ -3628,13 +3647,13 @@ fn application_cancelled_error(
 ) -> crate::error::CosmosError {
     diagnostics.set_operation_status(
         azure_core::http::StatusCode::RequestTimeout,
-        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+        Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
     );
     let diagnostics_ctx = Arc::new(diagnostics.complete());
     crate::error::CosmosError::builder()
         .with_status(crate::models::CosmosStatus::from_parts(
             azure_core::http::StatusCode::RequestTimeout,
-            Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT),
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT),
         ))
         .with_message("operation cancelled by application deadline during cross-region hedging")
         .with_diagnostics(diagnostics_ctx)
@@ -3807,7 +3826,9 @@ async fn apply_hedge_leg_effects(
         transport_result,
     );
     if !eval.effects.is_empty() {
-        ctx.location_state_store.apply(&eval.effects).await;
+        ctx.location_state_store
+            .apply_with_options(&eval.effects, Some(ctx.options))
+            .await;
     }
     if eval.observed_session_unavailable {
         *race_observed_session_unavailable = true;
@@ -3955,11 +3976,11 @@ async fn execute_hedged(
             // attempted before bailing.
             parent_diagnostics.set_operation_status(
                 azure_core::http::StatusCode::InternalServerError,
-                Some(SubStatusCode::TRANSPORT_GENERATED_503),
+                Some(crate::error::status_codes::substatus::TRANSPORT_GENERATED_503),
             );
             let diagnostics_ctx = Arc::new(parent_diagnostics.complete());
             return HedgedRaceResult::Terminal(Err(crate::error::CosmosError::builder()
-                .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
+                .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
                 .with_message("hedge threshold exceeds azure_core::time::Duration range")
                 .with_diagnostics(diagnostics_ctx)
                 .build()));
@@ -4506,7 +4527,7 @@ fn operation_allows_automatic_session_token_resolution(
 fn global_strong_account_validation_error(
     mut diagnostics: DiagnosticsContextBuilder,
 ) -> crate::error::CosmosError {
-    let status = crate::error::CosmosStatus::CLIENT_BAD_REQUEST;
+    let status = crate::error::status_codes::CLIENT_BAD_REQUEST;
     diagnostics.set_operation_status(status.status_code(), status.sub_status());
     crate::error::CosmosError::builder()
         .with_status(status)
@@ -4531,7 +4552,7 @@ fn global_strong_account_validation_error(
 /// as the [`HedgeDiagnostics::UNKNOWN_REGION_SENTINEL`] string for
 /// consistency with the diagnostics-attachment surface.
 ///
-/// Status is set to [`CosmosStatus::TRANSPORT_GENERATED_503`] so
+/// Status is set to [`crate::error::status_codes::TRANSPORT_GENERATED_503`] so
 /// retry-evaluation and telemetry can discriminate a client-side
 /// "both legs transient" classification from any other 5xx surface.
 /// Diagnostics are not threaded here: the surrounding
@@ -4551,7 +4572,7 @@ fn transient_outcome_error(
         .map(Region::as_str)
         .unwrap_or(HedgeDiagnostics::UNKNOWN_REGION_SENTINEL);
     crate::error::CosmosError::builder()
-        .with_status(crate::models::CosmosStatus::TRANSPORT_GENERATED_503)
+        .with_status(crate::error::status_codes::TRANSPORT_GENERATED_503)
         .with_message(format!(
             "hedging completed without producing a final response \
              (primary={p}, secondary={s})"
@@ -5028,7 +5049,7 @@ mod tests {
         );
         assert_eq!(
             error.status().sub_status(),
-            Some(crate::models::SubStatusCode::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+            Some(crate::error::status_codes::substatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
         );
     }
 
@@ -5244,10 +5265,10 @@ mod tests {
     }
 
     #[test]
-    fn apply_headers_feed_range_emits_read_key_type_and_epk_bounds() {
+    fn apply_headers_feed_range_emits_read_key_type_and_epk_bounds() -> crate::error::Result<()> {
         let feed_range = FeedRange::new(
-            EffectivePartitionKey::from("10"),
-            EffectivePartitionKey::from("20"),
+            EffectivePartitionKey::try_from("10")?,
+            EffectivePartitionKey::try_from("20")?,
         )
         .unwrap();
         let overrides = OperationOverrides {
@@ -5280,6 +5301,7 @@ mod tests {
                 .map(|s| s.to_string()),
             Some("20".to_string())
         );
+        Ok(())
     }
 
     #[test]
@@ -7345,7 +7367,7 @@ mod tests {
 
         use crate::{
             driver::pipeline::components::TransportOutcome,
-            models::{CosmosResponseHeaders, CosmosStatus, SubStatusCode},
+            models::{CosmosResponseHeaders, CosmosStatus},
         };
 
         use super::super::should_capture_session_token_from_status;
@@ -7388,7 +7410,7 @@ mod tests {
         #[test]
         fn skips_on_404_with_substatus_1002() {
             let outcome = http_error_outcome(StatusCode::NotFound);
-            let substatus = SubStatusCode::READ_SESSION_NOT_AVAILABLE;
+            let substatus = crate::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE;
             assert!(!should_capture_session_token_from_status(
                 Some(&substatus),
                 &outcome
@@ -8583,9 +8605,14 @@ mod tests {
         );
         let loc = make_location(both);
         assert_eq!(
+            super::resolve_endpoint(&read_op, &state, &loc, false, true, Duration::ZERO).endpoint,
+            r1,
+            "an operation with zero TTL can use the marked endpoint",
+        );
+        assert_eq!(
             resolve(&read_op, &loc),
             r2,
-            "a both-affecting mark on r1 must demote it for reads",
+            "another operation's TTL still demotes the same unmodified mark",
         );
         assert_eq!(
             resolve(&write_op, &loc),
@@ -10708,7 +10735,7 @@ mod tests {
 
         assert_eq!(
             error.status(),
-            crate::error::CosmosStatus::CLIENT_BAD_REQUEST
+            crate::error::status_codes::CLIENT_BAD_REQUEST
         );
         assert!(error.response().is_none());
         let diagnostics = error
@@ -11251,7 +11278,7 @@ mod tests {
         );
         assert_eq!(
             status.sub_status(),
-            Some(crate::models::SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+            Some(crate::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
         );
         // Diagnostics-on-error invariant: the synthesized error must
         // carry the operation's diagnostics chain (cf. P0 #1).

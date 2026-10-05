@@ -23,7 +23,7 @@ use azure_data_cosmos_driver::{
         ConsistencyLevel, InMemoryEmulatorHttpClient, RequestObserver, VirtualAccountConfig,
         VirtualRegion,
     },
-    models::{AccountReference, CosmosOperation, ItemReference, PartitionKey, SubStatusCode},
+    models::{AccountReference, CosmosOperation, ItemReference, PartitionKey},
     options::{
         DriverOptions, EndToEndOperationLatencyPolicy, ExcludedRegions, OperationOptions, Region,
     },
@@ -473,6 +473,6 @@ async fn recreation_refresh_shares_original_deadline() {
     assert_eq!(error.status().status_code(), StatusCode::RequestTimeout);
     assert_eq!(
         error.status().sub_status(),
-        Some(SubStatusCode::CLIENT_OPERATION_TIMEOUT)
+        Some(azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_OPERATION_TIMEOUT)
     );
 }

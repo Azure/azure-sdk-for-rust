@@ -14,7 +14,7 @@ use azure_data_cosmos::{
         ContainerProperties, EffectivePartitionKey, PartitionKeyDefinition, ThroughputProperties,
     },
     options::{CreateContainerOptions, ItemReadOptions, MaxItemCountHint, QueryOptions},
-    CosmosError, PartitionKey, Query, SubStatusCode, TransactionalBatch,
+    CosmosError, PartitionKey, Query, TransactionalBatch,
 };
 use futures::{StreamExt, TryStreamExt};
 
@@ -87,14 +87,33 @@ fn assert_recreation_signal(error: &CosmosError) {
             (status.status_code(), status.sub_status()),
             (
                 StatusCode::BadRequest,
-                Some(SubStatusCode::COLLECTION_RID_MISMATCH)
+                Some(azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
             ) | (
-                StatusCode::NotFound,
-                Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
-            ) | (StatusCode::Gone, Some(SubStatusCode::NAME_CACHE_STALE))
+                StatusCode::ServiceUnavailable,
+                Some(azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_READ_SESSION_NOT_AVAILABLE)
+            ) | (StatusCode::Gone, Some(azure_data_cosmos_driver::error::status_codes::substatus::NAME_CACHE_STALE))
         ),
         "expected a container recreation signal, got {status}"
     );
+}
+
+#[test]
+fn recreation_signal_accepts_wrapped_session_failure() {
+    let error = CosmosError::builder()
+        .with_status(
+            azure_data_cosmos_driver::error::status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+        )
+        .build();
+    assert_recreation_signal(&error);
+}
+
+#[test]
+#[should_panic(expected = "expected a container recreation signal")]
+fn recreation_signal_rejects_unrelated_service_unavailable() {
+    let error = CosmosError::builder()
+        .with_status(azure_data_cosmos_driver::error::status_codes::TRANSPORT_IO_FAILED)
+        .build();
+    assert_recreation_signal(&error);
 }
 
 #[tokio::test]
@@ -362,7 +381,7 @@ pub async fn stale_range_and_partition_shape_do_not_cross_recreation() -> Result
             assert_eq!(range_error.status().status_code(), StatusCode::BadRequest);
             assert_eq!(
                 range_error.status().sub_status(),
-                Some(SubStatusCode::COLLECTION_RID_MISMATCH)
+                Some(azure_data_cosmos_driver::error::status_codes::substatus::COLLECTION_RID_MISMATCH)
             );
 
             let shape_error = stale
@@ -377,7 +396,7 @@ pub async fn stale_range_and_partition_shape_do_not_cross_recreation() -> Result
             assert_eq!(shape_error.status().status_code(), StatusCode::BadRequest);
             assert_eq!(
                 shape_error.status().sub_status(),
-                Some(SubStatusCode::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
+                Some(azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS)
             );
 
             let missing = replacement

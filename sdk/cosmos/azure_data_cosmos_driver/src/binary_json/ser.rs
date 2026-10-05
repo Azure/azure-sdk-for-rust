@@ -22,14 +22,8 @@ use super::writer::{
 };
 use super::{
     markers::{FALSE, NULL, TRUE},
-    BinaryError, Result, PREAMBLE,
+    BinaryError, Result, PREAMBLE, RAW_VALUE_TOKEN,
 };
-
-/// Magic struct name `serde_json::value::RawValue` uses for verbatim JSON;
-/// rejected by [`serialize_struct`] rather than silently corrupted.
-///
-/// [`serialize_struct`]: BinarySerializer::serialize_struct
-const RAW_VALUE_TOKEN: &str = "$serde_json::private::RawValue";
 
 /// Magic struct name `serde_json::Number` uses under the `arbitrary_precision`
 /// feature: a `Number` serializes as `{ NUMBER_TOKEN: "<decimal string>" }`.

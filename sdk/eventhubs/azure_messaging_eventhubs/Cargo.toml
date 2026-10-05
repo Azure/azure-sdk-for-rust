@@ -20,9 +20,9 @@ edition.workspace = true
 async-lock.workspace = true
 async-stream.workspace = true
 async-trait.workspace = true
-azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.1", default-features = false }
 # Unreleased: the WebSocket withdrawal requires azure_core_amqp 1.2.0-beta.2.
 # Keep local core dependencies aligned for the types exchanged between crates.
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", default-features = false }
 # `default-features = false` so that the `default` feature below is what selects
 # the TLS stack, in the same shape as `azure_core` above. With the default
 # features on here, a consumer that turns them off could not drop the rustls

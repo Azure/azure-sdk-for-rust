@@ -8,15 +8,15 @@ use azure_data_cosmos::{
         AvailabilityStrategy, ChangeFeedOptions, ChangeFeedStartFrom, ItemReadOptions,
         OperationOptions, QueryOptions, ReadConsistencyStrategy, Region,
     },
-    Query, RoutingStrategy, SubStatusCode,
+    Query, RoutingStrategy,
 };
 use futures::StreamExt;
 
 use crate::e2e_test_cases::{
     fixture::{build_client_with_defaults, ClientSetup, E2eTest, TestResult},
     support::{
-        hosted_wire_counts, item, selected_scenario_profile, wait_for_item_replication,
-        with_replication_paused_if, HostedWireCounts, Item,
+        assert_wrapped_session_failure, hosted_wire_counts, item, selected_scenario_profile,
+        wait_for_item_replication, with_replication_paused_if, HostedWireCounts, Item,
     },
 };
 
@@ -421,11 +421,7 @@ async fn assert_invalid_session_tokens_rejected(
         .await
         .expect("future-token query must yield an error")
         .expect_err("future query session token must be rejected");
-    assert_eq!(query_error.status().status_code(), StatusCode::NotFound);
-    assert_eq!(
-        query_error.status().sub_status(),
-        Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
-    );
+    assert_wrapped_session_failure(&query_error);
 
     let change_options = ChangeFeedOptions::default()
         .with_session_token(future_token)
@@ -442,11 +438,7 @@ async fn assert_invalid_session_tokens_rejected(
         .await
         .expect("future-token change feed must yield an error")
         .expect_err("future change-feed session token must be rejected");
-    assert_eq!(change_error.status().status_code(), StatusCode::NotFound);
-    assert_eq!(
-        change_error.status().sub_status(),
-        Some(SubStatusCode::READ_SESSION_NOT_AVAILABLE)
-    );
+    assert_wrapped_session_failure(&change_error);
     Ok(())
 }
 
