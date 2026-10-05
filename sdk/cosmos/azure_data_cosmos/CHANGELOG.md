@@ -6,8 +6,8 @@
 
 ### Breaking Changes
 
+- Changed the `User-Agent` header format to `azsdk-rust-cosmos/{sdk-version} (drv={driver-version}; {os}; {arch}; {rustc}[; ft={B64}]) [{suffix}]`, replacing the separate `azsdk-rust-cosmos-driver/{version} {os}/{arch} rustc/{version}` tokens and the trailing `|F<HEX>` feature-flag token. ([#5406](https://github.com/Azure/azure-sdk-for-rust/pull/5406))
 - Terminal service 404/1002, 403/3, and 403/1008 errors now surface as synthetic 503/20310, 503/20311, and 503/20312 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
-- Changed the `User-Agent` header format to `azsdk-rust-cosmos/{sdk-version} (drv={driver-version}; {os}; {arch}; {rustc}[; ft={B64}]) [{suffix}]`, replacing the separate `azsdk-rust-cosmos-driver/{version} {os}/{arch} rustc/{version}` tokens and the trailing `|F<HEX>` feature-flag token.
 
 ### Bugs Fixed
 

@@ -302,6 +302,14 @@ impl UserAgentProperty {
     pub const MAX_VALUE_LENGTH: usize = 32;
 
     /// Creates a new property, validating the key and value.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`CosmosError`] with HTTP 400 and substatus 20129
+    /// ([`CLIENT_USER_AGENT_PROPERTY_INVALID`](crate::error::status_codes::CLIENT_USER_AGENT_PROPERTY_INVALID))
+    /// if the key is invalid or reserved, or the value is empty, too long,
+    /// contains non-printable ASCII or a metadata delimiter (`;`, `(`, or `)`),
+    /// or has leading or trailing spaces.
     pub fn try_new(key: impl Into<String>, value: impl Into<String>) -> Result<Self, CosmosError> {
         let key = key.into();
         let value = value.into();

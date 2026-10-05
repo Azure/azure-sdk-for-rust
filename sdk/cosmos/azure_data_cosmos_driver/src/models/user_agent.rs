@@ -180,8 +180,11 @@ pub(crate) const FEATURE_FLAGS_KEY: &str = "ft";
 ///   cross-SDK client feature flags as a base64url number, omitted when none are
 ///   enabled) followed by any [`UserAgentProperty`] values supplied by the
 ///   wrapping SDK, such as its runtime version.
-/// - An optional suffix (typically from [`UserAgentSuffix`], [`WorkloadId`], or
-///   [`CorrelationId`]) follows the closing parenthesis after a space.
+/// - An optional suffix (typically from
+///   [`UserAgentSuffix`](crate::options::UserAgentSuffix),
+///   [`WorkloadId`](crate::options::WorkloadId), or
+///   [`CorrelationId`](crate::options::CorrelationId)) follows the closing
+///   parenthesis after a space.
 ///
 /// The string is limited to 255 ASCII characters. Truncation can never break
 /// the structure: the wrapping-SDK identifier is shortened first, then custom
