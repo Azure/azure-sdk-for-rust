@@ -1,5 +1,17 @@
 # Release History
 
+## 1.1.0-beta.2 (Unreleased)
+
+### Features Added
+
+### Breaking Changes
+
+### Bugs Fixed
+
+- Cache authentication challenge scopes only after resource validation succeeds.
+
+### Other Changes
+
 ## 1.1.0-beta.1 (2026-06-08)
 
 ### Features Added
