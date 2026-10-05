@@ -45,9 +45,9 @@ pub struct SessionOptions {
 
     /// The account name used to sign session requests.
     ///
-    /// Optional. When unset, the account name is derived from the request URL at
-    /// signing time. Set this explicitly when using a custom endpoint from which
-    /// the account name cannot be derived.
+    /// Optional. When unset, the account name is derived from the client endpoint when
+    /// the client is created. Set this explicitly when using a custom endpoint, such as
+    /// a custom domain, from which the account name cannot be derived.
     pub account_name: Option<String>,
 
     /// A shared session provider.

@@ -182,23 +182,38 @@ fn build_auth_policies(
 
 /// Resolves the account name used to sign session requests: the configured
 /// account name, or one derived from the endpoint.
+///
+/// Only path-style endpoints and standard `{account}.blob.{suffix}` hosts encode the
+/// account; any other host (such as a custom domain) yields `None`.
 fn resolve_session_account(endpoint: &Url, options: &SessionOptions) -> Option<String> {
     if let Some(account) = options.account_name.as_deref() {
         if !account.is_empty() {
             return Some(account.to_string());
         }
     }
-    let host = endpoint.host_str()?;
-    if host_is_ip_literal(host) {
+    if is_path_style(endpoint) {
         return endpoint
             .path_segments()?
             .find(|segment| !segment.is_empty())
             .map(str::to_string);
     }
-    host.split('.')
-        .next()
-        .filter(|label| !label.is_empty())
-        .map(str::to_string)
+    let (label, suffix) = endpoint.host_str()?.split_once('.')?;
+    if !suffix
+        .split('.')
+        .any(|part| part.eq_ignore_ascii_case("blob"))
+    {
+        return None;
+    }
+    // Shared Key signs secondary-location requests with the primary account name.
+    let account = label.strip_suffix("-secondary").unwrap_or(label);
+    (!account.is_empty()).then(|| account.to_string())
+}
+
+/// Whether `url` addresses the account by its first path segment rather than its
+/// host, as IP endpoints and the local emulator do.
+pub(crate) fn is_path_style(url: &Url) -> bool {
+    url.host_str()
+        .is_some_and(|host| host_is_ip_literal(host) || host.eq_ignore_ascii_case("localhost"))
 }
 
 /// Whether `host` (as returned by [`Url::host_str`]) is an IPv4 or bracketed
@@ -476,6 +491,69 @@ mod tests {
         };
         let endpoint = Url::parse("https://127.0.0.1/").unwrap();
         assert_eq!(resolve_session_account(&endpoint, &options), None);
+    }
+
+    #[test]
+    fn resolve_session_account_none_for_custom_domain() {
+        let options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: None,
+            ..Default::default()
+        };
+        let endpoint = Url::parse("https://cdn.contoso.com/").unwrap();
+        assert_eq!(resolve_session_account(&endpoint, &options), None);
+    }
+
+    #[test]
+    fn resolve_session_account_strips_secondary_suffix() {
+        let options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: None,
+            ..Default::default()
+        };
+        // Shared Key signs secondary-location requests with the primary account name.
+        let endpoint = Url::parse("https://myaccount-secondary.blob.core.windows.net/").unwrap();
+        assert_eq!(
+            resolve_session_account(&endpoint, &options).as_deref(),
+            Some("myaccount")
+        );
+    }
+
+    #[test]
+    fn resolve_session_account_uses_path_segment_for_localhost_emulator() {
+        let options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: None,
+            ..Default::default()
+        };
+        let endpoint = Url::parse("https://localhost:10000/devstoreaccount1/c").unwrap();
+        assert_eq!(
+            resolve_session_account(&endpoint, &options).as_deref(),
+            Some("devstoreaccount1")
+        );
+    }
+
+    #[test]
+    fn resolve_session_account_uses_host_label_for_blob_endpoint_variants() {
+        let options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: None,
+            ..Default::default()
+        };
+        // cspell:ignore privatelink chinacloudapi azurestack
+        for host in [
+            "myaccount.privatelink.blob.core.windows.net",
+            "myaccount.blob.core.chinacloudapi.cn",
+            "myaccount.blob.local.azurestack.external",
+            "MYACCOUNT.BLOB.CORE.WINDOWS.NET",
+        ] {
+            let endpoint = Url::parse(&format!("https://{host}/")).unwrap();
+            assert_eq!(
+                resolve_session_account(&endpoint, &options).as_deref(),
+                Some("myaccount"),
+                "host: {host}"
+            );
+        }
     }
 
     #[test]

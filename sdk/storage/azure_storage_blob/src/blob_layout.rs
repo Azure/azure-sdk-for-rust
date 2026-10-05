@@ -98,9 +98,10 @@ impl Layout {
     /// Resolves the serving endpoint for the segment covering `offset`.
     ///
     /// Uses binary search to find the first segment whose inclusive `end` is at or
-    /// beyond `offset`. Returns `None` when no segment covers the offset or the
-    /// covering segment has no endpoint; callers then fall back to the client's
-    /// configured endpoint. The bytes returned are identical regardless.
+    /// beyond `offset`, so an offset in a gap between segments resolves to the next
+    /// segment. Returns `None` when every segment ends before `offset` or the selected
+    /// segment has no endpoint; callers then fall back to the client's configured
+    /// endpoint. The bytes returned are identical regardless.
     pub fn ideal_endpoint(&self, offset: i64) -> Option<&str> {
         if self.segments.is_empty() {
             return None;
