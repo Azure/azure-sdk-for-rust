@@ -1336,6 +1336,7 @@ pub mod in_memory_emulator {
         #[cfg(feature = "fault_injection")]
         pub fn runtime_builder_with_fault_rules(self: &Arc<Self>, rules: Vec<Arc<crate::fault_injection::FaultInjectionRule>>) -> crate::driver::CosmosDriverRuntimeBuilder;
         pub fn store(&self) -> Arc<EmulatorStore>;
+        pub fn try_new(config: VirtualAccountConfig) -> crate::error::Result<Self>;
         pub fn with_request_observer(self, observer: Arc<dyn RequestObserver>) -> Self;
     }
     impl InMemoryEmulatorHttpClient {

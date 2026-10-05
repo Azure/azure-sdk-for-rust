@@ -93,6 +93,7 @@ pub(crate) const ENDPOINT_PROBE_INTERVAL: Duration = Duration::from_secs(60);
 #[cfg(feature = "tokio")]
 pub(crate) const BACKGROUND_REFRESH_INTERVAL: Duration = Duration::from_secs(300);
 
+#[cfg(feature = "tokio")]
 pub(crate) fn background_refresh_interval(get_env: &dyn Fn(&str) -> Option<String>) -> Duration {
     get_env("AZURE_COSMOS_E2E_BACKGROUND_ACCOUNT_REFRESH_INTERVAL_MS")
         .and_then(|value| value.parse::<u64>().ok())
@@ -1221,6 +1222,7 @@ mod tests {
 
     use super::*;
 
+    #[cfg(feature = "tokio")]
     #[test]
     fn e2e_background_refresh_interval_override_is_bounded_and_optional() {
         assert_eq!(
