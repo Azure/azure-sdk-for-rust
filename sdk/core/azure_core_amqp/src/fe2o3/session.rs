@@ -131,7 +131,8 @@ impl From<fe2o3_amqp::session::BeginError> for AmqpError {
     fn from(e: fe2o3_amqp::session::BeginError) -> Self {
         match e {
             fe2o3_amqp::session::BeginError::IllegalState
-            | fe2o3_amqp::session::BeginError::IllegalConnectionState => {
+            | fe2o3_amqp::session::BeginError::ConnectionNotOpened
+            | fe2o3_amqp::session::BeginError::ConnectionStopped(_) => {
                 AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
             }
             fe2o3_amqp::session::BeginError::RemoteEnded => {
@@ -154,7 +155,7 @@ impl From<fe2o3_amqp::session::Error> for AmqpError {
             | fe2o3_amqp::session::Error::RemoteAttachingLinkNameNotFound
             | fe2o3_amqp::session::Error::HandleInUse
             | fe2o3_amqp::session::Error::IllegalState
-            | fe2o3_amqp::session::Error::IllegalConnectionState
+            | fe2o3_amqp::session::Error::ConnectionStopped(_)
             | fe2o3_amqp::session::Error::TransferFrameToSender => {
                 AmqpErrorKind::TransportImplementationError(Box::new(e)).into()
             }

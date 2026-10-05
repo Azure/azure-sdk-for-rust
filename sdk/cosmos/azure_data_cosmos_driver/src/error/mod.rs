@@ -55,6 +55,11 @@ pub use backtrace::__bench as backtrace_bench;
 /// Underlying errors (transport, credential, deserialization, …) are
 /// reachable via [`std::error::Error::source`].
 ///
+/// Terminal service 404/1002, 403/3, and 403/1008 failures surface as synthetic
+/// 503/20310, 503/20311, and 503/20312 errors after retries and recovery.
+/// Their source retains the original error and wire response. Operation diagnostics report the 503,
+/// while individual request attempts retain their original status.
+///
 /// `CosmosError` is `Clone` (a cheap `Arc` refcount bump) so callers can pass
 /// it by value through `Result` chains without re-allocating, and so the
 /// pipeline can patch single fields (e.g. attaching diagnostics) cheaply.
@@ -150,6 +155,33 @@ enum ErrorContext {
 }
 
 impl CosmosError {
+    /// Converts terminal service conditions only after internal recovery has finished.
+    pub(crate) fn into_public_error(self) -> Self {
+        let (status, message) = match self.status() {
+            status_codes::READ_SESSION_NOT_AVAILABLE => (
+                status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+                "session consistency could not be satisfied after recovery",
+            ),
+            status_codes::WRITE_FORBIDDEN => (
+                status_codes::CLIENT_WRITE_FORBIDDEN,
+                "no eligible write region accepted the operation after recovery",
+            ),
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND => (
+                status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+                "account routing could not be recovered",
+            ),
+            _ => return self,
+        };
+        let mut builder = Self::builder().with_status(status).with_message(message);
+        if let Some(diagnostics) = self.diagnostics() {
+            builder = builder.with_diagnostics(Arc::new(diagnostics.clone_with_status(status)));
+        }
+        if let Some(tracking_id) = self.patch_tracking_id() {
+            builder = builder.with_patch_tracking_id(tracking_id);
+        }
+        builder.with_source(self).build()
+    }
+
     fn from_inner(mut inner: CosmosErrorInner) -> Self {
         if inner.backtrace.is_none() {
             // If we are wrapping another Cosmos `CosmosError` somewhere in
@@ -1055,7 +1087,10 @@ fn finalize_response(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{CosmosResponseHeaders, ResponseBody};
+    use crate::{
+        models::{CosmosResponseHeaders, ResponseBody},
+        options::DiagnosticsVerbosity,
+    };
     use azure_core::http::StatusCode;
     use std::sync::Mutex;
 
@@ -1098,6 +1133,126 @@ mod tests {
 
     fn make_test_payload() -> CosmosResponsePayload {
         CosmosResponsePayload::new(b"{\"x\":1}".to_vec(), CosmosResponseHeaders::default())
+    }
+
+    #[test]
+    fn public_error_wraps_terminal_status_and_preserves_source() {
+        for (original_status, expected_status, expected_name) in [
+            (
+                status_codes::READ_SESSION_NOT_AVAILABLE,
+                status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+                "ClientReadSessionNotAvailable",
+            ),
+            (
+                status_codes::WRITE_FORBIDDEN,
+                status_codes::CLIENT_WRITE_FORBIDDEN,
+                "ClientWriteForbidden",
+            ),
+            (
+                status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+                status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+                "ClientDatabaseAccountNotFound",
+            ),
+        ] {
+            let id = PatchTrackingId::from(uuid::Uuid::from_u128(42));
+            let original = CosmosError::builder()
+                .with_response(make_test_response(original_status, make_test_diagnostics()))
+                .with_patch_tracking_id(id)
+                .with_message("original service failure")
+                .with_source(std::io::Error::other("underlying cause"))
+                .build();
+            let original_diagnostics = original.diagnostics().unwrap();
+            let cached: Vec<serde_json::Value> = [
+                DiagnosticsVerbosity::Detailed,
+                DiagnosticsVerbosity::Summary,
+            ]
+            .into_iter()
+            .map(|verbosity| {
+                serde_json::from_str(original_diagnostics.to_json_string(Some(verbosity))).unwrap()
+            })
+            .collect();
+            let wrapped = original.clone().into_public_error();
+            assert_eq!(wrapped.status(), expected_status);
+            assert_eq!(wrapped.status().name(), Some(expected_name));
+            assert!(wrapped.response().is_none());
+            assert!(!wrapped.is_from_wire());
+            assert_eq!(wrapped.patch_tracking_id(), Some(id));
+            let source = wrapped
+                .source()
+                .unwrap()
+                .downcast_ref::<CosmosError>()
+                .unwrap();
+            assert!(Arc::ptr_eq(&source.inner, &original.inner));
+            let diagnostics = wrapped.diagnostics().unwrap();
+            assert_eq!(diagnostics.effective_status(), Some(expected_status));
+            for (verbosity, mut expected) in [
+                DiagnosticsVerbosity::Detailed,
+                DiagnosticsVerbosity::Summary,
+            ]
+            .into_iter()
+            .zip(cached)
+            {
+                let source_json: serde_json::Value = serde_json::from_str(
+                    source
+                        .diagnostics()
+                        .unwrap()
+                        .to_json_string(Some(verbosity)),
+                )
+                .unwrap();
+                assert_eq!(source_json, expected);
+                expected["status"] = expected_status.to_string().into();
+                let actual: serde_json::Value =
+                    serde_json::from_str(diagnostics.to_json_string(Some(verbosity))).unwrap();
+                assert_eq!(actual, expected);
+            }
+            let again = wrapped.clone().into_public_error();
+            assert!(Arc::ptr_eq(&again.inner, &wrapped.inner));
+        }
+    }
+
+    #[test]
+    fn public_error_wraps_without_diagnostics() {
+        for status in [
+            status_codes::READ_SESSION_NOT_AVAILABLE,
+            status_codes::WRITE_FORBIDDEN,
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+        ] {
+            let original = CosmosError::builder().with_status(status).build();
+            let wrapped = original.into_public_error();
+            assert_eq!(
+                wrapped.status().status_code(),
+                StatusCode::ServiceUnavailable
+            );
+            assert!(wrapped.diagnostics().is_none());
+            assert_eq!(
+                wrapped
+                    .source()
+                    .unwrap()
+                    .downcast_ref::<CosmosError>()
+                    .unwrap()
+                    .status(),
+                status
+            );
+        }
+    }
+
+    #[test]
+    fn public_error_leaves_other_status_pairs_unchanged() {
+        for status in [
+            CosmosStatus::new(StatusCode::NotFound),
+            CosmosStatus::new(StatusCode::NotFound).with_sub_status(0),
+            CosmosStatus::new(StatusCode::Forbidden),
+            CosmosStatus::new(StatusCode::Forbidden).with_sub_status(1009),
+            CosmosStatus::new(StatusCode::Gone).with_sub_status(1008),
+            CosmosStatus::new(StatusCode::Gone).with_sub_status(1002),
+            CosmosStatus::new(StatusCode::ServiceUnavailable),
+            CosmosStatus::new(StatusCode::RequestTimeout)
+                .with_sub_status(status_codes::substatus::CLIENT_OPERATION_TIMEOUT.value()),
+        ] {
+            let original = CosmosError::builder().with_status(status).build();
+            let result = original.clone().into_public_error();
+            assert!(Arc::ptr_eq(&result.inner, &original.inner), "{status}");
+        }
     }
 
     // -----------------------------------------------------------------

@@ -499,6 +499,10 @@ pub(crate) async fn execute_operation_pipeline(
     let mut container_recreation_retry_attempted = false;
     let location_snapshot = location_state_store.snapshot();
     let max_failover_retries = options.max_failover_retry_count().copied().unwrap_or(3);
+    let endpoint_unavailability_ttl = options
+        .endpoint_unavailability_ttl()
+        .copied()
+        .unwrap_or(Duration::from_secs(60));
 
     // Throttle (HTTP 429) retry limits, resolved from the effective operation
     // options. These are the analogs of the .NET SDK's
@@ -665,7 +669,7 @@ pub(crate) async fn execute_operation_pipeline(
                 &location,
                 pipeline_type.is_data_plane(),
                 account_name.is_some(),
-                location_state_store.endpoint_unavailability_ttl(),
+                endpoint_unavailability_ttl,
             ),
         };
         let attempt_read_consistency_strategy =
@@ -1134,7 +1138,9 @@ pub(crate) async fn execute_operation_pipeline(
             effects,
         );
         retry_state.pending_write_effects.extend(deferred_effects);
-        location_state_store.apply(&immediate_effects).await;
+        location_state_store
+            .apply_with_options(&immediate_effects, Some(options))
+            .await;
 
         // ── STAGE 7: Act on the control-flow decision ──────────────────
         match action {
@@ -1332,7 +1338,7 @@ pub(crate) async fn execute_operation_pipeline(
                     &location,
                     pipeline_type.is_data_plane(),
                     account_name.is_some(),
-                    location_state_store.endpoint_unavailability_ttl(),
+                    endpoint_unavailability_ttl,
                 );
                 // Re-evaluate hedge eligibility against the *post-advance*
                 // primary. After `advance_to_next_attempt` rotates the
@@ -3820,7 +3826,9 @@ async fn apply_hedge_leg_effects(
         transport_result,
     );
     if !eval.effects.is_empty() {
-        ctx.location_state_store.apply(&eval.effects).await;
+        ctx.location_state_store
+            .apply_with_options(&eval.effects, Some(ctx.options))
+            .await;
     }
     if eval.observed_session_unavailable {
         *race_observed_session_unavailable = true;
@@ -8597,9 +8605,14 @@ mod tests {
         );
         let loc = make_location(both);
         assert_eq!(
+            super::resolve_endpoint(&read_op, &state, &loc, false, true, Duration::ZERO).endpoint,
+            r1,
+            "an operation with zero TTL can use the marked endpoint",
+        );
+        assert_eq!(
             resolve(&read_op, &loc),
             r2,
-            "a both-affecting mark on r1 must demote it for reads",
+            "another operation's TTL still demotes the same unmodified mark",
         );
         assert_eq!(
             resolve(&write_op, &loc),

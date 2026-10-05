@@ -22,7 +22,10 @@
 //!   through the synchronous `out_error` slots and freed with
 //!   [`cosmos_error_free`].
 
-use std::ffi::{c_char, CString};
+use std::{
+    error::Error as _,
+    ffi::{c_char, CString},
+};
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::error::{
@@ -82,7 +85,7 @@ impl CosmosStatusCode {
 ///
 /// This enum is the **single source of truth** for those names on the C side.
 /// Each discriminant is a literal copy of the corresponding
-/// [`azure_data_cosmos_driver::error::SubStatusCode`] constant (cbindgen needs
+/// [`azure_data_cosmos_driver::error::status_codes::substatus`] constant (cbindgen needs
 /// literals to emit `= N`). A compile-time guard in the Rust source that defines
 /// this enum (`src/error.rs`, not part of the generated header) verifies every
 /// discriminant against the driver constant it mirrors, so a value that drifts
@@ -200,6 +203,12 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientTopologyResolutionFailed = 20305,
     /// `SERVICE_RETURNED_OBJECT_WITHOUT_RID` (20306).
     CosmosSubStatusServiceReturnedObjectWithoutRid = 20306,
+    /// `CLIENT_READ_SESSION_NOT_AVAILABLE` (20310).
+    CosmosSubStatusClientReadSessionNotAvailable = 20310,
+    /// `CLIENT_WRITE_FORBIDDEN` (20311).
+    CosmosSubStatusClientWriteForbidden = 20311,
+    /// `CLIENT_DATABASE_ACCOUNT_NOT_FOUND` (20312).
+    CosmosSubStatusClientDatabaseAccountNotFound = 20312,
     /// `CLIENT_FFI_NULL_ARGUMENT` (20350).
     CosmosSubStatusClientFfiNullArgument = 20350,
     /// `CLIENT_FFI_INVALID_UTF8` (20351).
@@ -232,6 +241,16 @@ pub enum CosmosSubStatus {
     CosmosSubStatusClientFfiRuntimeBuildFailed = 20361,
     /// `CLIENT_FFI_PANIC` (20362).
     CosmosSubStatusClientFfiPanic = 20362,
+    /// A cursor has an outstanding operation.
+    CosmosSubStatusClientFfiCursorBusy = 20363,
+    /// Wrong completion queue format.
+    CosmosSubStatusClientFfiQueueFormat = 20364,
+    /// Cursor progress is terminal.
+    CosmosSubStatusClientFfiCursorClosed = 20365,
+    /// Legacy completion cannot represent the page.
+    CosmosSubStatusClientFfiRepresentationUnsupported = 20366,
+    /// An admitted result was not delivered.
+    CosmosSubStatusClientFfiDeliveryLost = 20367,
     /// `CLIENT_GENERATED_401` (20401).
     CosmosSubStatusClientGenerated401 = 20401,
     /// `AUTHENTICATION_TOKEN_ACQUISITION_FAILED` (20402).
@@ -243,7 +262,7 @@ pub enum CosmosSubStatus {
 }
 
 /// Compile-time guard that keeps [`CosmosSubStatus`] pinned to the driver's
-/// canonical [`SubStatusCode`] constants.
+/// canonical [`azure_data_cosmos_driver::error::status_codes::substatus`] constants.
 ///
 /// cbindgen requires the enum above to carry literal discriminants (it neither
 /// expands macros nor parses the driver crate), so the names and values are
@@ -274,7 +293,7 @@ const _: () = {
                     concat!(
                         "CosmosSubStatus::",
                         stringify!($variant),
-                        " no longer matches driver SubStatusCode::",
+                        " no longer matches driver status_codes::substatus::",
                         stringify!($driver)
                     )
                 );
@@ -332,6 +351,9 @@ const _: () = {
         CosmosSubStatusClientThroughputPollerIncomplete => CLIENT_THROUGHPUT_POLLER_INCOMPLETE,
         CosmosSubStatusClientTopologyResolutionFailed => CLIENT_TOPOLOGY_RESOLUTION_FAILED,
         CosmosSubStatusServiceReturnedObjectWithoutRid => SERVICE_RETURNED_OBJECT_WITHOUT_RID,
+        CosmosSubStatusClientReadSessionNotAvailable => CLIENT_READ_SESSION_NOT_AVAILABLE,
+        CosmosSubStatusClientWriteForbidden => CLIENT_WRITE_FORBIDDEN,
+        CosmosSubStatusClientDatabaseAccountNotFound => CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
         CosmosSubStatusClientFfiNullArgument => CLIENT_FFI_NULL_ARGUMENT,
         CosmosSubStatusClientFfiInvalidUtf8 => CLIENT_FFI_INVALID_UTF8,
         CosmosSubStatusClientFfiInvalidHeader => CLIENT_FFI_INVALID_HEADER,
@@ -345,6 +367,11 @@ const _: () = {
         CosmosSubStatusClientFfiOperationCancelled => CLIENT_FFI_OPERATION_CANCELLED,
         CosmosSubStatusClientFfiRuntimeBuildFailed => CLIENT_FFI_RUNTIME_BUILD_FAILED,
         CosmosSubStatusClientFfiPanic => CLIENT_FFI_PANIC,
+        CosmosSubStatusClientFfiCursorBusy => CLIENT_FFI_CURSOR_BUSY,
+        CosmosSubStatusClientFfiQueueFormat => CLIENT_FFI_QUEUE_FORMAT,
+        CosmosSubStatusClientFfiCursorClosed => CLIENT_FFI_CURSOR_CLOSED,
+        CosmosSubStatusClientFfiRepresentationUnsupported => CLIENT_FFI_REPRESENTATION_UNSUPPORTED,
+        CosmosSubStatusClientFfiDeliveryLost => CLIENT_FFI_DELIVERY_LOST,
         CosmosSubStatusClientGenerated401 => CLIENT_GENERATED_401,
         CosmosSubStatusAuthenticationTokenAcquisitionFailed => AUTHENTICATION_TOKEN_ACQUISITION_FAILED,
         CosmosSubStatusTransitTimeout => TRANSIT_TIMEOUT,
@@ -398,6 +425,11 @@ pub(crate) enum CosmosErrorCode {
     /// A driver future spawned by the wrapper panicked; the panic firewall
     /// synthesized a failure so the host continuation is released.
     CosmosErrorCodeInternalError,
+    CosmosErrorCodeCursorBusy,
+    CosmosErrorCodeQueueFormat,
+    CosmosErrorCodeCursorClosed,
+    CosmosErrorCodeRepresentationUnsupported,
+    CosmosErrorCodeDeliveryLost,
 }
 
 impl CosmosErrorCode {
@@ -406,6 +438,25 @@ impl CosmosErrorCode {
     pub(crate) fn to_status(self) -> Option<CosmosStatus> {
         let (status_code, sub_status) = match self {
             Self::CosmosErrorCodeSuccess => return None,
+            Self::CosmosErrorCodeCursorBusy => {
+                (StatusCode::Conflict, azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_CURSOR_BUSY)
+            }
+            Self::CosmosErrorCodeQueueFormat => (
+                StatusCode::BadRequest,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_QUEUE_FORMAT,
+            ),
+            Self::CosmosErrorCodeCursorClosed => (
+                StatusCode::Conflict,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_CURSOR_CLOSED,
+            ),
+            Self::CosmosErrorCodeRepresentationUnsupported => (
+                StatusCode::BadRequest,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_REPRESENTATION_UNSUPPORTED,
+            ),
+            Self::CosmosErrorCodeDeliveryLost => (
+                StatusCode::ServiceUnavailable,
+                azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_DELIVERY_LOST,
+            ),
             Self::CosmosErrorCodeInvalidArgument => (
                 StatusCode::BadRequest,
                 azure_data_cosmos_driver::error::status_codes::substatus::CLIENT_FFI_NULL_ARGUMENT,
@@ -497,17 +548,19 @@ impl CosmosErrorCode {
 /// Mirrors the inline error fields of `cosmos_completion_t`. Every pointer
 /// field is **owned**; free the whole struct — and its strings — with
 /// [`cosmos_error_free`]. A `NULL` pointer field means that field was absent.
+///
+/// Synthetic 503/20310, 503/20311, and 503/20312 wrappers retain metadata from the original
+/// service response, but report `is_from_wire == 0`.
 #[repr(C)]
 pub struct CosmosError {
     /// Packed 32-bit status (`(http << 16) | sub_status`). See
     /// [`CosmosStatusCode`].
     pub status: CosmosStatusCode,
-    /// Wire HTTP status code (always populated, including for synthetic
-    /// errors).
+    /// Effective HTTP status code, including synthetic error classifications.
     pub http_status_code: u16,
     /// Cosmos sub-status code, or `-1` when absent.
     pub sub_status: i32,
-    /// `1` iff the error originated from a service wire response.
+    /// `1` for a direct wire error; `0` for synthetic errors and wrappers.
     pub is_from_wire: u8,
     /// Retry-after hint in milliseconds, or `-1` when absent.
     pub retry_after_ms: i64,
@@ -564,7 +617,7 @@ impl CosmosError {
             .backtrace()
             .and_then(|bt| to_cstring(bt.as_ref().to_string()));
 
-        let (activity_id, session_token, etag, retry_after_ms) = match err.response() {
+        let (activity_id, session_token, etag, retry_after_ms) = match original_response(&err) {
             Some(resp) => {
                 let headers = resp.headers();
                 (
@@ -601,6 +654,27 @@ impl CosmosError {
             backtrace: cstring_into_raw(backtrace),
         }))
     }
+}
+
+/// Keeps wire details for synthetic terminal-service wrappers.
+pub(crate) fn original_response(
+    error: &DriverCosmosError,
+) -> Option<&azure_data_cosmos_driver::models::CosmosResponse> {
+    use azure_data_cosmos_driver::error::status_codes;
+
+    if let Some(response) = error.response() {
+        return Some(response);
+    }
+    let original_status = match error.status() {
+        status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE => status_codes::READ_SESSION_NOT_AVAILABLE,
+        status_codes::CLIENT_WRITE_FORBIDDEN => status_codes::WRITE_FORBIDDEN,
+        status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND => status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+        _ => return None,
+    };
+    let source = error.source()?.downcast_ref::<DriverCosmosError>()?;
+    (source.status() == original_status)
+        .then(|| source.response())
+        .flatten()
 }
 
 /// Frees a `cosmos_error_t *` obtained from a synchronous `out_error` slot,
@@ -654,8 +728,101 @@ pub extern "C" fn cosmos_set_backtrace_options(
 // ─────────────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
+    use azure_data_cosmos_driver::{
+        error::status_codes,
+        fault_injection::{
+            CustomResponseBuilder, FaultInjectionConditionBuilder, FaultInjectionResultBuilder,
+            FaultInjectionRuleBuilder, FaultOperationType,
+        },
+        in_memory_emulator::{InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion},
+        models::AccountReference,
+        options::{DriverOptions, OperationOptions},
+    };
+    use std::{ffi::CStr, sync::Arc};
+
+    pub(crate) async fn fault_injected_error(status: CosmosStatus) -> DriverCosmosError {
+        let response = CustomResponseBuilder::new(status.status_code())
+            .with_sub_status(status.sub_status().unwrap().value())
+            .with_header("x-ms-activity-id", "11111111-1111-1111-1111-111111111111")
+            .with_header("x-ms-session-token", "0:-1#1")
+            .with_header("etag", "\"original-etag\"")
+            .with_header("x-ms-retry-after-ms", "17")
+            .with_header("x-ms-request-charge", "2.5")
+            .with_body(br#"{"code":"Injected","message":"original failure"}"#.to_vec())
+            .build();
+        let rule = Arc::new(
+            FaultInjectionRuleBuilder::new(
+                "terminal-metadata",
+                FaultInjectionResultBuilder::new()
+                    .with_custom_response(response)
+                    .build(),
+            )
+            .with_condition(
+                FaultInjectionConditionBuilder::new()
+                    .with_operation_type(FaultOperationType::MetadataReadContainer)
+                    .build(),
+            )
+            .build(),
+        );
+        let url = azure_core::http::Url::parse("https://eastus.emulator.local").unwrap();
+        let emulator = Arc::new(InMemoryEmulatorHttpClient::new(
+            VirtualAccountConfig::new(vec![VirtualRegion::new("East US", url.clone())]).unwrap(),
+        ));
+        let runtime = emulator
+            .runtime_builder_with_fault_rules(vec![rule.clone()])
+            .build()
+            .await
+            .unwrap();
+        let driver = runtime
+            .create_driver(
+                DriverOptions::builder(AccountReference::with_master_key(url, "ZW11bGF0b3Ita2V5"))
+                    .build(),
+            )
+            .await
+            .unwrap();
+        let error = driver
+            .resolve_container("testdb", "testcoll", OperationOptions::default())
+            .await
+            .unwrap_err();
+        assert!(rule.hit_count() > 0);
+        error
+    }
+
+    #[tokio::test]
+    async fn wrapped_service_error_retains_native_wire_details() {
+        for (source_status, expected) in [
+            (status_codes::READ_SESSION_NOT_AVAILABLE, (503, 20310)),
+            (status_codes::WRITE_FORBIDDEN, (503, 20311)),
+            (status_codes::DATABASE_ACCOUNT_NOT_FOUND, (503, 20312)),
+        ] {
+            let error = fault_injected_error(source_status).await;
+            let raw = CosmosError::into_raw(error);
+            // SAFETY: the freshly allocated error owns these strings until freed below.
+            unsafe {
+                let error = &*raw;
+                assert_eq!(unpack(error.status), expected);
+                assert_eq!(error.http_status_code, expected.0);
+                assert_eq!(error.sub_status, i32::from(expected.1));
+                assert_eq!(error.is_from_wire, 0);
+                assert_eq!(error.retry_after_ms, 17);
+                assert_eq!(
+                    CStr::from_ptr(error.activity_id).to_str().unwrap(),
+                    "11111111-1111-1111-1111-111111111111"
+                );
+                assert_eq!(
+                    CStr::from_ptr(error.session_token).to_str().unwrap(),
+                    "0:-1#1"
+                );
+                assert_eq!(
+                    CStr::from_ptr(error.etag).to_str().unwrap(),
+                    "\"original-etag\""
+                );
+            }
+            cosmos_error_free(raw);
+        }
+    }
 
     /// Decodes a packed status back into `(http, sub)`. A `sub` of `0` means the
     /// operation had no sub-status.
@@ -748,11 +915,21 @@ mod tests {
                 Ec::CosmosErrorCodeQueueFull => (503, 20359),          // CLIENT_FFI_QUEUE_FULL
                 Ec::CosmosErrorCodeRuntimeBuildFailed => (500, 20361), // CLIENT_FFI_RUNTIME_BUILD_FAILED
                 Ec::CosmosErrorCodeInternalError => (500, 20362),      // CLIENT_FFI_PANIC
+                Ec::CosmosErrorCodeCursorBusy => (409, 20363),
+                Ec::CosmosErrorCodeQueueFormat => (400, 20364),
+                Ec::CosmosErrorCodeCursorClosed => (409, 20365),
+                Ec::CosmosErrorCodeRepresentationUnsupported => (400, 20366),
+                Ec::CosmosErrorCodeDeliveryLost => (503, 20367),
             }
         }
 
         use CosmosErrorCode as Ec;
         let all = [
+            Ec::CosmosErrorCodeCursorBusy,
+            Ec::CosmosErrorCodeQueueFormat,
+            Ec::CosmosErrorCodeCursorClosed,
+            Ec::CosmosErrorCodeRepresentationUnsupported,
+            Ec::CosmosErrorCodeDeliveryLost,
             Ec::CosmosErrorCodeSuccess,
             Ec::CosmosErrorCodeInvalidArgument,
             Ec::CosmosErrorCodeInvalidUtf8,

@@ -14,6 +14,12 @@ binding language.
 See the [Cosmos SDK project documentation](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/README.md) for the broader
 project and architecture context.
 
+The native SemVer and C FFI compatibility policy, implemented Rust release
+gates, and proposed downstream and host-SDK propagation model are documented in
+[Native driver versioning and releases](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/docs/NATIVE_VERSIONING_AND_RELEASES.md).
+Release operators should follow the
+[native driver release guide](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/azure_data_cosmos_driver_native/docs/RELEASE_GUIDE.md).
+
 ## What this crate ships
 
 - A `cdylib` + `staticlib` named `azurecosmosdriver`
@@ -33,32 +39,91 @@ for the full design.
 
 ### Capability matrix (current)
 
-| Capability                                                                      | Status                                                                                  |
-| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Master-key authentication                                                       | ✅                                                                                       |
-| AAD token-credential authentication                                             | ✅ via host credential bridge                                                            |
-| Resource-token authentication                                                   | ⏳ follow-up                                                                              |
-| Sync driver creation (`_blocking`)                                              | ✅                                                                                       |
-| Async driver creation (`_submit`)                                               | ✅                                                                                       |
-| Cache-hit advisory (`5001 OPTIONS_IGNORED_ON_CACHE_HIT`)                        | ⏳ needs driver-side `was_cached` signal                                                 |
-| Sync + async `resolve_container`                                                | ✅                                                                                       |
-| Single + hierarchical partition keys                                            | ✅                                                                                       |
-| Item-CRUD operations (read / create / upsert / replace / delete)                | ✅                                                                                       |
-| Item PATCH                                                                      | ✅ (preview exposure is controlled by the consuming SDK)                                 |
-| Container-CRUD operations (read / replace / delete)                             | ✅                                                                                       |
-| Database + account-scope operations                                             | ✅                                                                                       |
-| `cosmos_submit_singleton_operation` (point ops)                                 | ✅                                                                                       |
-| `cosmos_submit_operation` (feeds + pagination)                                  | ✅                                                                                       |
-| Response status / RU / body / activity-id / session-token / etag / continuation | ✅                                                                                       |
-| Pagination (read-feeds + query result sets)                                     | ⏳ planned                                                                               |
-| Multi-part response body iteration                                              | ✅ via `cosmos_completion_item_count` / `cosmos_completion_item_page`                    |
-| Diagnostics accessors                                                           | ⏳ planned                                                                               |
-| Patch instruction builder                                                       | ⏳ planned                                                                               |
-| Transactional batch sub-operation builder                                       | ⏳ planned                                                                               |
-| Custom per-operation request headers                                            | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
-| Driver fault injection                                                          | ✅ via versioned `cosmos_driver_options_config_v2_t` records                             |
+| Capability | Status |
+| --- | --- |
+| Master-key authentication | ✅ |
+| AAD token-credential authentication | ✅ via host credential bridge |
+| Resource-token authentication | ⏳ follow-up |
+| Sync driver creation (`_blocking`) | ✅ |
+| Async driver creation (`_submit`) | ✅ |
+| Same-endpoint clients sharing cached container references | ✅ runtime-owned container cache |
+| Sync + async `resolve_container` | ✅ |
+| Single + hierarchical partition keys | ✅ |
+| Item-CRUD operations (read / create / upsert / replace / delete) | ✅ |
+| Item PATCH | ✅ (preview exposure is controlled by the consuming SDK) |
+| Container-CRUD operations (read / replace / delete) | ✅ |
+| Database + account-scope operations | ✅ |
+| `cosmos_submit_singleton_operation` (point ops) | ✅ |
+| `cosmos_submit_operation` (legacy feeds) | ✅ with explicit errors for unrepresentable results |
+| Response status / RU / body / activity-id / session-token / etag / continuation | ✅ |
+| Retained query/read-feed/change-feed cursors | Supported through `cosmos_cursor_*` |
+| Multi-part response body iteration | All standalone buffers in cursor completions; original page views through `cosmos_completion_item_count` / `cosmos_completion_item_page` on `common` |
+| Diagnostics accessors | Supported through completion diagnostics |
+| Patch instruction builder | ⏳ planned |
+| Transactional batch sub-operation builder | ⏳ planned |
+| Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
+| Driver fault injection | Supported through versioned `cosmos_driver_options_config_v2_t` records |
 
 ## Building
+
+Version **0.2.0** is a breaking C ABI revision. Check `cosmos_version()` against
+`AZURECOSMOSDRIVER_H_VERSION` before any layout-sensitive call, including options
+returned by value. Rebuild host bindings and vendor the generated header together
+with the matching library; do not mix 0.1.x headers and 0.2.x libraries.
+
+### Operation defaults and admission snapshots
+
+The same `cosmos_operation_options_t` supplies request, driver and runtime defaults.
+Initialize it with `cosmos_operation_options_default()`, not zero initialization:
+negative numeric values inherit, while zero retry counts and durations are explicit.
+Retry counts and throughput buckets accept the complete `uint32_t` range through
+checked `int64_t` fields. Non-NULL, zero-length regions/headers clear inherited
+collections. Throughput and throttle members inherit independently; binary flags
+replace their whole group. Hedging environment overrides retain driver precedence.
+
+Set `cosmos_runtime_options_t.operation_options` during construction or atomically
+replace the complete runtime group with `cosmos_runtime_set_operation_options`.
+NULL resets the defaults; rejected updates do not change them. Inputs are copied.
+
+Before lazy initialization, call `cosmos_operation_options_snapshot_create` with
+the runtime, client defaults and request overrides. It returns a resolved timeout
+in milliseconds (-1 if absent) and an owned snapshot. Put the handle in
+`cosmos_operation_request_t.options_snapshot`; the shared fields in `request.options`
+are then ignored, but its query-plan mode still applies. Submit copies the snapshot,
+so it may be freed immediately afterward. A driver from another runtime is rejected.
+All native retries and client-side patch stages retain the same configuration
+generation, including unset values and environment overrides.
+Account metadata refreshes triggered during recovery also retain the admitted
+throttle retry count and wait budget, including regional and HTTP-version fallback.
+Independently scheduled background refreshes use current runtime defaults.
+
+Cursor requests can carry the same admission snapshot in their common operation
+fields. The cursor retains it across opening and page requests: the original
+deadline includes time the host spends between pages, rather than restarting
+for each page. A snapshot from another runtime is rejected before admission.
+
+The snapshot starts its deadline at capture, deducting time spent in host
+initialization before execution; it never restarts the full budget at submit.
+Rust clamps configured latency below one second. Hosts may impose a stricter
+context deadline independently. Bootstrap/metadata initialization remains separate
+work, governed by the host's same deadline and the driver's metadata policy.
+
+Endpoint-unavailability TTL is resolved per operation during routing without
+mutating shared cooldown settings. The existing TTL environment variable is
+captured at runtime construction; background probes retain their construction policy.
+
+Drivers sharing a runtime reuse its container-reference cache, including name/RID
+lookups and recreation refreshes. Cached references retain the credentials used
+to create them, so same-account clients on one runtime must use compatible
+credentials. Use separate runtimes when credential isolation is required.
+
+Host-requested cancellation is not supported: dropping an in-flight driver future
+can discard its diagnostics. The CANCELLED outcome and handle-state values remain
+reserved. Hosts must retain operation cookies and drain terminal completions even
+if their own callers stop waiting. Admission deadlines remain enforced separately;
+an admission timeout does not guarantee partial driver diagnostics.
+
+### Commands
 
 ```bash
 # Rust side (produces the cdylib / staticlib and regenerates the header).
@@ -86,6 +151,124 @@ The resulting shared library lands at:
 Language bindings should either bundle the library next to their executable,
 publish it to the system loader path, or use a per-language helper to point
 at the build output (`LD_LIBRARY_PATH=…`, `[DllImport]` resolver, etc.).
+
+## Retained feed cursors
+
+Use `cosmos_cursor_*` for queries, read feeds, and change feed. The cursor retains
+the driver's plan between pages, including buffered queries that cannot produce
+a serialized continuation. See
+[the cursor specification](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0029-native-feed-cursor.md)
+for the complete contract.
+
+Read feeds preserve the driver's existing scope limits: database/container and
+single-partition item reads are supported; full-container item read-all returns
+`400/20112` (fan-out required). The cursor does not add read-feed range traversal.
+
+Initialize `cosmos_cursor_request_t` with `cosmos_cursor_request_init`. Its
+`abi_version` is 1; the size/version header belongs to the new cursor record and
+does not change any legacy record. Ordinary queries/read feeds use
+`request.operation.kind`; change feeds set that kind to 0 and select
+`change_feed_mode` (1: LatestVersion, 2: AllVersionsAndDeletes).
+The fresh change-feed `start_from` values are 1: Beginning, 2: Now, 3: PointInTime
+(with counted RFC 3339 `start_time`). Use 0 when resuming with a token.
+AllVersionsAndDeletes supports Now/resume; other well-formed starts and account
+opt-in/retention restrictions surface service errors.
+
+Create a dedicated queue with `cosmos_cursor_queue_create(runtime, capacity)`.
+Capacity counts admitted work as well as queued results; 0 is unbounded.
+The cursor stays bound to that queue. Open/Next/Checkpoint return operation
+handles, just like legacy submissions. Drain with `cosmos_cursor_queue_wait`,
+which returns allocated completion pointers. Never mix the legacy and cursor
+wait APIs: the new API returns a format error; legacy wait cannot return a
+packed error, so it logs an error and returns zero without consuming results.
+
+| Successful `result_kind` | Meaning |
+| --- | --- |
+| 1 | Opened; detach with `cosmos_cursor_completion_take_cursor`. |
+| 2 | Page, including empty pages and change-feed 304 idle responses. |
+| 3 | Checkpoint; copy the counted token before freeing its completion. |
+| 4 | End of a finite feed; repeated Next returns End without I/O. |
+
+Check `common.status`/`common.outcome` before interpreting the result kind.
+For a Page, `body_kind` is 0: NoPayload, 1: RawBytes (`common.body`/`body_len`),
+or 2: Items (`items`/`items_len`, every buffer in order). RawBytes may be a whole
+feed envelope. Never infer payload shape from JSON field names, and never assume
+binary-negotiated bytes are UTF-8. Set operation
+`binary_encoding_request_text_response = 2` when the host needs text output.
+Free each result with `cosmos_cursor_completion_free`, not the legacy array-free
+function; do not separately free its embedded common record.
+
+The following bounded helper reads at most `page_budget` pages from an already
+opened cursor on an otherwise idle queue. `consume` must copy bytes it retains after returning; the complete
+page remains valid until its completion is freed.
+
+```c
+#include "azurecosmosdriver.h"
+
+static cosmos_status_code_t read_pages(
+    cosmos_cursor_t *cursor, cosmos_completion_queue_t *queue,
+    unsigned page_budget, void (*consume)(const cosmos_cursor_completion_t *))
+{
+    for (unsigned page = 0; page < page_budget; ++page) {
+        cosmos_status_code_t status = COSMOS_STATUS_SUCCESS;
+        cosmos_operation_handle_t *op =
+            cosmos_cursor_next_submit(cursor, 0, &status);
+        if (!op) return status;
+        cosmos_cursor_completion_t *result = NULL;
+        size_t count = 0;
+        status = cosmos_cursor_queue_wait(queue, &result, 1, UINT32_MAX, &count);
+        if (!status && count == 0) {
+            status = cosmos_operation_handle_status(op);
+            if (!status) status = cosmos_cursor_status(cursor);
+            if (!status) status = (503 << 16) | COSMOS_SUB_STATUS_CLIENT_FFI_QUEUE_SHUTDOWN;
+        }
+        cosmos_operation_handle_free(op);
+        if (status || count == 0) return status;
+        status = result->common.status;
+        bool stop = result->result_kind == 4 ||
+                    result->common.http_status_code == 304;
+        if (!status && result->result_kind == 2) consume(result);
+        cosmos_cursor_completion_free(result);
+        if (status || stop) return status;
+    }
+    return COSMOS_STATUS_SUCCESS;
+}
+```
+
+For a query, set `operation.kind = COSMOS_OPERATION_KIND_QUERY_ITEMS`, supply the
+resolved container and a JSON query body, then submit Open and take the cursor
+from its completion. For a change feed, set `change_feed_mode = 1`,
+`start_from = 2`, and the container instead of a query body. The helper stops
+at 304 to let the caller choose a polling delay; 304 does not close the cursor.
+Always free the cursor and its queue when finished.
+
+`cosmos_cursor_checkpoint_submit` is separate from Next. DISTINCT and buffered
+non-streaming ORDER BY can reject a checkpoint while still allowing subsequent
+pages; ordinary read-feed checkpoints also retain the driver's existing
+unsupported status. A token is never required to advance a live cursor.
+Checkpoint errors indicating corrupted progress and execution failures terminate
+the cursor; inspect `cosmos_cursor_status` for its failure.
+
+Only one operation per cursor may be outstanding, until its result is transferred
+by the wait call. Overlap returns Busy. **Wrapper-managed prefetch is supported**:
+request another page after transfer while keeping earlier page completions alive.
+Bound that buffering in the host SDK. Capture and associate supported checkpoints
+with page boundaries before advancing, and persist only the token matching
+application-consumed progress. Native automatic prefetch/polling is not performed.
+
+On-demand cancellation is not supported; configure the operation's end-to-end
+timeout to bound execution. Free is non-blocking and does not cancel admitted work. Synchronize raw handle
+Free against new calls. Queue shutdown permits admitted work to drain, whereas
+queue Free abandons undelivered results and makes affected cursors unusable.
+Use `cosmos_operation_handle_status` to observe delivery loss even without a
+completion. Successful pages and driver errors, including timeouts, expose borrowed
+diagnostics through `common.diagnostics`, valid until the cursor completion is freed.
+
+**Legacy migration:** existing ABI layouts are unchanged, but one-shot feed
+submission now returns an explicit error for unsupported checkpoints or Items
+payloads instead of silently returning incomplete output. Feed kinds passed to
+the singleton entry point use the feed path and its guards. Normal point
+operations and representable raw feed responses keep their existing behavior.
 
 ---
 
@@ -172,7 +355,7 @@ cosmos_status_code_t = (http_status << 16) | sub_status
 The synthetic sub-status codes the driver can produce are re-exported as
 `cosmos_sub_status_t` / `COSMOS_SUB_STATUS_*` constants in the generated header.
 These are a **named mirror of the driver's canonical
-`azure_data_cosmos_driver::error::SubStatusCode` constants** — the
+`azure_data_cosmos_driver::error::status_codes::substatus` constants** — the
 `CosmosSubStatus` enum in `src/error.rs` re-exports each value so C hosts get
 stable, documented constant names. A host can therefore switch on
 `sub == COSMOS_SUB_STATUS_CLIENT_FFI_NULL_ARGUMENT`, etc.
@@ -373,6 +556,7 @@ internal static class Cosmos
         public StringView patch_tracking_id;              // UUID, NULL/0 = generate
         public ushort    patch_tracking_capacity;          // 0 = driver default
         public uint      patch_tracking_retention_seconds; // 0 = driver default
+        public IntPtr    options_snapshot;                 // NULL = no admission snapshot
     }
 
     // A drained completion. All pointers are borrowed until free_completions.
@@ -677,7 +861,8 @@ public final class CosmosSample {
         STRING_VIEW.withName("patch_tracking_id"),
         JAVA_SHORT.withName("patch_tracking_capacity"),
         MemoryLayout.paddingLayout(2),
-        JAVA_INT.withName("patch_tracking_retention_seconds"));
+        JAVA_INT.withName("patch_tracking_retention_seconds"),
+        ADDRESS.withName("options_snapshot"));
 
     // Layout of cosmos_completion_t. Pointers and intptr_t/uintptr_t are 8 bytes.
     static final GroupLayout COMPLETION = MemoryLayout.structLayout(
@@ -1242,6 +1427,7 @@ class CosmosOperationRequest(ctypes.Structure):
         ("patch_tracking_id", CosmosStringView),
         ("patch_tracking_capacity", ctypes.c_uint16),
         ("patch_tracking_retention_seconds", ctypes.c_uint32),
+        ("options_snapshot", void_p),
     ]
 
 
@@ -1483,11 +1669,10 @@ if __name__ == "__main__":
    retry storm the per-attempt list can be a compacted subset — `is_compacted`
    / `retained_request_count` report that, while `request_count` and
    `total_request_charge` stay exact.
-7. **Single-runtime caching.** Drivers are cached by endpoint URL on the
-   `cosmos_runtime_t` that created them. Multiple `cosmos_runtime_t`
-   instances do **not** share their caches — see
-   [section 4.4.1 in the spec](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md)
-   for the full contract.
+7. **Shared runtime caches.** Every construction creates a fresh driver, but
+   container references, account metadata and runtime transport resources are
+   shared. Cached container references can reuse another same-account client's
+   credentials; use separate runtimes when that is not intended.
 
 ## Repository archaeology — files removed by PR #4103
 
@@ -1496,11 +1681,11 @@ The earlier `azure_data_cosmos_native` crate (removed in
 commit `ccf43caae`) shipped a handful of files that have **not** been
 reintroduced in this crate; their content now lives elsewhere:
 
-| Old file                                                     | New location                                                                                                                                                           |
-| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `azurecosmos.pc.in` (pkg-config template)                    | This crate ships a sibling `azurecosmosdriver.pc.in` with the same shape but a new package name.                                                                       |
-| `docs/next_generation_sdks_design_principles.md`             | Folded into [sdk/cosmos/docs/specs/0019-native-wrapper.md section 2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md). |
-| `c_tests/test_common.h` runtime / client / database fixtures | Re-added incrementally as the corresponding C entry points land.                                                                                                       |
+| Old file | New location |
+| --- | --- |
+| `azurecosmos.pc.in` (pkg-config template) | This crate ships a sibling `azurecosmosdriver.pc.in` with the same shape but a new package name. |
+| `docs/next_generation_sdks_design_principles.md` | Folded into [sdk/cosmos/docs/specs/0019-native-wrapper.md section 2](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/docs/specs/0019-native-wrapper.md). |
+| `c_tests/test_common.h` runtime / client / database fixtures | Re-added incrementally as the corresponding C entry points land. |
 
 If you are spelunking the git history of the old crate looking for a behavior
 or test that "should be here", that table is the first place to check.

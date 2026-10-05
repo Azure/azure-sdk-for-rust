@@ -32,8 +32,15 @@ mod quoted_partition_key_paths;
 mod resilience_deadline;
 mod resilience_hedging;
 mod resilience_throttling_retry;
+mod resilience_topology;
 mod resilience_transient_retries;
 mod support;
+mod topology_continuations;
+mod topology_partition_transitions;
+mod topology_region_lifecycle;
+mod topology_replication;
+mod topology_support;
+mod topology_write_failover;
 mod transactional_batch_atomicity;
 
 const IMPLEMENTED_TESTS: &[&str] = &[
@@ -74,6 +81,13 @@ const IMPLEMENTED_TESTS: &[&str] = &[
     "resilience_transient_retries::request_timeout_retries_respect_failover_budget",
     "resilience_transient_retries::service_unavailable_is_retried_with_attempt_history",
     "resilience_transient_retries::response_timeout_is_retried_with_attempt_history",
+    "resilience_topology::partition_breaker_avoids_then_probes_recovered_region",
+    "resilience_topology::hedge_completes_while_preferred_region_transitions_offline",
+    "topology_region_lifecycle::preferred_region_recovers_across_offline_remove_and_readd",
+    "topology_write_failover::writes_follow_phased_failover_and_failback",
+    "topology_replication::paused_replica_converges_without_loss_or_duplication",
+    "topology_partition_transitions::manual_split_and_merge_preserve_point_state",
+    "topology_continuations::query_and_change_feed_resume_across_split_and_merge",
 ];
 
 #[test]

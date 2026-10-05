@@ -7,14 +7,15 @@ use std::io::Cursor;
 #[test]
 fn builds_primary_and_state_output_paths() {
     let output_dir = Path::new("sdk/keyvault/azure_security_keyvault_keys");
+    let working_dir = Path::new("target/generate_api/azure_security_keyvault_keys");
 
     assert_eq!(
         output_path(output_dir, OutputFormat::Markdown),
         output_dir.join("api.md")
     );
     assert_eq!(
-        state_file_path(output_dir, "version.txt"),
-        output_dir.join("state/version.txt")
+        state_file_path(working_dir, "version.txt"),
+        working_dir.join("state/version.txt")
     );
 }
 

@@ -665,8 +665,11 @@ own payload (up to one page per distinct backing retained across the fan-out).
 `ItemView::deserialize` resolves references in that page; `to_standalone` and
 `ResponseBody::items` decode and re-encode on demand when a caller needs an
 independent binary buffer. That buffer preserves the value, not the source's
-binary representation. The SDK uses contextual typed decoding directly, and
-the native legacy completion body remains standalone.
+binary representation. The SDK uses contextual typed decoding directly. Native
+cursor completions retain the original page-backed response and materialize
+independent buffers for their `items` array. Page-aware hosts use
+`cosmos_completion_item_page` on the cursor completion's `common` member.
+Legacy one-shot feeds reject item-list responses rather than truncating them.
 
 Note also that the emitted encoding follows the **negotiated operation**, not the
 bytes of any absorbed page, so on a binary-negotiated query the items sourced from

@@ -27,13 +27,14 @@ The tool exposes:
 - `--format <markdown|apiview>` default `markdown`
 - `--review` emits Markdown review sidecars and is valid only with `markdown`
 - `--check` compares generated content with existing files without writing; missing files pass
-- `--output <directory>` defaults to the target crate directory
+- `--output-dir <directory>` defaults to the target crate directory; `--output` remains a CLI alias
+- `--working-dir <directory>` defaults to the resolved output directory and is valid only with `markdown --review`
 
 Behavior:
 
 - default `markdown` writes `api.md`
 - `markdown --review` also writes `api.md.map`, `api.documentation.patch`, and `api.metadata.yml`
-- `markdown --review` writes package state under `<output>/state`
+- `markdown --review` writes package state under `<working-dir>/state`
 - `--format apiview` writes `apiview.json`
 - check comparisons ignore line-ending differences and mismatches exit `1`
 - progress goes to stdout

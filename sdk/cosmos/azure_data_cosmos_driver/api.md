@@ -737,6 +737,7 @@ pub mod error {
         pub const CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE: crate::error::CosmosStatus = _;
         pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: crate::error::CosmosStatus = _;
         pub const CLIENT_CROSS_PARTITION_QUERY_REQUIRES_CONTAINER_REF: crate::error::CosmosStatus = _;
+        pub const CLIENT_DATABASE_ACCOUNT_NOT_FOUND: crate::error::CosmosStatus = _;
         pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: crate::error::CosmosStatus = _;
         pub const CLIENT_DISTINCT_CONTINUATION_UNSUPPORTED: crate::error::CosmosStatus = CLIENT_BUFFERED_QUERY_CONTINUATION_UNSUPPORTED;
         pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: crate::error::CosmosStatus = _;
@@ -768,6 +769,7 @@ pub mod error {
         pub const CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES: crate::error::CosmosStatus = _;
         pub const CLIENT_QUERY_PLAN_RANGE_NOT_COVERED_BY_TOPOLOGY: crate::error::CosmosStatus = _;
         pub const CLIENT_QUERY_REWRITE_BODY_INVALID: crate::error::CosmosStatus = _;
+        pub const CLIENT_READ_SESSION_NOT_AVAILABLE: crate::error::CosmosStatus = _;
         pub const CLIENT_REQUEST_URL_MISSING_HOST: crate::error::CosmosStatus = _;
         pub const CLIENT_REQUEST_URL_MISSING_KNOWN_PORT: crate::error::CosmosStatus = _;
         pub const CLIENT_REQWEST_FEATURE_REQUIRED: crate::error::CosmosStatus = _;
@@ -782,6 +784,7 @@ pub mod error {
         pub const CLIENT_UNKNOWN_PRIORITY_LEVEL: crate::error::CosmosStatus = _;
         pub const CLIENT_UNSUPPORTED_QUERY_FEATURE: crate::error::CosmosStatus = _;
         pub const CLIENT_USER_AGENT_SUFFIX_INVALID: crate::error::CosmosStatus = _;
+        pub const CLIENT_WRITE_FORBIDDEN: crate::error::CosmosStatus = _;
         pub const COMPLETING_PARTITION_MIGRATION: crate::error::CosmosStatus = _;
         pub const COMPLETING_SPLIT: crate::error::CosmosStatus = _;
         pub const CROSS_PARTITION_QUERY_NOT_SERVABLE: crate::error::CosmosStatus = _;
@@ -821,10 +824,14 @@ pub mod error {
             pub const CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH: crate::error::SubStatusCode = _;
             pub const CLIENT_CPU_OVERLOAD: crate::error::SubStatusCode = _;
             pub const CLIENT_CROSS_PARTITION_FAN_OUT_EXCEEDED: crate::error::SubStatusCode = _;
+            pub const CLIENT_DATABASE_ACCOUNT_NOT_FOUND: crate::error::SubStatusCode = _;
             pub const CLIENT_DISTINCT_VALUE_TOO_DEEPLY_NESTED: crate::error::SubStatusCode = _;
             pub const CLIENT_DRIVER_NOT_INITIALIZED: crate::error::SubStatusCode = _;
             pub const CLIENT_DUPLICATE_FAULT_INJECTION_RULE_ID: crate::error::SubStatusCode = _;
             pub const CLIENT_FEED_RANGE_REQUIRES_FANOUT_PIPELINE: crate::error::SubStatusCode = _;
+            pub const CLIENT_FFI_CURSOR_BUSY: crate::error::SubStatusCode = _;
+            pub const CLIENT_FFI_CURSOR_CLOSED: crate::error::SubStatusCode = _;
+            pub const CLIENT_FFI_DELIVERY_LOST: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_FEED_EXHAUSTED: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_INVALID_HEADER: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_INVALID_OPTION_VALUE: crate::error::SubStatusCode = _;
@@ -834,8 +841,10 @@ pub mod error {
             pub const CLIENT_FFI_OPERATION_CONSUMED: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_PANIC: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_PRECONDITION_ALREADY_SET: crate::error::SubStatusCode = _;
+            pub const CLIENT_FFI_QUEUE_FORMAT: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_QUEUE_FULL: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_QUEUE_SHUTDOWN: crate::error::SubStatusCode = _;
+            pub const CLIENT_FFI_REPRESENTATION_UNSUPPORTED: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_RUNTIME_BUILD_FAILED: crate::error::SubStatusCode = _;
             pub const CLIENT_FFI_UNSUPPORTED_OPERATION_FOR_MUTATOR: crate::error::SubStatusCode = _;
             pub const CLIENT_GENERATED_401: crate::error::SubStatusCode = _;
@@ -852,6 +861,7 @@ pub mod error {
             pub const CLIENT_PREFIX_PARTITION_KEY_REQUIRES_MULTIHASH: crate::error::SubStatusCode = _;
             pub const CLIENT_QUERY_PLAN_INVALID_TOP_OFFSET_LIMIT: crate::error::SubStatusCode = _;
             pub const CLIENT_QUERY_PLAN_PRODUCED_EMPTY_RANGES: crate::error::SubStatusCode = _;
+            pub const CLIENT_READ_SESSION_NOT_AVAILABLE: crate::error::SubStatusCode = _;
             pub const CLIENT_REQUEST_URL_MISSING_HOST: crate::error::SubStatusCode = _;
             pub const CLIENT_REQUEST_URL_MISSING_KNOWN_PORT: crate::error::SubStatusCode = _;
             pub const CLIENT_REQWEST_FEATURE_REQUIRED: crate::error::SubStatusCode = _;
@@ -866,6 +876,7 @@ pub mod error {
             pub const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: crate::error::SubStatusCode = _;
             pub const CLIENT_UNKNOWN_PRIORITY_LEVEL: crate::error::SubStatusCode = _;
             pub const CLIENT_UNSUPPORTED_QUERY_FEATURE: crate::error::SubStatusCode = _;
+            pub const CLIENT_WRITE_FORBIDDEN: crate::error::SubStatusCode = _;
             pub const COLLECTION_CREATE_IN_PROGRESS: crate::error::SubStatusCode = _;
             pub const COLLECTION_RID_MISMATCH: crate::error::SubStatusCode = _;
             pub const COMPLETING_PARTITION_MIGRATION: crate::error::SubStatusCode = _;
@@ -1179,6 +1190,7 @@ pub mod in_memory_emulator {
         #[cfg(feature = "fault_injection")]
         pub fn runtime_builder_with_fault_rules(self: &Arc<Self>, rules: Vec<Arc<crate::fault_injection::FaultInjectionRule>>) -> crate::driver::CosmosDriverRuntimeBuilder;
         pub fn store(&self) -> Arc<EmulatorStore>;
+        pub fn try_new(config: VirtualAccountConfig) -> crate::error::Result<Self>;
         pub fn with_request_observer(self, observer: Arc<dyn RequestObserver>) -> Self;
     }
     impl InMemoryEmulatorHttpClient {

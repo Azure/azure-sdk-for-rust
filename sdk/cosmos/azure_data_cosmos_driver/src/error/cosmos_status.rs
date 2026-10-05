@@ -474,9 +474,8 @@ impl SubStatusCode {
             20913 => Some("WriteRegionBarrierChangedMidOperation"),
             20914 => Some("RegionScopedSessionContainerInBadState"),
 
-            // Client SDK–synthesized error codes (20100-20349) — see
-            // the constants block on `impl SubStatusCode` for the full
-            // catalog and rationale.
+            // Client SDK–synthesized error codes (20100-20349); see
+            // `error::status_codes` for the catalog and rationale.
             20100 => Some("ClientPartitionKeyEmpty"),
             20101 => Some("ClientPartitionKeyTooManyComponents"),
             20102 => Some("ClientPrefixPartitionKeyRequiresMultiHash"),
@@ -541,6 +540,9 @@ impl SubStatusCode {
             20307 => Some("ClientQueryPlanRangeNotCoveredByTopology"),
             20308 => Some("ServiceOrderByEnvelopeInvalid"),
             20309 => Some("ServiceQueryPlanOrderByMissingRewrittenQuery"),
+            20310 => Some("ClientReadSessionNotAvailable"),
+            20311 => Some("ClientWriteForbidden"),
+            20312 => Some("ClientDatabaseAccountNotFound"),
 
             // Native FFI wrapper pre-flight / plumbing codes (20350-20399)
             20350 => Some("ClientFfiNullArgument"),
@@ -556,6 +558,11 @@ impl SubStatusCode {
             20360 => Some("ClientFfiOperationCancelled"),
             20361 => Some("ClientFfiRuntimeBuildFailed"),
             20362 => Some("ClientFfiPanic"),
+            20363 => Some("ClientFfiCursorBusy"),
+            20364 => Some("ClientFfiQueueFormat"),
+            20365 => Some("ClientFfiCursorClosed"),
+            20366 => Some("ClientFfiRepresentationUnsupported"),
+            20367 => Some("ClientFfiDeliveryLost"),
 
             // SDK Server-side codes (21xxx) - consistent across .NET and Java
             21001 => Some("NameCacheIsStaleExceededRetryLimit"),

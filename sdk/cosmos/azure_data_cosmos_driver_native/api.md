@@ -68,6 +68,8 @@ pub mod completion {
     pub extern "C" fn cosmos_operation_handle_free(op: *mut OperationHandle);
     #[no_mangle]
     pub extern "C" fn cosmos_operation_handle_state(op: *const OperationHandle) -> CosmosOperationHandleState;
+    #[no_mangle]
+    pub extern "C" fn cosmos_operation_handle_status(op: *const OperationHandle) -> crate::error::CosmosStatusCode;
     pub struct CompletionQueue {
     }
     #[repr(C)]
@@ -157,6 +159,62 @@ pub mod credential {
     }
     pub type CosmosTokenProviderCallback = unsafe extern "C" fn(isize, *const CosmosTokenRequest) -> i32;
     pub type CosmosTokenProviderFree = unsafe extern "C" fn(isize);
+}
+pub mod cursor {
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_checkpoint_submit(cursor: *const CursorHandle, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_completion_free(completion: *mut CosmosCursorCompletion);
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_completion_take_cursor(completion: *mut CosmosCursorCompletion) -> *mut CursorHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_free(cursor: *mut CursorHandle);
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_next_submit(cursor: *const CursorHandle, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_open_submit(driver: *const crate::driver::DriverHandle, request: *const crate::cursor_request::CosmosCursorRequest, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_queue_create(runtime: *const crate::runtime::RuntimeContext, max_capacity: u32) -> *mut crate::completion::CompletionQueue;
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_queue_wait(queue: *mut crate::completion::CompletionQueue, out: *mut *mut CosmosCursorCompletion, max: usize, timeout_ms: u32, out_count: *mut usize) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_status(cursor: *const CursorHandle) -> crate::error::CosmosStatusCode;
+    #[repr(C)]
+    pub struct CosmosCursorBytes {
+        pub data: *const u8,
+        pub len: usize,
+    }
+    #[repr(C)]
+    pub struct CosmosCursorCompletion {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub common: crate::completion::CosmosCompletion,
+        pub result_kind: u32,
+        pub body_kind: u32,
+        pub items: *const CosmosCursorBytes,
+        pub items_len: usize,
+        pub checkpoint: crate::string::CosmosStringView,
+        pub cursor: *mut CursorHandle,
+        pub backing: *mut CursorCompletionBacking,
+    }
+    pub struct CursorCompletionBacking {
+    }
+    pub struct CursorHandle {
+    }
+}
+pub mod cursor_request {
+    #[no_mangle]
+    pub extern "C" fn cosmos_cursor_request_init(out: *mut CosmosCursorRequest);
+    #[repr(C)]
+    pub struct CosmosCursorRequest {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub operation: crate::op_request::CosmosOperationRequest,
+        pub change_feed_mode: u32,
+        pub start_from: u32,
+        pub start_time: crate::string::CosmosStringView,
+        pub reserved: [u32; 4],
+    }
 }
 pub mod database_ref {
     #[no_mangle]
@@ -311,6 +369,9 @@ pub mod error {
         CosmosSubStatusClientThroughputPollerIncomplete = 20304,
         CosmosSubStatusClientTopologyResolutionFailed = 20305,
         CosmosSubStatusServiceReturnedObjectWithoutRid = 20306,
+        CosmosSubStatusClientReadSessionNotAvailable = 20310,
+        CosmosSubStatusClientWriteForbidden = 20311,
+        CosmosSubStatusClientDatabaseAccountNotFound = 20312,
         CosmosSubStatusClientFfiNullArgument = 20350,
         CosmosSubStatusClientFfiInvalidUtf8 = 20351,
         CosmosSubStatusClientFfiInvalidHeader = 20352,
@@ -324,6 +385,11 @@ pub mod error {
         CosmosSubStatusClientFfiOperationCancelled = 20360,
         CosmosSubStatusClientFfiRuntimeBuildFailed = 20361,
         CosmosSubStatusClientFfiPanic = 20362,
+        CosmosSubStatusClientFfiCursorBusy = 20363,
+        CosmosSubStatusClientFfiQueueFormat = 20364,
+        CosmosSubStatusClientFfiCursorClosed = 20365,
+        CosmosSubStatusClientFfiRepresentationUnsupported = 20366,
+        CosmosSubStatusClientFfiDeliveryLost = 20367,
         CosmosSubStatusClientGenerated401 = 20401,
         CosmosSubStatusAuthenticationTokenAcquisitionFailed = 20402,
         CosmosSubStatusTransitTimeout = 20911,
@@ -448,8 +514,8 @@ pub mod op_request {
         pub content_response_on_write: i32,
         pub patch_strategy: i32,
         pub session_capturing_disabled: i8,
-        pub max_failover_retry_count: i32,
-        pub max_session_retry_count: i32,
+        pub max_failover_retry_count: i64,
+        pub max_session_retry_count: i64,
         pub end_to_end_timeout_ms: i64,
         pub endpoint_unavailability_ttl_ms: i64,
         pub excluded_regions: *const crate::string::CosmosStringView,
@@ -459,6 +525,13 @@ pub mod op_request {
         pub binary_encoding_enabled: i8,
         pub binary_encoding_request_text_response: i8,
         pub query_plan_mode: i32,
+        pub throughput_bucket: i64,
+        pub priority_level: i32,
+        pub max_throttle_retry_count: i64,
+        pub max_throttle_retry_wait_time_ms: i64,
+        pub hedging_enabled: i8,
+        pub availability_strategy: i32,
+        pub hedge_threshold_ms: i64,
     }
     #[repr(C)]
     pub struct CosmosOperationRequest {
@@ -488,6 +561,7 @@ pub mod op_request {
         pub patch_tracking_id: crate::string::CosmosStringView,
         pub patch_tracking_capacity: u16,
         pub patch_tracking_retention_seconds: u32,
+        pub options_snapshot: *const crate::options_snapshot::OperationOptionsSnapshot,
     }
     pub struct OptOf;
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -557,6 +631,17 @@ pub mod op_request {
         CosmosReadConsistencyStrategySession = 3,
         CosmosReadConsistencyStrategyGlobalStrong = 4,
         CosmosReadConsistencyStrategyLatestCommitted = 5,
+    }
+}
+pub mod options_snapshot {
+    #[no_mangle]
+    pub unsafe extern "C" fn cosmos_operation_options_snapshot_create(runtime: *const crate::runtime::RuntimeContext, client_options: *const crate::op_request::CosmosOperationOptions, request_options: *const crate::op_request::CosmosOperationOptions, out_snapshot: *mut *mut OperationOptionsSnapshot, out_timeout_ms: *mut i64) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
+    pub unsafe extern "C" fn cosmos_operation_options_snapshot_free(snapshot: *mut OperationOptionsSnapshot);
+    #[no_mangle]
+    pub unsafe extern "C" fn cosmos_runtime_set_operation_options(runtime: *const crate::runtime::RuntimeContext, options: *const crate::op_request::CosmosOperationOptions) -> crate::error::CosmosStatusCode;
+    #[derive(Clone)]
+    pub struct OperationOptionsSnapshot {
     }
 }
 pub mod partition_key {
@@ -660,6 +745,9 @@ pub mod runtime {
     pub extern "C" fn cosmos_runtime_free(runtime: *mut RuntimeContext);
     pub struct RuntimeContext {
     }
+    impl Drop for RuntimeContext {
+        fn drop(&mut self);
+    }
 }
 pub mod runtime_builder {
     #[no_mangle]
@@ -674,6 +762,7 @@ pub mod runtime_builder {
         pub user_agent_suffix: crate::string::CosmosStringView,
         pub wrapping_sdk_identifier: crate::string::CosmosStringView,
         pub cpu_refresh_interval_ms: u64,
+        pub operation_options: *const crate::op_request::CosmosOperationOptions,
     }
 }
 #[attr = MacroUse {arguments:UseAll}]

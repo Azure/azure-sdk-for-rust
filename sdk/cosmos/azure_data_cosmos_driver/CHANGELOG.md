@@ -1,9 +1,27 @@
 # Release History
 
-## 0.8.0 (Unreleased)
+## 1.0.0-beta.2 (Unreleased)
 
 ### Features Added
 
+### Breaking Changes
+
+- Terminal service 404/1002, 403/3, and 403/1008 errors now surface as synthetic 503/20310, 503/20311, and 503/20312 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
+
+### Bugs Fixed
+
+- Preserve admitted throttle retry settings during operation-triggered account metadata refresh, including regional and HTTP-version recovery paths. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
+- Honor per-operation endpoint unavailability TTL and runtime TTL updates during routing without changing sibling operations' cooldown intervals. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
+
+### Other Changes
+
+- Diagnostics JSON now includes the recorded operation-level status separately from unchanged per-attempt statuses. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
+
+## 1.0.0-beta.1 (2026-09-28)
+
+### Features Added
+
+- Added canonical status constants for native cursor lifecycle and result-delivery errors. ([#5334](https://github.com/Azure/azure-sdk-for-rust/pull/5334))
 - Added per-query `PlanOptions::max_buffered_query_window`, `with_max_buffered_query_window`, and `DEFAULT_MAX_BUFFERED_QUERY_WINDOW` (1000) to cap global OFFSET plus effective take for client-buffered queries, with no opt-out. ([#5301](https://github.com/Azure/azure-sdk-for-rust/pull/5301))
 - Extended Cosmos binary JSON query-page handling to cross-partition `DISTINCT`, including composition with streaming `ORDER BY` and `OFFSET`/`LIMIT`/`TOP`. ([#5070](https://github.com/Azure/azure-sdk-for-rust/pull/5070))
 - Added local Rust query planning for supported cross-partition queries, avoiding Gateway query-plan requests while retaining native and Gateway fallbacks for advanced query shapes, and `QueryPlanMode::{LocalPreferred, GatewayOnly}` to select providers per query. ([#5181](https://github.com/Azure/azure-sdk-for-rust/pull/5181))

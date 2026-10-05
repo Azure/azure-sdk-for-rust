@@ -369,6 +369,13 @@ enum TransientReadStatus {
 }
 
 impl TransientReadStatus {
+    fn matches(self, status: ActualHttpStatus) -> bool {
+        self.http_status()
+            .matches(status.status_code, status.substatus)
+            || (matches!(self, Self::SessionNotAvailable)
+                && WRAPPED_SESSION_NOT_AVAILABLE.matches(status.status_code, status.substatus))
+    }
+
     const fn http_status(self) -> ExpectedHttpStatus {
         match self {
             Self::PlainNotFound => PLAIN_NOT_FOUND,
@@ -505,6 +512,10 @@ const PLAIN_NOT_FOUND: ExpectedHttpStatus = ExpectedHttpStatus {
 const SESSION_NOT_AVAILABLE: ExpectedHttpStatus = ExpectedHttpStatus {
     status_code: StatusCode::NotFound,
     substatus: ExpectedSubstatus::Exact(1002),
+};
+const WRAPPED_SESSION_NOT_AVAILABLE: ExpectedHttpStatus = ExpectedHttpStatus {
+    status_code: StatusCode::ServiceUnavailable,
+    substatus: ExpectedSubstatus::Exact(20310),
 };
 const READ_SUCCEEDED: ExpectedHttpStatus = ExpectedHttpStatus {
     status_code: StatusCode::Ok,
@@ -657,7 +668,7 @@ async fn assert_item_deleted(
             }
             DeletedReadAction::TimedOut => {
                 return Err(format!(
-                    "read for '{execution}' remained at 404/1002 after {REPLICATION_TIMEOUT:?}"
+                    "read for '{execution}' remained at 503/20310 after {REPLICATION_TIMEOUT:?}"
                 )
                 .into())
             }
@@ -682,7 +693,7 @@ enum DeletedReadAction {
 fn deleted_read_action(status: ActualHttpStatus, before_deadline: bool) -> DeletedReadAction {
     if PLAIN_NOT_FOUND.matches(status.status_code, status.substatus) {
         DeletedReadAction::Deleted
-    } else if SESSION_NOT_AVAILABLE.matches(status.status_code, status.substatus) {
+    } else if WRAPPED_SESSION_NOT_AVAILABLE.matches(status.status_code, status.substatus) {
         if before_deadline {
             DeletedReadAction::Retry
         } else {
@@ -728,11 +739,7 @@ fn verify_transient_status(
     observed_statuses: &[ActualHttpStatus],
 ) -> TestResult {
     let allowed = read_case.expectation.allowed_transient_statuses();
-    if !allowed.iter().any(|expected| {
-        expected
-            .http_status()
-            .matches(actual.status_code, actual.substatus)
-    }) {
+    if !allowed.iter().any(|expected| expected.matches(actual)) {
         return Err(format!(
             "'{execution}' observed unexpected read status {actual:?}; expected transient {allowed:?} or terminal {:?}; observed {observed_statuses:?}",
             read_case.expectation.terminal_status()
@@ -759,11 +766,7 @@ fn verify_observed_statuses(
     let allowed = read_case.expectation.allowed_transient_statuses();
     if let Some(unexpected) = observed_statuses.iter().find(|actual| {
         !terminal.matches(actual.status_code, actual.substatus)
-            && !allowed.iter().any(|expected| {
-                expected
-                    .http_status()
-                    .matches(actual.status_code, actual.substatus)
-            })
+            && !allowed.iter().any(|expected| expected.matches(**actual))
     }) {
         return Err(format!(
             "'{execution}' observed unexpected internal read status {unexpected:?}; expected transient {allowed:?} or terminal {terminal:?}; observed {observed_statuses:?}"
@@ -780,13 +783,9 @@ fn verify_required_transient_observed(
 ) -> TestResult {
     let allowed = read_case.expectation.allowed_transient_statuses();
     if !allowed.is_empty()
-        && !observed_statuses.iter().any(|actual| {
-            allowed.iter().any(|expected| {
-                expected
-                    .http_status()
-                    .matches(actual.status_code, actual.substatus)
-            })
-        })
+        && !observed_statuses
+            .iter()
+            .any(|actual| allowed.iter().any(|expected| expected.matches(*actual)))
     {
         return Err(format!(
             "'{execution}' reached terminal status without observing required transient {allowed:?}; observed {observed_statuses:?}"
@@ -882,6 +881,21 @@ mod tests {
         assert_eq!(
             deleted_read_action(success, true),
             DeletedReadAction::SessionViolation
+        );
+    }
+
+    #[test]
+    fn wrapped_session_failure_remains_a_transient_not_a_missing_item() {
+        let status = ActualHttpStatus {
+            status_code: StatusCode::ServiceUnavailable,
+            substatus: Some(20310),
+        };
+        assert!(TransientReadStatus::SessionNotAvailable.matches(status));
+        assert!(!TransientReadStatus::PlainNotFound.matches(status));
+        assert_eq!(deleted_read_action(status, true), DeletedReadAction::Retry);
+        assert_eq!(
+            deleted_read_action(status, false),
+            DeletedReadAction::TimedOut
         );
     }
 

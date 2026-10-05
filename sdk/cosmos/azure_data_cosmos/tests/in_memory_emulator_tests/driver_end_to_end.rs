@@ -13,6 +13,10 @@
 //!
 //! See [`super::validation`] for the header/body comparison rules.
 
+use azure_data_cosmos_driver::error::{
+    status_codes::{CLIENT_READ_SESSION_NOT_AVAILABLE, READ_SESSION_NOT_AVAILABLE},
+    CosmosError, CosmosStatus,
+};
 use azure_data_cosmos_driver::models::{
     CosmosOperation, DatabaseReference, ItemReference, PartitionKey, ResponseBody,
 };
@@ -26,6 +30,7 @@ use super::dual_backend::DualBackend;
 use super::validation::{
     compare_responses, parse_body_json, BodyValidationSpec, HeaderValidationSpec, ResponseSnapshot,
 };
+use std::error::Error as _;
 use uuid::Uuid;
 
 /// Parses a single-payload response body as JSON without consuming the response.
@@ -503,8 +508,96 @@ async fn replace_item_through_driver() {
     backend.cleanup_real_database(&db_name).await;
 }
 
+fn assert_stale_session_read_error(error: &CosmosError, session_default: bool) {
+    if error.status() == CLIENT_READ_SESSION_NOT_AVAILABLE {
+        let source = error
+            .source()
+            .and_then(|source| source.downcast_ref::<CosmosError>())
+            .expect("a wrapped session failure must retain its original Cosmos error");
+        assert_eq!(source.status(), READ_SESSION_NOT_AVAILABLE, "{error:?}");
+    } else {
+        // A non-Session backend may ignore the token, but then the missing item
+        // must produce a plain 404, not a transport or routing failure.
+        assert!(
+            !session_default,
+            "expected a wrapped session failure: {error:?}"
+        );
+        assert_eq!(
+            error.status().status_code(),
+            azure_core::http::StatusCode::NotFound,
+            "{error:?}"
+        );
+        assert!(
+            error
+                .status()
+                .sub_status()
+                .is_none_or(|sub| sub.value() == 0),
+            "{error:?}"
+        );
+    }
+}
+
+#[test]
+fn stale_session_assertion_accepts_wrappers_independently_of_account_default() {
+    let error = CosmosError::builder()
+        .with_status(CLIENT_READ_SESSION_NOT_AVAILABLE)
+        .with_source(
+            CosmosError::builder()
+                .with_status(READ_SESSION_NOT_AVAILABLE)
+                .build(),
+        )
+        .build();
+    for session_default in [false, true] {
+        assert_stale_session_read_error(&error, session_default);
+    }
+}
+
+#[test]
+fn stale_session_assertion_accepts_only_plain_not_found_when_token_is_ignored() {
+    for status in [
+        CosmosStatus::new(azure_core::http::StatusCode::NotFound),
+        CosmosStatus::new(azure_core::http::StatusCode::NotFound).with_sub_status(0),
+    ] {
+        assert_stale_session_read_error(&CosmosError::builder().with_status(status).build(), false);
+    }
+}
+
+#[test]
+fn stale_session_assertion_rejects_unrelated_failures() {
+    for status in [
+        CosmosStatus::new(azure_core::http::StatusCode::ServiceUnavailable),
+        azure_data_cosmos_driver::error::status_codes::TRANSPORT_IO_FAILED,
+        azure_data_cosmos_driver::error::status_codes::CLIENT_WRITE_FORBIDDEN,
+        azure_data_cosmos_driver::error::status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+        CosmosStatus::new(azure_core::http::StatusCode::NotFound).with_sub_status(1003),
+        READ_SESSION_NOT_AVAILABLE,
+    ] {
+        assert!(
+            std::panic::catch_unwind(|| {
+                assert_stale_session_read_error(
+                    &CosmosError::builder().with_status(status).build(),
+                    false,
+                );
+            })
+            .is_err(),
+            "unexpectedly accepted {status}"
+        );
+    }
+}
+
+#[test]
+#[should_panic(expected = "expected a wrapped session failure")]
+fn stale_session_assertion_rejects_plain_not_found_for_session_default() {
+    assert_stale_session_read_error(
+        &CosmosError::builder()
+            .with_status(CosmosStatus::new(azure_core::http::StatusCode::NotFound))
+            .build(),
+        true,
+    );
+}
+
 #[tokio::test]
-async fn read_with_stale_session_token_returns_404_1002() {
+async fn read_with_stale_session_token_returns_wrapped_503() {
     let (backend, db_name, emu_container, real_container) = setup_with_container().await;
 
     // We first do a write to get a real session token (with the correct PKRange
@@ -597,17 +690,7 @@ async fn read_with_stale_session_token_returns_404_1002() {
         .await;
 
     let emu_err = emu_err.expect_err("Emulator should return an error for stale session read");
-    assert_eq!(
-        Some(emu_err.status().status_code()),
-        Some(azure_core::http::StatusCode::NotFound),
-        "Emulator error should be HTTP 404",
-    );
-    let error_code = emu_err.status().sub_status().map(|s| s.value().to_string());
-    assert_eq!(
-        error_code.as_deref(),
-        Some("1002"),
-        "Emulator error should have substatus 1002",
-    );
+    assert_stale_session_read_error(&emu_err, true);
 
     // ── Real account (if available) ──────────────────────────────
     if let (Some(ref driver), Some(ref real_ctr)) = (&backend.real_driver, &real_container) {
@@ -643,25 +726,10 @@ async fn read_with_stale_session_token_returns_404_1002() {
             .await;
 
         let real_err = real_err.expect_err("Real should return an error for stale session read");
-        // The read targets a nonexistent item, so it returns HTTP 404 on every
-        // consistency level. Under Session the seed-derived token's bumped LSN
-        // additionally trips the soft 404 / sub-status 1002 (ReadSessionNotAvailable)
-        // path (asserted below); Eventual/Strong ignore the token entirely.
-        assert_eq!(
-            real_err.status().status_code(),
-            azure_core::http::StatusCode::NotFound,
-            "Real stale session read should return HTTP 404",
+        assert_stale_session_read_error(
+            &real_err,
+            DualBackend::real_account_uses_session_consistency(),
         );
-        // Substatus 1002 is only produced under Session consistency; on
-        // Eventual/Strong accounts the stale token is ignored and the missing
-        // item surfaces as a plain 404/0. Only assert 1002 on Session accounts.
-        if DualBackend::real_account_uses_session_consistency() {
-            assert_eq!(
-                real_err.status().sub_status().map(|s| s.value()),
-                Some(1002),
-                "Real 404 stale session read should surface substatus 1002",
-            );
-        }
     }
 
     // Cleanup
@@ -955,8 +1023,8 @@ async fn paused_satellite_converges_to_latest_hub_write() {
         .await
         .expect_err("paused satellite should not observe the hub write yet");
     assert_eq!(
-        Some(west_read_before_resume.status().status_code()),
-        Some(azure_core::http::StatusCode::NotFound),
+        west_read_before_resume.status(),
+        CLIENT_READ_SESSION_NOT_AVAILABLE,
         "read should fail while West US replication is paused",
     );
 

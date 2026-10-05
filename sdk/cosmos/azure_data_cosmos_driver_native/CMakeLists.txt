@@ -61,7 +61,7 @@ configure_file(
 if(NOT WIN32)
     set(PKG_CONFIG_NAME "azurecosmosdriver")
     set(PKG_CONFIG_DESCRIPTION "Azure Cosmos DB driver C API")
-    set(PKG_CONFIG_VERSION "0.1.0")
+    set(PKG_CONFIG_VERSION "0.2.0")
     set(PKG_CONFIG_LIBS "-L\${libdir} -lazurecosmosdriver")
     set(PKG_CONFIG_CFLAGS "-I\${includedir}")
 
