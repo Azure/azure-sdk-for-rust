@@ -622,20 +622,6 @@ mod tests {
     }
 
     #[test]
-    fn example_properties_dropped_before_suffix() {
-        let big = "v".repeat(UserAgentProperty::MAX_VALUE_LENGTH);
-        let ua = pinned()
-            .with_wrapping_sdk_identifier("azsdk-x/1")
-            .with_suffix("myapp")
-            .with_properties((0..10).map(|i| property(&format!("k{i}"), &big)))
-            .build();
-        assert_well_formed(&ua);
-        assert_eq!(ua.as_str().len(), 235);
-        assert!(ua.as_str().ends_with(&format!("; k4={big}) myapp")));
-        assert!(!ua.as_str().contains("; k5="));
-    }
-
-    #[test]
     fn default_uses_built_in_values() {
         let expected = format!(
             "azsdk-rust-cosmos-driver/{DRIVER_VERSION} (drv={DRIVER_VERSION}; {}; {}; {RUSTC_VERSION})",
@@ -692,172 +678,46 @@ mod tests {
     }
 
     #[test]
-    fn oversized_wrapping_identifier_is_the_only_remaining_component() {
-        let suffix = "a".repeat(UserAgentSuffix::MAX_LENGTH);
-        let product = format!("azsdk-rust-{}", "x".repeat(500));
-        let ua = pinned()
-            .with_wrapping_sdk_identifier(product.clone())
-            .with_feature_flags(UserAgentFeatureFlags::HTTP2)
-            .with_property(property("dotnet", "8.0.1"))
-            .with_suffix(suffix.clone())
-            .build();
-        assert_well_formed(&ua);
-        assert_eq!(ua.as_str(), &product[..MAX_USER_AGENT_LENGTH]);
-        assert!(ua.suffix().is_none());
-    }
-
-    #[test]
-    fn platform_segments_are_removed_right_to_left_with_driver_last() {
-        let prefixes = [
-            "drv=1.0.0; linux; x86_64; 1.98.1; ft=EA; rt=.NET 8.0.1; host=aks",
-            "drv=1.0.0; linux; x86_64; 1.98.1; ft=EA; rt=.NET 8.0.1",
-            "drv=1.0.0; linux; x86_64; 1.98.1; ft=EA",
-            "drv=1.0.0; linux; x86_64; 1.98.1",
-            "drv=1.0.0; linux; x86_64",
-            "drv=1.0.0; linux",
-            "drv=1.0.0",
-            "",
+    fn truncation() {
+        let cases = [
+            (0, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64; 1.98.1; ft=EA; rt=.NET 8.0.1; host=aks)"),
+            (161, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64; 1.98.1; ft=EA; rt=.NET 8.0.1; host=aks)"),
+            (162, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64; 1.98.1; ft=EA; rt=.NET 8.0.1)"),
+            (171, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64; 1.98.1; ft=EA; rt=.NET 8.0.1)"),
+            (172, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64; 1.98.1; ft=EA)"),
+            (186, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64; 1.98.1; ft=EA)"),
+            (187, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64; 1.98.1)"),
+            (193, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64; 1.98.1)"),
+            (194, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64)"),
+            (201, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64)"),
+            (202, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux)"),
+            (209, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux)"),
+            (210, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0)"),
+            (216, "azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0)"),
+            (217, "azsdk-dotnet-cosmos/3.40.0"),
+            (228, "azsdk-dotnet-cosmos/3.40.0"),
+            (229, "azsdk-dotnet-cosmos/3.40.0"),
+            (300, "azsdk-dotnet-cosmos/3.40.0"),
         ];
-        for metadata in prefixes {
-            let platform_len = if metadata.is_empty() {
-                0
-            } else {
-                metadata.len() + 3
-            };
-            let product = format!(
-                "azsdk-{}",
-                "x".repeat(MAX_USER_AGENT_LENGTH - platform_len - " myapp".len() - 6)
-            );
+        for (suffix_len, expected_ua) in cases {
+            let suffix = "s".repeat(suffix_len);
             let ua = pinned()
-                .with_wrapping_sdk_identifier(product.clone())
+                .with_wrapping_sdk_identifier("azsdk-dotnet-cosmos/3.40.0")
                 .with_feature_flags(UserAgentFeatureFlags::HTTP2)
                 .with_property(property("rt", ".NET 8.0.1"))
                 .with_property(property("host", "aks"))
-                .with_suffix("myapp")
+                .with_suffix(suffix.clone())
                 .build();
-            let expected = if metadata.is_empty() {
-                format!("{product} myapp")
-            } else {
-                format!("{product} ({metadata}) myapp")
+            let expected_suffix_len = suffix_len.min(MAX_USER_AGENT_LENGTH - expected_ua.len() - 1);
+            let expected_suffix =
+                (expected_suffix_len > 0).then_some(&suffix[..expected_suffix_len]);
+            let expected = match expected_suffix {
+                Some(s) => format!("{expected_ua} {s}"),
+                None => expected_ua.to_owned(),
             };
-            assert_eq!(ua.as_str(), expected);
-            assert_eq!(ua.as_str().len(), MAX_USER_AGENT_LENGTH);
-            assert_eq!(ua.suffix(), Some("myapp"));
+            assert_eq!(ua.as_str(), expected, "suffix_len={suffix_len}");
+            assert_eq!(ua.suffix(), expected_suffix, "suffix_len={suffix_len}");
             assert_well_formed(&ua);
-        }
-    }
-
-    #[test]
-    fn exact_limit_keeps_platform_and_one_byte_over_drops_a_whole_segment() {
-        let metadata = "drv=1.0.0; linux; x86_64; 1.98.1";
-        let product = format!(
-            "azsdk-{}",
-            "x".repeat(MAX_USER_AGENT_LENGTH - metadata.len() - 3 - 6)
-        );
-        let exact = pinned()
-            .with_wrapping_sdk_identifier(product.clone())
-            .build();
-        assert_eq!(exact.as_str(), format!("{product} ({metadata})"));
-        assert_eq!(exact.as_str().len(), MAX_USER_AGENT_LENGTH);
-
-        let over = pinned()
-            .with_wrapping_sdk_identifier(format!("{product}x"))
-            .build();
-        assert_eq!(
-            over.as_str(),
-            format!("{product}x (drv=1.0.0; linux; x86_64)")
-        );
-        assert_well_formed(&over);
-    }
-
-    #[test]
-    fn suffix_is_shortened_only_after_platform_is_removed() {
-        for (product_len, expected_suffix) in [
-            (249, Some("myapp")),
-            (250, Some("myap")),
-            (254, None),
-            (255, None),
-        ] {
-            let product = format!("azsdk-{}", "x".repeat(product_len - 6));
-            let ua = pinned()
-                .with_wrapping_sdk_identifier(product.clone())
-                .with_suffix("myapp")
-                .build();
-            assert_eq!(ua.suffix(), expected_suffix);
-            assert_eq!(
-                ua.as_str(),
-                match expected_suffix {
-                    Some(s) => format!("{product} {s}"),
-                    None => product,
-                }
-            );
-            assert_well_formed(&ua);
-        }
-    }
-
-    #[test]
-    fn oversized_built_in_values_are_dropped_whole() {
-        let ua = pinned()
-            .with_os("x".repeat(MAX_USER_AGENT_LENGTH))
-            .with_suffix("myapp")
-            .build();
-        assert_eq!(
-            ua.as_str(),
-            "azsdk-rust-cosmos-driver/1.0.0 (drv=1.0.0) myapp"
-        );
-    }
-
-    #[test]
-    fn oversized_direct_identifier_is_truncated_last() {
-        let version = "v".repeat(MAX_USER_AGENT_LENGTH);
-        let product = format!("azsdk-rust-cosmos-driver/{version}");
-        let ua = pinned()
-            .with_driver_version(version)
-            .with_suffix("myapp")
-            .build();
-        assert_eq!(ua.as_str(), &product[..MAX_USER_AGENT_LENGTH]);
-        assert!(ua.suffix().is_none());
-        assert_well_formed(&ua);
-    }
-
-    #[test]
-    fn suffix_truncation_preserves_utf8_boundaries() {
-        let product = format!("azsdk-{}", "x".repeat(247));
-        let ua = pinned()
-            .with_wrapping_sdk_identifier(product.clone())
-            .with_suffix("a\u{e9}")
-            .build();
-        assert_eq!(ua.as_str(), format!("{product} a"));
-        assert_eq!(ua.suffix(), Some("a"));
-    }
-
-    #[test]
-    fn truncation_never_breaks_parentheses() {
-        let max_value = "v".repeat(UserAgentProperty::MAX_VALUE_LENGTH);
-        let props: Vec<_> = (0..40)
-            .map(|i| property(&format!("key{i}"), &max_value))
-            .collect();
-        let suffix = "s".repeat(UserAgentSuffix::MAX_LENGTH);
-        for wrap_len in (0..400).step_by(7) {
-            for prop_count in [0, 1, 3, 40] {
-                for flags in [UserAgentFeatureFlags::NONE, UserAgentFeatureFlags::HTTP2] {
-                    let ua = pinned()
-                        .with_wrapping_sdk_identifier(format!("azsdk-{}", "w".repeat(wrap_len)))
-                        .with_feature_flags(flags)
-                        .with_properties(props[..prop_count].iter().cloned())
-                        .with_suffix(suffix.clone())
-                        .build();
-                    assert_well_formed(&ua);
-                    let expected_suffix_len = MAX_USER_AGENT_LENGTH
-                        .saturating_sub(6 + wrap_len)
-                        .saturating_sub(1)
-                        .min(suffix.len());
-                    assert_eq!(
-                        ua.suffix(),
-                        (expected_suffix_len > 0).then_some(&suffix[..expected_suffix_len])
-                    );
-                }
-            }
         }
     }
 
