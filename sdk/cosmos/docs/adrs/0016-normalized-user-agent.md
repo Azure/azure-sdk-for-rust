@@ -25,7 +25,8 @@ usage defaults to `azsdk-rust-cosmos-driver/{driver-version}`.
 The parenthesized segment starts with `drv=<driver-version>`, identifying this
 as a driver-generated User-Agent. OS, architecture, and Rust compiler version
 follow as three positional values, in that order. Optional key-value entries
-follow them. The first `)` unambiguously ends the SDK-provided portion.
+follow them. When platform metadata is present, the first `)` unambiguously
+ends the SDK-provided portion.
 
 `ft` carries the enabled feature bitmask, retaining the existing cross-language
 bit assignments. Encode the unsigned integer as big-endian bytes, remove
@@ -46,11 +47,23 @@ repeated keys replace their earlier value in place.
 `UserAgent`. Sanitize wrapping identifiers and overridden built-in values so
 they cannot introduce delimiters or extra product tokens.
 
-Reserve space for the validated user suffix before optional SDK metadata. The
-suffix is opaque, follows the first closing parenthesis after one space, and
-is never normalized or truncated. Shorten an oversized wrapping identifier and
-omit trailing custom properties whole as needed to stay within 255 bytes.
-Never cut required metadata, feature flags, or the surrounding parentheses.
+If the full User-Agent exceeds 255 bytes, truncate in this order:
+
+1. Remove platform metadata segments whole from right to left: custom
+   properties, feature flags, compiler version, architecture, OS, and finally
+   `drv`. Preserve the remaining segments, semicolon-space separators, and
+   parentheses.
+2. If all platform metadata is removed, omit its parentheses entirely and use
+   `{sdk}/{version} [user-suffix]`. Shorten the suffix only if this is still too
+   large; omit the separating space when no suffix fits.
+3. If the SDK identifier alone exceeds the limit, shorten it to 255 bytes and
+   send only that identifier. This applies equally to a wrapping identifier and
+   the driver's direct identifier.
+
+The suffix remains opaque and is never normalized. It is shortened only after
+all platform metadata is gone. Never truncate a partial metadata segment or
+leave empty parentheses. If metadata is absent, parsers treat the first space
+as the boundary between the product token and the suffix.
 
 For example:
 
@@ -68,11 +81,16 @@ azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64; 1.98.1; ft=Eg; rt=.NET 8.0
   decodable with standard tools.
 - **Truncate the completed header or normalize the user suffix.** Rejected:
   this can break the metadata structure or alter operator-supplied identity.
+- **Shorten the SDK identifier before platform metadata.** Rejected:
+  SDK identity takes priority over platform details; suffix shortening is
+  allowed only after the platform section is completely removed.
 
 ## Consequences
 
 Telemetry can parse the SDK product, split the metadata on semicolons, and
 decode feature flags consistently across SDKs. Parsers must adopt this format
 instead of the previous product-token layout and trailing `|F<HEX>` encoding.
-Optional custom properties may be omitted under size pressure, while the
-validated suffix and mandatory metadata remain intact.
+Platform metadata, including `drv` and feature flags, may be absent under size
+pressure. The suffix may then be shortened or omitted. Parsers must support
+both the parenthesized format and the identifier-only or identifier-plus-suffix
+fallback, and must not assume every positional value is present.

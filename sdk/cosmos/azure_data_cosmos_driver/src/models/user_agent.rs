@@ -173,8 +173,8 @@ pub(crate) const FEATURE_FLAGS_KEY: &str = "ft";
 ///   identifier supplied by that SDK, e.g. `azsdk-rust-cosmos/0.34.0`.
 ///   Otherwise it is the driver itself, `azsdk-rust-cosmos-driver/{version}`.
 /// - The parenthesized metadata segment is a `; `-separated list. Its first
-///   entry is always `drv=<driver version>`, which marks the string as
-///   driver-generated. Three positional values follow, always in this order:
+///   entry is `drv=<driver version>`, which marks the string as
+///   driver-generated. Three positional values follow in this order:
 ///   operating system, CPU architecture, and the Rust compiler version the
 ///   driver was built with. Then come optional `key=value` entries: `ft` (the
 ///   cross-SDK client feature flags as a base64url number, omitted when none are
@@ -186,14 +186,16 @@ pub(crate) const FEATURE_FLAGS_KEY: &str = "ft";
 ///   [`CorrelationId`](crate::options::CorrelationId)) follows the closing
 ///   parenthesis after a space.
 ///
-/// The string is limited to 255 ASCII characters. Truncation can never break
-/// the structure: the wrapping-SDK identifier is shortened first, then custom
-/// properties are dropped whole (last first) when they do not fit. The `drv`,
-///   positional, and `ft` entries and the closing parenthesis are always present,
-/// and the suffix is never altered or truncated.
+/// The string is limited to 255 bytes. If it exceeds the limit, platform
+/// metadata entries are removed whole from right to left, including feature
+/// flags and positional values, with `drv` removed last. Remaining entries
+/// retain their parentheses and semicolon separators. If no metadata remains,
+/// the parentheses are omitted and the format is `{sdk}/{version} [{suffix}]`.
+/// Only then may the suffix be shortened or omitted, followed by the SDK
+/// identifier as a last resort.
 ///
-/// The first `)` unambiguously marks the end of the SDK-provided portion; the
-/// suffix is opaque and may contain any characters its source type allows.
+/// When metadata is present, the first `)` unambiguously marks the end of the
+/// SDK-provided portion. The suffix is opaque and is not normalized.
 ///
 /// # Example
 ///
@@ -232,7 +234,7 @@ impl UserAgent {
         &self.full_user_agent
     }
 
-    /// Returns the suffix that was used, if any.
+    /// Returns the suffix included in the header after truncation, if any.
     pub fn suffix(&self) -> Option<&str> {
         self.suffix.as_deref()
     }
@@ -343,7 +345,8 @@ impl UserAgentBuilder {
 
     /// Sets the suffix appended after the metadata segment.
     ///
-    /// The suffix is never altered or truncated, so it must already be
+    /// The suffix is not normalized and may be truncated only after all
+    /// platform metadata has been removed. It must already be
     /// validated (see [`UserAgentSuffix`](crate::options::UserAgentSuffix),
     /// [`WorkloadId`](crate::options::WorkloadId), and
     /// [`CorrelationId`](crate::options::CorrelationId)). Empty values are
@@ -355,18 +358,17 @@ impl UserAgentBuilder {
 
     /// Renders the [`UserAgent`].
     ///
-    /// The returned string never exceeds [`MAX_USER_AGENT_LENGTH`] (given a
-    /// suffix from a validated source type) and always contains exactly one
-    /// balanced `(...)` metadata segment.
+    /// The returned string never exceeds [`MAX_USER_AGENT_LENGTH`]. Platform
+    /// metadata is removed in whole segments from right to left before the
+    /// suffix or SDK identifier is shortened. Empty parentheses are omitted.
     pub(crate) fn build(self) -> UserAgent {
         let wrapping = self
             .wrapping_sdk_identifier
             .as_deref()
             .and_then(normalize_wrapping_sdk_identifier);
-        let suffix = self.suffix.filter(|s| !s.is_empty());
+        let mut suffix = self.suffix.filter(|s| !s.is_empty());
 
-        // Required metadata: never truncated or dropped. Built-in values may
-        // be overridden, so keep them from breaking the segment.
+        // Built-in values may be overridden, so keep them from breaking the segment.
         let positional = |value: &str| {
             let value = sanitize_token(value.trim());
             if value.is_empty() {
@@ -376,57 +378,56 @@ impl UserAgentBuilder {
             }
         };
         let driver_version = positional(&self.driver_version);
-        let mut required = format!(
-            "{DRIVER_VERSION_KEY}={driver_version}; {}; {}; {}",
+        let mut segments = vec![
+            format!("{DRIVER_VERSION_KEY}={driver_version}"),
             positional(&self.os),
             positional(&self.arch),
             positional(&self.rustc_version),
-        );
+        ];
         if !self.feature_flags.is_empty() {
-            required.push_str("; ");
-            required.push_str(&self.feature_flags.to_string());
+            segments.push(self.feature_flags.to_string());
         }
-        // Parentheses plus the separating space before them.
-        let required_len = required.len() + 3;
+        segments.extend(self.properties.iter().map(ToString::to_string));
 
-        let suffix_wanted = suffix.as_ref().map_or(0, |s| 1 + s.len());
-
-        // Only a wrapping identifier is ever shortened; the driver's own
-        // product token is short and fixed. The suffix is always kept whole,
-        // so it is budgeted before the wrapping identifier.
-        let mut product = match wrapping {
-            Some(mut w) => {
-                w.truncate(MAX_USER_AGENT_LENGTH.saturating_sub(required_len + suffix_wanted));
-                w
+        let mut product =
+            wrapping.unwrap_or_else(|| format!("{DRIVER_PRODUCT_NAME}/{driver_version}"));
+        let suffix_len = suffix.as_ref().map_or(0, |s| 1 + s.len());
+        let mut metadata_len =
+            segments.iter().map(String::len).sum::<usize>() + 2 * (segments.len() - 1);
+        while !segments.is_empty()
+            && product.len() + metadata_len + 3 + suffix_len > MAX_USER_AGENT_LENGTH
+        {
+            if let Some(segment) = segments.pop() {
+                metadata_len -= segment.len();
+                if !segments.is_empty() {
+                    metadata_len -= 2;
+                }
             }
-            None => String::new(),
-        };
-        if product.is_empty() {
-            product = format!("{DRIVER_PRODUCT_NAME}/{driver_version}");
         }
 
-        // Custom properties only get what remains after the product, the
-        // required metadata, and the suffix.
-        let mut property_budget =
-            MAX_USER_AGENT_LENGTH.saturating_sub(product.len() + required_len + suffix_wanted);
-
-        let mut metadata = required;
-        for property in &self.properties {
-            let cost = 2 + property.key().len() + 1 + property.value().len();
-            if cost > property_budget {
-                break;
+        if segments.is_empty() {
+            let max_suffix_len = MAX_USER_AGENT_LENGTH
+                .saturating_sub(product.len())
+                .saturating_sub(1);
+            suffix = suffix.and_then(|mut s| {
+                let mut end = s.len().min(max_suffix_len);
+                while !s.is_char_boundary(end) {
+                    end -= 1;
+                }
+                s.truncate(end);
+                (!s.is_empty()).then_some(s)
+            });
+            if suffix.is_none() {
+                product.truncate(MAX_USER_AGENT_LENGTH);
             }
-            property_budget -= cost;
-            metadata.push_str("; ");
-            metadata.push_str(property.key());
-            metadata.push('=');
-            metadata.push_str(property.value());
         }
 
         let mut full_user_agent = product;
-        full_user_agent.push_str(" (");
-        full_user_agent.push_str(&metadata);
-        full_user_agent.push(')');
+        if !segments.is_empty() {
+            full_user_agent.push_str(" (");
+            full_user_agent.push_str(&segments.join("; "));
+            full_user_agent.push(')');
+        }
         if let Some(s) = &suffix {
             full_user_agent.push(' ');
             full_user_agent.push_str(s);
@@ -524,7 +525,10 @@ mod tests {
             "too long ({}): {s}",
             s.len()
         );
-        let open = s.find('(').unwrap();
+        let Some(open) = s.find('(') else {
+            assert!(!s.contains(')'), "unexpected closing parenthesis: {s}");
+            return;
+        };
         let close = s.find(')').unwrap();
         assert!(open < close, "bad parens: {s}");
         assert_eq!(s.matches('(').count(), 1, "bad parens: {s}");
@@ -688,17 +692,143 @@ mod tests {
     }
 
     #[test]
-    fn pathological_wrapping_identifier_keeps_suffix_and_structure() {
+    fn oversized_wrapping_identifier_is_the_only_remaining_component() {
         let suffix = "a".repeat(UserAgentSuffix::MAX_LENGTH);
+        let product = format!("azsdk-rust-{}", "x".repeat(500));
         let ua = pinned()
-            .with_wrapping_sdk_identifier(format!("azsdk-rust-{}", "x".repeat(500)))
+            .with_wrapping_sdk_identifier(product.clone())
             .with_feature_flags(UserAgentFeatureFlags::HTTP2)
             .with_property(property("dotnet", "8.0.1"))
             .with_suffix(suffix.clone())
             .build();
         assert_well_formed(&ua);
-        assert_eq!(ua.suffix(), Some(suffix.as_str()));
-        assert!(ua.as_str().contains("; ft=EA"));
+        assert_eq!(ua.as_str(), &product[..MAX_USER_AGENT_LENGTH]);
+        assert!(ua.suffix().is_none());
+    }
+
+    #[test]
+    fn platform_segments_are_removed_right_to_left_with_driver_last() {
+        let prefixes = [
+            "drv=1.0.0; linux; x86_64; 1.98.1; ft=EA; rt=.NET 8.0.1; host=aks",
+            "drv=1.0.0; linux; x86_64; 1.98.1; ft=EA; rt=.NET 8.0.1",
+            "drv=1.0.0; linux; x86_64; 1.98.1; ft=EA",
+            "drv=1.0.0; linux; x86_64; 1.98.1",
+            "drv=1.0.0; linux; x86_64",
+            "drv=1.0.0; linux",
+            "drv=1.0.0",
+            "",
+        ];
+        for metadata in prefixes {
+            let platform_len = if metadata.is_empty() {
+                0
+            } else {
+                metadata.len() + 3
+            };
+            let product = format!(
+                "azsdk-{}",
+                "x".repeat(MAX_USER_AGENT_LENGTH - platform_len - " myapp".len() - 6)
+            );
+            let ua = pinned()
+                .with_wrapping_sdk_identifier(product.clone())
+                .with_feature_flags(UserAgentFeatureFlags::HTTP2)
+                .with_property(property("rt", ".NET 8.0.1"))
+                .with_property(property("host", "aks"))
+                .with_suffix("myapp")
+                .build();
+            let expected = if metadata.is_empty() {
+                format!("{product} myapp")
+            } else {
+                format!("{product} ({metadata}) myapp")
+            };
+            assert_eq!(ua.as_str(), expected);
+            assert_eq!(ua.as_str().len(), MAX_USER_AGENT_LENGTH);
+            assert_eq!(ua.suffix(), Some("myapp"));
+            assert_well_formed(&ua);
+        }
+    }
+
+    #[test]
+    fn exact_limit_keeps_platform_and_one_byte_over_drops_a_whole_segment() {
+        let metadata = "drv=1.0.0; linux; x86_64; 1.98.1";
+        let product = format!(
+            "azsdk-{}",
+            "x".repeat(MAX_USER_AGENT_LENGTH - metadata.len() - 3 - 6)
+        );
+        let exact = pinned()
+            .with_wrapping_sdk_identifier(product.clone())
+            .build();
+        assert_eq!(exact.as_str(), format!("{product} ({metadata})"));
+        assert_eq!(exact.as_str().len(), MAX_USER_AGENT_LENGTH);
+
+        let over = pinned()
+            .with_wrapping_sdk_identifier(format!("{product}x"))
+            .build();
+        assert_eq!(
+            over.as_str(),
+            format!("{product}x (drv=1.0.0; linux; x86_64)")
+        );
+        assert_well_formed(&over);
+    }
+
+    #[test]
+    fn suffix_is_shortened_only_after_platform_is_removed() {
+        for (product_len, expected_suffix) in [
+            (249, Some("myapp")),
+            (250, Some("myap")),
+            (254, None),
+            (255, None),
+        ] {
+            let product = format!("azsdk-{}", "x".repeat(product_len - 6));
+            let ua = pinned()
+                .with_wrapping_sdk_identifier(product.clone())
+                .with_suffix("myapp")
+                .build();
+            assert_eq!(ua.suffix(), expected_suffix);
+            assert_eq!(
+                ua.as_str(),
+                match expected_suffix {
+                    Some(s) => format!("{product} {s}"),
+                    None => product,
+                }
+            );
+            assert_well_formed(&ua);
+        }
+    }
+
+    #[test]
+    fn oversized_built_in_values_are_dropped_whole() {
+        let ua = pinned()
+            .with_os("x".repeat(MAX_USER_AGENT_LENGTH))
+            .with_suffix("myapp")
+            .build();
+        assert_eq!(
+            ua.as_str(),
+            "azsdk-rust-cosmos-driver/1.0.0 (drv=1.0.0) myapp"
+        );
+    }
+
+    #[test]
+    fn oversized_direct_identifier_is_truncated_last() {
+        let version = "v".repeat(MAX_USER_AGENT_LENGTH);
+        let product = format!("azsdk-rust-cosmos-driver/{version}");
+        let ua = pinned()
+            .with_driver_version(version)
+            .with_suffix("myapp")
+            .build();
+        assert_eq!(ua.as_str(), &product[..MAX_USER_AGENT_LENGTH]);
+        assert!(ua.suffix().is_none());
+        assert_well_formed(&ua);
+    }
+
+    #[test]
+    fn suffix_truncation_preserves_utf8_boundaries() {
+        let product = format!("azsdk-{}", "x".repeat(247));
+        let ua = pinned()
+            .with_wrapping_sdk_identifier(product.clone())
+            .with_suffix("a\u{e9}")
+            .build();
+        assert_eq!(ua.as_str(), format!("{product} a"));
+        assert_eq!(ua.suffix(), Some("a"));
     }
 
     #[test]
@@ -718,7 +848,14 @@ mod tests {
                         .with_suffix(suffix.clone())
                         .build();
                     assert_well_formed(&ua);
-                    assert_eq!(ua.suffix(), Some(suffix.as_str()));
+                    let expected_suffix_len = MAX_USER_AGENT_LENGTH
+                        .saturating_sub(6 + wrap_len)
+                        .saturating_sub(1)
+                        .min(suffix.len());
+                    assert_eq!(
+                        ua.suffix(),
+                        (expected_suffix_len > 0).then_some(&suffix[..expected_suffix_len])
+                    );
                 }
             }
         }
