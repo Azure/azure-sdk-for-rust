@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 /// Determines whether blob operations use session token authentication.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum SessionMode {
     /// The client library decides the behavior; may change in future releases.
     /// Currently resolves to [`SessionMode::Disabled`].

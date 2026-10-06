@@ -427,7 +427,7 @@ impl PartitionedDownloadBehavior for BlobClientDownloadBehavior<'_> {
 
     async fn prepare(&self, initial_headers: &Headers, etag_lock: Option<&Etag>) -> Result<()> {
         if self.layout_endpoint.is_some()
-            || matches!(self.layout_aware_routing, LayoutAwareRouting::Disabled)
+            || self.layout_aware_routing.resolve() != LayoutAwareRouting::Enabled
         {
             return Ok(());
         }

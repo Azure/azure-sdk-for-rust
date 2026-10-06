@@ -360,6 +360,41 @@ async fn test_download_layout_aware_routing_skips_without_hint() -> Result<(), B
     Ok(())
 }
 
+/// Routing is opt-in: with default options the SDK ignores an advertised layout, fetches
+/// nothing, and sends every request to the client's configured endpoint.
+#[tokio::test]
+async fn test_download_layout_aware_routing_is_disabled_by_default() -> Result<(), Box<dyn Error>> {
+    let seen = Arc::new(Mutex::new(Vec::<ObservedRequest>::new()));
+    let transport = layout_mock_transport(seen.clone(), LAYOUT, LayoutHint::Advertised);
+    let blob_client = blob_client_with(
+        transport,
+        "https://acct.blob.core.windows.net/container/blob",
+    )?;
+
+    let body = blob_client
+        .download(Some(BlobClientDownloadOptions {
+            partition_size: Some(NonZero::new(4).unwrap()),
+            parallel: Some(NonZero::new(2).unwrap()),
+            ..Default::default()
+        }))
+        .await?
+        .body
+        .collect()
+        .await?;
+
+    assert_eq!(&body[..], &BLOB_DATA[..]);
+    let seen = seen.lock().unwrap();
+    assert!(
+        !seen.iter().any(|request| request.is_layout),
+        "no layout should be fetched unless routing is enabled"
+    );
+    for request in seen.iter() {
+        assert_eq!(request.url.host_str(), Some(ACCOUNT_HOST));
+        assert_eq!(request.original_host, None);
+    }
+    Ok(())
+}
+
 /// A download that fits in one partition is served by the initial request, which is
 /// never routed, so the layout is not worth fetching.
 #[tokio::test]
@@ -1457,6 +1492,7 @@ async fn test_download_session_with_layout_aware_routing() -> Result<(), Box<dyn
             .download_into(
                 &mut buffer,
                 Some(BlobClientDownloadOptions {
+                    layout_aware_routing: LayoutAwareRouting::Enabled,
                     partition_size: Some(NonZero::new(PARTITION_SIZE).unwrap()),
                     parallel: Some(NonZero::new(parallel).unwrap()),
                     ..Default::default()

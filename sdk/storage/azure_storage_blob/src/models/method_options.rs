@@ -20,20 +20,36 @@ use crate::models::{
 /// requests issued by a download.
 ///
 /// This is a performance optimization only - the bytes returned are identical
-/// regardless of the mode used. Routing is enabled by default: the blob's layout is
-/// fetched and each range request is sent to the endpoint that serves it, falling
-/// back to the client's configured endpoint when no layout is available.
+/// regardless of the mode used. Routing is off unless requested: opt in with
+/// [`LayoutAwareRouting::Enabled`] to fetch the blob's layout and send each range request
+/// to the endpoint that serves it, falling back to the client's configured endpoint when no
+/// layout is available.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum LayoutAwareRouting {
+    /// The client library decides the behavior; may change in future releases.
+    /// Currently resolves to [`LayoutAwareRouting::Disabled`].
+    #[default]
+    Auto,
+
     /// Never route range requests based on the blob's layout. All requests are sent
     /// to the client's configured endpoint.
     Disabled,
 
     /// Use locality-aware routing. The blob's layout is fetched and each range
     /// download is routed to the endpoint that serves it.
-    #[default]
     Enabled,
+}
+
+impl LayoutAwareRouting {
+    /// Resolves [`LayoutAwareRouting::Auto`] to the current default behavior.
+    pub(crate) fn resolve(self) -> Self {
+        match self {
+            // Auto maps to Disabled for now; this may change in the future.
+            Self::Auto => Self::Disabled,
+            other => other,
+        }
+    }
 }
 
 /// Options to be passed to `BlobClient::download()`
@@ -70,7 +86,8 @@ pub struct BlobClientDownloadOptions<'a> {
     /// requests issued by this download. This is a performance optimization only:
     /// the bytes returned are identical regardless of the mode.
     ///
-    /// Defaults to [`LayoutAwareRouting::Enabled`]. Ignored when
+    /// Defaults to [`LayoutAwareRouting::Auto`], which currently resolves to
+    /// [`LayoutAwareRouting::Disabled`]. Ignored when
     /// [`layout_endpoint`](Self::layout_endpoint) is set.
     pub layout_aware_routing: LayoutAwareRouting,
 
@@ -381,4 +398,26 @@ pub struct BlockBlobClientUploadOptions<'a> {
 
     /// The tier to be set on the blob.
     pub tier: Option<AccessTier>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn layout_aware_routing_defaults_to_auto_which_resolves_to_disabled() {
+        assert_eq!(LayoutAwareRouting::default(), LayoutAwareRouting::Auto);
+        assert_eq!(
+            LayoutAwareRouting::Auto.resolve(),
+            LayoutAwareRouting::Disabled
+        );
+        assert_eq!(
+            LayoutAwareRouting::Disabled.resolve(),
+            LayoutAwareRouting::Disabled
+        );
+        assert_eq!(
+            LayoutAwareRouting::Enabled.resolve(),
+            LayoutAwareRouting::Enabled
+        );
+    }
 }
