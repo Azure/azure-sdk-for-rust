@@ -757,6 +757,7 @@ mod tests {
         assert_eq!(encode_base64url(0), "");
         assert_eq!(encode_base64url(0xFF), "_w");
         assert_eq!(encode_base64url(0x100), "AQA");
+        // cspell:ignore AQAA
         assert_eq!(encode_base64url(0x01_00_00), "AQAA");
         for value in [
             1u32,

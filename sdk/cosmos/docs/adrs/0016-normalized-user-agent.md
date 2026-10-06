@@ -69,7 +69,7 @@ For example:
 
 ```text
 azsdk-rust-cosmos-driver/1.0.0 (drv=1.0.0; linux; x86_64; 1.98.1)
-azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64; 1.98.1; ft=Eg; rt=.NET 8.0.1) myapp
+azsdk-dotnet-cosmos/3.40.0 (drv=1.0.0; linux; x86_64; 1.98.1; ft=Eg; rt=.NET 8.0.1) app
 ```
 
 ## Alternatives considered
