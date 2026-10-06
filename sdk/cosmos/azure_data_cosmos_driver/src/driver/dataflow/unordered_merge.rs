@@ -70,6 +70,11 @@ impl UnorderedMerge {
         self
     }
 
+    pub(crate) fn with_cursor(mut self, cursor: usize) -> Self {
+        self.cursor = cursor;
+        self
+    }
+
     /// Enables priming every child once before the first page is served.
     ///
     /// See [`prime_on_first_drain`](Self::prime_on_first_drain). Set for a fresh
@@ -306,6 +311,9 @@ impl PipelineNode for UnorderedMerge {
         Ok(PipelineNodeState::UnorderedMerge {
             active_tokens,
             start_from: self.start_marker.clone(),
+            next_epk: self.children[self.cursor % self.children.len()]
+                .feed_range()
+                .map(|range| range.min_inclusive().to_hex()),
         })
     }
 

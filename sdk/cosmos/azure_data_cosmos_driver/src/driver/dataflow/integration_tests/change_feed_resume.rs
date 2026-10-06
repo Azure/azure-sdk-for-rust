@@ -212,6 +212,7 @@ fn assert_unordered_snapshot(
     let PipelineNodeState::UnorderedMerge {
         active_tokens,
         start_from,
+        ..
     } = state
     else {
         panic!("expected UnorderedMerge snapshot, got {state:?}");
@@ -225,22 +226,28 @@ fn assert_unordered_snapshot(
     }
 }
 
-fn assert_merged_parent_targets(executor: &MockRequestExecutor) -> crate::error::Result<()> {
+fn assert_merged_parent_targets(
+    executor: &MockRequestExecutor,
+    right_first: bool,
+) -> crate::error::Result<()> {
     let merged = fr("", "FF")?;
+    let mut expected = vec![
+        RequestTarget::effective_partition_key_range(
+            fr("", "80")?,
+            "pk-merged".to_owned(),
+            merged.clone(),
+        ),
+        RequestTarget::effective_partition_key_range(
+            fr("80", "FF")?,
+            "pk-merged".to_owned(),
+            merged,
+        ),
+    ];
+    if right_first {
+        expected.reverse();
+    }
     assert_eq!(
-        executor.target_calls,
-        vec![
-            RequestTarget::effective_partition_key_range(
-                fr("", "80")?,
-                "pk-merged".to_owned(),
-                merged.clone(),
-            ),
-            RequestTarget::effective_partition_key_range(
-                fr("80", "FF")?,
-                "pk-merged".to_owned(),
-                merged,
-            ),
-        ],
+        executor.target_calls, expected,
         "the merged physical range must retain both parent EPK slices",
     );
     Ok(())
@@ -264,6 +271,86 @@ fn assert_now_resume_inputs(executor: &StartRecordingExecutor) {
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn resume_keeps_next_partition_after_split() -> crate::error::Result<()> {
+    let op = change_feed_operation(Some(ChangeFeedStartFrom::Beginning));
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "left")?,
+        resolved("80", "FF", "right")?,
+    ])]);
+    let mut pipeline = build_unordered_merge(&FeedRange::full(), &mut topology, &op, None).await?;
+    let mut executor = MockRequestExecutor::new(vec![Ok(cf_page(b"left", "left-etag"))]);
+    drain_pages(&mut pipeline, &mut executor, 1).await;
+    let state = pipeline.snapshot_state()?;
+    let resumed = round_trip_state(state, &op);
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+        resolved("", "80", "left")?,
+        resolved("80", "C0", "right-a")?,
+        resolved("C0", "FF", "right-b")?,
+    ])]);
+    let mut pipeline =
+        build_unordered_merge(&FeedRange::full(), &mut topology, &op, Some(resumed)).await?;
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(cf_page(b"right-a", "right-a-etag")),
+        Ok(cf_page(b"right-b", "right-b-etag")),
+        Ok(cf_page(b"left", "left-etag-2")),
+    ]);
+    drain_pages(&mut pipeline, &mut executor, 3).await;
+    assert_eq!(
+        executor.continuation_calls,
+        vec![None, None, Some("left-etag".to_owned())]
+    );
+    assert_eq!(
+        executor.target_calls,
+        vec![
+            RequestTarget::effective_partition_key_range(
+                fr("80", "C0")?,
+                "right-a".to_owned(),
+                fr("80", "C0")?
+            ),
+            RequestTarget::effective_partition_key_range(
+                fr("C0", "FF")?,
+                "right-b".to_owned(),
+                fr("C0", "FF")?
+            ),
+            RequestTarget::effective_partition_key_range(
+                fr("", "80")?,
+                "left".to_owned(),
+                fr("", "80")?
+            ),
+        ]
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn resume_rejects_invalid_next_partition() -> crate::error::Result<()> {
+    let op = change_feed_operation(None);
+    for next_epk in ["GG", "FF"] {
+        let mut topology =
+            MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "partition")?])]);
+        let result = build_unordered_merge(
+            &FeedRange::full(),
+            &mut topology,
+            &op,
+            Some(PipelineNodeState::UnorderedMerge {
+                active_tokens: vec![],
+                start_from: None,
+                next_epk: Some(next_epk.to_owned()),
+            }),
+        )
+        .await;
+        let error = result.err().expect("invalid polling position must fail");
+        let expected = if next_epk == "GG" {
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE
+        } else {
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH
+        };
+        assert_eq!(error.status(), expected);
+    }
+    Ok(())
+}
 
 /// Baseline: a single-partition change feed that polls once, serializes,
 /// resumes, and polls again. No topology change. Sanity-checks the end-to-end
@@ -299,6 +386,7 @@ async fn single_partition_change_feed_resume_roundtrips() -> crate::error::Resul
         PipelineNodeState::UnorderedMerge {
             active_tokens,
             start_from,
+            ..
         } => {
             assert_eq!(active_tokens.len(), 1, "got {active_tokens:?}");
             assert_eq!(active_tokens[0].min_epk, "");
@@ -409,7 +497,7 @@ async fn change_feed_resume_across_merge_reads_each_parent_subrange() -> crate::
 
     // Each leaf is scoped to its parent's sub-range within the merged physical
     // partition, so the wire layer emits `x-ms-start/end-epk` for both.
-    assert_merged_parent_targets(&executor2)?;
+    assert_merged_parent_targets(&executor2, false)?;
     Ok(())
 }
 
@@ -470,7 +558,7 @@ async fn point_in_time_merge_resume_keeps_marker_and_parent_slices() -> crate::e
             2
         ],
     );
-    assert_merged_parent_targets(&executor2.inner)?;
+    assert_merged_parent_targets(&executor2.inner, false)?;
     Ok(())
 }
 
@@ -498,8 +586,8 @@ async fn latest_version_now_merge_resume_reapplies_now_to_unsaved_slice() -> cra
     let resumed = round_trip_state(state, &resume_op);
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")?])]);
     let mut executor2 = StartRecordingExecutor::new(vec![
-        Ok(cf_page(b"merged-left", "now-left-2")),
         Ok(cf_page(b"merged-right", "now-right-1")),
+        Ok(cf_page(b"merged-left", "now-left-2")),
     ]);
     let mut pipeline2 = build_unordered_merge(
         &FeedRange::full(),
@@ -512,12 +600,12 @@ async fn latest_version_now_merge_resume_reapplies_now_to_unsaved_slice() -> cra
     drain_pages(&mut pipeline2, &mut executor2, 2).await;
     assert_eq!(
         executor2.inner.continuation_calls,
-        vec![Some("now-left".to_owned()), None],
+        vec![None, Some("now-left".to_owned())],
         "the saved slice uses its ETag; the unsaved slice re-applies persisted Now",
     );
     // These are RequestExecutor inputs; transport tests cover final header precedence.
     assert_now_resume_inputs(&executor2);
-    assert_merged_parent_targets(&executor2.inner)?;
+    assert_merged_parent_targets(&executor2.inner, true)?;
     Ok(())
 }
 
@@ -548,8 +636,8 @@ async fn avad_now_merge_resume_keeps_both_primed_parent_etags() -> crate::error:
     let resumed = round_trip_state(state, &resume_op);
     let mut topology2 = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "pk-merged")?])]);
     let mut executor2 = StartRecordingExecutor::new(vec![
-        Ok(cf_page(b"merged-left", "avad-left-2")),
         Ok(cf_page(b"merged-right", "avad-right-1")),
+        Ok(cf_page(b"merged-left", "avad-left-2")),
     ]);
     let mut pipeline2 = build_unordered_merge(
         &FeedRange::full(),
@@ -563,13 +651,13 @@ async fn avad_now_merge_resume_keeps_both_primed_parent_etags() -> crate::error:
     assert_eq!(
         executor2.inner.continuation_calls,
         vec![
-            Some("avad-left-1".to_owned()),
-            Some("avad-right".to_owned())
+            Some("avad-right".to_owned()),
+            Some("avad-left-1".to_owned())
         ],
         "both AVAD parent slices must retain their pinned ETags through the merge",
     );
     assert_now_resume_inputs(&executor2);
-    assert_merged_parent_targets(&executor2.inner)?;
+    assert_merged_parent_targets(&executor2.inner, true)?;
     Ok(())
 }
 
@@ -622,6 +710,7 @@ async fn all_versions_and_deletes_pins_every_range_before_checkpoint() -> crate:
         PipelineNodeState::UnorderedMerge {
             active_tokens,
             start_from,
+            ..
         } => {
             assert_eq!(
                 active_tokens.len(),
@@ -650,8 +739,8 @@ async fn all_versions_and_deletes_pins_every_range_before_checkpoint() -> crate:
         resolved("80", "FF", "pk-right")?,
     ])]);
     let mut executor2 = MockRequestExecutor::new(vec![
-        Ok(cf_page(b"left-2", "lsn-left-2")),
         Ok(cf_page(b"right-2", "lsn-right-2")),
+        Ok(cf_page(b"left-2", "lsn-left-2")),
     ]);
 
     let mut pipeline2 =
@@ -659,12 +748,12 @@ async fn all_versions_and_deletes_pins_every_range_before_checkpoint() -> crate:
             .await
             .unwrap();
     let pages2 = drain_pages(&mut pipeline2, &mut executor2, 2).await;
-    assert_eq!(pages2, vec![b"left-2".to_vec(), b"right-2".to_vec()]);
+    assert_eq!(pages2, vec![b"right-2".to_vec(), b"left-2".to_vec()]);
     assert_eq!(
         executor2.continuation_calls,
         vec![
-            Some("lsn-left-1".to_owned()),
-            Some("lsn-right-0".to_owned())
+            Some("lsn-right-0".to_owned()),
+            Some("lsn-left-1".to_owned())
         ],
         "resume must re-send each range's pinned ETag, not restart from Now",
     );
@@ -740,6 +829,7 @@ async fn all_versions_and_deletes_pins_ranges_when_resumed_before_first_page(
         PipelineNodeState::UnorderedMerge {
             active_tokens,
             start_from,
+            ..
         } => {
             assert!(
                 active_tokens.is_empty(),

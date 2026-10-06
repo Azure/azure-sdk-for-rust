@@ -1,0 +1,29 @@
+[package]
+name = "azure_cosmos_change_feed_processor_engine"
+version = "0.1.0"
+description = "Execution engine for the Azure Cosmos DB change feed processor"
+publish = false
+readme = "README.md"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+azure_core.workspace = true
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", version = "1.0.0-beta.2" }
+futures.workspace = true
+base64.workspace = true
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["sync"] }
+tracing.workspace = true
+
+[dev-dependencies]
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false, features = ["__internal_in_memory_emulator", "fault_injection"] }
+tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }
+
+[lints]
+workspace = true
