@@ -81,7 +81,7 @@ public Rust API, not in transport or database execution.
 
 | Surface | Package ownership and treatment |
 | --- | --- |
-| Public Rust callback API | `azure_data_cosmos_change_feed_processor` owns application-type decoding, invocation of the application's `processBatch` callback, options, error adaptation, and the internal processing adapter. |
+| Public Rust callback API | `azure_data_cosmos_change_feed_processor` owns application-type decoding, invocation of the application's `handleChanges` callback, options, error adaptation, and the internal processing adapter. |
 | Shared CFP engine | `azure_data_cosmos_change_feed_processor_driver` owns autonomous polling, bootstrap, lease authority, processing coordination, and checkpoint decisions. It invokes an internal adapter, not the application's typed callback, and does not know the application's document type. |
 | Typed change events | For an equivalent SDK event contract, the public Rust API duplicates/adapts `ChangeFeedItem<T>`, `ChangeFeedMetadata`, `ChangeFeedOperationType`, and `LogicalSequenceNumber`, including their custom deserialization behavior. |
 | Change-feed-specific public options | The public Rust API provides equivalents/adapters for the relevant `ChangeFeedMode`, `ChangeFeedOptions`, and `FeedOptions` responsibilities, including start-position configuration. Do not copy unrelated options or the entire typed iterator implementation. |
@@ -116,20 +116,20 @@ to import the consuming SDK or know its application type `T`.
 
 The public Rust API supplies an awaitable internal adapter that captures the
 application handler, decodes the raw batch, invokes the application's
-`processBatch` callback, and returns its actual completion/error. The engine
+`handleChanges` callback, and returns its actual completion/error. The engine
 invokes this adapter, not the typed application callback directly. Other
 language SDKs own decoding and application callback invocation, reporting the
 outcome through the proposed Rust FFI wrapper's delivery/completion bridge.
 Either bridge can satisfy the same contract; cross-language reuse does not
 require a producer-only engine. Moving code between packages
 does not imply another thread or runtime; queue and ABI mechanics are not
-selected here. `processBatch` names the application callback role, not an
+selected here. `handleChanges` names the application callback role, not an
 implemented native symbol.
 
 The shared CFP engine owns **lockstep processing and checkpointing**:
 
 > For each owned lease, an application batch is complete only after
-> `processBatch` succeeds and its corresponding conditional checkpoint is
+> `handleChanges` succeeds and its corresponding conditional checkpoint is
 > confirmed durable. That lease session must not read or deliver the next batch
 > before both conditions hold.
 
