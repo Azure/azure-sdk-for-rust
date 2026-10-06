@@ -81,13 +81,13 @@ public Rust API, not in transport or database execution.
 | Surface | Package ownership and treatment |
 | --- | --- |
 | Public Rust callback API | `azure_data_cosmos_change_feed_processor` owns application-type decoding, invocation of the application's `handleChanges` callback, options, error adaptation, and the internal processing adapter. |
-| Shared CFP engine | `azure_data_cosmos_change_feed_processor_driver` owns autonomous polling, bootstrap, lease authority, the shared processing-exchange implementation, and checkpoint decisions. Rust and native bindings use the same delivery/result handling. It invokes an internal adapter, not the application's typed callback, and does not know the application's document type. |
+| Shared CFP engine | `azure_data_cosmos_change_feed_processor_driver` owns autonomous polling, bootstrap, lease authority, shared processing-acknowledgement handling, and checkpoint decisions. Rust and native bindings use the same completion operation. It does not invoke the application's typed callback or know the application's document type. |
 | Typed change events | For an equivalent SDK event contract, the public Rust API duplicates/adapts `ChangeFeedItem<T>`, `ChangeFeedMetadata`, `ChangeFeedOperationType`, and `LogicalSequenceNumber`, including their custom deserialization behavior. |
 | Change-feed-specific public options | The public Rust API provides equivalents/adapters for the relevant `ChangeFeedMode`, `ChangeFeedOptions`, and `FeedOptions` responsibilities, including start-position configuration. Do not copy unrelated options or the entire typed iterator implementation. |
 | SDK-only conveniences | Recreate only those the public Rust API promises: for example, `RoutingStrategy::ProximityTo` expansion, SDK binary-option environment/default resolution, and application-facing diagnostics adapters. These are not inherited merely by depending on the database driver. |
 | Request policies and database execution | Reuse `azure_data_cosmos_driver` implementations and driver-owned `OperationOptions`: retries, cross-region routing, hedging, failover, metadata/topology caches, credential binding, and diagnostics data. Public exposure of their types is a separate compatibility decision. |
 | Wire encoding | Reuse `azure_data_cosmos_driver` binary JSON decoding, encoding, and transcoding facilities. Do not create another codec implementation in either CFP package. |
-| Rust FFI wrapper | The proposed `azure_data_cosmos_change_feed_processor_native` exposes a thin C-compatible binding to the shared processing exchange and forwards host results into its completion path. Other language SDKs own application-type decoding and invocation of their application callbacks. |
+| Rust FFI wrapper | The proposed `azure_data_cosmos_change_feed_processor_native` exposes a thin C-compatible binding that forwards batch handles and processing outcomes to the shared completion operation. Other language SDKs own application-type decoding and invocation of their application callbacks. |
 
 Copying event declarations alone is insufficient. The SDK event decoder distinguishes envelopes
 from flat documents, preserves optional metadata and previous images, handles
@@ -99,75 +99,56 @@ interchangeability.
 
 ## 4. Callback and Serialization Boundaries
 
-### 4.1 Bidirectional processing completion and lockstep checkpointing
+### 4.1 Callback completion and checkpointing
+
+The consuming SDK owns application callback invocation. The shared CFP driver
+owns lease checkpointing. Under this proposed contract, they communicate
+through **explicit processing acknowledgements**, following the
+consumer-acknowledgement pattern without introducing a message broker.
+
+The driver supplies a raw batch with an opaque batch handle. The SDK
+deserializes the changes, invokes the application's `handleChanges` callback,
+and waits for the callback's actual work to finish. It then reports success or
+failure for that handle. The application still only provides a callback; its
+SDK reports the outcome automatically.
 
 ```text
-Shared CFP engine -> raw batch -> public Rust API / Rust FFI wrapper -> SDK callback
-Shared CFP engine <- correlated processing outcome <------------------ completion
+CFP driver -> batch + handle -> SDK -> await handleChanges
+CFP driver <- handle + processing result <--------------- SDK
+
+Valid success -> conditional checkpoint
+Failure or no result -> no checkpoint
 ```
 
-The proposed requirement is **one shared processing-exchange implementation in
-`azure_data_cosmos_change_feed_processor_driver`, accessed through two thin
-bindings, not two independently implemented protocols with equivalent behavior.**
-It implements a bidirectional asynchronous request-reply boundary: raw batch
-delivery goes outward and the actual processing outcome returns, correlated
-with the pending delivery. Runtime communication is bidirectional while Cargo
-dependencies remain one-way; defining this contract does not require the engine
-to import the consuming SDK or know its application type `T`.
+The driver retains the handle's association with the candidate continuation and
+lease ownership generation. Fetching is not a committed checkpoint, and
+receiving or scheduling a batch is not processing success. The driver accepts
+completion only once for the current delivery and ownership; stale or duplicate
+results cannot authorize progress. Failure or an absent result cannot advance
+the checkpoint; silence does not prove the callback never ran.
 
-The shared CFP engine owns the common implementation of:
+The driver advances the durable checkpoint only after successful processing and
+a confirmed conditional write. That lease session must not read or deliver the
+next batch before both conditions hold; lease renewal continues independently.
+This is **lockstep processing and checkpointing**. If processing succeeded but
+persistence failed, the driver retries or reconciles checkpointing rather than
+automatically invoking the callback again.
 
-- Pending-delivery identity and its association with the lease, ownership
-  generation, and candidate checkpoint.
-- Processing-result acceptance, including stale and duplicate result handling.
-- Per-lease admission and outstanding-work limits.
-- Checkpoint eligibility, persistence, and retry/reconciliation decisions.
+**Both Rust and other languages use this same driver-side completion
+operation.** The public Rust API calls it directly through Rust interfaces.
+Other SDKs report through `azure_data_cosmos_change_feed_processor_native`,
+whose C ABI forwards the handle and outcome to the same implementation. The
+wrapper does not implement separate checkpoint or retry rules, and no
+application objects or Rust futures cross the ABI. Bidirectional runtime
+communication does not require a reverse package dependency on the SDK.
 
-The public Rust API accesses this implementation through Rust interfaces, not
-the C ABI. Its awaitable internal adapter decodes the raw batch, invokes the
-application's `handleChanges` callback, and returns its actual completion/error
-into the **same core-owned completion path** as a native host's result. There
-must be no Rust-only success path that bypasses this mechanism. The engine
-invokes the internal adapter, not the typed application callback directly.
-
-The future `azure_data_cosmos_change_feed_processor_native` package exposes a
-C-compatible binding to this same implementation and forwards host processing
-results into that completion path. Other language SDKs own decoding and
-application callback invocation. Bindings may differ in application decoding,
-callback invocation, host-runtime dispatch, ABI marshalling, and handle lifetime
-management; they must not independently implement CFP ownership validation,
-progress admission, or checkpoint/recovery rules.
-
-A future and a queue are complementary mechanisms: a queue can carry a request
-while a future awaits its reply. They are not separate processing protocols.
-No particular channel primitive or ABI signature is selected here.
-Cross-language reuse does not require a producer-only engine, and package
-separation does not imply another thread or runtime. `handleChanges` names the
-application callback role, not an implemented native symbol.
-
-The shared CFP engine owns **lockstep processing and checkpointing**:
-
-> For each owned lease, an application batch is complete only after
-> `handleChanges` succeeds and its corresponding conditional checkpoint is
-> confirmed durable. That lease session must not read or deliver the next batch
-> before both conditions hold.
-
-Fetching creates a candidate continuation, not a committed checkpoint.
-Receiving or scheduling the batch is not processing success: the consuming SDK
-reports success only after the callback's actual work completes. Processing
-failure or an absent reply cannot authorize checkpoint advancement; the engine
-applies its retry/stop policy, and silence does not prove the callback never ran.
-Before checkpointing, the engine validates delivery identity and current lease
-ownership; stale outcomes cannot authorize progress.
-
-After processing succeeds, checkpoint persistence failure leads to safe
-checkpoint retry or reconciliation, not automatic re-invocation of the
-successful callback. Lease renewal remains independent while the batch is
-outstanding. This is lockstep coordination, not transactional atomicity: a
-crash after application side effects but before checkpoint confirmation can
-cause replay, so it does not provide exactly-once external effects. This is a
-proposed package-level contract, not an implemented or repository-approved
-native API.
+Here, checkpoint policy belongs to
+`azure_data_cosmos_change_feed_processor_driver`; `azure_data_cosmos_driver`
+executes the database write. This proposed contract preserves at-least-once
+processing: a crash after application effects but before checkpoint confirmation
+can cause replay. It does not make those two operations one transaction or
+provide exactly-once external effects. This is not an implemented or
+repository-approved native API.
 
 ### 4.2 Why the typed database SDK is not the shared baseline
 
