@@ -18,6 +18,7 @@ use std::{
 };
 
 use crate::{
+    blob_layout::LayoutRoutingPolicy,
     logging::apply_storage_logging_defaults,
     session::{
         options::SessionOptions,
@@ -40,19 +41,24 @@ pub use blob_service_client::{BlobServiceClient, BlobServiceClientOptions};
 pub use block_blob_client::{BlockBlobClient, BlockBlobClientOptions};
 pub use page_blob_client::{PageBlobClient, PageBlobClientOptions};
 
-/// The OAuth scope used for Entra ID authentication against Storage.
-const STORAGE_SCOPE: &str = "https://storage.azure.com/.default";
-
-/// Applies Storage defaults: a transport that does not transparently decompress
-/// blob content, and the Storage logging allow lists.
+/// Applies defaults shared by every client.
+///
+/// Derived clients reuse their parent's pipeline rather than rebuilding it, so
+/// anything added here must be valid for all client types.
 fn apply_client_defaults(options: &mut ClientOptions) {
     if options.transport.is_none() {
         options.transport = Some(Transport::new(new_http_client(Some(HttpClientOptions {
             automatic_decompression: false,
         }))));
     }
+    options
+        .per_call_policies
+        .push(Arc::new(LayoutRoutingPolicy));
     apply_storage_logging_defaults(options);
 }
+
+/// The OAuth scope used for Entra ID authentication against Storage.
+const STORAGE_SCOPE: &str = "https://storage.azure.com/.default";
 
 /// Builds a client pipeline, sharing the configured transport with the session
 /// provider so session creation and authenticated requests use the same network context.
@@ -129,25 +135,17 @@ fn build_auth_policies(
         return Ok(per_retry_policies);
     };
 
-    // Session signing requires a storage account name. If sessions were explicitly
-    // enabled, fail when it cannot be resolved; otherwise, preserve bearer authentication.
+    // Session signing requires a storage account name; sessions are only on when the caller
+    // asked for them, so fail rather than silently fall back when it cannot be resolved.
     let Some(account) = resolve_session_account(endpoint, session_options) else {
         let endpoint = endpoint_for_logging(endpoint);
-        if session_options.is_explicitly_enabled() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!(
-                    "Session authentication requires a storage account name, but one could not \
-                     be determined from {endpoint}. Set `SessionOptions::account_name`."
-                ),
-            ));
-        }
-        tracing::warn!(
-            %endpoint,
-            "Session authentication is unavailable because the storage account name could not be determined. Falling back to bearer authentication."
-        );
-        per_retry_policies.push(bearer);
-        return Ok(per_retry_policies);
+        return Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            format!(
+                "Session authentication requires a storage account name, but one could not \
+                 be determined from {endpoint}. Set `SessionOptions::account_name`."
+            ),
+        ));
     };
 
     // Reuse an injected provider, or create a session-free client to acquire sessions.
@@ -176,23 +174,38 @@ fn build_auth_policies(
 
 /// Resolves the account name used to sign session requests: the configured
 /// account name, or one derived from the endpoint.
+///
+/// Only path-style endpoints and standard `{account}.blob.{suffix}` hosts encode the
+/// account; any other host (such as a custom domain) yields `None`.
 fn resolve_session_account(endpoint: &Url, options: &SessionOptions) -> Option<String> {
     if let Some(account) = options.account_name.as_deref() {
         if !account.is_empty() {
             return Some(account.to_string());
         }
     }
-    let host = endpoint.host_str()?;
-    if host_is_ip_literal(host) {
+    if is_path_style(endpoint) {
         return endpoint
             .path_segments()?
             .find(|segment| !segment.is_empty())
             .map(str::to_string);
     }
-    host.split('.')
-        .next()
-        .filter(|label| !label.is_empty())
-        .map(str::to_string)
+    let (label, suffix) = endpoint.host_str()?.split_once('.')?;
+    if !suffix
+        .split('.')
+        .any(|part| part.eq_ignore_ascii_case("blob"))
+    {
+        return None;
+    }
+    // Shared Key signs secondary-location requests with the primary account name.
+    let account = label.strip_suffix("-secondary").unwrap_or(label);
+    (!account.is_empty()).then(|| account.to_string())
+}
+
+/// Whether `url` addresses the account by its first path segment rather than its
+/// host, as IP endpoints and the local emulator do.
+pub(crate) fn is_path_style(url: &Url) -> bool {
+    url.host_str()
+        .is_some_and(|host| host_is_ip_literal(host) || host.eq_ignore_ascii_case("localhost"))
 }
 
 /// Whether `host` (as returned by [`Url::host_str`]) is an IPv4 or bracketed
@@ -470,6 +483,69 @@ mod tests {
         };
         let endpoint = Url::parse("https://127.0.0.1/").unwrap();
         assert_eq!(resolve_session_account(&endpoint, &options), None);
+    }
+
+    #[test]
+    fn resolve_session_account_none_for_custom_domain() {
+        let options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: None,
+            ..Default::default()
+        };
+        let endpoint = Url::parse("https://cdn.contoso.com/").unwrap();
+        assert_eq!(resolve_session_account(&endpoint, &options), None);
+    }
+
+    #[test]
+    fn resolve_session_account_strips_secondary_suffix() {
+        let options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: None,
+            ..Default::default()
+        };
+        // Shared Key signs secondary-location requests with the primary account name.
+        let endpoint = Url::parse("https://myaccount-secondary.blob.core.windows.net/").unwrap();
+        assert_eq!(
+            resolve_session_account(&endpoint, &options).as_deref(),
+            Some("myaccount")
+        );
+    }
+
+    #[test]
+    fn resolve_session_account_uses_path_segment_for_localhost_emulator() {
+        let options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: None,
+            ..Default::default()
+        };
+        let endpoint = Url::parse("https://localhost:10000/devstoreaccount1/c").unwrap();
+        assert_eq!(
+            resolve_session_account(&endpoint, &options).as_deref(),
+            Some("devstoreaccount1")
+        );
+    }
+
+    #[test]
+    fn resolve_session_account_uses_host_label_for_blob_endpoint_variants() {
+        let options = SessionOptions {
+            mode: SessionMode::Enabled,
+            account_name: None,
+            ..Default::default()
+        };
+        // cspell:ignore privatelink chinacloudapi azurestack
+        for host in [
+            "myaccount.privatelink.blob.core.windows.net",
+            "myaccount.blob.core.chinacloudapi.cn",
+            "myaccount.blob.local.azurestack.external",
+            "MYACCOUNT.BLOB.CORE.WINDOWS.NET",
+        ] {
+            let endpoint = Url::parse(&format!("https://{host}/")).unwrap();
+            assert_eq!(
+                resolve_session_account(&endpoint, &options).as_deref(),
+                Some("myaccount"),
+                "host: {host}"
+            );
+        }
     }
 
     #[test]

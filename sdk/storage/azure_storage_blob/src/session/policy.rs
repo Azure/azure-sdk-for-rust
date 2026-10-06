@@ -86,19 +86,14 @@ impl Policy for SessionAuthenticationPolicy {
         self.sign_request(request, &session)?;
         let response = next[0].send(ctx, request, &next[1..]).await?;
 
-        // On 401, drop the session, then reacquire and retry exactly once.
+        // On 401, drop the session and resend this request with bearer.
         if response.status() == StatusCode::Unauthorized {
+            // Read the error body so the connection can be reused.
+            let _ = response.into_body().collect().await;
             clear_session_headers(request);
             self.provider.invalidate_session(request, &session).await;
             request.body_mut().reset().await?;
-
-            let session = self.provider.get_session(request).await?;
-            if session.is_fallback_to_bearer() {
-                return self.fallback.send(ctx, request, next).await;
-            }
-
-            self.sign_request(request, &session)?;
-            return next[0].send(ctx, request, &next[1..]).await;
+            return self.fallback.send(ctx, request, next).await;
         }
 
         Ok(response)
@@ -245,7 +240,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn unauthorized_invalidates_and_retries_once_with_session() {
+    async fn unauthorized_invalidates_and_falls_back_to_bearer() {
         let provider = Arc::new(StubSessionProvider::new(valid_session(), true));
         let transport = CapturingTransport::new(vec![
             response(StatusCode::Unauthorized),
@@ -261,10 +256,26 @@ mod tests {
             "first attempt should use a session token"
         );
         assert!(
-            seen[1].as_deref().unwrap().starts_with("Session "),
-            "retry should use a reacquired session token"
+            seen[1].as_deref().unwrap().starts_with("Bearer "),
+            "retry should use bearer"
         );
-        assert_eq!(provider.get_calls(), 2);
+        assert_eq!(provider.get_calls(), 1, "no session should be reacquired");
+        assert_eq!(invalidated, 1);
+    }
+
+    #[tokio::test]
+    async fn unauthorized_bearer_retry_is_not_retried_again() {
+        let provider = Arc::new(StubSessionProvider::new(valid_session(), true));
+        let transport = CapturingTransport::new(vec![
+            response(StatusCode::Unauthorized),
+            response(StatusCode::Unauthorized),
+        ]);
+
+        let (status, seen, invalidated) = run(provider, transport).await;
+
+        assert_eq!(status, StatusCode::Unauthorized);
+        assert_eq!(seen.len(), 2);
+        assert!(seen[1].as_deref().unwrap().starts_with("Bearer "));
         assert_eq!(invalidated, 1);
     }
 }
