@@ -12,6 +12,7 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_security_keyvault_keys"
 keywords = ["sdk", "cloud"]
 categories = ["api-bindings"]
+exclude.workspace = true
 
 [features]
 default = ["azure_core/default"]
