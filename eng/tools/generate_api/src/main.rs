@@ -22,12 +22,22 @@ fn main() {
 }
 
 fn run() -> Result<(), String> {
-    verify_repository_root()?;
-
     let request = cli::parse()?;
+    let repository_root = resolve_repository_root(&request)?;
+    std::env::set_current_dir(&repository_root).map_err(|error| {
+        format!(
+            "Failed to set current directory to repository root '{}': {error}",
+            repository_root.display()
+        )
+    })?;
+
     diagnostics::info(format!(
         "Using toolchain channel: {}",
         env!("TOOLCHAIN_CHANNEL")
+    ));
+    diagnostics::info(format!(
+        "Using repository root: {}",
+        repository_root.display()
     ));
     diagnostics::info(format!(
         "Loading manifest: {}",
@@ -61,8 +71,6 @@ fn run() -> Result<(), String> {
 
                 let map_path = output::output_file_path(output_dir, cli::SOURCE_MAP_FILE_NAME);
                 let mappings = render::markdown::source_mappings_from_lines(&lines);
-                let repository_root = std::env::current_dir()
-                    .map_err(|error| format!("Failed to resolve repository root: {error}"))?;
                 let map = source_map::render(
                     cli::OutputFormat::Markdown.default_file_name(),
                     &mappings,
@@ -118,10 +126,31 @@ fn save_or_check(request: &cli::Request, path: &Path, contents: &str) -> Result<
     Ok(())
 }
 
-fn verify_repository_root() -> Result<(), String> {
-    if Path::new("eng/tools/generate_api").exists() {
+fn resolve_repository_root(request: &cli::Request) -> Result<std::path::PathBuf, String> {
+    let repository_root = if let Some(root) = &request.root {
+        root.clone()
+    } else {
+        std::env::current_dir().map_err(|error| {
+            format!("Failed to resolve current directory as repository root: {error}")
+        })?
+    };
+
+    verify_repository_root(&repository_root)?;
+    std::path::absolute(&repository_root).map_err(|error| {
+        format!(
+            "Failed to resolve repository root '{}': {error}",
+            repository_root.display()
+        )
+    })
+}
+
+fn verify_repository_root(repository_root: &Path) -> Result<(), String> {
+    if repository_root.join("eng/tools/generate_api").exists() {
         Ok(())
     } else {
-        Err("This tool must be run from the root of the azure-sdk-for-rust repository.".to_string())
+        Err(format!(
+            "Repository root '{}' does not contain eng/tools/generate_api.",
+            repository_root.display()
+        ))
     }
 }
