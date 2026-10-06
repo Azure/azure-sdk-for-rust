@@ -195,6 +195,7 @@ including supported change metadata and previous images.
 | Alternative | Package tradeoff |
 | --- | --- |
 | Add CFP to `azure_data_cosmos`, or have the shared CFP engine depend on it. | Couples processor delivery to the typed SDK and places Rust document decoding below the native boundary. Rejected as the shared baseline. |
+| Depend on `azure_data_cosmos` only from the public Rust CFP API to reuse event types. | Technically valid without affecting the shared engine or native path, but couples CFP's public types and releases to the primary SDK. Not selected for this draft. |
 | One standalone CFP package. | Fewer artifacts, but combines the typed Rust API with reusable coordination and couples their public compatibility surfaces. |
 | Two packages over `azure_data_cosmos_driver` (proposed). | Separates typing from coordination and reuses database capabilities; requires adapters and explicit compatible dependency ranges. |
 | Route all public Rust API configuration/codec access through the shared CFP engine. | Hides the direct dependency but adds forwarding APIs unrelated to coordination. The proposal instead retains the direct database-driver edge. |
@@ -213,6 +214,37 @@ dependency. A local path dependency is not a distribution substitute. Publicatio
 and release ordering therefore cannot be decided independently, even if support
 policies and version cadence differ. A future native package has a separate
 platform-library/header and ABI distribution contract.
+
+### 5.1 Why not reuse the typed SDK's types in the public Rust API?
+
+Depending on `azure_data_cosmos` solely from
+`azure_data_cosmos_change_feed_processor` could reuse SDK event types and their
+deserialization behavior without adding that dependency to the shared CFP
+engine or native consumption path. This is a technically valid alternative,
+distinct from making the shared engine depend on the typed SDK; FFI does not
+make public-Rust-API-only type reuse impossible.
+
+The author-selected direction for this draft instead uses explicit CFP-owned
+public models to reduce coupling to the primary SDK's public API and release
+lifecycle. Exposing SDK-owned types would make their compatibility part of CFP's
+public API contract. Applications and CFP could resolve different SDK versions
+or sources, yielding distinct Rust type identities and interoperability problems.
+Ordinary diamond dependencies are supported by Cargo: repeated paths to the
+same resolved package do not inherently duplicate types, clients, or runtime
+instances. The concern is deliberate compatibility coupling, not an intrinsically
+unsafe dependency diamond.
+
+Cargo has no special "types-only dependency": using only model APIs still brings
+the package's enabled dependency graph. `default-features = false` does not
+turn `azure_data_cosmos` into a models-only package, and other dependency paths
+may enable additional features.
+
+The cost is maintaining the relevant event types and decoder semantics
+identified in the duplication table in section 3. CFP-owned models have distinct
+Rust type identities and are not automatically interchangeable with SDK types.
+This duplication is a maintenance tradeoff, not a free solution or a guarantee
+of complete versioning independence. It is neither repository approval nor a
+universal rule for Rust libraries.
 
 ## 6. Integration Boundary
 
