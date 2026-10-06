@@ -17,25 +17,36 @@ Set-StrictMode -Version 2.0
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
 . ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'common.ps1'))
 
-$rustupInstalled = Ensure-RustupInstalled
-if ($rustupInstalled) {
-  Write-Host "Installed rustup to $(Get-RustupCargoHome)."
+$skipRustupProbes = $false
+if (Test-RustupInstalled) {
+  $rustupInstalled = $false
+}
+elseif ($PSCmdlet.ShouldProcess('rustup', 'Install rustup')) {
+  $rustupInstalled = Ensure-RustupInstalled
+  if ($rustupInstalled) {
+    Write-Host "Installed rustup to $(Get-RustupCargoHome)."
+  }
+}
+else {
+  $skipRustupProbes = $true
 }
 
 $installedToolchains = @{}
 
-$rustupVersion = Invoke-LoggedCommand 'rustup --version' -GroupOutput
-if (!($rustupVersion -match 'rustup (\d+)\.(\d+)\.\d+')) {
-  LogError "Failed to determine rustup version. rustup 1.28.0 or newer is required. Run 'rustup self update' and rerun this script."
-  exit 1
-}
+if (!$skipRustupProbes) {
+  $rustupVersion = Invoke-LoggedCommand 'rustup --version' -GroupOutput
+  if (!($rustupVersion -match 'rustup (\d+)\.(\d+)\.\d+')) {
+    LogError "Failed to determine rustup version. rustup 1.28.0 or newer is required. Run 'rustup self update' and rerun this script."
+    exit 1
+  }
 
-$major = [int] $matches[1]
-$minor = [int] $matches[2]
-# `rustup install` without an explicit toolchain requires rustup >= 1.28.0.
-if ($major -lt 1 -or ($major -eq 1 -and $minor -lt 28)) {
-  LogError "rustup 1.28.0 or newer is required; detected $($matches[0]). Run 'rustup self update' and rerun this script."
-  exit 1
+  $major = [int] $matches[1]
+  $minor = [int] $matches[2]
+  # `rustup install` without an explicit toolchain requires rustup >= 1.28.0.
+  if ($major -lt 1 -or ($major -eq 1 -and $minor -lt 28)) {
+    LogError "rustup 1.28.0 or newer is required; detected $($matches[0]). Run 'rustup self update' and rerun this script."
+    exit 1
+  }
 }
 
 function Install-RustToolchain(
@@ -71,4 +82,6 @@ if ($Tools) {
   }
 }
 
-Invoke-LoggedCommand 'rustup show' -GroupOutput
+if (!$skipRustupProbes) {
+  Invoke-LoggedCommand 'rustup show' -GroupOutput
+}

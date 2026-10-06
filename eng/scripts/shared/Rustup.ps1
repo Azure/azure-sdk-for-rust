@@ -27,6 +27,10 @@ function Add-RustupBinDirectoryToPath() {
   return $cargoBin
 }
 
+function Test-RustupInstalled() {
+  return $null -ne (Get-Command 'rustup' -ErrorAction SilentlyContinue)
+}
+
 function Get-RustupBootstrapInstaller() {
   if ($IsWindows) {
     return [pscustomobject]@{
@@ -51,20 +55,42 @@ function Get-RustupBootstrapInstaller() {
   }
 }
 
+function New-RustupBootstrapPath(
+  [Parameter(Mandatory = $true)]
+  [string] $FileName
+) {
+  $tempPath = [System.IO.Path]::GetTempPath()
+  while ($true) {
+    $tempDirectory = [System.IO.Path]::Combine(
+      $tempPath,
+      "rustup-$([System.IO.Path]::GetRandomFileName())"
+    )
+
+    try {
+      New-Item -ItemType Directory -Path $tempDirectory -ErrorAction Stop | Out-Null
+      return [pscustomobject]@{
+        DirectoryPath = $tempDirectory
+        InstallerPath = [System.IO.Path]::Combine($tempDirectory, $FileName)
+      }
+    }
+    catch [System.IO.IOException] {
+    }
+  }
+}
+
 function Ensure-RustupInstalled() {
-  $rustup = Get-Command 'rustup' -ErrorAction SilentlyContinue
-  if ($rustup) {
+  if (Test-RustupInstalled) {
     return $false
   }
 
   Add-RustupBinDirectoryToPath | Out-Null
-  $rustup = Get-Command 'rustup' -ErrorAction SilentlyContinue
-  if ($rustup) {
+  if (Test-RustupInstalled) {
     return $false
   }
 
   $installer = Get-RustupBootstrapInstaller
-  $installerPath = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), $installer.FileName)
+  $bootstrapPath = New-RustupBootstrapPath -FileName $installer.FileName
+  $installerPath = $bootstrapPath.InstallerPath
 
   try {
     Invoke-WebRequest -Uri $installer.Uri -OutFile $installerPath
@@ -83,13 +109,13 @@ function Ensure-RustupInstalled() {
     }
   }
   finally {
-    if (Test-Path -LiteralPath $installerPath) {
-      Remove-Item -LiteralPath $installerPath -Force
+    if (Test-Path -LiteralPath $bootstrapPath.DirectoryPath) {
+      Remove-Item -LiteralPath $bootstrapPath.DirectoryPath -Recurse -Force
     }
   }
 
   Add-RustupBinDirectoryToPath | Out-Null
-  if (!(Get-Command 'rustup' -ErrorAction SilentlyContinue)) {
+  if (!(Test-RustupInstalled)) {
     throw 'rustup was installed but is still unavailable on PATH.'
   }
 
