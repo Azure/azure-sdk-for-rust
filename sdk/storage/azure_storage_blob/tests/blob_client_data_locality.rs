@@ -511,7 +511,8 @@ async fn test_download_layout_aware_routing_from_container_client() -> Result<()
 /// The layout request carries the download's snapshot, version, range, encryption key,
 /// lease, conditions, and timeout, so the layout describes the same blob the chunks read.
 #[tokio::test]
-async fn test_download_layout_request_carries_download_options() -> Result<(), Box<dyn Error>> {
+async fn test_download_layout_aware_routing_scopes_layout_request_to_download(
+) -> Result<(), Box<dyn Error>> {
     let seen = Arc::new(Mutex::new(Vec::<ObservedRequest>::new()));
     let transport = layout_mock_transport(seen.clone(), LAYOUT, LayoutHint::Advertised);
     let blob_client = blob_client_with(
@@ -650,7 +651,8 @@ async fn test_download_layout_endpoint_overrides_layout_aware_routing() -> Resul
     let body = blob_client
         .download(Some(BlobClientDownloadOptions {
             layout_endpoint: Some("epa.blob.core.windows.net:443".into()),
-            // Left at its default of `Enabled` to show the explicit endpoint wins.
+            // Enabled so the hint would trigger a layout fetch if the explicit endpoint did not win.
+            layout_aware_routing: LayoutAwareRouting::Enabled,
             partition_size: Some(NonZero::new(4).unwrap()),
             parallel: Some(NonZero::new(2).unwrap()),
             ..Default::default()
