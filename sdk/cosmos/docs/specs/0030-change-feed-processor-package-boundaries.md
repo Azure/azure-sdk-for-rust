@@ -52,13 +52,13 @@ flowchart TB
     Core["azure_data_cosmos_<br/>change_feed_<br/>processor_driver"]
     DB["azure_data_cosmos_driver"]
     Host["Other language SDK<br/>host-language SHIM"]
-    FFI["azure_data_cosmos_<br/>change_feed_<br/>processor_ffi<br/>(proposed name)"]
+    Native["azure_data_cosmos_<br/>change_feed_<br/>processor_native<br/>(future package)"]
     App --> API
     API -->|"processing"| Core
     Core -->|"database execution"| DB
     API -->|"configuration / codecs"| DB
-    Host -->|"C ABI"| FFI
-    FFI -->|"processing"| Core
+    Host -->|"C ABI"| Native
+    Native -->|"processing"| Core
 ```
 
 **The facade also directly depends on `azure_data_cosmos_driver`** for
@@ -68,9 +68,9 @@ demonstrates it. This avoids making the CFP driver a forwarding facade for
 unrelated database configuration and codecs. It does not move processor
 coordination into the facade or introduce a dependency on `azure_data_cosmos`.
 
-`azure_data_cosmos_change_feed_processor_ffi` is a **proposed name** for a future
+`azure_data_cosmos_change_feed_processor_native` is the selected name for a future
 separate native adapter, not an approved third deliverable. It consumes the CFP
-driver rather than the typed facade; its final name and distribution remain
+driver rather than the typed facade; its placement and distribution remain
 open. The existing `azure_data_cosmos_driver_native` wraps database execution,
 not CFP coordination. The CFP driver calls `azure_data_cosmos_driver` through
 Rust, not through that existing database FFI package.
@@ -90,7 +90,7 @@ facade, not in transport or database execution.
 | SDK-only conveniences | Recreate only those the facade promises: for example, `RoutingStrategy::ProximityTo` expansion, SDK binary-option environment/default resolution, and application-facing diagnostics adapters. These are not inherited merely by depending on the database driver. |
 | Request policies and database execution | Reuse `azure_data_cosmos_driver` implementations and driver-owned `OperationOptions`: retries, cross-region routing, hedging, failover, metadata/topology caches, credential binding, and diagnostics data. Public exposure of their types is a separate compatibility decision. |
 | Wire encoding | Reuse `azure_data_cosmos_driver` binary JSON decoding, encoding, and transcoding facilities. Do not create another codec implementation in either CFP package. |
-| Native adaptation | The proposed `azure_data_cosmos_change_feed_processor_ffi` owns ABI adaptation between the shared engine and host-language SHIMs, not Rust application typing. |
+| Native adaptation | The proposed `azure_data_cosmos_change_feed_processor_native` owns ABI adaptation between the shared engine and host-language SHIMs, not Rust application typing. |
 
 Copying event declarations alone is insufficient. The
 [SDK event decoder](../../azure_data_cosmos/src/models/change_feed_item.rs) distinguishes envelopes
@@ -195,7 +195,7 @@ instances rather than assuming an account singleton.
 | Which driver types, if any, are exposed by the facade instead of adapted? | Defines source compatibility and constraints on database/CFP-driver dependency upgrades. |
 | What typed event and option contract does the facade promise? | Determines which SDK-owned models, decoder semantics, and builder conveniences must be duplicated/adapted. |
 | What are each package's publication, support, versioning, and compatible dependency-range policies? | Determines artifacts and coordinated release ordering; facade publication requires its dependency packages to be available. |
-| What is the final name and placement of the future native adapter? | Determines a separate package/ABI artifact boundary without making the typed facade the native baseline. |
+| What is the placement and distribution of `azure_data_cosmos_change_feed_processor_native`? | Determines a separate package/ABI artifact boundary without making the typed facade the native baseline; the package name is selected. |
 
 The direct facade-to-database-driver dependency is selected for this proposal,
 not an unresolved alternative. Operational CFP behavior and FFI delivery
