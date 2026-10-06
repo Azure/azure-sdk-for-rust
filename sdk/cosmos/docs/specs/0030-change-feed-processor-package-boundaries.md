@@ -82,13 +82,13 @@ public Rust API, not in transport or database execution.
 | Surface | Package ownership and treatment |
 | --- | --- |
 | Public Rust callback API | `azure_data_cosmos_change_feed_processor` owns application-type decoding, invocation of the application's `handleChanges` callback, options, error adaptation, and the internal processing adapter. |
-| Shared CFP engine | `azure_data_cosmos_change_feed_processor_driver` owns autonomous polling, bootstrap, lease authority, processing coordination, and checkpoint decisions. It invokes an internal adapter, not the application's typed callback, and does not know the application's document type. |
+| Shared CFP engine | `azure_data_cosmos_change_feed_processor_driver` owns autonomous polling, bootstrap, lease authority, the shared processing-exchange implementation, and checkpoint decisions. Rust and native bindings use the same delivery/result handling. It invokes an internal adapter, not the application's typed callback, and does not know the application's document type. |
 | Typed change events | For an equivalent SDK event contract, the public Rust API duplicates/adapts `ChangeFeedItem<T>`, `ChangeFeedMetadata`, `ChangeFeedOperationType`, and `LogicalSequenceNumber`, including their custom deserialization behavior. |
 | Change-feed-specific public options | The public Rust API provides equivalents/adapters for the relevant `ChangeFeedMode`, `ChangeFeedOptions`, and `FeedOptions` responsibilities, including start-position configuration. Do not copy unrelated options or the entire typed iterator implementation. |
 | SDK-only conveniences | Recreate only those the public Rust API promises: for example, `RoutingStrategy::ProximityTo` expansion, SDK binary-option environment/default resolution, and application-facing diagnostics adapters. These are not inherited merely by depending on the database driver. |
 | Request policies and database execution | Reuse `azure_data_cosmos_driver` implementations and driver-owned `OperationOptions`: retries, cross-region routing, hedging, failover, metadata/topology caches, credential binding, and diagnostics data. Public exposure of their types is a separate compatibility decision. |
 | Wire encoding | Reuse `azure_data_cosmos_driver` binary JSON decoding, encoding, and transcoding facilities. Do not create another codec implementation in either CFP package. |
-| Rust FFI wrapper | The proposed `azure_data_cosmos_change_feed_processor_native` bridges raw batch delivery and processing completion between the shared CFP engine and other language SDKs. Those SDKs own application-type decoding and invocation of their application callbacks. |
+| Rust FFI wrapper | The proposed `azure_data_cosmos_change_feed_processor_native` exposes a thin C-compatible binding to the shared processing exchange and forwards host results into its completion path. Other language SDKs own application-type decoding and invocation of their application callbacks. |
 
 Copying event declarations alone is insufficient. The SDK event decoder distinguishes envelopes
 from flat documents, preserves optional metadata and previous images, handles
@@ -107,24 +107,44 @@ Shared CFP engine -> raw batch -> public Rust API / Rust FFI wrapper -> SDK call
 Shared CFP engine <- correlated processing outcome <------------------ completion
 ```
 
-The proposed processing contract is a **bidirectional asynchronous request-reply
-boundary** defined by the shared CFP engine: it delivers a raw batch outward,
-and the consuming SDK returns the actual processing outcome correlated with that
-pending delivery. Runtime communication is bidirectional while Cargo
+The proposed requirement is **one shared processing-exchange implementation in
+`azure_data_cosmos_change_feed_processor_driver`, accessed through two thin
+bindings, not two independently implemented protocols with equivalent behavior.**
+It implements a bidirectional asynchronous request-reply boundary: raw batch
+delivery goes outward and the actual processing outcome returns, correlated
+with the pending delivery. Runtime communication is bidirectional while Cargo
 dependencies remain one-way; defining this contract does not require the engine
 to import the consuming SDK or know its application type `T`.
 
-The public Rust API supplies an awaitable internal adapter that captures the
-application handler, decodes the raw batch, invokes the application's
-`handleChanges` callback, and returns its actual completion/error. The engine
-invokes this adapter, not the typed application callback directly. Other
-language SDKs own decoding and application callback invocation, reporting the
-outcome through the proposed Rust FFI wrapper's delivery/completion bridge.
-Either bridge can satisfy the same contract; cross-language reuse does not
-require a producer-only engine. Moving code between packages
-does not imply another thread or runtime; queue and ABI mechanics are not
-selected here. `handleChanges` names the application callback role, not an
-implemented native symbol.
+The shared CFP engine owns the common implementation of:
+
+- Pending-delivery identity and its association with the lease, ownership
+  generation, and candidate checkpoint.
+- Processing-result acceptance, including stale and duplicate result handling.
+- Per-lease admission and outstanding-work limits.
+- Checkpoint eligibility, persistence, and retry/reconciliation decisions.
+
+The public Rust API accesses this implementation through Rust interfaces, not
+the C ABI. Its awaitable internal adapter decodes the raw batch, invokes the
+application's `handleChanges` callback, and returns its actual completion/error
+into the **same core-owned completion path** as a native host's result. There
+must be no Rust-only success path that bypasses this mechanism. The engine
+invokes the internal adapter, not the typed application callback directly.
+
+The future `azure_data_cosmos_change_feed_processor_native` package exposes a
+C-compatible binding to this same implementation and forwards host processing
+results into that completion path. Other language SDKs own decoding and
+application callback invocation. Bindings may differ in application decoding,
+callback invocation, host-runtime dispatch, ABI marshalling, and handle lifetime
+management; they must not independently implement CFP ownership validation,
+progress admission, or checkpoint/recovery rules.
+
+A future and a queue are complementary mechanisms: a queue can carry a request
+while a future awaits its reply. They are not separate processing protocols.
+No particular channel primitive or ABI signature is selected here.
+Cross-language reuse does not require a producer-only engine, and package
+separation does not imply another thread or runtime. `handleChanges` names the
+application callback role, not an implemented native symbol.
 
 The shared CFP engine owns **lockstep processing and checkpointing**:
 
