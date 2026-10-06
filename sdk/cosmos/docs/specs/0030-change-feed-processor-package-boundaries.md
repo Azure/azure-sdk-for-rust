@@ -15,7 +15,6 @@
 - [4. Callback and Serialization Boundaries](#4-callback-and-serialization-boundaries)
 - [5. Alternatives and Compatibility Consequences](#5-alternatives-and-compatibility-consequences)
 - [6. Integration Boundary](#6-integration-boundary)
-- [7. Package Decisions Still Open](#7-package-decisions-still-open)
 
 ## 1. Motivation and Decision Requested
 
@@ -266,17 +265,3 @@ state. Sharing must use supported, compatible driver/runtime contexts.
 `CosmosDriverRuntime::create_driver` creates a fresh driver; compatible drivers
 from the same runtime share runtime-owned resources. Retain the required
 instances rather than assuming an account singleton.
-
-## 7. Package Decisions Still Open
-
-| Question | Public boundary or distribution consequence |
-| --- | --- |
-| Which driver types, if any, are exposed by the public Rust API instead of adapted? | Defines source compatibility and constraints on database/CFP-driver dependency upgrades. |
-| What typed event and option contract does the public Rust API promise? | Determines which SDK-owned models, decoder semantics, and builder conveniences must be duplicated/adapted. |
-| What are each package's publication, support, versioning, and compatible dependency-range policies? | Determines artifacts and coordinated release ordering; publishing the public Rust API requires its dependency packages to be available. |
-| What is the placement and distribution of `azure_data_cosmos_change_feed_processor_native`? | Determines a separate package/ABI artifact boundary without making the public Rust API the native baseline; the package name is selected. |
-
-The direct public-Rust-API-to-database-driver dependency is selected for this
-proposal, not an unresolved alternative. Beyond the processing-completion
-boundary in section 4.1, operational CFP details and FFI delivery mechanics are
-intentionally excluded from this package decision.
