@@ -1,4 +1,4 @@
-<!-- cspell:ignore SHIM SHIMs -->
+<!-- cspell:ignore SHIM SHIMs checkpointing lockstep -->
 
 # Change Feed Processor Package Boundaries
 
@@ -27,7 +27,7 @@ serialization.
 
 This proposal requests agreement on two library packages:
 
-- **`azure_data_cosmos_change_feed_processor`**: typed Rust facade.
+- **`azure_data_cosmos_change_feed_processor`**: public Rust API.
 - **`azure_data_cosmos_change_feed_processor_driver`**: schema-agnostic CFP
   coordination engine.
 
@@ -37,8 +37,9 @@ The engine builds on `azure_data_cosmos_driver`, not the typed
 it does not change accepted ADRs or establish support or release approval.
 
 This document requests agreement on packages, dependency direction, ownership,
-and distribution consequences. It does not specify polling, lease algorithms,
-checkpoint state machines, scheduling, an FFI protocol, or implementation tests.
+and distribution consequences, including the processing-completion boundary.
+It does not detail polling, lease algorithms, checkpoint state machines,
+scheduling, an FFI protocol, or implementation tests.
 
 ## 2. Package Dependencies
 
@@ -61,16 +62,16 @@ flowchart TB
     Native -->|"processing"| Core
 ```
 
-**The facade also directly depends on `azure_data_cosmos_driver`** for
+**The public Rust API also directly depends on `azure_data_cosmos_driver`** for
 configuration, credential binding, and codec access. The author selected this
 edge for the proposal; the [prototype manifest][prototype-manifest] already
-demonstrates it. This avoids making the CFP driver a forwarding facade for
+demonstrates it. This avoids making the shared CFP engine a forwarding layer for
 unrelated database configuration and codecs. It does not move processor
-coordination into the facade or introduce a dependency on `azure_data_cosmos`.
+coordination into the public Rust API or introduce a dependency on `azure_data_cosmos`.
 
 `azure_data_cosmos_change_feed_processor_native` is the selected name for a future
-separate native adapter, not an approved third deliverable. It consumes the CFP
-driver rather than the typed facade; its placement and distribution remain
+Rust FFI wrapper, not an approved third deliverable. It consumes the shared CFP
+engine rather than the public Rust API; its placement and distribution remain
 open. The existing `azure_data_cosmos_driver_native` wraps database execution,
 not CFP coordination. The CFP driver calls `azure_data_cosmos_driver` through
 Rust, not through that existing database FFI package.
@@ -79,18 +80,18 @@ Rust, not through that existing database FFI package.
 
 Removing a dependency on `azure_data_cosmos` does not remove the capabilities
 implemented in `azure_data_cosmos_driver`. Duplication is primarily at the typed
-facade, not in transport or database execution.
+public Rust API, not in transport or database execution.
 
 | Surface | Package ownership and treatment |
 | --- | --- |
-| Public Rust API and typed application handler | `azure_data_cosmos_change_feed_processor` owns application types, decoding, options, error adaptation, and the handler adapter. |
-| CFP coordination | `azure_data_cosmos_change_feed_processor_driver` owns bootstrap, lease coordination, and invocation/completion coordination. It does not know the application's document type. |
-| Typed change events | For an equivalent SDK event contract, the facade duplicates/adapts `ChangeFeedItem<T>`, `ChangeFeedMetadata`, `ChangeFeedOperationType`, and `LogicalSequenceNumber`, including their custom deserialization behavior. |
-| Change-feed-specific public options | The facade provides equivalents/adapters for the relevant `ChangeFeedMode`, `ChangeFeedOptions`, and `FeedOptions` responsibilities, including start-position configuration. Do not copy unrelated options or the entire typed iterator implementation. |
-| SDK-only conveniences | Recreate only those the facade promises: for example, `RoutingStrategy::ProximityTo` expansion, SDK binary-option environment/default resolution, and application-facing diagnostics adapters. These are not inherited merely by depending on the database driver. |
+| Public Rust callback API | `azure_data_cosmos_change_feed_processor` owns application-type decoding, invocation of the application's `processBatch` callback, options, error adaptation, and the internal processing adapter. |
+| Shared CFP engine | `azure_data_cosmos_change_feed_processor_driver` owns autonomous polling, bootstrap, lease authority, processing coordination, and checkpoint decisions. It invokes an internal adapter, not the application's typed callback, and does not know the application's document type. |
+| Typed change events | For an equivalent SDK event contract, the public Rust API duplicates/adapts `ChangeFeedItem<T>`, `ChangeFeedMetadata`, `ChangeFeedOperationType`, and `LogicalSequenceNumber`, including their custom deserialization behavior. |
+| Change-feed-specific public options | The public Rust API provides equivalents/adapters for the relevant `ChangeFeedMode`, `ChangeFeedOptions`, and `FeedOptions` responsibilities, including start-position configuration. Do not copy unrelated options or the entire typed iterator implementation. |
+| SDK-only conveniences | Recreate only those the public Rust API promises: for example, `RoutingStrategy::ProximityTo` expansion, SDK binary-option environment/default resolution, and application-facing diagnostics adapters. These are not inherited merely by depending on the database driver. |
 | Request policies and database execution | Reuse `azure_data_cosmos_driver` implementations and driver-owned `OperationOptions`: retries, cross-region routing, hedging, failover, metadata/topology caches, credential binding, and diagnostics data. Public exposure of their types is a separate compatibility decision. |
 | Wire encoding | Reuse `azure_data_cosmos_driver` binary JSON decoding, encoding, and transcoding facilities. Do not create another codec implementation in either CFP package. |
-| Native adaptation | The proposed `azure_data_cosmos_change_feed_processor_native` owns ABI adaptation between the shared engine and host-language SHIMs, not Rust application typing. |
+| Rust FFI wrapper | The proposed `azure_data_cosmos_change_feed_processor_native` bridges raw batch delivery and processing completion between the shared CFP engine and other language SDKs. Those SDKs own application-type decoding and invocation of their application callbacks. |
 
 Copying event declarations alone is insufficient. The
 [SDK event decoder](../../azure_data_cosmos/src/models/change_feed_item.rs) distinguishes envelopes
@@ -103,24 +104,56 @@ interchangeability.
 
 ## 4. Callback and Serialization Boundaries
 
-### 4.1 The facade adapts typing; the engine coordinates completion
+### 4.1 Bidirectional processing completion and lockstep checkpointing
 
 ```text
-CFP driver -> raw batch -> facade adapter -> typed application callback
-CFP driver <- awaited result/error <------- callback completion
+Shared CFP engine -> raw batch -> public Rust API / Rust FFI wrapper -> SDK callback
+Shared CFP engine <- correlated processing outcome <------------------ completion
 ```
 
-The facade supplies a raw-batch callable that captures the application handler,
-decodes the batch into the facade's event types parameterized by `T`, invokes
-the handler, and returns a completion-bearing future. The engine can retain and
-invoke that callable and await its result without knowing `T` or depending on
-the facade package. The [prototype adapter][prototype-adapter] demonstrates
-this boundary; it does not establish a final public signature.
+The proposed processing contract is a **bidirectional asynchronous request-reply
+boundary** defined by the shared CFP engine: it delivers a raw batch outward,
+and the consuming SDK returns the actual processing outcome correlated with that
+pending delivery. Runtime communication is bidirectional while Cargo
+dependencies remain one-way; defining this contract does not require the engine
+to import the consuming SDK or know its application type `T`.
 
-Moving code into a separate crate does not automatically move execution onto
-another thread or runtime. This is an ownership and completion boundary, not a
-scheduling design. A future native adapter supplies an equivalent raw-payload
-and completion/error boundary; its ABI mechanism is not selected here.
+The public Rust API supplies an awaitable internal adapter that captures the
+application handler, decodes the raw batch, invokes the application's
+`processBatch` callback, and returns its actual completion/error. The engine
+invokes this adapter, not the typed application callback directly. Other
+language SDKs own decoding and application callback invocation, reporting the
+outcome through the proposed Rust FFI wrapper's delivery/completion bridge.
+Either bridge can satisfy the same contract; cross-language reuse does not
+require a producer-only engine. The [prototype adapter][prototype-adapter]
+illustrates the Rust boundary, not a final API. Moving code between packages
+does not imply another thread or runtime; queue and ABI mechanics are not
+selected here. `processBatch` names the application callback role, not an
+implemented native symbol.
+
+The shared CFP engine owns **lockstep processing and checkpointing**:
+
+> For each owned lease, an application batch is complete only after
+> `processBatch` succeeds and its corresponding conditional checkpoint is
+> confirmed durable. That lease session must not read or deliver the next batch
+> before both conditions hold.
+
+Fetching creates a candidate continuation, not a committed checkpoint.
+Receiving or scheduling the batch is not processing success: the consuming SDK
+reports success only after the callback's actual work completes. Processing
+failure or an absent reply cannot authorize checkpoint advancement; the engine
+applies its retry/stop policy, and silence does not prove the callback never ran.
+Before checkpointing, the engine validates delivery identity and current lease
+ownership; stale outcomes cannot authorize progress.
+
+After processing succeeds, checkpoint persistence failure leads to safe
+checkpoint retry or reconciliation, not automatic re-invocation of the
+successful callback. Lease renewal remains independent while the batch is
+outstanding. This is lockstep coordination, not transactional atomicity: a
+crash after application side effects but before checkpoint confirmation can
+cause replay, so it does not provide exactly-once external effects. This is a
+proposed package-level contract, not an implemented or repository-approved
+native API.
 
 ### 4.2 Why the typed database SDK is not the shared baseline
 
@@ -139,7 +172,7 @@ buffers and metadata instead, consistent with
 
 **Raw means application-schema-agnostic, not text-only or byte-for-byte
 untouched.** The database driver can perform wire decoding, schema-independent
-envelope processing, and binary/text conversion. Each consuming facade/SHIM
+envelope processing, and binary/text conversion. Each consuming Rust API/SHIM
 owns application typing and receives the declared payload shape and encoding,
 including supported change metadata and previous images.
 
@@ -150,16 +183,16 @@ including supported change metadata and previous images.
 | Add CFP to `azure_data_cosmos`, or have the shared CFP engine depend on it. | Couples processor delivery to the typed SDK and places Rust document decoding below the native boundary. Rejected as the shared baseline. |
 | One standalone CFP package. | Fewer artifacts, but combines the typed Rust API with reusable coordination and couples their public compatibility surfaces. |
 | Two packages over `azure_data_cosmos_driver` (proposed). | Separates typing from coordination and reuses database capabilities; requires adapters and explicit compatible dependency ranges. |
-| Route all facade configuration/codec access through the CFP driver. | Hides the direct dependency but adds forwarding APIs unrelated to coordination. The proposal instead retains the direct database-driver edge. |
+| Route all public Rust API configuration/codec access through the shared CFP engine. | Hides the direct dependency but adds forwarding APIs unrelated to coordination. The proposal instead retains the direct database-driver edge. |
 
 An internal dependency does not require re-exporting its public types. Exposing
-a driver option, error, or model in the facade's public API makes that type and
-its dependency version part of the facade's compatibility contract. Use explicit
+a driver option, error, or model in the public Rust API makes that type and
+its dependency version part of that API's compatibility contract. Use explicit
 adapters by default; any intentional shared public types need a documented
 compatibility decision. Package separation alone does not guarantee independent
 versioning or compatibility with every version of the database SDK/driver.
 
-The facade is intended to provide a publishable Cargo source package. Publishing
+The public Rust API is intended to provide a publishable Cargo source package. Publishing
 it to crates.io with a normal dependency on the CFP driver requires a compatible
 CFP-driver package available there, as well as its compatible database-driver
 dependency. A local path dependency is not a distribution substitute. Publication
@@ -171,7 +204,7 @@ platform-library/header and ABI distribution contract.
 
 Reuse the database driver's feed/dataflow machinery and prepared account/container
 bindings rather than copying SDK iterators, database execution, or metadata
-caches into CFP. Preserve driver diagnostics data; the facade adapts it for
+caches into CFP. Preserve driver diagnostics data; the public Rust API adapts it for
 application-facing diagnostics.
 
 Feed and lease bindings accept independently configured endpoints and credentials.
@@ -192,14 +225,15 @@ instances rather than assuming an account singleton.
 
 | Question | Public boundary or distribution consequence |
 | --- | --- |
-| Which driver types, if any, are exposed by the facade instead of adapted? | Defines source compatibility and constraints on database/CFP-driver dependency upgrades. |
-| What typed event and option contract does the facade promise? | Determines which SDK-owned models, decoder semantics, and builder conveniences must be duplicated/adapted. |
-| What are each package's publication, support, versioning, and compatible dependency-range policies? | Determines artifacts and coordinated release ordering; facade publication requires its dependency packages to be available. |
-| What is the placement and distribution of `azure_data_cosmos_change_feed_processor_native`? | Determines a separate package/ABI artifact boundary without making the typed facade the native baseline; the package name is selected. |
+| Which driver types, if any, are exposed by the public Rust API instead of adapted? | Defines source compatibility and constraints on database/CFP-driver dependency upgrades. |
+| What typed event and option contract does the public Rust API promise? | Determines which SDK-owned models, decoder semantics, and builder conveniences must be duplicated/adapted. |
+| What are each package's publication, support, versioning, and compatible dependency-range policies? | Determines artifacts and coordinated release ordering; publishing the public Rust API requires its dependency packages to be available. |
+| What is the placement and distribution of `azure_data_cosmos_change_feed_processor_native`? | Determines a separate package/ABI artifact boundary without making the public Rust API the native baseline; the package name is selected. |
 
-The direct facade-to-database-driver dependency is selected for this proposal,
-not an unresolved alternative. Operational CFP behavior and FFI delivery
-mechanics are intentionally excluded from this package decision.
+The direct public-Rust-API-to-database-driver dependency is selected for this
+proposal, not an unresolved alternative. Beyond the processing-completion
+boundary in section 4.1, operational CFP details and FFI delivery mechanics are
+intentionally excluded from this package decision.
 
 ## 8. References
 
@@ -216,7 +250,7 @@ mechanics are intentionally excluded from this package decision.
 - [Driver account and credential binding](../../azure_data_cosmos_driver/src/models/account_reference.rs)
 - [Driver runtime and resource sharing](../../azure_data_cosmos_driver/src/driver/runtime.rs)
 - [Response payload shapes and codecs](../../azure_data_cosmos_driver/src/models/response_body.rs)
-- [Prototype facade dependencies][prototype-manifest]
+- [Prototype public Rust API dependencies][prototype-manifest]
 - [Prototype typed callback adapter][prototype-adapter]
 
 [prototype-manifest]: https://github.com/jeet1995/azure-sdk-for-rust/blob/bbd6dde16ad69e1d4c2c9881d24d5c3a05dff11b/sdk/cosmos/azure_cosmos_change_feed_processor/Cargo.toml
