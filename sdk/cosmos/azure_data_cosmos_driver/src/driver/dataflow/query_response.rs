@@ -736,6 +736,10 @@ fn body_error_msg(message: &'static str) -> crate::error::CosmosError {
 }
 
 #[cfg(test)]
+#[path = "query_response_parsing_tests.rs"]
+mod parsing_tests;
+
+#[cfg(test)]
 mod tests {
     use std::{hint::black_box, time::Instant};
 

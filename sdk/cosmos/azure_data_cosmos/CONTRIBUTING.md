@@ -62,12 +62,23 @@ cargo test -p azure_data_cosmos --all-features --test live binary_order_by::live
 The explicit throughput environment variable is a provisioning guard. The test
 uses classic Gateway and separate text-enabled and binary-enabled clients,
 seeds identical documents, and verifies matching physical range boundaries with
-items in multiple ranges. It compares driver and typed SDK results under
+items in multiple ranges. Its reproducible seeded corpus includes nested,
+empty, reference-friendly string, Unicode, and numeric-boundary values.
+It compares driver and typed SDK results under
 `GatewayOnly` and `LocalPreferred` planning, including continuations,
-`TOP`, `OFFSET/LIMIT`, projections, ties, and ordered DISTINCT. Binary driver
+`TOP`, `OFFSET/LIMIT`, object/scalar/array/null projections, string sort keys,
+ties, and ordered DISTINCT with actual duplicate values. Every query runs with
+page-size hints of 1, 7, and 64. Resumable cases checkpoint up to three times,
+both on the existing client and on freshly constructed clients/runtimes.
+At most three query shapes run concurrently to bound execution time without
+reducing the matrix. Requested resume runs must exercise a checkpoint.
+Resumed results must match uninterrupted ordering on the same container,
+including tied keys. `LocalPreferred` can fall back to gateway planning.
+Binary driver
 output must contain original page-backed views; silently receiving text does
 not satisfy the test. Standalone materialization and view lifetimes are also
-checked.
+checked. The expanded matrix has a 30-minute timeout; provisioned-throughput
+charges continue until cleanup completes.
 
 The framework deletes the test database on completion, error, or timeout.
 An externally terminated process can bypass cleanup: the test prints its owned

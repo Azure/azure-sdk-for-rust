@@ -12,37 +12,50 @@
 
 use super::vectors::golden_vectors;
 use super::{decode, encode, from_slice, markers, PREAMBLE};
+use super::{reader::BinaryCursor, test_samples::SplitMix64};
 use serde_json::json;
 
-/// A tiny deterministic SplitMix64 PRNG.
-///
-/// Dependency-free (the crate avoids `rand`); the finalizer matches the
-/// SplitMix64 mixing used elsewhere in the driver. Deterministic so a failing
-/// case always reproduces from the same seed.
-struct SplitMix64 {
-    state: u64,
+fn scan(buffer: &[u8]) -> super::Result<()> {
+    let mut cursor = BinaryCursor::new(buffer)?;
+    let range = cursor.scan_value(0)?;
+    cursor.finish()?;
+    assert_eq!(range, 1..buffer.len());
+    Ok(())
 }
 
-impl SplitMix64 {
-    fn new(seed: u64) -> Self {
-        Self { state: seed }
-    }
+fn assert_scanner_agrees(buffer: &[u8]) {
+    let decoded = decode(buffer);
+    let scanned = scan(buffer);
+    assert_eq!(
+        scanned.is_ok(),
+        decoded.is_ok(),
+        "scanner/decoder acceptance differs: {buffer:02x?}"
+    );
+}
 
-    fn next_u64(&mut self) -> u64 {
-        self.state = self.state.wrapping_add(0x9e37_79b9_7f4a_7c15);
-        let mut z = self.state;
-        z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
-        z ^ (z >> 31)
+#[test]
+fn scanner_matches_decoder_on_generated_values() {
+    for seed in [0, 1, 0x5eed, u64::MAX] {
+        let mut rng = SplitMix64::new(seed);
+        for _ in 0..500 {
+            assert_scanner_agrees(&encode(&rng.document()));
+        }
     }
+}
 
-    /// Returns a `u64` in `[0, bound)` (`bound` must be non-zero).
-    fn below(&mut self, bound: u64) -> u64 {
-        self.next_u64() % bound
-    }
-
-    fn byte(&mut self) -> u8 {
-        self.next_u64() as u8
+#[test]
+fn scanner_matches_decoder_on_golden_truncations_and_corruptions() {
+    for vector in golden_vectors() {
+        for cut in 0..=vector.binary.len() {
+            assert_scanner_agrees(&vector.binary[..cut]);
+        }
+        for index in 0..vector.binary.len() {
+            for replacement in [0, 0x80, 0xc0, 0xe0, 0xff] {
+                let mut mutated = vector.binary.clone();
+                mutated[index] = replacement;
+                assert_scanner_agrees(&mutated);
+            }
+        }
     }
 }
 
@@ -115,7 +128,7 @@ fn decode_never_panics_on_random_bytes() {
             }
         }
         // The contract: terminate with Ok or Err, never panic.
-        let _ = decode(&buf);
+        assert_scanner_agrees(&buf);
     }
 }
 
@@ -128,7 +141,7 @@ fn decode_never_panics_on_truncated_valid_buffers() {
 
     for buf in &buffers {
         for cut in 0..=buf.len() {
-            let _ = decode(&buf[..cut]);
+            assert_scanner_agrees(&buf[..cut]);
         }
     }
 }
@@ -144,7 +157,7 @@ fn decode_never_panics_on_single_byte_corruption() {
             for replacement in [0x00, 0x80, 0xC0, 0xE0, 0xFF, rng.byte()] {
                 let mut corrupted = valid.clone();
                 corrupted[index] = replacement;
-                let _ = decode(&corrupted);
+                assert_scanner_agrees(&corrupted);
             }
         }
     }
@@ -162,18 +175,21 @@ fn adversarial_length_prefixes_do_not_over_allocate() {
     let mut str_l4 = vec![PREAMBLE, markers::STR_L4];
     str_l4.extend_from_slice(&huge.to_le_bytes());
     assert!(decode(&str_l4).is_err());
+    assert_scanner_agrees(&str_l4);
 
     // ArrL4 / ObjL4 with a giant declared body length.
     for marker in [markers::ARR_L4, markers::OBJ_L4] {
         let mut buf = vec![PREAMBLE, marker];
         buf.extend_from_slice(&huge.to_le_bytes());
         assert!(decode(&buf).is_err());
+        assert_scanner_agrees(&buf);
     }
 
     // Binary4ByteLength with a giant declared blob length.
     let mut bin = vec![PREAMBLE, markers::BINARY_4BYTE_LENGTH];
     bin.extend_from_slice(&huge.to_le_bytes());
     assert!(decode(&bin).is_err());
+    assert_scanner_agrees(&bin);
 
     // A uniform Int64 array claiming u16::MAX items (the max an ArrNumC2
     // count field can express): must error, not try to build a 65,535-element
@@ -181,6 +197,7 @@ fn adversarial_length_prefixes_do_not_over_allocate() {
     let mut uniform = vec![PREAMBLE, markers::ARR_NUM_C2, markers::INT64];
     uniform.extend_from_slice(&(u16::MAX).to_le_bytes());
     assert!(decode(&uniform).is_err());
+    assert_scanner_agrees(&uniform);
 }
 
 #[test]
@@ -195,6 +212,7 @@ fn deeply_nested_input_errors_without_stack_overflow() {
     buf.extend(std::iter::repeat_n(markers::ARR1, 10_000));
     buf.push(0x00); // a literal-int leaf (never reached past the guard)
     assert!(decode(&buf).is_err());
+    assert_scanner_agrees(&buf);
 }
 
 #[test]
@@ -202,7 +220,7 @@ fn all_two_byte_inputs_terminate() {
     // Exhaustively decode every `[0x80, b]` two-byte buffer: every single-byte
     // value form (and every invalid marker) must resolve without panicking.
     for b in 0u16..=255 {
-        let _ = decode(&[PREAMBLE, b as u8]);
+        assert_scanner_agrees(&[PREAMBLE, b as u8]);
     }
 }
 
@@ -319,6 +337,7 @@ fn many_references_to_one_large_string_stay_bounded() {
     );
     // The native path must also terminate without panicking.
     let _ = from_slice::<serde_json::Value>(&buf);
+    assert_scanner_agrees(&buf);
 }
 
 #[test]

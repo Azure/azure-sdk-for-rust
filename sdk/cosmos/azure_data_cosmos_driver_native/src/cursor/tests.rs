@@ -702,17 +702,36 @@ fn concurrent_admission_has_one_winner_and_preserves_capacity() {
 
 #[test]
 fn binary_items_survive_cursor_release() {
-    let fixture = Fixture::new(2);
+    binary_item_pages_survive_release(false);
+}
+
+#[test]
+fn referenced_binary_items_survive_cursor_release() {
+    binary_item_pages_survive_release(true);
+}
+
+fn binary_item_pages_survive_release(scripted: bool) {
+    let fixture = if scripted {
+        Fixture::scripted()
+    } else {
+        Fixture::new(2)
+    };
     let mut request = fixture.request();
-    let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank"}"#;
+    let body: &[u8] = if scripted {
+        br#"{"query":"SELECT TOP 6 * FROM c ORDER BY c.rank"}"#
+    } else {
+        br#"{"query":"SELECT * FROM c ORDER BY c.rank"}"#
+    };
     request.operation.body = body.as_ptr();
     request.operation.body_len = body.len();
     request.operation.max_item_count = 2;
     let mut options = cosmos_operation_options_default();
     options.binary_encoding_enabled = 2;
+    options.query_plan_mode = if scripted { 2 } else { 0 };
     request.operation.options = &options;
     let cursor = fixture.open(&request);
     let mut pages = Vec::new();
+    let mut source_snapshots = Vec::new();
     loop {
         let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
         // SAFETY: page is a live, owned completion.
@@ -728,12 +747,38 @@ fn binary_items_survive_cursor_release() {
                 cosmos_completion_item_count(&(*page).common),
                 (*page).items_len
             );
+            let mut snapshots = Vec::new();
+            for index in 0..(*page).items_len {
+                let mut source = ptr::null();
+                let mut source_len = 0;
+                let mut offset = 0;
+                let mut item_len = 0;
+                assert_eq!(
+                    cosmos_completion_item_page(
+                        &(*page).common,
+                        index,
+                        &mut source,
+                        &mut source_len,
+                        &mut offset,
+                        &mut item_len
+                    ),
+                    COSMOS_STATUS_SUCCESS
+                );
+                snapshots.push((
+                    source,
+                    std::slice::from_raw_parts(source, source_len).to_vec(),
+                    offset,
+                    item_len,
+                ));
+            }
+            source_snapshots.push(snapshots);
         }
         pages.push(page);
     }
     cosmos_cursor_free(cursor);
     let mut ranks = Vec::new();
-    for page in pages {
+    assert_eq!(pages.len(), source_snapshots.len());
+    for (page, snapshots) in pages.into_iter().zip(source_snapshots) {
         // SAFETY: each page owns its item views independently of the freed cursor.
         unsafe {
             if (*page).items_len > 0 {
@@ -765,6 +810,14 @@ fn binary_items_survive_cursor_release() {
                     assert!(offset + item_len <= source_len);
                     let source = std::slice::from_raw_parts(source, source_len);
                     assert_eq!(source.first(), Some(&0x80));
+                    let (original_source, snapshot, original_offset, original_len) =
+                        &snapshots[index];
+                    assert_eq!(source.as_ptr(), *original_source);
+                    assert_eq!(source, snapshot);
+                    assert_eq!((offset, item_len), (*original_offset, *original_len));
+                    if scripted {
+                        assert_eq!(value["shared"], "reference outside every document");
+                    }
                     let envelope = azure_data_cosmos_driver::binary_json::decode(source).unwrap();
                     assert!(envelope["Documents"]
                         .as_array()

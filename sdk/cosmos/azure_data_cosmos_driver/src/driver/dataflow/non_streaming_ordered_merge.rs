@@ -472,6 +472,67 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn retained_window_keeps_reference_pages_after_merge_drop() {
+        let first =
+            crate::binary_json::test_support::reference_rows(&[("e", 4), ("a", 0)], "first");
+        let second = crate::binary_json::test_support::reference_rows(
+            &[("d", 3), ("b", 1), ("c", 2)],
+            "second",
+        );
+        let snapshot = second.to_vec();
+        let pages = vec![
+            Ok(PageResult::Page {
+                response: response_with_charge(&first, 1.0),
+                is_terminal: false,
+            }),
+            Ok(PageResult::Page {
+                response: response_with_charge(&second, 2.0),
+                is_terminal: true,
+            }),
+        ];
+        let mut node = NonStreamingOrderedMerge::new(
+            Box::new(MockLeaf::with_pages(pages)),
+            vec![SortOrder::Ascending],
+            3,
+            1,
+            2,
+            Some(MaxItemCountHint::Limit(
+                std::num::NonZeroU32::new(1).unwrap(),
+            )),
+            true,
+        );
+        drop(first);
+        drop(second);
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = context(&mut executor, &mut topology);
+        let mut retained = Vec::new();
+        for _ in 0..2 {
+            let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap()
+            else {
+                panic!("page")
+            };
+            let ResponseBody::ContextualItems(items) = response.into_body() else {
+                panic!("contextual")
+            };
+            retained.extend(items);
+        }
+        drop(node);
+        assert_eq!(retained.len(), 2);
+        for (item, id) in retained.iter().zip(["b", "c"]) {
+            assert_eq!(item.source_page(), snapshot);
+            assert_eq!(
+                item.source_page().as_ptr(),
+                retained[0].source_page().as_ptr()
+            );
+            assert_eq!(
+                item.deserialize::<serde_json::Value>().unwrap(),
+                json!({"id": id, "shared": "second"})
+            );
+        }
+    }
+
+    #[tokio::test]
     async fn binary_encode_failure_does_not_consume_results() {
         let mut deep = json!(1);
         for _ in 0..(crate::binary_json::reader::MAX_DEPTH + 8) {
