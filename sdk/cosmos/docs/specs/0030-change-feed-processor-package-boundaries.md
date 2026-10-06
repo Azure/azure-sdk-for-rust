@@ -16,7 +16,6 @@
 - [5. Alternatives and Compatibility Consequences](#5-alternatives-and-compatibility-consequences)
 - [6. Integration Boundary](#6-integration-boundary)
 - [7. Package Decisions Still Open](#7-package-decisions-still-open)
-- [8. References](#8-references)
 
 ## 1. Motivation and Decision Requested
 
@@ -32,9 +31,8 @@ This proposal requests agreement on two library packages:
   coordination engine.
 
 The engine builds on `azure_data_cosmos_driver`, not the typed
-`azure_data_cosmos` SDK. This applies the existing
-[SDK/driver layering decision](../adrs/0001-sdk-driver-native-layering.md) to CFP;
-it does not change accepted ADRs or establish support or release approval.
+`azure_data_cosmos` SDK. This extends the existing SDK/driver separation to CFP;
+it does not establish support or release approval.
 
 This document requests agreement on packages, dependency direction, ownership,
 and distribution consequences, including the processing-completion boundary.
@@ -64,8 +62,7 @@ flowchart TB
 
 **The public Rust API also directly depends on `azure_data_cosmos_driver`** for
 configuration, credential binding, and codec access. The author selected this
-edge for the proposal; the [prototype manifest][prototype-manifest] already
-demonstrates it. This avoids making the shared CFP engine a forwarding layer for
+edge for the proposal. This avoids making the shared CFP engine a forwarding layer for
 unrelated database configuration and codecs. It does not move processor
 coordination into the public Rust API or introduce a dependency on `azure_data_cosmos`.
 
@@ -93,8 +90,7 @@ public Rust API, not in transport or database execution.
 | Wire encoding | Reuse `azure_data_cosmos_driver` binary JSON decoding, encoding, and transcoding facilities. Do not create another codec implementation in either CFP package. |
 | Rust FFI wrapper | The proposed `azure_data_cosmos_change_feed_processor_native` bridges raw batch delivery and processing completion between the shared CFP engine and other language SDKs. Those SDKs own application-type decoding and invocation of their application callbacks. |
 
-Copying event declarations alone is insufficient. The
-[SDK event decoder](../../azure_data_cosmos/src/models/change_feed_item.rs) distinguishes envelopes
+Copying event declarations alone is insufficient. The SDK event decoder distinguishes envelopes
 from flat documents, preserves optional metadata and previous images, handles
 empty/null delete images, and tolerates unknown operation types. Equivalent
 typed behavior requires adapting those semantics as well as the four types.
@@ -125,8 +121,7 @@ invokes this adapter, not the typed application callback directly. Other
 language SDKs own decoding and application callback invocation, reporting the
 outcome through the proposed Rust FFI wrapper's delivery/completion bridge.
 Either bridge can satisfy the same contract; cross-language reuse does not
-require a producer-only engine. The [prototype adapter][prototype-adapter]
-illustrates the Rust boundary, not a final API. Moving code between packages
+require a producer-only engine. Moving code between packages
 does not imply another thread or runtime; queue and ABI mechanics are not
 selected here. `processBatch` names the application callback role, not an
 implemented native symbol.
@@ -157,7 +152,7 @@ native API.
 
 ### 4.2 Why the typed database SDK is not the shared baseline
 
-`azure_data_cosmos` (called `azure_cosmos` in earlier discussion) exposes typed
+`azure_data_cosmos` exposes typed
 APIs such as `ContainerClient::query_change_feed<T>`. A host-language SHIM is the
 Java/.NET/Go/Python adapter that receives native payloads and invokes its
 language's API and serializers. Raw application payloads must reach that SHIM
@@ -167,8 +162,7 @@ Wrapping a typed Rust API with FFI is technically possible, but is rejected as
 this baseline: it would introduce a Rust representation and conversion or
 serialization step before host-language decoding. Choosing a generic Rust JSON
 value does not remove that coupling. Use the database driver's `ResponseBody`
-buffers and metadata instead, consistent with
-[ADR-0002](../adrs/0002-schema-agnostic-driver-boundary.md).
+buffers and metadata instead.
 
 **Raw means application-schema-agnostic, not text-only or byte-for-byte
 untouched.** The database driver can perform wire decoding, schema-independent
@@ -234,24 +228,3 @@ The direct public-Rust-API-to-database-driver dependency is selected for this
 proposal, not an unresolved alternative. Beyond the processing-completion
 boundary in section 4.1, operational CFP details and FFI delivery mechanics are
 intentionally excluded from this package decision.
-
-## 8. References
-
-- [Project support and package boundaries](../Project.md)
-- [Architecture and shared database execution](../Architecture.md)
-- [ADR-0001: SDK, driver, and native layering](../adrs/0001-sdk-driver-native-layering.md)
-- [ADR-0002: Schema-agnostic driver boundary](../adrs/0002-schema-agnostic-driver-boundary.md)
-- [Feed operations and dataflow](0012-feed-operations-and-dataflow.md)
-- [Binary encoding](0015-binary-encoding.md)
-- [SDK event models and custom decoder](../../azure_data_cosmos/src/models/change_feed_item.rs)
-- [SDK option ownership and driver re-exports](../../azure_data_cosmos/src/options/mod.rs)
-- [SDK builder adaptation](../../azure_data_cosmos/src/clients/cosmos_client_builder.rs)
-- [Container client's private driver-backed state](../../azure_data_cosmos/src/clients/container_client.rs)
-- [Driver account and credential binding](../../azure_data_cosmos_driver/src/models/account_reference.rs)
-- [Driver runtime and resource sharing](../../azure_data_cosmos_driver/src/driver/runtime.rs)
-- [Response payload shapes and codecs](../../azure_data_cosmos_driver/src/models/response_body.rs)
-- [Prototype public Rust API dependencies][prototype-manifest]
-- [Prototype typed callback adapter][prototype-adapter]
-
-[prototype-manifest]: https://github.com/jeet1995/azure-sdk-for-rust/blob/bbd6dde16ad69e1d4c2c9881d24d5c3a05dff11b/sdk/cosmos/azure_cosmos_change_feed_processor/Cargo.toml
-[prototype-adapter]: https://github.com/jeet1995/azure-sdk-for-rust/blob/bbd6dde16ad69e1d4c2c9881d24d5c3a05dff11b/sdk/cosmos/azure_cosmos_change_feed_processor/src/managed_lifecycle.rs#L74-L81
