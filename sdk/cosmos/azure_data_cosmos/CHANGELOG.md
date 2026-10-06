@@ -10,6 +10,8 @@
 
 ### Bugs Fixed
 
+- Keep CPU sampling active for long-lived clients and preserve diagnostics through partition split recovery, including `500/20206` errors.
+
 ### Other Changes
 
 ## 1.0.0-beta.1 (2026-09-28)

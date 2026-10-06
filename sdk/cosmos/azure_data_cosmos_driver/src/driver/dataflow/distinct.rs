@@ -61,6 +61,7 @@ use crate::models::{CosmosResponse, FeedRange, RequestCharge, ResponseBody};
 
 use super::distinct_hash::{hash_value, Hash128};
 use super::query_plan::DistinctType;
+use super::recovery_diagnostics::RecoveryDiagnostics;
 use super::{skip_take_page, PageResult, PipelineContext, PipelineNode, PipelineNodeState};
 
 /// Guidance surfaced when a caller asks for a continuation token on an
@@ -114,7 +115,7 @@ pub(crate) struct Distinct {
     /// context rather than retained one-per-page: `aggregate_sub_operations`
     /// re-bounds its record list to `max_request_diagnostics`, so a long run of
     /// all-duplicate pages cannot grow the artifact without limit.
-    suppressed_diagnostics: Option<Arc<DiagnosticsContext>>,
+    suppressed_diagnostics: RecoveryDiagnostics,
     /// The most recently suppressed page, kept as a template so accumulated
     /// charge/diagnostics can still be flushed as a final empty page if the
     /// child drains without ever surfacing a terminal page.
@@ -166,7 +167,7 @@ impl Distinct {
             map,
             exhausted: false,
             suppressed_charge: RequestCharge::default(),
-            suppressed_diagnostics: None,
+            suppressed_diagnostics: RecoveryDiagnostics::default(),
             pending_flush: None,
             emit_binary,
             poisoned: false,
@@ -206,12 +207,7 @@ impl Distinct {
             response.status(),
             response.diagnostics(),
         );
-        let merged = match self.suppressed_diagnostics.as_ref() {
-            Some(accumulated) => {
-                rebuilt.with_aggregated_prior_diagnostics(std::slice::from_ref(accumulated))
-            }
-            None => rebuilt,
-        };
+        let merged = self.suppressed_diagnostics.attach_response(rebuilt);
         self.clear_suppressed();
         merged
     }
@@ -220,34 +216,36 @@ impl Distinct {
     fn suppress(&mut self, response: CosmosResponse) {
         self.suppressed_charge =
             self.suppressed_charge + response.headers().request_charge.unwrap_or_default();
-        let incoming = response.diagnostics();
-        // Fold on arrival so only one context is ever retained. The newest page
-        // stays last, preserving the aggregate's "operation-level fields come
-        // from the final source" contract.
-        self.suppressed_diagnostics = match self.suppressed_diagnostics.take() {
-            None => Some(incoming),
-            Some(accumulated) => {
-                DiagnosticsContext::aggregate_sub_operations(&[accumulated, incoming]).map(Arc::new)
-            }
-        };
+        self.suppressed_diagnostics
+            .absorb(Some(response.diagnostics()));
         self.pending_flush = Some(response);
     }
 
     fn clear_suppressed(&mut self) {
         self.suppressed_charge = RequestCharge::default();
-        self.suppressed_diagnostics = None;
+        self.suppressed_diagnostics = RecoveryDiagnostics::default();
         self.pending_flush = None;
+    }
+
+    fn attach_error(
+        &mut self,
+        error: crate::error::CosmosError,
+        current: Option<Arc<DiagnosticsContext>>,
+    ) -> crate::error::CosmosError {
+        self.suppressed_diagnostics.absorb(current);
+        let error = self.suppressed_diagnostics.attach_error(error);
+        self.clear_suppressed();
+        error
     }
 
     /// Emits a final empty page carrying accumulated suppressed charge and
     /// diagnostics, or `None` if nothing is pending.
     fn flush_suppressed(&mut self) -> Option<PageResult> {
         let template = self.pending_flush.take()?;
-        // `suppressed_diagnostics` already includes the template's own
-        // diagnostics, so aggregate the list rather than layering onto it.
+        // The template's diagnostics are already included; do not add them again.
         let diagnostics = self
             .suppressed_diagnostics
-            .clone()
+            .take()
             .unwrap_or_else(|| template.diagnostics());
         let mut headers = template.headers().clone();
         headers.item_count = Some(0);
@@ -369,7 +367,12 @@ impl PipelineNode for Distinct {
         }
 
         loop {
-            match self.child.next_page(context).await? {
+            match self
+                .child
+                .next_page(context)
+                .await
+                .map_err(|error| self.attach_error(error, None))?
+            {
                 PageResult::Drained => {
                     self.exhausted = true;
                     // Flush charge/diagnostics from a fully-duplicate tail that
@@ -379,33 +382,43 @@ impl PipelineNode for Distinct {
                     }
                     return Ok(PageResult::Drained);
                 }
-                PageResult::SplitRequired { .. } => {
+                PageResult::SplitRequired { mut replacements } => {
                     // `SplitRequired` replaces the node that emits it, so
                     // forwarding would drop this node along with its
                     // deduplication map and resurrect suppressed values. The
                     // wrapped fan-out node absorbs splits internally, so this
                     // is unreachable today; fail loudly if that ever changes.
-                    return Err(crate::error::CosmosError::builder()
-                        .with_status(
-                            crate::error::status_codes::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT,
-                        )
-                        .with_message(
-                            "DISTINCT cannot forward a partition split; the wrapped fan-out \
+                    return Err(self.attach_error(
+                        crate::error::CosmosError::builder()
+                            .with_status(
+                                crate::error::status_codes::CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT,
+                            )
+                            .with_message(
+                                "DISTINCT cannot forward a partition split; the wrapped fan-out \
                              node must absorb splits internally",
-                        )
-                        .build());
+                            )
+                            .build(),
+                        replacements.take_diagnostics(),
+                    ));
                 }
                 PageResult::Page {
                     response,
                     is_terminal,
-                } => match self.process_page(response, is_terminal) {
-                    Ok(Some(page)) => return Ok(page),
-                    Ok(None) => continue,
-                    Err(e) => {
-                        self.poisoned = true;
-                        return Err(e);
+                } => {
+                    let diagnostics = response.diagnostics();
+                    match self.process_page(response, is_terminal) {
+                        Ok(Some(page)) => return Ok(page),
+                        Ok(None) => continue,
+                        Err(e) => {
+                            self.poisoned = true;
+                            self.suppressed_diagnostics.absorb(Some(diagnostics));
+                            if let Some(pending) = self.child.take_pending_error() {
+                                self.suppressed_diagnostics.absorb(pending.diagnostics());
+                            }
+                            return Err(self.attach_error(e, None));
+                        }
                     }
-                },
+                }
             }
         }
     }
@@ -413,6 +426,12 @@ impl PipelineNode for Distinct {
     #[cfg(test)]
     fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
         vec![self.child]
+    }
+
+    fn take_pending_error(&mut self) -> Option<crate::error::CosmosError> {
+        self.child
+            .take_pending_error()
+            .map(|error| self.attach_error(error, None))
     }
 
     fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {

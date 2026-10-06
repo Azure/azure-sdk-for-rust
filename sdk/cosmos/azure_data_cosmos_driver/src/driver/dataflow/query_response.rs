@@ -410,17 +410,36 @@ impl PageAggregator {
     /// retain the latest non-empty service-formatted value; request charge is
     /// summed across every absorbed response.
     pub(crate) fn absorb(&mut self, response: &CosmosResponse) -> crate::error::Result<()> {
-        let charge = response.headers().request_charge.unwrap_or_default();
-        self.request_charge = self.request_charge + charge;
-        self.diagnostics_sources.push(response.diagnostics());
-        if let Some(id) = &response.headers().activity_id {
-            self.activity_id = Some(id.clone());
-        }
+        self.absorb_session_token(response).map_err(|error| {
+            let mut diagnostics = super::recovery_diagnostics::RecoveryDiagnostics::default();
+            diagnostics.absorb(Some(response.diagnostics()));
+            diagnostics.attach_error(error)
+        })?;
+        self.absorb_validated(response);
+        Ok(())
+    }
+
+    /// Commits session progress even when the page body later fails validation.
+    pub(crate) fn absorb_session_token(
+        &mut self,
+        response: &CosmosResponse,
+    ) -> crate::error::Result<()> {
         if let Some(token) = &response.headers().session_token {
             self.session_token = Some(match &self.session_token {
                 Some(current) => current.merge(token)?,
                 None => token.clone(),
             });
+        }
+        Ok(())
+    }
+
+    /// Records a validated page whose session token has already been merged.
+    pub(crate) fn absorb_validated(&mut self, response: &CosmosResponse) {
+        let charge = response.headers().request_charge.unwrap_or_default();
+        self.request_charge = self.request_charge + charge;
+        self.diagnostics_sources.push(response.diagnostics());
+        if let Some(id) = &response.headers().activity_id {
+            self.activity_id = Some(id.clone());
         }
         if let Some(metrics) = response
             .headers()
@@ -442,7 +461,6 @@ impl PageAggregator {
         if self.diagnostics_sources.len() >= MAX_RETAINED_DIAGNOSTICS_SOURCES {
             self.fold_diagnostics();
         }
-        Ok(())
     }
 
     /// Collapses the retained per-page contexts into one, bounding peak memory
@@ -459,6 +477,17 @@ impl PageAggregator {
             self.diagnostics_sources.clear();
             self.diagnostics_sources.push(Arc::new(folded));
         }
+    }
+
+    pub(crate) fn attach_error(
+        self,
+        error: crate::error::CosmosError,
+    ) -> crate::error::CosmosError {
+        let mut diagnostics = super::recovery_diagnostics::RecoveryDiagnostics::default();
+        for source in self.diagnostics_sources {
+            diagnostics.absorb(Some(source));
+        }
+        diagnostics.attach_error(error)
     }
 
     /// Converts one raw item payload into the bytes this aggregator emits.

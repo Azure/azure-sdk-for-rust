@@ -4,6 +4,10 @@
 //! CPU and memory monitoring with historical snapshots.
 #![allow(dead_code)]
 
+#[cfg(test)]
+#[path = "cpu_memory/live_repro.rs"]
+mod live_repro;
+
 use std::{
     cmp::Ordering,
     collections::VecDeque,
@@ -249,7 +253,7 @@ impl std::fmt::Display for CpuMemoryHistory {
 /// because the singleton is held in a global `OnceLock<Arc<...>>`. When all
 /// handles are dropped the thread continues to run but idles (skipping
 /// sample collection) until a new handle is created via [`CpuMemoryMonitor::get_or_init`].
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub(crate) struct CpuMemoryMonitor {
     inner: Arc<CpuMemoryMonitorInner>,
 }
@@ -296,6 +300,15 @@ impl CpuMemoryMonitor {
     /// Returns `true` if the CPU appears to be overloaded.
     pub(crate) fn is_cpu_overloaded(&self) -> bool {
         self.snapshot().is_cpu_overloaded()
+    }
+}
+
+impl Clone for CpuMemoryMonitor {
+    fn clone(&self) -> Self {
+        self.inner.register();
+        Self {
+            inner: Arc::clone(&self.inner),
+        }
     }
 }
 
@@ -793,6 +806,72 @@ mod tests {
 
         // Both should point to the same inner
         assert!(Arc::ptr_eq(&monitor1.inner, &monitor2.inner));
+    }
+
+    #[test]
+    fn diagnostics_clones_keep_runtime_cpu_listener_alive() {
+        let inner = Arc::new(CpuMemoryMonitorInner::new(DEFAULT_REFRESH_INTERVAL));
+        inner.register();
+        let runtime_monitor = CpuMemoryMonitor {
+            inner: inner.clone(),
+        };
+        for _ in 0..20 {
+            let diagnostics_monitor = runtime_monitor.clone();
+            let hedge_monitor = diagnostics_monitor.clone();
+            drop(diagnostics_monitor);
+            drop(hedge_monitor);
+            assert_eq!(*inner.listener_count.read().unwrap(), 1);
+        }
+        let retained = runtime_monitor.clone();
+        drop(runtime_monitor);
+        assert!(inner.has_listeners());
+        drop(retained);
+        assert!(!inner.has_listeners());
+    }
+
+    #[test]
+    fn diagnostics_drop_does_not_stop_background_sampling() {
+        let inner = Arc::new(CpuMemoryMonitorInner::new(Duration::from_millis(25)));
+        inner.register();
+        let monitor = CpuMemoryMonitor {
+            inner: inner.clone(),
+        };
+        inner.start();
+        for _ in 0..3 {
+            let started = Instant::now();
+            let mut builder = crate::diagnostics::DiagnosticsContextBuilder::new(
+                crate::models::ActivityId::new_uuid(),
+                Arc::new(crate::options::DiagnosticsOptions::default()),
+            );
+            builder.set_cpu_monitor(monitor.clone());
+            let diagnostics = builder.complete();
+            drop(diagnostics.clone());
+            drop(diagnostics);
+            loop {
+                let history = monitor.snapshot();
+                if history
+                    .samples()
+                    .last()
+                    .is_some_and(|sample| sample.timestamp > started)
+                {
+                    break;
+                }
+                assert!(
+                    started.elapsed() < Duration::from_secs(5),
+                    "sampler stopped with a live runtime handle"
+                );
+                thread::sleep(Duration::from_millis(10));
+            }
+        }
+        #[cfg(any(target_os = "linux", target_os = "windows"))]
+        assert!(
+            monitor
+                .snapshot()
+                .samples()
+                .iter()
+                .any(|sample| sample.cpu.is_some()),
+            "supported platforms must collect real CPU values after warm-up"
+        );
     }
 
     // ---- Platform-specific tests exercising real OS APIs ----

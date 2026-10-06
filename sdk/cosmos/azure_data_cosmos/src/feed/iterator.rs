@@ -321,6 +321,10 @@ impl<T: Send + DeserializeOwned + 'static> QueryPageIterator<T> {
     ///
     /// Returns an error if a page fetch is currently in flight (the plan
     /// state is being mutated and cannot be safely snapshotted).
+    ///
+    /// After successfully receiving the final TOP/LIMIT rows, this method can
+    /// return a deferred request or response-validation error. Capturing a token
+    /// does not consume that error; continuing iteration still delivers it.
     pub fn to_continuation_token(&self) -> crate::Result<ContinuationToken> {
         match &self.source {
             PageSource::Live(state) => state.to_continuation_token(),
