@@ -81,11 +81,86 @@ No CFP token cache, automatic key rotation, or cross-cloud compatibility is
 implied. Metadata resolution is not proof of change-feed or checkpoint permission:
 the service authorizes ongoing requests, and failures remain explicit.
 
-The prepared API does not yet provide an automatic `start`/`stop` supervisor,
-instance registration, or automatic handler dispatch. Use the bounded
-processing/session and bootstrap APIs below. The existing source-only
+The prepared API provides continuous `start`/`stop` execution in addition to the
+bounded processing/session and bootstrap APIs below. The existing source-only
 `connect` constructors remain supported; configured lease factories reject
 those processors rather than falling back to their feed credentials.
+
+### Continuous Rust execution
+
+`start` loads the winning persisted bootstrap plan before selecting new positions.
+For a new workload it discovers source ranges and establishes mode/start-compatible
+checkpoints, including concretely anchored Now positions. It creates lease documents
+in an existing single-write-region `/workload` container; it provisions no resources.
+The supported workload remains bounded to 32 work records.
+
+```rust no_run
+use std::{future::Future, num::NonZeroU32, sync::Arc};
+use azure_core::credentials::TokenCredential;
+use azure_cosmos_change_feed_processor::{
+    ChangeFeedProcessor, ContainerBinding, ManagedProcessorOptions,
+};
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct Order { id: String }
+
+# async fn example(
+#     feed_credential: Arc<dyn TokenCredential>,
+#     lease_credential: Arc<dyn TokenCredential>,
+#     shutdown_requested: impl Future<Output = ()>,
+# ) -> Result<(), Box<dyn std::error::Error>> {
+let feed = ContainerBinding::with_token_credential(
+    std::env::var("FEED_ENDPOINT")?.parse()?,
+    "application-db", "orders", feed_credential,
+)?;
+let leases = ContainerBinding::with_token_credential(
+    std::env::var("LEASE_ENDPOINT")?.parse()?,
+    "coordination-db", "leases", lease_credential,
+)?;
+let processor = ChangeFeedProcessor::builder()
+    .build("orders-projection", feed, leases).await?;
+let options = ManagedProcessorOptions::new("worker-01")
+    .with_host_capacity(NonZeroU32::new(8).unwrap())
+    .with_callback_concurrency(NonZeroU32::new(4).unwrap());
+processor.start::<Order, _, _>(options, |page| async move {
+    for change in page.items() {
+        if let Some(order) = change.current() {
+            println!("Processing order {}", order.id);
+        }
+    }
+    Ok(())
+}).await?;
+shutdown_requested.await;
+let report = processor.stop().await.expect("execution was started");
+if !report.is_clean() {
+    return Err("shutdown has processing, maintenance, or release failures".into());
+}
+# Ok(())
+# }
+```
+
+The shared `Fn` handler must be `Send + Sync`; returned futures must be `Send`
+and must complete the actual application work before returning success. Different
+leases may invoke it concurrently, up to callback concurrency. Host capacity limits
+ownership, not callbacks. Each lease still has one outstanding batch and no prefetch.
+This execution path currently requires a Tokio runtime; handlers must yield cooperatively.
+
+Lifecycle calls serialize. Repeated/concurrent start is rejected; startup success
+means readiness was verified and scheduling began, not that every lease is healthy.
+Use `state` for per-lease activity, callback, and checkpoint markers. Stop retains
+task handles across caller cancellation; call it again to finish joining. Repeated
+completed stop returns the same report. Restart on the same object is permitted
+only after a confirmed clean shutdown. Dropping the object cancels owned work but
+does not prove joins or lease release and does not shut down shared driver resources.
+
+Transient reads reopen from confirmed durable progress. Ambiguous checkpoints
+require a latest-committed reread and an exact-ETag same-generation authority proof;
+the old session remains revoked. If the candidate was not stored, only its checkpoint
+is retried, not the successful callback. Callback/decoding failures remain visible
+and lease-local; authorization/configuration failures can stop the workload.
+An unchanged idle continuation needs no redundant checkpoint write; changed idle
+continuations still persist before another read.
 
 ```text
 azure_cosmos_change_feed_processor (typed decoding)

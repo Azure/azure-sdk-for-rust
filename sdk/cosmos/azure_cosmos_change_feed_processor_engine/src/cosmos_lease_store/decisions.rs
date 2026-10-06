@@ -3,7 +3,6 @@
 
 use std::time::Duration;
 
-use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::{models::ContinuationToken, CosmosError, Result};
 use tokio::time::Instant;
 
@@ -152,11 +151,8 @@ pub(super) fn confirm_lease_write(
 }
 
 pub(super) fn classify_checkpoint_failure(error: CosmosError) -> CheckpointError {
-    if error.status().status_code() == StatusCode::PreconditionFailed {
-        CheckpointError::Rejected(error)
-    } else {
-        CheckpointError::Ambiguous(error)
-    }
+    // A final 412 cannot exclude a committed earlier driver attempt.
+    CheckpointError::Ambiguous(error)
 }
 
 #[cfg(test)]

@@ -34,6 +34,47 @@ The driver is intentionally ignorant of document/item schemas. Data plane operat
 
 This crate follows **strict semantic versioning** but can move to new major versions more frequently than `azure_data_cosmos`. Breaking changes in the driver do not force SDK version bumps because the SDK uses adapter patterns to maintain backward compatibility.
 
+### Durable change-feed topology handoff
+
+`CosmosDriver::derive_change_feed_checkpoints` derives child resume positions
+from a confirmed parent checkpoint and a retained `ContainerReference`. The
+child EPK ranges must exactly tile the parent. Returned tokens correspond to
+the supplied child order; each retains the original start boundary and all
+intersecting per-range positions, including unpolled ranges for Beginning or
+PointInTime. Physical merges do not require logical lease consolidation.
+
+Only newly issued, account- and scope-bound EPK change-feed tokens are eligible.
+Raw server tokens, legacy unbound tokens, logical-partition scopes, buffered
+query snapshots, and source RID/account/scope/mode mismatches are rejected.
+Legacy tokens may still resume their original operation, but must produce a new,
+confirmed bound checkpoint before handoff. Tokens are not authenticated;
+callers must store and return them unchanged. The caller owns confirmation,
+durable persistence, atomic child publication, and parent fencing.
+
+For Now bootstrap, never persist a pre-poll snapshot. Poll a retained reader,
+acknowledge every returned page, and take its post-poll continuation. Validate
+the candidate with the derivation API using the unchanged parent as its sole
+child. Validation succeeds only when concrete server ETags cover every parent
+range. LatestVersion may require multiple polls; AllVersionsAndDeletes primes
+its ranges before returning its first page. These are per-range service
+boundaries, not one atomic account-wide timestamp. No page containing changes
+may be discarded to manufacture a bootstrap checkpoint.
+Incomplete anchoring returns `CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH` from
+derivation; other derivation failures are not a reason to restart from Now.
+An interrupted AllVersionsAndDeletes priming pass, a non-304 priming response,
+or a missing ETag fails the plan and makes its snapshot unavailable. Discard
+that plan and resume only from previously confirmed progress.
+
+Change-feed leaves recover from explicit service errors containing
+`Reduce page size and try again.` (HTTP 400 or 413) by halving a positive
+max-item-count hint down to one. With no positive hint, recovery starts at 100.
+Every attempt uses the unchanged cursor and scope; only a successful page
+advances progress. Ordinary errors use the existing transport policies, not
+this recovery. A single oversized item still fails. Consumer-specific byte
+limits are not inferred by the driver.
+Successful change-feed responses must carry a nonempty ETag; otherwise the
+driver fails without delivering the page or advancing its cursor.
+
 ### Error Backtraces
 
 `CosmosError` can carry a stack backtrace captured at construction. Capture is **opt-in** (matching idiomatic Rust): off by default, on whenever the stdlib `RUST_LIB_BACKTRACE` / `RUST_BACKTRACE` environment variables ask for it, and always overridable programmatically. When enabled, two independent rolling-1-second limiters keep the cost predictable under error storms — so unlike `RUST_BACKTRACE=1` (process-wide, unconditional, all-or-nothing) the driver can be left with backtraces *on* in production without paying the cost on every error.

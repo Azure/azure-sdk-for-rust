@@ -4,6 +4,10 @@
 
 ### Features Added
 
+- Added managed continuous execution, saved-plan-first range discovery, source-compatible Now anchoring, lease-local recovery, and completion-bearing task ownership and shutdown.
+- Added conditional same-generation checkpoint reconciliation that fences late writes before authorizing progress.
+- Added periodic fenced logical-lease subdivision using driver-derived child checkpoints, atomic staging/activation, and restart recovery with retained parent evidence.
+
 - Added local engine/lease/bootstrap constructors for prepared driver/container references with account/credential validation and RID-based source identity.
 
 - Added decentralized equal-count logical-lease selection, complete paginated inventory, bounded jittered pickup cycles, and readiness/ETag/generation-fenced active transfer without checkpoint reset.
@@ -18,6 +22,12 @@
 ### Breaking Changes
 
 ### Bugs Fixed
+
+- Signal ownership loss immediately when an in-flight lease/bootstrap write is cancelled.
+- Preserve matching local sessions during inventory scans spanning independent renewals.
+- Validate renewal headroom for the preceding write, renewal delay, and following request.
+- Classify sent checkpoint failures, including HTTP 412 without attempt provenance, as ambiguous.
+- Return after the final confirmed idle batch without consuming the idle-poll delay.
 
 - Surface unwinding application-callback panics as lease processing failures with recovery positions and diagnostics, without checkpointing or reading the next batch.
 

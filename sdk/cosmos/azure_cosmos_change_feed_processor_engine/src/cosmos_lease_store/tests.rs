@@ -1,6 +1,11 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod controlled_interleavings;
+mod generated_ownership;
+mod managed_recovery;
+mod review_regressions;
+
 use super::{
     CosmosLeaseStore, LeaseIdentity, LeaseOwnershipOptions, LeaseRecord, LeaseReleaseOutcome,
 };
@@ -451,7 +456,7 @@ async fn stale_generation_is_rejected_by_cosmos_etag_not_just_local_time(
         .await
         .unwrap_err();
     match error {
-        crate::CheckpointError::Rejected(error) => {
+        crate::CheckpointError::Ambiguous(error) => {
             assert_eq!(error.status().status_code(), StatusCode::PreconditionFailed)
         }
         _ => panic!("stale revision must fail conditionally"),

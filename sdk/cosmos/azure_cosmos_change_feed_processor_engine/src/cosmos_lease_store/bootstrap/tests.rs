@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod managed_protocol;
+
 use super::{
     coverage, BootstrapPhase, BootstrapPlan, BootstrapStartPolicy, BootstrapStore, InitialLease,
     StoredMode, INITIALIZATION_GENERATION,

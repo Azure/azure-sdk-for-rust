@@ -18,15 +18,70 @@ use crate::{
 };
 use crate::{ChangeFeedReadOptions, ChangeFeedReader, RawChangeFeedPage};
 
-/// Owns the connection used for schema-agnostic change-feed page reads.
-///
-/// This is a data-plane building block, not yet a lease-owning background processor.
+/// Owns the prepared source context for raw reads and managed lease processing.
+#[derive(Clone)]
 pub struct ProcessorEngine {
     driver: Arc<CosmosDriver>,
     container: ContainerReference,
 }
 
 impl ProcessorEngine {
+    pub(crate) async fn physical_ranges(&self) -> Result<Vec<FeedRange>> {
+        let partitions = self.driver.resolve_all_partition_key_ranges(&self.container, true)
+            .await?.ok_or_else(|| azure_data_cosmos_driver::CosmosError::builder()
+                .with_status(azure_data_cosmos_driver::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
+                .with_message("source topology requires a routing map").build())?;
+        partitions.iter().map(FeedRange::try_from).collect()
+    }
+    /// Returns the retained, independently credential-bound source driver.
+    pub fn driver(&self) -> &Arc<CosmosDriver> {
+        &self.driver
+    }
+
+    /// Returns the prepared source reference without name resolution.
+    pub fn container(&self) -> &ContainerReference {
+        &self.container
+    }
+
+    /// Discovers bounded source assignments and captures their initial positions.
+    ///
+    /// `Now` is materialized by polling each original reader before saving its
+    /// position. Existing persisted plans must be probed before calling this.
+    ///
+    /// # Errors
+    ///
+    /// Returns topology, scope, continuation, or source-read errors.
+    pub async fn discover_bootstrap_plan(
+        &self,
+        group: impl Into<String>,
+        mode: crate::ChangeFeedMode,
+        start: crate::BootstrapStartPolicy,
+    ) -> Result<crate::BootstrapPlan> {
+        let ranges = self.physical_ranges().await?;
+        if ranges.is_empty() || ranges.len() > 32 {
+            return Err(azure_data_cosmos_driver::CosmosError::builder()
+                .with_status(azure_data_cosmos_driver::error::status_codes::CLIENT_BAD_REQUEST)
+                .with_message("managed bootstrap requires one to 32 source assignments")
+                .build());
+        }
+        let mut seeds = Vec::with_capacity(ranges.len());
+        for range in ranges {
+            let mut reader = self
+                .open_reader(
+                    ChangeFeedReadOptions::new(range.clone(), start.clone()).with_mode(mode),
+                )
+                .await?;
+            let checkpoint = if matches!(start, ChangeFeedStartFrom::Now) {
+                reader.read_page().await?.continuation().clone()
+            } else {
+                reader.to_continuation_token()?
+            };
+            seeds.push(crate::InitialLease::new(range, checkpoint)?);
+        }
+        self.bootstrap_plan(group, mode, start, FeedRange::full(), seeds)
+            .await
+    }
+
     /// Validates a bootstrap plan's saved positions against this source driver.
     ///
     /// This does not fetch or choose fresh starting positions. For Now, callers
@@ -34,7 +89,7 @@ impl ProcessorEngine {
     ///
     /// # Errors
     ///
-    /// Returns incomplete-plan or driver source/mode/scope continuation errors.
+    /// Returns incomplete-plan, unanchored Now, or driver source/mode/scope errors.
     pub async fn bootstrap_plan(
         &self,
         group: impl Into<String>,
@@ -46,12 +101,21 @@ impl ProcessorEngine {
         let source = self.source_identity();
         let plan = crate::BootstrapPlan::new(source, group, mode, start.clone(), expected, seeds)?;
         for seed in plan.initial_leases() {
+            let checkpoint = ContinuationToken::from_string(seed.checkpoint().to_owned());
+            if matches!(start, ChangeFeedStartFrom::Now) {
+                // Reject split-raced scopes whose other leaves still reevaluate Now.
+                self.driver.derive_change_feed_checkpoints(
+                    &self.container,
+                    &checkpoint,
+                    seed.range(),
+                    std::slice::from_ref(seed.range()),
+                    mode == crate::ChangeFeedMode::AllVersionsAndDeletes,
+                )?;
+            }
             self.open_reader(
                 ChangeFeedReadOptions::new(seed.range().clone(), start.clone())
                     .with_mode(mode)
-                    .with_continuation(ContinuationToken::from_string(
-                        seed.checkpoint().to_owned(),
-                    )),
+                    .with_continuation(checkpoint),
             )
             .await?;
         }

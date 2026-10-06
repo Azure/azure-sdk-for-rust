@@ -59,7 +59,7 @@ impl LeaseOwnershipOptions {
     /// # Errors
     ///
     /// Rejects zero/sub-millisecond or excessive durations, and policies without
-    /// room for renewal plus its request timeout before the safety deadline.
+    /// room for two request timeouts plus the renewal delay before the safety deadline.
     pub fn new(
         duration: Duration,
         renew_interval: Duration,
@@ -81,8 +81,9 @@ impl LeaseOwnershipOptions {
             });
         if !valid
             || safety_margin >= duration
-            || renew_interval
-                .checked_add(request_timeout)
+            || request_timeout
+                .checked_mul(2)
+                .and_then(|writes| renew_interval.checked_add(writes))
                 .is_none_or(|budget| budget >= duration - safety_margin)
         {
             return Err(invalid(
@@ -336,6 +337,11 @@ impl CosmosLeaseStore {
                 "bootstrapped work leases require a workload readiness-gated store",
             ));
         }
+        if self.readiness.is_some() && !bootstrap::processing_eligible(&observation.record)? {
+            return Err(invalid(
+                "work lease is not committed and eligible for processing",
+            ));
+        }
         if !Arc::ptr_eq(&self.identity, &observation.store_identity) {
             return Err(invalid("lease observation belongs to a different store"));
         }
@@ -477,6 +483,29 @@ struct SessionState {
     authority: AuthorityState,
 }
 
+struct LeaseWriteGuard {
+    control: LeaseControl,
+    armed: bool,
+}
+impl LeaseWriteGuard {
+    fn new(control: &LeaseControl) -> Self {
+        Self {
+            control: control.clone(),
+            armed: true,
+        }
+    }
+    fn confirm(mut self) {
+        self.armed = false;
+    }
+}
+impl Drop for LeaseWriteGuard {
+    fn drop(&mut self) {
+        if self.armed {
+            self.control.lose_ownership();
+        }
+    }
+}
+
 impl SessionState {
     fn snapshot(&self) -> OwnedLease {
         // Only validated owned records are admitted to this private state.
@@ -510,6 +539,48 @@ impl Drop for SessionRunGuard {
 }
 
 impl LeaseSession {
+    /// Reconciles an uncertain checkpoint and conditionally re-establishes the same generation.
+    ///
+    /// The old session remains revoked. A new session is returned only after a
+    /// latest-committed read and exact-ETag write confirm the same owner, generation,
+    /// range, and either the prior or candidate progress. If the candidate is not
+    /// stored, retry its persistence with the returned session, not the callback.
+    /// Returns none when the observed authority belongs to another owner/generation.
+    ///
+    /// # Errors
+    ///
+    /// Returns invalid recovery inputs, unexpected progress, store, or uncertain-write errors.
+    pub async fn reconcile_checkpoint(
+        &self,
+        expected: &OwnedLease,
+        candidate: &ContinuationToken,
+    ) -> Result<Option<LeaseSession>> {
+        {
+            let state = self.state.lock().await;
+            plan_checkpoint(&state.record, expected, candidate)?;
+        }
+        self.control.lose_ownership();
+        let observed = self.store.observe().await?;
+        self.store.validate_observation(&observed)?;
+        if observed.record.ownership.owner.as_deref() != Some(expected.owner())
+            || observed.record.ownership.generation != expected.epoch().get()
+        {
+            return Ok(None);
+        }
+        if observed.record.range != *expected.range()
+            || (observed.checkpoint() != expected.checkpoint().as_str()
+                && observed.checkpoint() != candidate.as_str())
+        {
+            return Err(invalid(
+                "checkpoint recovery observed unexpected range or progress",
+            ));
+        }
+        self.store
+            .install_owner(observed.record, &observed.revision)
+            .await
+            .map(Some)
+    }
+
     pub(crate) fn begin_run(&self) -> Result<SessionRunGuard> {
         self.running
             .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
@@ -529,6 +600,8 @@ impl LeaseSession {
 
     /// Conditionally renews current authority without changing its checkpoint.
     ///
+    /// Cancelling an in-flight write immediately signals ownership loss to active processing.
+    ///
     /// # Errors
     ///
     /// Fails closed on expired authority, CAS rejection, or any uncertain write.
@@ -536,10 +609,10 @@ impl LeaseSession {
         let mut state = self.state.lock().await;
         let deadline = self.admit_write(&mut state)?;
         let began = Instant::now();
-        // Cancellation during a write must leave the session unusable.
         state.authority = AuthorityState::WriteInFlight {
             safe_until: deadline,
         };
+        let write = LeaseWriteGuard::new(&self.control);
         let result = self
             .write_before_deadline(&state.record, &state.revision, deadline)
             .await;
@@ -555,6 +628,7 @@ impl LeaseSession {
         state.revision = revision;
         state.authority = AuthorityState::Active { safe_until };
         self.deadline.send_replace(safe_until);
+        write.confirm();
         Ok(state.snapshot())
     }
 
@@ -564,10 +638,12 @@ impl LeaseSession {
     /// checkpoint. Its older revision is tolerated only because this session's
     /// own serialized renewals may have changed it. Independent stale sessions
     /// still write their stale ETag and cannot change a replacement owner's lease.
+    /// Cancelling an in-flight write immediately signals ownership loss.
     ///
     /// # Errors
     ///
-    /// Returns rejected or ambiguous persistence; neither is automatically retried.
+    /// Returns rejected local validation or ambiguous sent-write failures, including
+    /// HTTP 412 when a previous driver attempt may have committed. Neither is automatically retried.
     pub async fn checkpoint(
         &self,
         expected: &OwnedLease,
@@ -583,6 +659,7 @@ impl LeaseSession {
         state.authority = AuthorityState::WriteInFlight {
             safe_until: deadline,
         };
+        let write = LeaseWriteGuard::new(&self.control);
         let revision = match self
             .write_before_deadline(&record, &state.revision, deadline)
             .await
@@ -601,10 +678,13 @@ impl LeaseSession {
         state.revision = revision;
         state.authority = AuthorityState::Active { safe_until };
         self.deadline.send_replace(safe_until);
+        write.confirm();
         Ok(state.snapshot())
     }
 
     /// Releases authority conditionally, preserving range and durable checkpoint.
+    ///
+    /// Cancellation during persistence immediately signals ownership loss.
     ///
     /// # Errors
     ///
@@ -616,11 +696,15 @@ impl LeaseSession {
         state.authority = AuthorityState::WriteInFlight {
             safe_until: deadline,
         };
+        let write = LeaseWriteGuard::new(&self.control);
         let result = self
             .write_before_deadline(&record, &state.revision, deadline)
             .await;
         state.authority = AuthorityState::Revoked;
         self.control.lose_ownership();
+        if result.is_ok() {
+            write.confirm();
+        }
         result.map(|_| ())
     }
 

@@ -1,6 +1,9 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod managed_capacity;
+mod review_regressions;
+
 use super::{BalanceCycle, BalanceRunOptions, LeaseBalancer};
 use crate::cosmos_lease_store::bootstrap::tests::{
     error_rule, fixture, fixture_with_observer, policy,

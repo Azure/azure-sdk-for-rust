@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod managed_lifecycle;
+
 use super::{ChangeFeedProcessorBuilder, ContainerBinding, ProcessorEngine};
 use crate::{
     BootstrapPlan, ChangeFeedMode, ChangeFeedProcessor, ChangeFeedReadOptions, InitialLease,

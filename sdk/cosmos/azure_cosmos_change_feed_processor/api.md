@@ -84,6 +84,7 @@ pub struct BootstrapStore {
 impl BootstrapStore {
     pub async fn ensure_initialized<impl Into<String>: Into<String>>(&self, incarnation: impl Into<String>, startup_timeout: Duration) -> Result<BootstrapReady>;
     pub fn from_resolved_single_writer(driver: Arc<CosmosDriver>, container: ContainerReference, plan: BootstrapPlan, policy: LeaseOwnershipOptions) -> Result<Self>;
+    pub async fn load_existing_single_writer(driver: Arc<CosmosDriver>, container: ContainerReference, source: &str, group: &str, mode: ChangeFeedMode, start: &BootstrapStartPolicy, policy: LeaseOwnershipOptions) -> Result<Option<Self>>;
     pub async fn new_single_writer(driver: Arc<CosmosDriver>, database: &str, container: &str, plan: BootstrapPlan, policy: LeaseOwnershipOptions) -> Result<Self>;
     pub fn work_lease_store(&self, ready: &BootstrapReady, id: &str) -> Result<CosmosLeaseStore>;
 }
@@ -121,6 +122,11 @@ impl ChangeFeedProcessor {
     pub async fn read_page_with_options<T: DeserializeOwned>(&self, options: ChangeFeedReadOptions) -> Result<ChangeFeedPage<T>>;
     pub async fn run_owned_lease<T, C, H, F>(&self, lease: OwnedLease, read: ChangeFeedReadOptions, control: &LeaseControl, options: &LeaseRunOptions, store: &mut C, handler: H) -> std::result::Result<LeaseRunReport, LeaseRunError> where T: DeserializeOwned, C: CheckpointStore, H: FnMut(ChangeFeedPage<T>) -> F, F: Future<Output = azure_data_cosmos_driver::Result<()>>;
     pub async fn run_with_lease_session<T, H, F>(&self, session: &LeaseSession, read: ChangeFeedReadOptions, options: &LeaseRunOptions, handler: H) -> LeaseOwnershipRun where T: DeserializeOwned, H: FnMut(ChangeFeedPage<T>) -> F, F: Future<Output = azure_data_cosmos_driver::Result<()>>;
+}
+impl crate::ChangeFeedProcessor {
+    pub async fn start<T, H, F>(&self, options: ManagedProcessorOptions, handler: H) -> azure_core::Result<()> where T: DeserializeOwned + Send + 'static, H: Fn(ChangeFeedPage<T>) -> F + Send + Sync + 'static, F: Future<Output = azure_data_cosmos_driver::Result<()>> + Send + 'static;
+    pub async fn state(&self) -> ProcessorLifecycleState;
+    pub async fn stop(&self) -> Option<Arc<ManagedShutdownReport>>;
 }
 pub struct ChangeFeedProcessorBuilder {
 }
@@ -193,10 +199,15 @@ pub struct LeaseBalancer {
 }
 impl LeaseBalancer {
     pub async fn cycle(&mut self) -> Result<BalanceCycle>;
+    pub fn exclude_lease<impl Into<String>: Into<String>>(&mut self, id: impl Into<String>) -> Result<()>;
+    pub fn include_lease(&mut self, id: &str);
+    pub fn max_owned_leases(&self) -> NonZeroU32;
     pub fn new<impl Into<String>: Into<String>>(workload: BootstrapStore, worker: impl Into<String>) -> Result<Self>;
     pub fn page_size(&self) -> NonZeroU32;
+    pub async fn register_session(&mut self, session: LeaseSession) -> Result<()>;
     pub async fn run_cycles<H, F>(&mut self, options: &BalanceRunOptions, control: &LeaseControl, on_acquired: H) -> Result<BalanceRunReport> where H: FnMut(LeaseSession) -> F, F: Future<Output = Result<()>>;
     pub fn tie_break(&self) -> u64;
+    pub fn with_max_owned_leases(self, limit: NonZeroU32) -> Self;
     pub fn with_page_size(self, page_size: NonZeroU32) -> Self;
     pub fn with_tie_break(self, tie_break: u64) -> Self;
     pub fn worker(&self) -> &str;
@@ -284,11 +295,80 @@ impl LeaseSession {
     pub async fn checkpoint(&self, expected: &OwnedLease, candidate: &ContinuationToken) -> std::result::Result<OwnedLease, CheckpointError>;
     pub fn control(&self) -> &LeaseControl;
     pub async fn lease(&self) -> OwnedLease;
+    pub async fn reconcile_checkpoint(&self, expected: &OwnedLease, candidate: &ContinuationToken) -> Result<Option<LeaseSession>>;
     pub async fn release(&self) -> Result<()>;
     pub async fn renew(&self) -> Result<OwnedLease>;
 }
 impl CheckpointStore for LeaseSession {
     fn persist<'a>(&mut self, lease: &'a OwnedLease, candidate: &'a ContinuationToken) -> futures::future::BoxFuture<'a, std::result::Result<OwnedLease, CheckpointError>>;
+}
+pub struct ManagedLeaseShutdown {
+}
+impl ManagedLeaseShutdown {
+    pub fn error(&self) -> Option<&Arc<CosmosError>>;
+    pub fn id(&self) -> &str;
+    pub fn outcome(&self) -> LeaseRunOutcome;
+    pub fn release(&self) -> &LeaseReleaseOutcome;
+    pub fn snapshot(&self) -> Option<&ManagedLeaseSnapshot>;
+}
+#[derive(Clone)]
+pub struct ManagedLeaseSnapshot {
+}
+impl ManagedLeaseSnapshot {
+    pub fn id(&self) -> &str;
+    pub fn last_callback(&self) -> Option<&ContinuationToken>;
+    pub fn last_checkpoint(&self) -> &ContinuationToken;
+    pub fn last_error(&self) -> Option<&Arc<CosmosError>>;
+    pub fn last_feed(&self) -> Option<&ContinuationToken>;
+    pub fn state(&self) -> ManagedLeaseState;
+}
+#[derive(Clone)]
+pub struct ManagedProcessorOptions {
+}
+impl ManagedProcessorOptions {
+    pub fn balance_interval(&self) -> Duration;
+    pub fn callback_concurrency(&self) -> NonZeroU32;
+    pub fn coverage_interval(&self) -> Duration;
+    pub fn drain_timeout(&self) -> Duration;
+    pub fn host_capacity(&self) -> NonZeroU32;
+    pub fn instance_name(&self) -> &str;
+    pub fn max_item_count(&self) -> NonZeroU32;
+    pub fn mode(&self) -> ChangeFeedMode;
+    pub fn new<impl Into<String>: Into<String>>(instance_name: impl Into<String>) -> Self;
+    pub fn ownership_policy(&self) -> &LeaseOwnershipOptions;
+    pub fn poll_interval(&self) -> Duration;
+    pub fn recovery_backoff(&self) -> Duration;
+    pub fn start_policy(&self) -> &BootstrapStartPolicy;
+    pub fn startup_timeout(&self) -> Duration;
+    pub fn with_balance_interval(self, value: Duration) -> Self;
+    pub fn with_callback_concurrency(self, value: NonZeroU32) -> Self;
+    pub fn with_coverage_interval(self, value: Duration) -> Self;
+    pub fn with_drain_timeout(self, value: Duration) -> Self;
+    pub fn with_host_capacity(self, value: NonZeroU32) -> Self;
+    pub fn with_max_item_count(self, value: NonZeroU32) -> Self;
+    pub fn with_mode(self, value: ChangeFeedMode) -> Self;
+    pub fn with_ownership_policy(self, value: LeaseOwnershipOptions) -> Self;
+    pub fn with_poll_interval(self, value: Duration) -> Self;
+    pub fn with_recovery_backoff(self, value: Duration) -> Self;
+    pub fn with_start_policy(self, value: BootstrapStartPolicy) -> Self;
+    pub fn with_startup_timeout(self, value: Duration) -> Self;
+}
+#[derive(Clone)]
+pub struct ManagedProcessorSnapshot {
+}
+impl ManagedProcessorSnapshot {
+    pub fn is_healthy(&self) -> bool;
+    pub fn last_error(&self) -> Option<&Arc<CosmosError>>;
+    pub fn leases(&self) -> &[ManagedLeaseSnapshot];
+    pub fn state(&self) -> ManagedProcessorState;
+}
+pub struct ManagedShutdownReport {
+}
+impl ManagedShutdownReport {
+    pub fn errors(&self) -> &[Arc<CosmosError>];
+    pub fn is_clean(&self) -> bool;
+    pub fn joined_workers(&self) -> u64;
+    pub fn leases(&self) -> &[ManagedLeaseShutdown];
 }
 #[derive(Clone, Debug)]
 pub struct OwnedLease {
@@ -386,6 +466,28 @@ pub enum LeaseRunPhase {
     Reading,
     Handling,
     Checkpointing,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ManagedLeaseState {
+    Running,
+    Recovering,
+    Quarantined,
+    OwnershipLost,
+    Stopped,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ManagedProcessorState {
+    Running,
+    Stopping,
+    Stopped,
+    Failed,
+}
+#[non_exhaustive]
+pub enum ProcessorLifecycleState {
+    Prepared,
+    Running(azure_cosmos_change_feed_processor_engine::ManagedProcessorSnapshot),
+    Stopping(azure_cosmos_change_feed_processor_engine::ManagedProcessorSnapshot),
+    Stopped(std::sync::Arc<azure_cosmos_change_feed_processor_engine::ManagedShutdownReport>),
 }
 pub trait CheckpointStore: Send {
     fn persist<'a>(&mut self, lease: &'a OwnedLease, candidate: &'a ContinuationToken) -> futures::future::BoxFuture<'a, Result<OwnedLease, CheckpointError>>;

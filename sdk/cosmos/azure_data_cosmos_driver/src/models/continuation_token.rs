@@ -26,7 +26,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     driver::dataflow::PipelineNodeState,
-    models::{CosmosOperation, OperationType},
+    models::{CosmosOperation, FeedRange, OperationType},
 };
 
 /// Current SDK token version prefix.
@@ -79,6 +79,14 @@ impl ContinuationToken {
             rid: container.rid().to_string(),
             root: root_state.clone(),
             change_feed_full_fidelity,
+            change_feed_binding: (operation.is_change_feed()
+                && operation
+                    .target()
+                    .is_none_or(|range| !range.is_logical_partition()))
+            .then(|| ChangeFeedBinding {
+                account: container.account().endpoint().as_str().to_owned(),
+                scope: operation.target().cloned(),
+            }),
         };
 
         let json = serde_json::to_vec(&state).map_err(|e| {
@@ -191,9 +199,21 @@ pub struct TokenState {
     /// a change feed cannot switch modes across continuations.
     #[serde(rename = "cfm", default, skip_serializing_if = "Option::is_none")]
     change_feed_full_fidelity: Option<bool>,
+    #[serde(rename = "cfb", default, skip_serializing_if = "Option::is_none")]
+    change_feed_binding: Option<ChangeFeedBinding>,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+struct ChangeFeedBinding {
+    account: String,
+    scope: Option<FeedRange>,
 }
 
 impl TokenState {
+    pub(crate) fn has_change_feed_binding(&self) -> bool {
+        self.change_feed_binding.is_some()
+    }
+
     /// Validates that this token state is compatible with the provided query
     pub fn is_valid_for_operation(&self, operation: &CosmosOperation) -> crate::error::Result<()> {
         let expected = TokenOperation::for_operation(operation)?;
@@ -245,6 +265,16 @@ impl TokenState {
                     token_rid = self.rid,
                     op_rid = container.rid(),
                 )).build());
+        }
+        if let Some(binding) = &self.change_feed_binding {
+            if binding.account != container.account().endpoint().as_str()
+                || binding.scope.as_ref() != operation.target()
+            {
+                return Err(crate::error::CosmosError::builder()
+                    .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+                    .with_message("change feed checkpoint account or logical scope does not match the operation")
+                    .build());
+            }
         }
         Ok(())
     }
@@ -514,6 +544,7 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: None,
+            change_feed_binding: None,
         };
         let err = state.is_valid_for_operation(&change_feed_op()).unwrap_err();
         assert!(err.to_string().contains("ChangeFeed"));
@@ -526,6 +557,7 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: None,
+            change_feed_binding: None,
         };
         let err = state.is_valid_for_operation(&query_op()).unwrap_err();
         assert!(err.to_string().contains("Query"));
@@ -540,6 +572,7 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: None,
+            change_feed_binding: None,
         };
         let err = latest
             .is_valid_for_operation(&change_feed_avad_op())
@@ -552,6 +585,7 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: Some(true),
+            change_feed_binding: None,
         };
         let err = avad.is_valid_for_operation(&change_feed_op()).unwrap_err();
         assert!(err.to_string().contains("AllVersionsAndDeletes"));
@@ -565,6 +599,7 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: Some(true),
+            change_feed_binding: None,
         };
         avad.is_valid_for_operation(&change_feed_avad_op())
             .expect("AllVersionsAndDeletes token resumes an AllVersionsAndDeletes operation");
@@ -696,6 +731,7 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: None,
+            change_feed_binding: None,
         };
         state.is_valid_for_operation(&query_op()).unwrap();
     }
@@ -707,6 +743,7 @@ mod tests {
             rid: "different_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: None,
+            change_feed_binding: None,
         };
         let err = state.is_valid_for_operation(&query_op()).unwrap_err();
         assert!(err.to_string().contains("different_rid"));
@@ -720,6 +757,7 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: None,
+            change_feed_binding: None,
         };
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let read = CosmosOperation::read_item(item);

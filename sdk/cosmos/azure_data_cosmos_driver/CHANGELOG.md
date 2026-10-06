@@ -4,11 +4,17 @@
 
 ### Features Added
 
+- Added `CosmosDriver::derive_change_feed_checkpoints` for validated, source-bound child EPK checkpoint derivation.
+
 ### Breaking Changes
 
 - Terminal service 404/1002, 403/3, and 403/1008 errors now surface as synthetic 503/20310, 503/20311, and 503/20312 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
 
 ### Bugs Fixed
+
+- Bind new EPK change-feed continuations to the source account and scope, and recover explicit oversized-page errors with smaller item-count hints from the unchanged cursor.
+- Reject interrupted or invalid AllVersionsAndDeletes Now priming instead of checkpointing unserved progress.
+- Reject change-feed responses without a nonempty ETag instead of delivering pages without a valid resume position.
 
 - Preserve the next partition to poll in change-feed continuations so repeated one-page resumptions do not starve later partitions.
 - Preserve admitted throttle retry settings during operation-triggered account metadata refresh, including regional and HTTP-version recovery paths. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))

@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added continuous typed start/stop processing over prepared contexts with shared callbacks, independent capacity/concurrency controls, state snapshots, and retained shutdown evidence.
+
 - Added independently credential-bound feed/lease container configurations, an async builder with an overall preparation deadline, and configured lease/bootstrap factories that reuse resolved resources without implicit credential fallback.
 
 - Exposed shared equal-count balancing and confirmed-session handoff APIs; balancing behavior remains in the CFP engine.

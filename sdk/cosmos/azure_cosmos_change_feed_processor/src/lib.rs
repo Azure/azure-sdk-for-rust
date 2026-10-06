@@ -33,8 +33,14 @@ use url::Url;
 
 mod builder;
 mod container_binding;
+mod managed_lifecycle;
+pub use azure_cosmos_change_feed_processor_engine::{
+    ManagedLeaseShutdown, ManagedLeaseSnapshot, ManagedLeaseState, ManagedProcessorOptions,
+    ManagedProcessorSnapshot, ManagedProcessorState, ManagedShutdownReport,
+};
 pub use builder::ChangeFeedProcessorBuilder;
 pub use container_binding::ContainerBinding;
+pub use managed_lifecycle::ProcessorLifecycleState;
 
 pub mod models;
 pub use models::{
@@ -44,8 +50,8 @@ pub use models::{
 /// Reads complete modeled change events and coordinates one already-owned lease.
 ///
 /// Feed reads charge request units. An acquired Cosmos lease can be renewed
-/// while processing. Bootstrap and balancing are explicit bounded operations;
-/// an automatic start/stop supervisor is not provided.
+/// while processing. Prepared processors can start continuous managed execution
+/// and stop with joined task and conditional release evidence.
 pub struct ChangeFeedProcessor {
     engine: ProcessorEngine,
     prepared: Option<builder::PreparedProcessor>,

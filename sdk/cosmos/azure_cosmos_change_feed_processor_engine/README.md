@@ -4,6 +4,49 @@ Schema-agnostic execution engine for the Azure Cosmos DB change feed processor.
 
 This crate is unpublished and experimental.
 
+## Managed execution
+
+`ProcessorEngine::start_managed` connects the existing preparation, bootstrap,
+balancing, and lockstep lease coordinator into continuous execution. It accepts
+independently prepared lease-driver/container references and a completion-bearing
+shared raw callback. Application schemas remain outside the engine.
+
+`ManagedProcessorOptions` separates host lease capacity from callback concurrency.
+Both are bounded by the existing 32-record workload protocol. Startup first loads
+the saved winning plan; only a missing workload triggers source range discovery
+and fresh mode/start-compatible positions. Now positions are validated as concrete
+driver checkpoints, not re-evaluated after restart.
+
+`ManagedProcessor` retains its coordinator and lease task set. `stop` borrows the
+handle, so caller cancellation does not drop ownership of its join barrier. Later
+stop calls resume joining and return the same cached report after completion.
+Inspect processing, maintenance, task, and release failures; `is_complete` and
+`is_clean` answer different questions. Drop cancels work without claiming release.
+
+Transient reads reopen from confirmed progress. Callback failures are isolated
+and surfaced. Ambiguous checkpoint recovery revokes the old session, rereads
+storage, and conditionally proves the same owner/generation with a new revision
+before retrying only an unpersisted candidate. It cannot adopt a replacement owner
+or rerun a successful callback just because checkpoint transport failed.
+
+Snapshots distinguish feed-response activity, callback completion, and confirmed
+checkpoint writes. Elapsed-time markers are not a service item-count lag estimate.
+There is no globally registered zero-lease worker list or weighted balancing.
+Managed execution currently requires Tokio, and callbacks must yield cooperatively.
+
+The durable handoff storage protocol stages a quiesced parent and all pending
+children atomically, then conditionally retires the parent and activates the
+complete child set. Restart resumes its saved journal; children cannot acquire
+before activation. Parent evidence remains retained and counts toward the
+32-record bound. Driver checkpoint derivation is required; opaque tokens are
+never edited or manufactured by CFP. Periodic reconciliation refreshes topology,
+stops and joins only the affected local parent, and uses its latest confirmed
+position to stage replacements. Unrelated lease tasks continue. A concurrent
+reacquisition changes the parent revision and prevents the stale handoff.
+Physical merges keep logical scopes separate. At the 32-record bound or with
+an unsupported buffered checkpoint shape, subdivision is visibly deferred and
+the logical parent is retained.
+
 ## Data-plane reads
 
 `ProcessorEngine` connects through `azure_data_cosmos_driver`,
@@ -66,6 +109,9 @@ Only one batch can be outstanding. A successful handler is not rerun while
 definitely-not-persisted checkpoint writes retry. Ambiguous writes and rejected
 conditions stop with recovery state. Idle pages bypass handlers but still
 checkpoint their position; non-idle empty pages go through application handling.
+
+Idle delay precedes another read, not completion of the requested batch limit.
+A final confirmed idle page returns without sleeping.
 
 **Batch completion requires both callback success and confirmed durable
 checkpointing.** The next read cannot begin between those steps. Callback
@@ -187,6 +233,11 @@ This requires timer drift smaller than the margin and a monotonic clock that
 accounts for pauses; if the runtime/platform cannot provide that assumption,
 do not use this policy without an external fencing/clock contract.
 
+Renewal waits after a confirmed write completes. Timing validation therefore
+requires `2 * request_timeout + renew_interval < duration - safety_margin`:
+both the preceding write's latency and the next renewal's latency consume
+the authority window.
+
 `LeaseSession` owns one authoritative lease record/revision. Its async mutex
 serializes renewal, checkpoint, and release I/O only; it never spans the
 application handler. This local mutex is **not** cross-process coordination:
@@ -198,8 +249,15 @@ One processing run is admitted per session.
 The session keeps the persisted record and its ETag as canonical data.
 `OwnedLease` values are derived snapshots, not a second independently updated
 copy. Internal authority states distinguish active, write-in-flight/uncertain,
-and revoked. A cancelled write leaves the state uncertain and cannot silently
-restore authority.
+and revoked. Cancelling an in-flight renewal, checkpoint, release, or bootstrap
+write immediately signals ownership loss to active processing. Its state remains
+uncertain and cannot silently restore authority.
+
+Checkpoint validation rejected before I/O remains `CheckpointError::Rejected`.
+Sent-write failures are conservatively `CheckpointError::Ambiguous`, including
+a final HTTP 412: an earlier driver attempt may have committed and lost its
+response. Stop and reconcile the stored progress; do not infer non-persistence
+from the final status alone.
 
 Decision functions take explicit record, progress, revision, policy, and time
 inputs. Acquisition eligibility, checkpoint/release proposals, authority checks,
@@ -331,6 +389,11 @@ Fresh observers conservatively count occupied records as active. The inventory
 is not a global atomic membership snapshot; exact acquisition/transfer CAS and
 readiness guards resolve races. Each cycle rotates candidate order, and the
 bounded runner uses jittered scheduling.
+
+Inventory expiry does not revoke a local session with matching owner/generation:
+earlier pages may contain revisions replaced by independent renewal while later
+pages are read. The session watchdog enforces its current authority deadline;
+ineligible records, owner/generation changes, or absent assignments still revoke it.
 
 Active transfer uses `CosmosLeaseStore::transfer`: it validates the exact
 observed revision/owner generation, preserves the checkpoint, and installs a

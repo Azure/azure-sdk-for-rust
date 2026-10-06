@@ -217,7 +217,7 @@ impl LeaseRunOptions {
         self.retry_delay = value;
         self
     }
-    /// Sets the delay after an idle page is durably confirmed.
+    /// Sets the delay before another read after an idle page is durably confirmed.
     pub fn with_idle_delay(mut self, value: Duration) -> Self {
         self.idle_delay = value;
         self
@@ -611,60 +611,75 @@ where
                 }
             }
         }
-        report.progress = ProcessingProgress::Checkpointing(candidate.clone());
-        let mut attempt = 0;
-        loop {
-            attempt += 1;
-            let result = budget
-                .wait(
-                    // Polling the store future is guarded against ownership loss by wait().
-                    async { store.persist(&report.lease, &candidate).await },
-                    &mut signals,
-                    LeaseRunPhase::Checkpointing,
-                )
-                .await;
-            match result {
-                Step::Completed(Ok(receipt)) => {
-                    if let Err(error) =
-                        validate_checkpoint_receipt(&report.lease, &candidate, &receipt)
-                    {
-                        return Err(fail(report, error));
+        if idle && candidate == *report.lease.checkpoint() {
+            report.progress = ProcessingProgress::Ready;
+            report.confirmed_batches += 1;
+        } else {
+            report.progress = ProcessingProgress::Checkpointing(candidate.clone());
+            let mut attempt = 0;
+            loop {
+                attempt += 1;
+                let result = budget
+                    .wait(
+                        // Polling the store future is guarded against ownership loss by wait().
+                        async { store.persist(&report.lease, &candidate).await },
+                        &mut signals,
+                        LeaseRunPhase::Checkpointing,
+                    )
+                    .await;
+                match result {
+                    Step::Completed(Ok(receipt)) => {
+                        if let Err(error) =
+                            validate_checkpoint_receipt(&report.lease, &candidate, &receipt)
+                        {
+                            return Err(fail(report, error));
+                        }
+                        report.lease = receipt;
+                        report.progress = ProcessingProgress::Ready;
+                        report.confirmed_batches += 1;
+                        break;
                     }
-                    report.lease = receipt;
-                    report.progress = ProcessingProgress::Ready;
-                    report.confirmed_batches += 1;
-                    break;
-                }
-                Step::Completed(Err(error)) => {
-                    let decision = checkpoint_retry(&error, attempt, options.checkpoint_attempts);
-                    let (CheckpointError::Retryable(error)
-                    | CheckpointError::Ambiguous(error)
-                    | CheckpointError::Rejected(error)) = error;
-                    match decision {
-                        CheckpointRetry::Fail => return Err(fail(report, error)),
-                        CheckpointRetry::Retry => {
-                            tracing::warn!(attempt, error = %error, "checkpoint definitely not persisted; retrying candidate without rerunning handler");
-                            if let Step::Interrupted(outcome) = budget
-                                .wait(
-                                    sleep(options.retry_delay),
-                                    &mut signals,
-                                    LeaseRunPhase::Checkpointing,
-                                )
-                                .await
-                            {
-                                report.outcome = outcome;
-                                return Ok(report);
+                    Step::Completed(Err(error)) => {
+                        let decision =
+                            checkpoint_retry(&error, attempt, options.checkpoint_attempts);
+                        let (CheckpointError::Retryable(error)
+                        | CheckpointError::Ambiguous(error)
+                        | CheckpointError::Rejected(error)) = error;
+                        match decision {
+                            CheckpointRetry::Fail => return Err(fail(report, error)),
+                            CheckpointRetry::Retry => {
+                                tracing::warn!(attempt, error = %error, "checkpoint definitely not persisted; retrying candidate without rerunning handler");
+                                if let Step::Interrupted(outcome) = budget
+                                    .wait(
+                                        sleep(options.retry_delay),
+                                        &mut signals,
+                                        LeaseRunPhase::Checkpointing,
+                                    )
+                                    .await
+                                {
+                                    report.outcome = outcome;
+                                    return Ok(report);
+                                }
                             }
                         }
                     }
-                }
-                Step::Interrupted(outcome) => {
-                    report.outcome = outcome;
-                    return Ok(report);
+                    Step::Interrupted(outcome) => {
+                        report.outcome = outcome;
+                        return Ok(report);
+                    }
                 }
             }
         }
-        if idle {
+        if idle && report.confirmed_batches < options.max_batches.get() {
+            let state = *signals.borrow();
+            if state.lost || state.stop {
+                report.outcome = if state.lost {
+                    LeaseRunOutcome::OwnershipLost
+                } else {
+                    LeaseRunOutcome::StoppedDrained
+                };
+                return Ok(report);
+            }
             report.progress = ProcessingProgress::Reading;
             if let Step::Interrupted(outcome) = budget
                 .wait(

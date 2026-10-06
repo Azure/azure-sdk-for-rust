@@ -72,6 +72,7 @@ impl ChangeFeedProcessorBuilder {
                 group,
                 feed: feed.binding,
                 leases,
+                lifecycle: futures::lock::Mutex::new(crate::managed_lifecycle::Lifecycle::Prepared),
             }),
         })
     }
@@ -81,6 +82,7 @@ pub(crate) struct PreparedProcessor {
     pub group: String,
     pub feed: ContainerBinding,
     pub leases: PreparedContainer,
+    pub lifecycle: futures::lock::Mutex<crate::managed_lifecycle::Lifecycle>,
 }
 
 async fn prepare_side(

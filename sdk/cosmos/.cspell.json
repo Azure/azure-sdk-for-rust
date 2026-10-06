@@ -74,6 +74,7 @@
     "changefeed",
     "Charsets",
     "checkpointer",
+    "interleavings",
     "checkpointing",
     "checkptr",
     "chilecentral",

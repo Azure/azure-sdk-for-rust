@@ -9,6 +9,7 @@ mod cosmos_lease_store;
 mod lease_load_balancer;
 mod lease_processing;
 mod lease_topology_handler;
+mod managed_processor;
 mod prepared_container;
 mod processor_engine;
 
@@ -29,6 +30,11 @@ pub use lease_processing::{
     LeaseRunOutcome, LeaseRunPhase, LeaseRunReport, OwnedLease,
 };
 pub use lease_topology_handler::{plan_lease_topology, LeaseTopologyAssignment};
+pub use managed_processor::{
+    ManagedLeaseShutdown, ManagedLeaseSnapshot, ManagedLeaseState, ManagedProcessor,
+    ManagedProcessorOptions, ManagedProcessorSnapshot, ManagedProcessorState,
+    ManagedShutdownReport, RawChangeHandler,
+};
 pub use processor_engine::ProcessorEngine;
 
 /// Compatibility name for [`ProcessorEngine`].

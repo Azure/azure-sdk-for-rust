@@ -3,7 +3,13 @@
 
 use azure_core::http::StatusCode;
 use azure_data_cosmos_driver::{models::ItemReference, CosmosErrorBuilder, Result};
-use std::{collections::HashMap, future::Future, num::NonZeroU32, sync::Arc, time::Duration};
+use std::{
+    collections::{HashMap, HashSet},
+    future::Future,
+    num::NonZeroU32,
+    sync::Arc,
+    time::Duration,
+};
 use tokio::time::{sleep, timeout, Instant};
 
 use super::super::{invalid, CosmosLeaseStore, LeaseObservation, LeaseSession};
@@ -45,6 +51,8 @@ pub struct LeaseBalancer {
     sessions: HashMap<String, LeaseSession>,
     tie_break: u64,
     page_size: NonZeroU32,
+    maximum_owned: NonZeroU32,
+    excluded: HashSet<String>,
 }
 impl LeaseBalancer {
     /// Attaches to an already-initialized workload; never initializes it.
@@ -64,6 +72,8 @@ impl LeaseBalancer {
             sessions: HashMap::new(),
             tie_break: rand::random(),
             page_size: NonZeroU32::new(8).expect("eight is non-zero"),
+            maximum_owned: NonZeroU32::new(32).expect("32 is non-zero"),
+            excluded: HashSet::new(),
         })
     }
     /// Supplies deterministic candidate rotation.
@@ -75,6 +85,65 @@ impl LeaseBalancer {
     pub fn with_page_size(mut self, page_size: NonZeroU32) -> Self {
         self.page_size = page_size;
         self
+    }
+    /// Sets this host's ownership ceiling independently of callback concurrency.
+    ///
+    /// Values above the protocol's 32-record bound are rejected by [`cycle()`](Self::cycle).
+    pub fn with_max_owned_leases(mut self, limit: NonZeroU32) -> Self {
+        self.maximum_owned = limit;
+        self
+    }
+    /// Returns the configured ownership ceiling.
+    pub fn max_owned_leases(&self) -> NonZeroU32 {
+        self.maximum_owned
+    }
+    /// Defers a lease-local failed candidate without removing it from global policy counts.
+    ///
+    /// # Errors
+    ///
+    /// Rejects an empty lease ID.
+    pub fn exclude_lease(&mut self, id: impl Into<String>) -> Result<()> {
+        let id = id.into();
+        if id.trim().is_empty() {
+            return Err(invalid("excluded lease ID cannot be empty"));
+        }
+        self.excluded.insert(id);
+        Ok(())
+    }
+    /// Allows a previously deferred candidate to be acquired again.
+    pub fn include_lease(&mut self, id: &str) {
+        self.excluded.remove(id);
+    }
+    /// Tracks freshly confirmed same-worker recovery authority.
+    ///
+    /// # Errors
+    ///
+    /// Rejects lost authority or a different worker identity.
+    pub async fn register_session(&mut self, session: LeaseSession) -> Result<()> {
+        let state = session.state.lock().await;
+        let lease = state.snapshot();
+        if super::super::authority_deadline(
+            state.authority,
+            Instant::now(),
+            session.control().is_lost(),
+        )
+        .is_err()
+            || lease.owner() != self.worker
+        {
+            return Err(invalid(
+                "registered session is not this worker's confirmed authority",
+            ));
+        }
+        drop(state);
+        if let Some(existing) = self.sessions.get(lease.id()) {
+            if !existing.control().is_lost() && !Arc::ptr_eq(&existing.state, &session.state) {
+                return Err(invalid(
+                    "a different active session is already registered for this lease",
+                ));
+            }
+        }
+        self.sessions.insert(lease.id().to_owned(), session);
+        Ok(())
     }
     /// Returns this worker's incarnation.
     pub fn worker(&self) -> &str {
@@ -100,6 +169,11 @@ impl LeaseBalancer {
     /// Returns readiness, invalid/partial inventory, or uncertain-write errors.
     /// The cycle has a 30-second outer budget and grants no session on failure.
     pub async fn cycle(&mut self) -> Result<BalanceCycle> {
+        if self.maximum_owned.get() > 32 {
+            return Err(invalid(
+                "host lease capacity cannot exceed the 32-record workload bound",
+            ));
+        }
         timeout(Duration::from_secs(30), self.cycle_inner())
             .await
             .map_err(|_| {
@@ -172,12 +246,12 @@ impl LeaseBalancer {
         let action = plan_equal_lease_balance(&snapshots, &self.worker, self.tie_break)?;
         self.tie_break = self.tie_break.wrapping_add(1);
         self.seen = next_seen;
+        // Inventory expiry can refer to a pre-renewal revision; the local watchdog owns expiry.
         for (id, session) in &self.sessions {
             let lease = session.lease().await;
             if !entries.iter().any(|(snapshot, _, observed)| {
                 snapshot.id() == id
                     && snapshot.eligible()
-                    && !snapshot.expired()
                     && snapshot.owner() == Some(self.worker.as_str())
                     && observed.record.ownership.generation == lease.epoch().get()
             }) {
@@ -189,6 +263,11 @@ impl LeaseBalancer {
         let Some(action) = action else {
             return Ok(BalanceCycle::NoAction);
         };
+        if self.sessions.len() >= self.maximum_owned.get() as usize
+            || self.excluded.contains(action.lease_id())
+        {
+            return Ok(BalanceCycle::NoAction);
+        }
         let (_, store, observation) = entries
             .iter()
             .find(|(snapshot, _, _)| snapshot.id() == action.lease_id())

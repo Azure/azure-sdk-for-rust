@@ -171,7 +171,7 @@ fn invalid_records_and_checkpoint_failure_classification_are_explicit() {
         .build();
     assert!(matches!(
         classify_checkpoint_failure(conflict),
-        CheckpointError::Rejected(_)
+        CheckpointError::Ambiguous(_)
     ));
     assert!(matches!(
         classify_checkpoint_failure(invalid("unknown outcome")),

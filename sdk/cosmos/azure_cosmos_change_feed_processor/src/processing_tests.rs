@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod review_regressions;
+
 use super::{
     decode_items,
     tests::{setup, setup_with_driver},

@@ -19,7 +19,7 @@ use tokio::time::{sleep, timeout, Instant};
 
 use super::{
     decisions::AuthorityState, invalid, CosmosLeaseStore, LeaseIdentity, LeaseOwnershipOptions,
-    LeaseRecord, LeaseSession,
+    LeaseRecord, LeaseSession, LeaseWriteGuard,
 };
 use crate::ChangeFeedMode;
 
@@ -27,6 +27,7 @@ const MAX_INITIAL_LEASES: usize = 32;
 const INITIALIZATION_GENERATION: u64 = 1;
 
 mod balancing;
+mod topology;
 pub use balancing::{BalanceCycle, BalanceRunOptions, BalanceRunReport, LeaseBalancer};
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -198,6 +199,63 @@ pub struct BootstrapStore {
 }
 
 impl BootstrapStore {
+    /// Loads the winning persisted initialization plan without discovering fresh positions.
+    ///
+    /// Returns none only when the workload record does not exist. Existing
+    /// partial initialization is resumed using its original plan.
+    ///
+    /// # Errors
+    ///
+    /// Returns configuration, partitioning, metadata, or lease-account errors.
+    pub async fn load_existing_single_writer(
+        driver: Arc<CosmosDriver>,
+        container: ContainerReference,
+        source: &str,
+        group: &str,
+        mode: ChangeFeedMode,
+        start: &BootstrapStartPolicy,
+        policy: LeaseOwnershipOptions,
+    ) -> Result<Option<Self>> {
+        if source.trim().is_empty() || group.trim().is_empty() {
+            return Err(invalid("bootstrap requires a non-empty source and group"));
+        }
+        let id = workload_identity(source, group)?;
+        let store = CosmosLeaseStore::from_resolved_single_writer(
+            driver,
+            container,
+            PartitionKey::from(id.clone()),
+            id,
+            policy,
+        )?;
+        validate_partition(&store.container)?;
+        let observed = match store.observe().await {
+            Ok(observed) => observed,
+            Err(error) if error.status().status_code() == StatusCode::NotFound => return Ok(None),
+            Err(error) => return Err(error),
+        };
+        let metadata: Metadata = serde_json::from_value(
+            observed
+                .record
+                .extra
+                .get("bootstrap")
+                .ok_or_else(|| invalid("workload record has no bootstrap metadata"))?
+                .clone(),
+        )?;
+        validate_plan(&metadata.plan)?;
+        if metadata.plan.source() != source
+            || metadata.plan.group() != group
+            || metadata.plan.mode() != mode
+            || metadata.plan.start_policy() != start
+        {
+            return Err(invalid(
+                "persisted workload configuration does not match this processor",
+            ));
+        }
+        let workload = Self::with_store(store, metadata.plan.clone())?;
+        workload.metadata(&observed.record)?;
+        Ok(Some(workload))
+    }
+
     /// Addresses a stable source/group workload in an existing lease container.
     ///
     /// # Errors
@@ -251,12 +309,7 @@ impl BootstrapStore {
     }
 
     fn with_store(store: CosmosLeaseStore, plan: BootstrapPlan) -> Result<Self> {
-        let paths = store.container.partition_key_definition().paths();
-        if paths.len() != 1 || paths[0] != "/workload" {
-            return Err(invalid(
-                "bootstrap requires an existing container partitioned by /workload",
-            ));
-        }
+        validate_partition(&store.container)?;
         Ok(Self { store, plan })
     }
 
@@ -326,6 +379,9 @@ impl BootstrapStore {
             let observation = self.store.observe().await?;
             let metadata = self.metadata(&observation.record)?;
             if metadata.phase == BootstrapPhase::Ready {
+                if self.resume_topology_transitions().await? > 0 {
+                    continue;
+                }
                 let records = self.discover().await?;
                 if coverage(&metadata.plan, &records, &self.store.id)?.is_empty() {
                     // Fence the completeness snapshot against a concurrent readiness transition.
@@ -680,6 +736,7 @@ impl LeaseSession {
         state.authority = AuthorityState::WriteInFlight {
             safe_until: deadline,
         };
+        let write = LeaseWriteGuard::new(&self.control);
         let result = tokio::time::timeout_at(
             deadline,
             self.store.execute(
@@ -707,6 +764,7 @@ impl LeaseSession {
         state.revision = revision;
         state.authority = AuthorityState::Active { safe_until };
         self.deadline.send_replace(safe_until);
+        write.confirm();
         Ok(())
     }
 }
@@ -763,7 +821,7 @@ fn batch_revision(
         })
 }
 
-fn processing_eligible(record: &LeaseRecord) -> Result<bool> {
+pub(super) fn processing_eligible(record: &LeaseRecord) -> Result<bool> {
     if record
         .extra
         .get("recordKind")
@@ -803,9 +861,21 @@ fn verification_reads(id: &str, revision: &str, records: &[LeaseRecord]) -> Resu
 }
 
 fn workload_id(plan: &BootstrapPlan) -> Result<String> {
+    workload_identity(&plan.source, &plan.group)
+}
+fn validate_partition(container: &ContainerReference) -> Result<()> {
+    let paths = container.partition_key_definition().paths();
+    if paths.len() != 1 || paths[0] != "/workload" {
+        return Err(invalid(
+            "bootstrap requires an existing container partitioned by /workload",
+        ));
+    }
+    Ok(())
+}
+fn workload_identity(source: &str, group: &str) -> Result<String> {
     let id = format!(
         "cfp.{}",
-        URL_SAFE_NO_PAD.encode(serde_json::to_vec(&(&plan.source, &plan.group))?)
+        URL_SAFE_NO_PAD.encode(serde_json::to_vec(&(source, group))?)
     );
     if id.len() > 800 {
         return Err(invalid(
@@ -856,7 +926,23 @@ fn validate_plan(plan: &BootstrapPlan) -> Result<()> {
 
 // Missing assignments are created only when no existing logical lease covers their range.
 fn coverage(plan: &BootstrapPlan, records: &[LeaseRecord], workload: &str) -> Result<Vec<usize>> {
-    let mut ordered: Vec<_> = records.iter().collect();
+    let mut ordered = Vec::new();
+    for record in records {
+        if record.extra.get("workload") != Some(&json!(workload))
+            || record.extra.get("initializationGeneration")
+                != Some(&json!(INITIALIZATION_GENERATION))
+            || record.version != 1
+            || record.checkpoint.is_empty()
+            || !interval(&record.range)
+        {
+            return Err(invalid(
+                "workload coverage contains an invalid or unrecognized-generation record",
+            ));
+        }
+        if processing_eligible(record)? {
+            ordered.push(record);
+        }
+    }
     ordered.sort_by(|a, b| a.range.min_inclusive().cmp(b.range.min_inclusive()));
     let mut ids = std::collections::HashSet::new();
     let mut previous_max = None;
@@ -913,7 +999,11 @@ fn ready(id: &str, plan: BootstrapPlan, records: Vec<LeaseRecord>) -> Result<Boo
     Ok(BootstrapReady {
         id: id.to_owned(),
         plan,
-        lease_ids: records.into_iter().map(|lease| lease.id).collect(),
+        lease_ids: records
+            .into_iter()
+            .filter(|record| processing_eligible(record).expect("coverage validated lifecycle"))
+            .map(|lease| lease.id)
+            .collect(),
     })
 }
 

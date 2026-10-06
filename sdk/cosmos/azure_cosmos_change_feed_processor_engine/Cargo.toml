@@ -22,7 +22,8 @@ tokio = { workspace = true, features = ["sync"] }
 tracing.workspace = true
 
 [dev-dependencies]
-azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false, features = ["__internal_in_memory_emulator", "fault_injection"] }
+async-trait.workspace = true
+azure_data_cosmos_driver = { path = "../azure_data_cosmos_driver", default-features = false, features = ["__internal_in_memory_emulator", "__internal_mocking", "fault_injection"] }
 tokio = { workspace = true, features = ["rt-multi-thread", "test-util"] }
 
 [lints]
