@@ -5,41 +5,55 @@ mod encode_in_place;
 mod encode_streaming;
 mod smv1;
 
-use azure_core::{http::Body, Result};
+use std::num::NonZero;
 
-const ENCODE_SEGMENT_LENGTH_USIZE: usize = 4 * 1024 * 1024;
-const ENCODE_SEGMENT_LENGTH_U64: u64 = ENCODE_SEGMENT_LENGTH_USIZE as u64;
+use azure_core::{http::Body, Result};
+use bytes::Bytes;
+
+const ENCODE_SEGMENT_LENGTH_USIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
+const ENCODE_SEGMENT_LENGTH_U64: NonZero<u64> =
+    NonZero::new(ENCODE_SEGMENT_LENGTH_USIZE.get() as u64).unwrap();
 
 /// Encodes a [Body] into a structured message using the crc 64 nvme checksum flag.
 /// A precalculated crc for the full message may be optionally provided, skipping re-compute.
 pub fn encode_with_checksum(content: Body, crc_64_nvme: Option<u64>) -> Result<Body> {
     if let Some(crc) = crc_64_nvme {
-        Ok(Body::SeekableStream(Box::new(
+        return Ok(Body::SeekableStream(Box::new(
             encode_in_place::wrap_body_with_structured_message(content, crc)?,
-        )))
-    } else {
-        match content {
-            Body::Bytes(bytes) => Ok(Body::SeekableStream(Box::new(
-                encode_in_place::encode_bytes_in_structured_message(
-                    bytes,
-                    ENCODE_SEGMENT_LENGTH_USIZE,
-                ),
-            ))),
-            Body::SeekableStream(seekable_stream) => Ok(Body::SeekableStream(Box::new(
-                encode_streaming::SeekableStructuredMessageEncodingStream::new(
-                    seekable_stream,
-                    ENCODE_SEGMENT_LENGTH_U64,
-                )?,
-            ))),
-        }
+        )));
+    }
+    if let Some(0) = content.len() {
+        return Ok(Body::SeekableStream(Box::new(
+            encode_in_place::encode_bytes_in_structured_message(
+                Bytes::new(),
+                ENCODE_SEGMENT_LENGTH_USIZE,
+            ),
+        )));
+    }
+    match content {
+        Body::Bytes(bytes) => Ok(Body::SeekableStream(Box::new(
+            encode_in_place::encode_bytes_in_structured_message(bytes, ENCODE_SEGMENT_LENGTH_USIZE),
+        ))),
+        Body::SeekableStream(seekable_stream) => Ok(Body::SeekableStream(Box::new(
+            encode_streaming::SeekableStructuredMessageEncodingStream::new(
+                seekable_stream,
+                ENCODE_SEGMENT_LENGTH_U64,
+            )?,
+        ))),
     }
 }
 
-const fn derive_structured_message_length(content_len: u64, segment_len: u64) -> u64 {
+const fn derive_structured_message_length(content_len: u64, segment_len: NonZero<u64>) -> u64 {
     const CRC_64_LEN: u64 = 8;
+    // manual impl instead of min() to allow for const fn
+    let num_segments = if content_len == 0 {
+        1
+    } else {
+        content_len.div_ceil(segment_len.get())
+    };
     content_len
         + smv1::STREAM_HEADER_LENGTH as u64
-        + (content_len.div_ceil(segment_len)) * (smv1::SEGMENT_HEADER_LENGTH as u64 + CRC_64_LEN)
+        + num_segments * (smv1::SEGMENT_HEADER_LENGTH as u64 + CRC_64_LEN)
         + CRC_64_LEN
 }
 

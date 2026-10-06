@@ -3,6 +3,7 @@
 
 use std::{
     cmp::min,
+    num::NonZero,
     pin::pin,
     task::{ready, Poll},
 };
@@ -34,8 +35,10 @@ pub struct SeekableStructuredMessageEncodingStream {
     /// On stream reset, a change is technically tolerated by the spec, but is undesirable for a content-validation
     /// feature and should also not be tolerated. Therefore, this value must remain constant over the stream lifetime.
     ///
+    /// This stream is not to be used with empty content, so we force a NonZero type.
+    ///
     /// DO NOT MODIFY.
-    content_len: u64,
+    content_len: NonZero<u64>,
 
     /// Number of bytes that have been read so far from content.
     /// This value should be reset on stream reset.
@@ -55,7 +58,7 @@ pub struct SeekableStructuredMessageEncodingStream {
     /// Exact number of content bytes to encode per segment, excluding the final segment which may be smaller.
     ///
     /// DO NOT MODIFY.
-    segment_len: u64,
+    segment_len: NonZero<u64>,
 
     /// Checksums which have already been calculated for the segments, in order. These are held even after use
     /// in case of stream reset. This not only avoids recompute, it also catches any corruption between the
@@ -93,14 +96,29 @@ enum StructuredMetadata {
 }
 
 impl SeekableStructuredMessageEncodingStream {
-    pub fn new(content: Box<dyn SeekableStream>, segment_len: u64) -> Result<Self> {
+    /// Constructor.
+    ///
+    /// # Error
+    ///
+    /// Returns an error if `content.len()` returns `None` or `Some(0)`.
+    ///
+    /// Returns an error if the the content length divided by segment length exceeds the u16 limit.
+    pub fn new(content: Box<dyn SeekableStream>, segment_len: NonZero<u64>) -> Result<Self> {
         let Some(content_len) = content.len() else {
             return Err(Error::with_message(
                 ErrorKind::Io,
                 "Structured message requires content of a known length.",
             ));
         };
-        let segment_count: u16 = content_len.div_ceil(segment_len).try_into().with_context(
+        let content_len = NonZero::new(content_len).ok_or_else(|| {
+            Error::with_message(
+                ErrorKind::Other,
+                "`SeekableStructuredMessageEncodingStream` not to be used for 0-length content.",
+            )
+        })?;
+        // will always be non-zero value due to content_len being NonZero
+        // ensures minimum of 1 segments required by spec
+        let segment_count: u16 = content_len.get().div_ceil(segment_len.get()).try_into().with_context(
             ErrorKind::DataConversion,
             "Unsupported segment count (exceeds u16). Increase segment length to support the content length.",
         )?;
@@ -114,7 +132,7 @@ impl SeekableStructuredMessageEncodingStream {
             state: StructuredMessageStateMachine::StructuredMetadata(
                 StructuredMetadata::StreamHeader,
                 smv1::StreamHeader {
-                    message_len: derive_structured_message_length(content_len, segment_len),
+                    message_len: derive_structured_message_length(content_len.get(), segment_len),
                     flags: smv1::Flags::CRC_64_NVME,
                     segment_count,
                 }
@@ -130,7 +148,8 @@ impl SeekableStructuredMessageEncodingStream {
     /// calculation should never change over the struct lifetime.
     fn segment_count(&self) -> std::io::Result<u16> {
         self.content_len
-            .div_ceil(self.segment_len)
+            .get()
+            .div_ceil(self.segment_len.get())
             .try_into()
             .map_err(std::io::Error::other)
     }
@@ -224,7 +243,8 @@ impl AsyncRead for SeekableStructuredMessageEncodingStream {
                 StructuredMessageStateMachine::Complete => break,
                 StructuredMessageStateMachine::SegmentContent(segment_cursor, segment_digest) => {
                     // Limit read by remaining max segment len, transition if at limit
-                    let limit = min(this.segment_len - *segment_cursor, buf.len() as u64) as usize;
+                    let limit =
+                        min(this.segment_len.get() - *segment_cursor, buf.len() as u64) as usize;
                     if limit == 0 {
                         this.transition_to_segment_footer()?;
                         continue;
@@ -234,7 +254,7 @@ impl AsyncRead for SeekableStructuredMessageEncodingStream {
                         ready!(pin!(&mut this.content).poll_read(cx, &mut buf[..limit]))?;
                     if inner_read == 0 {
                         // handle premature EOF
-                        if this.content_read < this.content_len {
+                        if this.content_read < this.content_len.get() {
                             return Poll::Ready(Err(std::io::Error::new(
                                 std::io::ErrorKind::UnexpectedEof,
                                 "Premature EOF reading structured message content",
@@ -249,7 +269,7 @@ impl AsyncRead for SeekableStructuredMessageEncodingStream {
                     *segment_cursor += inner_read as u64;
                     this.content_read += inner_read as u64;
                     total_read += inner_read;
-                    if this.content_read > this.content_len {
+                    if this.content_read > this.content_len.get() {
                         return Poll::Ready(Err(std::io::Error::new(
                             std::io::ErrorKind::InvalidData,
                             "Content stream exceeded reported length producing invalid structured message.",
@@ -271,7 +291,7 @@ impl AsyncRead for SeekableStructuredMessageEncodingStream {
                             StructuredMetadata::StreamHeader
                             | StructuredMetadata::SegmentFooter => {
                                 // if underlying content stream finished, move to stream footer, where we must compose checksums
-                                if this.content_read >= this.content_len {
+                                if this.content_read >= this.content_len.get() {
                                     StructuredMessageStateMachine::StructuredMetadata(
                                         StructuredMetadata::StreamFooter,
                                         this.compose_checksum_cache()?
@@ -290,8 +310,8 @@ impl AsyncRead for SeekableStructuredMessageEncodingStream {
                                         smv1::SegmentHeader {
                                             segment_number: this.current_segment_num(),
                                             content_length: min(
-                                                this.segment_len,
-                                                this.content_len - this.content_read,
+                                                this.segment_len.get(),
+                                                this.content_len.get() - this.content_read,
                                             ),
                                         }
                                         .as_bytes(),
@@ -335,9 +355,12 @@ impl SeekableStream for SeekableStructuredMessageEncodingStream {
         self.state = StructuredMessageStateMachine::StructuredMetadata(
             StructuredMetadata::StreamHeader,
             smv1::StreamHeader {
-                message_len: derive_structured_message_length(self.content_len, self.segment_len),
+                message_len: derive_structured_message_length(
+                    self.content_len.get(),
+                    self.segment_len,
+                ),
                 flags: smv1::Flags::CRC_64_NVME,
-                segment_count: self.content_len.div_ceil(self.segment_len) as u16,
+                segment_count: self.content_len.get().div_ceil(self.segment_len.get()) as u16,
             }
             .as_bytes(),
         );
@@ -345,11 +368,11 @@ impl SeekableStream for SeekableStructuredMessageEncodingStream {
     }
 
     fn len(&self) -> Option<u64> {
-        let num_segments = self.content_len.div_ceil(self.segment_len);
+        let num_segments = self.content_len.get().div_ceil(self.segment_len.get());
 
         const CRC_LEN: u64 = 8;
         return Some(
-            self.content_len
+            self.content_len.get()
                 + smv1::STREAM_HEADER_LENGTH as u64 // header
                 + num_segments * (smv1::SEGMENT_HEADER_LENGTH as u64 + CRC_LEN) // segment headers and footers
                 + CRC_LEN, // footer
@@ -386,7 +409,7 @@ mod tests {
     #[tokio::test]
     async fn test_encode_single_segment() {
         const DATA_LEN: usize = 1024;
-        const SEGMENT_LEN: u64 = usize::MAX as u64;
+        const SEGMENT_LEN: NonZero<u64> = NonZero::new(usize::MAX as u64).unwrap();
         const TOTAL_STRUCTURED_LEN: usize =
             derive_structured_message_length(DATA_LEN as u64, SEGMENT_LEN) as usize;
 
@@ -442,8 +465,10 @@ mod tests {
     async fn test_encode_multi_segment() {
         const DATA_LEN: usize = 1024;
         const SEGMENT_0_LEN: usize = 999; // results in 2 segments of uneven length
-        const TOTAL_STRUCTURED_LEN: usize =
-            derive_structured_message_length(DATA_LEN as u64, SEGMENT_0_LEN as u64) as usize;
+        const TOTAL_STRUCTURED_LEN: usize = derive_structured_message_length(
+            DATA_LEN as u64,
+            NonZero::new(SEGMENT_0_LEN as u64).unwrap(),
+        ) as usize;
 
         let data = rand::random::<[u8; DATA_LEN]>();
         let expected_segment_0_crc = crc_inline(&data[..SEGMENT_0_LEN]);
@@ -452,7 +477,7 @@ mod tests {
 
         let mut sm_stream = SeekableStructuredMessageEncodingStream::new(
             Box::new(BytesStream::new(data.to_vec())),
-            SEGMENT_0_LEN as u64,
+            NonZero::new(SEGMENT_0_LEN as u64).unwrap(),
         )
         .unwrap();
 
@@ -532,7 +557,7 @@ mod tests {
     #[tokio::test]
     async fn test_len() {
         const DATA_LEN: usize = 1024;
-        const SEGMENT_LEN: u64 = usize::MAX as u64;
+        const SEGMENT_LEN: NonZero<u64> = NonZero::new(usize::MAX as u64).unwrap();
         const TOTAL_STRUCTURED_LEN: usize =
             derive_structured_message_length(DATA_LEN as u64, SEGMENT_LEN) as usize;
 
@@ -550,7 +575,7 @@ mod tests {
     #[tokio::test]
     async fn test_no_len_fail_construct() {
         const DATA_LEN: usize = 1024;
-        const SEGMENT_LEN: u64 = usize::MAX as u64;
+        const SEGMENT_LEN: NonZero<u64> = NonZero::new(usize::MAX as u64).unwrap();
 
         let data = rand::random::<[u8; DATA_LEN]>();
 
@@ -568,7 +593,7 @@ mod tests {
     #[tokio::test]
     async fn test_reset() {
         const DATA_LEN: usize = 1024;
-        const SEGMENT_LEN: u64 = usize::MAX as u64;
+        const SEGMENT_LEN: NonZero<u64> = NonZero::new(usize::MAX as u64).unwrap();
 
         let data = rand::random::<[u8; DATA_LEN]>();
 
@@ -591,7 +616,7 @@ mod tests {
     #[tokio::test]
     async fn test_reset_fail_propagates() {
         const DATA_LEN: usize = 1024;
-        const SEGMENT_LEN: u64 = usize::MAX as u64;
+        const SEGMENT_LEN: NonZero<u64> = NonZero::new(usize::MAX as u64).unwrap();
 
         let data = rand::random::<[u8; DATA_LEN]>();
 
@@ -609,7 +634,7 @@ mod tests {
     #[tokio::test]
     async fn test_early_eof() {
         const DATA_LEN: usize = 1024;
-        const SEGMENT_LEN: u64 = usize::MAX as u64;
+        const SEGMENT_LEN: NonZero<u64> = NonZero::new(usize::MAX as u64).unwrap();
 
         let data = rand::random::<[u8; DATA_LEN]>();
 
@@ -627,7 +652,7 @@ mod tests {
     #[tokio::test]
     async fn test_late_eof() {
         const DATA_LEN: usize = 1024;
-        const SEGMENT_LEN: u64 = usize::MAX as u64;
+        const SEGMENT_LEN: NonZero<u64> = NonZero::new(usize::MAX as u64).unwrap();
 
         let data = rand::random::<[u8; DATA_LEN]>();
 

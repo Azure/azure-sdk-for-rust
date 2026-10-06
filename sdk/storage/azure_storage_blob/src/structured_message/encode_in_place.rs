@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-use std::cmp::min;
+use std::{cmp::min, num::NonZero};
 
 use azure_core::{error::ErrorKind, http::Body, stream::SeekableStream, Error, Result};
 use bytes::Bytes;
@@ -60,21 +60,31 @@ pub fn wrap_body_with_structured_message(
 /// When a precalculated checksum is provided, a single message segment is forced, respecting the skipping of re-compute.
 pub fn encode_bytes_in_structured_message(
     content: Bytes,
-    segment_len: usize,
+    segment_len: NonZero<usize>,
 ) -> impl SeekableStream {
     let content_crc = crc_inline(&content);
 
-    let segments_with_checksums = (0..content.len())
-        .step_by(segment_len)
-        .map(|offset| {
-            let segment = content.slice(offset..min(offset + segment_len, content.len()));
-            let crc = crc_inline(&segment);
-            (segment, crc)
-        })
-        .collect::<Vec<_>>();
+    let segments_with_checksums = if content.is_empty() {
+        const CRC_OF_EMPTY_DATA: u64 = 0;
+        vec![(Bytes::new(), CRC_OF_EMPTY_DATA)]
+    } else {
+        (0..content.len())
+            .step_by(segment_len.get())
+            .map(|offset| {
+                let segment = content.slice(offset..min(offset + segment_len.get(), content.len()));
+                let crc = crc_inline(&segment);
+                (segment, crc)
+            })
+            .collect::<Vec<_>>()
+    };
 
     let stream_header = smv1::StreamHeader {
-        message_len: derive_structured_message_length(content.len() as u64, segment_len as u64),
+        message_len: derive_structured_message_length(
+            content.len() as u64,
+            // SAFETY: segment_len.get() will produce a non-zero value.
+            //         primitive cast from usize to u64 is considered safe.
+            unsafe { NonZero::new_unchecked(segment_len.get() as u64) },
+        ),
         flags: smv1::Flags::CRC_64_NVME,
         segment_count: segments_with_checksums.len() as u16,
     }
@@ -84,7 +94,7 @@ pub fn encode_bytes_in_structured_message(
     let mut sequence = Vec::with_capacity(1 + segments_with_checksums.len() * 3 + 1);
 
     sequence.push(stream_header);
-    for (i, (segment, crc)) in segments_with_checksums.iter().enumerate() {
+    for (i, (segment, crc)) in segments_with_checksums.into_iter().enumerate() {
         let segment_header = smv1::SegmentHeader {
             segment_number: i as u16 + smv1::INIT_SEGMENT_NUM,
             content_length: segment.len() as u64,
@@ -93,7 +103,7 @@ pub fn encode_bytes_in_structured_message(
         let segment_footer = Bytes::from(crc.to_le_bytes().to_vec());
 
         sequence.push(segment_header);
-        sequence.push(segment.clone());
+        sequence.push(segment);
         sequence.push(segment_footer);
     }
     let stream_footer = Bytes::from(content_crc.to_le_bytes().to_vec());
@@ -120,8 +130,10 @@ mod tests {
     #[tokio::test]
     async fn test_wrap_body_with_structured_message() {
         const DATA_LEN: usize = 1024;
-        const TOTAL_STRUCTURED_LEN: usize =
-            derive_structured_message_length(DATA_LEN as u64, usize::MAX as u64) as usize;
+        const TOTAL_STRUCTURED_LEN: usize = derive_structured_message_length(
+            DATA_LEN as u64,
+            NonZero::new(usize::MAX as u64).unwrap(),
+        ) as usize;
 
         let data = rand::random::<[u8; DATA_LEN]>();
         let data_crc = crc_inline(&data);
@@ -175,8 +187,10 @@ mod tests {
     #[test]
     fn test_wrap_body_with_structured_message_len() {
         const DATA_LEN: usize = 1024;
-        const TOTAL_STRUCTURED_LEN: usize =
-            derive_structured_message_length(DATA_LEN as u64, usize::MAX as u64) as usize;
+        const TOTAL_STRUCTURED_LEN: usize = derive_structured_message_length(
+            DATA_LEN as u64,
+            NonZero::new(usize::MAX as u64).unwrap(),
+        ) as usize;
 
         let data = rand::random::<[u8; DATA_LEN]>();
         let data_crc = crc_inline(&data);
@@ -190,8 +204,10 @@ mod tests {
     #[test]
     fn test_wrap_body_with_structured_message_fails_no_len() {
         const DATA_LEN: usize = 1024;
-        const TOTAL_STRUCTURED_LEN: usize =
-            derive_structured_message_length(DATA_LEN as u64, usize::MAX as u64) as usize;
+        const TOTAL_STRUCTURED_LEN: usize = derive_structured_message_length(
+            DATA_LEN as u64,
+            NonZero::new(usize::MAX as u64).unwrap(),
+        ) as usize;
 
         let data = rand::random::<[u8; DATA_LEN]>();
         let data_crc = crc_inline(&data);
@@ -251,8 +267,10 @@ mod tests {
     #[tokio::test]
     async fn test_wrap_body_with_structured_message_accepts_any_checksum() {
         const DATA_LEN: usize = 1024;
-        const TOTAL_STRUCTURED_LEN: usize =
-            derive_structured_message_length(DATA_LEN as u64, usize::MAX as u64) as usize;
+        const TOTAL_STRUCTURED_LEN: usize = derive_structured_message_length(
+            DATA_LEN as u64,
+            NonZero::new(usize::MAX as u64).unwrap(),
+        ) as usize;
 
         let data = [1u8; DATA_LEN];
         let incorrect_data_crc: u64 = 0x0123456789abcdef;
@@ -280,16 +298,69 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_wrap_body_empty_message() {
+        const TOTAL_STRUCTURED_LEN: usize =
+            derive_structured_message_length(0, NonZero::new(usize::MAX as u64).unwrap()) as usize;
+
+        for body in [
+            Body::Bytes(vec![].into()),
+            Body::SeekableStream(Box::new(BytesStream::new(vec![].clone()))),
+        ] {
+            let mut sm_stream = wrap_body_with_structured_message(body, 0).unwrap();
+
+            let mut dst = Vec::new();
+            assert_eq!(
+                sm_stream.read_to_end(&mut dst).await.unwrap(),
+                TOTAL_STRUCTURED_LEN
+            );
+
+            assert_eq!(
+                &dst[..smv1::STREAM_HEADER_LENGTH],
+                smv1::StreamHeader {
+                    message_len: TOTAL_STRUCTURED_LEN as u64,
+                    flags: smv1::Flags::CRC_64_NVME,
+                    segment_count: 1,
+                }
+                .as_bytes()
+            );
+            // there's still a segment even when there's no body
+            assert_eq!(
+                &dst[smv1::STREAM_HEADER_LENGTH
+                    ..smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH],
+                smv1::SegmentHeader {
+                    segment_number: 1,
+                    content_length: 0,
+                }
+                .as_bytes()
+            );
+            assert_eq!(
+                &dst[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH
+                    ..smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + 8],
+                &0u64.to_le_bytes()[..],
+            );
+            assert_eq!(
+                &dst[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + 8..],
+                &0u64.to_le_bytes()[..],
+            );
+        }
+    }
+
+    #[tokio::test]
     async fn test_encode_bytes_in_structured_message_single_segment() {
         const DATA_LEN: usize = 1024;
         const SEGMENT_LEN: usize = usize::MAX;
-        const TOTAL_STRUCTURED_LEN: usize =
-            derive_structured_message_length(DATA_LEN as u64, SEGMENT_LEN as u64) as usize;
+        const TOTAL_STRUCTURED_LEN: usize = derive_structured_message_length(
+            DATA_LEN as u64,
+            NonZero::new(SEGMENT_LEN as u64).unwrap(),
+        ) as usize;
 
         let data = rand::random::<[u8; DATA_LEN]>();
         let expected_data_crc = crc_inline(&data);
 
-        let mut sm_stream = encode_bytes_in_structured_message(data.to_vec().into(), SEGMENT_LEN);
+        let mut sm_stream = encode_bytes_in_structured_message(
+            data.to_vec().into(),
+            NonZero::new(SEGMENT_LEN).unwrap(),
+        );
 
         let mut dst = Vec::new();
         assert_eq!(
@@ -334,15 +405,20 @@ mod tests {
     async fn test_encode_bytes_in_structured_message_multi_segment() {
         const DATA_LEN: usize = 1024;
         const SEGMENT_0_LEN: usize = 999; // results in 2 segments of uneven length
-        const TOTAL_STRUCTURED_LEN: usize =
-            derive_structured_message_length(DATA_LEN as u64, SEGMENT_0_LEN as u64) as usize;
+        const TOTAL_STRUCTURED_LEN: usize = derive_structured_message_length(
+            DATA_LEN as u64,
+            NonZero::new(SEGMENT_0_LEN as u64).unwrap(),
+        ) as usize;
 
         let data = rand::random::<[u8; DATA_LEN]>();
         let expected_segment_0_crc = crc_inline(&data[..SEGMENT_0_LEN]);
         let expected_segment_1_crc = crc_inline(&data[SEGMENT_0_LEN..]);
         let expected_data_crc = crc_inline(&data);
 
-        let mut sm_stream = encode_bytes_in_structured_message(data.to_vec().into(), SEGMENT_0_LEN);
+        let mut sm_stream = encode_bytes_in_structured_message(
+            data.to_vec().into(),
+            NonZero::new(SEGMENT_0_LEN).unwrap(),
+        );
 
         let mut dst = Vec::new();
         assert_eq!(
@@ -423,10 +499,16 @@ mod tests {
         let data = rand::random::<[u8; DATA_LEN]>();
 
         for segment_len in [usize::MAX, DATA_LEN, DATA_LEN + 1, DATA_LEN - 1, 1] {
-            let sm_stream = encode_bytes_in_structured_message(data.to_vec().into(), segment_len);
+            let sm_stream = encode_bytes_in_structured_message(
+                data.to_vec().into(),
+                NonZero::new(segment_len).unwrap(),
+            );
             assert_eq!(
                 sm_stream.len().unwrap(),
-                derive_structured_message_length(DATA_LEN as u64, segment_len as u64)
+                derive_structured_message_length(
+                    DATA_LEN as u64,
+                    NonZero::new(segment_len as u64).unwrap()
+                )
             );
         }
     }
@@ -434,7 +516,7 @@ mod tests {
     #[tokio::test]
     async fn test_encode_bytes_in_structured_message_reset() {
         const DATA_LEN: usize = 1024;
-        const SEGMENT_LEN: usize = 999;
+        const SEGMENT_LEN: NonZero<usize> = NonZero::new(999).unwrap();
 
         let data = rand::random::<[u8; DATA_LEN]>();
 
@@ -448,5 +530,49 @@ mod tests {
         sm_stream.read_to_end(&mut dst_2).await.unwrap();
 
         assert_eq!(dst_1, dst_2);
+    }
+
+    #[tokio::test]
+    async fn test_encode_bytes_empty_message() {
+        const TOTAL_STRUCTURED_LEN: usize =
+            derive_structured_message_length(0, NonZero::new(usize::MAX as u64).unwrap()) as usize;
+
+        let mut sm_stream =
+            encode_bytes_in_structured_message(vec![].into(), NonZero::new(usize::MAX).unwrap());
+
+        let mut dst = Vec::new();
+        assert_eq!(
+            sm_stream.read_to_end(&mut dst).await.unwrap(),
+            TOTAL_STRUCTURED_LEN
+        );
+
+        assert_eq!(
+            &dst[..smv1::STREAM_HEADER_LENGTH],
+            smv1::StreamHeader {
+                message_len: TOTAL_STRUCTURED_LEN as u64,
+                flags: smv1::Flags::CRC_64_NVME,
+                segment_count: 1,
+            }
+            .as_bytes()
+        );
+        // there's still a segment even when there's no body
+        assert_eq!(
+            &dst[smv1::STREAM_HEADER_LENGTH
+                ..smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH],
+            smv1::SegmentHeader {
+                segment_number: 1,
+                content_length: 0,
+            }
+            .as_bytes()
+        );
+        assert_eq!(
+            &dst[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH
+                ..smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + 8],
+            &0u64.to_le_bytes()[..],
+        );
+        assert_eq!(
+            &dst[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + 8..],
+            &0u64.to_le_bytes()[..],
+        );
     }
 }
