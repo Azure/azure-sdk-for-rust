@@ -273,9 +273,10 @@ pub struct CosmosCompletion {
     /// The host's opaque pointer-sized cookie, round-tripped verbatim from
     /// submit; the wrapper never dereferences it.
     pub user_data: isize,
-    /// Wire HTTP status code, or `0` when there is no wire response.
+    /// Effective HTTP status code, or `0` when absent or error details are suppressed.
     pub http_status_code: u16,
-    /// `1` iff an error completion originated from a service wire response.
+    /// `1` for a direct wire error; `0` for synthetic errors or suppressed details.
+    /// Synthetic wrappers can still retain original response metadata.
     pub is_from_wire: u8,
     /// Borrowed error message (NUL-terminated UTF-8), or NULL on a non-error
     /// completion / when error details are suppressed.
@@ -536,7 +537,7 @@ impl PendingCompletion {
             p.backtrace = err
                 .backtrace()
                 .and_then(|bt| to_cstring(bt.as_ref().to_string()));
-            if let Some(resp) = err.response() {
+            if let Some(resp) = crate::error::original_response(&err) {
                 p.response = Some(resp.clone());
                 // Wire response: overlay the effective sub-status onto the
                 // wire headers before synthesis. `err.status().sub_status()`
@@ -1543,6 +1544,79 @@ mod tests {
     use crate::runtime::__test_only_create_default_runtime;
     use std::ffi::CStr;
     use std::mem::MaybeUninit;
+
+    #[tokio::test]
+    async fn wrapped_service_completions_preserve_status_diagnostics_and_body() {
+        use azure_data_cosmos_driver::{error::status_codes, options::DiagnosticsVerbosity};
+
+        for original_status in [
+            status_codes::READ_SESSION_NOT_AVAILABLE,
+            status_codes::WRITE_FORBIDDEN,
+            status_codes::DATABASE_ACCOUNT_NOT_FOUND,
+        ] {
+            let error = crate::error::tests::fault_injected_error(original_status).await;
+            let status = error.status();
+            for include_details in [false, true] {
+                let pending = PendingCompletion::error(
+                    0,
+                    Arc::new(OperationInner::new()),
+                    error.clone(),
+                    include_details,
+                );
+                assert_eq!(pending.status, CosmosStatusCode::from_status(status));
+                assert!(!pending.is_from_wire);
+                let diagnostics = pending.diagnostics.as_ref().unwrap();
+                assert_eq!(diagnostics.effective_status(), Some(status));
+                for verbosity in [
+                    DiagnosticsVerbosity::Detailed,
+                    DiagnosticsVerbosity::Summary,
+                ] {
+                    let json: serde_json::Value =
+                        serde_json::from_str(diagnostics.to_json_string(Some(verbosity))).unwrap();
+                    assert_eq!(json["status"], status.to_string());
+                }
+                if include_details {
+                    assert_eq!(pending.http_status_code, 503);
+                    let response = pending.response.as_ref().unwrap();
+                    assert_eq!(response.status(), original_status);
+                    assert_eq!(response.headers().retry_after_ms, Some(17));
+                    assert!(!response.body().is_empty());
+                    assert!(pending.headers.as_ptr_len().1 > 0);
+                } else {
+                    assert_eq!(pending.http_status_code, 0);
+                    assert!(pending.response.is_none());
+                    assert_eq!(pending.headers.as_ptr_len().1, 0);
+                }
+                let mut completion = pending.into_ffi();
+                assert_eq!(completion.status, CosmosStatusCode::from_status(status));
+                if include_details {
+                    use crate::response_header::{CosmosHeaderId, CosmosValueKind};
+                    // SAFETY: the live completion owns these initialized header entries.
+                    let headers = unsafe {
+                        std::slice::from_raw_parts(completion.headers, completion.headers_len)
+                    };
+                    let substatus = headers
+                        .iter()
+                        .find(|header| header.id == CosmosHeaderId::CosmosHeaderIdSubStatus)
+                        .unwrap();
+                    assert_eq!(substatus.value.kind, CosmosValueKind::I64.0);
+                    // SAFETY: the checked I64 tag selects this union member.
+                    assert_eq!(
+                        unsafe { substatus.value.payload.i64_value },
+                        i64::from(status.sub_status().unwrap().value())
+                    );
+                    let charge = headers
+                        .iter()
+                        .find(|header| header.id == CosmosHeaderId::CosmosHeaderIdRequestCharge)
+                        .unwrap();
+                    assert_eq!(charge.value.kind, CosmosValueKind::F64.0);
+                    // SAFETY: the checked F64 tag selects this union member.
+                    assert_eq!(unsafe { charge.value.payload.f64_value }, 2.5);
+                }
+                cosmos_completion_queue_free_completions(&mut completion, 1);
+            }
+        }
+    }
 
     #[test]
     fn patch_tracking_id_accessor_surfaces_error_identity_without_rich_details() {

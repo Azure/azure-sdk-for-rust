@@ -17,8 +17,8 @@ use futures::StreamExt;
 use crate::e2e_test_cases::{
     fixture::{build_client_with_customizer, ClientSetup, E2eTest, TestResult},
     support::{
-        item, selected_scenario_profile, wait_for_item_replication, with_replication_paused_if,
-        Item,
+        assert_wrapped_session_failure, item, selected_scenario_profile, wait_for_item_replication,
+        with_replication_paused_if, Item,
     },
 };
 
@@ -103,11 +103,7 @@ async fn response_tokens_are_captured_before_switching_to_session() -> TestResul
             let error = unavailable.expect_err(
                 "the Session read must enforce the token captured from the Eventual response",
             );
-            assert_eq!(error.status().status_code(), StatusCode::NotFound);
-            assert_eq!(
-                error.status().sub_status(),
-                Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE)
-            );
+            assert_wrapped_session_failure(&error);
             Ok(())
         })
         .await
@@ -313,11 +309,7 @@ async fn disabled_capture_exposes_delayed_replica() -> TestResult {
             );
             let unavailable = with_token
                 .expect_err("an explicit token must identify the delayed session replica");
-            assert_eq!(unavailable.status().status_code(), StatusCode::NotFound);
-            assert_eq!(
-                unavailable.status().sub_status(),
-                Some(azure_data_cosmos_driver::error::status_codes::substatus::READ_SESSION_NOT_AVAILABLE)
-            );
+            assert_wrapped_session_failure(&unavailable);
             Ok(())
         })
         .await
