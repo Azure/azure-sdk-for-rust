@@ -135,25 +135,17 @@ fn build_auth_policies(
         return Ok(per_retry_policies);
     };
 
-    // Session signing requires a storage account name. If sessions were explicitly
-    // enabled, fail when it cannot be resolved; otherwise, preserve bearer authentication.
+    // Session signing requires a storage account name; sessions are only on when the caller
+    // asked for them, so fail rather than silently fall back when it cannot be resolved.
     let Some(account) = resolve_session_account(endpoint, session_options) else {
         let endpoint = endpoint_for_logging(endpoint);
-        if session_options.is_explicitly_enabled() {
-            return Err(azure_core::Error::with_message(
-                azure_core::error::ErrorKind::Other,
-                format!(
-                    "Session authentication requires a storage account name, but one could not \
-                     be determined from {endpoint}. Set `SessionOptions::account_name`."
-                ),
-            ));
-        }
-        tracing::warn!(
-            %endpoint,
-            "Session authentication is unavailable because the storage account name could not be determined. Falling back to bearer authentication."
-        );
-        per_retry_policies.push(bearer);
-        return Ok(per_retry_policies);
+        return Err(azure_core::Error::with_message(
+            azure_core::error::ErrorKind::Other,
+            format!(
+                "Session authentication requires a storage account name, but one could not \
+                 be determined from {endpoint}. Set `SessionOptions::account_name`."
+            ),
+        ));
     };
 
     // Reuse an injected provider, or create a session-free client to acquire sessions.
