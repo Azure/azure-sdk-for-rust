@@ -203,5 +203,26 @@ The public Rust API uses `azure_data_cosmos_driver` to create a driver with the
 supplied account endpoint and credential, then resolve the container by its
 database and container names. `azure_data_cosmos_change_feed_processor_driver`
 uses these drivers and resolved containers for change-feed reads and lease
-writes. If both containers use the same account and credential, they can share
-one driver instance. No dependency on `azure_data_cosmos` is required.
+writes. If both containers use the same account, credential, and compatible
+request settings, they can share one driver instance. No dependency on
+`azure_data_cosmos` is required.
+
+```text
+Application
+    │ supplies feed and lease endpoints, credentials, and container names
+    ▼
+azure_data_cosmos_change_feed_processor
+    │ uses azure_data_cosmos_driver to prepare:
+    │
+    ├─ Feed:  driver + resolved feed container ──┐
+    │                                          │
+    └─ Lease: driver + resolved lease container ┤
+                                               ▼
+                    azure_data_cosmos_change_feed_processor_driver
+                        ├─ Feed pair  → read changes
+                        └─ Lease pair → read/write leases and checkpoints
+```
+
+The public Rust API passes both pairs to
+`azure_data_cosmos_change_feed_processor_driver` during construction. This is
+a proposed construction boundary, not an existing CFP constructor signature.
