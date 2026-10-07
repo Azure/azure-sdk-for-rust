@@ -29,6 +29,8 @@ fe2o3-amqp = { version = "0.16", features = ["native-tls"] }
 
 ## Transport lifetime
 
+Only one `AmqpConnection::open()` attempt can run on an object at a time. A failed or cancelled opening releases its provisional transport, and callers can retry on the same object. A successfully opened connection remains single-use, including after close or abort.
+
 `AmqpConnection::abort()` terminates an opened transport without waiting for the peer's close handshake. Dropping the connection also releases its socket. Use `abort()` to retire a failed transport when an operation deadline expires.
 
 Pending sends and sender metadata waits return when their connection or session closes. A lost acknowledgement leaves delivery uncertain. Sending the message again can produce duplicate messages.

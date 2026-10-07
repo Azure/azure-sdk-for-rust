@@ -72,6 +72,9 @@ pub trait AmqpConnectionApis {
     /// Asynchronously opens an AMQP connection.
     ///
     /// Only one opening attempt can run on this connection at a time.
+    /// A failed or cancelled attempt can be retried on the same object.
+    /// After a successful opening, the object cannot open again, including after
+    /// [`close()`](Self::close).
     ///
     /// # Errors
     ///

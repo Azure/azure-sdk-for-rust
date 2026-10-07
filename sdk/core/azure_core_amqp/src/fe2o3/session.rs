@@ -96,9 +96,6 @@ impl Fe2o3AmqpSession {
             .ok_or_else(Self::session_not_set)
     }
 
-    fn session_already_attached() -> AmqpError {
-        AmqpError::with_message("AMQP Session is already attached")
-    }
     fn session_not_set() -> AmqpError {
         AmqpError::with_message("AMQP Session is not set")
     }
@@ -114,15 +111,10 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         connection: &AmqpConnection,
         options: Option<AmqpSessionOptions>,
     ) -> Result<()> {
-        let transport = connection.implementation.transport()?;
-        let connection_closed = connection.implementation.closed()?;
-        let mut connection = connection
-            .implementation
-            .get()
-            .get()
-            .ok_or_else(Self::session_already_attached)?
-            .lock()
-            .await;
+        let opened = connection.implementation.get()?;
+        let transport = opened.transport.clone();
+        let connection_closed = transport.closed.clone();
+        let mut connection = opened.handle.lock().await;
 
         let mut session_builder = fe2o3_amqp::session::Session::builder();
 

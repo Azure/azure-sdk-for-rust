@@ -6,7 +6,7 @@ use crate::{
     error::{AmqpErrorKind, Result},
     fe2o3::{
         error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError, Fe2o3TransportError},
-        transport::{Closed, Transport},
+        transport::{AbortOnDrop, Transport},
     },
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
     AmqpError,
@@ -17,7 +17,7 @@ use fe2o3_amqp::connection::ConnectionHandle;
 use rustls_platform_verifier::ConfigVerifierExt;
 use std::{
     borrow::BorrowMut,
-    sync::{Arc, OnceLock},
+    sync::{Mutex as StdMutex, OnceLock},
 };
 use tokio::{net::TcpStream, sync::Mutex};
 use tracing::{debug, warn};
@@ -25,8 +25,37 @@ use tracing::{debug, warn};
 #[derive(Debug, Default)]
 pub(crate) struct Fe2o3AmqpConnection {
     opening: Mutex<()>,
-    connection: OnceLock<Mutex<ConnectionHandle<()>>>,
-    transport: OnceLock<Transport<TcpStream>>,
+    connection: OnceLock<OpenedConnection>,
+    pending_transport: StdMutex<Option<Transport<TcpStream>>>,
+}
+
+#[derive(Debug)]
+pub(crate) struct OpenedConnection {
+    pub handle: Mutex<ConnectionHandle<()>>,
+    pub transport: Transport<TcpStream>,
+}
+
+struct PendingTransport<'a> {
+    connection: &'a Fe2o3AmqpConnection,
+    guard: Option<AbortOnDrop<TcpStream>>,
+}
+
+impl PendingTransport<'_> {
+    fn disarm(mut self) {
+        if let Some(guard) = self.guard.take() {
+            guard.disarm();
+        }
+    }
+}
+
+impl Drop for PendingTransport<'_> {
+    fn drop(&mut self) {
+        self.connection
+            .pending_transport
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take();
+    }
 }
 
 impl Fe2o3AmqpConnection {
@@ -34,30 +63,22 @@ impl Fe2o3AmqpConnection {
         Self {
             opening: Mutex::new(()),
             connection: OnceLock::new(),
-            transport: OnceLock::new(),
+            pending_transport: StdMutex::new(None),
         }
     }
 
-    pub fn get(&self) -> &OnceLock<Mutex<ConnectionHandle<()>>> {
-        &self.connection
-    }
-
-    pub fn closed(&self) -> Result<Arc<Closed>> {
-        self.transport
-            .get()
-            .map(|transport| transport.closed.clone())
-            .ok_or_else(Self::connection_not_set)
-    }
-
-    pub fn transport(&self) -> Result<Transport<TcpStream>> {
-        self.transport
-            .get()
-            .cloned()
-            .ok_or_else(Self::connection_not_set)
+    pub fn get(&self) -> Result<&OpenedConnection> {
+        self.connection.get().ok_or_else(Self::connection_not_set)
     }
 
     pub fn abort(&self) {
-        if let Some(transport) = self.transport.get() {
+        let transport = self
+            .pending_transport
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+            .or_else(|| self.connection.get().map(|opened| opened.transport.clone()));
+        if let Some(transport) = transport {
             transport.abort();
         }
     }
@@ -169,7 +190,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 builder = builder.buffer_size(buffer_size);
             }
 
-            let handle = match options.transport.unwrap_or_default() {
+            let (handle, transport, pending) = match options.transport.unwrap_or_default() {
                 AmqpTransport::Tcp => {
                     // `custom_endpoint` redirects the socket to a proxy while the
                     // AMQP `hostname` stays the real service host.
@@ -212,30 +233,36 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                         .await
                         .map_err(azure_core::Error::from)?;
                     let (transport, stream) = Transport::new(socket);
-                    self.transport
-                        .set(transport)
-                        .map_err(|_| Self::connection_already_set())?;
-                    builder
+                    let pending = PendingTransport {
+                        connection: self,
+                        guard: Some(transport.guard()),
+                    };
+                    *self
+                        .pending_transport
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner) =
+                        Some(transport.clone());
+                    let handle = builder
                         .open_with_stream(stream)
                         .await
-                        .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?
+                        .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?;
+                    (handle, transport, pending)
                 }
             };
 
             self.connection
-                .set(Mutex::new(handle))
+                .set(OpenedConnection {
+                    handle: Mutex::new(handle),
+                    transport,
+                })
                 .map_err(|_| Self::connection_already_set())?;
+            pending.disarm();
             Ok(())
         }
     }
 
     async fn close(&self) -> Result<()> {
-        let mut connection = self
-            .connection
-            .get()
-            .ok_or_else(Self::connection_not_set)?
-            .lock()
-            .await;
+        let mut connection = self.get()?.handle.lock().await;
         connection
             .borrow_mut()
             .close()
@@ -250,12 +277,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
         description: Option<String>,
         info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
     ) -> Result<()> {
-        let mut connection = self
-            .connection
-            .get()
-            .ok_or_else(Self::connection_not_set)?
-            .lock()
-            .await;
+        let mut connection = self.get()?.handle.lock().await;
         let res = connection
             .borrow_mut()
             .close_with_error(fe2o3_amqp::types::definitions::Error::new(
@@ -328,9 +350,15 @@ mod tests {
     #[cfg(feature = "fe2o3_amqp_rustls")]
     use super::platform_verifier_connector;
     use super::{AmqpConnectionApis, Fe2o3AmqpConnection};
+    use crate::AmqpConnection;
     use azure_core::http::Url;
+    use fe2o3_amqp::acceptor::{ConnectionAcceptor, SaslAnonymousMechanism};
     use std::{sync::Arc, time::Duration};
-    use tokio::{net::TcpListener, time::timeout};
+    use tokio::{
+        io::{AsyncReadExt, AsyncWriteExt},
+        net::TcpListener,
+        time::timeout,
+    };
 
     #[cfg(feature = "fe2o3_amqp_rustls")]
     #[test]
@@ -371,5 +399,97 @@ mod tests {
         first.abort();
         assert!(first.await.unwrap_err().is_cancelled());
         assert!(connection.opening.try_lock().is_ok());
+    }
+
+    async fn open_and_close(connection: &AmqpConnection) {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
+        let peer = tokio::spawn(async move {
+            let (socket, _) = listener.accept().await.unwrap();
+            ConnectionAcceptor::builder()
+                .container_id("open-peer")
+                .sasl_acceptor(SaslAnonymousMechanism {})
+                .build()
+                .accept(socket)
+                .await
+                .unwrap()
+        });
+        timeout(
+            Duration::from_secs(2),
+            connection.open("retry".into(), url.clone(), None),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        let mut peer = peer.await.unwrap();
+        let opened = connection.implementation.get().unwrap();
+        assert!(!opened.transport.closed.is_closed());
+        assert!(connection
+            .open("duplicate".into(), url.clone(), None)
+            .await
+            .is_err());
+        let (client_close, peer_close) = timeout(Duration::from_secs(2), async {
+            tokio::join!(connection.close(), peer.close())
+        })
+        .await
+        .unwrap();
+        client_close.unwrap();
+        peer_close.unwrap();
+        assert!(connection.open("closed".into(), url, None).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn failed_handshakes_leave_the_same_connection_reusable() {
+        let connection = AmqpConnection::new();
+        for _ in 0..2 {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
+            let peer = tokio::spawn(async move {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut header = [0; 8];
+                socket.read_exact(&mut header).await.unwrap();
+                socket.write_all(b"INVALID!").await.unwrap();
+                let mut remaining = Vec::new();
+                timeout(Duration::from_secs(2), socket.read_to_end(&mut remaining))
+                    .await
+                    .expect("a failed handshake must release its socket")
+                    .unwrap();
+            });
+            assert!(timeout(
+                Duration::from_secs(2),
+                connection.open("failure".into(), url, None),
+            )
+            .await
+            .unwrap()
+            .is_err());
+            peer.await.unwrap();
+            assert!(connection.implementation.get().is_err());
+        }
+        open_and_close(&connection).await;
+    }
+
+    #[tokio::test]
+    async fn cancelled_handshake_closes_socket_and_allows_retry() {
+        let connection = Arc::new(AmqpConnection::new());
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
+        let client = connection.clone();
+        let opening = tokio::spawn(async move { client.open("cancel".into(), url, None).await });
+        let (mut peer, _) = timeout(Duration::from_secs(2), listener.accept())
+            .await
+            .unwrap()
+            .unwrap();
+        let mut header = [0; 8];
+        peer.read_exact(&mut header).await.unwrap();
+        assert!(connection.implementation.get().is_err());
+        opening.abort();
+        assert!(opening.await.unwrap_err().is_cancelled());
+        let mut remaining = Vec::new();
+        timeout(Duration::from_secs(2), peer.read_to_end(&mut remaining))
+            .await
+            .expect("cancellation must close the provisional socket")
+            .unwrap();
+        assert!(connection.implementation.get().is_err());
+        open_and_close(&connection).await;
     }
 }
