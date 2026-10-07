@@ -82,6 +82,7 @@ directly by Rust source remain with their crates.
 | 0013 | Basic control-plane operations (`adrs/0013-basic-control-plane-operations.md`) | Accepted |
 | 0014 | Diagnostics collection and emission (`adrs/0014-diagnostics-collection-and-emission.md`) | Accepted |
 | 0015 | Eager partition topology loading (`adrs/0015-eager-partition-topology-loading.md`) | Accepted |
+| 0016 | Driver-owned normalized User-Agent format (`adrs/0016-normalized-user-agent.md`) | Approved on PR merge |
 
 ## Reports
 
