@@ -14,7 +14,7 @@
 - [3. Ownership, Reuse, and Duplication](#3-ownership-reuse-and-duplication)
 - [4. Callback and Serialization Boundaries](#4-callback-and-serialization-boundaries)
 - [5. Alternatives and Compatibility Consequences](#5-alternatives-and-compatibility-consequences)
-- [6. Integration Boundary](#6-integration-boundary)
+- [6. Authentication for Feed and Lease Containers](#6-authentication-for-feed-and-lease-containers)
 
 ## 1. Motivation and Decision Requested
 
@@ -188,24 +188,33 @@ This duplication is a maintenance tradeoff, not a free solution or a guarantee
 of complete versioning independence. It is neither repository approval nor a
 universal rule for Rust libraries.
 
-## 6. Integration Boundary
+## 6. Authentication for Feed and Lease Containers
 
-Reuse the feed/dataflow machinery and prepared account/container bindings in
-`azure_data_cosmos_driver`
-rather than copying SDK iterators, database execution, or metadata
-caches into CFP. Preserve driver diagnostics data; the public Rust API adapts it for
-application-facing diagnostics.
+The application supplies an account endpoint, database name, container name,
+and credential for each container. The feed and lease containers may belong to
+different accounts and use different credentials.
 
-Feed and lease bindings accept independently configured endpoints and credentials.
-The CFP retains the prepared driver/container bindings. Database authorization
-stays in `azure_data_cosmos_driver`; provider-specific token acquisition and
-lifecycle stay with the supplied credential provider. An application may
-explicitly reuse a credential authorized for both accounts; there is no implicit
-feed-to-lease credential fallback.
+| Container | Required access |
+| --- | --- |
+| Feed container | Read changes and the metadata needed to access the change feed. |
+| Lease container | Read and write lease documents, including checkpoints. |
 
-`ContainerClient` holds private driver-backed state, not the shared metadata-cache
-implementation. Bypassing it does not automatically reuse an existing client's
-state. Sharing must use supported, compatible driver/runtime contexts.
-`CosmosDriverRuntime::create_driver` creates a fresh driver; compatible drivers
-from the same runtime share runtime-owned resources. Retain the required
-instances rather than assuming an account singleton.
+The public Rust API uses `azure_data_cosmos_driver` to create a driver with the
+supplied account endpoint and credential, then resolve the container by its
+database and container names. `azure_data_cosmos_change_feed_processor_driver`
+uses these drivers and resolved containers for change-feed reads and lease
+writes. If both containers use the same account and credential, they can share
+one driver instance. No dependency on `azure_data_cosmos` is required.
+
+Authentication happens on each request, not once for the lifetime of a
+container. With an account key, `azure_data_cosmos_driver` signs the request.
+With an Entra ID credential, it asks the supplied credential provider for a
+Cosmos DB token and constructs the authorization header. Token acquisition and
+refresh belong to that provider, such as a credential from `azure_identity`,
+not to either CFP package.
+
+The application must arrange the required permissions. Neither CFP nor
+`azure_data_cosmos_driver` creates identities or grants access. Supplying a
+credential does not guarantee that initialization or later requests will
+succeed. A credential may be explicitly reused when authorized for both
+accounts; lease operations must not silently fall back to the feed credential.
