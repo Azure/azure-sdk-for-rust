@@ -127,9 +127,19 @@ completion only once for the current delivery and ownership; stale or duplicate
 results cannot authorize progress. Failure or an absent result cannot advance
 the checkpoint; silence does not prove the callback never ran.
 
-The driver advances the durable checkpoint only after successful processing and
-a confirmed conditional write. That lease session must not read or deliver the
-next batch before both conditions hold; lease renewal continues independently.
+**For each lease, the driver awaits application processing completion and
+confirmed conditional checkpoint persistence before admitting the next batch.
+These waits suspend the lease-processing task without blocking the executor or
+lease maintenance.** The sequence is to publish batch N, await its actual
+processing result, and, if successful and still owned, await conditional
+checkpoint confirmation. Only then may that lease read or deliver batch N+1.
+Awaiting "batch queued" is insufficient; asynchronous waiting does not permit
+early progress.
+
+The executor must remain available for renewal, other leases, and delivery of
+the processing result. The waiting task must not block an executor thread or
+hold a lock needed to report completion. Failure, ownership loss, or cancellation
+takes the appropriate failure/stop path; none counts as successful completion.
 This is **lockstep processing and checkpointing**. If processing succeeded but
 persistence failed, the driver retries or reconciles checkpointing rather than
 automatically invoking the callback again.
