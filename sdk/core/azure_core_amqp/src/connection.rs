@@ -152,7 +152,8 @@ impl AmqpConnection {
     /// An interrupted send can have reached the peer without an acknowledgement.
     /// During opening, this method cancels the attempt and releases its provisional
     /// transport. The pending [`open()`](AmqpConnectionApis::open) returns an error,
-    /// and a later attempt can use the same object.
+    /// and a new attempt can start immediately on the same object. Cleanup from the
+    /// cancelled attempt does not affect its replacement.
     /// Calling this method on an unused connection has no effect.
     pub fn abort(&self) {
         #[cfg(feature = "fe2o3_amqp")]

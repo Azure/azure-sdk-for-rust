@@ -91,7 +91,11 @@ impl OpeningGuard<'_> {
             .opening
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if self.attempt.aborted.load(Ordering::Acquire) {
+        if self.attempt.aborted.load(Ordering::Acquire)
+            || !opening
+                .as_ref()
+                .is_some_and(|current| Arc::ptr_eq(current, &self.attempt))
+        {
             return Err(opening_aborted());
         }
         self.connection
@@ -112,11 +116,18 @@ impl Drop for OpeningGuard<'_> {
         if self.committed {
             return;
         }
-        self.connection
+        let mut opening = self
+            .connection
             .opening
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .take();
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if opening
+            .as_ref()
+            .is_some_and(|current| Arc::ptr_eq(current, &self.attempt))
+        {
+            opening.take();
+        }
+        drop(opening);
         self.attempt.abort();
     }
 }
@@ -164,11 +175,11 @@ impl Fe2o3AmqpConnection {
     }
 
     pub fn abort(&self) {
-        let opening = self
+        let mut opening = self
             .opening
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let attempt = opening.clone();
+        let attempt = opening.take();
         if let Some(attempt) = &attempt {
             // Reject publication under the lock, then wake the opening after release.
             attempt.aborted.store(true, Ordering::Release);
@@ -437,8 +448,16 @@ mod tests {
     use super::{AmqpConnectionApis, Fe2o3AmqpConnection, Transport};
     use crate::{AmqpConnection, AmqpErrorKind};
     use azure_core::http::Url;
-    use fe2o3_amqp::acceptor::{ConnectionAcceptor, SaslAnonymousMechanism};
-    use std::{sync::Arc, time::Duration};
+    use fe2o3_amqp::{
+        acceptor::{ConnectionAcceptor, ListenerConnectionHandle, SaslAnonymousMechanism},
+        connection::ConnectionHandle,
+        sasl_profile::SaslProfile,
+        Connection,
+    };
+    use std::{
+        sync::{Arc, Barrier},
+        time::Duration,
+    };
     use tokio::{
         io::{AsyncReadExt, AsyncWriteExt},
         net::{TcpListener, TcpStream},
@@ -486,7 +505,7 @@ mod tests {
         assert!(connection.opening.lock().unwrap().is_none());
     }
 
-    async fn open_and_close(connection: &AmqpConnection) {
+    async fn open_peer(connection: &AmqpConnection) -> (ListenerConnectionHandle, Url) {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
         let peer = tokio::spawn(async move {
@@ -506,7 +525,11 @@ mod tests {
         .await
         .unwrap()
         .unwrap();
-        let mut peer = peer.await.unwrap();
+        (peer.await.unwrap(), url)
+    }
+
+    async fn open_and_close(connection: &AmqpConnection) {
+        let (mut peer, url) = open_peer(connection).await;
         let opened = connection.implementation.get().unwrap();
         assert!(!opened.transport.closed.is_closed());
         assert!(connection
@@ -639,5 +662,133 @@ mod tests {
         let connection = AmqpConnection::new();
         connection.abort();
         open_and_close(&connection).await;
+    }
+
+    #[test]
+    fn stale_cleanup_preserves_the_replacement_reservation() {
+        let connection = Fe2o3AmqpConnection::new();
+        let old = connection.begin_open().unwrap();
+        connection.abort();
+        let replacement = connection.begin_open().unwrap();
+        drop(old);
+        assert!(Arc::ptr_eq(
+            connection.opening.lock().unwrap().as_ref().unwrap(),
+            &replacement.attempt,
+        ));
+        assert!(connection.begin_open().is_err());
+        assert!(!replacement.attempt.cancelled.is_closed());
+        drop(replacement);
+        assert!(connection.begin_open().is_ok());
+    }
+
+    async fn negotiated_candidate() -> (
+        ConnectionHandle<()>,
+        Transport<TcpStream>,
+        ListenerConnectionHandle,
+    ) {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let socket = TcpStream::connect(listener.local_addr().unwrap())
+            .await
+            .unwrap();
+        let (peer, _) = listener.accept().await.unwrap();
+        let (transport, stream) = Transport::new(socket);
+        let acceptor = ConnectionAcceptor::builder()
+            .container_id("candidate-peer")
+            .sasl_acceptor(SaslAnonymousMechanism {})
+            .build();
+        let (client, peer) = timeout(Duration::from_secs(2), async {
+            tokio::join!(
+                Connection::builder()
+                    .container_id("candidate")
+                    .sasl_profile(SaslProfile::Anonymous)
+                    .open_with_stream(stream),
+                acceptor.accept(peer),
+            )
+        })
+        .await
+        .unwrap();
+        (client.unwrap(), transport, peer.unwrap())
+    }
+
+    #[tokio::test]
+    async fn stale_completion_and_cleanup_preserve_the_opened_replacement() {
+        let connection = AmqpConnection::new();
+        let mut old = connection.implementation.begin_open().unwrap();
+        let (old_handle, old_transport, mut old_peer) = negotiated_candidate().await;
+        old.attempt.set_transport(old_transport.clone()).unwrap();
+        connection.abort();
+        let (mut peer, url) = open_peer(&connection).await;
+        assert!(old.publish(old_handle, old_transport.clone()).is_err());
+        drop(old);
+        assert!(old_transport.closed.is_closed());
+        assert!(!connection
+            .implementation
+            .get()
+            .unwrap()
+            .transport
+            .closed
+            .is_closed());
+        let (client_close, peer_close) = timeout(Duration::from_secs(2), async {
+            tokio::join!(connection.close(), peer.close())
+        })
+        .await
+        .unwrap();
+        client_close.unwrap();
+        peer_close.unwrap();
+        assert!(connection.open("reopen".into(), url, None).await.is_err());
+        timeout(Duration::from_secs(2), old_peer.on_close())
+            .await
+            .unwrap()
+            .unwrap_err();
+    }
+
+    #[tokio::test]
+    async fn abort_and_publication_have_one_consistent_outcome() {
+        for _ in 0..16 {
+            let connection = Fe2o3AmqpConnection::new();
+            let mut opening = connection.begin_open().unwrap();
+            let (handle, transport, mut peer) = negotiated_candidate().await;
+            opening.attempt.set_transport(transport.clone()).unwrap();
+            let barrier = Barrier::new(2);
+            let result = std::thread::scope(|scope| {
+                scope.spawn(|| {
+                    barrier.wait();
+                    connection.abort();
+                });
+                barrier.wait();
+                opening.publish(handle, transport.clone())
+            });
+            assert_eq!(result.is_ok(), connection.get().is_ok());
+            assert!(transport.closed.is_closed());
+            drop(opening);
+            timeout(Duration::from_secs(2), peer.on_close())
+                .await
+                .unwrap()
+                .unwrap_err();
+            if result.is_ok() {
+                assert!(connection.begin_open().is_err());
+            } else {
+                assert!(connection.begin_open().is_ok());
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn publication_before_abort_keeps_the_connection_single_use() {
+        let connection = Fe2o3AmqpConnection::new();
+        let mut opening = connection.begin_open().unwrap();
+        let (handle, transport, mut peer) = negotiated_candidate().await;
+        opening.attempt.set_transport(transport.clone()).unwrap();
+        opening.publish(handle, transport.clone()).unwrap();
+        drop(opening);
+        assert!(!transport.closed.is_closed());
+        connection.abort();
+        assert!(connection.get().is_ok());
+        assert!(connection.begin_open().is_err());
+        assert!(transport.closed.is_closed());
+        timeout(Duration::from_secs(2), peer.on_close())
+            .await
+            .unwrap()
+            .unwrap_err();
     }
 }
