@@ -56,11 +56,13 @@ flowchart TB
     Native -->|"processing"| Core
 ```
 
-**The public Rust API also directly depends on `azure_data_cosmos_driver`** for
-configuration, credential binding, and codec access. The author selected this
-edge for the proposal. This avoids making the shared CFP engine a forwarding layer for
-unrelated database configuration and codecs. It does not move processor
-coordination into the public Rust API or introduce a dependency on `azure_data_cosmos`.
+**The public Rust API also directly depends on `azure_data_cosmos_driver`** to
+set database request options, associate each feed/lease account with its
+credentials, and decode the driver's payload buffers into Rust change events
+using its JSON/binary JSON decoding facilities. It reuses these database
+capabilities directly instead of adding forwarding APIs to the shared CFP
+engine. Processing coordination still belongs to that engine; the public Rust
+API does not depend on `azure_data_cosmos`.
 
 `azure_data_cosmos_change_feed_processor_native` is the selected name for a future
 Rust FFI wrapper, not an approved third deliverable. It consumes the shared CFP
