@@ -285,7 +285,8 @@ impl From<fe2o3_amqp::link::ReceiverAttachError> for AmqpError {
             fe2o3_amqp::link::ReceiverAttachError::RemoteClosedWithError(e) => {
                 AmqpErrorKind::AmqpDescribedError(e.into()).into()
             }
-            fe2o3_amqp::link::ReceiverAttachError::IllegalSessionState
+            fe2o3_amqp::link::ReceiverAttachError::SessionStopped(_)
+            | fe2o3_amqp::link::ReceiverAttachError::SessionNotMapped
             | fe2o3_amqp::link::ReceiverAttachError::IllegalState => {
                 AmqpErrorKind::ConnectionDropped(Box::new(e)).into()
             }
@@ -304,6 +305,9 @@ impl From<fe2o3_amqp::link::RecvError> for AmqpError {
             // this for `SendError::LinkStateError`.
             fe2o3_amqp::link::RecvError::LinkStateError(link_state_error) => {
                 AmqpError::from(link_state_error)
+            }
+            fe2o3_amqp::link::RecvError::MessageSizeExceeded(exceeded) => {
+                super::error::message_size_exceeded(exceeded)
             }
             fe2o3_amqp::link::RecvError::TransferLimitExceeded => {
                 AmqpErrorKind::TransferLimitExceeded(Box::new(e)).into()
@@ -450,7 +454,9 @@ mod tests {
     #[test]
     fn recv_link_state_other_carries_the_link_state_error() {
         let recv_error = fe2o3_amqp::link::RecvError::LinkStateError(
-            fe2o3_amqp::link::LinkStateError::IllegalSessionState,
+            fe2o3_amqp::link::LinkStateError::SessionStopped(
+                fe2o3_amqp::link::SessionStopReason::RemoteEnded,
+            ),
         );
         let amqp_error = AmqpError::from(recv_error);
         let AmqpErrorKind::LinkStateError(source) = amqp_error.kind() else {
@@ -462,5 +468,43 @@ mod tests {
                 .is_some(),
             "the reported error must carry the LinkStateError, not the enclosing RecvError"
         );
+    }
+
+    #[test]
+    fn recv_message_size_exceeded_reports_payload_size_condition() {
+        let recv_error = fe2o3_amqp::link::RecvError::MessageSizeExceeded(
+            fe2o3_amqp::link::MessageSizeExceeded {
+                size: 2048,
+                max_size: 1024,
+            },
+        );
+        let error = AmqpError::from(recv_error);
+        let AmqpErrorKind::AmqpDescribedError(described) = error.kind() else {
+            panic!("an oversized delivery must report a described error");
+        };
+        assert_eq!(
+            described.condition,
+            crate::error::AmqpErrorCondition::LinkPayloadSizeExceeded
+        );
+        let description = described
+            .description
+            .as_deref()
+            .expect("an oversized delivery must report its size and the link maximum");
+        assert!(description.contains("2048"));
+        assert!(description.contains("1024"));
+        assert!(described.info.is_empty());
+    }
+
+    // fe2o3-amqp 0.17 replaced `IllegalSessionState` with `SessionStopped`.
+    // The attach failure must keep the recovery kind it had before.
+    #[test]
+    fn receiver_attach_session_stopped_reports_connection_dropped() {
+        let attach_error = fe2o3_amqp::link::ReceiverAttachError::SessionStopped(
+            fe2o3_amqp::link::SessionStopReason::RemoteEnded,
+        );
+        assert!(matches!(
+            AmqpError::from(attach_error).kind(),
+            AmqpErrorKind::ConnectionDropped(_)
+        ));
     }
 }

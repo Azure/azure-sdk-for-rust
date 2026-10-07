@@ -405,6 +405,11 @@ pub async fn probe_data_plane_ready(
     unreachable!("loop should be exited by 'return' when attempts are exhausted")
 }
 
+fn read_replication_pending(status: CosmosStatus) -> bool {
+    status.status_code() == StatusCode::NotFound
+        || status == status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE
+}
+
 /// Reads an item while retrying the transient propagation states expected on
 /// newly created live resources.
 pub async fn read_item_with_readiness_retry(
@@ -428,7 +433,7 @@ pub async fn read_item_with_readiness_retry(
             .await
         {
             Ok(response) => return Ok(response),
-            Err(error) if error.status().status_code() == StatusCode::NotFound => {
+            Err(error) if read_replication_pending(error.status()) => {
                 println!(
                     "Read item failed with {:?}: {}. Retrying after {:?}...",
                     error.status().status_code(),
@@ -1298,7 +1303,7 @@ impl TestRunContext {
         Ok(db_client)
     }
 
-    /// Reads an item from the specified container with exponential backoff retries on 404 errors.
+    /// Reads an item with backoff on not-found and wrapped session-unavailable errors.
     /// This is useful for tests where eventual consistency may cause transient read failures.
     pub async fn read_item(
         &self,
@@ -1310,7 +1315,7 @@ impl TestRunContext {
         read_item_with_readiness_retry(container, partition_key, item_id, options).await
     }
 
-    /// Queries items from the specified container with exponential backoff retries on 404 errors.
+    /// Queries items with backoff on not-found and wrapped session-unavailable errors.
     /// This is useful for tests where eventual consistency may cause transient query failures.
     pub async fn query_items<T>(
         &self,
@@ -1337,7 +1342,7 @@ impl TestRunContext {
             {
                 Ok(pager) => match pager.try_collect::<Vec<T>>().await {
                     Ok(items) => return Ok(items),
-                    Err(e) if e.status().status_code() == StatusCode::NotFound => {
+                    Err(e) if read_replication_pending(e.status()) => {
                         println!(
                             "Query items failed with {:?}: {}. Retrying after {:?}...",
                             e.status().status_code(),
@@ -1349,7 +1354,7 @@ impl TestRunContext {
                     }
                     Err(e) => return Err(e),
                 },
-                Err(e) if e.status().status_code() == StatusCode::NotFound => {
+                Err(e) if read_replication_pending(e.status()) => {
                     println!(
                         "Query items failed with {:?}: {}. Retrying after {:?}...",
                         e.status().status_code(),
@@ -2115,9 +2120,10 @@ pub async fn build_aad_client_from_env(
 mod tests {
     use super::{
         aad_token_invalid_issuer, combine_test_and_cleanup_results, effective_binary_encoding,
-        item_not_found, rbac_name_based_data_not_ready, retry_container_readiness, retry_setup_dns,
-        satellite_probe_should_retry, setup_dns_failure, transient_satellite_readiness_error,
-        AuthMode, BinaryEncodingOptions, SETUP_DNS_TIMEOUT,
+        item_not_found, rbac_name_based_data_not_ready, read_replication_pending,
+        retry_container_readiness, retry_setup_dns, satellite_probe_should_retry,
+        setup_dns_failure, transient_satellite_readiness_error, AuthMode, BinaryEncodingOptions,
+        SETUP_DNS_TIMEOUT,
     };
     use azure_core::http::StatusCode;
     use azure_data_cosmos::{CosmosError, CosmosStatus, SubStatusCode};
@@ -2579,6 +2585,31 @@ mod tests {
             StatusCode::Forbidden,
             SubStatusCode::new(0),
         )));
+        assert!(!item_not_found(
+            &CosmosError::builder()
+                .with_status(status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE)
+                .build()
+        ));
+    }
+
+    #[test]
+    fn read_replication_pending_recognizes_only_the_session_wrapper() {
+        for status in [
+            CosmosStatus::new(StatusCode::NotFound),
+            status_codes::READ_SESSION_NOT_AVAILABLE,
+            status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE,
+        ] {
+            assert!(read_replication_pending(status), "{status}");
+        }
+        for status in [
+            CosmosStatus::new(StatusCode::ServiceUnavailable),
+            status_codes::TRANSPORT_IO_FAILED,
+            status_codes::CLIENT_WRITE_FORBIDDEN,
+            status_codes::CLIENT_DATABASE_ACCOUNT_NOT_FOUND,
+            CosmosStatus::new(StatusCode::Forbidden),
+        ] {
+            assert!(!read_replication_pending(status), "{status}");
+        }
     }
 
     /// The probe issues a real write, so load-shedding responses must not fail

@@ -589,6 +589,18 @@ Rationale:
 
 ### 3.5 Error model
 
+Terminal service 404/1002, 403/3, and 403/1008 failures use the driver's synthetic
+503/20310 (`CLIENT_READ_SESSION_NOT_AVAILABLE`), 503/20311
+(`CLIENT_WRITE_FORBIDDEN`), and 503/20312 (`CLIENT_DATABASE_ACCOUNT_NOT_FOUND`)
+classifications. Native packed status, rich error
+fields, completion substatus headers, and operation diagnostics use the new
+pair. `is_from_wire` is false for these wrappers, even though their original
+source carries a wire response. When rich details are enabled, the native
+wrapper retains that response's body and metadata, including activity ID,
+request charge, retry-after, session token, and ETag where exposed. Individual
+diagnostic attempts retain their service statuses. Diagnostics remain available
+on completions when rich details are disabled. No ABI layout change is required.
+
 The wrapper's error surface is built on two complementary types — a **packed `cosmos_status_code_t`** numeric return value for the C function contract, and a rich `cosmos_error_t` payload that mirrors the driver's `azure_data_cosmos::Error` (introduced in [#4442](https://github.com/Azure/azure-sdk-for-rust/pull/4442)). Both surfaces are derived from the driver's single canonical `CosmosStatus` taxonomy — there is **no** parallel FFI-specific error enum (this is the unification landed in [#4696](https://github.com/Azure/azure-sdk-for-rust/issues/4696); the authoritative implementation and the crate README's "Error & status model" section describe the same model). Both **must** be exposed because the host SDKs sitting on top of this wrapper need full error fidelity for **diagnosability** and for **routing failure classes into language-native exception types** — they do **not** re-implement retry / throttling / conditional-write recovery (that's the driver's responsibility, by design — see `Architecture.md` (`../Architecture.md`) "Schema-Agnostic Data Plane"). Concretely:
 
 - **Diagnosability.** `400 Bad Request` is the canonical example: callers cannot debug it without the gateway response body, headers (`x-ms-activity-id`, `x-ms-substatus`), and the driver's `DiagnosticsContext` for the failed attempt. The rich payload exposes all three.

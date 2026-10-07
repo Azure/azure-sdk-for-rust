@@ -300,7 +300,7 @@ impl EmulatorConfig {
             )?;
         }
 
-        Ok(Arc::new(InMemoryEmulatorHttpClient::new(account)))
+        Ok(Arc::new(InMemoryEmulatorHttpClient::try_new(account)?))
     }
 
     pub(crate) async fn provision(

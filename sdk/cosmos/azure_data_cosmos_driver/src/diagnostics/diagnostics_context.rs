@@ -1237,6 +1237,8 @@ enum DiagnosticsPayload<'a> {
 #[derive(Serialize)]
 struct DiagnosticsOutput<'a> {
     activity_id: &'a ActivityId,
+    #[serde(flatten)]
+    status: Option<CosmosStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
     patch_tracking_id: Option<&'a PatchTrackingId>,
     total_duration_ms: u64,
@@ -1308,6 +1310,8 @@ struct DeduplicatedGroup {
 #[derive(Serialize)]
 struct TruncatedOutput<'a> {
     activity_id: &'a ActivityId,
+    #[serde(flatten)]
+    status: Option<CosmosStatus>,
     #[serde(skip_serializing_if = "Option::is_none")]
     patch_tracking_id: Option<&'a PatchTrackingId>,
     total_duration_ms: u64,
@@ -3188,6 +3192,12 @@ impl DiagnosticsContext {
         }
     }
 
+    pub(crate) fn clone_with_status(&self, status: CosmosStatus) -> Self {
+        let mut context = self.clone_with_operation_name(self.operation_name.clone());
+        context.status = Some(status);
+        context
+    }
+
     /// Returns `true` when this context represents a finished operation.
     ///
     /// A [`DiagnosticsContext`] is immutable and finalized at construction, so
@@ -3292,6 +3302,9 @@ impl DiagnosticsContext {
 
     /// Serializes diagnostics to a JSON string.
     ///
+    /// The top-level `status`, when recorded, describes the operation outcome.
+    /// Request and region entries retain the original attempt statuses.
+    ///
     /// The result is lazily cached - the first call computes the JSON,
     /// subsequent calls return the cached string (for the same verbosity level).
     ///
@@ -3333,6 +3346,7 @@ impl DiagnosticsContext {
         let system_usage = self.resolve_system_usage();
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
+            status: self.status,
             patch_tracking_id: self.patch_tracking_id.as_ref(),
             total_duration_ms,
             total_request_charge: self.total_request_charge(),
@@ -3371,6 +3385,7 @@ impl DiagnosticsContext {
 
         let output = DiagnosticsOutput {
             activity_id: &self.activity_id,
+            status: self.status,
             patch_tracking_id: self.patch_tracking_id.as_ref(),
             total_duration_ms,
             total_request_charge: self.total_request_charge(),
@@ -3393,6 +3408,7 @@ impl DiagnosticsContext {
             // Return a truncated indicator
             let truncated = TruncatedOutput {
                 activity_id: &self.activity_id,
+                status: self.status,
                 patch_tracking_id: self.patch_tracking_id.as_ref(),
                 total_duration_ms,
                 request_count: self.request_count(),
@@ -4664,6 +4680,7 @@ mod tests {
         let actual = normalize_diagnostics_json(&rendered);
         let expected: serde_json::Value = serde_json::json!({
             "activity_id": "debug-json-test",
+            "status": "503/20003 (TransportGenerated503)",
             "total_duration_ms": 0,
             "total_request_charge": 0.0,
             "request_count": 1,
@@ -6174,6 +6191,7 @@ mod tests {
         let actual = normalize_diagnostics_json(json);
         let expected: serde_json::Value = serde_json::json!({
             "activity_id": "test-no-system-info",
+            "status": "200",
             "total_duration_ms": 0,
             "total_request_charge": 0.0,
             "request_count": 0,
@@ -6200,6 +6218,7 @@ mod tests {
         let actual = normalize_diagnostics_json(json);
         let expected: serde_json::Value = serde_json::json!({
             "activity_id": "test-machine-id",
+            "status": "200",
             "total_duration_ms": 0,
             "total_request_charge": 0.0,
             "request_count": 0,
@@ -6216,6 +6235,7 @@ mod tests {
         let actual_summary = normalize_diagnostics_json(json_summary);
         let expected_summary: serde_json::Value = serde_json::json!({
             "activity_id": "test-machine-id",
+            "status": "200",
             "total_duration_ms": 0,
             "total_request_charge": 0.0,
             "request_count": 0,
@@ -6247,6 +6267,7 @@ mod tests {
         let actual = normalize_diagnostics_json(json);
         let expected: serde_json::Value = serde_json::json!({
             "activity_id": "test-system-usage",
+            "status": "200",
             "total_duration_ms": 0,
             "total_request_charge": 0.0,
             "request_count": 0,
@@ -6291,6 +6312,7 @@ mod tests {
         let actual = normalize_diagnostics_json(json);
         let expected: serde_json::Value = serde_json::json!({
             "activity_id": "test-system-usage-empty",
+            "status": "200",
             "total_duration_ms": 0,
             "total_request_charge": 0.0,
             "request_count": 0,
@@ -6579,6 +6601,61 @@ mod tests {
             u16::from(requests.last().unwrap().status().status_code()),
             429
         );
+    }
+
+    #[test]
+    fn terminal_status_copy_preserves_compacted_attempts_and_cached_output() {
+        let original_status = crate::error::status_codes::READ_SESSION_NOT_AVAILABLE;
+        let public_status = crate::error::status_codes::CLIENT_READ_SESSION_NOT_AVAILABLE;
+        let mut builder = DiagnosticsContextBuilder::new(
+            ActivityId::from_string("session-storm".to_string()),
+            options_with_cap(16),
+        );
+        record_run(
+            &mut builder,
+            ExecutionContext::OperationRetry,
+            "East US",
+            "https://east/",
+            original_status,
+            2.0,
+            1000,
+        );
+        builder.set_operation_status(original_status.status_code(), original_status.sub_status());
+        let original = builder.complete();
+        let cached: Vec<serde_json::Value> = [
+            DiagnosticsVerbosity::Detailed,
+            DiagnosticsVerbosity::Summary,
+        ]
+        .into_iter()
+        .map(|verbosity| serde_json::from_str(original.to_json_string(Some(verbosity))).unwrap())
+        .collect();
+        let wrapped = original.clone_with_status(public_status);
+        assert!(wrapped.compaction().is_some());
+        assert_eq!(wrapped.request_count(), 1000);
+        assert_eq!(wrapped.total_request_charge().value(), 2000.0);
+        assert_eq!(
+            wrapped.retained_request_count(),
+            original.retained_request_count()
+        );
+        for (verbosity, mut expected) in [
+            DiagnosticsVerbosity::Detailed,
+            DiagnosticsVerbosity::Summary,
+        ]
+        .into_iter()
+        .zip(cached)
+        {
+            assert_eq!(
+                serde_json::from_str::<serde_json::Value>(original.to_json_string(Some(verbosity)))
+                    .unwrap(),
+                expected
+            );
+            expected["status"] = public_status.to_string().into();
+            assert_eq!(
+                serde_json::from_str::<serde_json::Value>(wrapped.to_json_string(Some(verbosity)))
+                    .unwrap(),
+                expected
+            );
+        }
     }
 
     #[test]
