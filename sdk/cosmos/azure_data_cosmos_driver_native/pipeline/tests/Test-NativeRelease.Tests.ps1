@@ -79,7 +79,7 @@ $Header
         $root = New-ReleaseFixture
 
         {
-            & $ScriptPath -RepositoryRoot $root -GitInvoker $GitInvoker
+            & $ScriptPath -RepositoryRoot $root -SourceBranch 'refs/heads/main' -GitInvoker $GitInvoker
         } | Should -Not -Throw
 
         $global:GitInvocations | Should -BeNullOrEmpty
@@ -98,7 +98,7 @@ $Header
         )
 
         {
-            & $ScriptPath -RepositoryRoot $root -GitInvoker $GitInvoker
+            & $ScriptPath -RepositoryRoot $root -SourceBranch 'refs/heads/main' -GitInvoker $GitInvoker
         } | Should -Not -Throw
     }
 
@@ -115,7 +115,7 @@ $Header
         )
 
         {
-            & $ScriptPath -RepositoryRoot $root -GitInvoker $GitInvoker
+            & $ScriptPath -RepositoryRoot $root -SourceBranch 'refs/heads/main' -GitInvoker $GitInvoker
         } | Should -Throw "*must contain a '0.2.0' release heading*"
     }
 
@@ -133,7 +133,7 @@ $Header
             Set-Content $headerPath
 
         {
-            & $ScriptPath -RepositoryRoot $root
+            & $ScriptPath -RepositoryRoot $root -SourceBranch 'refs/heads/main'
         } | Should -Throw "*Header version '0.2.0' does not match Cargo version '0.2.1'*"
     }
 
@@ -150,7 +150,7 @@ $Header
             Set-Content $changelogPath
 
         {
-            & $ScriptPath -RepositoryRoot $root
+            & $ScriptPath -RepositoryRoot $root -SourceBranch 'refs/heads/main'
         } | Should -Throw "*must contain a '0.2.1' release heading*"
     }
 

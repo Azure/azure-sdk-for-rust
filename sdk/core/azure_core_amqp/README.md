@@ -21,10 +21,10 @@ For AMQP over TCP with `native-tls`:
 
 ```toml
 [dependencies]
-azure_core_amqp = { version = "1.2.0-beta.2", default-features = false, features = [
+azure_core_amqp = { version = "1.2.0-beta.3", default-features = false, features = [
     "fe2o3_amqp",
 ] }
-fe2o3-amqp = { version = "0.16", features = ["native-tls"] }
+fe2o3-amqp = { version = "0.18", features = ["native-tls"] }
 ```
 
 ## Transport lifetime

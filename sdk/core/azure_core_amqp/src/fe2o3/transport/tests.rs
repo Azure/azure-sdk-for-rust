@@ -5,12 +5,15 @@ use super::{Closed, Transport};
 use crate::{
     AmqpConnection, AmqpConnectionApis, AmqpErrorKind, AmqpMessage, AmqpReceiver, AmqpReceiverApis,
     AmqpReceiverOptions, AmqpSender, AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSource,
+    ReceiverCreditMode,
 };
 use azure_core::http::Url;
 use fe2o3_amqp::{
     acceptor::{
         ConnectionAcceptor, LinkAcceptor, LinkEndpoint, SaslAnonymousMechanism, SessionAcceptor,
     },
+    connection::ConnectionStopReason,
+    link::{LinkStateError, SessionStopReason},
     types::{messaging::Body, primitives::Value},
     Connection,
 };
@@ -143,6 +146,15 @@ async fn pending_receives(action: ReceivePeerAction) {
                         .build(),
                     Some(AmqpReceiverOptions {
                         name: Some(format!("receiver-{partition}")),
+                        // Closure cases need an empty receive, not delivery credit. Avoid
+                        // racing an initial Flow frame with the peer's Close frame.
+                        credit_mode: Some(
+                            if matches!(action, ReceivePeerAction::SendAfterQuietWait) {
+                                ReceiverCreditMode::Auto(100)
+                            } else {
+                                ReceiverCreditMode::Manual
+                            },
+                        ),
                         ..Default::default()
                     }),
                 )
@@ -194,10 +206,24 @@ async fn pending_receives(action: ReceivePeerAction) {
                 let AmqpErrorKind::LinkStateError(source) = error.kind() else {
                     panic!("expected a receive link-state error, got {error:?}");
                 };
-                assert!(matches!(
-                    source.downcast_ref::<fe2o3_amqp::link::LinkStateError>(),
-                    Some(fe2o3_amqp::link::LinkStateError::IllegalSessionState)
-                ));
+                let expected = match action {
+                    ReceivePeerAction::CloseConnection => {
+                        SessionStopReason::ConnectionStopped(ConnectionStopReason::RemoteClosed)
+                    }
+                    ReceivePeerAction::EndSession => SessionStopReason::RemoteEnded,
+                    ReceivePeerAction::AbortPeerSocket
+                    | ReceivePeerAction::AbortClientTransport => {
+                        SessionStopReason::ConnectionStopped(ConnectionStopReason::Closed)
+                    }
+                    ReceivePeerAction::SendAfterQuietWait => unreachable!(),
+                };
+                assert!(
+                    matches!(
+                        source.downcast_ref::<LinkStateError>(),
+                        Some(LinkStateError::SessionStopped(reason)) if *reason == expected
+                    ),
+                    "unexpected receive stop reason: {source:?}"
+                );
             }
         }
         timeout(Duration::from_secs(2), completed.notified())

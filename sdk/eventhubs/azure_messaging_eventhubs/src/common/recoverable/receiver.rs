@@ -445,7 +445,9 @@ mod tests {
                         ))
                         .into()),
                         Outcome::SessionDropped => Err(AmqpErrorKind::LinkStateError(Box::new(
-                            fe2o3_amqp::link::LinkStateError::IllegalSessionState,
+                            fe2o3_amqp::link::LinkStateError::SessionStopped(
+                                fe2o3_amqp::link::SessionStopReason::Ended,
+                            ),
                         ))
                         .into()),
                         Outcome::ServerBusy => {
@@ -700,7 +702,9 @@ mod tests {
             };
             assert!(matches!(
                 source.downcast_ref::<fe2o3_amqp::link::LinkStateError>(),
-                Some(fe2o3_amqp::link::LinkStateError::IllegalSessionState)
+                Some(fe2o3_amqp::link::LinkStateError::SessionStopped(
+                    fe2o3_amqp::link::SessionStopReason::Ended,
+                ))
             ));
             assert_eq!(attempts, usize::try_from(max_retries + 1).unwrap());
             assert_eq!(harness.recoveries(), usize::try_from(max_retries).unwrap());

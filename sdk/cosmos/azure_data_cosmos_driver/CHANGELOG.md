@@ -4,7 +4,12 @@
 
 ### Features Added
 
+- Added `UserAgentProperty` and `CosmosDriverRuntimeBuilder::with_user_agent_property` so wrapping SDKs can add validated `key=value` entries (for example a language runtime version such as `rt=.NET 8.0.1`; values may contain spaces but never `;`, `(`, or `)`) to the `User-Agent` metadata segment. ([#5406](https://github.com/Azure/azure-sdk-for-rust/pull/5406))
+
 ### Breaking Changes
+
+- Changed the `User-Agent` header to a compact, parsable format used by every Cosmos SDK: `{sdk}/{version} (drv={driver}; {os}; {arch}; {rustc}[; ft={B64}][; {key}={value}]...) [{suffix}]`. Feature flags are big-endian bytes without leading zeros, base64url-encoded without padding (e.g. `ft=Eg` for 0x12). To fit the 255-byte limit, platform segments are removed whole from right to left, with `drv` removed last; empty parentheses are omitted, then the suffix is shortened if needed, and finally the SDK identifier. The suffix is never normalized. ([#5406](https://github.com/Azure/azure-sdk-for-rust/pull/5406))
+- Terminal service 404/1002, 403/3, and 403/1008 errors now surface as synthetic 503/20310, 503/20311, and 503/20312 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
 
 ### Bugs Fixed
 
@@ -12,6 +17,8 @@
 - Honor per-operation endpoint unavailability TTL and runtime TTL updates during routing without changing sibling operations' cooldown intervals. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
 
 ### Other Changes
+
+- Diagnostics JSON now includes the recorded operation-level status separately from unchanged per-attempt statuses. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
 
 ## 1.0.0-beta.1 (2026-09-28)
 

@@ -17,7 +17,8 @@ use crate::{
     models::{normalize_wrapping_sdk_identifier, UserAgent, UserAgentFeatureFlags},
     options::{
         parse_duration_millis_from_env, ConnectionPoolOptions, CorrelationId, DiagnosticsOptions,
-        DriverOptions, OperationOptions, PartitionFailoverOptions, UserAgentSuffix, WorkloadId,
+        DriverOptions, OperationOptions, PartitionFailoverOptions, UserAgentProperty,
+        UserAgentSuffix, WorkloadId,
     },
     system::{CpuMemoryMonitor, VmMetadataService},
 };
@@ -155,9 +156,13 @@ pub struct CosmosDriverRuntime {
     ///
     /// Set by higher-level SDKs (e.g., `azure_data_cosmos`) so requests can be
     /// attributed to the wrapping SDK in addition to the driver. Example value:
-    /// `azsdk-rust-cosmos/0.34.0`. When unset, the User-Agent starts with the
-    /// driver's own identifier.
+    /// `azsdk-rust-cosmos/0.34.0`. When unset, the User-Agent's product token is
+    /// the driver's own identifier.
     wrapping_sdk_identifier: Option<String>,
+
+    /// Custom `key=value` entries added to the `User-Agent` metadata segment
+    /// by the wrapping SDK, in insertion order with unique keys.
+    user_agent_properties: Vec<UserAgentProperty>,
 
     /// Cross-SDK feature flags advertised in this runtime's base `User-Agent`.
     ///
@@ -335,6 +340,12 @@ impl CosmosDriverRuntime {
         self.wrapping_sdk_identifier.as_deref()
     }
 
+    /// Returns the custom `User-Agent` properties supplied via
+    /// [`CosmosDriverRuntimeBuilder::with_user_agent_property`].
+    pub fn user_agent_properties(&self) -> &[UserAgentProperty] {
+        &self.user_agent_properties
+    }
+
     /// Returns the cross-SDK feature flags advertised in this runtime's base
     /// `User-Agent` header.
     pub(crate) fn user_agent_feature_flags(&self) -> UserAgentFeatureFlags {
@@ -358,6 +369,22 @@ impl CosmosDriverRuntime {
             self.workload_id,
             self.correlation_id.as_ref(),
             feature_flags,
+            &self.user_agent_properties,
+        )
+    }
+
+    /// Computes a `User-Agent` using an explicit per-driver suffix in place of
+    /// the runtime's suffix source.
+    pub(crate) fn user_agent_with_suffix(
+        &self,
+        suffix: &UserAgentSuffix,
+        feature_flags: UserAgentFeatureFlags,
+    ) -> UserAgent {
+        compute_user_agent_with_suffix(
+            self.wrapping_sdk_identifier.as_deref(),
+            Some(suffix.as_str().to_owned()),
+            feature_flags,
+            &self.user_agent_properties,
         )
     }
 
@@ -431,8 +458,10 @@ impl CosmosDriverRuntime {
 /// 4. No suffix (base user agent only)
 ///
 /// If [`with_wrapping_sdk_identifier()`](Self::with_wrapping_sdk_identifier) is
-/// set, its value is prepended to the prefix so requests can be attributed to
-/// both the wrapping SDK and the driver.
+/// set, it becomes the leading `{sdk}/{version}` product token; the driver
+/// always reports its own version as the first `drv=` entry of the
+/// parenthesized metadata segment. SDKs can add their own metadata with
+/// [`with_user_agent_property()`](Self::with_user_agent_property).
 ///
 #[non_exhaustive]
 #[derive(Clone, Debug, Default)]
@@ -445,6 +474,7 @@ pub struct CosmosDriverRuntimeBuilder {
     correlation_id: Option<CorrelationId>,
     user_agent_suffix: Option<UserAgentSuffix>,
     wrapping_sdk_identifier: Option<String>,
+    user_agent_properties: Vec<UserAgentProperty>,
     cpu_refresh_interval: Option<Duration>,
     #[cfg(any(
         test,
@@ -535,20 +565,48 @@ impl CosmosDriverRuntimeBuilder {
         self
     }
 
-    /// Sets a wrapping-SDK identifier prepended to the User-Agent header.
+    /// Sets the SDK identifier that leads the User-Agent header.
     ///
-    /// Higher-level SDKs (such as `azure_data_cosmos`) call this to identify
-    /// themselves alongside the driver. The supplied value should already be a
-    /// complete token (e.g., `azsdk-rust-cosmos/0.34.0`); the driver only
-    /// sanitizes non-ASCII characters and trims whitespace. An empty or
-    /// whitespace-only value is treated as unset and clears any previously
-    /// configured identifier.
+    /// Higher-level SDKs (such as `azure_data_cosmos`, which may be written in
+    /// any language) call this to identify themselves as the product; the
+    /// driver's own version is still reported as the `drv=` entry. The supplied
+    /// value should already be a complete `name/version` token (e.g.,
+    /// `azsdk-rust-cosmos/0.34.0`); the driver trims whitespace and replaces
+    /// non-ASCII characters, whitespace, parentheses, and `;` with `_` so the
+    /// header stays parsable. An empty or whitespace-only value is treated as
+    /// unset and clears any previously configured identifier.
     ///
     /// When set, the User-Agent looks like:
-    /// `azsdk-rust-cosmos/0.34.0 azsdk-rust-cosmos-driver/0.3.0 linux/x86_64 rustc/1.85.0`
+    /// `azsdk-rust-cosmos/0.34.0 (drv=0.3.0; linux; x86_64; 1.85.0)`
     pub fn with_wrapping_sdk_identifier(mut self, identifier: impl Into<String>) -> Self {
         let raw = identifier.into();
         self.wrapping_sdk_identifier = normalize_wrapping_sdk_identifier(&raw);
+        self
+    }
+
+    /// Adds a custom `key=value` entry to the `User-Agent` metadata segment.
+    ///
+    /// Wrapping SDKs use this to report their own metadata, such as a language
+    /// runtime version. Entries appear after the driver-owned entries, in the
+    /// order they were added; adding a property whose key was already added
+    /// replaces the earlier value in place. If the header runs out of space,
+    /// trailing properties are omitted whole.
+    ///
+    /// With a wrapping SDK identifier of `azsdk-dotnet-cosmos/3.40.0` and a
+    /// `dotnet=8.0.1` property, the User-Agent looks like:
+    /// `azsdk-dotnet-cosmos/3.40.0 (drv=0.3.0; linux; x86_64; 1.85.0; dotnet=8.0.1)`
+    ///
+    /// Construct the property with [`UserAgentProperty::try_new`], which
+    /// validates the key and value.
+    pub fn with_user_agent_property(mut self, property: UserAgentProperty) -> Self {
+        match self
+            .user_agent_properties
+            .iter_mut()
+            .find(|p| p.key() == property.key())
+        {
+            Some(existing) => *existing = property,
+            None => self.user_agent_properties.push(property),
+        }
         self
     }
 
@@ -622,6 +680,7 @@ impl CosmosDriverRuntimeBuilder {
             self.workload_id,
             self.correlation_id.as_ref(),
             user_agent_feature_flags,
+            &self.user_agent_properties,
         ));
 
         let proxy_configuration = ProxyConfig::from_env(connection_pool.proxy_allowed());
@@ -715,6 +774,7 @@ impl CosmosDriverRuntimeBuilder {
             correlation_id: self.correlation_id,
             user_agent_suffix: self.user_agent_suffix,
             wrapping_sdk_identifier: self.wrapping_sdk_identifier,
+            user_agent_properties: self.user_agent_properties,
             user_agent_feature_flags,
             container_cache: ContainerCache::new(),
             account_metadata_cache: Arc::new(AccountMetadataCache::new()),
@@ -739,16 +799,35 @@ fn compute_user_agent(
     workload_id: Option<WorkloadId>,
     correlation_id: Option<&CorrelationId>,
     feature_flags: UserAgentFeatureFlags,
+    properties: &[UserAgentProperty],
 ) -> UserAgent {
-    if let Some(suffix) = user_agent_suffix {
-        UserAgent::from_suffix(wrapping_sdk_identifier, suffix, feature_flags)
+    let suffix = if let Some(suffix) = user_agent_suffix {
+        Some(suffix.as_str().to_owned())
     } else if let Some(workload_id) = workload_id {
-        UserAgent::from_workload_id(wrapping_sdk_identifier, workload_id, feature_flags)
-    } else if let Some(correlation_id) = correlation_id {
-        UserAgent::from_correlation_id(wrapping_sdk_identifier, correlation_id, feature_flags)
+        Some(format!("w{}", workload_id.value()))
     } else {
-        UserAgent::from_wrapping_sdk_identifier(wrapping_sdk_identifier, feature_flags)
+        correlation_id.map(|c| c.as_str().to_owned())
+    };
+    compute_user_agent_with_suffix(wrapping_sdk_identifier, suffix, feature_flags, properties)
+}
+
+/// Builds a [`UserAgent`] with an already-resolved suffix.
+fn compute_user_agent_with_suffix(
+    wrapping_sdk_identifier: Option<&str>,
+    suffix: Option<String>,
+    feature_flags: UserAgentFeatureFlags,
+    properties: &[UserAgentProperty],
+) -> UserAgent {
+    let mut builder = UserAgent::builder()
+        .with_feature_flags(feature_flags)
+        .with_properties(properties.iter().cloned());
+    if let Some(identifier) = wrapping_sdk_identifier {
+        builder = builder.with_wrapping_sdk_identifier(identifier);
     }
+    if let Some(suffix) = suffix {
+        builder = builder.with_suffix(suffix);
+    }
+    builder.build()
 }
 
 #[cfg(test)]
@@ -901,6 +980,23 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn user_agent_properties_render_in_order_and_replace_by_key() {
+        let runtime = CosmosDriverRuntimeBuilder::new()
+            .with_wrapping_sdk_identifier("azsdk-dotnet-cosmos/3.40.0")
+            .with_user_agent_property(UserAgentProperty::try_new("dotnet", "7.0.0").unwrap())
+            .with_user_agent_property(UserAgentProperty::try_new("lang", "csharp").unwrap())
+            .with_user_agent_property(UserAgentProperty::try_new("dotnet", "8.0.1").unwrap())
+            .build()
+            .await
+            .unwrap();
+        assert_eq!(runtime.user_agent_properties().len(), 2);
+        let ua = runtime.user_agent().as_str();
+        assert!(ua.starts_with("azsdk-dotnet-cosmos/3.40.0 (drv="), "{ua}");
+        assert!(ua.contains("; dotnet=8.0.1; lang=csharp)"), "{ua}");
+        assert!(!ua.contains("7.0.0"), "{ua}");
+    }
+
     /// `with_wrapping_sdk_identifier` is documented to treat empty or
     /// whitespace-only input as unset and to strip non-ASCII. Verify that the
     /// `wrapping_sdk_identifier()` accessor reflects that normalization so the
@@ -942,7 +1038,7 @@ mod tests {
             runtime
                 .user_agent()
                 .as_str()
-                .starts_with("azsdk-rust-caf_/1.0 azsdk-rust-cosmos-driver/"),
+                .starts_with("azsdk-rust-caf_/1.0 ("),
             "unexpected User-Agent: {}",
             runtime.user_agent().as_str(),
         );
