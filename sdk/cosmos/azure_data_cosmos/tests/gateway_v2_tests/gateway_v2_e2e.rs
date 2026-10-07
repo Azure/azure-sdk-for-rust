@@ -530,7 +530,7 @@ async fn provision_v1_container(
     let container_name = format!("gw_v2-test-v1-container-{unique}");
     let db_client = client.database_client(db_name);
 
-    let account = DriverAccountReference::with_master_key(
+    let account = DriverAccountReference::with_account_key(
         normalize_gateway_v2_endpoint(endpoint).parse::<url::Url>()?,
         key.to_string(),
     );

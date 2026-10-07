@@ -179,7 +179,7 @@ pub extern "C" fn cosmos_account_ref_with_master_key(
     // Copy the key into a `String` so the resulting `Secret` owns its
     // bytes (the C caller may free its copy after this call returns).
     let secret = Secret::from(key_str);
-    let driver_ref = DriverAccountReference::with_master_key(url, secret);
+    let driver_ref = DriverAccountReference::with_account_key(url, secret);
     let handle = AccountRefHandle::into_raw(driver_ref);
     // SAFETY: caller guarantees `out_account` is writable for one
     // `*mut AccountRefHandle`.

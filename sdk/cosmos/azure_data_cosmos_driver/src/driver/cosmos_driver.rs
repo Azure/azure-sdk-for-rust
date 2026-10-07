@@ -4648,7 +4648,7 @@ mod tests {
     }"#;
 
     fn signed_test_account(url: &str) -> AccountReference {
-        AccountReference::with_master_key(Url::parse(url).unwrap(), "dGVzdA==")
+        AccountReference::with_account_key(Url::parse(url).unwrap(), "dGVzdA==")
     }
 
     #[test]
@@ -4773,7 +4773,7 @@ mod tests {
     }
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
@@ -5392,7 +5392,7 @@ mod tests {
 
     #[test]
     fn endpoint_for_write_region_uses_service_uri() {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
             "test-key",
         );
@@ -5415,7 +5415,7 @@ mod tests {
 
     #[test]
     fn endpoint_for_write_region_falls_back_when_none() {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
             "test-key",
         );

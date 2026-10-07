@@ -148,7 +148,7 @@ async fn build_driver_with_faults(
         .expect("runtime builds against the in-memory emulator");
 
     let account =
-        AccountReference::with_master_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+        AccountReference::with_account_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5");
 
     let driver_options = DriverOptions::builder(account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])

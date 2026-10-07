@@ -950,7 +950,7 @@ mod tests {
     use url::Url;
 
     fn container() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -964,7 +964,7 @@ mod tests {
     }
 
     fn rid_container() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://example.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );

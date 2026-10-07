@@ -1314,7 +1314,7 @@ mod tests {
     use super::super::components::{MAX_DTX_COORDINATOR_RETRIES, MAX_DTX_INFRA_RETRIES};
 
     fn make_create_item_operation() -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1337,7 +1337,7 @@ mod tests {
     }
 
     fn make_read_operation() -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==", // base64 "test"
         );
@@ -1347,7 +1347,7 @@ mod tests {
 
     fn make_create_operation() -> CosmosOperation {
         // create_database uses OperationType::Create which is NOT idempotent
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1363,7 +1363,7 @@ mod tests {
     fn make_dtx_operation_for(
         transaction_type: crate::models::DistributedTransactionType,
     ) -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1795,7 +1795,7 @@ mod tests {
         use super::*;
 
         fn make_patch_operation(retry_safe: Option<bool>) -> CosmosOperation {
-            let account = AccountReference::with_master_key(
+            let account = AccountReference::with_account_key(
                 url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
                 "dGVzdA==",
             );
@@ -1894,7 +1894,7 @@ mod tests {
         use crate::models::{FeedRange, OperationType, StoredProcedureReference};
 
         fn make_execute_stored_procedure_operation() -> CosmosOperation {
-            let account = AccountReference::with_master_key(
+            let account = AccountReference::with_account_key(
                 url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
                 "dGVzdA==",
             );

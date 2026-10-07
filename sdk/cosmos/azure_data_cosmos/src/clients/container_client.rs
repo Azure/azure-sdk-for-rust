@@ -1637,7 +1637,7 @@ mod tests {
     #[cfg(feature = "preview_patch")]
     #[test]
     fn patch_options_forward_to_driver_operation() {
-        let account = azure_data_cosmos_driver::models::AccountReference::with_master_key(
+        let account = azure_data_cosmos_driver::models::AccountReference::with_account_key(
             azure_core::http::Url::parse("https://localhost").unwrap(),
             "test-key",
         );
