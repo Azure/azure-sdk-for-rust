@@ -205,16 +205,3 @@ database and container names. `azure_data_cosmos_change_feed_processor_driver`
 uses these drivers and resolved containers for change-feed reads and lease
 writes. If both containers use the same account and credential, they can share
 one driver instance. No dependency on `azure_data_cosmos` is required.
-
-Authentication happens on each request, not once for the lifetime of a
-container. With an account key, `azure_data_cosmos_driver` signs the request.
-With an Entra ID credential, it asks the supplied credential provider for a
-Cosmos DB token and constructs the authorization header. Token acquisition and
-refresh belong to that provider, such as a credential from `azure_identity`,
-not to either CFP package.
-
-The application must arrange the required permissions. Neither CFP nor
-`azure_data_cosmos_driver` creates identities or grants access. Supplying a
-credential does not guarantee that initialization or later requests will
-succeed. A credential may be explicitly reused when authorized for both
-accounts; lease operations must not silently fall back to the feed credential.
