@@ -111,46 +111,6 @@ Valid success -> conditional checkpoint
 Failure or no result -> no checkpoint
 ```
 
-The driver retains the handle's association with the candidate continuation and
-lease ownership generation. Fetching is not a committed checkpoint, and
-receiving or scheduling a batch is not processing success. The driver accepts
-completion only once for the current delivery and ownership; stale or duplicate
-results cannot authorize progress. Failure or an absent result cannot advance
-the checkpoint; silence does not prove the callback never ran.
-
-**For each lease, the driver awaits application processing completion and
-confirmed conditional checkpoint persistence before admitting the next batch.
-These waits suspend the lease-processing task without blocking the executor or
-lease maintenance.** The sequence is to publish batch N, await its actual
-processing result, and, if successful and still owned, await conditional
-checkpoint confirmation. Only then may that lease read or deliver batch N+1.
-Awaiting "batch queued" is insufficient; asynchronous waiting does not permit
-early progress.
-
-The executor must remain available for renewal, other leases, and delivery of
-the processing result. The waiting task must not block an executor thread or
-hold a lock needed to report completion. Failure, ownership loss, or cancellation
-takes the appropriate failure/stop path; none counts as successful completion.
-This is **lockstep processing and checkpointing**. If processing succeeded but
-persistence failed, the driver retries or reconciles checkpointing rather than
-automatically invoking the callback again.
-
-**Both Rust and other languages use this same driver-side completion
-operation.** The public Rust API calls it directly through Rust interfaces.
-Other SDKs report through `azure_data_cosmos_change_feed_processor_native`,
-whose C ABI forwards the handle and outcome to the same implementation. The
-wrapper does not implement separate checkpoint or retry rules, and no
-application objects or Rust futures cross the ABI. Bidirectional runtime
-communication does not require a reverse package dependency on the SDK.
-
-Here, checkpoint policy belongs to
-`azure_data_cosmos_change_feed_processor_driver`; `azure_data_cosmos_driver`
-executes the database write. This proposed contract preserves at-least-once
-processing: a crash after application effects but before checkpoint confirmation
-can cause replay. It does not make those two operations one transaction or
-provide exactly-once external effects. This is not an implemented or
-repository-approved native API.
-
 ### 4.2 Why the typed database SDK is not the shared baseline
 
 `azure_data_cosmos` exposes typed
