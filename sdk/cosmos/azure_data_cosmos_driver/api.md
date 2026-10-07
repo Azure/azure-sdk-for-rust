@@ -554,6 +554,7 @@ pub mod driver {
         pub fn proxy_configuration(&self) -> &ProxyConfig;
         pub fn set_default_operation_options(&self, options: OperationOptions);
         pub fn user_agent(&self) -> &Arc<UserAgent>;
+        pub fn user_agent_properties(&self) -> &[UserAgentProperty];
         pub fn user_agent_suffix(&self) -> Option<&UserAgentSuffix>;
         pub fn workload_id(&self) -> Option<WorkloadId>;
         pub fn wrapping_sdk_identifier(&self) -> Option<&str>;
@@ -573,6 +574,7 @@ pub mod driver {
         pub fn with_diagnostics_options(self, options: DiagnosticsOptions) -> Self;
         #[cfg(feature = "__internal_mocking")]
         pub fn with_mock_http_client_factory(self, factory: Arc<dyn HttpClientFactory>) -> Self;
+        pub fn with_user_agent_property(self, property: UserAgentProperty) -> Self;
         pub fn with_user_agent_suffix(self, suffix: UserAgentSuffix) -> Self;
         pub fn with_workload_id(self, workload_id: WorkloadId) -> Self;
         pub fn with_wrapping_sdk_identifier<impl Into<String>: Into<String>>(self, identifier: impl Into<String>) -> Self;
@@ -783,6 +785,7 @@ pub mod error {
         pub const CLIENT_UNKNOWN_CONSISTENCY_LEVEL: crate::error::CosmosStatus = _;
         pub const CLIENT_UNKNOWN_PRIORITY_LEVEL: crate::error::CosmosStatus = _;
         pub const CLIENT_UNSUPPORTED_QUERY_FEATURE: crate::error::CosmosStatus = _;
+        pub const CLIENT_USER_AGENT_PROPERTY_INVALID: crate::error::CosmosStatus = _;
         pub const CLIENT_USER_AGENT_SUFFIX_INVALID: crate::error::CosmosStatus = _;
         pub const CLIENT_WRITE_FORBIDDEN: crate::error::CosmosStatus = _;
         pub const COMPLETING_PARTITION_MIGRATION: crate::error::CosmosStatus = _;
@@ -1190,6 +1193,7 @@ pub mod in_memory_emulator {
         #[cfg(feature = "fault_injection")]
         pub fn runtime_builder_with_fault_rules(self: &Arc<Self>, rules: Vec<Arc<crate::fault_injection::FaultInjectionRule>>) -> crate::driver::CosmosDriverRuntimeBuilder;
         pub fn store(&self) -> Arc<EmulatorStore>;
+        pub fn try_new(config: VirtualAccountConfig) -> crate::error::Result<Self>;
         pub fn with_request_observer(self, observer: Arc<dyn RequestObserver>) -> Self;
     }
     impl InMemoryEmulatorHttpClient {
@@ -3079,6 +3083,19 @@ pub mod options {
         pub fn new(env: Option<::std::sync::Arc<ThroughputControlOptions>>, runtime: Option<::std::sync::Arc<ThroughputControlOptions>>, account: Option<::std::sync::Arc<ThroughputControlOptions>>, operation: Option<&'a ThroughputControlOptions>) -> Self;
         pub fn priority_level(&self) -> Option<&PriorityLevel>;
         pub fn throughput_bucket(&self) -> Option<&u32>;
+    }
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    pub struct UserAgentProperty {
+    }
+    impl UserAgentProperty {
+        const MAX_KEY_LENGTH: usize = 16;
+        const MAX_VALUE_LENGTH: usize = 32;
+        pub fn key(&self) -> &str;
+        pub fn try_new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(key: impl Into<String>, value: impl Into<String>) -> Result<Self, CosmosError>;
+        pub fn value(&self) -> &str;
+    }
+    impl Display for UserAgentProperty {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result;
     }
     #[derive(Clone, Debug, Eq, PartialEq)]
     pub struct UserAgentSuffix(/* private fields */);
