@@ -24,6 +24,7 @@ use tracing::{debug, warn};
 
 #[derive(Debug, Default)]
 pub(crate) struct Fe2o3AmqpConnection {
+    opening: Mutex<()>,
     connection: OnceLock<Mutex<ConnectionHandle<()>>>,
     transport: OnceLock<Transport<TcpStream>>,
 }
@@ -31,6 +32,7 @@ pub(crate) struct Fe2o3AmqpConnection {
 impl Fe2o3AmqpConnection {
     pub fn new() -> Self {
         Self {
+            opening: Mutex::new(()),
             connection: OnceLock::new(),
             transport: OnceLock::new(),
         }
@@ -101,6 +103,13 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
         url: Url,
         options: Option<AmqpConnectionOptions>,
     ) -> Result<()> {
+        let _opening = self
+            .opening
+            .try_lock()
+            .map_err(|_| AmqpError::with_message("Connection opening is already in progress"))?;
+        if self.connection.get().is_some() {
+            return Err(Self::connection_already_set());
+        }
         {
             let options = options.unwrap_or_default();
             let mut endpoint = url.clone();
@@ -314,10 +323,16 @@ impl From<Fe2o3ConnectionError> for AmqpError {
     }
 }
 
-#[cfg(all(test, feature = "fe2o3_amqp_rustls"))]
+#[cfg(test)]
 mod tests {
+    #[cfg(feature = "fe2o3_amqp_rustls")]
     use super::platform_verifier_connector;
+    use super::{AmqpConnectionApis, Fe2o3AmqpConnection};
+    use azure_core::http::Url;
+    use std::{sync::Arc, time::Duration};
+    use tokio::{net::TcpListener, time::timeout};
 
+    #[cfg(feature = "fe2o3_amqp_rustls")]
     #[test]
     fn platform_verifier_connector_builds() {
         // `ClientConfig::builder()` panics when the process has no default
@@ -325,5 +340,36 @@ mod tests {
         // cannot read the trust store of the operating system. Both faults
         // would otherwise appear only when a connection opens.
         assert!(platform_verifier_connector().is_ok());
+    }
+
+    #[tokio::test]
+    async fn concurrent_open_is_rejected_without_connecting() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
+        let connection = Arc::new(Fe2o3AmqpConnection::new());
+        let first_connection = connection.clone();
+        let first_url = url.clone();
+        let first =
+            tokio::spawn(
+                async move { first_connection.open("first".into(), first_url, None).await },
+            );
+        let (_peer, _) = timeout(Duration::from_secs(2), listener.accept())
+            .await
+            .unwrap()
+            .unwrap();
+        let error = timeout(
+            Duration::from_millis(100),
+            connection.open("second".into(), url, None),
+        )
+        .await
+        .expect("a concurrent open must not wait for the first handshake")
+        .unwrap_err();
+        assert!(error.to_string().contains("already in progress"));
+        assert!(timeout(Duration::from_millis(20), listener.accept())
+            .await
+            .is_err());
+        first.abort();
+        assert!(first.await.unwrap_err().is_cancelled());
+        assert!(connection.opening.try_lock().is_ok());
     }
 }

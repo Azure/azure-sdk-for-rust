@@ -71,6 +71,13 @@ pub struct AmqpConnectionOptions {
 pub trait AmqpConnectionApis {
     /// Asynchronously opens an AMQP connection.
     ///
+    /// Only one opening attempt can run on this connection at a time.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if another opening attempt is in progress or this connection
+    /// has already opened successfully.
+    ///
     /// # Arguments
     /// - `name`: The name of the connection.
     /// - `url`: The URL of the AMQP broker.
