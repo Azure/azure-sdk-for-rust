@@ -83,6 +83,33 @@ before. Thin-client/GatewayV2 legs are also unaffected/out of scope.
 
 ## Local testing
 
+### ARM-provisioned job prerequisites
+
+Cosmos live jobs that deploy resources run `prepare-test-resource-modules.yml`
+through the live-test `PreSteps` hook, before the shared subnet lookup. It installs
+Az 16.3.0 from PSGallery in CurrentUser scope when no eligible bundle is present,
+then imports it and checks Az.Resources and Az.StorageSync commands. This prevents
+missing `Get-AzResource` from stopping resource setup before deployment can load
+its dependencies. Installation, import, and command lookup failures remain blocking.
+
+Az 16.3.0 requires Az.Accounts 5.5.3 or newer and includes Az.Resources 10.2.0,
+Az.Storage 9.7.2, and Az.StorageSync 2.6.0. The complete bundle also lets the shared
+deployment and cleanup loaders reuse installed modules instead of falling back to
+their older Az bundle. A missing PSGallery registration is restored without
+changing repository trust; an unexpected source URL is rejected.
+
+The step runs only in internal CI and skips fixed-account jobs, identified by
+their `AccountSelector` matrix value. Public CI and build-only jobs are unchanged.
+It does not authenticate or change service connections or permissions.
+
+Run its isolated tests with Pester 5 and powershell-yaml 0.4.7 or newer:
+
+```powershell
+Invoke-Pester sdk/cosmos/eng/pipelines/prepare-test-resource-modules.Tests.ps1
+```
+
+### Fixed-account resolver
+
 Run the resolver's local test suite (no ADO, no Azure access required):
 
 ```powershell

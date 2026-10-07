@@ -1,0 +1,45 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+steps:
+  - pwsh: |
+      $ErrorActionPreference = 'Stop'
+      $version = '16.3.0'
+      $module = Get-Module -Name Az -ListAvailable |
+        Where-Object { $_.Version -ge [version]$version } |
+        Sort-Object Version -Descending |
+        Select-Object -First 1
+      if (!$module) {
+        $repository = Get-PSRepository | Where-Object Name -EQ 'PSGallery'
+        if (!$repository) {
+          Register-PSRepository -Default -ErrorAction Stop
+          $repository = Get-PSRepository -Name PSGallery -ErrorAction Stop
+        }
+        if (!$repository -or $repository.SourceLocation.TrimEnd('/') -ne 'https://www.powershellgallery.com/api/v2') {
+          throw 'PSGallery must use https://www.powershellgallery.com/api/v2.'
+        }
+        Write-Host "Installing Az $version for Cosmos test-resource provisioning."
+        Install-Module -Name Az -RequiredVersion $version -Repository PSGallery -Scope CurrentUser -Force -ErrorAction Stop
+        $module = Get-Module -Name Az -ListAvailable |
+          Where-Object { $_.Version -eq [version]$version } |
+          Select-Object -First 1
+        if (!$module) {
+          throw "Az $version is not discoverable after installation."
+        }
+      }
+      # Install before importing to avoid locking dependency assemblies on Windows.
+      Import-Module -Name $module.Path -ErrorAction Stop
+      $commands = @(
+        'Az.Resources\Get-AzResource',
+        'Az.Resources\New-AzResourceGroupDeployment',
+        'Az.Resources\Remove-AzResourceGroup',
+        'Az.StorageSync\Get-AzStorageSyncService'
+      )
+      foreach ($command in $commands) {
+        Get-Command -Name $command -ErrorAction Stop | Out-Null
+      }
+      Write-Host "Verified Az $($module.Version) for Cosmos test-resource provisioning."
+    displayName: Prepare Cosmos test-resource modules
+    # Fixed-account matrix entries have AccountSelector and skip ARM provisioning.
+    condition: and(succeeded(), eq(variables['System.TeamProject'], 'internal'), eq(variables['AccountSelector'], ''))
+    workingDirectory: $(Build.SourcesDirectory)
