@@ -10,6 +10,7 @@
 
 - Concurrent calls to `AmqpConnection::open()` now return an error without starting another connection attempt.
 - A failed or cancelled connection handshake now releases its transport and permits another `open()` on the same object.
+- `AmqpConnection::abort()` now cancels an in-progress opening, including TCP connection and protocol negotiation.
 - Pending sends and sender metadata waits now return when their connection or session closes; session errors retain the peer's protocol condition.
 - Dropping a connection now releases its socket even when an AMQP write is blocked; cancelling session, sender, or CBS preparation retires the transport used by that preparation.
 

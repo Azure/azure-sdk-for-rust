@@ -73,6 +73,8 @@ pub trait AmqpConnectionApis {
     ///
     /// Only one opening attempt can run on this connection at a time.
     /// A failed or cancelled attempt can be retried on the same object.
+    /// [`AmqpConnection::abort()`] cancels an opening attempt without waiting for
+    /// TCP connection or protocol negotiation to complete.
     /// After a successful opening, the object cannot open again, including after
     /// [`close()`](Self::close).
     ///
@@ -148,7 +150,10 @@ impl AmqpConnection {
     /// Use this method to retire a failed connection when graceful shutdown cannot
     /// finish. Pending operations fail. An opened connection cannot reopen.
     /// An interrupted send can have reached the peer without an acknowledgement.
-    /// Calling this method before opening a connection has no effect.
+    /// During opening, this method cancels the attempt and releases its provisional
+    /// transport. The pending [`open()`](AmqpConnectionApis::open) returns an error,
+    /// and a later attempt can use the same object.
+    /// Calling this method on an unused connection has no effect.
     pub fn abort(&self) {
         #[cfg(feature = "fe2o3_amqp")]
         self.implementation.abort();
