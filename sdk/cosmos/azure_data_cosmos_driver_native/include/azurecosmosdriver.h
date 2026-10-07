@@ -2253,14 +2253,19 @@ const char *cosmos_completion_patch_tracking_id(const struct cosmos_completion_t
 
 /**
  * Returns the number of items addressable through
- * `cosmos_completion_item_page`.
+ * [`cosmos_completion_item_page()`].
  *
- * A nonempty single-body response counts as one item. NULL, no-payload, and
- * freed completion records count as zero. The count excludes later feed
- * pages. A non-NULL `completion` must point to a completion record returned
- * by the queue whose storage is still allocated.
+ * A nonempty single-body response counts as one item. NULL and no-payload
+ * responses count as zero. The count excludes later feed pages.
  *
- * For a cursor result, pass the address of its `common` member.
+ * A non-NULL `completion` must point to allocated completion storage. Queue
+ * records whose backing was released by
+ * [`cosmos_completion_queue_free_completions()`] count as zero while their
+ * caller-owned record storage remains allocated.
+ *
+ * For a cursor result, pass the address of its `common` member only while
+ * the result is live. [`crate::cursor::cosmos_cursor_completion_free()`]
+ * deallocates the result; calling this accessor afterward is invalid.
  */
 uintptr_t cosmos_completion_item_count(const struct cosmos_completion_t *completion);
 
@@ -2274,17 +2279,20 @@ uintptr_t cosmos_completion_item_count(const struct cosmos_completion_t *complet
  * single-body responses, the page is the item itself, starting at offset
  * zero. Returned page pointers remain valid until the completion is freed.
  * For a cursor result, pass the address of its `common` member and release
- * the owning result with `cosmos_cursor_completion_free`.
+ * the owning result with [`crate::cursor::cosmos_cursor_completion_free()`].
+ * That function deallocates the result; calling this accessor afterward is
+ * invalid.
  *
- * A non-NULL `completion` must point to a completion record returned by the
- * queue whose storage is still allocated. Non-NULL outputs must point to
- * writable slots.
+ * A non-NULL `completion` must point to allocated completion storage.
+ * Non-NULL outputs must point to writable slots.
  *
  * # Errors
  *
- * Returns an invalid-argument status for NULL output slots, a NULL or freed
- * completion record, or an out-of-range `item_index`. Non-NULL outputs are
- * reset to NULL/zero on failure.
+ * Returns an invalid-argument status for NULL output slots, a NULL completion,
+ * an out-of-range `item_index`, or a queue record whose backing was released
+ * by [`cosmos_completion_queue_free_completions()`] but whose caller-owned
+ * record storage remains allocated. Non-NULL outputs are reset to NULL/zero
+ * on failure.
  */
 cosmos_status_code_t cosmos_completion_item_page(const struct cosmos_completion_t *completion,
                                                  uintptr_t item_index,

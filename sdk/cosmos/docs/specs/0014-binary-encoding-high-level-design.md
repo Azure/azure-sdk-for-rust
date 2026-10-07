@@ -671,6 +671,18 @@ independent buffers for their `items` array. Page-aware hosts use
 `cosmos_completion_item_page` on the cursor completion's `common` member.
 Legacy one-shot feeds reject item-list responses rather than truncating them.
 
+The test-only retention observer samples unique binary source pages held by
+buffered child rows, a newly fetched page, and the output currently being
+assembled. It records only addresses and lengths, without retaining additional
+page ownership. For 16 partitions with 100 items per page and 1 KiB payloads,
+the selective `OFFSET 20 LIMIT 10` characterization measured a peak of
+1,773,658 backing-page bytes, compared with 1,108,540 bytes reachable from the
+ten output survivors. Shared pages are counted once. These are page-buffer
+lengths, not total heap allocations or process peak memory; retained output
+from earlier calls, transport buffers, and decoded metadata are outside the
+measurement. Instrumentation is compiled only for unit tests, and its timings
+are not an uninstrumented performance comparison.
+
 Note also that the emitted encoding follows the **negotiated operation**, not the
 bytes of any absorbed page, so on a binary-negotiated query the items sourced from
 **text** pages are re-encoded too, which normalizes key order and collapses

@@ -301,6 +301,7 @@ impl ChildStream {
         context: &mut PipelineContext<'_>,
         aggregator: &mut PageAggregator,
         directions: &[SortOrder],
+        #[cfg(test)] retention: Option<tests::RetentionSample>,
     ) -> crate::error::Result<FillOutcome> {
         loop {
             if !self.buffered.is_empty() || self.drained {
@@ -312,6 +313,12 @@ impl ChildStream {
                     response,
                     is_terminal,
                 } => {
+                    #[cfg(test)]
+                    if let (Some(retention), crate::models::ResponseBody::Bytes(page)) =
+                        (&retention, response.body())
+                    {
+                        retention.record(Some(page));
+                    }
                     aggregator.absorb(&response)?;
                     let mut rows: VecDeque<query_response::EnvelopeRow> =
                         query_response::parse_envelope_page(response.body(), directions.len())?
@@ -385,6 +392,8 @@ pub(crate) struct StreamingOrderedMerge {
     /// tracks the *emitted* format, not the wire: under
     /// `request_text_response` the wire is binary while items stay text.
     emit_binary: bool,
+    #[cfg(test)]
+    retention: Option<tests::RetentionObserver>,
 }
 
 impl StreamingOrderedMerge {
@@ -403,6 +412,8 @@ impl StreamingOrderedMerge {
             deferred_error: None,
             continuation_unsafe: false,
             query_fingerprint,
+            #[cfg(test)]
+            retention: None,
         }
     }
 
@@ -426,9 +437,17 @@ impl StreamingOrderedMerge {
         let mut split_retries = 0;
         let mut topology_changed = false;
         loop {
+            #[cfg(test)]
+            let retention = self.retention_sample();
             // Disjoint field borrows: `children` mutably, `directions` shared.
             let outcome = self.children[idx]
-                .ensure_filled(context, aggregator, &self.directions)
+                .ensure_filled(
+                    context,
+                    aggregator,
+                    &self.directions,
+                    #[cfg(test)]
+                    retention,
+                )
                 .await;
             // Commit before propagating: a fill that absorbed a page and then
             // failed to parse it still advanced session state we must not lose.
@@ -568,6 +587,8 @@ impl PipelineNode for StreamingOrderedMerge {
             return Ok(PageResult::Drained);
         }
 
+        #[cfg(test)]
+        self.record_output_retention(&[]);
         let mut aggregator = PageAggregator::new(self.emit_binary);
         aggregator.seed_session_token(self.session_token.clone());
 
@@ -631,6 +652,8 @@ impl PipelineNode for StreamingOrderedMerge {
                 break;
             }
             items.push(item);
+            #[cfg(test)]
+            self.record_output_retention(&items);
             if items.len() < cap {
                 if self.children[winner].buffered.front().is_some() {
                     binary_heap::push_by(&mut head_heap, winner, |left, right| {
@@ -1056,10 +1079,77 @@ fn build_value_boundary_child(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{collections::HashMap, hint::black_box, num::NonZeroU32, time::Instant};
+    use std::{
+        collections::HashMap,
+        hint::black_box,
+        num::NonZeroU32,
+        sync::atomic::{AtomicUsize, Ordering as AtomicOrdering},
+        time::{Duration, Instant},
+    };
 
     use crate::driver::dataflow::mocks::{self, MockLeaf};
     use crate::models::effective_partition_key::EffectivePartitionKey;
+
+    #[derive(Default)]
+    pub(super) struct RetentionObserver {
+        peak_bytes: Arc<AtomicUsize>,
+        output_pages: HashMap<usize, usize>,
+    }
+
+    pub(super) struct RetentionSample {
+        peak_bytes: Arc<AtomicUsize>,
+        pages: HashMap<usize, usize>,
+    }
+
+    impl RetentionSample {
+        pub(super) fn record(&self, fetched_page: Option<&[u8]>) {
+            let mut bytes: usize = self.pages.values().sum();
+            if let Some(page) = fetched_page {
+                if crate::binary_json::is_binary(page)
+                    && !self.pages.contains_key(&(page.as_ptr() as usize))
+                {
+                    bytes += page.len();
+                }
+            }
+            self.peak_bytes.fetch_max(bytes, AtomicOrdering::Relaxed);
+        }
+    }
+
+    impl StreamingOrderedMerge {
+        pub(super) fn retention_sample(&self) -> Option<RetentionSample> {
+            let observer = self.retention.as_ref()?;
+            // Store addresses and lengths, never owning clones that would extend retention.
+            let mut pages = observer.output_pages.clone();
+            for child in &self.children {
+                for row in &child.buffered {
+                    if let query_response::EnvelopePayload::Binary(item) = &row.payload {
+                        let page = item.source_page();
+                        pages.insert(page.as_ptr() as usize, page.len());
+                    }
+                }
+            }
+            Some(RetentionSample {
+                peak_bytes: observer.peak_bytes.clone(),
+                pages,
+            })
+        }
+
+        pub(super) fn record_output_retention(&mut self, items: &[ItemView]) {
+            let Some(observer) = &mut self.retention else {
+                return;
+            };
+            observer.output_pages.clear();
+            for item in items {
+                let page = item.source_page();
+                if crate::binary_json::is_binary(page) {
+                    observer
+                        .output_pages
+                        .insert(page.as_ptr() as usize, page.len());
+                }
+            }
+            self.retention_sample().unwrap().record(None);
+        }
+    }
 
     fn range(min: &str, max: &str) -> crate::error::Result<FeedRange> {
         FeedRange::new(
@@ -1235,12 +1325,16 @@ mod tests {
         )
     }
 
-    #[tokio::test]
-    #[ignore = "run explicitly to characterize selective binary ORDER BY merging"]
-    async fn measure_binary_order_by_selective_streaming_merge() {
+    struct SelectiveMergeMeasurements {
+        source_bytes: usize,
+        peak_merge_page_bytes: usize,
+        retained_output_page_bytes: usize,
+        elapsed: Duration,
+    }
+
+    async fn selective_binary_merge_measurements(rounds: u32) -> SelectiveMergeMeasurements {
         const FAN_OUT: usize = 16;
         const ITEMS_PER_PAGE: usize = 100;
-        const ROUNDS: usize = 40;
         const SKIP: u64 = 20;
         const TAKE: u64 = 10;
 
@@ -1251,8 +1345,9 @@ mod tests {
             .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(30).unwrap()));
 
         let start = Instant::now();
-        let mut peak_retained_output_page_bytes = 0;
-        for _ in 0..ROUNDS {
+        let mut retained_output_page_bytes = 0;
+        let mut peak_merge_page_bytes = 0;
+        for _ in 0..rounds {
             let children: Vec<_> = pages
                 .iter()
                 .enumerate()
@@ -1276,12 +1371,15 @@ mod tests {
                     )
                 })
                 .collect();
-            let merge = StreamingOrderedMerge::new(
+            let mut merge = StreamingOrderedMerge::new(
                 Arc::new(operation.clone()),
                 vec![SortOrder::Ascending],
                 children,
                 "baseline-fingerprint".to_owned(),
             );
+            let observer = RetentionObserver::default();
+            let peak_bytes = observer.peak_bytes.clone();
+            merge.retention = Some(observer);
             let mut node =
                 super::super::skip_take::SkipTake::new(Box::new(merge), SKIP, Some(TAKE), true);
             let mut executor = mocks::NoopRequestExecutor;
@@ -1304,8 +1402,10 @@ mod tests {
                 assert_eq!(view.raw_value(), &view.source_page()[view.value_range()]);
             }
             assert_eq!(retained.len(), TAKE as usize);
-            peak_retained_output_page_bytes =
-                peak_retained_output_page_bytes.max(retained.values().sum());
+            retained_output_page_bytes = retained_output_page_bytes.max(retained.values().sum());
+            let measured_peak = peak_bytes.load(AtomicOrdering::Relaxed);
+            assert_eq!(measured_peak, source_bytes);
+            peak_merge_page_bytes = peak_merge_page_bytes.max(measured_peak);
             let items: Vec<serde_json::Value> = response.body().clone().into_items().unwrap();
             let ranks: Vec<_> = items
                 .iter()
@@ -1314,12 +1414,122 @@ mod tests {
             assert_eq!(ranks, (SKIP..SKIP + TAKE).collect::<Vec<_>>());
             black_box(items);
         }
-        let elapsed = start.elapsed();
+        SelectiveMergeMeasurements {
+            source_bytes,
+            peak_merge_page_bytes,
+            retained_output_page_bytes,
+            elapsed: start.elapsed(),
+        }
+    }
+
+    #[tokio::test]
+    async fn retention_high_water_includes_every_buffered_partition() {
+        let measurements = selective_binary_merge_measurements(1).await;
+        assert_eq!(
+            measurements.peak_merge_page_bytes,
+            measurements.source_bytes
+        );
+        assert!(measurements.peak_merge_page_bytes > measurements.retained_output_page_bytes);
+    }
+
+    #[tokio::test]
+    async fn retention_high_water_includes_output_during_replenishment() {
+        let first = crate::binary_json::test_support::reference_rows(&[("a", 0)], "first");
+        let next =
+            crate::binary_json::test_support::reference_rows(&[("b", 1)], &"next".repeat(1024));
+        let sibling = crate::binary_json::test_support::reference_rows(&[("c", 2)], "sibling");
+        let operation = mocks::operation()
+            .with_supported_serialization_formats("CosmosBinary")
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(2).unwrap()));
+        let children = vec![
+            ChildStream::fresh(
+                range("", "80").unwrap(),
+                Box::new(MockLeaf::with_pages(vec![
+                    Ok(PageResult::Page {
+                        response: mocks::response(&first),
+                        is_terminal: false,
+                    }),
+                    Ok(PageResult::Page {
+                        response: mocks::response(&next),
+                        is_terminal: true,
+                    }),
+                ])),
+            ),
+            ChildStream::fresh(
+                range("80", "FF").unwrap(),
+                Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                    response: mocks::response(&sibling),
+                    is_terminal: true,
+                })])),
+            ),
+        ];
+        let mut merge = StreamingOrderedMerge::new(
+            Arc::new(operation),
+            vec![SortOrder::Ascending],
+            children,
+            "retention".to_owned(),
+        );
+        let observer = RetentionObserver::default();
+        let peak_bytes = observer.peak_bytes.clone();
+        merge.retention = Some(observer);
+        let PageResult::Page { response, .. } = next_page(&mut merge).await else {
+            panic!("expected an ordered page");
+        };
+        assert_eq!(ids(&response), ["a", "b"]);
+        assert_eq!(
+            peak_bytes.load(AtomicOrdering::Relaxed),
+            first.len() + next.len() + sibling.len(),
+        );
+    }
+
+    #[tokio::test]
+    async fn retention_high_water_counts_shared_pages_once() {
+        let page = crate::binary_json::test_support::reference_rows(&[("a", 0)], "shared");
+        let response = mocks::response(&page);
+        let operation = mocks::operation()
+            .with_supported_serialization_formats("CosmosBinary")
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(2).unwrap()));
+        let children = [("", "80"), ("80", "FF")]
+            .into_iter()
+            .map(|(min, max)| {
+                ChildStream::fresh(
+                    range(min, max).unwrap(),
+                    Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                        response: response.clone(),
+                        is_terminal: true,
+                    })])),
+                )
+            })
+            .collect();
+        let mut merge = StreamingOrderedMerge::new(
+            Arc::new(operation),
+            vec![SortOrder::Ascending],
+            children,
+            "shared-retention".to_owned(),
+        );
+        let observer = RetentionObserver::default();
+        let peak_bytes = observer.peak_bytes.clone();
+        merge.retention = Some(observer);
+        let PageResult::Page { response, .. } = next_page(&mut merge).await else {
+            panic!("expected an ordered page");
+        };
+        assert_eq!(ids(&response), ["a", "a"]);
+        assert_eq!(peak_bytes.load(AtomicOrdering::Relaxed), page.len());
+    }
+
+    #[tokio::test]
+    #[ignore = "run explicitly to characterize selective binary ORDER BY merging"]
+    async fn measure_binary_order_by_selective_streaming_merge() {
+        let measurements = selective_binary_merge_measurements(40).await;
         println!(
-            "ORDER BY selective merge: fan_out={FAN_OUT} items_per_page={ITEMS_PER_PAGE} \
-             source_bytes={source_bytes} skip={SKIP} take={TAKE} rounds={ROUNDS} \
-             peak_retained_output_page_bytes={peak_retained_output_page_bytes} elapsed_ms={:.2}",
-            elapsed.as_secs_f64() * 1000.0,
+            "ORDER BY selective merge: fan_out=16 items_per_page=100 \
+             source_bytes={} skip=20 take=10 rounds=40 \
+             peak_retained_merge_page_bytes={} retained_output_page_bytes={} \
+             instrumented_elapsed_ms={:.2}",
+            measurements.source_bytes,
+            measurements.peak_merge_page_bytes,
+            measurements.retained_output_page_bytes,
+            measurements.elapsed.as_secs_f64() * 1000.0,
         );
     }
 

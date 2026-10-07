@@ -4,8 +4,11 @@
 
 ### Features Added
 
+- Added `ItemView` for contextual deserialization and original binary page/range access, preserving binary `ORDER BY` payload bytes through merges, DISTINCT, and pagination windows. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
+
 ### Breaking Changes
 
+- Added `ResponseBody::ContextualItems` to the exhaustive public enum; update exhaustive matches to handle page-backed items, or use the response-body helpers for typed deserialization or standalone materialization. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
 - Terminal service 404/1002, 403/3, and 403/1008 errors now surface as synthetic 503/20310, 503/20311, and 503/20312 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
 
 ### Bugs Fixed
