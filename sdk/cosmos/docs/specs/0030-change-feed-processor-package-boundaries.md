@@ -84,17 +84,9 @@ public Rust API, not in transport or database execution.
 | Typed change events | For an equivalent SDK event contract, the public Rust API duplicates/adapts `ChangeFeedItem<T>`, `ChangeFeedMetadata`, `ChangeFeedOperationType`, and `LogicalSequenceNumber`, including their custom deserialization behavior. |
 | Change-feed-specific public options | The public Rust API provides equivalents/adapters for the relevant `ChangeFeedMode`, `ChangeFeedOptions`, and `FeedOptions` responsibilities, including start-position configuration. Do not copy unrelated options or the entire typed iterator implementation. |
 | SDK-only conveniences | Recreate only those the public Rust API promises: for example, `RoutingStrategy::ProximityTo` expansion, SDK binary-option environment/default resolution, and application-facing diagnostics adapters. These are not inherited merely by depending on the database driver. |
-| Request policies and database execution | Reuse `azure_data_cosmos_driver` implementations and driver-owned `OperationOptions`: retries, cross-region routing, hedging, failover, metadata/topology caches, credential binding, and diagnostics data. Public exposure of their types is a separate compatibility decision. |
+| Database requests | `azure_data_cosmos_driver` sends change-feed reads and lease/checkpoint writes to Cosmos DB. It authenticates each request, selects the endpoint, and handles request retries and regional failover. CFP decides when to issue these operations; it does not duplicate the database driver's request handling. |
 | Wire encoding | Reuse `azure_data_cosmos_driver` binary JSON decoding, encoding, and transcoding facilities. Do not create another codec implementation in either CFP package. |
 | Rust FFI wrapper | The proposed `azure_data_cosmos_change_feed_processor_native` exposes a thin C-compatible binding that forwards batch handles and processing outcomes to the shared completion operation. Other language SDKs own application-type decoding and invocation of their application callbacks. |
-
-Copying event declarations alone is insufficient. The SDK event decoder distinguishes envelopes
-from flat documents, preserves optional metadata and previous images, handles
-empty/null delete images, and tolerates unknown operation types. Equivalent
-typed behavior requires adapting those semantics as well as the four types.
-These copied types have **different Rust type identities**, even when their
-definitions match the SDK's; matching wire semantics is not source-level
-interchangeability.
 
 ## 4. Callback and Serialization Boundaries
 
