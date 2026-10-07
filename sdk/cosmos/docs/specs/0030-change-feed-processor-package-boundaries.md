@@ -40,9 +40,6 @@ scheduling, an FFI protocol, or implementation tests.
 
 ## 2. Package Dependencies
 
-Concatenating a node's wrapped lines gives its package name. Every package edge
-below is a proposed Cargo dependency; only the host-to-FFI edge crosses a C ABI.
-
 ```mermaid
 flowchart TB
     App["Rust application"]
