@@ -69,7 +69,7 @@ Rust FFI wrapper, not an approved third deliverable. It consumes the shared CFP
 engine rather than the public Rust API; its placement and distribution remain
 open. The existing `azure_data_cosmos_driver_native` wraps database execution,
 not CFP coordination. The CFP driver calls `azure_data_cosmos_driver` through
-Rust, not through that existing database FFI package.
+Rust, not through `azure_data_cosmos_driver_native`.
 
 ## 3. Ownership, Reuse, and Duplication
 
@@ -83,8 +83,8 @@ public Rust API, not in transport or database execution.
 | Shared CFP engine | `azure_data_cosmos_change_feed_processor_driver` owns autonomous polling, bootstrap, lease authority, shared processing-acknowledgement handling, and checkpoint decisions. Rust and native bindings use the same completion operation. It does not invoke the application's typed callback or know the application's document type. |
 | Typed change events | For an equivalent SDK event contract, the public Rust API duplicates/adapts `ChangeFeedItem<T>`, `ChangeFeedMetadata`, `ChangeFeedOperationType`, and `LogicalSequenceNumber`, including their custom deserialization behavior. |
 | Change-feed-specific public options | The public Rust API provides equivalents/adapters for the relevant `ChangeFeedMode`, `ChangeFeedOptions`, and `FeedOptions` responsibilities, including start-position configuration. Do not copy unrelated options or the entire typed iterator implementation. |
-| SDK-only conveniences | Recreate only those the public Rust API promises: for example, `RoutingStrategy::ProximityTo` expansion, SDK binary-option environment/default resolution, and application-facing diagnostics adapters. These are not inherited merely by depending on the database driver. |
-| Database requests | `azure_data_cosmos_driver` sends change-feed reads and lease/checkpoint writes to Cosmos DB. It authenticates each request, selects the endpoint, and handles request retries and regional failover. CFP decides when to issue these operations; it does not duplicate the database driver's request handling. |
+| SDK-only conveniences | Recreate only those the public Rust API promises: for example, `RoutingStrategy::ProximityTo` expansion, SDK binary-option environment/default resolution, and application-facing diagnostics adapters. These are not inherited merely by depending on `azure_data_cosmos_driver`. |
+| Database requests | `azure_data_cosmos_driver` sends change-feed reads and lease/checkpoint writes to Cosmos DB. It authenticates each request, selects the endpoint, and handles request retries and regional failover. CFP decides when to issue these operations; it does not duplicate request handling from `azure_data_cosmos_driver`. |
 | Wire encoding | Reuse `azure_data_cosmos_driver` binary JSON decoding, encoding, and transcoding facilities. Do not create another codec implementation in either CFP package. |
 | Rust FFI wrapper | The proposed `azure_data_cosmos_change_feed_processor_native` exposes a thin C-compatible binding that forwards batch handles and processing outcomes to the shared completion operation. Other language SDKs own application-type decoding and invocation of their application callbacks. |
 
@@ -111,7 +111,7 @@ Valid success -> conditional checkpoint
 Failure or no result -> no checkpoint
 ```
 
-### 4.2 Why the typed database SDK is not the shared baseline
+### 4.2 Why `azure_data_cosmos` is not the shared baseline
 
 `azure_data_cosmos` exposes typed
 APIs such as `ContainerClient::query_change_feed<T>`. A host-language SHIM is the
@@ -122,11 +122,11 @@ without first materializing them into Rust application models.
 Wrapping a typed Rust API with FFI is technically possible, but is rejected as
 this baseline: it would introduce a Rust representation and conversion or
 serialization step before host-language decoding. Choosing a generic Rust JSON
-value does not remove that coupling. Use the database driver's `ResponseBody`
+value does not remove that coupling. Use `ResponseBody` from `azure_data_cosmos_driver`
 buffers and metadata instead.
 
 **Raw means application-schema-agnostic, not text-only or byte-for-byte
-untouched.** The database driver can perform wire decoding, schema-independent
+untouched.** `azure_data_cosmos_driver` can perform wire decoding, schema-independent
 envelope processing, and binary/text conversion. Each consuming Rust API/SHIM
 owns application typing and receives the declared payload shape and encoding,
 including supported change metadata and previous images.
@@ -139,19 +139,20 @@ including supported change metadata and previous images.
 | Depend on `azure_data_cosmos` only from the public Rust CFP API to reuse event types. | Technically valid without affecting the shared engine or native path, but couples CFP's public types and releases to the primary SDK. Not selected for this draft. |
 | One standalone CFP package. | Fewer artifacts, but combines the typed Rust API with reusable coordination and couples their public compatibility surfaces. |
 | Two packages over `azure_data_cosmos_driver` (proposed). | Separates typing from coordination and reuses database capabilities; requires adapters and explicit compatible dependency ranges. |
-| Route all public Rust API configuration/codec access through the shared CFP engine. | Hides the direct dependency but adds forwarding APIs unrelated to coordination. The proposal instead retains the direct database-driver edge. |
+| Route all public Rust API configuration/codec access through the shared CFP engine. | Hides the direct dependency but adds forwarding APIs unrelated to coordination. The proposal instead retains the direct dependency on `azure_data_cosmos_driver`. |
 
 An internal dependency does not require re-exporting its public types. Exposing
 a driver option, error, or model in the public Rust API makes that type and
 its dependency version part of that API's compatibility contract. Use explicit
 adapters by default; any intentional shared public types need a documented
 compatibility decision. Package separation alone does not guarantee independent
-versioning or compatibility with every version of the database SDK/driver.
+versioning or compatibility with every version of `azure_data_cosmos` or
+`azure_data_cosmos_driver`.
 
 The public Rust API is intended to provide a publishable Cargo source package. Publishing
-it to crates.io with a normal dependency on the CFP driver requires a compatible
-CFP-driver package available there, as well as its compatible database-driver
-dependency. A local path dependency is not a distribution substitute. Publication
+it to crates.io requires compatible versions of
+`azure_data_cosmos_change_feed_processor_driver` and `azure_data_cosmos_driver`
+to be available there. A local path dependency is not a distribution substitute. Publication
 and release ordering therefore cannot be decided independently, even if support
 policies and version cadence differ. A future native package has a separate
 platform-library/header and ABI distribution contract.
@@ -189,8 +190,9 @@ universal rule for Rust libraries.
 
 ## 6. Integration Boundary
 
-Reuse the database driver's feed/dataflow machinery and prepared account/container
-bindings rather than copying SDK iterators, database execution, or metadata
+Reuse the feed/dataflow machinery and prepared account/container bindings in
+`azure_data_cosmos_driver`
+rather than copying SDK iterators, database execution, or metadata
 caches into CFP. Preserve driver diagnostics data; the public Rust API adapts it for
 application-facing diagnostics.
 
