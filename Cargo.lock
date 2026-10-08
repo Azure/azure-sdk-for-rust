@@ -577,6 +577,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "azure_cosmos_change_feed_processor"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "azure_core 1.1.0",
+ "azure_cosmos_change_feed_processor_engine",
+ "azure_data_cosmos_driver",
+ "futures",
+ "serde",
+ "serde_json",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "azure_cosmos_change_feed_processor_engine"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "azure_core 1.1.0",
+ "azure_data_cosmos_driver",
+ "base64",
+ "futures",
+ "rand 0.10.2",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "azure_data_cosmos"
 version = "1.1.0-beta.1"
 dependencies = [

@@ -945,17 +945,19 @@ pub(crate) async fn build_unordered_merge(
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
-    let (saved_tokens, resume_start) = match resume {
-        None => (None, None),
+    let (saved_tokens, resume_start, next_epk) = match resume {
+        None => (None, None, None),
         Some(PipelineNodeState::Drained) => {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         Some(PipelineNodeState::UnorderedMerge {
             active_tokens,
             start_from,
+            next_epk,
         }) => (
             Some(validate_unordered_merge_tokens(active_tokens)?),
             start_from,
+            next_epk,
         ),
         Some(other) => {
             return Err(crate::error::CosmosError::builder()
@@ -1076,8 +1078,33 @@ pub(crate) async fn build_unordered_merge(
             .build());
     }
 
+    let cursor = if let Some(next_epk) = next_epk {
+        let next_epk = parse_continuation_epk(
+            &next_epk,
+            crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+            "UnorderedMerge next_epk",
+        )?;
+        request_nodes
+            .iter()
+            .position(|node| {
+                node.feed_range().is_some_and(|range| {
+                    range.min_inclusive() <= &next_epk && &next_epk < range.max_exclusive()
+                })
+            })
+            .ok_or_else(|| {
+                crate::error::CosmosError::builder()
+                    .with_status(
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH,
+                    )
+                    .with_message("change-feed continuation next_epk is outside the feed range")
+                    .build()
+            })?
+    } else {
+        0
+    };
     let root = Box::new(
         UnorderedMerge::new(request_nodes)
+            .with_cursor(cursor)
             .with_start_marker(start_marker)
             .with_prime_on_first_drain(prime_on_first_drain),
     );

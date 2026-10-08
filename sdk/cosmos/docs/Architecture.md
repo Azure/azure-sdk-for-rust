@@ -53,13 +53,242 @@ specs/0019-native-wrapper.md (`specs/0019-native-wrapper.md`) and
 specs/0020-native-async-invocation.md (`specs/0020-native-async-invocation.md`).
 
 **Supporting crates.** `azure_data_cosmos_macros` generates layered option
-types; `azure_data_cosmos_emulator` hosts the driver's in-memory emulator over
-real ports for cross-client testing
+types. `azure_cosmos_change_feed_processor` and
+`azure_cosmos_change_feed_processor_engine` are unpublished crates for the
+application-facing processor and its execution engine, respectively.
+The processor will own configuration, handlers, lifecycle, and state inspection;
+the engine will own lease coordination, partition workers, checkpoint persistence, and
+load balancing. The initial data-plane path is processor (typed decoding) ->
+engine (raw response and continuation) -> driver -> Cosmos DB. Each call reads
+LatestVersion or AllVersionsAndDeletes pages with a retained driver plan. A
+bounded single-lease coordinator handles delivery, completion, conditional
+checkpoint receipts, stop, and ownership-loss handling. A Cosmos-backed session
+adds one pre-created lease's acquisition/takeover, independent renewal/watchdog,
+and coordinated checkpoint/release. Bounded explicit-plan bootstrap verifies
+complete workload coverage and fences readiness; automatic source discovery,
+weighted capacity, and a production distributed lifecycle are not implemented.
+`azure_data_cosmos_emulator` hosts the driver's in-memory emulator over real
+ports for cross-client testing
 (specs/0021-in-memory-emulator.md (`specs/0021-in-memory-emulator.md`),
 specs/0027-hosted-emulator.md (`specs/0027-hosted-emulator.md`)); the
 observability harness, perf CLI, and benchmarks exercise diagnostics, scale, and
 driver overhead respectively. None of these are part of the supported surface —
 see Project.md (`Project.md`).
+
+## Change feed processor engine
+
+Use six responsibility modules rather than reproducing the Java/.NET class
+hierarchy. `ProcessorEngine` is the state owner, not a configuration object.
+The fluent builder belongs in the public CFP crate; engine configuration is
+plain data with boundary validation.
+
+The public builder consumes independently credential-bound feed and lease
+`ContainerBinding` values. One overall preparation deadline covers both
+contexts; no processor, bootstrap write, lease authority, or callback is
+published on partial failure. Each binding currently uses a fresh runtime/cache
+namespace because runtime container-cache keys omit credential identity.
+Matching endpoints or cloned templates do not deduplicate credentials.
+The engine retains the feed driver/reference, and the public prepared state
+retains the lease driver/reference. Polling and lease operations never repeat
+CFP-level name resolution; explicit local constructors reuse prepared references.
+Driver-managed topology/account refresh and invalidated metadata remain allowed.
+Source/group validation prevents a bootstrap plan being applied to a different
+prepared RID. Automatic lifecycle supervision and shared live-runtime injection
+remain deferred; preparation is not permanent authorization.
+
+| Module | Responsibility | Rust shape |
+| --- | --- | --- |
+| `processor_engine` | Own validated configuration, running lease tasks, batch delivery and acknowledgments, start/stop, and failure coordination. | One main struct, state types, and async functions. |
+| `change_feed_bootstrapper` | Initialize groups and leases safely; reuse reconciliation logic for splits and remapping. | Functions, not a permanent task. |
+| `change_feed_poller` | Read a lease's feed through the driver and deliver bounded batches. | Per-lease async loop. |
+| `lease_checkpointer` | Persist acknowledged progress with ownership-conditional writes; surface conflicts and failures. | Functions and checkpoint-policy state when needed. |
+| `lease_load_balancer` | Decide which leases to acquire or release; the engine applies conditional operations. | Periodic decision function. |
+| `lease_renewer` | Renew ownership independently of handler progress; detect ownership loss or an exceeded safety deadline. | Async renewal loop. |
+
+`processor_engine` and `change_feed_poller` now provide connection reuse and a
+retained raw reader. `lease_processing` holds one coordinator function, local
+owned-lease state, signals, and the minimal source/checkpoint I/O seams. The
+public CFP crate independently models and decodes application-facing events;
+the core never requires a customer document type.
+
+Only one batch is outstanding. A successful handler acknowledges the batch but
+does not advance durable progress; a validated store receipt confirms its
+candidate and new revision. Only definitely-not-persisted failures retry,
+without rerunning a successful handler. Ambiguous/rejected writes fail with
+recovery state. Stop drains within policy; loss revokes completion. An
+interrupted write may have committed remotely and must be reconciled.
+
+Current tests include both the fake checkpoint seam and Cosmos-backed ETag
+operations from independent runtimes against an in-memory service. The latter
+test contention, takeover, stale-owner fencing, and renewal during busy handlers,
+but do not prove real-service or multi-writer correctness. A dedicated live test
+is gated and requires an existing released test lease and separate authorization.
+Automatic bootstrap discovery, weighted balancing, and durable lease
+reconciliation remain future work; do not add empty interfaces, factories, or
+supervisors to stand in for them. Routing, transport retries, wire codecs, and
+feed topology mechanics remain driver responsibilities.
+
+### Lease ownership and progress
+
+`ProcessorEngine` bootstraps or reconciles leases, periodically applies
+balancing decisions, and owns one `run_lease(...)` async task per acquired lease.
+That function coordinates `read -> deliver -> await acknowledgment -> checkpoint`
+while renewal runs independently of handler progress.
+
+Batch completion means actual callback completion plus confirmed durable
+checkpointing; batch N+1 cannot begin before both. Callback error, unwinding
+panic, or cancellation leaves previous durable progress unchanged. Safe
+checkpoint retry does not invoke a successful callback again; uncertain writes
+or exhausted authority/budget require stopping and reconciliation. The narrow
+callback panic boundary returns a processing failure, not a success fallback.
+Whole-task cancellation is observed by its caller; aborting panics remain fatal.
+Crash recovery can replay a batch completed by the application but not yet
+confirmed in the checkpoint store. Application side effects are not atomically
+coupled to that checkpoint.
+
+Each lease has one authoritative local ownership state and store revision.
+Renewal and checkpoint writes coordinate their revisions and preserve each
+other's fields rather than writing stale independent copies. Store-side
+conditional writes enforce ownership across processes. A conflict requires
+explicit reconciliation and ownership validation before further writes.
+
+Acknowledgments identify the ownership epoch and delivered batch. Handler
+failure or a late acknowledgment must never checkpoint past unfinished work.
+On ownership loss or an exceeded ownership-safety deadline, stop admitting
+work, revoke delivery, reject obsolete completions, and stop the lease task.
+
+Shutdown drains within the configured policy, attempts conditional release
+while ownership is valid, and observes task failures. Interrupted bootstrap or
+topology reconciliation preserves recoverable range coverage and progress.
+Cover these behaviors with tests as they are implemented; successfully fetching
+a page is not evidence that its changes were processed.
+
+If alternate lease stores are required, use one small `LeaseStore` trait.
+`Lease`, configuration, and error/state enums are data models, not additional
+architectural layers.
+
+### Cosmos-backed authority for one lease
+
+`cosmos_lease_store` owns one pre-created point record addressed by item ID and
+partition key. Acquisition and takeover increment a stored generation using
+the observed ETag. A contender observes an occupied record unchanged for the
+persisted lease interval before takeover; local authority uses a shorter
+monotonic safety interval measured from the start of a confirmed write.
+Policies require whole-millisecond durations and renewal headroom. Timer drift
+must be bounded by the margin; suspension must consume authority time.
+
+The store requires a single-write-region lease account, explicitly acknowledged
+by `new_single_writer`; the driver currently has no production public account
+capability accessor for automatic verification. Multi-writer conflict resolution
+is not a global ownership fence.
+
+A `LeaseSession` owns the authoritative record/revision. Its async mutex
+serializes only lease writes, not handlers. The independent watchdog does not
+wait for that mutex. Renewal continues during handling and preserves progress;
+checkpoint uses the latest session revision and preserves ownership fields.
+Failed/ambiguous writes and expiry revoke the session, rather than rebasing
+stale authority on another worker's revision. Processing, maintenance, and
+conditional release outcomes are separate. Cancellation leaves no detached
+maintenance task and may leave an uncertain write requiring reconciliation.
+
+Ownership decisions are functions over focused record/policy/timing inputs:
+eligibility, checkpoint/release proposals, authority checks, and write-window
+confirmation have no I/O or hidden clock reads. The async shell samples clocks,
+executes CAS writes, and publishes the validated state. The canonical record
+and ETag produce derived `OwnedLease` snapshots; they are not maintained as
+two copies. Internal enums represent active, uncertain-write, or revoked
+authority and couple pending processing progress to its phase. Receipt
+validation and retry policy are decision functions separate from the async
+coordinator. The watchdog's deadline channel remains a deliberate projection
+that does not require taking the revision lock.
+
+Bootstrap is separate: its workload-scoped record has the same ID
+and partition key for source identity/group, atomic create-if-absent,
+immutable mode/start/protocol configuration, initializer generation/revision,
+and recoverable starting positions. `Ready` must commit the initialization
+generation before work leases are eligible. Non-transactional staged writes
+from obsolete initializers cannot activate work or reset checkpoints. Wait,
+renewal, takeover, and readiness publication must all respect startup deadlines.
+The existing plain pre-created lease path remains separate. Bounded
+`bootstrap::ensure_initialized` now persists explicit seed positions/configuration
+before creating work. Bootstrap/work records share a `/workload` partition key:
+transactional batches fence initializer-owned creation and commit readiness
+after ETag-guarded coverage reads. No child checkpoint conversion is performed.
+
+Completeness means coverage of an explicit expected range, not merely that
+supplied leases have valid physical mappings. Every startup call rechecks
+Ready; failures in discovery/creation cannot publish readiness, and cleanup
+does not swallow the original failure. Existing covering parents keep progress;
+partial coverage needing token narrowing and unknown generations fail closed.
+The winning persisted plan is reused after crashes rather than choosing a new
+Now. Callers must establish concrete Now positions before providing seeds.
+
+Bootstrap ownership epochs and initialization generation are distinct.
+This bounded protocol retains initialization generation 1 across initializer
+takeovers and uses same-partition transactions instead of a cross-partition
+staging scheme. `work_lease_store` checks Ready/committed generation atomically
+with acquisition; plain stores reject bootstrapped items to prevent bypass.
+Automatic source discovery, migration, replacement initialization generations,
+continuous background verification, weighted balancing, and topology handoffs remain
+future work.
+
+### Equal-count logical-lease balancing
+
+The shared `lease_load_balancer` policy takes explicit lease ownership,
+expiry/eligibility, current incarnation, and tie-breaking inputs. It counts
+eligible logical leases, not physical partitions. Membership is distinct
+non-expired owners plus the current worker; other zero-lease workers are not
+globally registered.
+
+The ceiling share is `ceil(L/W)`. Below it, a worker prefers unused/expired work.
+Without those candidates, it attempts at most one transfer from a most-loaded
+donor whose count is at least two higher. Balanced uneven counts therefore do
+not oscillate merely to reach the ceiling.
+
+`LeaseBalancer` reads every inventory page for a Ready workload before planning.
+It excludes control records, uncommitted generations, and pending/transitioning/
+retired assignments. Page failures are errors, not empty snapshots. Local
+liveness history uses unchanged ETags over the persisted observation interval.
+One exact-revision pickup or active transfer is attempted; conflicts require
+fresh inventory, while uncertain results grant no local processing session.
+All ownership changes preserve checkpoints and increment generations.
+
+Confirmed sessions are handed to a prompt work-registration callback. Their
+engine renewal/watchdog runs independently of balancing and application work.
+Fresh ownership changes revoke known local sessions. Bounded jittered scheduling
+has no central dispatcher, weights, or worker registry. Stop requests worker
+drain; callers still own/join task handles and inspect release outcomes.
+Selection/ETag fencing cannot undo already-running application side effects.
+The current workload inventory remains bounded to 32 records and requires the
+single-writer/timer assumptions of the lease store.
+
+### Durable topology reconciliation
+
+The shared core's `lease_topology_handler` owns planning durable assignments,
+not physical request repair. Startup refreshes topology through
+`ProcessorEngine::reconcile_lease_topology`; future bootstrap/runtime callers
+must also schedule bounded periodic reconciliation or consume a defined driver
+signal. A physical split may be absorbed by `UnorderedMerge` without a 410
+reaching CFP.
+
+The current planner keeps logical ranges and their confirmed checkpoints
+unchanged across physical splits and merges. This avoids loss of recovery
+state, but subdivision for greater lease-level parallelism is deferred. The
+public driver has no dedicated checkpoint derivation/composition API for
+durable lease handoffs; CFP must not edit opaque tokens or choose a “later”
+token from independently advanced ranges.
+
+A future apply/resume function must quiesce parents, conditionally record
+`Active -> Transitioning`, idempotently prepare `Pending` replacements, validate
+durable coverage, and commit a handoff marker that retires parent authority
+before child acquisition is eligible. Preserve retired records/markers until
+recovery and activation no longer require them. A merge can retain multiple
+logical leases on one physical partition; checkpoint collapse is an optional
+separate optimization, not required recovery.
+
+These transition states and durable writes are not implemented by the current
+planning-only module. Bootstrap and balancing must reuse this contract rather
+than create another hierarchy or acquire pending records prematurely.
 
 ## Request lifecycle
 

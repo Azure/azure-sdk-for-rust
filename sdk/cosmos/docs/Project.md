@@ -43,6 +43,7 @@ matter for versioning and support expectations.
 | Supported SDK | `azure_data_cosmos` | Full Microsoft support. Strict semantic versioning with multi-year backward compatibility per major version. |
 | Public engine | `azure_data_cosmos_driver`, `azure_data_cosmos_macros` | Public APIs with community/GitHub support only. Semantic versioning, but major versions can move faster than the SDK's. |
 | Cross-language interop | `azure_data_cosmos_driver_native` | Internal, unpublished. Stability is defined by the C ABI contract, not by crates.io semver. |
+| Experimental change feed processing | `azure_cosmos_change_feed_processor`, `azure_cosmos_change_feed_processor_engine` | Unpublished data-plane APIs with no compatibility guarantees yet. Distributed processing is not implemented. |
 | Engineering tools | `azure_data_cosmos_emulator`, `azure_data_cosmos_observability_harness`, `azure_data_cosmos_perf`, `azure_data_cosmos_benchmarks` | Unpublished developer tools. No service compatibility, durability, performance, or support guarantees. |
 
 The emulator in particular is a test double for SDK development, **not** the
@@ -56,6 +57,8 @@ Azure Cosmos DB Emulator product, and should never be described as one.
 | `azure_data_cosmos_driver` | Schema-agnostic execution engine: operation model, routing, caches, retries, hedging, transports, query dataflow, diagnostics collection. |
 | `azure_data_cosmos_driver_native` | C ABI (`cdylib`/`staticlib`) wrapper exposing the driver to non-Rust SDKs through a completion-queue-style async model. |
 | `azure_data_cosmos_macros` | Procedural macros generating the layered configuration boilerplate the SDK and driver options rely on. |
+| `azure_cosmos_change_feed_processor` | Independent typed LatestVersion/AVAD event models and single-lease handler adaptation; future full processor configuration and lifecycle. |
+| `azure_cosmos_change_feed_processor_engine` | Retained reads, Cosmos-backed ownership, bounded bootstrap, and decentralized equal-count logical-lease balancing; automatic discovery, weights, and durable topology handoffs remain future work. |
 | `azure_data_cosmos_emulator` | Out-of-process host that serves the driver's in-memory emulator over real ports so any client can drive it. |
 | `azure_data_cosmos_observability_harness` | Soak/load tool that validates the end-to-end diagnostics and OpenTelemetry experience. |
 | `azure_data_cosmos_perf` | CLI for performance and scale runs against real accounts. |

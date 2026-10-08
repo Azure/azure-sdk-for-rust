@@ -536,6 +536,9 @@ pub mod driver {
         pub fn runtime(&self) -> &CosmosDriverRuntime;
         pub fn user_agent(&self) -> &Arc<UserAgent>;
     }
+    impl crate::driver::CosmosDriver {
+        pub fn derive_change_feed_checkpoints(&self, container: &ContainerReference, checkpoint: &ContinuationToken, parent_range: &FeedRange, child_ranges: &[FeedRange], full_fidelity: bool) -> Result<Vec<ContinuationToken>>;
+    }
     #[derive(Debug)]
     #[non_exhaustive]
     pub struct CosmosDriverRuntime {

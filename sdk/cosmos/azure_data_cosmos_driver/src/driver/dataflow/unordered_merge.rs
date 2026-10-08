@@ -51,6 +51,7 @@ pub(crate) struct UnorderedMerge {
     /// items — only an ETag. Priming therefore captures each range's starting
     /// ETag without dropping any change. Cleared after the priming pass runs.
     prime_on_first_drain: bool,
+    priming_failed: bool,
 }
 
 impl UnorderedMerge {
@@ -61,12 +62,18 @@ impl UnorderedMerge {
             cursor: 0,
             start_marker: None,
             prime_on_first_drain: false,
+            priming_failed: false,
         }
     }
 
     /// Sets the change feed start marker carried in snapshots of this node.
     pub(crate) fn with_start_marker(mut self, start_marker: Option<ChangeFeedStartFrom>) -> Self {
         self.start_marker = start_marker;
+        self
+    }
+
+    pub(crate) fn with_cursor(mut self, cursor: usize) -> Self {
+        self.cursor = cursor;
         self
     }
 
@@ -108,19 +115,15 @@ impl UnorderedMerge {
             loop {
                 match self.children[idx].next_page(context).await? {
                     PageResult::Page { response, .. } => {
-                        // Start-from-`Now` first poll: a 304 carrying only an
-                        // ETag, which the child has now recorded. Discarding the
-                        // (item-less) page loses nothing; advance to the next
-                        // child. The ETag is what makes priming worthwhile — a
-                        // 304 with no ETag would leave the child unpinned and
-                        // silently resume from `Now`, so assert its presence to
-                        // catch a service/transport contract violation in debug
-                        // builds.
-                        debug_assert!(
-                            response.headers().etag.is_some(),
-                            "priming poll returned a page without an ETag; the range \
-                             cannot record its start position and would resume from `Now`"
-                        );
+                        if u16::from(response.status().status_code()) != 304
+                            || response
+                                .headers()
+                                .etag
+                                .as_ref()
+                                .is_none_or(|etag| etag.to_string().is_empty())
+                        {
+                            return Err(priming_error());
+                        }
                         idx += 1;
                         break;
                     }
@@ -163,6 +166,9 @@ impl PipelineNode for UnorderedMerge {
         &mut self,
         context: &mut PipelineContext<'_>,
     ) -> crate::error::Result<PageResult> {
+        if self.priming_failed {
+            return Err(priming_error());
+        }
         if self.children.is_empty() {
             return Ok(PageResult::Drained);
         }
@@ -171,8 +177,12 @@ impl PipelineNode for UnorderedMerge {
         // so each records its concrete starting continuation before any
         // checkpoint can be taken. This runs exactly once.
         if self.prime_on_first_drain {
+            if let Err(error) = self.prime_children(context).await {
+                // An interrupted priming pass must not expose unserved progress.
+                self.priming_failed = true;
+                return Err(error);
+            }
             self.prime_on_first_drain = false;
-            self.prime_children(context).await?;
             if self.children.is_empty() {
                 return Ok(PageResult::Drained);
             }
@@ -264,6 +274,9 @@ impl PipelineNode for UnorderedMerge {
     }
 
     fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
+        if self.priming_failed {
+            return Err(priming_error());
+        }
         if self.children.is_empty() {
             return Ok(PipelineNodeState::Drained);
         }
@@ -306,6 +319,9 @@ impl PipelineNode for UnorderedMerge {
         Ok(PipelineNodeState::UnorderedMerge {
             active_tokens,
             start_from: self.start_marker.clone(),
+            next_epk: self.children[self.cursor % self.children.len()]
+                .feed_range()
+                .map(|range| range.min_inclusive().to_hex()),
         })
     }
 
@@ -319,6 +335,13 @@ impl PipelineNode for UnorderedMerge {
     fn fan_out_width(&self) -> usize {
         self.children.iter().map(|c| c.fan_out_width()).sum()
     }
+}
+
+fn priming_error() -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+        .with_message("change-feed Now priming requires a 304 with an ETag for every range; discard the failed plan and restart from confirmed progress")
+        .build()
 }
 
 #[cfg(test)]
@@ -467,13 +490,10 @@ mod tests {
 
     #[tokio::test]
     async fn prime_on_first_drain_polls_every_child_once() {
-        // Child 0 has a second page; children 1 and 2 have one each. Priming
-        // must poll every child once (consuming a1, b1, c1) before the
-        // round-robin serves a page, so the first served page is child 0's
-        // *second* poll (a2) rather than a1.
+        // Priming captures empty 304 boundaries before serving child 0's next page.
         let child_a = MockLeaf::with_pages(vec![
             Ok(PageResult::Page {
-                response: response_with_etag(b"a1", "etag-a1"),
+                response: response_now_anchor("etag-a1"),
                 is_terminal: true,
             }),
             Ok(PageResult::Page {
@@ -482,11 +502,11 @@ mod tests {
             }),
         ]);
         let child_b = MockLeaf::with_pages(vec![Ok(PageResult::Page {
-            response: response_with_etag(b"b1", "etag-b1"),
+            response: response_now_anchor("etag-b1"),
             is_terminal: true,
         })]);
         let child_c = MockLeaf::with_pages(vec![Ok(PageResult::Page {
-            response: response_with_etag(b"c1", "etag-c1"),
+            response: response_now_anchor("etag-c1"),
             is_terminal: true,
         })]);
 
@@ -522,7 +542,7 @@ mod tests {
             replacements: SplitReplacements::untiled(vec![
                 Box::new(MockLeaf::with_pages(vec![
                     Ok(PageResult::Page {
-                        response: response_with_etag(b"ra1", "etag-ra1"),
+                        response: response_now_anchor("etag-ra1"),
                         is_terminal: true,
                     }),
                     Ok(PageResult::Page {
@@ -531,7 +551,7 @@ mod tests {
                     }),
                 ])),
                 Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
-                    response: response_with_etag(b"rb1", "etag-rb1"),
+                    response: response_now_anchor("etag-rb1"),
                     is_terminal: true,
                 })])),
             ]),
@@ -543,14 +563,39 @@ mod tests {
         let mut topology = NoopTopologyProvider;
         let mut ctx = PipelineContext::new(&mut executor, Some(&mut topology));
 
-        // Priming splices in the two replacements and polls each once (ra1,
-        // rb1); the served page is the first replacement's second poll (ra2).
+        // Each replacement is anchored before serving its next page.
         let r = merge.next_page(&mut ctx).await.unwrap();
         match r {
             PageResult::Page { response, .. } => {
                 assert_eq!(response.body_bytes(), b"ra2");
             }
             other => panic!("expected Page, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn priming_payload_or_interruption_never_becomes_a_checkpoint() {
+        for page in [
+            Ok(PageResult::Page {
+                response: response_with_etag(b"pending-unserved-events", "etag"),
+                is_terminal: false,
+            }),
+            Ok(PageResult::Page {
+                response: response(b""),
+                is_terminal: false,
+            }),
+            Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+                .with_message("interrupted")
+                .build()),
+        ] {
+            let mut merge = UnorderedMerge::new(vec![Box::new(MockLeaf::with_pages(vec![page]))])
+                .with_prime_on_first_drain(true);
+            let mut executor = NoopRequestExecutor;
+            let mut ctx = PipelineContext::new(&mut executor, None);
+            assert!(merge.next_page(&mut ctx).await.is_err());
+            assert!(merge.snapshot_state().is_err());
+            assert!(merge.next_page(&mut ctx).await.is_err());
         }
     }
 }

@@ -386,17 +386,25 @@ pub(crate) fn response_with_request_diagnostics(requests: usize) -> CosmosRespon
 /// change feed contract where every poll (including a start-from-`Now` 304)
 /// carries an ETag continuation.
 pub(crate) fn response_with_etag(body: &[u8], etag: &str) -> CosmosResponse {
+    etag_response(body, etag, StatusCode::Ok)
+}
+
+pub(crate) fn response_now_anchor(etag: &str) -> CosmosResponse {
+    etag_response(b"", etag, StatusCode::NotModified)
+}
+
+fn etag_response(body: &[u8], etag: &str, status: StatusCode) -> CosmosResponse {
     let mut diagnostics = DiagnosticsContextBuilder::new(
         ActivityId::new_uuid(),
         Arc::new(DiagnosticsOptions::default()),
     );
-    diagnostics.set_operation_status(StatusCode::Ok, None);
+    diagnostics.set_operation_status(status, None);
     let mut headers = CosmosResponseHeaders::new();
     headers.etag = Some(Etag::from(etag.to_owned()));
     CosmosResponse::new(
         body.to_vec(),
         headers,
-        CosmosStatus::new(StatusCode::Ok),
+        CosmosStatus::new(status),
         Arc::new(diagnostics.complete()),
     )
 }

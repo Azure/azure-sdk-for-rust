@@ -83,6 +83,9 @@ pub(crate) enum PipelineNodeState {
         active_tokens: Vec<RangedToken>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         start_from: Option<ChangeFeedStartFrom>,
+        /// Lower EPK bound of the next child to poll. Older tokens start at the first child.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        next_epk: Option<String>,
     },
 
     /// A global skip/take (`OFFSET` / `LIMIT` / `TOP`) applied over a single
@@ -459,6 +462,7 @@ mod tests {
         let err = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![],
             start_from: None,
+            next_epk: None,
         }
         .into_child_contribution("Parent", 0, 1)
         .expect_err("nested UnorderedMerge is not a supported child shape");
@@ -694,6 +698,7 @@ mod tests {
         let state = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![],
             start_from: None,
+            next_epk: None,
         };
         let json = serde_json::to_string(&state).unwrap();
         assert_eq!(
@@ -705,10 +710,38 @@ mod tests {
     }
 
     #[test]
+    fn unordered_merge_parses_legacy_polling_position() {
+        let parsed: PipelineNodeState =
+            serde_json::from_str(r#"{"kind":"unordered_merge"}"#).unwrap();
+        assert_eq!(
+            parsed,
+            PipelineNodeState::UnorderedMerge {
+                active_tokens: vec![],
+                start_from: None,
+                next_epk: None,
+            }
+        );
+    }
+
+    #[test]
+    fn unordered_merge_serializes_next_partition() {
+        let state = PipelineNodeState::UnorderedMerge {
+            active_tokens: vec![],
+            start_from: None,
+            next_epk: Some("80".to_owned()),
+        };
+        assert_eq!(
+            serde_json::to_string(&state).unwrap(),
+            r#"{"kind":"unordered_merge","next_epk":"80"}"#
+        );
+    }
+
+    #[test]
     fn unordered_merge_round_trips_with_tokens() {
         let state = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![token("00", "55", "t1"), token("55", "AA", "t2")],
             start_from: None,
+            next_epk: None,
         };
         let json = serde_json::to_string(&state).unwrap();
         let parsed: PipelineNodeState = serde_json::from_str(&json).unwrap();
@@ -720,6 +753,7 @@ mod tests {
         let now = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![],
             start_from: Some(ChangeFeedStartFrom::Now),
+            next_epk: None,
         };
         let json = serde_json::to_string(&now).unwrap();
         assert_eq!(
@@ -733,6 +767,7 @@ mod tests {
 
         let point_in_time = PipelineNodeState::UnorderedMerge {
             active_tokens: vec![token("00", "FF", "t1")],
+            next_epk: None,
             start_from: Some(ChangeFeedStartFrom::PointInTime(time::macros::datetime!(
                 2015-10-21 07:28:00 UTC
             ))),

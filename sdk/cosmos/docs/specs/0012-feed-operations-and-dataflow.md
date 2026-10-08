@@ -89,6 +89,7 @@ The `ContinuationToken` type serves two roles:
 - **O(1) size for sequential drain.** Only the active partition's EPK bounds and server continuation are stored. Drained partitions are reconstructed from the EPK cursor on resume.
 - **Bound to the operation.** Tokens include a container RID and operation kind. Replaying a token against a different container or operation type is rejected.
 - **Survives partition topology changes.** Tokens store EPK bounds, not physical partition IDs. Splits and merges are handled by re-resolving EPK bounds to current partitions.
+- **Preserves change-feed polling order.** `UnorderedMerge` snapshots include an optional `next_epk`, the lower bound of the next child to poll. Resumption selects the rebuilt child containing that EPK, including after a split or merge. Older tokens without this field start at the first child. This prevents repeated one-page resumptions from starving later partitions.
 
 ### What the Token Does NOT Encode
 

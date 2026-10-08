@@ -12,6 +12,7 @@
 // cspell:ignore splitmix
 
 pub(crate) mod cache;
+mod change_feed_checkpoint;
 mod cosmos_driver;
 pub(crate) mod dataflow;
 pub(crate) mod jitter;

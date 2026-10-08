@@ -3,11 +3,11 @@
 
 //! Request leaf node for the dataflow pipeline.
 
-use std::sync::Arc;
+use std::{num::NonZeroU32, sync::Arc};
 
 use async_trait::async_trait;
 
-use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey};
+use crate::models::{CosmosOperation, CosmosResponse, FeedRange, MaxItemCountHint, PartitionKey};
 
 use super::{
     PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode, PipelineNodeState,
@@ -222,13 +222,8 @@ impl PipelineNode for Request {
             "executing request node"
         );
 
-        match context
-            .execute_request(
-                &self.operation,
-                self.target.clone(),
-                PartitionRoutingRefresh::UseCached,
-                continuation.clone(),
-            )
+        match self
+            .execute_with_page_size_recovery(context, continuation.clone())
             .await
         {
             Ok(response) => Ok(self.handle_response(response)),
@@ -279,6 +274,78 @@ impl PipelineNode for Request {
 }
 
 impl Request {
+    async fn execute_with_page_size_recovery(
+        &self,
+        context: &mut PipelineContext<'_>,
+        continuation: Option<String>,
+    ) -> crate::error::Result<CosmosResponse> {
+        let mut operation = Arc::clone(&self.operation);
+        let mut prior = Vec::new();
+        // A u32 item limit can be halved at most 31 times before reaching one.
+        for _ in 0..=32 {
+            match context
+                .execute_request(
+                    &operation,
+                    self.target.clone(),
+                    PartitionRoutingRefresh::UseCached,
+                    continuation.clone(),
+                )
+                .await
+            {
+                Ok(response) => {
+                    if operation.is_change_feed()
+                        && response
+                            .headers()
+                            .etag
+                            .as_ref()
+                            .is_none_or(|etag| etag.to_string().is_empty())
+                    {
+                        return Err(crate::error::CosmosError::builder()
+                            .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+                            .with_message("change-feed response has no nonempty ETag; progress cannot be confirmed")
+                            .with_diagnostics(response.with_aggregated_prior_diagnostics(&prior).diagnostics())
+                            .build());
+                    }
+                    return Ok(response.with_aggregated_prior_diagnostics(&prior));
+                }
+                Err(error) => {
+                    let status = u16::from(error.status().status_code());
+                    // The service has no dedicated substatus for this condition.
+                    // Match only its explicit page-size instruction, as the Java CFP does.
+                    if !operation.is_change_feed()
+                        || !matches!(status, 400 | 413)
+                        || !error
+                            .to_string()
+                            .contains("Reduce page size and try again.")
+                    {
+                        return Err(error);
+                    }
+                    let count = match operation.request_headers().max_item_count {
+                        Some(MaxItemCountHint::Limit(count)) if count.get() > 1 => count.get() / 2,
+                        Some(MaxItemCountHint::Limit(_)) => return Err(error),
+                        _ => 100,
+                    };
+                    if let Some(diagnostics) = error.diagnostics() {
+                        prior.push(diagnostics);
+                    }
+                    tracing::warn!(
+                        max_item_count = count,
+                        "reducing change-feed page size from the unchanged cursor"
+                    );
+                    operation = Arc::new(((*operation).clone()).with_max_item_count(
+                        MaxItemCountHint::Limit(
+                            NonZeroU32::new(count).expect("positive reduced item count"),
+                        ),
+                    ));
+                }
+            }
+        }
+        Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+            .with_message("change-feed page-size recovery exhausted")
+            .build())
+    }
+
     async fn refresh_logical_partition_identity(
         &mut self,
         context: &mut PipelineContext<'_>,
@@ -373,9 +440,7 @@ impl Request {
                 continuation: token,
             };
         }
-        // If the response carried no ETag (unexpected for a change feed read),
-        // keep the prior state so the next poll can retry rather than ending
-        // the stream prematurely. The change feed is never terminal.
+        // The request boundary rejects missing ETags before this state advances.
         PageResult::Page {
             response,
             is_terminal: false,
@@ -533,6 +598,162 @@ mod tests {
         effective_partition_key::EffectivePartitionKey, ContainerProperties, ContainerReference,
         FeedRange, ItemReference, PartitionKeyDefinition,
     };
+
+    struct PageSizeExecutor {
+        inner: MockRequestExecutor,
+        counts: Vec<Option<MaxItemCountHint>>,
+    }
+
+    impl RequestExecutor for PageSizeExecutor {
+        fn execute_request<'a>(
+            &'a mut self,
+            operation: &'a CosmosOperation,
+            target: RequestTarget,
+            refresh: PartitionRoutingRefresh,
+            continuation: Option<String>,
+        ) -> futures::future::BoxFuture<'a, crate::error::Result<CosmosResponse>> {
+            self.counts.push(operation.request_headers().max_item_count);
+            self.inner
+                .execute_request(operation, target, refresh, continuation)
+        }
+    }
+
+    fn size_error(message: &'static str) -> crate::error::CosmosError {
+        crate::error::CosmosError::builder()
+            .with_status(crate::error::CosmosStatus::new(
+                azure_core::http::StatusCode::BadRequest,
+            ))
+            .with_message(message)
+            .build()
+    }
+
+    #[tokio::test]
+    async fn change_feed_page_size_recovery_reuses_confirmed_cursor_until_success() {
+        let container = logical_partition_operation().container().unwrap().clone();
+        let operation = CosmosOperation::change_feed(container, Some(FeedRange::full()))
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(8).unwrap()));
+        let mut request = Request::new(
+            Arc::new(operation),
+            RequestTarget::effective_partition_key_range(
+                FeedRange::full(),
+                "0".into(),
+                FeedRange::full(),
+            ),
+            Some("confirmed".into()),
+        );
+        let page = response_with_etag(b"remaining-events", "next");
+        let mut executor = PageSizeExecutor {
+            inner: MockRequestExecutor::new(vec![
+                Err(size_error("Reduce page size and try again.")),
+                Err(size_error("Reduce page size and try again.")),
+                Ok(page),
+            ]),
+            counts: vec![],
+        };
+        let result = request
+            .next_page(&mut PipelineContext::new(&mut executor, None))
+            .await
+            .unwrap();
+        let PageResult::Page { response, .. } = result else {
+            panic!("page required");
+        };
+        assert_eq!(response.body_bytes(), b"remaining-events");
+        assert_eq!(
+            executor.counts,
+            [8, 4, 2].map(|count| Some(MaxItemCountHint::Limit(NonZeroU32::new(count).unwrap())))
+        );
+        assert_eq!(
+            executor.inner.continuation_calls,
+            vec![Some("confirmed".into()); 3]
+        );
+        assert_eq!(
+            request.snapshot_state().unwrap(),
+            PipelineNodeState::Request {
+                server_continuation: Some("next".into())
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn page_size_floor_and_unrelated_errors_leave_cursor_unchanged() {
+        for (change_feed, message, count, expected_calls) in [
+            (true, "Reduce page size and try again.", 4, 3),
+            (true, "invalid user request", 4, 1),
+            (false, "Reduce page size and try again.", 4, 1),
+        ] {
+            let container = logical_partition_operation().container().unwrap().clone();
+            let operation = if change_feed {
+                CosmosOperation::change_feed(container, Some(FeedRange::full()))
+            } else {
+                CosmosOperation::query_items(container, Some(FeedRange::full()))
+            }
+            .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(count).unwrap()));
+            let mut request = Request::new(
+                Arc::new(operation),
+                RequestTarget::effective_partition_key_range(
+                    FeedRange::full(),
+                    "0".into(),
+                    FeedRange::full(),
+                ),
+                Some("confirmed".into()),
+            );
+            let mut executor = PageSizeExecutor {
+                inner: MockRequestExecutor::new(
+                    (0..expected_calls)
+                        .map(|_| Err(size_error(message)))
+                        .collect(),
+                ),
+                counts: vec![],
+            };
+            let error = request
+                .next_page(&mut PipelineContext::new(&mut executor, None))
+                .await
+                .unwrap_err();
+            assert!(error.to_string().contains(message));
+            assert_eq!(executor.counts.len(), expected_calls);
+            assert_eq!(
+                executor.inner.continuation_calls,
+                vec![Some("confirmed".into()); expected_calls]
+            );
+            assert_eq!(
+                request.snapshot_state().unwrap(),
+                PipelineNodeState::Request {
+                    server_continuation: Some("confirmed".into())
+                }
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn change_feed_missing_position_does_not_deliver_page() {
+        let container = logical_partition_operation().container().unwrap().clone();
+        let operation = Arc::new(CosmosOperation::change_feed(
+            container,
+            Some(FeedRange::full()),
+        ));
+        let mut request = Request::new(
+            operation,
+            RequestTarget::effective_partition_key_range(
+                FeedRange::full(),
+                "0".into(),
+                FeedRange::full(),
+            ),
+            Some("confirmed".into()),
+        );
+        let mut executor = MockRequestExecutor::new(vec![Ok(response(b"items-without-progress"))]);
+        let error = request
+            .next_page(&mut PipelineContext::new(&mut executor, None))
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("ETag"));
+        assert_eq!(
+            request.snapshot_state().unwrap(),
+            PipelineNodeState::Request {
+                server_continuation: Some("confirmed".into())
+            }
+        );
+        assert_eq!(executor.continuation_calls, vec![Some("confirmed".into())]);
+    }
 
     #[derive(Clone, Debug)]
     struct PhysicalPartitionSpec {
