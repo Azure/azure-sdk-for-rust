@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 //! Buffered, cross-partition full-text and hybrid ranking.
+//!
+//! Each component applies its global result window before candidates are coalesced and fused.
 
 use std::{
     cmp::Ordering,
@@ -151,6 +153,8 @@ impl GlobalStatistics {
 struct Component {
     query: String,
     direction: SortOrder,
+    skip: usize,
+    take: usize,
 }
 
 struct RankedRow {
@@ -215,6 +219,36 @@ fn parse_result(raw: &RawValue, component_count: usize) -> crate::error::Result<
     })
 }
 
+fn compare_scores(left: Option<f64>, right: Option<f64>, direction: SortOrder) -> Ordering {
+    match (left, right) {
+        (Some(left), Some(right)) => {
+            let order = left.partial_cmp(&right).expect("scores are finite");
+            match direction {
+                SortOrder::Ascending => order,
+                SortOrder::Descending => order.reverse(),
+            }
+        }
+        (Some(_), None) => Ordering::Less,
+        (None, Some(_)) => Ordering::Greater,
+        (None, None) => Ordering::Equal,
+    }
+}
+
+fn coalesce_result(rows: &mut HashMap<String, RankedRow>, row: RankedRow) {
+    match rows.entry(row.rid.clone()) {
+        std::collections::hash_map::Entry::Vacant(entry) => {
+            entry.insert(row);
+        }
+        std::collections::hash_map::Entry::Occupied(mut entry) => {
+            for (previous, current) in entry.get_mut().scores.iter_mut().zip(row.scores) {
+                if current.is_some() {
+                    *previous = current;
+                }
+            }
+        }
+    }
+}
+
 fn rank_results(rows: &mut [RankedRow], directions: &[SortOrder], weights: &[f64]) {
     for (component, (direction, weight)) in directions.iter().zip(weights).enumerate() {
         let mut scores: Vec<(f64, usize)> = rows
@@ -223,12 +257,8 @@ fn rank_results(rows: &mut [RankedRow], directions: &[SortOrder], weights: &[f64
             .filter_map(|(index, row)| row.scores[component].map(|score| (score, index)))
             .collect();
         scores.sort_unstable_by(|left, right| {
-            let order = left.0.partial_cmp(&right.0).unwrap_or(Ordering::Equal);
-            match direction {
-                SortOrder::Ascending => order,
-                SortOrder::Descending => order.reverse(),
-            }
-            .then_with(|| rows[left.1].rid.cmp(&rows[right.1].rid))
+            compare_scores(Some(left.0), Some(right.0), *direction)
+                .then_with(|| rows[left.1].rid.cmp(&rows[right.1].rid))
         });
         let missing_rank = scores.len() + 1;
         for row in rows.iter_mut() {
@@ -314,6 +344,7 @@ pub(crate) struct HybridSearch {
     statistic_indices: Vec<Option<usize>>,
     statistics: Option<GlobalStatistics>,
     next_component: usize,
+    component_rows: HashMap<String, RankedRow>,
     rows: HashMap<String, RankedRow>,
     candidate_count: usize,
     component_limits: Vec<usize>,
@@ -362,6 +393,23 @@ impl HybridSearch {
                     .as_ref()
                     .filter(|query| !query.is_empty())
                     .ok_or_else(|| invalid_plan("hybrid search component has no rewrittenQuery"))?;
+                let take = match (component.top, component.limit) {
+                    (Some(top), Some(limit)) => top.min(limit),
+                    (Some(top), None) => top,
+                    (None, Some(limit)) => limit,
+                    (None, None) => {
+                        return Err(invalid_plan(
+                            "hybrid search component query has no finite candidate limit",
+                        ));
+                    }
+                };
+                let skip = component.offset.unwrap_or(0);
+                let window = skip
+                    .checked_add(take)
+                    .and_then(|window| usize::try_from(window).ok())
+                    .ok_or_else(|| invalid_plan("hybrid search candidate bound is too large"))?;
+                let skip = usize::try_from(skip)
+                    .map_err(|_| invalid_plan("hybrid search component OFFSET is too large"))?;
                 Ok(Component {
                     query: query.clone(),
                     direction: component
@@ -369,6 +417,8 @@ impl HybridSearch {
                         .first()
                         .copied()
                         .unwrap_or(SortOrder::Descending),
+                    skip,
+                    take: window - skip,
                 })
             })
             .collect::<crate::error::Result<_>>()?;
@@ -392,24 +442,10 @@ impl HybridSearch {
         } else {
             info.component_weights.clone()
         };
-        let component_limits: Vec<usize> = info
-            .component_query_infos
+        let component_limits: Vec<usize> = components
             .iter()
-            .map(|query| {
-                let bound = match (query.top, query.limit) {
-                    (Some(top), Some(limit)) => top.min(limit),
-                    (Some(top), None) => top,
-                    (None, Some(limit)) => limit,
-                    (None, None) => {
-                        return Err(invalid_plan(
-                            "hybrid search component query has no finite candidate limit",
-                        ));
-                    }
-                };
-                usize::try_from(bound)
-                    .map_err(|_| invalid_plan("hybrid search candidate bound is too large"))
-            })
-            .collect::<crate::error::Result<_>>()?;
+            .map(|component| component.skip + component.take)
+            .collect();
         let max_candidates = component_limits
             .iter()
             .try_fold(0_usize, |total, bound| {
@@ -464,6 +500,7 @@ impl HybridSearch {
             statistic_indices,
             statistics: None,
             next_component: 0,
+            component_rows: HashMap::new(),
             rows: HashMap::new(),
             candidate_count: 0,
             component_limits,
@@ -530,20 +567,27 @@ impl HybridSearch {
                 )));
             }
             let row = parse_result(&raw, self.components.len())?;
-            match self.rows.entry(row.rid.clone()) {
-                std::collections::hash_map::Entry::Vacant(entry) => {
-                    entry.insert(row);
-                }
-                std::collections::hash_map::Entry::Occupied(mut entry) => {
-                    for (previous, current) in entry.get_mut().scores.iter_mut().zip(row.scores) {
-                        if current.is_some() {
-                            *previous = current;
-                        }
-                    }
-                }
-            }
+            coalesce_result(&mut self.component_rows, row);
         }
         Ok(())
+    }
+
+    fn finish_component(&mut self) {
+        let component = &self.components[self.next_component];
+        let mut rows: Vec<_> = self.component_rows.drain().map(|(_, row)| row).collect();
+        rows.sort_unstable_by(|left, right| {
+            compare_scores(
+                left.scores[self.next_component],
+                right.scores[self.next_component],
+                component.direction,
+            )
+            .then_with(|| left.rid.cmp(&right.rid))
+        });
+        for row in rows.into_iter().skip(component.skip).take(component.take) {
+            coalesce_result(&mut self.rows, row);
+        }
+        self.component_child = None;
+        self.next_component += 1;
     }
 
     fn account_for_split_children(&mut self, count: usize) -> crate::error::Result<()> {
@@ -670,13 +714,11 @@ impl PipelineNode for HybridSearch {
                         .expect("aggregator initialized")
                         .absorb(&response)?;
                     if is_terminal {
-                        self.component_child = None;
-                        self.next_component += 1;
+                        self.finish_component();
                     }
                 }
                 PageResult::Drained => {
-                    self.component_child = None;
-                    self.next_component += 1;
+                    self.finish_component();
                 }
                 PageResult::SplitRequired { .. } => {
                     return Err(invalid_page(
@@ -911,6 +953,68 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn applies_global_component_limits_before_fusion() {
+        let mut info = plan();
+        info.requires_global_statistics = false;
+        info.component_weights = vec![1.0, 1.0];
+        info.skip = Some(0);
+        info.take = Some(2);
+        for component in &mut info.component_query_infos {
+            component.rewritten_query = Some("SELECT TOP 2 c FROM c".to_owned());
+        }
+        let first_target = epk_range_target().unwrap();
+        let second_range = FeedRange::new(
+            EffectivePartitionKey::try_from("80").unwrap(),
+            EffectivePartitionKey::MAX,
+        )
+        .unwrap();
+        let second_target = RequestTarget::effective_partition_key_range(
+            second_range.clone(),
+            "1".to_owned(),
+            second_range,
+        );
+        let mut node = HybridSearch::new(
+            operation(),
+            &info,
+            vec![first_target, second_target],
+            vec![],
+            FullTextScoreScope::Global,
+            0,
+            2,
+        )
+        .unwrap();
+        let row =
+            |rid, scores| json!({"_rid": rid, "componentScores": scores, "payload": {"id": rid}});
+        let responses = [
+            page(json!([row("x", [100, 40]), row("p", [80, 80])]), 1.0),
+            page(json!([row("y", [90, 50]), row("q", [70, 70])]), 1.0),
+            page(json!([row("z", [40, 100]), row("p", [80, 80])]), 1.0),
+            page(json!([row("w", [50, 90]), row("q", [70, 70])]), 1.0),
+        ];
+        let mut executor = MockRequestExecutor::new(responses.into_iter().map(Ok).collect());
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        // "p" would win fusion over all partition-local candidates, but is outside both
+        // global TOP 2 component windows: ["x", "y"] and ["z", "w"].
+        for (expected, terminal) in [("x", false), ("z", true)] {
+            let PageResult::Page {
+                response,
+                is_terminal,
+            } = node.next_page(&mut context).await.unwrap()
+            else {
+                panic!("expected ranked page");
+            };
+            assert_eq!(ids(&response), [expected]);
+            assert_eq!(is_terminal, terminal);
+        }
+        assert!(matches!(
+            node.next_page(&mut context).await.unwrap(),
+            PageResult::Drained
+        ));
+    }
+
+    #[tokio::test]
     async fn allows_candidates_from_split_children_after_parent_emits_results() {
         let target = epk_range_target().unwrap();
         let mut node = HybridSearch::new(
@@ -932,8 +1036,8 @@ mod tests {
         let mut executor = MockRequestExecutor::new(vec![
             Ok(parent),
             Err(gone_error()),
-            Ok(page(json!([row("b", 0.8), row("c", 0.7)]), 1.0)),
-            Ok(page(json!([row("d", 0.6), row("e", 0.5)]), 1.0)),
+            Ok(page(json!([row("b", 0.95), row("c", 0.7)]), 1.0)),
+            Ok(page(json!([row("d", 0.99), row("e", 0.5)]), 1.0)),
         ]);
         let middle = EffectivePartitionKey::try_from("40").unwrap();
         let end = EffectivePartitionKey::try_from("80").unwrap();
@@ -954,7 +1058,7 @@ mod tests {
         let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap() else {
             panic!("expected first ranked page");
         };
-        assert_eq!(ids(&response), ["a"]);
+        assert_eq!(ids(&response), ["d"]);
         let PageResult::Page {
             response,
             is_terminal,
@@ -978,6 +1082,211 @@ mod tests {
         assert_eq!(
             topology.refresh_calls,
             [PartitionRoutingRefresh::ForceRefresh]
+        );
+    }
+
+    #[test]
+    fn applies_component_windows_with_sort_direction_and_offset() {
+        for (top, offset, limit, direction, expected) in [
+            (Some(2), None, None, SortOrder::Descending, &["c", "d"][..]),
+            (Some(2), None, None, SortOrder::Ascending, &["a", "b"]),
+            (None, Some(1), Some(2), SortOrder::Descending, &["b", "c"]),
+            (Some(1), Some(1), Some(2), SortOrder::Descending, &["c"]),
+            (Some(3), None, Some(2), SortOrder::Descending, &["c", "d"]),
+            (None, Some(10), Some(2), SortOrder::Descending, &[]),
+        ] {
+            let mut info = single_component_plan();
+            let component = &mut info.component_query_infos[0];
+            component.top = top;
+            component.offset = offset;
+            component.limit = limit;
+            component.order_by = vec![direction];
+            let target = epk_range_target().unwrap();
+            let mut node = HybridSearch::new(
+                operation(),
+                &info,
+                vec![target.clone(), target],
+                vec![],
+                FullTextScoreScope::Local,
+                0,
+                2,
+            )
+            .unwrap();
+            node.collect_results(
+                page(
+                    json!([
+                        {"_rid":"b", "componentScores":[2], "payload":{"id":"b"}},
+                        {"_rid":"d", "componentScores":[4], "payload":{"id":"d"}},
+                        {"_rid":"a", "componentScores":[1], "payload":{"id":"a"}},
+                        {"_rid":"c", "componentScores":[3], "payload":{"id":"c"}}
+                    ]),
+                    1.0,
+                )
+                .body(),
+            )
+            .unwrap();
+            node.finish_component();
+            let mut retained: Vec<_> = node.rows.keys().map(String::as_str).collect();
+            retained.sort_unstable();
+            assert_eq!(
+                retained, expected,
+                "top={top:?} offset={offset:?} limit={limit:?} direction={direction:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn component_window_breaks_ties_by_rid_and_places_missing_scores_last() {
+        for direction in [SortOrder::Ascending, SortOrder::Descending] {
+            let mut info = single_component_plan();
+            info.component_query_infos[0].top = Some(1);
+            info.component_query_infos[0].order_by = vec![direction];
+            let target = epk_range_target().unwrap();
+            let mut node = HybridSearch::new(
+                operation(),
+                &info,
+                vec![target.clone(), target.clone(), target],
+                vec![],
+                FullTextScoreScope::Local,
+                0,
+                1,
+            )
+            .unwrap();
+            node.collect_results(
+                page(
+                    json!([
+                        {"_rid":"missing", "componentScores":[null], "payload":{"id":"missing"}},
+                        {"_rid":"b", "componentScores":[1], "payload":{"id":"b"}},
+                        {"_rid":"a", "componentScores":[1], "payload":{"id":"a"}}
+                    ]),
+                    1.0,
+                )
+                .body(),
+            )
+            .unwrap();
+            node.finish_component();
+            assert_eq!(
+                node.rows.keys().map(String::as_str).collect::<Vec<_>>(),
+                ["a"]
+            );
+        }
+    }
+
+    #[test]
+    fn deduplicates_replayed_rows_before_applying_component_window() {
+        let info = single_component_plan();
+        let target = epk_range_target().unwrap();
+        let mut node = HybridSearch::new(
+            operation(),
+            &info,
+            vec![target.clone(), target],
+            vec![],
+            FullTextScoreScope::Local,
+            0,
+            2,
+        )
+        .unwrap();
+        node.collect_results(
+            page(
+                json!([
+                    {"_rid":"a", "componentScores":[10], "payload":{"id":"a"}},
+                    {"_rid":"a", "componentScores":[10], "payload":{"id":"a"}},
+                    {"_rid":"b", "componentScores":[9], "payload":{"id":"b"}},
+                    {"_rid":"c", "componentScores":[8], "payload":{"id":"c"}}
+                ]),
+                1.0,
+            )
+            .body(),
+        )
+        .unwrap();
+        node.finish_component();
+        let mut retained: Vec<_> = node.rows.keys().map(String::as_str).collect();
+        retained.sort_unstable();
+        assert_eq!(retained, ["a", "b"]);
+        assert_eq!(node.candidate_count, 4);
+    }
+
+    #[test]
+    fn component_windows_preserve_scores_when_coalescing_retained_candidates() {
+        let mut info = plan();
+        info.requires_global_statistics = false;
+        let target = epk_range_target().unwrap();
+        let mut node = HybridSearch::new(
+            operation(),
+            &info,
+            vec![target.clone(), target],
+            vec![],
+            FullTextScoreScope::Local,
+            0,
+            2,
+        )
+        .unwrap();
+        node.collect_results(
+            page(
+                json!([
+                    {"_rid":"a", "componentScores":[100,1], "payload":{"id":"a"}},
+                    {"_rid":"b", "componentScores":[90,null], "payload":{"id":"b"}},
+                    {"_rid":"excluded", "componentScores":[80,100], "payload":{"id":"excluded"}}
+                ]),
+                1.0,
+            )
+            .body(),
+        )
+        .unwrap();
+        node.finish_component();
+        node.collect_results(
+            page(
+                json!([
+                    {"_rid":"b", "componentScores":[null,100], "payload":{"id":"b"}},
+                    {"_rid":"c", "componentScores":[80,90], "payload":{"id":"c"}},
+                    {"_rid":"a", "componentScores":[null,1], "payload":{"id":"a"}}
+                ]),
+                1.0,
+            )
+            .body(),
+        )
+        .unwrap();
+        node.finish_component();
+        assert_eq!(node.rows.len(), 3);
+        assert_eq!(node.rows["a"].scores, [Some(100.0), Some(1.0)]);
+        assert_eq!(node.rows["b"].scores, [Some(90.0), Some(100.0)]);
+        assert_eq!(node.rows["c"].scores, [Some(80.0), Some(90.0)]);
+        assert!(!node.rows.contains_key("excluded"));
+    }
+
+    #[test]
+    fn component_windows_allow_zero_take_and_reject_offset_overflow() {
+        let mut info = single_component_plan();
+        info.component_query_infos[0].top = Some(0);
+        let mut node = HybridSearch::new(
+            operation(),
+            &info,
+            vec![epk_range_target().unwrap()],
+            vec![],
+            FullTextScoreScope::Local,
+            0,
+            0,
+        )
+        .unwrap();
+        node.finish_component();
+        assert!(node.rows.is_empty());
+
+        info.component_query_infos[0].top = Some(1);
+        info.component_query_infos[0].offset = Some(u64::MAX);
+        assert_eq!(
+            HybridSearch::new(
+                operation(),
+                &info,
+                vec![epk_range_target().unwrap()],
+                vec![],
+                FullTextScoreScope::Local,
+                0,
+                1,
+            )
+            .err()
+            .unwrap()
+            .status(),
+            status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
         );
     }
 
