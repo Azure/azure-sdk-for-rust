@@ -105,16 +105,16 @@ fn planning_timeout_error(
         .build()
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_RETRIES: u32 = 10;
 // Matches .NET DistributedTransactionCommitter.MaxCumulativeRetryDelay (30 s).
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_CUMULATIVE_DELAY: Duration = Duration::from_secs(30);
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_BASE_DELAY: Duration = Duration::from_secs(1);
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_EXPONENT: u32 = 5;
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
@@ -293,7 +293,7 @@ fn container_recreation_recovery_eligible(
         return false;
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     if operation.resource_type() == ResourceType::DistributedTransactionBatch {
         return false;
     }
@@ -2755,15 +2755,15 @@ impl CosmosDriver {
             )?;
         }
 
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         let requested = self
             .operation_options_view(options)
             .patch_strategy()
             .copied()
             .unwrap_or_default();
-        #[cfg(not(feature = "preview_patch"))]
+        #[cfg(not(feature = "unstable_patch"))]
         let _ = options;
-        #[cfg(not(feature = "preview_patch"))]
+        #[cfg(not(feature = "unstable_patch"))]
         let requested = crate::options::PatchStrategy::Auto;
         let execution = resolve_patch_strategy(requested, instructions.as_ref())?;
         tracing::debug!(
@@ -2966,8 +2966,8 @@ impl CosmosDriver {
         }
     }
 
-    /// Executes a preview distributed transaction through the Gateway coordinator.
-    #[cfg(feature = "preview_dtx")]
+    /// Executes an unstable distributed transaction through the Gateway coordinator.
+    #[cfg(feature = "unstable_dtx")]
     pub async fn execute_distributed_transaction(
         &self,
         request: crate::models::DistributedTransactionRequest,
@@ -2978,7 +2978,7 @@ impl CosmosDriver {
             .map_err(crate::error::CosmosError::into_public_error)
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn execute_distributed_transaction_inner(
         &self,
         mut request: crate::models::DistributedTransactionRequest,
@@ -3126,7 +3126,7 @@ impl CosmosDriver {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn resolve_distributed_transaction_session_tokens(
         &self,
         operations: &mut [crate::models::DistributedTransactionOperation],
@@ -4507,7 +4507,7 @@ impl CosmosDriver {
     }
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn distributed_transaction_outer_retry_delay(
     response: &crate::models::DistributedTransactionResponse,
     retry_after_ms: Option<u64>,
@@ -4545,7 +4545,7 @@ fn distributed_transaction_outer_retry_delay(
     Some(delay)
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn distributed_transaction_outer_computed_delay(retry_count: u32) -> Duration {
     let exponent = retry_count.min(DTX_OUTER_MAX_EXPONENT);
     let delay_seconds = DTX_OUTER_BASE_DELAY.as_secs_f64() * 2_f64.powi(exponent as i32);
@@ -4779,7 +4779,7 @@ mod tests {
         )
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn dtx_response(
         status_code: azure_core::http::StatusCode,
         is_retriable: bool,
@@ -4800,7 +4800,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_stops_on_success_or_non_retriable() {
         assert!(distributed_transaction_outer_retry_delay(
@@ -4821,7 +4821,7 @@ mod tests {
         .is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_uses_larger_retry_after() {
         let delay = distributed_transaction_outer_retry_delay(
@@ -4836,7 +4836,7 @@ mod tests {
         assert_eq!(delay, Duration::from_secs(5));
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_stops_at_retry_cap_and_cumulative_budget() {
         let response = dtx_response(azure_core::http::StatusCode::from(449_u16), true);
@@ -4858,7 +4858,7 @@ mod tests {
         .is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_stops_at_caller_deadline() {
         let response = dtx_response(azure_core::http::StatusCode::from(449_u16), true);
@@ -4885,7 +4885,7 @@ mod tests {
         .is_some());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_infra_envelope_stops_outer_loop() {
         // Two-tier retry composition: after the inner bodyless classifier
@@ -4911,7 +4911,7 @@ mod tests {
         .is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_body_bearing_retriable_envelope_drives_outer_loop() {
         // The complement: a body-bearing coordinator envelope that declares

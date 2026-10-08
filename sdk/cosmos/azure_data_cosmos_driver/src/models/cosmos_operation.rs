@@ -1094,7 +1094,7 @@ impl CosmosOperation {
     }
 
     /// Builds a distributed transaction coordinator operation.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub fn distributed_transaction(
         account: AccountReference,
         transaction_type: crate::models::DistributedTransactionType,
@@ -1642,7 +1642,7 @@ mod tests {
             .allows_ambiguous_outcome_retry());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn distributed_write_transaction_is_idempotent() {
         let op = CosmosOperation::distributed_transaction(
@@ -1654,7 +1654,7 @@ mod tests {
         assert!(op.is_idempotent());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn distributed_read_transaction_is_read_only_and_idempotent() {
         let op = CosmosOperation::distributed_transaction(

@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Preview Distributed Transaction wire models.
+//! Unstable Distributed Transaction wire models.
 //!
-//! **Preview / work in progress.** Gated behind the disabled-by-default
-//! `preview_dtx` feature; the DTX service feature is not yet generally
+//! **Unstable / work in progress.** Gated behind the disabled-by-default
+//! `unstable_dtx` feature; the DTX service feature is not yet generally
 //! available. These types may change or be removed without notice and are
 //! **not supported for production use**.
 

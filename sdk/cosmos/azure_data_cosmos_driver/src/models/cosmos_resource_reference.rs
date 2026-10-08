@@ -315,7 +315,7 @@ impl CosmosResourceReference {
             return ResourcePaths::empty();
         }
 
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         if self.resource_type == ResourceType::DistributedTransactionBatch {
             return ResourcePaths {
                 buf: "/operations/dtc".to_owned(),
@@ -652,7 +652,7 @@ impl CosmosResourceReference {
                     "/offers".to_string()
                 }
             }
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             ResourceType::DistributedTransactionBatch => {
                 if let Some(ref id) = self.id {
                     let id_str = Self::identifier_str(id);
@@ -674,7 +674,7 @@ impl CosmosResourceReference {
                 // Parent is the account — empty link.
                 Cow::Borrowed("")
             }
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             ResourceType::DistributedTransactionBatch => Cow::Borrowed(""),
             ResourceType::DocumentCollection => {
                 // Parent is the database.

@@ -544,7 +544,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn should_hedge_distributed_transaction_never() {
         // DTX operations carry `ResourceType::DistributedTransactionBatch`, which

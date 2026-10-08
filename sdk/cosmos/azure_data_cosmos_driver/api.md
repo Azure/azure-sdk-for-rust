@@ -518,7 +518,7 @@ pub mod driver {
         #[cfg(any(test, feature = "__internal_testing"))]
         pub fn __test_only_hub_region_cache_snapshot(&self) -> Vec<(String, String)>;
         pub fn account(&self) -> &AccountReference;
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         pub async fn execute_distributed_transaction(&self, request: crate::models::DistributedTransactionRequest, options: OperationOptions) -> crate::error::Result<crate::models::DistributedTransactionResponse>;
         pub async fn execute_operation(&self, operation: CosmosOperation, options: OperationOptions) -> crate::error::Result<Option<crate::models::CosmosResponse>>;
         pub async fn execute_plan(&self, plan: &mut OperationPlan, container: Option<ContainerReference>, options: OperationOptions) -> crate::error::Result<Option<crate::models::CosmosResponse>>;
@@ -886,15 +886,15 @@ pub mod error {
             pub const COMPLETING_SPLIT: crate::error::SubStatusCode = _;
             pub const CROSS_PARTITION_QUERY_NOT_SERVABLE: crate::error::SubStatusCode = _;
             pub const DATABASE_ACCOUNT_NOT_FOUND: crate::error::SubStatusCode = _;
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             pub const DTC_ACCOUNT_CONFIG_FAILURE: crate::error::SubStatusCode = _;
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             pub const DTC_COORDINATOR_RACE_CONFLICT: crate::error::SubStatusCode = _;
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             pub const DTC_DISPATCH_FAILURE: crate::error::SubStatusCode = _;
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             pub const DTC_LEDGER_FAILURE: crate::error::SubStatusCode = _;
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             pub const DTC_OPERATION_ROLLED_BACK: crate::error::SubStatusCode = _;
             pub const HOT_PARTITION_KEY_THROTTLED: crate::error::SubStatusCode = _;
             pub const MALFORMED_CONTINUATION_TOKEN: crate::error::SubStatusCode = _;
@@ -1487,7 +1487,7 @@ pub mod models {
         pub fn delete_container(container: ContainerReference) -> Self;
         pub fn delete_database(database: DatabaseReference) -> Self;
         pub fn delete_item(item: ItemReference) -> Self;
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         pub fn distributed_transaction(account: AccountReference, transaction_type: crate::models::DistributedTransactionType) -> Self;
         pub fn is_change_feed(&self) -> bool;
         pub fn is_idempotent(&self) -> bool;
@@ -1647,7 +1647,7 @@ pub mod models {
         pub log_results: Option<String>,
         pub collection_index_transformation_progress: Option<i64>,
         pub collection_lazy_indexing_progress: Option<i64>,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         pub distributed_transaction_idempotency_token: Option<uuid::Uuid>,
     }
     impl CosmosResponseHeaders {
@@ -1718,7 +1718,7 @@ pub mod models {
         pub fn rid(&self) -> Option<&str>;
         pub fn rid_based_path(&self) -> Option<String>;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct DistributedTransactionOperation {
@@ -1729,7 +1729,7 @@ pub mod models {
         pub precondition: Option<crate::models::Precondition>,
         pub patch_filter_predicate: Option<std::borrow::Cow<'static, str>>,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionOperation {
         pub fn new(kind: DistributedTransactionOperationKind, target: DistributedTransactionTarget) -> Self;
         pub fn with_patch_filter_predicate<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, predicate: impl Into<Cow<'static, str>>) -> Self;
@@ -1737,7 +1737,7 @@ pub mod models {
         pub fn with_resource_body<impl Into<Bytes>: Into<Bytes>>(self, body: impl Into<Bytes>) -> Self;
         pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct DistributedTransactionOperationResult {
@@ -1751,12 +1751,12 @@ pub mod models {
         pub request_charge: Option<crate::models::RequestCharge>,
         pub resource_body: DistributedTransactionResultBody,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionOperationResult {
         pub fn is_completed_status_code(&self) -> bool;
         pub fn is_success_status_code(&self) -> bool;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct DistributedTransactionRequest {
@@ -1764,12 +1764,12 @@ pub mod models {
         pub operations: Vec<DistributedTransactionOperation>,
         pub idempotency_token: uuid::Uuid,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionRequest {
         pub fn new(transaction_type: DistributedTransactionType, operations: Vec<DistributedTransactionOperation>) -> Self;
         pub fn serialize_body(&self) -> crate::error::Result<Vec<u8>>;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct DistributedTransactionResponse {
@@ -1786,7 +1786,7 @@ pub mod models {
         pub diagnostic_string: Option<String>,
         pub error_message: Option<String>,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionResponse {
         pub fn from_body(status_code: azure_core::http::StatusCode, sub_status_code: Option<crate::models::SubStatusCode>, body: &[u8], operation_count: usize, idempotency_token: Uuid) -> Self;
         pub fn is_completed_status_code(&self) -> bool;
@@ -1794,7 +1794,7 @@ pub mod models {
         pub fn is_success_status_code(&self) -> bool;
         pub fn len(&self) -> usize;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug)]
     #[non_exhaustive]
     pub struct DistributedTransactionTarget {
@@ -1802,7 +1802,7 @@ pub mod models {
         pub partition_key: crate::models::PartitionKey,
         pub id: std::borrow::Cow<'static, str>,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionTarget {
         pub fn new<impl Into<PartitionKey>: Into<PartitionKey>, impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(container: ContainerReference, partition_key: impl Into<PartitionKey>, id: impl Into<Cow<'static, str>>) -> Self;
     }
@@ -2240,7 +2240,7 @@ pub mod models {
     impl From<Secret> for Credential {
         fn from(key: Secret) -> Self;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]
     pub enum DistributedTransactionOperationKind {
@@ -2251,7 +2251,7 @@ pub mod models {
         Delete,
         Patch,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[non_exhaustive]
     pub enum DistributedTransactionResultBody {
@@ -2259,22 +2259,22 @@ pub mod models {
         None,
         Bytes(azure_core::Bytes),
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     #[non_exhaustive]
     pub enum DistributedTransactionType {
         Write,
         Read,
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl DistributedTransactionType {
         pub fn as_str(self) -> &'static str;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl AsRef<str> for DistributedTransactionType {
         fn as_ref(&self) -> &str;
     }
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     impl Display for DistributedTransactionType {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result;
     }
@@ -2301,9 +2301,9 @@ pub mod models {
         HeadFeed,
         Execute,
         Patch,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         CommitDistributedTransaction,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         ReadDistributedTransaction,
     }
     impl OperationType {
@@ -2392,7 +2392,7 @@ pub mod models {
         UserDefinedFunction,
         PartitionKeyRange,
         Offer,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         DistributedTransactionBatch,
     }
     impl ResourceType {
@@ -2771,7 +2771,7 @@ pub mod options {
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
     pub struct OperationOptions {
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         pub patch_strategy: Option<crate::options::PatchStrategy>,
         pub read_consistency_strategy: Option<crate::options::ReadConsistencyStrategy>,
         pub excluded_regions: Option<crate::options::ExcludedRegions>,
@@ -2811,7 +2811,7 @@ pub mod options {
         pub fn with_hedging_enabled(self, value: bool) -> Self;
         pub fn with_max_failover_retry_count(self, value: u32) -> Self;
         pub fn with_max_session_retry_count(self, value: u32) -> Self;
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         pub fn with_patch_strategy(self, value: PatchStrategy) -> Self;
         pub fn with_read_consistency_strategy(self, value: ReadConsistencyStrategy) -> Self;
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
@@ -2835,7 +2835,7 @@ pub mod options {
         pub fn max_session_retry_count(&self) -> Option<&u32>;
         pub fn new(env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
         pub fn new_with_override(env_override: Option<::std::sync::Arc<OperationOptions>>, env: Option<::std::sync::Arc<OperationOptions>>, runtime: Option<::std::sync::Arc<OperationOptions>>, account: Option<::std::sync::Arc<OperationOptions>>, operation: Option<&'a OperationOptions>) -> Self;
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         pub fn patch_strategy(&self) -> Option<&PatchStrategy>;
         pub fn read_consistency_strategy(&self) -> Option<&ReadConsistencyStrategy>;
         pub fn session_capturing_disabled(&self) -> Option<&bool>;
