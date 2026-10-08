@@ -221,7 +221,7 @@ fn resolve_gateway_v2_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, 
                     )
                     .into()
                 })?;
-            let account = AccountReference::with_master_key(endpoint, key);
+            let account = AccountReference::with_account_key(endpoint, key);
             let connection_pool = ConnectionPoolOptions::builder().build()?;
             Ok(Some(TestEnv {
                 account,

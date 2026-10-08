@@ -68,7 +68,7 @@ use super::{
 ///     .await?;
 ///
 /// // Create a driver for an account
-/// let account = AccountReference::with_master_key(
+/// let account = AccountReference::with_account_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-key",
 /// );
@@ -421,7 +421,7 @@ impl CosmosDriverRuntime {
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );

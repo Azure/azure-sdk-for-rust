@@ -30,7 +30,7 @@ use crate::fault_injection::FaultInjectionRule;
 /// };
 /// use url::Url;
 ///
-/// let account = AccountReference::with_master_key(
+/// let account = AccountReference::with_account_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-master-key",
 /// );

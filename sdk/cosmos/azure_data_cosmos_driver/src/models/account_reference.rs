@@ -182,7 +182,7 @@ impl From<Arc<dyn TokenCredential>> for Credential {
 /// .unwrap();
 ///
 /// // Using the shorthand constructor
-/// let account = AccountReference::with_master_key(
+/// let account = AccountReference::with_account_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-master-key",
 /// );
@@ -275,8 +275,8 @@ impl AccountReference {
     /// Returns a new `AccountReference` with the given backup endpoints.
     ///
     /// This is a post-construction transformation for use when the account
-    /// was created via a convenience constructor (`with_master_key`,
-    /// `with_credential`) and backup endpoints need to be attached without
+    /// was created via a convenience constructor ([`with_account_key()`](Self::with_account_key),
+    /// [`with_credential()`](Self::with_credential)) and backup endpoints need to be attached without
     /// going through the full builder.
     ///
     /// Existing clones of this account are unaffected.

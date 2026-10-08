@@ -108,7 +108,7 @@ fn format_rfc1123(timestamp: &OffsetDateTime) -> String {
 /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
 /// // 1. Set up runtime and driver
 /// let runtime = CosmosDriverRuntime::builder().build().await?;
-/// let account = AccountReference::with_master_key(
+/// let account = AccountReference::with_account_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-key",
 /// );
@@ -760,7 +760,7 @@ impl CosmosOperation {
     /// use azure_data_cosmos_driver::models::{AccountReference, CosmosOperation};
     /// use url::Url;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -805,7 +805,7 @@ impl CosmosOperation {
     /// };
     /// use url::Url;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -842,7 +842,7 @@ impl CosmosOperation {
     /// };
     /// use url::Url;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -892,7 +892,7 @@ impl CosmosOperation {
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -985,7 +985,7 @@ impl CosmosOperation {
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -1025,7 +1025,7 @@ impl CosmosOperation {
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
