@@ -15,7 +15,10 @@ use std::{
     pin::pin,
     sync::{Arc, OnceLock},
 };
-use tokio::{net::TcpStream, sync::Mutex};
+use tokio::{
+    net::TcpStream,
+    sync::{Mutex, Notify},
+};
 use tracing::{debug, trace};
 
 #[derive(Debug, Clone, Default)]
@@ -58,6 +61,15 @@ impl SessionClosed {
 struct SessionMonitor {
     closed: SessionClosed,
     task: tokio::task::JoinHandle<()>,
+    rearm: Arc<Notify>,
+}
+
+struct RearmMonitorOnDrop<'a>(&'a Notify);
+
+impl Drop for RearmMonitorOnDrop<'_> {
+    fn drop(&mut self) {
+        self.0.notify_one();
+    }
 }
 
 impl Drop for SessionMonitor {
@@ -169,18 +181,26 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         };
         let notification = closed.session.clone();
         let error = closed.error.clone();
+        let rearm = Arc::new(Notify::new());
+        let monitor_rearm = rearm.clone();
         let task = tokio::spawn(async move {
             let mut lock = Box::pin(session.clone().lock_owned());
             // Register the outcome waker, then release the handle between polls.
             // Keeping the mutex guard while waiting would prevent link attachment.
-            let result = poll_fn(|cx| {
-                let mut handle = std::task::ready!(lock.as_mut().poll(cx));
-                let result = pin!(handle.on_end()).poll(cx);
-                drop(handle);
-                lock = Box::pin(session.clone().lock_owned());
-                result
-            })
-            .await;
+            let result = loop {
+                tokio::select! {
+                    result = poll_fn(|cx| {
+                        let mut handle = std::task::ready!(lock.as_mut().poll(cx));
+                        let result = pin!(handle.on_end()).poll(cx);
+                        drop(handle);
+                        lock = Box::pin(session.clone().lock_owned());
+                        result
+                    }) => break result,
+                    // Local end() can replace the outcome waker. Poll it again
+                    // when that caller exits, including through cancellation.
+                    _ = monitor_rearm.notified() => {}
+                }
+            };
             if let Err(fe2o3_amqp::session::Error::RemoteEndedWithError(reason)) = result {
                 // Preserve terminal protocol conditions for every waiter.
                 let _ = error.set(reason.into());
@@ -188,12 +208,20 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             notification.close();
         });
         self.monitor
-            .set(Arc::new(SessionMonitor { closed, task }))
+            .set(Arc::new(SessionMonitor {
+                closed,
+                task,
+                rearm,
+            }))
             .map_err(|_| Self::could_not_set_session())?;
         Ok(())
     }
 
     async fn end(&self) -> Result<()> {
+        let monitor = self.monitor.get().ok_or_else(Self::session_not_set)?;
+        // Declare before the mutex guard so cancellation unlocks the session
+        // before waking the monitor. notify_one also retains an early wakeup.
+        let _rearm = RearmMonitorOnDrop(&monitor.rearm);
         let mut session = self
             .session
             .get()

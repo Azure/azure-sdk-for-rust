@@ -237,15 +237,20 @@ async fn pending_receives(action: ReceivePeerAction) {
 
 #[tokio::test]
 async fn session_end_wakes_every_send_and_metadata_waiter() {
-    session_end_wakes_waiters(false).await;
+    session_end_wakes_waiters(false, false).await;
 }
 
 #[tokio::test]
 async fn session_end_preserves_terminal_protocol_condition() {
-    session_end_wakes_waiters(true).await;
+    session_end_wakes_waiters(true, false).await;
 }
 
-async fn session_end_wakes_waiters(with_error: bool) {
+#[tokio::test]
+async fn cancelled_session_end_wakes_every_send_and_metadata_waiter() {
+    session_end_wakes_waiters(false, true).await;
+}
+
+async fn session_end_wakes_waiters(with_error: bool, cancel_end: bool) {
     timeout(Duration::from_secs(5), async {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
@@ -283,7 +288,12 @@ async fn session_end_wakes_waiters(with_error: bool) {
                 });
             }
             peer_end.notified().await;
-            if with_error {
+            if cancel_end {
+                assert!(matches!(
+                    session.on_end().await,
+                    Err(fe2o3_amqp::session::Error::RemoteEnded)
+                ));
+            } else if with_error {
                 session
                     .end_with_error(fe2o3_amqp::types::definitions::Error::new(
                         fe2o3_amqp::types::definitions::ErrorCondition::Custom(
@@ -329,7 +339,30 @@ async fn session_end_wakes_waiters(with_error: bool) {
         let sender = senders[0].clone();
         let metadata = tokio::spawn(async move { sender.max_message_size().await });
         tokio::task::yield_now().await;
+        let closed = session.implementation.closed().unwrap();
+        let mut waiter = Box::pin(closed.run(pending::<crate::error::Result<()>>()));
+        poll_fn(|cx| {
+            assert!(waiter.as_mut().poll(cx).is_pending());
+            Poll::Ready(())
+        })
+        .await;
+        if cancel_end {
+            // The empty control queue accepts End on the first poll, which then
+            // waits on the session outcome. Cancel before yielding so the peer
+            // cannot reply until after the caller's completion waker is abandoned.
+            let mut ending = Box::pin(session.end());
+            poll_fn(|cx| {
+                assert!(ending.as_mut().poll(cx).is_pending());
+                Poll::Ready(())
+            })
+            .await;
+            drop(ending);
+        }
         end.notify_one();
+        timeout(Duration::from_secs(1), waiter)
+            .await
+            .expect("session closure must wake waiters even after end is cancelled")
+            .unwrap_err();
         while let Some(result) = sends.join_next().await {
             let error = result.unwrap().err().unwrap();
             if with_error {
