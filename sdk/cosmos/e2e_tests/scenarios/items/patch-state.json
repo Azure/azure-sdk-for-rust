@@ -4,7 +4,7 @@
     "id": "item.patch-state",
     "title": "Patch strategies persist the exact post-image",
     "requirement": "Safe server-side and read-modify-write patch paths return and persist the same exact post-image, while attempts to patch the item ID fail without changing its addressability or stored state.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",
@@ -39,7 +39,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }

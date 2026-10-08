@@ -149,8 +149,23 @@
           "type": "array",
           "uniqueItems": true,
           "items": {
-            "type": "string",
-            "minLength": 1
+            "enum": [
+              "capabilities",
+              "changeFeed",
+              "container",
+              "database",
+              "gatewayV2",
+              "item",
+              "partitionMerge",
+              "partitionSplit",
+              "patch",
+              "perPartitionFailover",
+              "query",
+              "regionLifecycle",
+              "replicationPauseResume",
+              "transactionalBatch",
+              "writeRegionFailover"
+            ]
           }
         }
       }

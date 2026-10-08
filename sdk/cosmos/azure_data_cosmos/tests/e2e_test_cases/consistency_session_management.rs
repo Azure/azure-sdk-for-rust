@@ -17,8 +17,8 @@ use futures::StreamExt;
 use crate::e2e_test_cases::{
     fixture::{build_client_with_customizer, ClientSetup, E2eTest, TestResult},
     support::{
-        assert_wrapped_session_failure, item, selected_scenario_profile, wait_for_item_replication,
-        with_replication_paused_if, Item,
+        assert_wrapped_session_failure, item, selected_scenario_profile,
+        wait_for_item_replication_in_region, with_replication_paused_if, Item,
     },
 };
 
@@ -118,10 +118,18 @@ async fn explicit_tokens_work_when_automatic_capture_is_disabled() -> TestResult
     let Some(profile) = selected_scenario_profile("consistency.session-management").await? else {
         return Ok(());
     };
+    let regions: Vec<_> = profile
+        .selected_account()?
+        .region_names()
+        .map(|name| Region::new(name.to_owned()))
+        .collect();
+    if regions.len() != 2 {
+        return Err("session management requires exactly two configured regions".into());
+    }
     let setup = ClientSetup::from_profile(
         profile.selected_runtime()?,
         profile.selected_client()?,
-        RoutingStrategy::PreferredRegions(vec![Region::WEST_US, Region::EAST_US]),
+        RoutingStrategy::PreferredRegions(vec![regions[1].clone(), regions[0].clone()]),
     )?;
     let client = build_client_with_customizer(setup, |builder| {
         let mut defaults = OperationOptions::default();
@@ -161,7 +169,15 @@ async fn explicit_tokens_work_when_automatic_capture_is_disabled() -> TestResult
                 .await?;
             assert_eq!(explicit.into_model::<Item>()?, expected);
 
-            wait_for_item_replication(&fixture.container, &expected.id, &expected).await?;
+            wait_for_item_replication_in_region(
+                &fixture.container,
+                "A",
+                &expected.id,
+                &expected,
+                regions[1].clone(),
+                regions.clone(),
+            )
+            .await?;
             for value in 0..3 {
                 let id = format!("session-page-{value}");
                 fixture
@@ -170,8 +186,15 @@ async fn explicit_tokens_work_when_automatic_capture_is_disabled() -> TestResult
                     .await?;
             }
             let last_page_item = item("session-page-2", "A", 2);
-            wait_for_item_replication(&fixture.container, &last_page_item.id, &last_page_item)
-                .await?;
+            wait_for_item_replication_in_region(
+                &fixture.container,
+                "A",
+                &last_page_item.id,
+                &last_page_item,
+                regions[1].clone(),
+                regions.clone(),
+            )
+            .await?;
 
             let page_size = MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap());
             let options = QueryOptions::default()

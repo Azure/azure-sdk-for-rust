@@ -138,11 +138,11 @@ async fn health(State(state): State<ManagementState>) -> Json<serde_json::Value>
         "binaryNegotiatedRequests": state.metrics.binary_negotiated_requests(),
         "binaryPayloadRequests": state.metrics.binary_payload_requests(),
         "binaryResponsePayloads": state.metrics.binary_response_payloads(),
-        "defaultConsistencyRequests": state.metrics.default_consistency_requests(),
-        "eventualConsistencyRequests": state.metrics.eventual_consistency_requests(),
-        "sessionConsistencyRequests": state.metrics.session_consistency_requests(),
-        "latestCommittedConsistencyRequests": state.metrics.latest_committed_consistency_requests(),
-        "globalStrongConsistencyRequests": state.metrics.global_strong_consistency_requests(),
+        "wireDefaultConsistencyRequests": state.metrics.wire_default_consistency_requests(),
+        "wireEventualConsistencyRequests": state.metrics.wire_eventual_consistency_requests(),
+        "wireSessionConsistencyRequests": state.metrics.wire_session_consistency_requests(),
+        "wireLatestCommittedConsistencyRequests": state.metrics.wire_latest_committed_consistency_requests(),
+        "wireGlobalStrongConsistencyRequests": state.metrics.wire_global_strong_consistency_requests(),
         "gatewayRequests": state.metrics.gateway_requests(),
         "gateway20Requests": state.metrics.gateway20_requests()
     }))

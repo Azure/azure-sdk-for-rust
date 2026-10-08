@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://azure.github.io/cosmos-sdk-e2e-tests/shards.v1.json",
+  "title": "Cosmos SDK E2E CI shard manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "specVersion", "maximumDurationMinutes", "shards"],
+  "properties": {
+    "$schema": {
+      "const": "schema/shards.v1.json"
+    },
+    "specVersion": {
+      "const": "1.0"
+    },
+    "maximumDurationMinutes": {
+      "type": "integer",
+      "minimum": 15,
+      "maximum": 20
+    },
+    "shards": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "trigger", "matrix", "profiles", "backends"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]+$"
+          },
+          "trigger": {
+            "enum": ["pullRequest", "scheduled", "live"]
+          },
+          "matrix": {
+            "type": "string",
+            "pattern": "^\\.\\./.+\\.json$"
+          },
+          "profiles": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "backends": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": ["hostedEmulatorGatewayV1", "hostedEmulatorGatewayV2", "azureLive"]
+            }
+          }
+        }
+      }
+    }
+  }
+}

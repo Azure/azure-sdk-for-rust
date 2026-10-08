@@ -1,0 +1,51 @@
+{
+  "displayNames": {
+    "aad": "aad_auth",
+    "smokeTests": "smoke",
+    "sessionSingleRegion": "session_single_region",
+    "sdkDefault": "sdk_default"
+  },
+  "matrix": {
+    "Agent": {
+      "ubuntu": {
+        "OSVmImage": "env:LINUXVMIMAGE",
+        "Pool": "env:LINUXPOOL"
+      }
+    },
+    "RustToolchainName": [
+      "nightly"
+    ],
+    "AZURE_COSMOS_AUTH_MODE": [
+      "aad"
+    ],
+    "AZURE_COSMOS_E2E_BACKEND": [
+      "azureLive"
+    ],
+    "AZURE_COSMOS_ACCOUNT_WRITE_MODE": [
+      "single"
+    ],
+    "AZURE_COSMOS_ACCOUNT_MULTI_REGION": [
+      "false"
+    ],
+    "AZURE_COSMOS_ACCOUNT_REGIONS": [
+      "provisioned-primary"
+    ],
+    "AZURE_COSMOS_E2E_PROFILE": [
+      "smokeTests"
+    ],
+    "AZURE_COSMOS_E2E_ACCOUNT": [
+      "sessionSingleRegion"
+    ],
+    "AZURE_COSMOS_E2E_RUNTIME": [
+      "sdkDefault"
+    ],
+    "AZURE_COSMOS_E2E_CLIENT": [
+      "sdkDefault"
+    ],
+    "Account Settings": {
+      "Session SingleWrite": {
+        "ArmTemplateParameters": "@{ defaultConsistencyLevel = 'Session'; enableAutomaticFailover = $false; enableContinuousBackup = $true }"
+      }
+    }
+  }
+}

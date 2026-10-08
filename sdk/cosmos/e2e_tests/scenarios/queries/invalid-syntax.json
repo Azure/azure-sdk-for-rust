@@ -4,7 +4,7 @@
     "id": "query.invalid-syntax",
     "title": "Invalid query syntax returns bad request",
     "requirement": "A deferred query failure is surfaced as a typed 400 error rather than an empty feed.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "dotnet",
@@ -33,7 +33,7 @@
             ]
         },
         "azureLive": {
-            "applicability": "supported",
+            "applicability": "required",
             "fidelity": "full"
         }
     }

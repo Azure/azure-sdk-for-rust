@@ -4,7 +4,7 @@
     "id": "consistency.response-token-capture",
     "title": "Response tokens survive consistency changes",
     "requirement": "An eligible response session token is captured independently of the operation's effective consistency, and a later Session operation automatically resolves and enforces that token.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",

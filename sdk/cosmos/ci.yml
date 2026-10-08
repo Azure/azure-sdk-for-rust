@@ -176,10 +176,38 @@ extends:
         Path: sdk/cosmos/live-platform-matrix.json
         Selection: sparse
         GenerateVMJobs: true
+      # Release-gating catalog-driven differential baselines. Nightly emits
+      # structured Cargo results, which the E2E post-step converts to JUnit
+      # and scenario/profile/backend coverage reports. Keep each profile in a
+      # separate shard with a 20-minute budget.
+      - Name: Cosmos_e2e_live_fixed
+        Path: sdk/cosmos/e2e-live-fixed-matrix.json
+        Selection: all
+        GenerateVMJobs: true
+      - Name: Cosmos_e2e_live_configuration
+        Path: sdk/cosmos/e2e-live-configuration-matrix.json
+        Selection: all
+        GenerateVMJobs: true
     PreTestRunSteps:
       - template: /sdk/cosmos/eng/pipelines/resolve-test-account-steps.yml
         parameters:
           AccountSelector: $(AccountSelector)
+    PostSteps:
+      - task: Powershell@2
+        displayName: Generate Cosmos E2E coverage report
+        condition: and(succeededOrFailed(), eq(variables['AZURE_COSMOS_E2E_BACKEND'], 'azureLive'), ne(variables['AZURE_COSMOS_E2E_PROFILE'], ''))
+        inputs:
+          pwsh: true
+          filePath: $(Build.SourcesDirectory)/sdk/cosmos/eng/scripts/Write-CosmosE2eReport.ps1
+          arguments: >
+            -JUnitDirectory '$(Build.SourcesDirectory)/test-results/junit'
+            -OutputDirectory '$(Build.ArtifactStagingDirectory)/cosmos-e2e-report'
+      - task: PublishPipelineArtifact@1
+        displayName: Publish Cosmos E2E coverage report
+        condition: and(succeededOrFailed(), eq(variables['AZURE_COSMOS_E2E_BACKEND'], 'azureLive'), ne(variables['AZURE_COSMOS_E2E_PROFILE'], ''))
+        inputs:
+          targetPath: $(Build.ArtifactStagingDirectory)/cosmos-e2e-report
+          artifact: CosmosE2E-$(System.JobName)-$(System.JobAttempt)
     LiveTestMatrixConfigs:
       # Legs that still use ARM-deployed per-run Cosmos accounts (not migrated
       # to fixed self-owned accounts):
@@ -202,5 +230,9 @@ extends:
       # to bound live-account cost.
       - Name: Cosmos_live_test_aad
         Path: sdk/cosmos/live-aad-platform-matrix.json
+        Selection: all
+        GenerateVMJobs: true
+      - Name: Cosmos_e2e_live_aad
+        Path: sdk/cosmos/e2e-live-aad-matrix.json
         Selection: all
         GenerateVMJobs: true

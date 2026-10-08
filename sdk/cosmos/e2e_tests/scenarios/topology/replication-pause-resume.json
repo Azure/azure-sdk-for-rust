@@ -4,7 +4,7 @@
     "id": "topology.replication-pause-resume",
     "title": "Replication pause and resume converge without loss",
     "requirement": "A paused replica remains stale and, after replication resumes, converges to every committed item without loss or duplication.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",

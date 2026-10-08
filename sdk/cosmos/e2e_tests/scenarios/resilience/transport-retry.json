@@ -4,7 +4,7 @@
   "id": "resilience.transport-retry",
   "title": "Retryable response timeouts preserve read results",
   "requirement": "A bounded injected response timeout is retried for a read and diagnostics retain transport failure and successful terminal attempts.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",

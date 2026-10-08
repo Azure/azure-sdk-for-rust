@@ -4,7 +4,7 @@
   "id": "resilience.hedging",
   "title": "A delayed preferred region triggers a hedge",
   "requirement": "A delayed primary read launches an alternate-region request whose winning result, regions, and terminal hedge state are visible in diagnostics.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",

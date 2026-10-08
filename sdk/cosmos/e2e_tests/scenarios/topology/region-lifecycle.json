@@ -4,7 +4,7 @@
     "id": "topology.region-lifecycle",
     "title": "Clients recover across region lifecycle transitions",
     "requirement": "Reads recover when a preferred region is offlined or removed, and the region can return online or be re-added without restarting the hosted account.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",

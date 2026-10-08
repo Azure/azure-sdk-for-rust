@@ -13,6 +13,9 @@ function Test-CosmosE2eScenarioDocuments {
     $e2eTestRoot = ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'e2e_tests'))
     $scenarioSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'scenario.v1.json'))
     $profileSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'profile.v1.json'))
+    $implementationSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'implementation.v1.json'))
+    $quarantineSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'quarantine.v1.json'))
+    $shardSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'shards.v1.json'))
 
     $scenarioDocuments = @(Get-ChildItem ([System.IO.Path]::Combine($e2eTestRoot, 'scenarios')) -Recurse -Filter '*.json' | ForEach-Object {
             if (-not (Get-Content $_.FullName -Raw | Test-Json -SchemaFile $scenarioSchema)) {
@@ -28,6 +31,9 @@ function Test-CosmosE2eScenarioDocuments {
         })
 
     $implementationPath = ([System.IO.Path]::Combine($e2eTestRoot, 'implementations', 'rust.json'))
+    if (-not (Get-Content $implementationPath -Raw | Test-Json -SchemaFile $implementationSchema)) {
+        throw "Cosmos E2E implementation map failed schema validation: $implementationPath"
+    }
     $implementation = Get-Content $implementationPath -Raw | ConvertFrom-Json
     $scenarioIds = @($scenarioDocuments.id | Sort-Object -Unique)
     $implementationIds = @($implementation.scenarios.id | Sort-Object -Unique)
@@ -40,6 +46,41 @@ function Test-CosmosE2eScenarioDocuments {
     $unknownProfileIds = @($referencedProfileIds | Where-Object { $_ -notin $profileIds })
     if ($unknownProfileIds.Count -gt 0) {
         throw "Cosmos E2E scenarios reference unknown profile IDs: $($unknownProfileIds -join ', ')."
+    }
+
+    $quarantinePath = ([System.IO.Path]::Combine($e2eTestRoot, 'quarantine.json'))
+    if (-not (Get-Content $quarantinePath -Raw | Test-Json -SchemaFile $quarantineSchema)) {
+        throw "Cosmos E2E quarantine manifest failed schema validation: $quarantinePath"
+    }
+    $quarantine = Get-Content $quarantinePath -Raw | ConvertFrom-Json
+    foreach ($entry in @($quarantine.entries)) {
+        if ($entry.scenario -notin $scenarioIds) {
+            throw "Cosmos E2E quarantine references unknown scenario '$($entry.scenario)'."
+        }
+        $expiry = [DateTimeOffset]::ParseExact(
+            [string]$entry.expires,
+            'yyyy-MM-dd',
+            [Globalization.CultureInfo]::InvariantCulture)
+        if ($expiry -lt [DateTimeOffset]::UtcNow.Date) {
+            throw "Cosmos E2E quarantine for '$($entry.scenario)' expired on $($entry.expires)."
+        }
+    }
+
+    $shardPath = ([System.IO.Path]::Combine($e2eTestRoot, 'shards.v1.json'))
+    if (-not (Get-Content $shardPath -Raw | Test-Json -SchemaFile $shardSchema)) {
+        throw "Cosmos E2E shard manifest failed schema validation: $shardPath"
+    }
+    $shards = Get-Content $shardPath -Raw | ConvertFrom-Json
+    foreach ($shard in @($shards.shards)) {
+        $unknownProfiles = @($shard.profiles | Where-Object { $_ -notin $profileIds })
+        if ($unknownProfiles.Count -gt 0) {
+            throw "Cosmos E2E shard '$($shard.id)' references unknown profiles: $($unknownProfiles -join ', ')."
+        }
+        $matrixPath = ([System.IO.Path]::GetFullPath(
+                ([System.IO.Path]::Combine($e2eTestRoot, [string]$shard.matrix))))
+        if (-not (Test-Path $matrixPath)) {
+            throw "Cosmos E2E shard '$($shard.id)' references missing matrix '$matrixPath'."
+        }
     }
 }
 
@@ -123,6 +164,74 @@ function New-CosmosE2eEmulatorConfig {
     }
 }
 
+function Test-CosmosE2eLiveProfile {
+    param(
+        [Parameter(Mandatory)]
+        [string] $ProfileId
+    )
+
+    if (-not $env:AZURE_COSMOS_CONNECTION_STRING) {
+        throw "Azure Live E2E profile '$ProfileId' requires AZURE_COSMOS_CONNECTION_STRING."
+    }
+    $e2eTestRoot = ([System.IO.Path]::Combine($PSScriptRoot, '..', '..', 'e2e_tests'))
+    $profilePath = ([System.IO.Path]::Combine($e2eTestRoot, 'profiles', "$ProfileId.json"))
+    if (-not (Test-Path $profilePath)) {
+        throw "E2E profile '$ProfileId' does not exist at '$profilePath'."
+    }
+    $profile = Get-Content $profilePath -Raw | ConvertFrom-Json
+    $accounts = @($profile.accounts)
+    $selectedAccounts = if ($env:AZURE_COSMOS_E2E_ACCOUNT) {
+        @($accounts | Where-Object { $_.id -eq $env:AZURE_COSMOS_E2E_ACCOUNT })
+    }
+    elseif ($accounts.Count -eq 1) {
+        @($accounts[0])
+    }
+    else {
+        throw "AZURE_COSMOS_E2E_ACCOUNT is required for profile '$ProfileId'."
+    }
+    if ($selectedAccounts.Count -ne 1) {
+        throw "Profile '$ProfileId' does not contain exactly one account named '$env:AZURE_COSMOS_E2E_ACCOUNT'."
+    }
+    $account = $selectedAccounts[0]
+    $expectedConsistency = switch ([string]$account.consistency) {
+        'strong' { 'Strong' }
+        'boundedStaleness' { 'BoundedStaleness' }
+        'session' { 'Session' }
+        'consistentPrefix' { 'ConsistentPrefix' }
+        'eventual' { 'Eventual' }
+        default { throw "Unsupported account consistency '$($account.consistency)'." }
+    }
+    $regions = @($env:AZURE_COSMOS_ACCOUNT_REGIONS -split ';' | Where-Object { $_ })
+    $expectedMultiRegion = (@($account.regions).Count -gt 1).ToString().ToLowerInvariant()
+    $checks = [ordered]@{
+        AZURE_COSMOS_DEFAULT_CONSISTENCY = @($env:AZURE_COSMOS_DEFAULT_CONSISTENCY, $expectedConsistency)
+        AZURE_COSMOS_ACCOUNT_WRITE_MODE = @($env:AZURE_COSMOS_ACCOUNT_WRITE_MODE, [string]$account.writeMode)
+        AZURE_COSMOS_ACCOUNT_MULTI_REGION = @($env:AZURE_COSMOS_ACCOUNT_MULTI_REGION, $expectedMultiRegion)
+        AZURE_COSMOS_ACCOUNT_REGION_COUNT = @($regions.Count, @($account.regions).Count)
+    }
+    foreach ($check in $checks.GetEnumerator()) {
+        if ($check.Value[0] -ne $check.Value[1]) {
+            throw "Azure Live account is incompatible with E2E profile '$ProfileId': $($check.Key) is '$($check.Value[0])', expected '$($check.Value[1])'."
+        }
+    }
+    foreach ($axis in @('RUNTIME', 'CLIENT')) {
+        $definitions = @($profile.($axis.ToLowerInvariant() + 's'))
+        $selection = [Environment]::GetEnvironmentVariable("AZURE_COSMOS_E2E_$axis")
+        if (-not $selection -and $definitions.Count -eq 1) {
+            $selection = [string]$definitions[0].id
+            [Environment]::SetEnvironmentVariable("AZURE_COSMOS_E2E_$axis", $selection)
+        }
+        if (@($definitions | Where-Object { $_.id -eq $selection }).Count -ne 1) {
+            throw "AZURE_COSMOS_E2E_$axis='$selection' is not defined by profile '$ProfileId'."
+        }
+    }
+    $env:AZURE_COSMOS_TEST_MODE = 'required'
+    $env:RUSTFLAGS = $env:RUSTFLAGS -replace '\s*--cfg[= ]test_category="[^"]*"', ''
+    $env:RUSTFLAGS = "$($env:RUSTFLAGS) --cfg=test_category=`"e2e`""
+    $env:RUST_TEST_THREADS = '1'
+    Write-Host "Validated Azure Live E2E profile '$ProfileId' against a $($regions.Count)-region $($account.writeMode)-write $expectedConsistency account."
+}
+
 if (-not $env:AZURE_COSMOS_E2E_TESTS_VALIDATED) {
     Test-CosmosE2eScenarioDocuments
     $env:AZURE_COSMOS_E2E_TESTS_VALIDATED = '1'
@@ -163,6 +272,13 @@ if ($env:AZURE_COSMOS_FUZZ -eq '1' -and -not $env:AZURE_COSMOS_FUZZ_RAN) {
     # `cargo test` builds the account-backed driver tests on this Azure
     # Pipelines job (SYSTEM_TEAMPROJECTID is set).
     $env:AZURE_COSMOS_TEST_MODE = 'skipped'
+    return
+}
+
+# Profile-driven Azure Live path. Fixed-account resolution exports explicit
+# backend and topology metadata so profile suitability fails closed.
+if ($env:AZURE_COSMOS_E2E_PROFILE -and $env:AZURE_COSMOS_E2E_BACKEND -eq 'azureLive') {
+    Test-CosmosE2eLiveProfile -ProfileId $env:AZURE_COSMOS_E2E_PROFILE
     return
 }
 

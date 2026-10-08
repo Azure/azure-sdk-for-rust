@@ -138,6 +138,11 @@ async fn handlers_emit_metrics_spans_and_sampled_failures() -> TestResult {
     let Some(profile) = selected_scenario_profile("diagnostics.handlers-telemetry").await? else {
         return Ok(());
     };
+    let preferred_regions = profile
+        .selected_account()?
+        .region_names()
+        .map(|name| Region::new(name.to_owned()))
+        .collect();
     let metric_exporter = InMemoryMetricExporter::default();
     let metric_reader = PeriodicReader::builder(metric_exporter.clone()).build();
     let meter_provider = SdkMeterProvider::builder()
@@ -165,7 +170,7 @@ async fn handlers_emit_metrics_spans_and_sampled_failures() -> TestResult {
     let setup = ClientSetup::from_profile(
         profile.selected_runtime()?,
         profile.selected_client()?,
-        RoutingStrategy::PreferredRegions(vec![Region::EAST_US, Region::WEST_US]),
+        RoutingStrategy::PreferredRegions(preferred_regions),
     )?;
     let client = build_client_with_customizer(setup, |builder| {
         Ok(builder

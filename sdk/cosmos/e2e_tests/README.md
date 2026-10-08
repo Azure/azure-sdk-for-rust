@@ -91,6 +91,83 @@ The blocking `e2e-dynamic-topology-matrix.json` selects the single
 `dynamicTopology` setup cell through both hosted gateways. Fixture serialization
 keeps account-wide topology controls isolated from other scenarios in the shard.
 
+## Azure Live release gate
+
+The catalog-driven live gate has fixed-account and provisioned-account legs:
+
+- `e2e-live-fixed-matrix.json` runs `smokeTests` and `coreOperations` against a
+  fixed single-region Session account;
+- `e2e-live-configuration-matrix.json` runs `liveConfiguration` against a
+  fixed two-region, single-write Session account; and
+- `e2e-live-aad-matrix.json` provisions a short-lived account and reruns the
+  smoke profile with Entra ID data-plane authentication.
+
+The fixed-account resolver exports the actual consistency, write mode, and
+region list. Test setup compares those values with the selected profile before
+compiling the isolated `e2e` category. An incompatible or incompletely
+described account fails setup; required live coverage cannot silently skip.
+The provisioned shard declares equivalent metadata in its matrix and obtains
+the endpoint and consistency from the ARM deployment outputs.
+
+For a local fixed-account run, dot-source the resolver as described in the
+pipeline README, set the four `AZURE_COSMOS_E2E_*` axes, and invoke the Cosmos
+test setup before running the `e2e_tests` integration target. The selected
+account must match the profile topology. Hosted runs instead set
+`AZURE_COSMOS_EMULATOR_FLAVOR` to `inmemory-v1` or `inmemory-v2`; setup creates
+the account and management endpoint automatically.
+
+Dedicated live shards use nightly Rust. The standard test runner writes Cargo
+JSON, the repository converter emits JUnit, and
+`eng/scripts/Write-CosmosE2eReport.ps1` produces `coverage.json` and
+`coverage.md`. Each record includes the scenario, profile, account, runtime,
+client, backend, actual transport, status, duration, and attempt count.
+Required tests that are missing, failed, or skipped fail the report gate. The
+canonical pull-request, scheduled, and live shard inventory is
+`shards.v1.json`; every shard has a 20-minute ceiling.
+
+Pipeline infrastructure may retry an environmental job once. Source-native
+product tests do not add broad retries or convert failures into skips. A
+temporary quarantine belongs in `quarantine.json` and must name an owner,
+public issue, reason, expiry date, and exact profile/backend cells. Catalog
+validation rejects unknown or expired entries, while reports label an allowed
+failure `quarantined` rather than `passed`.
+
+## Portable capability and adapter contract
+
+`scenario.v1.json` is the versioned capability vocabulary. Capabilities name
+service or backend behavior (`item`, `query`, `gatewayV2`,
+`partitionSplit`), never a Rust type or method. `implementation.v1.json`
+defines the common per-SDK source-native map. A peer SDK may mark a scenario
+`unsupported` with a reason; it must not emulate executable behavior in JSON.
+
+Profiles describe semantic setup intent. Each SDK adapter projects a field as
+follows:
+
+| Profile concern | Rust | Java/.NET | Python |
+| --- | --- | --- | --- |
+| Account consistency, regions, write mode | Backend/account setup | Backend/account setup | Backend/account setup |
+| Gateway V2 and PPCB | Public option when available; otherwise backend default | Public or test-only SDK option | Unsupported unless exposed publicly |
+| Binary encoding | Public client/runtime option | Public or test-only SDK option | Unsupported unless exposed publicly |
+| Preferred/account-order routing | Public client routing | Public client routing | Public equivalent when available |
+| Read-consistency defaults | Public runtime/client/operation option | Public equivalent when available | Account/backend-driven or unsupported |
+| Diagnostics, metrics, tracing | SDK-native handlers and OpenTelemetry | SDK-native diagnostics and OpenTelemetry | SDK-native diagnostics hooks |
+
+An adapter must fail its cell as unsupported when it cannot faithfully project
+a required setup axis. Internal or test-only switches are recorded in that
+SDK's implementation documentation and are not promoted into scenario
+requirements. This keeps scenario identity portable without requiring peer
+SDKs to copy Rust APIs.
+
+## Hosted health-counter contract
+
+All Gateway V1 and Gateway V2 `/health` request, binary, and consistency
+counters increment only after the host has constructed a complete HTTP
+response. Decode, dispatch, buffering, and response-conversion failures are
+not counted. Consistency fields use `wireDefaultConsistencyRequests`,
+`wireEventualConsistencyRequests`, and corresponding `wire*` names. The
+Default bucket means no non-default read-consistency wire header was observed;
+it is not a claim about semantic consistency selected by the service.
+
 ## Precedents and implementations
 
 The `precedents` array records prior evidence for expected behavior. A

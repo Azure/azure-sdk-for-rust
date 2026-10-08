@@ -1,0 +1,5 @@
+{
+  "$schema": "schema/quarantine.v1.json",
+  "specVersion": "1.0",
+  "entries": []
+}

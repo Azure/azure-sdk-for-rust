@@ -386,17 +386,14 @@ Scope:
 - promotion of validated `azureLive` applicability from `supported` to
   `required`;
 - complete diagnostics and OpenTelemetry audit;
-- TODO: define the semantic boundary of every hosted-emulator `/health` counter before treating
-  the counters as a reporting contract: decoded request, completed emulator operation, or
-  successfully emitted host response. Then place related Gateway V1/Gateway V2 increments on the
-  chosen side of fallible conversion boundaries and add failure-path tests that pin the result.
-  PR3 intentionally keeps the current placement because generated Gateway V2 responses are
-  buffered and use validated headers, no reachable conversion failure or cross-counter equality
-  contract has been demonstrated, and moving counters now would choose semantics implicitly. The
-  current `defaultConsistencyRequests` name is also retained in PR3: it is used as the wire bucket
-  for requests carrying no non-default read-consistency-strategy signal, not as a semantic count of
-  Default reads. PR5 must decide whether to rename it to reflect that wire meaning or add separate
-  semantic read counters before exposing these values in reports;
+- hosted-emulator `/health` request, binary, and read-consistency counters use
+  one semantic boundary: the host successfully constructed the complete HTTP
+  response. Gateway V1 and Gateway V2 increments occur after every fallible
+  request decode, emulator dispatch, response buffering, and HTTP conversion.
+  Decode and conversion failures do not increment these counters. The
+  read-consistency fields are named `wire*ConsistencyRequests`; the Default
+  bucket therefore means that no non-default wire signal was present, not
+  that the service necessarily performed a semantic Default read;
 - generated pull-request and scheduled shard manifests;
 - JUnit and scenario/profile/backend coverage reports;
 - runtime measurement and shard calibration;
@@ -407,6 +404,22 @@ Scope:
 
 PR5 is the release-readiness gate for the suite rather than a place to add
 large amounts of previously untested functionality.
+
+The release gate uses fixed Session accounts for `smokeTests`,
+`coreOperations`, and the two-region `liveConfiguration` profile. A separate
+provisioned Entra ID smoke shard confirms that source-native scenarios do not
+depend on key authentication. Dedicated live shards use nightly Rust so Cargo
+results can be converted to JUnit. `Write-CosmosE2eReport.ps1` joins those
+results to the catalog and implementation map, fails on missing or skipped
+required scenarios, emits JSON and Markdown coverage, and enforces the
+20-minute shard ceiling declared by `e2e_tests/shards.v1.json`.
+
+Environmental reruns are owned by pipeline infrastructure and rerun the whole
+shard at most once; product tests do not hide retries. A scenario quarantine
+must be declared in `e2e_tests/quarantine.json` with an owner, public issue,
+reason, expiry date, and exact backend/profile cells. Quarantined failures are
+reported as `quarantined`, never `passed`, and expired or unknown entries fail
+catalog validation.
 
 ## Pull-request workflow
 
