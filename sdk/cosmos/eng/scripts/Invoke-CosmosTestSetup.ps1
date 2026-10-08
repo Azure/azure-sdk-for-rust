@@ -14,8 +14,6 @@ function Test-CosmosE2eScenarioDocuments {
     $scenarioSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'scenario.v1.json'))
     $profileSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'profile.v1.json'))
     $implementationSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'implementation.v1.json'))
-    $quarantineSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'quarantine.v1.json'))
-    $shardSchema = ([System.IO.Path]::Combine($e2eTestRoot, 'schema', 'shards.v1.json'))
 
     $scenarioDocuments = @(Get-ChildItem ([System.IO.Path]::Combine($e2eTestRoot, 'scenarios')) -Recurse -Filter '*.json' | ForEach-Object {
             if (-not (Get-Content $_.FullName -Raw | Test-Json -SchemaFile $scenarioSchema)) {
@@ -46,41 +44,6 @@ function Test-CosmosE2eScenarioDocuments {
     $unknownProfileIds = @($referencedProfileIds | Where-Object { $_ -notin $profileIds })
     if ($unknownProfileIds.Count -gt 0) {
         throw "Cosmos E2E scenarios reference unknown profile IDs: $($unknownProfileIds -join ', ')."
-    }
-
-    $quarantinePath = ([System.IO.Path]::Combine($e2eTestRoot, 'quarantine.json'))
-    if (-not (Get-Content $quarantinePath -Raw | Test-Json -SchemaFile $quarantineSchema)) {
-        throw "Cosmos E2E quarantine manifest failed schema validation: $quarantinePath"
-    }
-    $quarantine = Get-Content $quarantinePath -Raw | ConvertFrom-Json
-    foreach ($entry in @($quarantine.entries)) {
-        if ($entry.scenario -notin $scenarioIds) {
-            throw "Cosmos E2E quarantine references unknown scenario '$($entry.scenario)'."
-        }
-        $expiry = [DateTimeOffset]::ParseExact(
-            [string]$entry.expires,
-            'yyyy-MM-dd',
-            [Globalization.CultureInfo]::InvariantCulture)
-        if ($expiry -lt [DateTimeOffset]::UtcNow.Date) {
-            throw "Cosmos E2E quarantine for '$($entry.scenario)' expired on $($entry.expires)."
-        }
-    }
-
-    $shardPath = ([System.IO.Path]::Combine($e2eTestRoot, 'shards.v1.json'))
-    if (-not (Get-Content $shardPath -Raw | Test-Json -SchemaFile $shardSchema)) {
-        throw "Cosmos E2E shard manifest failed schema validation: $shardPath"
-    }
-    $shards = Get-Content $shardPath -Raw | ConvertFrom-Json
-    foreach ($shard in @($shards.shards)) {
-        $unknownProfiles = @($shard.profiles | Where-Object { $_ -notin $profileIds })
-        if ($unknownProfiles.Count -gt 0) {
-            throw "Cosmos E2E shard '$($shard.id)' references unknown profiles: $($unknownProfiles -join ', ')."
-        }
-        $matrixPath = ([System.IO.Path]::GetFullPath(
-                ([System.IO.Path]::Combine($e2eTestRoot, [string]$shard.matrix))))
-        if (-not (Test-Path $matrixPath)) {
-            throw "Cosmos E2E shard '$($shard.id)' references missing matrix '$matrixPath'."
-        }
     }
 }
 

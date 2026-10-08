@@ -91,9 +91,9 @@ The blocking `e2e-dynamic-topology-matrix.json` selects the single
 `dynamicTopology` setup cell through both hosted gateways. Fixture serialization
 keeps account-wide topology controls isolated from other scenarios in the shard.
 
-## Azure Live release gate
+## Azure Live execution
 
-The catalog-driven live gate has fixed-account and provisioned-account legs:
+The catalog-driven live matrix has fixed-account and provisioned-account legs:
 
 - `e2e-live-fixed-matrix.json` runs `smokeTests` and `coreOperations` against a
   fixed single-region Session account;
@@ -105,7 +105,8 @@ The catalog-driven live gate has fixed-account and provisioned-account legs:
 The fixed-account resolver exports the actual consistency, write mode, and
 region list. Test setup compares those values with the selected profile before
 compiling the isolated `e2e` category. An incompatible or incompletely
-described account fails setup; required live coverage cannot silently skip.
+described account fails setup. This setup check is not proof that every required
+scenario executed.
 The provisioned shard declares equivalent metadata in its matrix and obtains
 the endpoint and consistency from the ARM deployment outputs.
 
@@ -116,21 +117,19 @@ account must match the profile topology. Hosted runs instead set
 `AZURE_COSMOS_EMULATOR_FLAVOR` to `inmemory-v1` or `inmemory-v2`; setup creates
 the account and management endpoint automatically.
 
-Dedicated live shards use nightly Rust. The standard test runner writes Cargo
-JSON, the repository converter emits JUnit, and
-`eng/scripts/Write-CosmosE2eReport.ps1` produces `coverage.json` and
-`coverage.md`. Each record includes the scenario, profile, account, runtime,
-client, backend, actual transport, status, duration, and attempt count.
-Required tests that are missing, failed, or skipped fail the report gate. The
-canonical pull-request, scheduled, and live shard inventory is
-`shards.v1.json`; every shard has a 20-minute ceiling.
+All shards use the standard repository test runner: test failures fail the test
+task. Dedicated live shards use nightly Rust, which also enables Cargo JSON
+capture and the existing JUnit conversion and publication steps. Hosted shards
+on stable Rust use the normal test output without structured result capture.
+There is no separate scenario-coverage report or quarantine policy that overrides
+test failures. A passing test result alone does not certify that every required
+scenario executed; profile selection can currently return successfully without
+running an unselected scenario.
 
-Pipeline infrastructure may retry an environmental job once. Source-native
-product tests do not add broad retries or convert failures into skips. A
-temporary quarantine belongs in `quarantine.json` and must name an owner,
-public issue, reason, expiry date, and exact profile/backend cells. Catalog
-validation rejects unknown or expired entries, while reports label an allowed
-failure `quarantined` rather than `passed`.
+The matrix files referenced by `sdk/cosmos/ci.yml` define the pull-request,
+scheduled, and live shards. Target 15–20 minutes per shard when tuning against
+observed CI runtimes. This is a tuning target, not an enforced E2E duration
+ceiling; existing pipeline job timeouts remain unchanged.
 
 ## Portable capability and adapter contract
 

@@ -394,32 +394,35 @@ Scope:
   read-consistency fields are named `wire*ConsistencyRequests`; the Default
   bucket therefore means that no non-default wire signal was present, not
   that the service necessarily performed a semantic Default read;
-- generated pull-request and scheduled shard manifests;
-- JUnit and scenario/profile/backend coverage reports;
+- pull-request, scheduled, and live shard selection in CI matrix files;
+- ordinary test results, with existing JUnit publication on nightly jobs;
 - runtime measurement and shard calibration;
-- 15–20 minute maximum shard target;
-- retry and quarantine policy for environmental failures;
+- a 15–20 minute shard tuning target, not a custom duration gate;
+- test failures remain blocking without a custom quarantine override;
 - documentation for local, hosted-emulator, and live execution; and
 - cross-SDK portability review with Java, .NET, and Python implementations.
 
-PR5 is the release-readiness gate for the suite rather than a place to add
-large amounts of previously untested functionality.
+PR5 focuses on live execution and release readiness rather than adding a
+separate reporting or test-execution system.
 
-The release gate uses fixed Session accounts for `smokeTests`,
+The live matrix uses fixed Session accounts for `smokeTests`,
 `coreOperations`, and the two-region `liveConfiguration` profile. A separate
 provisioned Entra ID smoke shard confirms that source-native scenarios do not
 depend on key authentication. Dedicated live shards use nightly Rust so Cargo
-results can be converted to JUnit. `Write-CosmosE2eReport.ps1` joins those
-results to the catalog and implementation map, fails on missing or skipped
-required scenarios, emits JSON and Markdown coverage, and enforces the
-20-minute shard ceiling declared by `e2e_tests/shards.v1.json`.
+results can be converted to JUnit by the existing repository infrastructure.
+Hosted jobs on stable Rust use normal test output. Both paths retain the
+standard test runner's failure handling; no custom report or quarantine policy
+overrides failed tests.
 
-Environmental reruns are owned by pipeline infrastructure and rerun the whole
-shard at most once; product tests do not hide retries. A scenario quarantine
-must be declared in `e2e_tests/quarantine.json` with an owner, public issue,
-reason, expiry date, and exact backend/profile cells. Quarantined failures are
-reported as `quarantined`, never `passed`, and expired or unknown entries fail
-catalog validation.
+CI matrix files define shard selection. The 15–20 minute target guides tuning
+against measured CI runtimes; it is not an enforced E2E duration ceiling.
+Existing pipeline job timeouts remain unchanged.
+
+Catalog validation checks scenario/profile documents and implementation mappings,
+not execution evidence. A passing run does not by itself prove that every
+required scenario ran: profile selection can currently return successfully for
+unselected scenarios. Preventing false-green selection remains a separate
+test-selection concern, not a guarantee supplied by a coverage report.
 
 ## Pull-request workflow
 
@@ -464,9 +467,10 @@ The roadmap is complete when:
 - scheduled hosted-emulator matrices cover deterministic fault and topology
   behavior through Gateway V1 and Gateway V2;
 - every eligible scenario runs against appropriate live account profiles;
-- required backend coverage is enforced rather than informational;
-- CI reports scenario/profile/backend coverage;
-- no shard exceeds the 15–20 minute target under normal conditions; and
+- required scenario selection is validated and functional failures fail CI;
+- CI uses standard test results without a separate scenario-coverage report;
+- shard runtimes are measured and tuned toward 15–20 minutes under normal
+  conditions; and
 - the catalog is usable by peer SDK teams without requiring them to adopt Rust
   APIs or a shared behavioral interpreter.
 
