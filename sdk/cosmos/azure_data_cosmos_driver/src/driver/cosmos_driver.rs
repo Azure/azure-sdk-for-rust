@@ -3279,11 +3279,12 @@ impl CosmosDriver {
             let prior_diagnostics = error.diagnostics();
             let replacement_container = operation.container().cloned();
             let plan_options = plan.plan_options.clone();
+            let persistent_deadline = plan.operation.absolute_deadline();
             let operation = operation.with_absolute_deadline(absolute_deadline);
             *plan = self
                 .plan_operation_resolved(operation, &options, None, &plan_options, None)
                 .await?;
-            plan.clear_execution_deadlines();
+            plan.reset_replan_deadlines(persistent_deadline);
             plan.container_recreation_recovery_attempted = true;
             let (retry_result, retry_successes, _) = self
                 .execute_plan_once(plan, replacement_container, &options, absolute_deadline)
@@ -4065,6 +4066,11 @@ impl CosmosDriver {
         continuation: Option<&ContinuationToken>,
         plan_options: &PlanOptions,
     ) -> crate::error::Result<OperationPlan> {
+        if operation.read_many.is_some() && continuation.is_some() {
+            return Err(crate::read_many::invalid(
+                "read-many does not support resume",
+            ));
+        }
         if operation.operation_type() == crate::models::OperationType::Patch
             && !operation.patch_strategy_is_resolved()
         {
@@ -4240,6 +4246,22 @@ impl CosmosDriver {
         // Per-Request differences are layered on at execution time via
         // OperationOverrides; the operation itself is never mutated.
         let operation = Arc::new(operation);
+
+        if let Some(request) = &operation.read_many {
+            let container = operation
+                .container()
+                .cloned()
+                .ok_or_else(|| crate::read_many::invalid("read-many requires a container"))?;
+            let mut topology = CachedTopologyProvider::new(
+                &self.pk_range_cache,
+                container,
+                self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
+            );
+            let pipeline =
+                super::dataflow::read_many::build(operation.clone(), request, &mut topology)
+                    .await?;
+            return planner::finalize_plan(pipeline, operation, true, plan_options);
+        }
 
         // Resolve the continuation token (if any) into a planner-ready resume
         // state. Server-issued tokens are only valid for trivial operations.

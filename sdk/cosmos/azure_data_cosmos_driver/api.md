@@ -583,6 +583,7 @@ pub mod driver {
     }
     impl OperationPlan {
         pub fn to_continuation_token(&self) -> crate::error::Result<ContinuationToken>;
+        pub fn with_execution_deadline(self, deadline: Instant) -> Self;
     }
 }
 pub mod error {
@@ -1516,6 +1517,7 @@ pub mod models {
         pub fn read_container_by_rid<impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>, impl Into<std::borrow::Cow<'static, str>>: Into<std::borrow::Cow<'static, str>>>(account: AccountReference, db_rid: impl Into<std::borrow::Cow<'static, str>>, container_rid: impl Into<std::borrow::Cow<'static, str>>) -> Self;
         pub fn read_database(database: DatabaseReference) -> Self;
         pub fn read_item(item: ItemReference) -> Self;
+        pub fn read_many(container: ContainerReference, selection: crate::read_many::ReadManySelection, filter: Option<crate::read_many::ReadManyFilter>) -> Self;
         pub fn read_offer<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(account: AccountReference, offer_id: impl Into<Cow<'static, str>>) -> Self;
         pub fn replace_container(container: ContainerReference) -> Self;
         pub fn replace_item(item: ItemReference) -> Self;
@@ -3278,6 +3280,24 @@ pub mod options {
     pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
     pub const DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS: usize = 32;
     pub const DEFAULT_MAX_FAN_OUT: u32 = 100;
+}
+pub mod read_many {
+    #[derive(Clone, Debug)]
+    pub struct ReadManyFilter {
+    }
+    impl ReadManyFilter {
+        pub fn with_parameter<impl Into<String>: Into<String>>(self, name: impl Into<String>, value: Value) -> crate::Result<Self>;
+    }
+    impl FromStr for ReadManyFilter {
+        type Err = CosmosError;
+        fn from_str(value: &str) -> crate::Result<Self>;
+    }
+    #[derive(Clone, Debug)]
+    #[non_exhaustive]
+    pub enum ReadManySelection {
+        Items(Vec<(crate::models::PartitionKey, String)>),
+        Partitions(Vec<crate::models::PartitionKey>),
+    }
 }
 #[cfg(feature = "__internal_mocking")]
 pub mod test {

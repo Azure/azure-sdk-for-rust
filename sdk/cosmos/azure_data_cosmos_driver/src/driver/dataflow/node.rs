@@ -4,8 +4,12 @@
 //! [`PipelineNode`] trait and [`PageResult`] returned from each pull.
 
 use async_trait::async_trait;
+use std::sync::Arc;
 
-use crate::models::{CosmosResponse, FeedRange};
+use crate::{
+    diagnostics::DiagnosticsContext,
+    models::{CosmosResponse, FeedRange},
+};
 
 use super::{context::PipelineContext, snapshot::PipelineNodeState};
 
@@ -73,7 +77,11 @@ impl std::fmt::Debug for PageResult {
 /// The payload is a private enum so the only ways to obtain a value crate-wide
 /// are [`Self::try_tiling`] and the test-only [`Self::untiled`]; the invariant
 /// cannot be bypassed by constructing or mutating a variant directly.
-pub(crate) struct SplitReplacements(Repr);
+pub(crate) struct SplitReplacements {
+    nodes: Repr,
+    // Only used if the parent rejects replacements; accepted nodes already carry these attempts.
+    rejection_diagnostics: Vec<Arc<DiagnosticsContext>>,
+}
 
 enum Repr {
     /// Validated by [`SplitReplacements::try_tiling`], stored in ascending
@@ -104,18 +112,48 @@ impl SplitReplacements {
         }
         ranged.sort_by(|a, b| a.0.min_inclusive().cmp(b.0.min_inclusive()));
         validate_exact_coverage(scope, ranged.iter().map(|(range, _)| range))?;
-        Ok(Self(Repr::Tiled(ranged)))
+        Ok(Self {
+            nodes: Repr::Tiled(ranged),
+            rejection_diagnostics: Vec::new(),
+        })
     }
 
     /// Test-only escape hatch for mock nodes that carry no feed range and so
     /// have no tiling invariant to uphold.
     #[cfg(test)]
     pub(crate) fn untiled(nodes: Vec<Box<dyn PipelineNode>>) -> Self {
-        Self(Repr::Untiled(nodes))
+        Self {
+            nodes: Repr::Untiled(nodes),
+            rejection_diagnostics: Vec::new(),
+        }
+    }
+
+    pub(crate) fn with_rejection_diagnostics(
+        mut self,
+        diagnostics: Vec<Arc<DiagnosticsContext>>,
+    ) -> Self {
+        self.rejection_diagnostics = diagnostics;
+        self
+    }
+
+    /// Rejects replacements without discarding the attempts they would have carried.
+    pub(crate) fn into_error(mut self, error: crate::CosmosError) -> crate::CosmosError {
+        if self.rejection_diagnostics.is_empty() {
+            return error;
+        }
+        self.rejection_diagnostics.extend(error.diagnostics());
+        let status = error.status();
+        let mut builder = crate::CosmosErrorBuilder::from_error(error);
+        if let Some(diagnostics) =
+            DiagnosticsContext::aggregate_sub_operations(&self.rejection_diagnostics)
+        {
+            builder = builder.with_diagnostics(Arc::new(diagnostics.with_operation_status(status)));
+        }
+        builder.build()
     }
 
     pub(crate) fn len(&self) -> usize {
-        match &self.0 {
+        match &self.nodes {
             Repr::Tiled(ranged) => ranged.len(),
             #[cfg(test)]
             Repr::Untiled(nodes) => nodes.len(),
@@ -124,7 +162,7 @@ impl SplitReplacements {
 
     /// Consumes the set, yielding nodes in ascending range order.
     pub(crate) fn into_nodes(self) -> Vec<Box<dyn PipelineNode>> {
-        match self.0 {
+        match self.nodes {
             Repr::Tiled(ranged) => ranged.into_iter().map(|(_, node)| node).collect(),
             #[cfg(test)]
             Repr::Untiled(nodes) => nodes,
@@ -137,7 +175,7 @@ impl SplitReplacements {
     pub(crate) fn into_ranged(
         self,
     ) -> crate::error::Result<Vec<(FeedRange, Box<dyn PipelineNode>)>> {
-        match self.0 {
+        match self.nodes {
             Repr::Tiled(ranged) => Ok(ranged),
             #[cfg(test)]
             Repr::Untiled(nodes) => nodes

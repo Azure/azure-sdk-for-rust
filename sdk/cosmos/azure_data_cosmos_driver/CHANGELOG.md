@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- Added non-resumable read-many plans with item/partition selections, parameterized filters, bounded query batches, and shared execution deadlines. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 - Added `UserAgentProperty` and `CosmosDriverRuntimeBuilder::with_user_agent_property` so wrapping SDKs can add validated `key=value` entries (for example a language runtime version such as `rt=.NET 8.0.1`; values may contain spaces but never `;`, `(`, or `)`) to the `User-Agent` metadata segment. ([#5406](https://github.com/Azure/azure-sdk-for-rust/pull/5406))
 
 ### Breaking Changes

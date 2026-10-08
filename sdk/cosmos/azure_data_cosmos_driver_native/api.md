@@ -678,6 +678,36 @@ pub mod partition_key {
         pub bool_value: u8,
     }
 }
+pub mod read_many {
+    #[no_mangle]
+    pub unsafe extern "C" fn cosmos_read_many_open_submit(driver: *const crate::driver::DriverHandle, request: *const CosmosReadManyRequest, queue: *mut crate::completion::CompletionQueue, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
+    pub unsafe extern "C" fn cosmos_read_many_request_init(out: *mut CosmosReadManyRequest);
+    #[repr(C)]
+    pub struct CosmosReadManyIdentity {
+        pub partition_key: *const crate::partition_key::CosmosPartitionKeyComponent,
+        pub partition_key_len: usize,
+        pub item_id: crate::string::CosmosStringView,
+    }
+    #[repr(C)]
+    pub struct CosmosReadManyParameter {
+        pub name: crate::string::CosmosStringView,
+        pub json_value: crate::string::CosmosStringView,
+    }
+    #[repr(C)]
+    pub struct CosmosReadManyRequest {
+        pub struct_size_bytes: u32,
+        pub abi_version: u32,
+        pub operation: crate::op_request::CosmosOperationRequest,
+        pub selection_kind: u32,
+        pub identities: *const CosmosReadManyIdentity,
+        pub identities_len: usize,
+        pub filter: crate::string::CosmosStringView,
+        pub parameters: *const CosmosReadManyParameter,
+        pub parameters_len: usize,
+        pub reserved: [u32; 4],
+    }
+}
 pub mod response_header {
     #[no_mangle]
     pub extern "C" fn cosmos_header_name(id: CosmosHeaderId) -> *const std::ffi::c_char;

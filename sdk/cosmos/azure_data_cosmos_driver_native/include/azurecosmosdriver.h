@@ -2089,6 +2089,87 @@ typedef struct cosmos_driver_options_config_v2_t {
 } cosmos_driver_options_config_v2_t;
 
 /**
+ * One selected logical key, with an item id only for item selection.
+ */
+typedef struct cosmos_read_many_identity_t {
+  /**
+   * Counted components in container path order; must describe a complete key.
+   */
+  const struct cosmos_partition_key_component_t *partition_key;
+  /**
+   * Component count (one to three).
+   */
+  uintptr_t partition_key_len;
+  /**
+   * Required for Items; must be NULL/0 for Partitions.
+   */
+  struct cosmos_string_view_t item_id;
+} cosmos_read_many_identity_t;
+
+/**
+ * A named filter parameter containing one JSON value.
+ */
+typedef struct cosmos_read_many_parameter_t {
+  /**
+   * Parameter name including `@`.
+   */
+  struct cosmos_string_view_t name;
+  /**
+   * UTF-8 JSON encoding of the value.
+   */
+  struct cosmos_string_view_t json_value;
+} cosmos_read_many_parameter_t;
+
+/**
+ * Read-many cursor input. Initialize with [`cosmos_read_many_request_init()`].
+ *
+ * Pointers are borrowed only until submit returns. Results use the existing
+ * cursor completion format and ownership rules. No durable resume is supported.
+ */
+typedef struct cosmos_read_many_request_t {
+  /**
+   * Readable record size, including zero-filled extensions.
+   */
+  uint32_t struct_size_bytes;
+  /**
+   * Must be 1.
+   */
+  uint32_t abi_version;
+  /**
+   * Container, session, activity, page hints, and options; kind must be zero.
+   */
+  struct cosmos_operation_request_t operation;
+  /**
+   * 1: exact items; 2: complete logical partitions.
+   */
+  uint32_t selection_kind;
+  /**
+   * Selected identities. NULL/0 selects nothing, never the full container.
+   */
+  const struct cosmos_read_many_identity_t *identities;
+  /**
+   * Number of selected identities.
+   */
+  uintptr_t identities_len;
+  /**
+   * Optional scalar predicate using alias `c`, without WHERE.
+   */
+  struct cosmos_string_view_t filter;
+  /**
+   * Named JSON parameters for the predicate.
+   */
+  const struct cosmos_read_many_parameter_t *parameters;
+  /**
+   * Number of parameters.
+   */
+  uintptr_t parameters_len;
+  /**
+   * Must be zero.
+   */
+  uint32_t reserved[4];
+} cosmos_read_many_request_t;
+
+/**
  * Flat C ABI options for building a `cosmos_runtime_t` in a single call.
  *
  * Every field is sentinel-encoded so a zeroed struct (or a NULL pointer
@@ -2919,6 +3000,34 @@ uintptr_t cosmos_partition_key_component_count(const struct cosmos_partition_key
  * returning `0`).
  */
 bool cosmos_partition_key_is_empty(const struct cosmos_partition_key_t *pk);
+
+/**
+ * Initializes a caller-owned request. Set selection kind and container before use.
+ *
+ * # Safety
+ *
+ * `out` must be NULL or point to writable, aligned storage for the full record.
+ */
+void cosmos_read_many_request_init(struct cosmos_read_many_request_t *out);
+
+/**
+ * Opens a read-many cursor without consuming its first page.
+ *
+ * Use the existing cursor Next, Free, and completion functions. Checkpoint is
+ * unsupported but does not terminate live iteration.
+ *
+ * # Safety
+ *
+ * Handles must be live and synchronized against release. `request` must
+ * describe an aligned readable size/version prefix and the declared allocation;
+ * nested arrays and strings must remain readable until this call returns.
+ * `out_pre_error`, when non-NULL, must be writable.
+ */
+struct cosmos_operation_handle_t *cosmos_read_many_open_submit(const struct cosmos_driver_t *driver,
+                                                               const struct cosmos_read_many_request_t *request,
+                                                               struct cosmos_completion_queue_t *queue,
+                                                               intptr_t user_data,
+                                                               cosmos_status_code_t *out_pre_error);
 
 /**
  * Returns the canonical wire header name (NUL-terminated UTF-8) for a header

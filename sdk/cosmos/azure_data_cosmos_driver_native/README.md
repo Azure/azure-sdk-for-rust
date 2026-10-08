@@ -57,12 +57,38 @@ for the full design.
 | `cosmos_submit_operation` (legacy feeds) | ✅ with explicit errors for unrepresentable results |
 | Response status / RU / body / activity-id / session-token / etag / continuation | ✅ |
 | Retained query/read-feed/change-feed cursors | Supported through `cosmos_cursor_*` |
+| Read-many with optional scoped filters | `cosmos_read_many_open_submit` uses the retained cursor lifecycle |
 | Multi-part response body iteration | All buffers in cursor completions |
 | Diagnostics accessors | Supported through completion diagnostics |
 | Patch instruction builder | ⏳ planned |
 | Transactional batch sub-operation builder | ⏳ planned |
 | Custom per-operation request headers | ✅ via `cosmos_CosmosOperationOptions.custom_headers` (array of `cosmos_CosmosHeaderKv`) |
 | Driver fault injection | Supported through versioned `cosmos_driver_options_config_v2_t` records |
+
+## Read-many cursors
+
+Initialize `cosmos_read_many_request_t` with `cosmos_read_many_request_init`,
+set its container, and select either exact items (`selection_kind = 1`) or
+complete logical partitions (`selection_kind = 2`). Supply counted identities;
+partition selections must leave each item id unset. Duplicate selections are
+removed, empty selections read nothing, and missing items are omitted.
+
+An optional scalar SQL predicate using alias `c` narrows the selection.
+Bind values through the counted parameter array, with names including `@` and
+values encoded as JSON. Filters cannot replace the selection. Full SELECT
+queries, subqueries, projections, ordering, and aggregates belong in the query
+API. Hierarchical prefixes are not supported for partition selections.
+
+Submit through `cosmos_read_many_open_submit` on a cursor queue, then use the
+existing Next, completion, and Free APIs. Input buffers can be released as soon
+as submit returns. Pages expose every item buffer and remain valid until their
+completion is freed, even after advancing or freeing the cursor.
+Empty pages are not End. Results are unordered and not a transactional snapshot.
+
+Durable checkpoints and resume are unsupported for both selection modes;
+an unsupported checkpoint does not stop live iteration. The Rust SDK uses the
+same plan, with an explicit `collect_all` helper for callers willing to buffer
+all results in memory.
 
 ## Building
 

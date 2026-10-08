@@ -2,6 +2,8 @@
 
 ## 1.0.0 (2026-10-08)
 
+- Added paged `ContainerClient::read_many` for item or complete-partition selections, optional scoped filters, and explicit result collection with aggregate diagnostics. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+
 ### Breaking Changes
 
 - Changed the `User-Agent` header format to `azsdk-rust-cosmos/{sdk-version} (drv={driver-version}; {os}; {arch}; {rustc}[; ft={B64}]) [{suffix}]`, replacing the separate driver and platform tokens and the trailing `|F<HEX>` feature-flag token. To fit the 255-byte limit, platform segments are removed whole from right to left; once none remain, the parentheses are omitted and the suffix, then the SDK identifier, may be shortened. ([#5406](https://github.com/Azure/azure-sdk-for-rust/pull/5406))

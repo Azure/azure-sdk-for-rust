@@ -111,6 +111,29 @@ pub struct OperationPlan {
 }
 
 impl OperationPlan {
+    /// Limits all subsequent page requests to a shared absolute deadline.
+    ///
+    /// Use this when collecting an entire feed under one timeout budget.
+    /// This only shortens an existing deadline and does not include caller idle
+    /// time before this method is called. A timeout terminates the request using
+    /// the driver's normal error and diagnostics contract.
+    pub fn with_execution_deadline(mut self, deadline: Instant) -> Self {
+        let deadline = self
+            .operation
+            .absolute_deadline()
+            .into_iter()
+            .chain(self.initial_execution_deadline)
+            .fold(deadline, Instant::min);
+        self.initial_execution_deadline = None;
+        self.operation = Arc::new(
+            self.operation
+                .as_ref()
+                .clone()
+                .with_absolute_deadline(Some(deadline)),
+        );
+        self
+    }
+
     /// Creates an operation plan wrapping the given pipeline.
     pub(crate) fn new(
         pipeline: Pipeline,
@@ -141,11 +164,15 @@ impl OperationPlan {
         self.initial_execution_deadline.take()
     }
 
-    /// Clears deadlines retained by an internal replan after the current
-    /// `execute_plan` call has already adopted that budget.
-    pub(crate) fn clear_execution_deadlines(&mut self) {
+    /// Drops a replan's temporary budget without losing a caller-pinned deadline.
+    pub(crate) fn reset_replan_deadlines(&mut self, persistent: Option<Instant>) {
         self.initial_execution_deadline = None;
-        self.operation = Arc::new(self.operation.as_ref().clone().with_absolute_deadline(None));
+        self.operation = Arc::new(
+            self.operation
+                .as_ref()
+                .clone()
+                .with_absolute_deadline(persistent),
+        );
     }
 
     /// Records that a page advanced the pipeline but never reached the caller.

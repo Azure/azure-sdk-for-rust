@@ -42,6 +42,7 @@ pub use feed_ranges::ReadFeedRangesOptions;
 #[cfg(feature = "preview_patch")]
 pub use item::PatchItemOptions;
 pub use item::{ItemReadOptions, ItemWriteOptions};
+pub use read_many::ReadManyOptions;
 pub use routing_strategy::RoutingStrategy;
 #[cfg(feature = "control_plane")]
 pub use throughput::ThroughputOptions;
@@ -59,6 +60,7 @@ mod database;
 mod feed;
 mod feed_ranges;
 mod item;
+mod read_many;
 mod routing_strategy;
 #[cfg(feature = "control_plane")]
 mod throughput;
