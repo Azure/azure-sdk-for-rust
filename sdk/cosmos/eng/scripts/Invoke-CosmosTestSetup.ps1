@@ -210,6 +210,12 @@ if ($env:AZURE_COSMOS_EMULATOR_FLAVOR -in @('inmemory-v1', 'inmemory-v2')) {
         $configuration = $e2eConfiguration.Path
         $expectedAccountId = $e2eConfiguration.AccountId
         $env:AZURE_COSMOS_DEFAULT_CONSISTENCY = $e2eConfiguration.DefaultConsistency
+        if ($env:AZURE_COSMOS_E2E_PROFILE -eq 'dynamicTopology') {
+            $env:AZURE_COSMOS_E2E_BACKGROUND_ACCOUNT_REFRESH_INTERVAL_MS = '1000'
+        }
+        else {
+            Remove-Item Env:AZURE_COSMOS_E2E_BACKGROUND_ACCOUNT_REFRESH_INTERVAL_MS -ErrorAction SilentlyContinue
+        }
     }
     $managementEndpoint = $env:AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT
     $accountEndpoint = $env:AZURE_COSMOS_INMEMORY_ACCOUNT_ENDPOINT

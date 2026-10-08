@@ -1,16 +1,10 @@
 # Release History
 
-## 1.0.0-beta.2 (Unreleased)
+## 1.0.0 (2026-10-08)
 
 ### Features Added
 
 - Added `#[option(skip)]` for internal optional state excluded from configuration views and builder setters. ([#5366](https://github.com/Azure/azure-sdk-for-rust/pull/5366))
-
-### Breaking Changes
-
-### Bugs Fixed
-
-### Other Changes
 
 ## 1.0.0-beta.1 (2026-09-28)
 

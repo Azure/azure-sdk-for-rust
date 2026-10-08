@@ -105,16 +105,16 @@ fn planning_timeout_error(
         .build()
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_RETRIES: u32 = 10;
 // Matches .NET DistributedTransactionCommitter.MaxCumulativeRetryDelay (30 s).
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_CUMULATIVE_DELAY: Duration = Duration::from_secs(30);
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_BASE_DELAY: Duration = Duration::from_secs(1);
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_EXPONENT: u32 = 5;
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
@@ -293,7 +293,7 @@ fn container_recreation_recovery_eligible(
         return false;
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     if operation.resource_type() == ResourceType::DistributedTransactionBatch {
         return false;
     }
@@ -1704,11 +1704,7 @@ impl CosmosDriver {
                 .circuit_breaker_enabled(),
         );
         let user_agent = match options.user_agent_suffix() {
-            Some(suffix) => Arc::new(UserAgent::from_suffix(
-                runtime.wrapping_sdk_identifier(),
-                suffix,
-                feature_flags,
-            )),
+            Some(suffix) => Arc::new(runtime.user_agent_with_suffix(suffix, feature_flags)),
             None if feature_flags == runtime.user_agent_feature_flags() => {
                 Arc::clone(runtime.user_agent())
             }
@@ -1846,7 +1842,9 @@ impl CosmosDriver {
         // lookups in `execute_operation` use the cheap `get_or_fetch` fast
         // path because freshness is owned by this loop.
         #[cfg(feature = "tokio")]
-        location_state_store.start_account_refresh_loop();
+        location_state_store.start_account_refresh_loop(
+            super::routing::background_refresh_interval(&|name| std::env::var(name).ok()),
+        );
 
         // Spawn the background endpoint-probe loop. This makes account-level
         // endpoint failback probe-gated: an endpoint marked unavailable (e.g.
@@ -2570,7 +2568,7 @@ impl CosmosDriver {
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -2757,15 +2755,15 @@ impl CosmosDriver {
             )?;
         }
 
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         let requested = self
             .operation_options_view(options)
             .patch_strategy()
             .copied()
             .unwrap_or_default();
-        #[cfg(not(feature = "preview_patch"))]
+        #[cfg(not(feature = "unstable_patch"))]
         let _ = options;
-        #[cfg(not(feature = "preview_patch"))]
+        #[cfg(not(feature = "unstable_patch"))]
         let requested = crate::options::PatchStrategy::Auto;
         let execution = resolve_patch_strategy(requested, instructions.as_ref())?;
         tracing::debug!(
@@ -2968,8 +2966,8 @@ impl CosmosDriver {
         }
     }
 
-    /// Executes a preview distributed transaction through the Gateway coordinator.
-    #[cfg(feature = "preview_dtx")]
+    /// Executes an unstable distributed transaction through the Gateway coordinator.
+    #[cfg(feature = "unstable_dtx")]
     pub async fn execute_distributed_transaction(
         &self,
         request: crate::models::DistributedTransactionRequest,
@@ -2980,7 +2978,7 @@ impl CosmosDriver {
             .map_err(crate::error::CosmosError::into_public_error)
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn execute_distributed_transaction_inner(
         &self,
         mut request: crate::models::DistributedTransactionRequest,
@@ -3128,7 +3126,7 @@ impl CosmosDriver {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn resolve_distributed_transaction_session_tokens(
         &self,
         operations: &mut [crate::models::DistributedTransactionOperation],
@@ -3869,7 +3867,7 @@ impl CosmosDriver {
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -4509,7 +4507,7 @@ impl CosmosDriver {
     }
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn distributed_transaction_outer_retry_delay(
     response: &crate::models::DistributedTransactionResponse,
     retry_after_ms: Option<u64>,
@@ -4547,7 +4545,7 @@ fn distributed_transaction_outer_retry_delay(
     Some(delay)
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn distributed_transaction_outer_computed_delay(retry_count: u32) -> Duration {
     let exponent = retry_count.min(DTX_OUTER_MAX_EXPONENT);
     let delay_seconds = DTX_OUTER_BASE_DELAY.as_secs_f64() * 2_f64.powi(exponent as i32);
@@ -4650,7 +4648,7 @@ mod tests {
     }"#;
 
     fn signed_test_account(url: &str) -> AccountReference {
-        AccountReference::with_master_key(Url::parse(url).unwrap(), "dGVzdA==")
+        AccountReference::with_account_key(Url::parse(url).unwrap(), "dGVzdA==")
     }
 
     #[test]
@@ -4775,13 +4773,13 @@ mod tests {
     }
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn dtx_response(
         status_code: azure_core::http::StatusCode,
         is_retriable: bool,
@@ -4802,7 +4800,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_stops_on_success_or_non_retriable() {
         assert!(distributed_transaction_outer_retry_delay(
@@ -4823,7 +4821,7 @@ mod tests {
         .is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_uses_larger_retry_after() {
         let delay = distributed_transaction_outer_retry_delay(
@@ -4838,7 +4836,7 @@ mod tests {
         assert_eq!(delay, Duration::from_secs(5));
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_stops_at_retry_cap_and_cumulative_budget() {
         let response = dtx_response(azure_core::http::StatusCode::from(449_u16), true);
@@ -4860,7 +4858,7 @@ mod tests {
         .is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_stops_at_caller_deadline() {
         let response = dtx_response(azure_core::http::StatusCode::from(449_u16), true);
@@ -4887,7 +4885,7 @@ mod tests {
         .is_some());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_infra_envelope_stops_outer_loop() {
         // Two-tier retry composition: after the inner bodyless classifier
@@ -4913,7 +4911,7 @@ mod tests {
         .is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_body_bearing_retriable_envelope_drives_outer_loop() {
         // The complement: a body-bearing coordinator envelope that declares
@@ -5394,7 +5392,7 @@ mod tests {
 
     #[test]
     fn endpoint_for_write_region_uses_service_uri() {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
             "test-key",
         );
@@ -5417,7 +5415,7 @@ mod tests {
 
     #[test]
     fn endpoint_for_write_region_falls_back_when_none() {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
             "test-key",
         );
@@ -7353,7 +7351,7 @@ mod tests {
         // NOT share the runtime's base `Arc<UserAgent>`: its feature flags
         // differ from the runtime's, so it recomputes its own `UserAgent` whose
         // cross-SDK feature token drops the PPCB bit (0x2) while retaining
-        // HTTP/2 (0x10) -> `|F10`. This exercises the `None => recompute` branch
+        // HTTP/2 (0x10) -> `ft=EA`. This exercises the `None => recompute` branch
         // in `CosmosDriver::new` and proves the emitted token tracks per-driver
         // client configuration rather than a hardcoded value.
         let factory = Arc::new(ScriptedFactory::new(std::iter::repeat_n(
@@ -7368,13 +7366,13 @@ mod tests {
                 .unwrap(),
         );
 
-        // The runtime's base header advertises HTTP/2 + PPCB by default (|F12).
+        // The runtime's base header advertises HTTP/2 + PPCB by default (`ft=Eg`).
         assert_eq!(
             runtime.user_agent_feature_flags(),
             UserAgentFeatureFlags::HTTP2 | UserAgentFeatureFlags::PER_PARTITION_CIRCUIT_BREAKER,
         );
         assert!(
-            runtime.user_agent().as_str().ends_with("|F12"),
+            runtime.user_agent().as_str().ends_with("; ft=Eg)"),
             "unexpected runtime User-Agent: {}",
             runtime.user_agent().as_str()
         );
@@ -7399,10 +7397,10 @@ mod tests {
             !Arc::ptr_eq(driver.user_agent(), runtime.user_agent()),
             "driver disabling PPCB must own a distinct User-Agent Arc"
         );
-        // PPCB bit (0x2) dropped, HTTP/2 (0x10) retained -> |F10.
+        // PPCB bit (0x2) dropped, HTTP/2 (0x10) retained -> `ft=EA`.
         assert!(
-            driver.user_agent().as_str().ends_with("|F10"),
-            "expected driver User-Agent to drop the PPCB bit (|F10): {}",
+            driver.user_agent().as_str().ends_with("; ft=EA)"),
+            "expected driver User-Agent to drop the PPCB bit (`ft=EA`): {}",
             driver.user_agent().as_str()
         );
     }

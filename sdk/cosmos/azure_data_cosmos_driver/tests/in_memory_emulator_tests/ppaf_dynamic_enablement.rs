@@ -58,7 +58,7 @@ fn build_emulator_with_initial_ppaf(ppaf_enabled: bool) -> Arc<InMemoryEmulatorH
 }
 
 fn account() -> AccountReference {
-    AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5")
+    AccountReference::with_account_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5")
 }
 
 /// Drives one trivial operation through the full pipeline so the snapshot

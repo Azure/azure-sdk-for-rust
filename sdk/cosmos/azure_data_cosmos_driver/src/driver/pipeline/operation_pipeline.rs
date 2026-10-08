@@ -102,7 +102,7 @@ fn container_recreation_refresh_eligible(
         return false;
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     if operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch {
         return false;
     }
@@ -1242,7 +1242,7 @@ pub(crate) async fn execute_operation_pipeline(
                 );
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             OperationAction::DtxRetry { new_state, delay } => {
                 tracing::debug!(
                     activity_id = %activity_id,
@@ -1981,12 +1981,12 @@ fn resolve_endpoint(
 }
 
 fn is_distributed_transaction_operation(operation: &CosmosOperation) -> bool {
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     {
         operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch
     }
 
-    #[cfg(not(feature = "preview_dtx"))]
+    #[cfg(not(feature = "unstable_dtx"))]
     {
         let _ = operation;
         false
@@ -2484,7 +2484,7 @@ fn build_transport_request_with_fault_injection(
         read_consistency_strategy: ctx.read_consistency_strategy,
         url,
         headers,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         resource_type,
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
         auth_context,
@@ -4867,7 +4867,7 @@ mod tests {
     };
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
@@ -5985,9 +5985,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -6621,7 +6621,7 @@ mod tests {
         assert_eq!(patch_routing.routing_fallback, None);
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn resolve_endpoint_uses_account_write_region_order_for_read_dtx() {
         let operation = CosmosOperation::distributed_transaction(
@@ -6670,7 +6670,7 @@ mod tests {
         assert_eq!(routing.endpoint, account_write_endpoint);
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn resolve_endpoint_uses_account_write_region_order_for_write_dtx() {
         let operation = CosmosOperation::distributed_transaction(
@@ -6756,9 +6756,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -6825,9 +6825,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -6906,9 +6906,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -7021,9 +7021,9 @@ mod tests {
             max_session_retries: 3,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_backend_failover_retries:
                 crate::driver::pipeline::components::MAX_BACKEND_FAILOVER_RETRIES,
@@ -7865,9 +7865,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -7933,9 +7933,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -8004,9 +8004,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -8088,9 +8088,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -8183,9 +8183,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -11576,9 +11576,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 10,
             max_backend_failover_retries: 120,

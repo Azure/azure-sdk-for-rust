@@ -186,27 +186,24 @@ async fn read_item(client: &CosmosClient, id: &str) {
         .expect("public SDK read succeeds");
 }
 
-/// Strong keeps SDK writes on the hub even when the account's multi-write flag
-/// is true and the caller asks for proximity to West.
-#[tokio::test(start_paused = true)]
-async fn strong_multi_write_routes_public_sdk_to_hub() {
-    let recorder = DataPlaneHostRecorder::new();
+/// Multi-write Strong is not a valid Cosmos DB account configuration.
+#[test]
+fn strong_multi_write_configuration_is_rejected() {
     let config = VirtualAccountConfig::new(vec![east(), west()])
         .unwrap()
         .with_write_mode(WriteMode::Multi)
         .with_consistency(ConsistencyLevel::Strong)
         .with_replication_config(ReplicationConfig::immediate());
-    // Bootstrap through West (not the expected destination) so an
-    // implementation that blindly writes to the account endpoint would fail.
-    let (client, _) = build_client_at(config, WEST_URL, Region::WEST_US, recorder.clone()).await;
-
-    recorder.clear();
-    create_item(&client, "strong-public").await;
-    let hosts = recorder.hosts();
-    assert!(
-        !hosts.is_empty() && hosts.iter().all(|host| host == EAST_HOST),
-        "Strong must keep public SDK writes on the hub; observed {hosts:?}"
+    let error = InMemoryEmulatorHttpClient::try_new(config)
+        .err()
+        .expect("multi-write Strong must be rejected");
+    assert_eq!(
+        error.status().status_code(),
+        azure_core::http::StatusCode::BadRequest
     );
+    assert!(error
+        .to_string()
+        .contains("multi-write accounts do not support Strong consistency"));
 }
 
 /// The public client recovers when its preferred multi-write satellite remains

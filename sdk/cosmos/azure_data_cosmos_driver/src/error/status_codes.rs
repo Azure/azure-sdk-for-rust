@@ -394,6 +394,12 @@ pub const CLIENT_USER_AGENT_SUFFIX_INVALID: CosmosStatus = CosmosStatus {
     sub_status: Some(SubStatusCode::new(20128)),
 };
 
+/// 400 / 20129 — a user-agent property key or value is invalid or reserved.
+pub const CLIENT_USER_AGENT_PROPERTY_INVALID: CosmosStatus = CosmosStatus {
+    status_code: StatusCode::BadRequest,
+    sub_status: Some(SubStatusCode::new(20129)),
+};
+
 /// 500 / 20217 — a `DISTINCT` node was asked to forward a partition split,
 /// which would discard its deduplication state.
 pub const CLIENT_DISTINCT_CANNOT_FORWARD_SPLIT: CosmosStatus = CosmosStatus {
@@ -707,19 +713,19 @@ pub mod substatus {
     /// RU budget exceeded (3200).
     pub const RU_BUDGET_EXCEEDED: SubStatusCode = SubStatusCode::new(3200);
     /// DTX coordinator race conflict (5352).
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTC_COORDINATOR_RACE_CONFLICT: SubStatusCode = SubStatusCode::new(5352);
     /// DTX ledger failure (5411).
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTC_LEDGER_FAILURE: SubStatusCode = SubStatusCode::new(5411);
     /// DTX account configuration failure (5412).
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTC_ACCOUNT_CONFIG_FAILURE: SubStatusCode = SubStatusCode::new(5412);
     /// DTX backend dispatch infrastructure failure (5413).
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTC_DISPATCH_FAILURE: SubStatusCode = SubStatusCode::new(5413);
     /// DTX prepared operation rolled back on abort (5415, DtcOperationRolledBack).
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub const DTC_OPERATION_ROLLED_BACK: SubStatusCode = SubStatusCode::new(5415);
     /// Throttle due to split (3088).
     pub const THROTTLE_DUE_TO_SPLIT: SubStatusCode = SubStatusCode::new(3088);
