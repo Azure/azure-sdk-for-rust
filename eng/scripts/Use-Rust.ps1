@@ -21,7 +21,12 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 
 . ([System.IO.Path]::Combine($PSScriptRoot, '..', 'common', 'scripts', 'common.ps1'))
-. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'Cargo.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'shared', 'common.ps1'))
+
+$rustupInstalled = Ensure-RustupInstalled
+if ($rustupInstalled) {
+  Write-Host "Installed rustup to $(Get-RustupCargoHome)."
+}
 
 $toolchainArg = if ($Toolchain -eq 'active') {
   # Depending on the version of rustup currently installed, simply calling `rustup --version` will

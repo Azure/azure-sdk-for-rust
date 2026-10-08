@@ -9,7 +9,7 @@
 
 #[doc(inline)]
 pub use azure_data_cosmos_driver::models::{MaxItemCountHint, Precondition, SessionToken};
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 #[doc(inline)]
 pub use azure_data_cosmos_driver::options::PatchStrategy;
 #[doc(inline)]
@@ -39,7 +39,7 @@ pub use database::{
 };
 pub use feed::{FeedOptions, QueryOptions};
 pub use feed_ranges::ReadFeedRangesOptions;
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 pub use item::PatchItemOptions;
 pub use item::{ItemReadOptions, ItemWriteOptions};
 pub use routing_strategy::RoutingStrategy;

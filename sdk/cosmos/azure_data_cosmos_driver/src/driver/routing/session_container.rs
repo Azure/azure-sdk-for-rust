@@ -183,7 +183,7 @@ impl SessionContainer {
     }
 
     /// Stores or merges a session token and returns an error if any segment is malformed.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub(crate) fn set_session_token_checked(
         &self,
         container: &ContainerReference,
@@ -294,7 +294,7 @@ mod tests {
     use url::Url;
 
     fn test_container(db_name: &str, coll_name: &str, coll_rid: &str) -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );

@@ -46,10 +46,16 @@ pub struct InMemoryEmulatorHttpClient {
 impl InMemoryEmulatorHttpClient {
     /// Creates a new emulator HTTP client with the given virtual account configuration.
     pub fn new(config: VirtualAccountConfig) -> Self {
-        Self {
+        Self::try_new(config).expect("invalid in-memory emulator account configuration")
+    }
+
+    /// Tries to create an emulator HTTP client with the given virtual account configuration.
+    pub fn try_new(config: VirtualAccountConfig) -> crate::error::Result<Self> {
+        config.validate()?;
+        Ok(Self {
             store: EmulatorStore::new(config),
             request_observer: None,
-        }
+        })
     }
 
     /// Returns a handle to the underlying emulator store for test hooks and provisioning.
@@ -93,7 +99,7 @@ impl InMemoryEmulatorHttpClient {
     /// ));
     ///
     /// let runtime = emulator.runtime_builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://eastus.emulator.local").unwrap(),
     ///     "emulator-key",
     /// );

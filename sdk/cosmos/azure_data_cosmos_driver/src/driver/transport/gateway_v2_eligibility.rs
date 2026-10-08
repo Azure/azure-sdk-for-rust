@@ -56,7 +56,7 @@ pub(crate) fn is_operation_supported_by_gateway_v2(
             OperationType::Head | OperationType::HeadFeed | OperationType::Execute => false,
             // Distributed transactions route through the standard gateway
             // coordinator, never the thin-client Gateway 2.0 path.
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             OperationType::CommitDistributedTransaction
             | OperationType::ReadDistributedTransaction => false,
         },
@@ -68,7 +68,7 @@ pub(crate) fn is_operation_supported_by_gateway_v2(
         | ResourceType::UserDefinedFunction
         | ResourceType::PartitionKeyRange
         | ResourceType::Offer => false,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         ResourceType::DistributedTransactionBatch => false,
     }
 }
@@ -128,7 +128,7 @@ mod tests {
                 | OperationType::Patch
                 | OperationType::Batch => true,
                 OperationType::Head | OperationType::HeadFeed | OperationType::Execute => false,
-                #[cfg(feature = "preview_dtx")]
+                #[cfg(feature = "unstable_dtx")]
                 OperationType::CommitDistributedTransaction
                 | OperationType::ReadDistributedTransaction => false,
             },
@@ -140,7 +140,7 @@ mod tests {
             | ResourceType::UserDefinedFunction
             | ResourceType::PartitionKeyRange
             | ResourceType::Offer => false,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             ResourceType::DistributedTransactionBatch => false,
         }
     }
