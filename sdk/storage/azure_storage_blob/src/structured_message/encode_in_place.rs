@@ -516,7 +516,7 @@ mod tests {
         const TOTAL_STRUCTURED_LEN: usize =
             derive_structured_message_length(0, NonZero::new(usize::MAX as u64).unwrap()) as usize;
 
-        let mut structured_body =
+        let structured_body =
             encode_bytes_in_structured_message(vec![].into(), NonZero::new(usize::MAX).unwrap())
                 .concat();
 

@@ -166,7 +166,10 @@ mod tests {
         let data = random::<[u8; 1024]>().to_vec();
         let structured_body = [
             smv1::StreamHeader {
-                message_len: derive_structured_message_length(data.len() as u64, u64::MAX),
+                message_len: derive_structured_message_length(
+                    data.len() as u64,
+                    u64::MAX.try_into().unwrap(),
+                ),
                 flags: smv1::Flags::CRC_64_NVME,
                 segment_count: 1,
             }
@@ -236,7 +239,7 @@ mod tests {
             smv1::StreamHeader {
                 message_len: derive_structured_message_length(
                     data.len() as u64,
-                    SEGMENT_LEN as u64,
+                    (SEGMENT_LEN as u64).try_into().unwrap(),
                 ),
                 flags: smv1::Flags::CRC_64_NVME,
                 segment_count: 3,
@@ -260,7 +263,8 @@ mod tests {
     #[tokio::test]
     async fn test_detect_bad_version() {
         let data = random::<[u8; 1024]>().to_vec();
-        let mut structured_body = encode_bytes_in_structured_message(data.into(), 1024).concat();
+        let mut structured_body =
+            encode_bytes_in_structured_message(data.into(), 1024.try_into().unwrap()).concat();
         structured_body[0] = 0xFF;
         assert!(pin!(decode(BytesStream::new(structured_body)))
             .try_next()
@@ -271,7 +275,8 @@ mod tests {
     #[tokio::test]
     async fn test_detect_incorrectly_encoded_length() {
         let data = random::<[u8; 1024]>().to_vec();
-        let mut structured_body = encode_bytes_in_structured_message(data.into(), 1024).concat();
+        let mut structured_body =
+            encode_bytes_in_structured_message(data.into(), 1024.try_into().unwrap()).concat();
 
         let tampered_header = smv1::StreamHeader {
             message_len: 99999,
@@ -291,10 +296,14 @@ mod tests {
     async fn test_detect_invalid_flags() {
         let data = random::<[u8; 1024]>().to_vec();
         let mut structured_body =
-            encode_bytes_in_structured_message(data.clone().into(), 1024).concat();
+            encode_bytes_in_structured_message(data.clone().into(), 1024.try_into().unwrap())
+                .concat();
 
         let tampered_header = smv1::StreamHeader {
-            message_len: derive_structured_message_length(data.len() as u64, 1024),
+            message_len: derive_structured_message_length(
+                data.len() as u64,
+                1024.try_into().unwrap(),
+            ),
             flags: smv1::Flags::from_bits_retain(0xFFFF),
             segment_count: 1,
         };
@@ -311,10 +320,14 @@ mod tests {
     async fn test_detect_valid_inaccurate_flags() {
         let data = random::<[u8; 1024]>().to_vec();
         let mut structured_body =
-            encode_bytes_in_structured_message(data.clone().into(), 1024).concat();
+            encode_bytes_in_structured_message(data.clone().into(), 1024.try_into().unwrap())
+                .concat();
 
         let tampered_header = smv1::StreamHeader {
-            message_len: derive_structured_message_length(data.len() as u64, 1024),
+            message_len: derive_structured_message_length(
+                data.len() as u64,
+                1024.try_into().unwrap(),
+            ),
             flags: smv1::Flags::NONE,
             segment_count: 1,
         };
@@ -331,10 +344,14 @@ mod tests {
     async fn test_detect_incorrectly_encoded_segment_count() {
         let data = random::<[u8; 1024]>().to_vec();
         let mut structured_body =
-            encode_bytes_in_structured_message(data.clone().into(), 1024).concat();
+            encode_bytes_in_structured_message(data.clone().into(), 1024.try_into().unwrap())
+                .concat();
 
         let tampered_header = smv1::StreamHeader {
-            message_len: derive_structured_message_length(data.len() as u64, 1024),
+            message_len: derive_structured_message_length(
+                data.len() as u64,
+                1024.try_into().unwrap(),
+            ),
             flags: smv1::Flags::CRC_64_NVME,
             segment_count: 9999,
         };
@@ -352,7 +369,8 @@ mod tests {
         const SEG_LEN: usize = 512;
         let data = random::<[u8; SEG_LEN]>().to_vec();
         let mut structured_body =
-            encode_bytes_in_structured_message(data.clone().into(), 1024).concat();
+            encode_bytes_in_structured_message(data.clone().into(), 1024.try_into().unwrap())
+                .concat();
         let tamper_idx = smv1::StreamHeader::LENGTH + smv1::SegmentHeader::LENGTH + SEG_LEN - 2;
         structured_body[tamper_idx] = !structured_body[tamper_idx];
 
@@ -367,7 +385,8 @@ mod tests {
     async fn test_detect_bad_stream_checksum() {
         let data = random::<[u8; 1024]>().to_vec();
         let mut structured_body =
-            encode_bytes_in_structured_message(data.clone().into(), 1024).concat();
+            encode_bytes_in_structured_message(data.clone().into(), 1024.try_into().unwrap())
+                .concat();
         let tamper_idx = structured_body.len() - 2;
         structured_body[tamper_idx] = !structured_body[tamper_idx];
 
@@ -384,7 +403,8 @@ mod tests {
         // encode message with multiple uneven segments
         let seg_1_len: usize = data.len() / 2 + 11;
         let structured_body =
-            encode_bytes_in_structured_message(data.clone().into(), seg_1_len).concat();
+            encode_bytes_in_structured_message(data.clone().into(), seg_1_len.try_into().unwrap())
+                .concat();
 
         for truncated_len in [
             structured_body.len() - 1,  // off by 1 errors
@@ -420,7 +440,8 @@ mod tests {
         // encode message with multiple uneven segments
         let seg_1_len: usize = data.len() / 2 + 11;
         let mut structured_body =
-            encode_bytes_in_structured_message(data.clone().into(), seg_1_len).concat();
+            encode_bytes_in_structured_message(data.clone().into(), seg_1_len.try_into().unwrap())
+                .concat();
         structured_body.extend_from_slice(&[0]);
 
         assert!(pin!(decode(BytesStream::new(structured_body)))
