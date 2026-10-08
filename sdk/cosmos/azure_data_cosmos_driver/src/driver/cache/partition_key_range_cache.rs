@@ -844,7 +844,7 @@ mod tests {
     #[tokio::test]
     async fn resolve_returns_range_id() {
         let cache = PartitionKeyRangeCache::new();
-        let account = crate::models::AccountReference::with_master_key(
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key",
         );
@@ -874,7 +874,7 @@ mod tests {
     #[tokio::test]
     async fn empty_pk_returns_none() {
         let cache = PartitionKeyRangeCache::new();
-        let account = crate::models::AccountReference::with_master_key(
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key",
         );
@@ -903,7 +903,7 @@ mod tests {
     #[tokio::test]
     async fn force_refresh_uses_incremental_merge() {
         let cache = PartitionKeyRangeCache::new();
-        let account = crate::models::AccountReference::with_master_key(
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key",
         );
@@ -1035,7 +1035,7 @@ mod tests {
     // =========================================================================
 
     fn make_container(pk_json: &str) -> ContainerReference {
-        let account = crate::models::AccountReference::with_master_key(
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key",
         );

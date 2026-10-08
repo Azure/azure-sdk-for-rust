@@ -39,7 +39,7 @@ const GATEWAY_URL: &str = "https://eastus.emulator.local";
 const DATABASE_NAME: &str = "pkcache-db";
 
 fn account() -> AccountReference {
-    AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5")
+    AccountReference::with_account_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5")
 }
 
 /// Number of real `/pkranges` GET requests a single converged cold fetch (or

@@ -6,7 +6,7 @@
 //! [`SessionManager`] wraps [`SessionContainer`] and provides consistency-gated
 //! resolve / capture operations that the pipeline calls directly.
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 use crate::models::partition_key_range::PartitionKeyRange;
 use crate::models::{
     ContainerReference, CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType,
@@ -150,7 +150,7 @@ impl SessionManager {
     }
 
     /// Merges per-operation DTX session tokens into the shared session cache.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub(crate) fn merge_distributed_transaction_session_tokens(
         &self,
         response: &crate::models::DistributedTransactionResponse,
@@ -207,7 +207,7 @@ impl SessionManager {
     /// that cannot produce a token, it falls back to the compound
     /// collection-level token so the coordinator can select the relevant
     /// segment.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub(crate) fn resolve_distributed_transaction_session_token(
         &self,
         operation: &crate::models::DistributedTransactionOperation,
@@ -232,7 +232,7 @@ impl SessionManager {
     }
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn dtx_malformed_session_token_error(message: String) -> crate::error::CosmosError {
     crate::error::CosmosError::builder()
         .with_status(crate::error::CosmosStatus::new(
@@ -253,7 +253,7 @@ mod tests {
     use url::Url;
 
     fn test_container() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -397,7 +397,7 @@ mod tests {
         let mgr = SessionManager::new();
 
         // Capture a token for a container with a specific RID
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -470,7 +470,7 @@ mod tests {
         assert_eq!(token.as_str(), "0:1#100");
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_merge_valid_token_updates_session_cache() {
         use crate::models::{
@@ -522,7 +522,7 @@ mod tests {
         assert_eq!(token.as_str(), "0:1#100#1=10");
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_split_session_token_without_pk_range_prefix_errors_under_session_consistency() {
         use crate::models::{
@@ -571,7 +571,7 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_malformed_success_token_errors_under_session_consistency() {
         use crate::models::{
@@ -620,7 +620,7 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_malformed_success_token_is_lenient_without_session_consistency() {
         use crate::models::{
@@ -666,7 +666,7 @@ mod tests {
             .unwrap();
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_token_without_colon_errors_even_with_pk_range_under_session_consistency() {
         use crate::models::{
@@ -723,7 +723,7 @@ mod tests {
             .unwrap();
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_not_modified_sub_operation_skipped_under_session_consistency() {
         use crate::models::{
@@ -780,7 +780,7 @@ mod tests {
         assert!(mgr.resolve_session_token(&read_op, None, None).is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_merges_successful_sub_operation_token_on_non_success_response() {
         use crate::models::{
@@ -835,7 +835,7 @@ mod tests {
         assert_eq!(token.as_str(), "0:1#100#1=10");
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_resolve_stamps_cached_token_and_preserves_user_token() {
         use crate::models::{
@@ -947,7 +947,7 @@ mod tests {
     fn multiple_containers_isolated() {
         let mgr = SessionManager::new();
 
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1110,7 +1110,7 @@ mod tests {
         // Container Create targets data partitions (NOT master), but the
         // operation has no ContainerReference so capture is skipped.
         let mgr = SessionManager::new();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1158,7 +1158,7 @@ mod tests {
     fn capture_skipped_for_container_read_feed() {
         // Container ReadFeed (list containers) targets master, so skip capture.
         let mgr = SessionManager::new();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );

@@ -292,7 +292,7 @@ pub(crate) fn assert_drained(result: crate::error::Result<PageResult>) {
 
 /// Creates a test `CosmosOperation`.
 pub(crate) fn operation() -> CosmosOperation {
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         "dGVzdA==",
     );

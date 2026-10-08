@@ -213,7 +213,7 @@ pub(super) async fn make_hedging_driver(
         .await
         .expect("runtime builds");
 
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         // Cosmos master keys are base64; the emulator does not actually
         // validate the signature so any well-formed base64 value works.
@@ -659,7 +659,7 @@ async fn hedging_disabled_per_operation() {
         .build()
         .await
         .expect("runtime builds");
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         "ZW11bGF0b3JrZXk=",
     );
@@ -1031,7 +1031,7 @@ async fn hedging_with_ppcb_existing_failures() {
         .build()
         .await
         .expect("runtime builds");
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         "ZW11bGF0b3JrZXk=",
     );
@@ -1131,7 +1131,7 @@ async fn hedging_alternate_wins_trip_ppcb() {
         .build()
         .await
         .expect("runtime builds");
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         "ZW11bGF0b3JrZXk=",
     );
@@ -1358,7 +1358,7 @@ async fn hedging_exclude_regions_under_503_retry() {
         .build()
         .await
         .expect("runtime builds");
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         "ZW11bGF0b3JrZXk=",
     );

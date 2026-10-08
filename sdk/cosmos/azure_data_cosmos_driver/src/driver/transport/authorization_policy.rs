@@ -119,7 +119,7 @@ pub(crate) async fn generate_authorization(
             s.push_str(&token);
             s
         }
-        Credential::MasterKey(key) => {
+        Credential::AccountKey(key) => {
             let string_to_sign = build_string_to_sign(auth_ctx, date_string);
             trace!(signature_payload = ?string_to_sign, "generating Cosmos auth signature");
             let signature = azure_core::hmac::hmac_sha256(&string_to_sign, key).map_err(|err| {

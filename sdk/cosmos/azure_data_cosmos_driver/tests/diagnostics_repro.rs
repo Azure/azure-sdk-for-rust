@@ -165,7 +165,7 @@ async fn in_memory_split_diagnostics_repro() -> Result<(), Box<dyn Error>> {
             .await?;
         let driver = runtime
             .create_driver(
-                DriverOptions::builder(AccountReference::with_master_key(
+                DriverOptions::builder(AccountReference::with_account_key(
                     endpoint,
                     "ZW11bGF0b3Ita2V5",
                 ))
