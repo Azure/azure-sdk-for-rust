@@ -27,11 +27,20 @@ pub(crate) struct Fe2o3AmqpSession {
     monitor: OnceLock<Arc<SessionMonitor>>,
 }
 
+/// Shared closure state for an AMQP session and its connection.
+///
+/// Clones share closure notifications and the captured remote session error.
+/// [`Self::run()`] uses this state to stop pending operations when either closes.
+/// [`Self::guard()`] provides transport cleanup if preparation is cancelled.
 #[derive(Debug, Clone)]
 pub(crate) struct SessionClosed {
+    /// Signals that the underlying connection transport has closed.
     connection: Arc<Closed>,
+    /// Signals that session completion has been observed.
     session: Arc<Closed>,
+    /// Remote session error captured by the closure monitor.
     error: Arc<OnceLock<AmqpDescribedError>>,
+    /// Transport retained for cancellation cleanup.
     transport: Transport<TcpStream>,
 }
 
@@ -57,10 +66,17 @@ impl SessionClosed {
     }
 }
 
+/// Owns the task that observes session completion and notifies waiters.
+///
+/// Local `end()` calls wake the task on exit so it can restore its completion
+/// waker after cancellation. Dropping the monitor aborts the task.
 #[derive(Debug)]
 struct SessionMonitor {
+    /// Shared closure notifications, remote session error, and transport.
     closed: SessionClosed,
+    /// Background observer of the session's completion outcome.
     task: tokio::task::JoinHandle<()>,
+    /// Requests another completion poll after a local `end()` call exits.
     rearm: Arc<Notify>,
 }
 
