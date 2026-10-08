@@ -175,7 +175,7 @@ fn build_emulator_with_replication(
 }
 
 fn account_at(endpoint: &str) -> AccountReference {
-    AccountReference::with_master_key(Url::parse(endpoint).unwrap(), "ZW11bGF0b3Ita2V5")
+    AccountReference::with_account_key(Url::parse(endpoint).unwrap(), "ZW11bGF0b3Ita2V5")
 }
 
 async fn build_driver(

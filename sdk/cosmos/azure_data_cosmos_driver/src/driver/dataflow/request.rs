@@ -638,7 +638,7 @@ mod tests {
     }
 
     fn logical_partition_operation() -> CosmosOperation {
-        let account = crate::models::AccountReference::with_master_key(
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );

@@ -136,7 +136,7 @@ fn fake_account() -> AccountReference {
         Url::parse("https://gw_v2-pipeline-tests.documents.azure.com/").expect("static URL parses");
     // Master-key value is base64-encoded; the bytes never reach the wire because
     // the capturing transport short-circuits every send.
-    AccountReference::with_master_key(url, "dGVzdC1tYXN0ZXIta2V5")
+    AccountReference::with_account_key(url, "dGVzdC1tYXN0ZXIta2V5")
 }
 
 fn read_env(name: &str) -> Option<String> {
@@ -147,7 +147,7 @@ fn live_account_from_env() -> Option<AccountReference> {
     let endpoint = read_env("AZURE_COSMOS_GW_V2_ENDPOINT")?;
     let key = read_env("AZURE_COSMOS_GW_V2_KEY")?;
     let url = Url::parse(&endpoint).ok()?;
-    Some(AccountReference::with_master_key(url, key))
+    Some(AccountReference::with_account_key(url, key))
 }
 
 /// Builds a runtime with the capturing factory.

@@ -27,7 +27,7 @@ use azure_data_cosmos_driver::fault_injection::{
 use super::{host_recorder::HostRecorder, GATEWAY_URL};
 
 fn account() -> AccountReference {
-    AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5")
+    AccountReference::with_account_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5")
 }
 
 fn emulator(recorder: Arc<HostRecorder>) -> Arc<InMemoryEmulatorHttpClient> {

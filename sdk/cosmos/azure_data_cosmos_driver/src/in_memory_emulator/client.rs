@@ -99,7 +99,7 @@ impl InMemoryEmulatorHttpClient {
     /// ));
     ///
     /// let runtime = emulator.runtime_builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://eastus.emulator.local").unwrap(),
     ///     "emulator-key",
     /// );

@@ -75,7 +75,7 @@ async fn setup(
         .build()
         .await
         .expect("runtime builds against the in-memory emulator");
-    let account = azure_data_cosmos_driver::models::AccountReference::with_master_key(
+    let account = azure_data_cosmos_driver::models::AccountReference::with_account_key(
         Url::parse(GATEWAY_URL).unwrap(),
         "ZW11bGF0b3Ita2V5",
     );

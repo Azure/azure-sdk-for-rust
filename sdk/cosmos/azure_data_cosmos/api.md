@@ -265,7 +265,7 @@ impl From<u16> for SubStatusCode {
 pub enum CosmosCredential {
     TokenCredential(std::sync::Arc<dyn TokenCredential>),
     #[cfg(feature = "key_auth")]
-    MasterKey(azure_core::credentials::Secret),
+    AccountKey(azure_core::credentials::Secret),
 }
 impl From<Arc<dyn TokenCredential>> for CosmosCredential {
     fn from(credential: Arc<dyn TokenCredential>) -> Self;

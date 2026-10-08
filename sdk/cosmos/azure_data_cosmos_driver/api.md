@@ -1351,9 +1351,9 @@ pub mod models {
         pub fn backup_endpoints(&self) -> &[Url];
         pub fn builder(endpoint: Url) -> AccountReferenceBuilder;
         pub fn endpoint(&self) -> &Url;
+        pub fn with_account_key<impl Into<Secret>: Into<Secret>>(endpoint: Url, key: impl Into<Secret>) -> Self;
         pub fn with_backup_endpoints(self, endpoints: Vec<Url>) -> Self;
         pub fn with_credential(endpoint: Url, credential: Arc<dyn TokenCredential>) -> Self;
-        pub fn with_master_key<impl Into<Secret>: Into<Secret>>(endpoint: Url, key: impl Into<Secret>) -> Self;
     }
     impl Eq for AccountReference {
     }
@@ -2228,7 +2228,7 @@ pub mod models {
     }
     #[derive(Clone)]
     pub enum Credential {
-        MasterKey(azure_core::credentials::Secret),
+        AccountKey(azure_core::credentials::Secret),
         TokenCredential(std::sync::Arc<dyn TokenCredential>),
     }
     impl Debug for Credential {

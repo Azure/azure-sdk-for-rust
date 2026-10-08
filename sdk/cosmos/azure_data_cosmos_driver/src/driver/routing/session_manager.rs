@@ -253,7 +253,7 @@ mod tests {
     use url::Url;
 
     fn test_container() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -397,7 +397,7 @@ mod tests {
         let mgr = SessionManager::new();
 
         // Capture a token for a container with a specific RID
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -947,7 +947,7 @@ mod tests {
     fn multiple_containers_isolated() {
         let mgr = SessionManager::new();
 
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1110,7 +1110,7 @@ mod tests {
         // Container Create targets data partitions (NOT master), but the
         // operation has no ContainerReference so capture is skipped.
         let mgr = SessionManager::new();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
@@ -1158,7 +1158,7 @@ mod tests {
     fn capture_skipped_for_container_read_feed() {
         // Container ReadFeed (list containers) targets master, so skip capture.
         let mgr = SessionManager::new();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );
