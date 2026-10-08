@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://azure.github.io/cosmos-sdk-e2e-tests/implementation.v1.json",
+  "title": "Cosmos SDK E2E source-native implementation map",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "specVersion", "sdk", "testTarget", "scenarios"],
+  "properties": {
+    "$schema": {
+      "const": "../schema/implementation.v1.json"
+    },
+    "specVersion": {
+      "const": "1.0"
+    },
+    "sdk": {
+      "enum": ["rust", "java", "dotnet", "python"]
+    },
+    "testTarget": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9-]*)+$"
+          },
+          "test": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": ["active", "planned", "unsupported"]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": { "enum": ["active", "planned"] }
+              }
+            },
+            "then": {
+              "required": ["test"]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "status": { "const": "unsupported" }
+              }
+            },
+            "then": {
+              "required": ["reason"]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

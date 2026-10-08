@@ -2,9 +2,9 @@
 # Licensed under the MIT License.
 #
 # Resolves a single fixed Cosmos live-test account from the one JSON secret and
-# exports AZURE_COSMOS_CONNECTION_STRING (+ ACCOUNT_HOST, DATABASE_NAME,
-# AZURE_COSMOS_DEFAULT_CONSISTENCY, COSMOS_RUSTFLAGS, and optionally
-# AZURE_COSMOS_SECONDARY_KEY) for the tests.
+# exports AZURE_COSMOS_CONNECTION_STRING (+ account topology metadata,
+# ACCOUNT_HOST, DATABASE_NAME, AZURE_COSMOS_DEFAULT_CONSISTENCY,
+# COSMOS_RUSTFLAGS, and optionally AZURE_COSMOS_SECONDARY_KEY) for the tests.
 #
 # The Rust Cosmos live-test matrix runs on ubuntu, windows, and macOS agents, so
 # this resolver is PowerShell (pwsh), not bash+jq.
@@ -81,12 +81,28 @@ $databaseRaw = Get-OptionalString $account 'database'
 $database = if ([string]::IsNullOrWhiteSpace($databaseRaw)) { 'shared-test-db' } else { $databaseRaw }
 $consistency = Get-OptionalString $account 'consistency'
 $testCategory = Get-OptionalString $account 'testCategory'
+$multiWriteProperty = $account.PSObject.Properties['multiWrite']
+$multiRegionProperty = $account.PSObject.Properties['multiRegion']
+$regionsProperty = $account.PSObject.Properties['regions']
 
 if ([string]::IsNullOrWhiteSpace($endpoint)) { Fail "Account '$AccountSelector' is missing required 'endpoint'." }
 if ([string]::IsNullOrWhiteSpace($key)) { Fail "Account '$AccountSelector' is missing required 'key'." }
 if (-not $endpoint.StartsWith('https://')) { Fail "Account '$AccountSelector' endpoint must start with https:// (got '$endpoint')." }
 if ([string]::IsNullOrWhiteSpace($consistency)) { Fail "Account '$AccountSelector' is missing required 'consistency'." }
 if ([string]::IsNullOrWhiteSpace($testCategory)) { Fail "Account '$AccountSelector' is missing required 'testCategory'." }
+if ($null -eq $multiWriteProperty) { Fail "Account '$AccountSelector' is missing required 'multiWrite'." }
+if ($null -eq $multiRegionProperty) { Fail "Account '$AccountSelector' is missing required 'multiRegion'." }
+if ($null -eq $regionsProperty) { Fail "Account '$AccountSelector' is missing required 'regions'." }
+$regions = @($regionsProperty.Value)
+if ($regions.Count -eq 0 -or
+    @($regions | Where-Object { [string]::IsNullOrWhiteSpace([string]$_) }).Count -gt 0) {
+    Fail "Account '$AccountSelector' must contain at least one non-empty region."
+}
+$multiWrite = [bool]$multiWriteProperty.Value
+$multiRegion = [bool]$multiRegionProperty.Value
+if ($multiRegion -ne ($regions.Count -gt 1)) {
+    Fail "Account '$AccountSelector' multiRegion does not match its region count."
+}
 
 $connectionString = "AccountEndpoint=$endpoint;AccountKey=$key;"
 # Only fixed live-account jobs use this resolver; emulator setup never adds "live".
@@ -130,9 +146,13 @@ Emit-Public 'ACCOUNT_HOST' $endpoint
 Emit-Public 'DATABASE_NAME' $database
 Emit-Public 'AZURE_COSMOS_DEFAULT_CONSISTENCY' $consistency
 Emit-Public 'COSMOS_RUSTFLAGS' $rustFlags
+Emit-Public 'AZURE_COSMOS_E2E_BACKEND' 'azureLive'
+Emit-Public 'AZURE_COSMOS_ACCOUNT_WRITE_MODE' $(if ($multiWrite) { 'multi' } else { 'single' })
+Emit-Public 'AZURE_COSMOS_ACCOUNT_MULTI_REGION' $multiRegion.ToString().ToLowerInvariant()
+Emit-Public 'AZURE_COSMOS_ACCOUNT_REGIONS' ($regions -join ';')
 if (-not [string]::IsNullOrWhiteSpace($secondaryKey)) {
     Emit-Secret 'AZURE_COSMOS_SECONDARY_KEY' $secondaryKey
 }
 
 # Masked, secret-free summary for logs.
-Write-Host "Resolved Cosmos test account '$AccountSelector': endpoint=$endpoint consistency=$consistency testCategory=$testCategory key=***"
+Write-Host "Resolved Cosmos test account '$AccountSelector': endpoint=$endpoint consistency=$consistency writeMode=$(if ($multiWrite) { 'multi' } else { 'single' }) regions=$($regions.Count) testCategory=$testCategory key=***"

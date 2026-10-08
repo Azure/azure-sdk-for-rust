@@ -176,6 +176,17 @@ extends:
         Path: sdk/cosmos/live-platform-matrix.json
         Selection: sparse
         GenerateVMJobs: true
+      # Catalog-driven live differential baselines. Nightly emits structured
+      # Cargo results for the standard JUnit conversion and publication steps.
+      # Keep profiles in separate shards; target 15-20 minutes when tuning.
+      - Name: Cosmos_e2e_live_fixed
+        Path: sdk/cosmos/e2e-live-fixed-matrix.json
+        Selection: all
+        GenerateVMJobs: true
+      - Name: Cosmos_e2e_live_configuration
+        Path: sdk/cosmos/e2e-live-configuration-matrix.json
+        Selection: all
+        GenerateVMJobs: true
     PreTestRunSteps:
       - template: /sdk/cosmos/eng/pipelines/resolve-test-account-steps.yml
         parameters:
@@ -202,5 +213,9 @@ extends:
       # to bound live-account cost.
       - Name: Cosmos_live_test_aad
         Path: sdk/cosmos/live-aad-platform-matrix.json
+        Selection: all
+        GenerateVMJobs: true
+      - Name: Cosmos_e2e_live_aad
+        Path: sdk/cosmos/e2e-live-aad-matrix.json
         Selection: all
         GenerateVMJobs: true

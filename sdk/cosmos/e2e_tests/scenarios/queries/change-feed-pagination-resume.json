@@ -4,7 +4,7 @@
   "id": "changefeed.pagination-resume",
   "title": "Change feed pagination resumes without replay",
   "requirement": "A LatestVersion change feed can persist and resume a continuation without losing or replaying changes from the current snapshot.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",
@@ -39,7 +39,7 @@
       ]
     },
     "azureLive": {
-      "applicability": "supported",
+      "applicability": "required",
       "fidelity": "full"
     }
   }

@@ -4,7 +4,7 @@
   "id": "item.scalar-partition-keys",
   "title": "Scalar partition key values retain their JSON type",
   "requirement": "Point operations distinguish string, numeric, Boolean, null, and undefined partition key values and preserve exact item state.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",
@@ -37,7 +37,7 @@
       ]
     },
     "azureLive": {
-      "applicability": "supported",
+      "applicability": "required",
       "fidelity": "full"
     }
   }

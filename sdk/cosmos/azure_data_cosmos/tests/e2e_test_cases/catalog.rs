@@ -74,6 +74,7 @@ const PROFILES: &[&str] = &[
     include_str!("../../../e2e_tests/profiles/lifecycleConsistencyMatrix.json"),
     include_str!("../../../e2e_tests/profiles/readConsistencyOverrideMatrix.json"),
     include_str!("../../../e2e_tests/profiles/dynamicTopology.json"),
+    include_str!("../../../e2e_tests/profiles/liveConfiguration.json"),
 ];
 
 const RUST_IMPLEMENTATIONS: &str = include_str!("../../../e2e_tests/implementations/rust.json");
@@ -83,6 +84,9 @@ const CONFIGURATION_RESILIENCE_MATRIX: &str =
 const CONSISTENCY_MATRIX: &str = include_str!("../../../e2e-consistency-matrix.json");
 const OVERRIDE_MATRIX: &str = include_str!("../../../e2e-read-consistency-override-matrix.json");
 const DYNAMIC_TOPOLOGY_MATRIX: &str = include_str!("../../../e2e-dynamic-topology-matrix.json");
+const LIVE_FIXED_MATRIX: &str = include_str!("../../../e2e-live-fixed-matrix.json");
+const LIVE_CONFIGURATION_MATRIX: &str = include_str!("../../../e2e-live-configuration-matrix.json");
+const LIVE_AAD_MATRIX: &str = include_str!("../../../e2e-live-aad-matrix.json");
 const SCENARIO_SCHEMA: &str = include_str!("../../../e2e_tests/schema/scenario.v1.json");
 const PROFILE_SCHEMA: &str = include_str!("../../../e2e_tests/schema/profile.v1.json");
 
@@ -249,6 +253,8 @@ pub struct ClientDefinition {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct ImplementationMap {
+    #[serde(rename = "$schema")]
+    schema: String,
     spec_version: String,
     sdk: String,
     test_target: String,
@@ -583,6 +589,33 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
             .find(|profile| profile.id == "dynamicTopology")
             .expect("dynamic topology profile must be registered"),
     )?;
+    validate_live_pipeline_matrix(
+        LIVE_FIXED_MATRIX,
+        &[
+            profiles
+                .iter()
+                .find(|profile| profile.id == "smokeTests")
+                .expect("smoke profile must be registered"),
+            profiles
+                .iter()
+                .find(|profile| profile.id == "coreOperations")
+                .expect("core operations profile must be registered"),
+        ],
+    )?;
+    validate_live_pipeline_matrix(
+        LIVE_CONFIGURATION_MATRIX,
+        &[profiles
+            .iter()
+            .find(|profile| profile.id == "liveConfiguration")
+            .expect("live configuration profile must be registered")],
+    )?;
+    validate_live_pipeline_matrix(
+        LIVE_AAD_MATRIX,
+        &[profiles
+            .iter()
+            .find(|profile| profile.id == "smokeTests")
+            .expect("smoke profile must be registered")],
+    )?;
 
     let scenarios = load_scenarios()?;
     let mut scenario_ids = BTreeSet::new();
@@ -691,7 +724,8 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
 
     let implementations: ImplementationMap =
         serde_json::from_str(RUST_IMPLEMENTATIONS).map_err(|error| error.to_string())?;
-    if implementations.spec_version != "1.0"
+    if implementations.schema != "../schema/implementation.v1.json"
+        || implementations.spec_version != "1.0"
         || implementations.sdk != "rust"
         || implementations.test_target != "e2e_tests"
     {
@@ -793,6 +827,55 @@ fn validate_pipeline_matrix(json: &str, profile: &Profile) -> Result<(), String>
             "pipeline matrix for '{}' must cover Gateway V1 and Gateway V2",
             profile.id
         ));
+    }
+    Ok(())
+}
+
+fn validate_live_pipeline_matrix(json: &str, profiles: &[&Profile]) -> Result<(), String> {
+    let document: Value = serde_json::from_str(json).map_err(|error| error.to_string())?;
+    let matrix = document
+        .get("matrix")
+        .and_then(Value::as_object)
+        .ok_or("live pipeline matrix must contain an object named 'matrix'")?;
+    let expected_profiles = profiles.iter().map(|profile| profile.id.as_str()).collect();
+    if matrix_axis(matrix, "AZURE_COSMOS_E2E_PROFILE")? != expected_profiles {
+        return Err("live pipeline matrix does not cover its declared profiles".to_owned());
+    }
+    for (axis, environment_variable, expected) in [
+        (
+            "account",
+            "AZURE_COSMOS_E2E_ACCOUNT",
+            profiles
+                .iter()
+                .flat_map(|profile| profile.accounts.iter().map(|value| value.id.as_str()))
+                .collect(),
+        ),
+        (
+            "runtime",
+            "AZURE_COSMOS_E2E_RUNTIME",
+            profiles
+                .iter()
+                .flat_map(|profile| profile.runtimes.iter().map(|value| value.id.as_str()))
+                .collect(),
+        ),
+        (
+            "client",
+            "AZURE_COSMOS_E2E_CLIENT",
+            profiles
+                .iter()
+                .flat_map(|profile| profile.clients.iter().map(|value| value.id.as_str()))
+                .collect(),
+        ),
+    ] {
+        let actual = matrix_axis(matrix, environment_variable)?;
+        if actual != expected {
+            return Err(format!(
+                "live pipeline matrix does not cover its {axis} axis: expected {expected:?}, got {actual:?}"
+            ));
+        }
+    }
+    if matrix_axis(matrix, "RustToolchainName")? != BTreeSet::from(["nightly"]) {
+        return Err("live E2E matrices must use nightly to emit JUnit coverage data".to_owned());
     }
     Ok(())
 }

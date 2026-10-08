@@ -39,8 +39,12 @@ $result = Invoke-Resolver 'session-multiwrite' $sampleJson
 if ($result.ExitCode -eq 0 -and
     $result.Output -match 'AZURE_COSMOS_CONNECTION_STRING=AccountEndpoint=https://REPLACE-session-multiwrite' -and
     $result.Output -match 'COSMOS_RUSTFLAGS=--cfg=test_category="multi_write" --cfg=test_category="live"' -and
-    $result.Output -match 'AZURE_COSMOS_DEFAULT_CONSISTENCY=Session') {
-    Test-Ok "resolved connection string + rustflags + consistency"
+    $result.Output -match 'AZURE_COSMOS_DEFAULT_CONSISTENCY=Session' -and
+    $result.Output -match 'AZURE_COSMOS_E2E_BACKEND=azureLive' -and
+    $result.Output -match 'AZURE_COSMOS_ACCOUNT_WRITE_MODE=multi' -and
+    $result.Output -match 'AZURE_COSMOS_ACCOUNT_MULTI_REGION=true' -and
+    $result.Output -match 'AZURE_COSMOS_ACCOUNT_REGIONS=East US 2;West US 3') {
+    Test-Ok "resolved connection string + rustflags + profile metadata"
 }
 else {
     Test-Fail "resolve valid selector" "(rc=$($result.ExitCode)): $($result.Output)"
@@ -80,11 +84,15 @@ $result = Invoke-Resolver '' $sampleJson
 if ($result.ExitCode -ne 0) { Test-Ok "empty selector rejected" } else { Test-Fail "empty selector should fail" }
 
 Write-Host "Test 9: missing testCategory fails"
-$result = Invoke-Resolver 'x' '{"version":1,"accounts":{"x":{"endpoint":"https://x","key":"k","consistency":"Session"}}}'
+$result = Invoke-Resolver 'x' '{"version":1,"accounts":{"x":{"endpoint":"https://x","key":"k","consistency":"Session","multiWrite":false,"multiRegion":false,"regions":["East US"]}}}'
 if ($result.ExitCode -ne 0) { Test-Ok "missing testCategory rejected" } else { Test-Fail "missing testCategory should fail" }
 
+Write-Host "Test 10: missing topology metadata fails"
+$result = Invoke-Resolver 'x' '{"version":1,"accounts":{"x":{"endpoint":"https://x","key":"k","consistency":"Session","testCategory":"emulator"}}}'
+if ($result.ExitCode -ne 0) { Test-Ok "missing topology metadata rejected" } else { Test-Fail "missing topology metadata should fail" }
+
 Write-Host ""
-Write-Host "Test 10: every fixed live account enables the dedicated live target"
+Write-Host "Test 11: every fixed live account enables the dedicated live target"
 $accounts = ($sampleJson | ConvertFrom-Json).accounts
 foreach ($property in $accounts.PSObject.Properties) {
     $result = Invoke-Resolver $property.Name $sampleJson

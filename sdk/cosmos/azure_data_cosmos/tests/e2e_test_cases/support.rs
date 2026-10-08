@@ -88,7 +88,13 @@ pub(super) async fn wait_for_item_replication_in_region(
     }
     operation.excluded_regions = Some(excluded);
     let options = ItemReadOptions::default().with_operation_options(operation);
-    let deadline = tokio::time::Instant::now() + std::time::Duration::from_secs(5);
+    let replication_timeout =
+        if std::env::var("AZURE_COSMOS_E2E_BACKEND").as_deref() == Ok("azureLive") {
+            std::time::Duration::from_secs(30)
+        } else {
+            std::time::Duration::from_secs(5)
+        };
+    let deadline = tokio::time::Instant::now() + replication_timeout;
     loop {
         if tokio::time::Instant::now() >= deadline {
             return Err(format!("item '{item_id}' did not replicate before the deadline").into());
@@ -399,21 +405,23 @@ pub(super) struct HostedWireCounts {
     pub(super) binary_negotiated_requests: u64,
     pub(super) binary_payload_requests: u64,
     pub(super) binary_response_payloads: u64,
-    default_consistency_requests: u64,
-    eventual_consistency_requests: u64,
-    session_consistency_requests: u64,
-    latest_committed_consistency_requests: u64,
-    global_strong_consistency_requests: u64,
+    wire_default_consistency_requests: u64,
+    wire_eventual_consistency_requests: u64,
+    wire_session_consistency_requests: u64,
+    wire_latest_committed_consistency_requests: u64,
+    wire_global_strong_consistency_requests: u64,
 }
 
 impl HostedWireCounts {
     pub(super) fn consistency_requests(self, strategy: ReadConsistencyStrategy) -> u64 {
         match strategy {
-            ReadConsistencyStrategy::Default => self.default_consistency_requests,
-            ReadConsistencyStrategy::Eventual => self.eventual_consistency_requests,
-            ReadConsistencyStrategy::Session => self.session_consistency_requests,
-            ReadConsistencyStrategy::LatestCommitted => self.latest_committed_consistency_requests,
-            ReadConsistencyStrategy::GlobalStrong => self.global_strong_consistency_requests,
+            ReadConsistencyStrategy::Default => self.wire_default_consistency_requests,
+            ReadConsistencyStrategy::Eventual => self.wire_eventual_consistency_requests,
+            ReadConsistencyStrategy::Session => self.wire_session_consistency_requests,
+            ReadConsistencyStrategy::LatestCommitted => {
+                self.wire_latest_committed_consistency_requests
+            }
+            ReadConsistencyStrategy::GlobalStrong => self.wire_global_strong_consistency_requests,
             _ => 0,
         }
     }

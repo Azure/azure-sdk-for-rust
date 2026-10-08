@@ -4,7 +4,7 @@
     "id": "resilience.partition-topology-retry",
     "title": "Partition topology changes refresh routing",
     "requirement": "A partition-scoped query that receives 410/1002 refreshes partition routing, retries, and retains the failed topology attempt in diagnostics.",
-    "maturity": "candidate",
+    "maturity": "stable",
     "precedents": [
         {
             "sdk": "rust",
