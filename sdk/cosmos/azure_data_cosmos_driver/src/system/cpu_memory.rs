@@ -4,10 +4,6 @@
 //! CPU and memory monitoring with historical snapshots.
 #![allow(dead_code)]
 
-#[cfg(test)]
-#[path = "cpu_memory/live_repro.rs"]
-mod live_repro;
-
 use std::{
     cmp::Ordering,
     collections::VecDeque,
@@ -838,7 +834,6 @@ mod tests {
         };
         inner.start();
         for _ in 0..3 {
-            let started = Instant::now();
             let mut builder = crate::diagnostics::DiagnosticsContextBuilder::new(
                 crate::models::ActivityId::new_uuid(),
                 Arc::new(crate::options::DiagnosticsOptions::default()),
@@ -847,13 +842,14 @@ mod tests {
             let diagnostics = builder.complete();
             drop(diagnostics.clone());
             drop(diagnostics);
+            let started = Instant::now();
             loop {
                 let history = monitor.snapshot();
-                if history
-                    .samples()
-                    .last()
-                    .is_some_and(|sample| sample.timestamp > started)
-                {
+                if history.samples().last().is_some_and(|sample| {
+                    sample.timestamp > started
+                        && (!cfg!(any(target_os = "linux", target_os = "windows"))
+                            || sample.cpu.is_some())
+                }) {
                     break;
                 }
                 assert!(
@@ -864,14 +860,24 @@ mod tests {
             }
         }
         #[cfg(any(target_os = "linux", target_os = "windows"))]
-        assert!(
-            monitor
-                .snapshot()
-                .samples()
-                .iter()
-                .any(|sample| sample.cpu.is_some()),
-            "supported platforms must collect real CPU values after warm-up"
-        );
+        {
+            let mut builder = crate::diagnostics::DiagnosticsContextBuilder::new(
+                crate::models::ActivityId::new_uuid(),
+                Arc::new(crate::options::DiagnosticsOptions::default()),
+            );
+            builder.set_cpu_monitor(monitor);
+            let diagnostics = builder.complete();
+            let json: serde_json::Value =
+                serde_json::from_str(diagnostics.to_json_string(None)).unwrap();
+            assert_eq!(json["system_usage"]["cpu"]["status"], "available");
+            assert!(
+                json["system_usage"]["cpu"]["samples"]
+                    .as_array()
+                    .unwrap()
+                    .len()
+                    >= 3
+            );
+        }
     }
 
     // ---- Platform-specific tests exercising real OS APIs ----

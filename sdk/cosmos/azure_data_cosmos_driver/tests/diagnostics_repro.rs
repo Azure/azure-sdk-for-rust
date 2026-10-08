@@ -1,11 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#![cfg(all(feature = "fault_injection", feature = "__internal_testing"))]
-
-// This shared harness exposes helpers for other integration test binaries.
-#[allow(dead_code, unused_imports)]
-mod framework;
+#![cfg(all(feature = "fault_injection", feature = "__internal_in_memory_emulator"))]
 
 use azure_data_cosmos_driver::{
     driver::CosmosDriver,
@@ -180,30 +176,6 @@ async fn in_memory_split_diagnostics_repro() -> Result<(), Box<dyn Error>> {
             .resolve_container_by_name("diagnostics-repro", "items", OperationOptions::default())
             .await?;
         run_repro(&driver, container, &rule, exhaustion).await?;
-    }
-    Ok(())
-}
-
-#[tokio::test]
-#[ignore = "creates isolated live resources; requires an explicitly configured test account"]
-async fn live_split_diagnostics_repro() -> Result<(), Box<dyn Error>> {
-    assert_eq!(
-        framework::get_test_mode(),
-        framework::CosmosTestMode::Required,
-        "set AZURE_COSMOS_TEST_MODE=required so missing credentials cannot silently skip the repro"
-    );
-    for exhaustion in [true, false] {
-        let rule = split_rule(if exhaustion { None } else { Some(1) });
-        framework::DriverTestClient::run_with_unique_db_and_fault_injection(
-            vec![rule.clone()],
-            async |context, database| {
-                let name = context.unique_container_name();
-                let container = context.create_container(&database, &name, "/pk").await?;
-                let driver = context.create_persistent_driver().await?;
-                run_repro(&driver, container, &rule, exhaustion).await
-            },
-        )
-        .await?;
     }
     Ok(())
 }
