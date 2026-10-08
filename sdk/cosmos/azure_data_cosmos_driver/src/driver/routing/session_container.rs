@@ -183,7 +183,7 @@ impl SessionContainer {
     }
 
     /// Stores or merges a session token and returns an error if any segment is malformed.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub(crate) fn set_session_token_checked(
         &self,
         container: &ContainerReference,

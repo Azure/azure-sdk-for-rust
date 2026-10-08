@@ -578,7 +578,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos"
-version = "1.0.0-beta.2"
+version = "1.0.0"
 dependencies = [
  "arbitrary",
  "async-lock",
@@ -623,7 +623,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_driver"
-version = "1.0.0-beta.2"
+version = "1.0.0"
 dependencies = [
  "arc-swap",
  "async-lock",
@@ -688,7 +688,7 @@ dependencies = [
 
 [[package]]
 name = "azure_data_cosmos_macros"
-version = "1.0.0-beta.2"
+version = "1.0.0"
 dependencies = [
  "proc-macro2",
  "quote",

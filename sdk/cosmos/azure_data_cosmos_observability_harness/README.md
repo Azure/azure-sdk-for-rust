@@ -37,7 +37,7 @@ architecture and specification.
 
 | Feature | Default | Effect |
 | --- | --- | --- |
-| `preview_opentelemetry` | ✅ | Enables `azure_data_cosmos/preview_opentelemetry` and registers both `CosmosMetricsHandler` and `CosmosTracingHandler`. This integration is preview because the `opentelemetry` crate is still in preview. |
+| `preview_opentelemetry` | ✅ | Enables `azure_data_cosmos/unstable_opentelemetry` and registers both `CosmosMetricsHandler` and `CosmosTracingHandler`. This integration is unstable because the `opentelemetry` crate is still in preview. |
 | `fault_injection` | ✅ | Enables `azure_data_cosmos/fault_injection` and the `--fault-*` flags. |
 | `otlp` | ❌ | Pulls `opentelemetry-otlp` (gRPC) so `--exporter otlp` works. Selects no TLS provider on its own. |
 | `otlp_rustls` | ✅ | Adds rustls with the `aws-lc-rs` provider and bundled webpki roots to the OTLP transport, so `https://` collectors work with no OpenSSL. Inert unless `otlp` is also enabled, which is why it can default on without dragging the gRPC stack into every build. |

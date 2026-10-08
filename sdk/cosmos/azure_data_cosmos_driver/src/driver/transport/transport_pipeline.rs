@@ -18,7 +18,7 @@ use std::time::{Duration, Instant};
 use futures::{future::Either, pin_mut};
 use tracing::trace;
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 use crate::models::ResourceType;
 use crate::{
     diagnostics::{
@@ -404,10 +404,10 @@ pub(crate) async fn execute_transport_pipeline(
         // DTX request detection only exists when the preview feature is enabled;
         // in default builds no request can carry the DTX typed resource value, so
         // the flag is a constant `false` and the throttle path behaves as before.
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         let is_distributed_transaction_request =
             request.resource_type == ResourceType::DistributedTransactionBatch;
-        #[cfg(not(feature = "preview_dtx"))]
+        #[cfg(not(feature = "unstable_dtx"))]
         let is_distributed_transaction_request = false;
         let action =
             evaluate_transport_retry(&result, &throttle_state, is_distributed_transaction_request);
@@ -1385,7 +1385,7 @@ mod tests {
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             resource_type: ResourceType::Database,
             body: None,
             auth_context: super::super::AuthorizationContext::new(
@@ -1991,7 +1991,7 @@ mod tests {
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             url: endpoint.url().clone(),
             headers: azure_core::http::headers::Headers::new(),
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             resource_type: ResourceType::Database,
             body: None,
             auth_context: super::super::AuthorizationContext::new(
@@ -2354,7 +2354,7 @@ mod tests {
             read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
             url: endpoint.url().clone(),
             headers,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             resource_type: ResourceType::Document,
             body: None,
             auth_context: super::super::AuthorizationContext::new(
