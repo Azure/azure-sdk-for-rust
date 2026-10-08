@@ -7,12 +7,16 @@
 //! - [`WorkloadId`] - Workload identifier for resource governance
 //! - [`CorrelationId`] - Client-side metrics correlation
 //! - [`UserAgentSuffix`] - Suffix appended to the user agent string
+//! - [`UserAgentProperty`] - Custom `key=value` entry in the user agent metadata
 //!
 //! The computed [`UserAgent`](crate::models::UserAgent) type is in the models module.
 
 use std::fmt;
 
-use crate::error::CosmosError;
+use crate::{
+    error::CosmosError,
+    models::{DRIVER_VERSION_KEY, FEATURE_FLAGS_KEY},
+};
 
 /// Workload identifier for resource governance.
 ///
@@ -246,6 +250,117 @@ impl fmt::Display for UserAgentSuffix {
     }
 }
 
+/// Validates a user agent property value: printable ASCII, no leading or
+/// trailing space, and none of the metadata-segment delimiters `;`, `(`, `)`.
+fn is_valid_property_value(s: &str) -> bool {
+    !s.starts_with(' ')
+        && !s.ends_with(' ')
+        && s.chars()
+            .all(|c| matches!(c, ' '..='~') && !matches!(c, ';' | '(' | ')'))
+}
+
+/// A custom `key=value` entry added to the metadata segment of the
+/// `User-Agent` header.
+///
+/// Wrapping SDKs use this to report their own metadata, such as a runtime
+/// version (`dotnet=8.0.1`). Entries appear inside the parentheses after the
+/// driver-owned entries, in the order they were added.
+///
+/// Keys start with a lowercase ASCII letter and continue with lowercase ASCII
+/// letters, digits, hyphens, or underscores, up to
+/// [`MAX_KEY_LENGTH`](Self::MAX_KEY_LENGTH) characters. The keys `drv` and `ft`
+/// are reserved for the driver. Values are between 1 and
+/// [`MAX_VALUE_LENGTH`](Self::MAX_VALUE_LENGTH) printable ASCII characters
+/// (including spaces, so `.NET 8.0.1` is fine), with no leading or trailing
+/// space. Values can never contain `;`, `(`, or `)`, which delimit the
+/// metadata segment. Invalid input returns a [`CosmosError`] with HTTP 400
+/// status.
+///
+/// The header is limited in size: if a property does not fit, it (and any
+/// properties after it) is omitted from the `User-Agent`.
+///
+/// # Examples
+///
+/// ```
+/// use azure_data_cosmos_driver::options::UserAgentProperty;
+///
+/// let property = UserAgentProperty::try_new("rt", ".NET 8.0.1").unwrap();
+/// assert_eq!(property.to_string(), "rt=.NET 8.0.1");
+/// assert!(UserAgentProperty::try_new("rt", "a;b").is_err());
+/// ```
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UserAgentProperty {
+    key: String,
+    value: String,
+}
+
+impl UserAgentProperty {
+    /// Maximum length for a property key.
+    pub const MAX_KEY_LENGTH: usize = 16;
+
+    /// Maximum length for a property value.
+    pub const MAX_VALUE_LENGTH: usize = 32;
+
+    /// Creates a new property, validating the key and value.
+    ///
+    /// # Errors
+    ///
+    /// Returns a [`CosmosError`] with HTTP 400 and substatus 20129
+    /// ([`CLIENT_USER_AGENT_PROPERTY_INVALID`](crate::error::status_codes::CLIENT_USER_AGENT_PROPERTY_INVALID))
+    /// if the key is invalid or reserved, or the value is empty, too long,
+    /// contains non-printable ASCII or a metadata delimiter (`;`, `(`, or `)`),
+    /// or has leading or trailing spaces.
+    pub fn try_new(key: impl Into<String>, value: impl Into<String>) -> Result<Self, CosmosError> {
+        let key = key.into();
+        let value = value.into();
+
+        let valid_key = key.len() <= Self::MAX_KEY_LENGTH
+            && key.chars().next().is_some_and(|c| c.is_ascii_lowercase())
+            && key
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '-' | '_'));
+        let message = if !valid_key {
+            format!(
+                "UserAgentProperty key must be 1-{} characters, start with a lowercase letter, and contain only lowercase letters, digits, hyphen, or underscore",
+                Self::MAX_KEY_LENGTH
+            )
+        } else if key == DRIVER_VERSION_KEY || key == FEATURE_FLAGS_KEY {
+            format!("UserAgentProperty key '{key}' is reserved for the driver")
+        } else if value.is_empty() || value.len() > Self::MAX_VALUE_LENGTH {
+            format!(
+                "UserAgentProperty value must be 1-{} characters, got {}",
+                Self::MAX_VALUE_LENGTH,
+                value.len()
+            )
+        } else if !is_valid_property_value(&value) {
+            "UserAgentProperty value must be printable ASCII without leading or trailing spaces and must not contain ';', '(' or ')'".to_owned()
+        } else {
+            return Ok(Self { key, value });
+        };
+
+        Err(CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_USER_AGENT_PROPERTY_INVALID)
+            .with_message(message)
+            .build())
+    }
+
+    /// Returns the property key.
+    pub fn key(&self) -> &str {
+        &self.key
+    }
+
+    /// Returns the property value.
+    pub fn value(&self) -> &str {
+        &self.value
+    }
+}
+
+impl fmt::Display for UserAgentProperty {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}={}", self.key, self.value)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -351,6 +466,51 @@ mod tests {
                 assert!(error.to_string().contains("HTTP header-safe"));
                 assert!(!error.to_string().contains(invalid));
             }
+        }
+    }
+
+    #[test]
+    fn user_agent_property_valid() {
+        let p = UserAgentProperty::try_new("dotnet", "8.0.1").unwrap();
+        assert_eq!(p.key(), "dotnet");
+        assert_eq!(p.value(), "8.0.1");
+        assert_eq!(p.to_string(), "dotnet=8.0.1");
+    }
+
+    #[test]
+    fn user_agent_property_allows_spaces_and_punctuation() {
+        let p = UserAgentProperty::try_new("rt", ".NET 8.0.1").unwrap();
+        assert_eq!(p.to_string(), "rt=.NET 8.0.1");
+        assert!(UserAgentProperty::try_new("os", "Ubuntu 24.04+lts/x=y,z").is_ok());
+    }
+
+    #[test]
+    fn user_agent_property_rejects_invalid_input() {
+        for (key, value) in [
+            ("", "1"),
+            ("Dotnet", "1"),
+            ("1abc", "1"),
+            ("a b", "1"),
+            ("a=b", "1"),
+            ("a;b", "1"),
+            ("drv", "1"),
+            ("ft", "1"),
+            (&"k".repeat(UserAgentProperty::MAX_KEY_LENGTH + 1), "1"),
+            ("k", ""),
+            ("k", " leading"),
+            ("k", "trailing "),
+            ("k", "tab\there"),
+            ("k", "caf\u{e9}"),
+            ("k", "a;b"),
+            ("k", "(x)"),
+            ("k", &"v".repeat(UserAgentProperty::MAX_VALUE_LENGTH + 1)),
+        ] {
+            let err = UserAgentProperty::try_new(key, value).unwrap_err();
+            assert_eq!(
+                err.status(),
+                crate::error::status_codes::CLIENT_USER_AGENT_PROPERTY_INVALID,
+                "{key:?}={value:?}"
+            );
         }
     }
 }

@@ -1704,11 +1704,7 @@ impl CosmosDriver {
                 .circuit_breaker_enabled(),
         );
         let user_agent = match options.user_agent_suffix() {
-            Some(suffix) => Arc::new(UserAgent::from_suffix(
-                runtime.wrapping_sdk_identifier(),
-                suffix,
-                feature_flags,
-            )),
+            Some(suffix) => Arc::new(runtime.user_agent_with_suffix(suffix, feature_flags)),
             None if feature_flags == runtime.user_agent_feature_flags() => {
                 Arc::clone(runtime.user_agent())
             }
@@ -7355,7 +7351,7 @@ mod tests {
         // NOT share the runtime's base `Arc<UserAgent>`: its feature flags
         // differ from the runtime's, so it recomputes its own `UserAgent` whose
         // cross-SDK feature token drops the PPCB bit (0x2) while retaining
-        // HTTP/2 (0x10) -> `|F10`. This exercises the `None => recompute` branch
+        // HTTP/2 (0x10) -> `ft=EA`. This exercises the `None => recompute` branch
         // in `CosmosDriver::new` and proves the emitted token tracks per-driver
         // client configuration rather than a hardcoded value.
         let factory = Arc::new(ScriptedFactory::new(std::iter::repeat_n(
@@ -7370,13 +7366,13 @@ mod tests {
                 .unwrap(),
         );
 
-        // The runtime's base header advertises HTTP/2 + PPCB by default (|F12).
+        // The runtime's base header advertises HTTP/2 + PPCB by default (`ft=Eg`).
         assert_eq!(
             runtime.user_agent_feature_flags(),
             UserAgentFeatureFlags::HTTP2 | UserAgentFeatureFlags::PER_PARTITION_CIRCUIT_BREAKER,
         );
         assert!(
-            runtime.user_agent().as_str().ends_with("|F12"),
+            runtime.user_agent().as_str().ends_with("; ft=Eg)"),
             "unexpected runtime User-Agent: {}",
             runtime.user_agent().as_str()
         );
@@ -7401,10 +7397,10 @@ mod tests {
             !Arc::ptr_eq(driver.user_agent(), runtime.user_agent()),
             "driver disabling PPCB must own a distinct User-Agent Arc"
         );
-        // PPCB bit (0x2) dropped, HTTP/2 (0x10) retained -> |F10.
+        // PPCB bit (0x2) dropped, HTTP/2 (0x10) retained -> `ft=EA`.
         assert!(
-            driver.user_agent().as_str().ends_with("|F10"),
-            "expected driver User-Agent to drop the PPCB bit (|F10): {}",
+            driver.user_agent().as_str().ends_with("; ft=EA)"),
+            "expected driver User-Agent to drop the PPCB bit (`ft=EA`): {}",
             driver.user_agent().as_str()
         );
     }
