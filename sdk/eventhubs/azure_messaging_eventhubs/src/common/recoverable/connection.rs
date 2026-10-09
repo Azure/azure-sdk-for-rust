@@ -27,6 +27,7 @@ use azure_core_amqp::{
     AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource, AmqpSymbol,
     AmqpTransport,
 };
+use futures::{pin_mut, select_biased, FutureExt};
 #[cfg(test)]
 use std::sync::Mutex;
 use std::{
@@ -149,7 +150,7 @@ pub(crate) struct RecoverableConnection {
     // One persistent notification per recovery generation. Hold this lock
     // through invalidation so subscribers capture an even generation and its
     // matching notification together. The notification stays set for old users.
-    sender_invalidation: AsyncMutex<Arc<OnceCell<()>>>,
+    generation_invalidation: AsyncMutex<Arc<OnceCell<()>>>,
 
     #[cfg(test)]
     forced_error: Mutex<Option<AmqpError>>,
@@ -322,7 +323,7 @@ impl RecoverableConnection {
                 mgmt_client: RwLock::new(Arc::new(OnceCell::new())),
                 authorizer,
                 generation: AtomicU64::new(0),
-                sender_invalidation: AsyncMutex::new(Arc::new(OnceCell::new())),
+                generation_invalidation: AsyncMutex::new(Arc::new(OnceCell::new())),
                 #[cfg(test)]
                 forced_error: Mutex::new(None),
                 #[cfg(test)]
@@ -438,7 +439,7 @@ impl RecoverableConnection {
         // the client.
         self.closed.store(true, Ordering::Release);
         {
-            let invalidated = self.sender_invalidation.lock().await;
+            let invalidated = self.generation_invalidation.lock().await;
             invalidated.get_or_init(|| async {}).await;
         }
 
@@ -482,11 +483,30 @@ impl RecoverableConnection {
                 }
             }
             let _opening = self.connection_open.lock().await;
-            let (generation, _) = self.sender_invalidation().await?;
+            let (generation, invalidated) = self.generation_invalidation().await?;
             if let Some(connection) = self.connections.lock().await.as_ref() {
                 return Ok(connection.clone());
             }
-            let created = self.create_connection().await?;
+            // The provisional connection is not cached yet. Invalidation must
+            // cancel its handshake rather than wait for the peer to respond.
+            let created = {
+                let opening = self.create_connection().fuse();
+                let changed = invalidated.wait().fuse();
+                pin_mut!(opening, changed);
+                select_biased! {
+                    _ = changed => {
+                        if self.closed.load(Ordering::Acquire) {
+                            return Err(AmqpError::with_message(
+                                "The client that owns this connection is closed.",
+                            ));
+                        }
+                        // Drop the unfinished opening and its transport before
+                        // retrying. The loop also releases the opening lock.
+                        continue;
+                    },
+                    result = opening => result?,
+                }
+            };
             let mut connection = self.connections.lock().await;
             if self.closed.load(Ordering::Acquire) {
                 created.abort();
@@ -621,10 +641,14 @@ impl RecoverableConnection {
         captured.is_multiple_of(2) && self.current_generation() == captured
     }
 
-    pub(super) async fn sender_invalidation(
+    /// Captures a recovery generation and its persistent invalidation signal.
+    ///
+    /// Opening connections and operations share this signal. Recovery or close
+    /// wakes existing subscribers; recovery gives later subscribers a new signal.
+    pub(super) async fn generation_invalidation(
         &self,
     ) -> azure_core_amqp::Result<(u64, Arc<OnceCell<()>>)> {
-        let invalidated = self.sender_invalidation.lock().await;
+        let invalidated = self.generation_invalidation.lock().await;
         if self.closed.load(Ordering::Acquire) {
             return Err(AmqpError::with_message(
                 "The client that owns this connection is closed.",
@@ -1138,7 +1162,7 @@ impl RecoverableConnection {
         generation: Option<u64>,
     ) {
         let connection_id = self.get_connection_id();
-        let mut invalidated = self.sender_invalidation.lock().await;
+        let mut invalidated = self.generation_invalidation.lock().await;
         if generation.is_some_and(|generation| !self.generation_is_current(generation)) {
             return;
         }
@@ -1501,13 +1525,14 @@ mod tests {
         time::{Duration, OffsetDateTime},
     };
     use azure_core_test::credentials::MockCredential;
+    use fe2o3_amqp::acceptor::{ConnectionAcceptor, SaslAnonymousMechanism, SessionAcceptor};
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
     };
-    use tokio::sync::Notify;
+    use tokio::{io::AsyncReadExt, net::TcpListener, sync::Notify, time::timeout};
 
-    fn connection_for_sender_invalidation() -> Arc<RecoverableConnection> {
+    fn connection_for_generation_invalidation() -> Arc<RecoverableConnection> {
         RecoverableConnection::new(
             Url::parse("amqps://example.com").unwrap(),
             None,
@@ -1521,19 +1546,19 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn sender_invalidation_persists_for_late_waiters() {
-        let connection = connection_for_sender_invalidation();
-        let (_, original) = connection.sender_invalidation().await.unwrap();
+    async fn generation_invalidation_persists_for_late_waiters() {
+        let connection = connection_for_generation_invalidation();
+        let (_, original) = connection.generation_invalidation().await.unwrap();
         for action in [
             ErrorRecoveryAction::ReconnectLink,
             ErrorRecoveryAction::ReconnectSession,
             ErrorRecoveryAction::ReconnectConnection,
         ] {
-            let (generation, previous) = connection.sender_invalidation().await.unwrap();
+            let (generation, previous) = connection.generation_invalidation().await.unwrap();
             connection
                 .apply_recovery_plan(RecoveryPlan::for_action(&action).unwrap())
                 .await;
-            let (next_generation, next) = connection.sender_invalidation().await.unwrap();
+            let (next_generation, next) = connection.generation_invalidation().await.unwrap();
             assert_eq!(next_generation, generation + 2);
             assert!(previous.get().is_some());
             assert!(next.get().is_none());
@@ -1543,9 +1568,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn sender_subscription_waits_until_invalidation_finishes() {
-        let connection = connection_for_sender_invalidation();
-        let (_, previous) = connection.sender_invalidation().await.unwrap();
+    async fn generation_subscription_waits_until_invalidation_finishes() {
+        let connection = connection_for_generation_invalidation();
+        let (_, previous) = connection.generation_invalidation().await.unwrap();
         let sessions = connection.session_instances.write().await;
         let recovery = connection.apply_recovery_plan(
             RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectConnection).unwrap(),
@@ -1555,7 +1580,7 @@ mod tests {
         assert!(previous.get().is_none());
         assert_eq!(connection.generation(), 0);
 
-        let subscription = connection.sender_invalidation();
+        let subscription = connection.generation_invalidation();
         futures::pin_mut!(subscription);
         assert!(futures::poll!(&mut subscription).is_pending());
         drop(sessions);
@@ -1566,8 +1591,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn concurrent_sender_invalidations_wait_before_mutating_generation() {
-        let connection = connection_for_sender_invalidation();
+    async fn concurrent_generation_invalidations_wait_before_mutating_generation() {
+        let connection = connection_for_generation_invalidation();
         let sessions = connection.session_instances.write().await;
         let plan = RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectConnection).unwrap();
         let first = connection.apply_recovery_plan(plan);
@@ -1580,7 +1605,7 @@ mod tests {
         futures::join!(first, second);
         assert_eq!(connection.generation(), 4);
         assert!(connection
-            .sender_invalidation()
+            .generation_invalidation()
             .await
             .unwrap()
             .1
@@ -1589,18 +1614,18 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn close_notifies_senders_and_rejects_new_subscriptions() {
-        let connection = connection_for_sender_invalidation();
-        let (_, invalidated) = connection.sender_invalidation().await.unwrap();
+    async fn close_notifies_generation_waiters_and_rejects_new_subscriptions() {
+        let connection = connection_for_generation_invalidation();
+        let (_, invalidated) = connection.generation_invalidation().await.unwrap();
         connection.close_connection().await.unwrap();
         assert!(invalidated.get().is_some());
-        assert!(connection.sender_invalidation().await.is_err());
+        assert!(connection.generation_invalidation().await.is_err());
     }
 
     #[tokio::test]
     async fn cancelled_recovery_leaves_generation_and_notifications_usable() {
-        let connection = connection_for_sender_invalidation();
-        let (_, notification) = connection.sender_invalidation().await.unwrap();
+        let connection = connection_for_generation_invalidation();
+        let (_, notification) = connection.generation_invalidation().await.unwrap();
         let sessions = connection.session_instances.write().await;
         let mut recovery =
             Box::pin(connection.recover_generation(0, ErrorRecoveryAction::ReconnectConnection));
@@ -1623,7 +1648,7 @@ mod tests {
         }
         assert_eq!(connection.generation(), 2);
         assert!(notification.get().is_some());
-        let (_, replacement) = connection.sender_invalidation().await.unwrap();
+        let (_, replacement) = connection.generation_invalidation().await.unwrap();
         connection
             .recover_generation(0, ErrorRecoveryAction::ReconnectConnection)
             .await;
@@ -2829,6 +2854,113 @@ mod tests {
     fn recovery_plan_none_for_non_reconnect_actions() {
         assert!(RecoveryPlan::for_action(&ErrorRecoveryAction::RetryAction).is_none());
         assert!(RecoveryPlan::for_action(&ErrorRecoveryAction::ReturnError).is_none());
+    }
+
+    fn connection_for_listener(listener: &TcpListener) -> Arc<RecoverableConnection> {
+        RecoverableConnection::new(
+            Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap(),
+            None,
+            None,
+            AmqpTransport::Tcp,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        )
+    }
+
+    #[tokio::test]
+    async fn close_cancels_stalled_connection_open() {
+        timeout(std::time::Duration::from_secs(10), async {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let connection = connection_for_listener(&listener);
+            let opening = tokio::spawn({
+                let connection = connection.clone();
+                async move { connection.ensure_connection().await }
+            });
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut header = [0; 8];
+            stream.read_exact(&mut header).await.unwrap();
+            assert_eq!(&header[..4], b"AMQP");
+            // Keep the peer silent and open. Reading the client's header proves
+            // the opening is inside the handshake before close invalidates it.
+            assert!(!opening.is_finished());
+            assert!(connection.connections.lock().await.is_none());
+            connection.close_connection().await.unwrap();
+
+            let error = opening
+                .await
+                .unwrap()
+                .err()
+                .expect("closed opening must fail");
+            assert!(error
+                .to_string()
+                .contains("client that owns this connection is closed"));
+            assert_eq!(stream.read(&mut [0]).await.unwrap(), 0);
+            assert!(connection.connection_open.try_lock().is_some());
+            assert!(connection.connections.lock().await.is_none());
+            // A later caller must fail without opening another socket.
+            assert!(connection.ensure_connection().await.is_err());
+            assert!(futures::poll!(Box::pin(listener.accept())).is_pending());
+        })
+        .await
+        .expect("close must cancel the stalled opening without a producer deadline");
+    }
+
+    #[tokio::test]
+    async fn recovery_cancels_stalled_connection_open() {
+        timeout(std::time::Duration::from_secs(10), async {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let connection = connection_for_listener(&listener);
+            let opening = tokio::spawn({
+                let connection = connection.clone();
+                async move { connection.ensure_connection().await }
+            });
+            let (mut stale_stream, _) = listener.accept().await.unwrap();
+            let mut header = [0; 8];
+            stale_stream.read_exact(&mut header).await.unwrap();
+            assert_eq!(&header[..4], b"AMQP");
+            assert!(!opening.is_finished());
+            assert!(connection.connections.lock().await.is_none());
+            let generation = connection.generation();
+            RecoverableConnection::recover_from_error(
+                Arc::downgrade(&connection),
+                ErrorRecoveryAction::ReconnectConnection,
+            )
+            .await
+            .unwrap();
+            assert!(connection.generation() > generation);
+
+            // The SDK must close the obsolete socket while the peer still holds
+            // it open. Only then allow the replacement handshake to complete.
+            assert_eq!(stale_stream.read(&mut [0]).await.unwrap(), 0);
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut peer = ConnectionAcceptor::builder()
+                .container_id("replacement-peer")
+                .sasl_acceptor(SaslAnonymousMechanism {})
+                .build()
+                .accept(stream)
+                .await
+                .unwrap();
+            let replacement = opening.await.unwrap().unwrap();
+            let cached = connection.ensure_connection().await.unwrap();
+            assert!(Arc::ptr_eq(&replacement, &cached));
+            assert!(connection.connection_open.try_lock().is_some());
+
+            // Exchange another protocol frame after cleanup to prove that the
+            // old opening's destructor did not abort the replacement transport.
+            let session = AmqpSession::new();
+            let session_acceptor = SessionAcceptor::new();
+            let (begun, accepted) = tokio::join!(
+                session.begin(&replacement, None),
+                session_acceptor.accept(&mut peer),
+            );
+            begun.unwrap();
+            let _peer_session = accepted.unwrap();
+            connection.close_connection().await.unwrap();
+        })
+        .await
+        .expect("recovery must cancel the stalled opening and establish a usable replacement");
     }
 
     // The management-client build must not hold any `mgmt_client` lock.

@@ -171,7 +171,7 @@ impl RecoverableSender {
         #[cfg(test)]
         connection.get_forced_error()?;
 
-        let (generation, invalidated) = connection.sender_invalidation().await?;
+        let (generation, invalidated) = connection.generation_invalidation().await?;
         captured.store(generation, Ordering::Release);
         // Preparation can run CBS recovery on this task. Let it finish before
         // racing the transport operation against the peer's notification.

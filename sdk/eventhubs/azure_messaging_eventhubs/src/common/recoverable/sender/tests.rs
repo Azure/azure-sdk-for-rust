@@ -219,7 +219,7 @@ async fn pending_sends_recover(invalidate_from_peer: bool, count: usize, blackho
 }
 
 #[tokio::test]
-async fn repeated_sender_invalidations_respect_retry_limit() {
+async fn repeated_generation_invalidations_respect_retry_limit() {
     let attempts = AtomicUsize::new(0);
     let options = RetryOptions {
         initial_delay: azure_core::time::Duration::ZERO,
@@ -551,7 +551,7 @@ async fn deadline_cancels_open_session_attach_and_cbs_preparation() {
                 .unwrap()
                 .unwrap();
             assert!(connection
-                .sender_invalidation()
+                .generation_invalidation()
                 .await
                 .unwrap()
                 .1
@@ -582,7 +582,7 @@ async fn deadline_after_self_recovery_preserves_replacement_generation() {
     futures::pin_mut!(operation);
     assert!(futures::poll!(&mut operation).is_pending());
     assert_eq!(connection.generation(), 2);
-    let (_, replacement) = connection.sender_invalidation().await.unwrap();
+    let (_, replacement) = connection.generation_invalidation().await.unwrap();
     tokio::time::advance(Duration::from_secs(60)).await;
     assert_timed_out(&operation.await.unwrap_err());
     assert_eq!(connection.generation(), 2);
