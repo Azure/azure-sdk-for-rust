@@ -32,14 +32,14 @@ pub fn encode_with_checksum(content: Body, crc_64_nvme: Option<u64>) -> Result<B
                 ENCODE_SEGMENT_LENGTH_USIZE,
             )
             .into_iter()
-            .map(|bytes| bytes.into()),
+            .map(Into::into),
         ))));
     }
     match content {
         Body::Bytes(bytes) => Ok(Body::SeekableStream(Box::new(MultiBodyStream::new(
             encode_in_place::encode_bytes_in_structured_message(bytes, ENCODE_SEGMENT_LENGTH_USIZE)
                 .into_iter()
-                .map(|bytes| bytes.into()),
+                .map(Into::into),
         )))),
         Body::SeekableStream(seekable_stream) => Ok(Body::SeekableStream(Box::new(
             encode_streaming::SeekableStructuredMessageEncodingStream::new(
