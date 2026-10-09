@@ -3,19 +3,20 @@
 
 use crate::{
     common::recoverable::RecoverableConnection,
+    consumer::{StartLocation, StartPosition},
     error::{find_link_stolen, ErrorKind, EventHubsError, Result},
     models::ReceivedEventData,
 };
 use async_stream::try_stream;
 use azure_core::{http::Url, time::Duration};
 use azure_core_amqp::{
-    error::AmqpErrorKind, AmqpDeliveryApis as _, AmqpError, AmqpReceiverApis as _,
-    AmqpReceiverOptions, AmqpSource,
+    error::AmqpErrorKind, message::AmqpSourceFilter, AmqpDeliveryApis as _, AmqpDescribed,
+    AmqpError, AmqpReceiverApis as _, AmqpReceiverOptions, AmqpSource,
 };
 use futures::Stream;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc,
+    Arc, Mutex,
 };
 use tracing::{debug, trace, warn, Instrument};
 
@@ -136,6 +137,7 @@ pub struct EventReceiver {
     connection: Arc<RecoverableConnection>,
     receiver_options: AmqpReceiverOptions,
     message_source: AmqpSource,
+    resume_position: Mutex<Option<StartPosition>>,
     source_url: Url,
     partition_id: String,
     timeout: Option<Duration>,
@@ -159,6 +161,7 @@ impl EventReceiver {
             connection,
             receiver_options,
             message_source,
+            resume_position: Mutex::new(None),
             partition_id,
             timeout,
             closed: AtomicBool::new(false),
@@ -174,6 +177,13 @@ impl EventReceiver {
     /// This method returns a stream of [`ReceivedEventData`] that can be used to receive messages from the Event Hub.
     /// The stream will continue to yield messages as long as the receiver is not closed.
     /// The stream will yield an error if there is an issue receiving messages from the Event Hub.
+    ///
+    /// The configured source is used until an event with usable position metadata is yielded.
+    /// After that, recovery resumes exclusively after its offset, or after its sequence number
+    /// when the offset is unavailable. If an event has neither position, the last known resume
+    /// position is retained. Before the first usable position, the configured source remains in
+    /// effect, so a [`StartLocation::Latest`] selector can skip events that arrive before a
+    /// recovery attachment.
     ///
     /// # Returns
     ///
@@ -232,8 +242,9 @@ impl EventReceiver {
                 // Instrument each awaited operation with the stream's span so the
                 // receive loop is parented under it on every poll (see the span
                 // construction above for why this is not a fn-level attribute).
+                let message_source = self.message_source_for_receive();
                 let receiver = self.connection.get_receiver(&self.source_url,
-                    self.message_source.clone(),
+                    message_source,
                     self.receiver_options.clone(),
                     &self.partition_id,
                     self.timeout
@@ -249,6 +260,7 @@ impl EventReceiver {
                 // Now that we have a delivery, we can process it.
                 let message = delivery.into_message();
                 let message = ReceivedEventData::from(message);
+                self.update_resume_position(&message);
                 // SENSITIVE-DATA: `{:?}` on a ReceivedEventData dumps the
                 // raw AMQP message, including the customer payload body and any PII in
                 // application properties. This is redacted by the SafeDebug derive ONLY
@@ -261,6 +273,55 @@ impl EventReceiver {
                 yield message;
             }
         })
+    }
+
+    fn message_source_for_receive(&self) -> AmqpSource {
+        let resume_position = self
+            .resume_position
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        let Some(resume_position) = resume_position else {
+            return self.message_source.clone();
+        };
+
+        let mut message_source = self.message_source.clone();
+        let selector_key = AmqpSourceFilter::selector_filter().description().into();
+        let selector = Box::new(AmqpDescribed::new(
+            AmqpSourceFilter::selector_filter().code(),
+            StartPosition::start_expression(&Some(resume_position)),
+        ));
+        if let Some(filter) = &mut message_source.filter {
+            filter.remove(&selector_key);
+            filter.insert(selector_key, selector.into());
+        } else {
+            message_source.filter = Some(vec![(selector_key, selector.into())].into());
+        }
+        message_source
+    }
+
+    fn update_resume_position(&self, message: &ReceivedEventData) {
+        let resume_position = message
+            .offset()
+            .as_ref()
+            .map(|offset| StartPosition {
+                location: StartLocation::Offset(offset.clone()),
+                inclusive: false,
+            })
+            .or_else(|| {
+                message
+                    .sequence_number()
+                    .map(|sequence_number| StartPosition {
+                        location: StartLocation::SequenceNumber(sequence_number),
+                        inclusive: false,
+                    })
+            });
+        if let Some(resume_position) = resume_position {
+            *self
+                .resume_position
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(resume_position);
+        }
     }
 
     /// Closes the event receiver, detaching from the remote.
