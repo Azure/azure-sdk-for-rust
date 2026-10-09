@@ -41,7 +41,7 @@ where
             None
         };
 
-        for seg_idx in 0..stream_header.segment_count {
+        for seg_idx in smv1::INIT_SEGMENT_NUM..smv1::INIT_SEGMENT_NUM + stream_header.segment_count {
             let segment_header = smv1::SegmentHeader::parse(
                 &reader.read_exact_inline_stack::<{smv1::SegmentHeader::LENGTH}>().await?)?;
             assert_segment_idx(seg_idx, segment_header.segment_number)?;
@@ -175,7 +175,7 @@ mod tests {
             }
             .to_vec(),
             smv1::SegmentHeader {
-                segment_number: 0,
+                segment_number: 1,
                 content_length: data.len() as u64,
             }
             .to_vec(),
@@ -204,7 +204,7 @@ mod tests {
 
         let seg_1 = [
             smv1::SegmentHeader {
-                segment_number: 0,
+                segment_number: 1,
                 content_length: SEGMENT_LEN as u64,
             }
             .to_vec(),
@@ -215,7 +215,7 @@ mod tests {
 
         let seg_2 = [
             smv1::SegmentHeader {
-                segment_number: 1,
+                segment_number: 2,
                 content_length: SEGMENT_LEN as u64,
             }
             .to_vec(),
@@ -226,7 +226,7 @@ mod tests {
 
         let seg_3 = [
             smv1::SegmentHeader {
-                segment_number: 2,
+                segment_number: 3,
                 content_length: (data.len() - SEGMENT_LEN * 2) as u64,
             }
             .to_vec(),
