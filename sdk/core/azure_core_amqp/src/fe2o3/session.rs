@@ -233,6 +233,16 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
         Ok(())
     }
 
+    /// Ends the session and returns its shutdown result.
+    ///
+    /// Returns successfully if the session has already ended. Otherwise, signals
+    /// session closure when the shutdown await returns, whether it succeeds or fails.
+    ///
+    /// Local shutdown can replace the monitor's completion waker. The
+    /// `RearmMonitorOnDrop` guard wakes the monitor when this call exits, including
+    /// when its future is dropped while awaiting. The guard is declared before the
+    /// session mutex guard so the mutex is released before the monitor is notified.
+    /// This lets the monitor resume observing session completion after cancellation.
     async fn end(&self) -> Result<()> {
         let monitor = self.monitor.get().ok_or_else(Self::session_not_set)?;
         // Declare before the mutex guard so cancellation unlocks the session
