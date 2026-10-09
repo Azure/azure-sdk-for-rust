@@ -25,7 +25,7 @@ pub(crate) const SEGMENT_HEADER_LENGTH: usize = 10;
 pub(crate) const INIT_SEGMENT_NUM: u16 = 1;
 
 bitflags! {
-    #[derive(Clone, Copy, Default, PartialEq, Eq)]
+    #[derive(Clone, Copy, Default, Debug, PartialEq, Eq)]
     pub struct Flags: u16 {
         const NONE = 0x0000;
         const CRC_64_NVME = 0x0001;
@@ -33,7 +33,7 @@ bitflags! {
 }
 
 /// A Structured Message version 1 stream header.
-#[derive(Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct StreamHeader {
     /// Total message length recorded by the stream header.
     pub(crate) message_len: u64,
@@ -46,6 +46,8 @@ pub(crate) struct StreamHeader {
 }
 
 impl StreamHeader {
+    pub(crate) const LENGTH: usize = STREAM_HEADER_LENGTH;
+
     /// Parses a stream header from raw bytes.
     /// The buffer is expected to be exactly `STREAM_HEADER_LENGTH` bytes long.
     pub(crate) fn parse(buffer: &[u8]) -> Result<Self> {
@@ -89,11 +91,11 @@ impl StreamHeader {
         })
     }
 
-    pub(crate) fn as_bytes(&self) -> Bytes {
+    pub(crate) fn to_vec(&self) -> Vec<u8> {
         let mut buffer = vec![0u8; STREAM_HEADER_LENGTH];
         // SAFETY: The buffer has been created above with the required length.
         unsafe { self.write_unchecked(&mut buffer) };
-        buffer.into()
+        buffer
     }
 
     pub(crate) fn write(&self, buffer: &mut [u8]) -> Result<()> {
@@ -130,6 +132,18 @@ impl TryFrom<&[u8]> for StreamHeader {
     }
 }
 
+impl From<StreamHeader> for Vec<u8> {
+    fn from(value: StreamHeader) -> Self {
+        value.to_vec()
+    }
+}
+
+impl From<StreamHeader> for Bytes {
+    fn from(value: StreamHeader) -> Self {
+        value.to_vec().into()
+    }
+}
+
 /// A Structured Message version 1 segment header.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct SegmentHeader {
@@ -141,6 +155,8 @@ pub(crate) struct SegmentHeader {
 }
 
 impl SegmentHeader {
+    pub(crate) const LENGTH: usize = SEGMENT_HEADER_LENGTH;
+
     /// Parses a segment header from raw bytes.
     /// The buffer is expected to be exactly `SEGMENT_HEADER_LENGTH` bytes long.
     pub(crate) fn parse(buffer: &[u8]) -> Result<Self> {
@@ -172,11 +188,11 @@ impl SegmentHeader {
         })
     }
 
-    pub(crate) fn as_bytes(&self) -> Bytes {
+    pub(crate) fn to_vec(&self) -> Vec<u8> {
         let mut buffer = vec![0u8; SEGMENT_HEADER_LENGTH];
         // SAFETY: The buffer has been created above with the required length.
         unsafe { self.write_unchecked(&mut buffer) };
-        buffer.into()
+        buffer
     }
 
     pub(crate) fn write(&self, buffer: &mut [u8]) -> Result<()> {
@@ -204,6 +220,18 @@ impl TryFrom<&[u8]> for SegmentHeader {
 
     fn try_from(buffer: &[u8]) -> Result<Self> {
         Self::parse(buffer)
+    }
+}
+
+impl From<SegmentHeader> for Vec<u8> {
+    fn from(value: SegmentHeader) -> Self {
+        value.to_vec()
+    }
+}
+
+impl From<SegmentHeader> for Bytes {
+    fn from(value: SegmentHeader) -> Self {
+        value.to_vec().into()
     }
 }
 

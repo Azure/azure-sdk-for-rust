@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+mod decode;
 mod encode_in_place;
 mod encode_streaming;
 mod smv1;
@@ -9,6 +10,8 @@ use std::num::NonZero;
 
 use azure_core::{http::Body, Result};
 use bytes::Bytes;
+
+use crate::streams::multi_body_stream::MultiBodyStream;
 
 const ENCODE_SEGMENT_LENGTH_USIZE: NonZero<usize> = NonZero::new(4 * 1024 * 1024).unwrap();
 const ENCODE_SEGMENT_LENGTH_U64: NonZero<u64> =
@@ -23,17 +26,21 @@ pub fn encode_with_checksum(content: Body, crc_64_nvme: Option<u64>) -> Result<B
         )));
     }
     if let Some(0) = content.len() {
-        return Ok(Body::SeekableStream(Box::new(
+        return Ok(Body::SeekableStream(Box::new(MultiBodyStream::new(
             encode_in_place::encode_bytes_in_structured_message(
                 Bytes::new(),
                 ENCODE_SEGMENT_LENGTH_USIZE,
-            ),
-        )));
+            )
+            .into_iter()
+            .map(Into::into),
+        ))));
     }
     match content {
-        Body::Bytes(bytes) => Ok(Body::SeekableStream(Box::new(
-            encode_in_place::encode_bytes_in_structured_message(bytes, ENCODE_SEGMENT_LENGTH_USIZE),
-        ))),
+        Body::Bytes(bytes) => Ok(Body::SeekableStream(Box::new(MultiBodyStream::new(
+            encode_in_place::encode_bytes_in_structured_message(bytes, ENCODE_SEGMENT_LENGTH_USIZE)
+                .into_iter()
+                .map(Into::into),
+        )))),
         Body::SeekableStream(seekable_stream) => Ok(Body::SeekableStream(Box::new(
             encode_streaming::SeekableStructuredMessageEncodingStream::new(
                 seekable_stream,
