@@ -7,7 +7,7 @@ use azure_core::http::StatusCode;
 use futures::FutureExt;
 
 use crate::e2e_test_cases::{
-    fixture::{build_client, TestResult},
+    fixture::{build_client, build_management_client, TestResult},
     support::should_run,
 };
 
@@ -24,13 +24,21 @@ async fn bootstrap_primary_endpoint() -> TestResult {
     // Building the public SDK client against the reachable primary endpoint succeeds.
     let client = build_client().await?;
 
-    // The initialized client can complete its first account operation.
+    // Resource management requires key auth, even when the data client uses AAD.
+    let management_client = build_management_client(&client).await?;
     let database_id = format!("e2e-bootstrap-{}", azure_core::Uuid::new_v4());
-    let response = client.create_database(&database_id, None).await?;
-    let database = client.database_client(&database_id);
+    let response = management_client
+        .create_database(&database_id, None)
+        .await?;
+    let database = management_client.database_client(&database_id);
     let outcome = AssertUnwindSafe(async {
         assert_eq!(response.status().status_code(), StatusCode::Created);
         response.into_model()?;
+
+        // Exercise the selected authentication with a permitted metadata read.
+        let read = client.database_client(&database_id).read(None).await?;
+        assert_eq!(read.status().status_code(), StatusCode::Ok);
+        assert_eq!(read.into_model()?.id.as_deref(), Some(database_id.as_str()));
         Ok::<_, Box<dyn std::error::Error>>(())
     })
     .catch_unwind()

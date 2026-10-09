@@ -167,8 +167,8 @@ function Test-CosmosE2eLiveProfile {
     $regions = @($env:AZURE_COSMOS_ACCOUNT_REGIONS -split ';' | Where-Object { $_ })
     $expectedMultiRegion = (@($account.regions).Count -gt 1).ToString().ToLowerInvariant()
     $checks = [ordered]@{
-        AZURE_COSMOS_DEFAULT_CONSISTENCY = @($env:AZURE_COSMOS_DEFAULT_CONSISTENCY, $expectedConsistency)
-        AZURE_COSMOS_ACCOUNT_WRITE_MODE = @($env:AZURE_COSMOS_ACCOUNT_WRITE_MODE, [string]$account.writeMode)
+        AZURE_COSMOS_DEFAULT_CONSISTENCY  = @($env:AZURE_COSMOS_DEFAULT_CONSISTENCY, $expectedConsistency)
+        AZURE_COSMOS_ACCOUNT_WRITE_MODE   = @($env:AZURE_COSMOS_ACCOUNT_WRITE_MODE, [string]$account.writeMode)
         AZURE_COSMOS_ACCOUNT_MULTI_REGION = @($env:AZURE_COSMOS_ACCOUNT_MULTI_REGION, $expectedMultiRegion)
         AZURE_COSMOS_ACCOUNT_REGION_COUNT = @($regions.Count, @($account.regions).Count)
     }

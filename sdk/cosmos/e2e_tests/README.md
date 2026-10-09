@@ -142,14 +142,14 @@ defines the common per-SDK source-native map. A peer SDK may mark a scenario
 Profiles describe semantic setup intent. Each SDK adapter projects a field as
 follows:
 
-| Profile concern | Rust | Java/.NET | Python |
-| --- | --- | --- | --- |
-| Account consistency, regions, write mode | Backend/account setup | Backend/account setup | Backend/account setup |
-| Gateway V2 and PPCB | Public option when available; otherwise backend default | Public or test-only SDK option | Unsupported unless exposed publicly |
-| Binary encoding | Public client/runtime option | Public or test-only SDK option | Unsupported unless exposed publicly |
-| Preferred/account-order routing | Public client routing | Public client routing | Public equivalent when available |
-| Read-consistency defaults | Public runtime/client/operation option | Public equivalent when available | Account/backend-driven or unsupported |
-| Diagnostics, metrics, tracing | SDK-native handlers and OpenTelemetry | SDK-native diagnostics and OpenTelemetry | SDK-native diagnostics hooks |
+| Profile concern                          | Rust                                                    | Java/.NET                                | Python                                |
+| ---------------------------------------- | ------------------------------------------------------- | ---------------------------------------- | ------------------------------------- |
+| Account consistency, regions, write mode | Backend/account setup                                   | Backend/account setup                    | Backend/account setup                 |
+| Gateway V2 and PPCB                      | Public option when available; otherwise backend default | Public or test-only SDK option           | Unsupported unless exposed publicly   |
+| Binary encoding                          | Public client/runtime option                            | Public or test-only SDK option           | Unsupported unless exposed publicly   |
+| Preferred/account-order routing          | Public client routing                                   | Public client routing                    | Public equivalent when available      |
+| Read-consistency defaults                | Public runtime/client/operation option                  | Public equivalent when available         | Account/backend-driven or unsupported |
+| Diagnostics, metrics, tracing            | SDK-native handlers and OpenTelemetry                   | SDK-native diagnostics and OpenTelemetry | SDK-native diagnostics hooks          |
 
 An adapter must fail its cell as unsupported when it cannot faithfully project
 a required setup axis. Internal or test-only switches are recorded in that
