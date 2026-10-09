@@ -247,7 +247,7 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
     async fn end(&self) -> Result<()> {
         let monitor = self.monitor.get().ok_or_else(Self::session_not_set)?;
         // Declare before the mutex guard so cancellation unlocks the session
-        // before waking the monitor. notify_one also retains an early wakeup.
+        // before waking the monitor. notify_one also retains an early wake-up.
         let _rearm = RearmMonitorOnDrop(&monitor.rearm);
         let mut session = self
             .session

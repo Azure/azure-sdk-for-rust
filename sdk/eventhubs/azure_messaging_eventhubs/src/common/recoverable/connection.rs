@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-// cspell:ignore geodr georeplication sastoken
+// cspell:ignore geodr georeplication sasl sastoken
 
 use super::{
     claims_based_security::RecoverableClaimsBasedSecurity, management::RecoverableManagementClient,

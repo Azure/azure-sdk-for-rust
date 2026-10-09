@@ -43,7 +43,7 @@ use tokio::{
     time::timeout,
 };
 
-// cspell:ignore sasl
+// cspell:ignore performatives sasl
 
 #[derive(Clone, Copy)]
 enum ReceivePeerAction {
