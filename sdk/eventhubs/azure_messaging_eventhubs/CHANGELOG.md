@@ -6,6 +6,10 @@
 
 - Added `ConsumerClientBuilder::with_idle_timeout` and `ProducerClientBuilder::with_idle_timeout` to configure the AMQP connection idle timeout and enable peer heartbeat negotiation.
 
+### Bugs Fixed
+
+- `EventProcessor::shutdown` now cancels pending partition reads and releases this instance's ownership records; restarting issues fresh clients, and `close` uses the same stop path. ([#5096](https://github.com/Azure/azure-sdk-for-rust/issues/5096))
+
 ## 0.17.0 (2026-09-14)
 
 ### Breaking Changes
