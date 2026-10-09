@@ -419,8 +419,8 @@ Events follow a consistent level policy so you can pick the verbosity you need:
   map updates.
 - `trace` - very-high-frequency or per-message detail, including the hot send path.
 
-When a retried operation returns an error, the SDK logs one `warn` event, `Operation recovery
-stopped, returning error.`, with these fields:
+When a recovery loop stops after an attempt returns an error, the SDK logs one `warn` event,
+`Operation recovery stopped, returning error.`, with these fields:
 
 - `stop_reason` - the decision that ended recovery: `elapsed_budget_exhausted`,
   `retries_exhausted`, `non_recoverable`, `recovery_failed`, or `recovery_unavailable`.
