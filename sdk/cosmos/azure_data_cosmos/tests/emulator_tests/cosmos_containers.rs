@@ -6,7 +6,6 @@ use super::framework;
 
 use std::error::Error;
 
-use azure_data_cosmos::options::CreateContainerOptions;
 use azure_data_cosmos::{
     models::PartitionKeyKind,
     models::{
@@ -52,11 +51,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
             let throughput = ThroughputProperties::manual(400);
 
             let container_client = run_context
-                .create_container(
-                    db_client,
-                    properties.clone(),
-                    Some(CreateContainerOptions::default().with_throughput(throughput)),
-                )
+                .create_container(db_client, properties.clone(), Some(throughput))
                 .await?;
 
             // Read the container to get its properties
@@ -99,17 +94,16 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
             }
             assert_eq!(vec![properties.id.clone()], ids);
 
-            let container_client = db_client
-                .container_client(properties.id.as_ref(), None)
-                .await?;
             let mut updated_indexing_policy = IndexingPolicy::default();
             updated_indexing_policy.automatic = false;
             updated_indexing_policy.indexing_mode = Some(IndexingMode::None);
             let updated_properties =
                 ContainerProperties::new(properties.id.clone(), properties.partition_key.clone())
                     .with_indexing_policy(updated_indexing_policy);
-            let update_response = container_client
-                .replace(updated_properties, None)
+            let update_response = run_context
+                .replace_container(db_client, updated_properties)
+                .await?
+                .read(None)
                 .await?
                 .into_model()?;
             let updated_indexing_policy = update_response.indexing_policy.unwrap();
@@ -122,9 +116,7 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
             );
 
             let current_throughput = run_context
-                .management_container_client(db_client, "TheContainer")
-                .await?
-                .read_throughput(None)
+                .read_container_throughput(db_client, "TheContainer")
                 .await?
                 .expect("throughput should be present");
 
@@ -132,15 +124,13 @@ pub async fn container_crud_simple() -> Result<(), Box<dyn Error>> {
 
             let new_throughput = ThroughputProperties::manual(500);
             let throughput_response = run_context
-                .management_container_client(db_client, "TheContainer")
-                .await?
-                .begin_replace_throughput(new_throughput, None)
-                .await?
-                .await?
-                .into_model()?;
+                .replace_container_throughput(db_client, "TheContainer", new_throughput)
+                .await?;
             assert_eq!(Some(500), throughput_response.throughput());
 
-            container_client.delete(None).await?;
+            run_context
+                .delete_container(db_client, "TheContainer")
+                .await?;
 
             query_pager = db_client
                 .query_containers(
@@ -325,8 +315,10 @@ pub async fn container_vector_and_full_text_policies_round_trip() -> Result<(), 
 
             // Read-modify-replace: send the properties we just read straight back.
             // Anything the model dropped on read would be permanently lost here.
-            let replaced = container_client
-                .replace(created.clone(), None)
+            let replaced = run_context
+                .replace_container(db_client, created.clone())
+                .await?
+                .read(None)
                 .await?
                 .into_model()?;
 
@@ -337,7 +329,9 @@ pub async fn container_vector_and_full_text_policies_round_trip() -> Result<(), 
             let reread = container_client.read(None).await?.into_model()?;
             assert_vector_and_full_text_policies(&reread, "after re-read");
 
-            container_client.delete(None).await?;
+            run_context
+                .delete_container(db_client, properties.id.as_ref())
+                .await?;
 
             Ok(())
         },

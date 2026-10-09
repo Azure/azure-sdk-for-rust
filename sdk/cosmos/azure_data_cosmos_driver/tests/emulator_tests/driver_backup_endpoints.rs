@@ -83,32 +83,45 @@ async fn driver_operations_work_after_backup_boot() -> Result<(), Box<dyn Error>
         .create_driver(DriverOptions::builder(account.clone()).build())
         .await?;
 
-    // Create a database to verify the driver is operational.
     let db_name = format!(
         "backup-test-{}",
         uuid::Uuid::new_v4().to_string()[..8].to_owned()
     );
-    let body = format!(r#"{{"id": "{}"}}"#, db_name);
-    let operation = CosmosOperation::create_database(account.clone()).with_body(body.into_bytes());
+    if let Some(arm_client) = &env.arm_client {
+        arm_client.create_database(&db_name).await?;
+    } else {
+        let body = format!(r#"{{"id": "{}"}}"#, db_name);
+        let operation =
+            CosmosOperation::create_database(account.clone()).with_body(body.into_bytes());
+        driver
+            .execute_singleton_operation(operation, OperationOptions::default())
+            .await?;
+    }
 
+    let db_ref = DatabaseReference::from_name(account, db_name.clone());
     let result = driver
-        .execute_singleton_operation(operation, OperationOptions::default())
+        .execute_singleton_operation(
+            CosmosOperation::read_database(db_ref.clone()),
+            OperationOptions::default(),
+        )
         .await;
 
     assert!(
         result.is_ok(),
-        "should be able to create database after backup boot: {:?}",
+        "should be able to read a database after backup boot: {:?}",
         result.err()
     );
 
-    // Cleanup
-    let db_ref = DatabaseReference::from_name(account, db_name);
-    let _ = driver
-        .execute_singleton_operation(
-            CosmosOperation::delete_database(db_ref),
-            OperationOptions::default(),
-        )
-        .await;
+    if let Some(arm_client) = &env.arm_client {
+        arm_client.delete_database(&db_name).await?;
+    } else {
+        driver
+            .execute_singleton_operation(
+                CosmosOperation::delete_database(db_ref),
+                OperationOptions::default(),
+            )
+            .await?;
+    }
 
     Ok(())
 }
