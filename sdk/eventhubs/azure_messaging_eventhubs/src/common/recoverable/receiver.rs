@@ -218,6 +218,8 @@ impl AmqpReceiverApis for RecoverableReceiver {
 
 #[cfg(test)]
 mod tests {
+    // cspell:ignore sasl batchable
+
     use super::*;
     use crate::{
         common::retry::{
@@ -1444,14 +1446,14 @@ mod tests {
             } else {
                 assert_eq!(markers, [1, 2, 3, 4, 5]);
             }
-            connection
-                .close_connection()
-                .await
-                .expect("local receiver connection must close cleanly");
             timeout(LOCAL_PEER_TIMEOUT, peer)
                 .await
                 .expect("local peer must finish")
                 .expect("local peer must not panic");
+            connection
+                .close_connection()
+                .await
+                .expect("local receiver connection must close cleanly");
         })
         .await
         .expect("local receiver recovery must finish within its bound");
