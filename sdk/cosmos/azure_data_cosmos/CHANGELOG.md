@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Keep CPU sampling active for long-lived clients and preserve diagnostics through partition split recovery, including `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
+
 ### Other Changes
 
 ## 1.0.0 (2026-10-08)
