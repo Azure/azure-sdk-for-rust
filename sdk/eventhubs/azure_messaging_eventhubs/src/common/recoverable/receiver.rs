@@ -218,20 +218,37 @@ impl AmqpReceiverApis for RecoverableReceiver {
 
 #[cfg(test)]
 mod tests {
+    // cspell:ignore sasl batchable
+
     use super::*;
     use crate::{
         common::retry::{
             test_support::{capture_logs, stop_warning, ManualClock},
             HEALTHY_WAIT,
         },
+        consumer::{event_receiver::EventReceiver, StartLocation, StartPosition},
         error::{find_link_stolen, ErrorKind},
+        models::ReceivedEventData,
         RetryOptions,
     };
+    use azure_core::http::Url;
     use azure_core_amqp::{
         error::{AmqpErrorCondition, AmqpErrorKind},
-        AmqpDescribedError, AmqpTransport,
+        message::AmqpSourceFilter,
+        AmqpDescribed, AmqpDescribedError, AmqpReceiverOptions, AmqpSource, AmqpTransport,
+        ReceiverCreditMode,
     };
     use azure_core_test::credentials::MockCredential;
+    use fe2o3_amqp::{
+        acceptor::{
+            ConnectionAcceptor, LinkAcceptor, LinkEndpoint, SaslAnonymousMechanism, SessionAcceptor,
+        },
+        types::{
+            messaging::{Message, MessageAnnotations},
+            primitives::Value,
+        },
+    };
+    use futures::StreamExt;
     use std::{
         future::Future,
         pin::Pin,
@@ -240,6 +257,11 @@ mod tests {
             Arc, Mutex,
         },
         time::{Duration as StdDuration, Instant},
+    };
+    use tokio::{
+        net::TcpListener,
+        sync::{mpsc, Notify},
+        time::timeout,
     };
     use tracing::{Instrument, Level};
 
@@ -1010,5 +1032,683 @@ mod tests {
                 "partition_id=7",
             ],
         );
+    }
+
+    /// Failure scope used to exercise receiver recovery.
+    #[derive(Clone, Copy)]
+    enum LocalRecoveryKind {
+        /// Recover after the receiver link closes.
+        Link,
+        /// Recover after the AMQP session closes.
+        Session,
+        /// Recover after the AMQP connection closes.
+        Connection,
+    }
+
+    /// Message annotation combinations used to select the resume position.
+    #[derive(Clone, Copy)]
+    enum LocalAnnotations {
+        /// Include both offset and sequence number annotations.
+        OffsetAndSequence,
+        /// Include only the sequence number annotation.
+        SequenceOnly,
+        /// Omit position annotations from the message.
+        Missing,
+    }
+
+    /// Controls the deterministic local peer recovery scenario.
+    #[derive(Clone, Copy)]
+    struct LocalPeerConfig {
+        /// Failure scope to inject during recovery.
+        recovery: LocalRecoveryKind,
+        /// Annotations placed on scripted messages.
+        annotations: LocalAnnotations,
+        /// Drop and recreate the event stream before reading resumed events.
+        recreate_stream: bool,
+        /// Use the moving-tail semantics of the `Latest` start position.
+        latest: bool,
+        /// Omit annotations on the first resumed event, then retry from the known cursor.
+        missing_after_known_offset: bool,
+    }
+
+    const LOCAL_PEER_TIMEOUT: StdDuration = StdDuration::from_secs(5);
+
+    fn local_error(kind: LocalRecoveryKind) -> AmqpError {
+        let error = std::io::Error::other("forced local receiver recovery");
+        match kind {
+            LocalRecoveryKind::Link => {
+                AmqpError::from(AmqpErrorKind::LinkClosedByRemote(Box::new(error)))
+            }
+            LocalRecoveryKind::Session => {
+                AmqpError::from(AmqpErrorKind::SessionClosedByRemote(Box::new(error)))
+            }
+            LocalRecoveryKind::Connection => {
+                AmqpError::from(AmqpErrorKind::ConnectionClosedByRemote(Box::new(error)))
+            }
+        }
+    }
+
+    fn selector_from_sender(sender: &fe2o3_amqp::Sender) -> String {
+        let source = sender
+            .source()
+            .as_ref()
+            .expect("receiver attach must contain a source");
+        let filters = source
+            .filter
+            .as_ref()
+            .expect("receiver attach must contain a selector filter");
+        let value = filters
+            .values()
+            .next()
+            .expect("receiver attach must contain one selector filter");
+        let Value::Described(described) = value else {
+            panic!("selector filter must be described, got {value:?}");
+        };
+        let Value::String(selector) = &described.value else {
+            panic!(
+                "selector filter value must be a string, got {:?}",
+                described.value
+            );
+        };
+        selector.clone()
+    }
+
+    fn local_message(
+        marker: u8,
+        annotations: LocalAnnotations,
+    ) -> Message<fe2o3_amqp::types::messaging::Data> {
+        let mut builder = Message::builder();
+        match annotations {
+            LocalAnnotations::OffsetAndSequence => {
+                builder = builder.message_annotations(
+                    MessageAnnotations::builder()
+                        .insert("x-opt-offset", marker.to_string())
+                        .insert("x-opt-sequence-number", i64::from(marker))
+                        .build(),
+                );
+            }
+            LocalAnnotations::SequenceOnly => {
+                builder = builder.message_annotations(
+                    MessageAnnotations::builder()
+                        .insert("x-opt-sequence-number", i64::from(marker))
+                        .build(),
+                );
+            }
+            LocalAnnotations::Missing => {}
+        }
+        builder.data(marker.to_string().into_bytes()).build()
+    }
+
+    async fn send_local_marker(
+        sender: &mut fe2o3_amqp::Sender,
+        marker: u8,
+        annotations: LocalAnnotations,
+    ) {
+        timeout(
+            LOCAL_PEER_TIMEOUT,
+            sender.send(local_message(marker, annotations)),
+        )
+        .await
+        .expect("local peer send must complete")
+        .expect("local peer must send the scripted marker");
+    }
+
+    async fn send_local_marker_batchable(
+        sender: &mut fe2o3_amqp::Sender,
+        marker: u8,
+        annotations: LocalAnnotations,
+    ) {
+        timeout(
+            LOCAL_PEER_TIMEOUT,
+            sender.send_batchable(local_message(marker, annotations)),
+        )
+        .await
+        .expect("local peer batchable send must complete")
+        .expect("local peer must send the scripted marker");
+    }
+
+    fn local_selector(start: &StartPosition) -> String {
+        StartPosition::start_expression(&Some(start.clone()))
+    }
+
+    fn local_source(source_url: &Url, start: &StartPosition) -> AmqpSource {
+        AmqpSource::builder()
+            .with_address(source_url.to_string())
+            .add_to_filter(
+                AmqpSourceFilter::selector_filter().description().into(),
+                Box::new(AmqpDescribed::new(
+                    AmqpSourceFilter::selector_filter().code(),
+                    local_selector(start),
+                )),
+            )
+            .build()
+    }
+
+    fn local_resume_selector(sequence_only: bool) -> String {
+        local_selector(&StartPosition {
+            location: if sequence_only {
+                StartLocation::SequenceNumber(2)
+            } else {
+                StartLocation::Offset("2".to_string())
+            },
+            inclusive: false,
+        })
+    }
+
+    fn marker(event: &ReceivedEventData) -> u8 {
+        event
+            .event_data()
+            .body()
+            .expect("local event must have a marker body")
+            .first()
+            .copied()
+            .and_then(|byte| char::from(byte).to_digit(10))
+            .and_then(|digit| u8::try_from(digit).ok())
+            .expect("local marker must be one decimal digit")
+    }
+
+    async fn next_local_event(
+        stream: &mut (impl futures::Stream<Item = crate::error::Result<ReceivedEventData>> + Unpin),
+    ) -> ReceivedEventData {
+        timeout(LOCAL_PEER_TIMEOUT, stream.next())
+            .await
+            .expect("local receive must complete")
+            .expect("local stream must yield an event")
+            .expect("local stream must not yield an error")
+    }
+
+    async fn local_peer(
+        listener: TcpListener,
+        config: LocalPeerConfig,
+        selectors: mpsc::UnboundedSender<String>,
+        marker_two_consumed: Arc<Notify>,
+        marker_three_consumed: Arc<Notify>,
+    ) {
+        let mut attach_index = 0usize;
+
+        'connections: loop {
+            let (stream, _) = timeout(LOCAL_PEER_TIMEOUT, listener.accept())
+                .await
+                .expect("local peer must accept a client connection")
+                .expect("local peer listener must remain usable");
+            let mut connection = ConnectionAcceptor::builder()
+                .container_id(format!("receiver-peer-{attach_index}"))
+                .sasl_acceptor(SaslAnonymousMechanism {})
+                .build()
+                .accept(stream)
+                .await
+                .expect("local peer must complete the AMQP connection");
+
+            loop {
+                let mut session = timeout(
+                    LOCAL_PEER_TIMEOUT,
+                    SessionAcceptor::new().accept(&mut connection),
+                )
+                .await
+                .expect("local peer must accept a client session")
+                .expect("local peer session must remain usable");
+                let endpoint =
+                    timeout(LOCAL_PEER_TIMEOUT, LinkAcceptor::new().accept(&mut session))
+                        .await
+                        .expect("local peer must accept a receiver link")
+                        .expect("local peer receiver link must remain usable");
+                let LinkEndpoint::Sender(mut sender) = endpoint else {
+                    panic!("expected the client receiver link");
+                };
+                let selector = selector_from_sender(&sender);
+                let current_attach = attach_index;
+                attach_index += 1;
+                selectors
+                    .send(selector.clone())
+                    .expect("receiver test must observe every attach");
+
+                if current_attach == 0 {
+                    send_local_marker_batchable(&mut sender, 1, config.annotations).await;
+                    send_local_marker_batchable(&mut sender, 2, config.annotations).await;
+                    timeout(LOCAL_PEER_TIMEOUT, marker_two_consumed.notified())
+                        .await
+                        .expect("local peer must observe marker 2");
+                    if matches!(config.recovery, LocalRecoveryKind::Connection) {
+                        break;
+                    }
+                    continue;
+                }
+
+                if config.missing_after_known_offset && current_attach == 1 {
+                    send_local_marker(&mut sender, 3, LocalAnnotations::Missing).await;
+                    timeout(LOCAL_PEER_TIMEOUT, marker_three_consumed.notified())
+                        .await
+                        .expect("local peer must observe marker 3");
+                    continue;
+                }
+
+                let expected = local_resume_selector(matches!(
+                    config.annotations,
+                    LocalAnnotations::SequenceOnly
+                ));
+                let markers = if selector == expected {
+                    match current_attach {
+                        1 => vec![3, 4, 5],
+                        2 if config.missing_after_known_offset => vec![3, 4, 5],
+                        2 => vec![4, 5],
+                        _ => panic!("unexpected extra local receiver attach"),
+                    }
+                } else if config.latest {
+                    // The initial Latest selector only admits events arriving after
+                    // the attach. Markers 3 through 5 already existed by recovery.
+                    vec![6]
+                } else {
+                    vec![1, 2, 3, 4, 5]
+                };
+                for marker in markers {
+                    send_local_marker(&mut sender, marker, config.annotations).await;
+                }
+                break 'connections;
+            }
+        }
+    }
+
+    async fn run_local_recovery(config: LocalPeerConfig, start: StartPosition) {
+        timeout(StdDuration::from_secs(15), async move {
+            let listener = TcpListener::bind("127.0.0.1:0")
+                .await
+                .expect("local peer must bind");
+            let address = listener
+                .local_addr()
+                .expect("local peer must expose its address");
+            let source_url = Url::parse(&format!("amqp://{address}/hub/Partitions/0"))
+                .expect("local source URL must parse");
+            let connection = RecoverableConnection::new(
+                Url::parse(&format!("amqp://{address}/hub")).unwrap(),
+                Some("receiver-recovery-local".to_string()),
+                None,
+                AmqpTransport::Tcp,
+                None,
+                Arc::new(MockCredential),
+                RetryOptions {
+                    initial_delay: azure_core::time::Duration::milliseconds(1),
+                    max_delay: azure_core::time::Duration::milliseconds(10),
+                    max_total_elapsed: azure_core::time::Duration::seconds(10),
+                    ..Default::default()
+                },
+                None,
+            );
+            connection
+                .authorizer
+                .disable_authorization()
+                .expect("local receiver test must disable authorization");
+            connection
+                .authorizer
+                .set_token_refresh_bias_for_test(azure_core::time::Duration::seconds(1))
+                .expect("local receiver test must configure token refresh bias");
+
+            let receiver = EventReceiver::new(
+                connection.clone(),
+                AmqpReceiverOptions {
+                    name: Some("receiver-recovery-local".to_string()),
+                    credit_mode: Some(ReceiverCreditMode::Auto(300)),
+                    auto_accept: true,
+                    ..Default::default()
+                },
+                local_source(&source_url, &start),
+                source_url,
+                "0".to_string(),
+                None,
+            );
+
+            let (selectors, mut observed_selectors) = mpsc::unbounded_channel();
+            let marker_two_consumed = Arc::new(Notify::new());
+            let marker_three_consumed = Arc::new(Notify::new());
+            let peer = tokio::spawn(local_peer(
+                listener,
+                config,
+                selectors,
+                marker_two_consumed.clone(),
+                marker_three_consumed.clone(),
+            ));
+            let mut stream = Box::pin(receiver.stream_events());
+
+            let mut markers = vec![marker(&next_local_event(&mut stream).await)];
+            markers.push(marker(&next_local_event(&mut stream).await));
+            assert_eq!(markers, [1, 2]);
+            let initial_selector = timeout(LOCAL_PEER_TIMEOUT, observed_selectors.recv())
+                .await
+                .expect("local peer must report the initial selector")
+                .expect("local peer selector channel must remain open");
+            let expected_initial = local_selector(&start);
+            assert_eq!(initial_selector, expected_initial);
+            marker_two_consumed.notify_one();
+
+            if config.missing_after_known_offset {
+                connection
+                    .force_error(local_error(config.recovery))
+                    .expect("first local recovery error must be recorded");
+                let third = marker(&next_local_event(&mut stream).await);
+                let second_selector = timeout(LOCAL_PEER_TIMEOUT, observed_selectors.recv())
+                    .await
+                    .expect("local peer must report the first recovery selector")
+                    .expect("local peer selector channel must remain open");
+                assert_eq!(second_selector, local_resume_selector(false));
+                assert_eq!(third, 3);
+                markers.push(third);
+                marker_three_consumed.notify_one();
+                connection
+                    .force_error(local_error(config.recovery))
+                    .expect("second local recovery error must be recorded");
+                let fourth_resume = marker(&next_local_event(&mut stream).await);
+                let third_selector = timeout(LOCAL_PEER_TIMEOUT, observed_selectors.recv())
+                    .await
+                    .expect("local peer must report the second recovery selector")
+                    .expect("local peer selector channel must remain open");
+                assert_eq!(third_selector, local_resume_selector(false));
+                markers.push(fourth_resume);
+                markers.push(marker(&next_local_event(&mut stream).await));
+                markers.push(marker(&next_local_event(&mut stream).await));
+            } else {
+                if config.recreate_stream {
+                    drop(stream);
+                    connection
+                        .force_error(local_error(config.recovery))
+                        .expect("local recovery error must be recorded");
+                    let mut recreated = Box::pin(receiver.stream_events());
+                    let first_resume = marker(&next_local_event(&mut recreated).await);
+                    let second_selector = timeout(LOCAL_PEER_TIMEOUT, observed_selectors.recv())
+                        .await
+                        .expect("local peer must report the recovery selector")
+                        .expect("local peer selector channel must remain open");
+                    assert_eq!(
+                        second_selector,
+                        local_resume_selector(matches!(
+                            config.annotations,
+                            LocalAnnotations::SequenceOnly
+                        ))
+                    );
+                    markers.push(first_resume);
+                    for _ in 0..3 {
+                        if markers.len() == 5 {
+                            break;
+                        }
+                        markers.push(marker(&next_local_event(&mut recreated).await));
+                    }
+                } else {
+                    connection
+                        .force_error(local_error(config.recovery))
+                        .expect("local recovery error must be recorded");
+                    let first_resume = marker(&next_local_event(&mut stream).await);
+                    let second_selector = timeout(LOCAL_PEER_TIMEOUT, observed_selectors.recv())
+                        .await
+                        .expect("local peer must report the recovery selector")
+                        .expect("local peer selector channel must remain open");
+                    assert_eq!(
+                        second_selector,
+                        local_resume_selector(matches!(
+                            config.annotations,
+                            LocalAnnotations::SequenceOnly
+                        ))
+                    );
+                    markers.push(first_resume);
+                    for _ in 0..3 {
+                        if markers.len() == 5 {
+                            break;
+                        }
+                        markers.push(marker(&next_local_event(&mut stream).await));
+                    }
+                }
+            }
+            if config.missing_after_known_offset {
+                assert_eq!(markers, [1, 2, 3, 3, 4, 5]);
+            } else {
+                assert_eq!(markers, [1, 2, 3, 4, 5]);
+            }
+            timeout(LOCAL_PEER_TIMEOUT, peer)
+                .await
+                .expect("local peer must finish")
+                .expect("local peer must not panic");
+            connection
+                .close_connection()
+                .await
+                .expect("local receiver connection must close cleanly");
+        })
+        .await
+        .expect("local receiver recovery must finish within its bound");
+    }
+
+    #[tokio::test]
+    async fn receiver_recovery_local_offset_link_continuous() {
+        run_local_recovery(
+            LocalPeerConfig {
+                recovery: LocalRecoveryKind::Link,
+                annotations: LocalAnnotations::OffsetAndSequence,
+                recreate_stream: false,
+                latest: false,
+                missing_after_known_offset: false,
+            },
+            StartPosition {
+                location: StartLocation::Offset("0".to_string()),
+                inclusive: true,
+            },
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn receiver_recovery_local_offset_session_recreated() {
+        run_local_recovery(
+            LocalPeerConfig {
+                recovery: LocalRecoveryKind::Session,
+                annotations: LocalAnnotations::OffsetAndSequence,
+                recreate_stream: true,
+                latest: false,
+                missing_after_known_offset: false,
+            },
+            StartPosition {
+                location: StartLocation::Offset("0".to_string()),
+                inclusive: true,
+            },
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn receiver_recovery_local_offset_connection_continuous() {
+        run_local_recovery(
+            LocalPeerConfig {
+                recovery: LocalRecoveryKind::Connection,
+                annotations: LocalAnnotations::OffsetAndSequence,
+                recreate_stream: false,
+                latest: false,
+                missing_after_known_offset: false,
+            },
+            StartPosition {
+                location: StartLocation::Offset("0".to_string()),
+                inclusive: true,
+            },
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn receiver_recovery_local_sequence_fallback() {
+        run_local_recovery(
+            LocalPeerConfig {
+                recovery: LocalRecoveryKind::Connection,
+                annotations: LocalAnnotations::SequenceOnly,
+                recreate_stream: true,
+                latest: false,
+                missing_after_known_offset: false,
+            },
+            StartPosition {
+                location: StartLocation::Earliest,
+                inclusive: false,
+            },
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn receiver_recovery_local_missing_annotations_preserve_offset() {
+        run_local_recovery(
+            LocalPeerConfig {
+                recovery: LocalRecoveryKind::Link,
+                annotations: LocalAnnotations::OffsetAndSequence,
+                recreate_stream: false,
+                latest: false,
+                missing_after_known_offset: true,
+            },
+            StartPosition {
+                location: StartLocation::Offset("0".to_string()),
+                inclusive: true,
+            },
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn receiver_recovery_local_latest_moving_tail() {
+        run_local_recovery(
+            LocalPeerConfig {
+                recovery: LocalRecoveryKind::Session,
+                annotations: LocalAnnotations::OffsetAndSequence,
+                recreate_stream: false,
+                latest: true,
+                missing_after_known_offset: false,
+            },
+            StartPosition::default(),
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn receiver_recovery_local_before_first_selector_characterization() {
+        timeout(StdDuration::from_secs(15), async {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            let source_url = Url::parse(&format!("amqp://{address}/hub/Partitions/0")).unwrap();
+            let connection = RecoverableConnection::new(
+                Url::parse(&format!("amqp://{address}/hub")).unwrap(),
+                Some("receiver-before-first".to_string()),
+                None,
+                AmqpTransport::Tcp,
+                None,
+                Arc::new(MockCredential),
+                RetryOptions::default(),
+                None,
+            );
+            connection.authorizer.disable_authorization().unwrap();
+            connection
+                .authorizer
+                .set_token_refresh_bias_for_test(azure_core::time::Duration::seconds(1))
+                .unwrap();
+            let start = StartPosition {
+                location: StartLocation::Offset("2".to_string()),
+                inclusive: true,
+            };
+            let source = local_source(&source_url, &start);
+            let receiver_options = AmqpReceiverOptions {
+                name: Some("receiver-before-first".to_string()),
+                credit_mode: Some(ReceiverCreditMode::Auto(300)),
+                auto_accept: true,
+                ..Default::default()
+            };
+            let receiver = EventReceiver::new(
+                connection.clone(),
+                receiver_options.clone(),
+                source.clone(),
+                source_url.clone(),
+                "0".to_string(),
+                None,
+            );
+            let (selectors, mut observed_selectors) = mpsc::unbounded_channel();
+            let close_initial = Arc::new(Notify::new());
+            let close_initial_for_peer = close_initial.clone();
+            let marker_received = Arc::new(Notify::new());
+            let marker_received_for_peer = marker_received.clone();
+            let peer = tokio::spawn(async move {
+                for attach_index in 0..2 {
+                    let (stream, _) = timeout(LOCAL_PEER_TIMEOUT, listener.accept())
+                        .await
+                        .unwrap()
+                        .unwrap();
+                    let mut connection = ConnectionAcceptor::builder()
+                        .container_id(format!("receiver-before-first-peer-{attach_index}"))
+                        .sasl_acceptor(SaslAnonymousMechanism {})
+                        .build()
+                        .accept(stream)
+                        .await
+                        .unwrap();
+                    let mut session = timeout(
+                        LOCAL_PEER_TIMEOUT,
+                        SessionAcceptor::new().accept(&mut connection),
+                    )
+                    .await
+                    .unwrap()
+                    .unwrap();
+                    let LinkEndpoint::Sender(mut sender) =
+                        timeout(LOCAL_PEER_TIMEOUT, LinkAcceptor::new().accept(&mut session))
+                            .await
+                            .unwrap()
+                            .unwrap()
+                    else {
+                        panic!("expected the client receiver link");
+                    };
+                    selectors.send(selector_from_sender(&sender)).unwrap();
+                    if attach_index == 0 {
+                        timeout(LOCAL_PEER_TIMEOUT, close_initial_for_peer.notified())
+                            .await
+                            .unwrap();
+                        let _ = timeout(LOCAL_PEER_TIMEOUT, connection.close())
+                            .await
+                            .unwrap();
+                    } else {
+                        send_local_marker_batchable(
+                            &mut sender,
+                            2,
+                            LocalAnnotations::OffsetAndSequence,
+                        )
+                        .await;
+                        timeout(LOCAL_PEER_TIMEOUT, marker_received_for_peer.notified())
+                            .await
+                            .unwrap();
+                    }
+                }
+            });
+            timeout(
+                LOCAL_PEER_TIMEOUT,
+                connection.ensure_receiver(&source_url, &source, &receiver_options),
+            )
+            .await
+            .unwrap()
+            .unwrap();
+            let initial_selector = timeout(LOCAL_PEER_TIMEOUT, observed_selectors.recv())
+                .await
+                .unwrap()
+                .unwrap();
+            assert_eq!(
+                initial_selector,
+                local_selector(&start),
+                "the initial selector must remain inclusive before the first delivery"
+            );
+            connection
+                .force_error(local_error(LocalRecoveryKind::Connection))
+                .unwrap();
+            close_initial.notify_one();
+            let mut stream = Box::pin(receiver.stream_events());
+            let first_event = next_local_event(&mut stream).await;
+            let recovery_selector = timeout(LOCAL_PEER_TIMEOUT, observed_selectors.recv())
+                .await
+                .unwrap()
+                .unwrap();
+            assert_eq!(
+                recovery_selector,
+                local_selector(&start),
+                "recovery before the first delivery must retain the configured selector"
+            );
+            assert_eq!(marker(&first_event), 2);
+            marker_received.notify_one();
+            connection.close_connection().await.unwrap();
+            timeout(LOCAL_PEER_TIMEOUT, peer).await.unwrap().unwrap();
+        })
+        .await
+        .expect("before-first selector characterization must finish within its bound");
     }
 }
