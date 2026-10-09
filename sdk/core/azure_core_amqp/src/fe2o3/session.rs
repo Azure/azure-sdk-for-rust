@@ -38,7 +38,7 @@ pub(crate) struct SessionClosed {
     connection: Arc<Closed>,
     /// Signals that session completion has been observed.
     session: Arc<Closed>,
-    /// Remote session error captured by the closure monitor.
+    /// Remote session error captured by the monitor or local shutdown.
     error: Arc<OnceLock<AmqpDescribedError>>,
     /// Transport retained for cancellation cleanup.
     transport: Transport<TcpStream>,
@@ -237,6 +237,7 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
     ///
     /// Returns successfully if the session has already ended. Otherwise, signals
     /// session closure when the shutdown await returns, whether it succeeds or fails.
+    /// Saves any remote session error before signaling closure so waiters can read it.
     ///
     /// Local shutdown can replace the monitor's completion waker. The
     /// `RearmMonitorOnDrop` guard wakes the monitor when this call exits, including
@@ -258,9 +259,13 @@ impl AmqpSessionApis for Fe2o3AmqpSession {
             trace!("Session already ended, returning.");
             return Ok(());
         }
-        let result = session.end().await.map_err(AmqpError::from);
-        self.closed()?.session.close();
-        result
+        let result = session.end().await;
+        if let Err(fe2o3_amqp::session::Error::RemoteEndedWithError(reason)) = &result {
+            // Local end consumes the outcome before the monitor can observe it.
+            let _ = monitor.closed.error.set(reason.clone().into());
+        }
+        monitor.closed.session.close();
+        result.map_err(AmqpError::from)
     }
 }
 

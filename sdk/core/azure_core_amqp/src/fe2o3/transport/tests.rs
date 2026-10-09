@@ -14,9 +14,16 @@ use fe2o3_amqp::{
     },
     connection::ConnectionStopReason,
     link::{LinkStateError, SessionStopReason},
-    types::{messaging::Body, primitives::Value},
+    types::{
+        definitions::{AmqpError as ProtocolError, Error as ProtocolDescribedError},
+        messaging::Body,
+        performatives::{Begin, End, Open},
+        primitives::Value,
+        sasl::{SaslCode, SaslInit, SaslMechanisms, SaslOutcome},
+    },
     Connection,
 };
+use serde::{de::DeserializeOwned, Serialize};
 use std::{
     future::{pending, poll_fn, Future},
     io,
@@ -30,7 +37,7 @@ use std::{
 };
 use tokio::{
     io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, DuplexStream, ReadBuf},
-    net::TcpListener,
+    net::{TcpListener, TcpStream},
     sync::{mpsc, Notify},
     task::JoinSet,
     time::timeout,
@@ -248,6 +255,153 @@ async fn session_end_preserves_terminal_protocol_condition() {
 #[tokio::test]
 async fn cancelled_session_end_wakes_every_send_and_metadata_waiter() {
     session_end_wakes_waiters(false, true).await;
+}
+
+#[tokio::test]
+async fn local_session_end_preserves_remote_error_for_waiters() {
+    timeout(Duration::from_secs(5), async {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
+        let release = Arc::new(Notify::new());
+        let peer_release = release.clone();
+        let mut peers = JoinSet::new();
+        peers.spawn(async move {
+            // Use a wire peer so the reply to our End carries an error. The
+            // fe2o3 acceptor automatically replies to End without an error.
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut header = [0; 8];
+            socket.read_exact(&mut header).await.unwrap();
+            assert_eq!(&header, b"AMQP\x03\x01\x00\x00");
+            socket.write_all(&header).await.unwrap();
+            write_session_test_frame(&mut socket, 1, 0, SaslMechanisms::default()).await;
+            let (_, init): (_, SaslInit) = read_session_test_frame(&mut socket, 1).await;
+            assert_eq!(init.mechanism.as_str(), "ANONYMOUS");
+            write_session_test_frame(
+                &mut socket,
+                1,
+                0,
+                SaslOutcome {
+                    code: SaslCode::Ok,
+                    additional_data: None,
+                },
+            )
+            .await;
+            socket.read_exact(&mut header).await.unwrap();
+            assert_eq!(&header, b"AMQP\x00\x01\x00\x00");
+            socket.write_all(&header).await.unwrap();
+            let (_, mut open): (_, Open) = read_session_test_frame(&mut socket, 0).await;
+            open.container_id = "session-error-peer".into();
+            open.idle_time_out = None;
+            write_session_test_frame(&mut socket, 0, 0, open).await;
+            let (channel, mut begin): (_, Begin) = read_session_test_frame(&mut socket, 0).await;
+            begin.remote_channel = Some(channel);
+            write_session_test_frame(&mut socket, 0, 0, begin).await;
+            let (end_channel, end): (_, End) = read_session_test_frame(&mut socket, 0).await;
+            assert_eq!(end_channel, channel);
+            assert!(end.error.is_none());
+            write_session_test_frame(
+                &mut socket,
+                0,
+                0,
+                End {
+                    error: Some(ProtocolDescribedError::new(
+                        ProtocolError::UnauthorizedAccess,
+                        Some("session permission revoked".into()),
+                        Some(
+                            [("reason".into(), Value::String("revoked".into()))]
+                                .into_iter()
+                                .collect(),
+                        ),
+                    )),
+                },
+            )
+            .await;
+            // Keep TCP open so connection closure cannot satisfy the waiters.
+            peer_release.notified().await;
+        });
+        let connection = AmqpConnection::new();
+        connection
+            .open("session-client".into(), url, None)
+            .await
+            .unwrap();
+        let session = AmqpSession::new();
+        session.begin(&connection, None).await.unwrap();
+        let closed = session.implementation.closed().unwrap();
+        let mut waiters = JoinSet::new();
+        for _ in 0..2 {
+            let closed = closed.clone();
+            waiters.spawn(async move { closed.run(pending::<crate::error::Result<()>>()).await });
+        }
+        tokio::task::yield_now().await;
+        let error = session.end().await.unwrap_err();
+        let AmqpErrorKind::AmqpDescribedError(expected) = error.kind() else {
+            panic!("local end must return the remote error: {error:?}");
+        };
+        assert_eq!(
+            expected.condition,
+            crate::error::AmqpErrorCondition::UnauthorizedAccess
+        );
+        assert_eq!(
+            expected.description.as_deref(),
+            Some("session permission revoked")
+        );
+        assert_eq!(
+            expected.info.get("reason"),
+            Some(&crate::AmqpValue::String("revoked".into()))
+        );
+        while let Some(result) = waiters.join_next().await {
+            let error = result.unwrap().unwrap_err();
+            assert!(
+                matches!(error.kind(), AmqpErrorKind::AmqpDescribedError(actual) if actual == expected),
+                "waiter lost the remote error: {error:?}"
+            );
+        }
+        // The saved error must also be available to operations started later.
+        let error = closed
+            .run(pending::<crate::error::Result<()>>())
+            .await
+            .unwrap_err();
+        assert!(
+            matches!(error.kind(), AmqpErrorKind::AmqpDescribedError(actual) if actual == expected)
+        );
+        release.notify_one();
+        peers.join_next().await.unwrap().unwrap();
+        connection.abort();
+    })
+    .await
+    .expect("local session shutdown and its waiters must finish");
+}
+
+async fn read_session_test_frame<T: DeserializeOwned>(
+    socket: &mut TcpStream,
+    frame_type: u8,
+) -> (u16, T) {
+    let mut header = [0; 8];
+    socket.read_exact(&mut header).await.unwrap();
+    let size = u32::from_be_bytes(header[..4].try_into().unwrap()) as usize;
+    assert!((8..=65_536).contains(&size));
+    assert_eq!(header[4], 2, "fixture expects no extended frame header");
+    assert_eq!(header[5], frame_type);
+    let channel = u16::from_be_bytes([header[6], header[7]]);
+    let mut body = vec![0; size - 8];
+    socket.read_exact(&mut body).await.unwrap();
+    (channel, serde_amqp::from_slice(&body).unwrap())
+}
+
+async fn write_session_test_frame(
+    socket: &mut TcpStream,
+    frame_type: u8,
+    channel: u16,
+    value: impl Serialize,
+) {
+    let body = serde_amqp::to_vec(&value).unwrap();
+    socket
+        .write_all(&u32::try_from(body.len() + 8).unwrap().to_be_bytes())
+        .await
+        .unwrap();
+    socket.write_all(&[2, frame_type]).await.unwrap();
+    socket.write_all(&channel.to_be_bytes()).await.unwrap();
+    socket.write_all(&body).await.unwrap();
 }
 
 async fn session_end_wakes_waiters(with_error: bool, cancel_end: bool) {
