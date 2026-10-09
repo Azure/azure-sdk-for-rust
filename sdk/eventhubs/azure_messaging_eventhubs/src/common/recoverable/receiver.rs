@@ -1034,26 +1034,40 @@ mod tests {
         );
     }
 
+    /// Failure scope used to exercise receiver recovery.
     #[derive(Clone, Copy)]
     enum LocalRecoveryKind {
+        /// Recover after the receiver link closes.
         Link,
+        /// Recover after the AMQP session closes.
         Session,
+        /// Recover after the AMQP connection closes.
         Connection,
     }
 
+    /// Message annotation combinations used to select the resume position.
     #[derive(Clone, Copy)]
     enum LocalAnnotations {
+        /// Include both offset and sequence number annotations.
         OffsetAndSequence,
+        /// Include only the sequence number annotation.
         SequenceOnly,
+        /// Omit position annotations from the message.
         Missing,
     }
 
+    /// Controls the deterministic local peer recovery scenario.
     #[derive(Clone, Copy)]
     struct LocalPeerConfig {
+        /// Failure scope to inject during recovery.
         recovery: LocalRecoveryKind,
+        /// Annotations placed on scripted messages.
         annotations: LocalAnnotations,
+        /// Drop and recreate the event stream before reading resumed events.
         recreate_stream: bool,
+        /// Use the moving-tail semantics of the `Latest` start position.
         latest: bool,
+        /// Omit annotations on the first resumed event, then retry from the known cursor.
         missing_after_known_offset: bool,
     }
 
