@@ -1,6 +1,6 @@
 # Release History
 
-## 2.0.0 (Unreleased)
+## 1.1.0-beta.1 (Unreleased)
 
 ### Features Added
 
@@ -12,9 +12,12 @@
 
 ### Bugs Fixed
 
+- Keep CPU sampling active while runtime or diagnostics handles remain alive. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
+- Preserve bounded diagnostic history through partition split recovery, query buffering, and terminal `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
+
 ### Other Changes
 
-## 1.0.0 (2026-10-07)
+## 1.0.0 (2026-10-08)
 
 ### Features Added
 
@@ -22,8 +25,10 @@
 
 ### Breaking Changes
 
+- Renamed the `preview_dtx` and `preview_patch` feature flags to `unstable_dtx` and `unstable_patch`, respectively; update dependency feature selections to use the new names. ([#5426](https://github.com/Azure/azure-sdk-for-rust/pull/5426))
 - Changed the `User-Agent` header to a compact, parsable format used by every Cosmos SDK: `{sdk}/{version} (drv={driver}; {os}; {arch}; {rustc}[; ft={B64}][; {key}={value}]...) [{suffix}]`. Feature flags are big-endian bytes without leading zeros, base64url-encoded without padding (e.g. `ft=Eg` for 0x12). To fit the 255-byte limit, platform segments are removed whole from right to left, with `drv` removed last; empty parentheses are omitted, then the suffix is shortened if needed, and finally the SDK identifier. The suffix is never normalized. ([#5406](https://github.com/Azure/azure-sdk-for-rust/pull/5406))
 - Terminal service 404/1002, 403/3, and 403/1008 errors now surface as synthetic 503/20310, 503/20311, and 503/20312 errors, retaining the original wire error in `source()`. ([#5392](https://github.com/Azure/azure-sdk-for-rust/pull/5392))
+- Renamed `Credential::MasterKey` to `Credential::AccountKey` and `AccountReference::with_master_key()` to `AccountReference::with_account_key()`. ([#5421](https://github.com/Azure/azure-sdk-for-rust/pull/5421))
 
 ### Bugs Fixed
 

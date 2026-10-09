@@ -10,7 +10,7 @@ pub mod binary_response_format;
 pub mod container_recreation;
 pub mod control_plane;
 pub mod distinct;
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub mod distributed_transaction;
 pub mod dynamic_topology;
 #[cfg(feature = "fault_injection")]
@@ -34,11 +34,11 @@ pub mod partition_key_range_cache_lifecycle;
 pub mod partition_topology_cache;
 pub mod patch_default;
 #[cfg(feature = "fault_injection")]
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 pub mod patch_retry_faults;
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 pub mod patch_strategy;
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 pub mod patch_verification_routing;
 pub mod point_operations;
 pub mod ppaf_dynamic_enablement;

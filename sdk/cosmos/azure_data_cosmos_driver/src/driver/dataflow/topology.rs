@@ -106,7 +106,7 @@ mod tests {
     }
 
     fn make_container_with_rid(rid: &'static str) -> ContainerReference {
-        let account = crate::models::AccountReference::with_master_key(
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );

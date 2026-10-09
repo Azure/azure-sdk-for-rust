@@ -68,7 +68,7 @@ use super::{
 ///     .await?;
 ///
 /// // Create a driver for an account
-/// let account = AccountReference::with_master_key(
+/// let account = AccountReference::with_account_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-key",
 /// );
@@ -421,7 +421,7 @@ impl CosmosDriverRuntime {
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -840,7 +840,7 @@ mod tests {
     #[tokio::test]
     async fn create_driver_propagates_initialization_failures() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "***not-base64***",
         );
@@ -864,7 +864,7 @@ mod tests {
     #[tokio::test]
     async fn create_driver_rejects_http_production_endpoint() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("http://myaccount.documents.azure.com/").unwrap(),
             "***not-base64***",
         );
@@ -882,7 +882,7 @@ mod tests {
     #[tokio::test]
     async fn create_driver_rejects_http_backup_endpoint() {
         let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://myaccount.documents.azure.com/").unwrap(),
             "***not-base64***",
         )

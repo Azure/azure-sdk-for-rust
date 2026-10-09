@@ -13,6 +13,7 @@ use std::collections::VecDeque;
 
 use async_trait::async_trait;
 
+use super::recovery_diagnostics::RecoveryDiagnostics;
 use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState, RangedToken};
 use crate::models::ChangeFeedStartFrom;
 
@@ -101,13 +102,19 @@ impl UnorderedMerge {
     async fn prime_children(
         &mut self,
         context: &mut PipelineContext<'_>,
+        recovery: &mut RecoveryDiagnostics,
     ) -> crate::error::Result<()> {
         let mut idx = 0;
         while idx < self.children.len() {
             let mut split_retries = 0;
             loop {
-                match self.children[idx].next_page(context).await? {
+                match self.children[idx]
+                    .next_page(context)
+                    .await
+                    .map_err(|error| recovery.attach_error(error))?
+                {
                     PageResult::Page { response, .. } => {
+                        recovery.absorb(Some(response.diagnostics()));
                         // Start-from-`Now` first poll: a 304 carrying only an
                         // ETag, which the child has now recorded. Discarding the
                         // (item-less) page loses nothing; advance to the next
@@ -130,18 +137,21 @@ impl UnorderedMerge {
                         self.children.remove(idx);
                         break;
                     }
-                    PageResult::SplitRequired { replacements } => {
+                    PageResult::SplitRequired { mut replacements } => {
+                        recovery.absorb(replacements.take_diagnostics());
                         split_retries += 1;
                         if split_retries > MAX_SPLIT_RETRIES {
-                            return Err(crate::error::CosmosError::builder()
-                                .with_status(
-                                    crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED,
-                                )
-                                .with_message(format!(
-                                    "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
+                            return Err(recovery.attach_error(
+                                crate::error::CosmosError::builder()
+                                    .with_status(
+                                        crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED,
+                                    )
+                                    .with_message(format!(
+                                        "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                      while priming UnorderedMerge children"
-                                ))
-                                .build());
+                                    ))
+                                    .build(),
+                            ));
                         }
                         // Splice the replacement ranges in place and re-prime
                         // from the first replacement (same index).
@@ -166,13 +176,14 @@ impl PipelineNode for UnorderedMerge {
         if self.children.is_empty() {
             return Ok(PageResult::Drained);
         }
+        let mut recovery = RecoveryDiagnostics::default();
 
         // For a fresh AllVersionsAndDeletes feed, poll every range once up front
         // so each records its concrete starting continuation before any
         // checkpoint can be taken. This runs exactly once.
         if self.prime_on_first_drain {
             self.prime_on_first_drain = false;
-            self.prime_children(context).await?;
+            self.prime_children(context, &mut recovery).await?;
             if self.children.is_empty() {
                 return Ok(PageResult::Drained);
             }
@@ -192,7 +203,11 @@ impl PipelineNode for UnorderedMerge {
             let idx = self.cursor % self.children.len();
             let child = &mut self.children[idx];
 
-            match child.next_page(context).await? {
+            match child
+                .next_page(context)
+                .await
+                .map_err(|error| recovery.attach_error(error))?
+            {
                 PageResult::Page {
                     response,
                     // A child's `is_terminal` (304 / no continuation) is
@@ -211,7 +226,7 @@ impl PipelineNode for UnorderedMerge {
                     // Propagate the page to the caller. The iterator layer
                     // decides whether to surface 304 pages as empty results.
                     return Ok(PageResult::Page {
-                        response,
+                        response: recovery.attach_response(response),
                         // UnorderedMerge never signals terminal to its
                         // parent — the change feed stream is infinite.
                         is_terminal: false,
@@ -235,16 +250,21 @@ impl PipelineNode for UnorderedMerge {
                         return Ok(PageResult::Drained);
                     }
                 }
-                PageResult::SplitRequired { replacements } => {
+                PageResult::SplitRequired { mut replacements } => {
+                    recovery.absorb(replacements.take_diagnostics());
                     split_retries += 1;
                     if split_retries > MAX_SPLIT_RETRIES {
-                        return Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED)
-                            .with_message(format!(
-                                "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
+                        return Err(recovery.attach_error(
+                            crate::error::CosmosError::builder()
+                                .with_status(
+                                    crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED,
+                                )
+                                .with_message(format!(
+                                    "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in UnorderedMerge"
-                            ))
-                            .build());
+                                ))
+                                .build(),
+                        ));
                     }
 
                     // Remove the split child and splice in replacements.

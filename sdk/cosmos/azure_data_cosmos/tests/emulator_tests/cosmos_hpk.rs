@@ -19,7 +19,7 @@ use azure_core::http::StatusCode;
 use azure_data_cosmos::clients::{ContainerClient, DatabaseClient};
 use azure_data_cosmos::feed::FeedScope;
 use azure_data_cosmos::models::{ContainerProperties, PartitionKeyKind};
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use azure_data_cosmos::models::{PatchInstructions, PatchOperation};
 use azure_data_cosmos::{PartitionKey, Query, SubStatusCode, TransactionalBatch};
 use framework::{TestClient, TestOptions, TestRunContext};
@@ -358,7 +358,7 @@ pub async fn hpk_item_delete_full_key() -> Result<(), Box<dyn Error>> {
 }
 
 /// A5: patch a field on an item addressed by a full 2-level key.
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 #[tokio::test]
 #[cfg_attr(
     not(any(

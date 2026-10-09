@@ -407,7 +407,7 @@ async fn driver_container(
         .await?;
     let driver = runtime
         .create_driver(
-            DriverOptions::builder(DriverAccountReference::with_master_key(
+            DriverOptions::builder(DriverAccountReference::with_account_key(
                 connection.account_endpoint().parse()?,
                 connection.account_key().clone(),
             ))

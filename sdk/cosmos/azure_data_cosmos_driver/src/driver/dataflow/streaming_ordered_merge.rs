@@ -55,6 +55,7 @@ use std::cmp::Ordering;
 use std::collections::VecDeque;
 use std::sync::Arc;
 
+use super::recovery_diagnostics::RecoveryDiagnostics;
 use async_trait::async_trait;
 
 use crate::models::{CosmosOperation, FeedRange, ItemView, MaxItemCountHint, SessionToken};
@@ -301,6 +302,7 @@ impl ChildStream {
         context: &mut PipelineContext<'_>,
         aggregator: &mut PageAggregator,
         directions: &[SortOrder],
+        recovery: &mut RecoveryDiagnostics,
         #[cfg(test)] retention: Option<tests::RetentionSample>,
     ) -> crate::error::Result<FillOutcome> {
         loop {
@@ -319,17 +321,27 @@ impl ChildStream {
                     {
                         retention.record(Some(page));
                     }
-                    aggregator.absorb(&response)?;
-                    let mut rows: VecDeque<query_response::EnvelopeRow> =
-                        query_response::parse_envelope_page(response.body(), directions.len())?
-                            .into();
-                    let fallback = directions.first().copied().unwrap_or(SortOrder::Ascending);
-                    let rid_direction =
-                        if matches!(&self.pending_discard, PendingDiscard::ResumeBoundary { .. }) {
+                    let validated = aggregator.absorb_session_token(&response).and_then(|()| {
+                        let rows: VecDeque<query_response::EnvelopeRow> =
+                            query_response::parse_envelope_page(response.body(), directions.len())?
+                                .into();
+                        let fallback = directions.first().copied().unwrap_or(SortOrder::Ascending);
+                        let rid_direction = if matches!(
+                            &self.pending_discard,
+                            PendingDiscard::ResumeBoundary { .. }
+                        ) {
                             query_response::effective_rid_direction(response.headers(), fallback)?
                         } else {
                             fallback
                         };
+                        Ok((rows, rid_direction))
+                    });
+                    let (mut rows, rid_direction) = validated.map_err(|error| {
+                        recovery.absorb(Some(response.diagnostics()));
+                        recovery.attach_error(error)
+                    })?;
+                    let response = recovery.attach_response(response);
+                    aggregator.absorb_validated(&response);
                     self.pending_discard.apply(&mut rows, rid_direction);
                     self.buffered = rows;
                     if is_terminal {
@@ -436,6 +448,7 @@ impl StreamingOrderedMerge {
     ) -> crate::error::Result<bool> {
         let mut split_retries = 0;
         let mut topology_changed = false;
+        let mut recovery = RecoveryDiagnostics::default();
         loop {
             #[cfg(test)]
             let retention = self.retention_sample();
@@ -445,6 +458,7 @@ impl StreamingOrderedMerge {
                     context,
                     aggregator,
                     &self.directions,
+                    &mut recovery,
                     #[cfg(test)]
                     retention,
                 )
@@ -452,21 +466,27 @@ impl StreamingOrderedMerge {
             // Commit before propagating: a fill that absorbed a page and then
             // failed to parse it still advanced session state we must not lose.
             self.session_token = aggregator.session_token().cloned();
-            let outcome = outcome?;
+            let outcome = outcome.map_err(|error| recovery.attach_error(error))?;
             match outcome {
                 FillOutcome::Filled => return Ok(topology_changed),
-                FillOutcome::SplitRequired { replacements } => {
+                FillOutcome::SplitRequired { mut replacements } => {
+                    recovery.absorb(replacements.take_diagnostics());
                     split_retries += 1;
                     if split_retries > MAX_SPLIT_RETRIES {
-                        return Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED)
-                            .with_message(format!(
-                                "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
+                        return Err(recovery.attach_error(
+                            crate::error::CosmosError::builder()
+                                .with_status(
+                                    crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED,
+                                )
+                                .with_message(format!(
+                                    "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in StreamingOrderedMerge"
-                            ))
-                            .build());
+                                ))
+                                .build(),
+                        ));
                     }
-                    self.handle_split(idx, replacements)?;
+                    self.handle_split(idx, replacements)
+                        .map_err(|error| recovery.attach_error(error))?;
                     topology_changed = true;
                     // Loop: index `idx` now refers to the first replacement.
                 }
@@ -602,7 +622,7 @@ impl PipelineNode for StreamingOrderedMerge {
             .await
         {
             self.continuation_unsafe = true;
-            return Err(err);
+            return Err(aggregator.attach_error(err));
         }
         let mut head_heap = self.build_head_heap();
 
@@ -627,13 +647,8 @@ impl PipelineNode for StreamingOrderedMerge {
                 Ok(item) => item,
                 Err(err) => {
                     self.children[winner].buffered.push_front(row);
-                    // No partial page to defer behind, so `aggregator` is
-                    // dropped. Safe only because `ensure_stream_filled` commits
-                    // the merged session token to `self` as each page is
-                    // absorbed; the charge and diagnostics do go with it, an
-                    // accounting loss on an already-failed call.
                     if items.is_empty() {
-                        return Err(err);
+                        return Err(aggregator.attach_error(err));
                     }
                     self.deferred_error = Some(err);
                     break;
@@ -643,10 +658,8 @@ impl PipelineNode for StreamingOrderedMerge {
                 // The boundary was not advanced, so put the row back and let
                 // it be re-emitted on a later attempt.
                 self.children[winner].buffered.push_front(row);
-                // See the encode branch above for why discarding `aggregator`
-                // here does not lose session progress.
                 if items.is_empty() {
-                    return Err(err);
+                    return Err(aggregator.attach_error(err));
                 }
                 self.deferred_error = Some(err);
                 break;
@@ -713,6 +726,10 @@ impl PipelineNode for StreamingOrderedMerge {
     #[cfg(test)]
     fn into_children(self) -> Vec<Box<dyn PipelineNode>> {
         self.children.into_iter().map(|c| c.node).collect()
+    }
+
+    fn take_pending_error(&mut self) -> Option<crate::error::CosmosError> {
+        self.deferred_error.take()
     }
 
     fn snapshot_state(&self) -> crate::error::Result<PipelineNodeState> {
@@ -1323,6 +1340,609 @@ mod tests {
             children,
             "test-fingerprint".to_owned(),
         )
+    }
+
+    #[tokio::test]
+    async fn split_exhaustion_keeps_attempt_diagnostics() {
+        let range = FeedRange::full();
+        let request = Request::new(
+            Arc::new(mocks::operation()),
+            RequestTarget::effective_partition_key_range(range.clone(), "0".into(), range.clone()),
+            None,
+        );
+        let mut node = merge(
+            vec![ChildStream::fresh(range.clone(), Box::new(request))],
+            vec![SortOrder::Ascending],
+        );
+        let mut executor = mocks::MockRequestExecutor::new(
+            (0..11)
+                .map(|_| Err(mocks::gone_error_with_diagnostics()))
+                .collect(),
+        );
+        let mut topology =
+            mocks::PhysicalTopologyProvider::new(vec![super::super::ResolvedRange {
+                partition_key_range_id: "0".into(),
+                parents: Vec::new(),
+                range,
+            }]);
+        let error = node
+            .next_page(&mut PipelineContext::new(
+                &mut executor,
+                Some(&mut topology),
+            ))
+            .await
+            .unwrap_err();
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED
+        );
+        let diagnostics = error.diagnostics().unwrap();
+        assert_eq!(diagnostics.request_count(), 11);
+        assert_eq!(diagnostics.effective_status(), Some(error.status()));
+    }
+
+    #[tokio::test]
+    async fn recovered_attempts_survive_failure_before_first_page() {
+        for malformed in [false, true] {
+            let left_range = range("", "80").unwrap();
+            let page = if malformed {
+                mocks::response(b"{")
+            } else {
+                join_envelope_response(&[("rid", 1, "first")], None)
+            };
+            let replacement = Box::new(
+                mocks::MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                    response: page,
+                    is_terminal: true,
+                })])
+                .with_feed_range(left_range.clone()),
+            );
+            let replacements = SplitReplacements::try_tiling(&left_range, vec![replacement])
+                .unwrap()
+                .with_diagnostics(mocks::gone_error_with_diagnostics().diagnostics());
+            let left = ChildStream::fresh(
+                left_range,
+                Box::new(mocks::MockLeaf::with_pages(vec![Ok(
+                    PageResult::SplitRequired { replacements },
+                )])),
+            );
+            let right = ChildStream::fresh(
+                range("80", "FF").unwrap(),
+                Box::new(mocks::MockLeaf::with_pages(vec![Err(
+                    mocks::gone_error_with_diagnostics(),
+                )])),
+            );
+            let mut node = merge(vec![left, right], vec![SortOrder::Ascending]);
+            let mut executor = mocks::NoopRequestExecutor;
+            let error = node
+                .next_page(&mut PipelineContext::new(&mut executor, None))
+                .await
+                .unwrap_err();
+            let diagnostics = error
+                .diagnostics()
+                .expect("immediate errors must retain absorbed recovery attempts");
+            assert_eq!(diagnostics.request_count(), if malformed { 1 } else { 2 });
+            assert_eq!(diagnostics.effective_status(), Some(error.status()));
+        }
+    }
+
+    #[tokio::test]
+    async fn poisoned_distinct_retains_pending_child_recovery_diagnostics() {
+        use crate::{
+            diagnostics::{
+                DiagnosticsContextBuilder, ExecutionContext, PipelineKind, TransportHttpVersion,
+                TransportKind, TransportSecurity,
+            },
+            driver::dataflow::{query_plan::DistinctType, Distinct, SkipTake},
+            error::status_codes,
+            models::{CosmosResponse, RequestCharge},
+        };
+        use std::error::Error as _;
+
+        for nested in [false, true] {
+            let payload = format!("{}0{}", "[".repeat(130), "]".repeat(130));
+            let body = format!(
+                r#"{{"Documents":[{{"_rid":"first","orderByItems":[{{"item":1}}],"payload":{payload}}}]}}"#
+            );
+            let scope = FeedRange::full();
+            let request = Request::new(
+                Arc::new(mocks::operation()),
+                RequestTarget::effective_partition_key_range(
+                    scope.clone(),
+                    "0".into(),
+                    scope.clone(),
+                ),
+                None,
+            );
+            let mut merged = merge(
+                vec![ChildStream::fresh(scope.clone(), Box::new(request))],
+                vec![SortOrder::Ascending],
+            );
+            merged.emit_binary = false;
+            let distinct: Box<dyn PipelineNode> =
+                Box::new(Distinct::new(Box::new(merged), DistinctType::Ordered));
+            let mut root: Box<dyn PipelineNode> = if nested {
+                Box::new(SkipTake::new(distinct, 0, Some(1), false))
+            } else {
+                distinct
+            };
+            let charged = |response: CosmosResponse| {
+                let mut headers = response.headers().clone();
+                headers.request_charge = Some(RequestCharge::new(1.0));
+                let mut diagnostics = DiagnosticsContextBuilder::new(
+                    crate::models::ActivityId::new_uuid(),
+                    Arc::new(crate::options::DiagnosticsOptions::default()),
+                );
+                let endpoint = crate::driver::routing::CosmosEndpoint::global(
+                    url::Url::parse("https://acct.example/").unwrap(),
+                );
+                let handle = diagnostics.start_request(
+                    ExecutionContext::Initial,
+                    PipelineKind::DataPlane,
+                    TransportSecurity::Secure,
+                    TransportKind::Gateway,
+                    TransportHttpVersion::Http11,
+                    &endpoint,
+                );
+                diagnostics.update_request(handle, |request| {
+                    request.with_charge(RequestCharge::new(1.0))
+                });
+                diagnostics.complete_request(handle, response.status().status_code(), None);
+                diagnostics.set_operation_status(response.status().status_code(), None);
+                CosmosResponse::new(
+                    response.body().clone(),
+                    headers,
+                    response.status(),
+                    Arc::new(diagnostics.complete()),
+                )
+            };
+            let mut executor = mocks::MockRequestExecutor::new(vec![
+                Ok(charged(mocks::response_with_continuation(
+                    body.as_bytes(),
+                    Some("more"),
+                ))),
+                Err(mocks::gone_error_with_diagnostics()),
+                Ok(charged(mocks::response(b"{"))),
+            ]);
+            let mut topology =
+                mocks::PhysicalTopologyProvider::new(vec![super::super::ResolvedRange {
+                    partition_key_range_id: "0".into(),
+                    parents: Vec::new(),
+                    range: scope,
+                }]);
+            {
+                let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+                let error = root.next_page(&mut context).await.unwrap_err();
+                assert_eq!(
+                    error.status(),
+                    status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+                );
+                assert!(error
+                    .source()
+                    .unwrap()
+                    .to_string()
+                    .contains("recursion limit exceeded"));
+                let diagnostics = error.diagnostics().unwrap();
+                assert_eq!(diagnostics.request_count(), 3);
+                assert_eq!(diagnostics.total_request_charge(), RequestCharge::new(3.0));
+                assert_eq!(diagnostics.effective_status(), Some(error.status()));
+                assert_eq!(
+                    diagnostics
+                        .requests()
+                        .iter()
+                        .map(|request| request.status().status_code())
+                        .collect::<Vec<_>>(),
+                    vec![
+                        azure_core::http::StatusCode::Ok,
+                        azure_core::http::StatusCode::Gone,
+                        azure_core::http::StatusCode::Ok
+                    ]
+                );
+                let json: serde_json::Value =
+                    serde_json::from_str(diagnostics.to_json_string(None)).unwrap();
+                assert_eq!(json["topology_recovery"]["total_attempts"], 1);
+                assert!(root.take_pending_error().is_none());
+                let repeated = root.next_page(&mut context).await.unwrap_err();
+                assert_eq!(repeated.status(), error.status());
+                assert!(
+                    repeated.diagnostics().is_none(),
+                    "reported attempts must not be delivered again"
+                );
+            }
+            assert_eq!(
+                executor.target_calls.len(),
+                3,
+                "poisoning must not fetch another page"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn terminal_window_hands_off_deferred_recovery_error_without_polling() {
+        use crate::driver::dataflow::{query_plan::DistinctType, Distinct, SkipTake};
+        use crate::models::{CosmosResponse, RequestCharge};
+
+        for (wrapper, skip) in (0..3).flat_map(|wrapper| [0, 1].map(|skip| (wrapper, skip))) {
+            let left_range = range("", "80").unwrap();
+            let right_range = range("80", "FF").unwrap();
+            let request = |range: FeedRange, id: &str| {
+                ChildStream::fresh(
+                    range.clone(),
+                    Box::new(Request::new(
+                        Arc::new(mocks::operation()),
+                        RequestTarget::effective_partition_key_range(
+                            range.clone(),
+                            id.into(),
+                            range,
+                        ),
+                        None,
+                    )),
+                )
+            };
+            let merged: Box<dyn PipelineNode> = Box::new(merge(
+                vec![
+                    request(left_range.clone(), "0"),
+                    request(right_range.clone(), "1"),
+                ],
+                vec![SortOrder::Ascending],
+            ));
+            let child: Box<dyn PipelineNode> = match wrapper {
+                0 => merged,
+                1 => Box::new(Distinct::new(merged, DistinctType::Ordered)),
+                _ => Box::new(Distinct::new(
+                    Box::new(SkipTake::new(merged, 0, Some(2), false)),
+                    DistinctType::Ordered,
+                )),
+            };
+            let mut window = SkipTake::new(child, skip, Some(2 - skip), false);
+            let charged = |response: CosmosResponse| {
+                let mut headers = response.headers().clone();
+                headers.request_charge = Some(RequestCharge::new(1.0));
+                let diagnostics = mocks::gone_error_with_diagnostics().diagnostics().unwrap();
+                CosmosResponse::new(
+                    response.body().clone(),
+                    headers,
+                    response.status(),
+                    Arc::new(diagnostics.clone_with_status(response.status())),
+                )
+            };
+            let mut executor = mocks::MockRequestExecutor::new(vec![
+                Ok(charged(join_envelope_response(
+                    &[("a", 1, "first")],
+                    Some("left"),
+                ))),
+                Ok(charged(join_envelope_response(
+                    &[("b", 2, "second")],
+                    Some("right"),
+                ))),
+                Ok(charged(join_envelope_response(
+                    &[("c", 3, "third")],
+                    Some("left-next"),
+                ))),
+                Err(mocks::gone_error_with_diagnostics()),
+                Ok(charged(mocks::response(b"{"))),
+            ]);
+            let mut topology = mocks::PhysicalTopologyProvider::new(vec![
+                super::super::ResolvedRange {
+                    partition_key_range_id: "0".into(),
+                    parents: vec![],
+                    range: left_range,
+                },
+                super::super::ResolvedRange {
+                    partition_key_range_id: "1".into(),
+                    parents: vec![],
+                    range: right_range,
+                },
+            ]);
+            {
+                let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+                let PageResult::Page {
+                    response,
+                    is_terminal,
+                } = window.next_page(&mut context).await.unwrap()
+                else {
+                    panic!("expected window rows");
+                };
+                assert_eq!(
+                    ids(&response),
+                    if skip == 0 {
+                        vec!["first", "second"]
+                    } else {
+                        vec!["second"]
+                    }
+                );
+                assert!(
+                    !is_terminal,
+                    "pending error must remain observable after TOP is satisfied"
+                );
+                assert_eq!(response.diagnostics().request_count(), 3);
+                assert_eq!(
+                    response.diagnostics().total_request_charge(),
+                    RequestCharge::new(3.0)
+                );
+                assert!(!response
+                    .diagnostics()
+                    .to_json_string(None)
+                    .contains("topology_recovery"));
+                let pending = window
+                    .snapshot_state()
+                    .expect_err("a pending error must not be saved as drained");
+                assert_eq!(pending.diagnostics().unwrap().request_count(), 2);
+                let error = window
+                    .next_page(&mut context)
+                    .await
+                    .expect_err("deliver the pending error");
+                let diagnostics = error.diagnostics().unwrap();
+                assert_eq!(error.status(), pending.status());
+                assert_eq!(diagnostics.request_count(), 2);
+                assert_eq!(diagnostics.total_request_charge(), RequestCharge::new(2.0));
+                assert_eq!(diagnostics.effective_status(), Some(error.status()));
+                let json: serde_json::Value =
+                    serde_json::from_str(diagnostics.to_json_string(None)).unwrap();
+                assert_eq!(json["topology_recovery"]["total_attempts"], 1);
+                assert!(matches!(
+                    window.next_page(&mut context).await.unwrap(),
+                    PageResult::Drained
+                ));
+                assert!(matches!(
+                    window.snapshot_state().unwrap(),
+                    PipelineNodeState::Drained
+                ));
+            }
+            assert_eq!(
+                executor.target_calls.len(),
+                5,
+                "handoff must not execute another request"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn malformed_replacement_diagnostics_belong_to_deferred_error() {
+        for invalid_header in [false, true] {
+            let scope = FeedRange::full();
+            let prior = mocks::gone_error_with_diagnostics().diagnostics().unwrap();
+            let prior = Arc::new(prior.with_topology_recovery(
+                "0",
+                &scope,
+                std::time::Duration::ZERO,
+                std::time::Duration::ZERO,
+                None,
+                [("1".to_owned(), String::new(), "FF".to_owned())].into_iter(),
+            ));
+            let mut headers = mocks::response(b"").headers().clone();
+            headers.session_token = Some(SessionToken::new("0:1#20"));
+            headers.query_execution_info = invalid_header.then(|| "{".to_owned());
+            let body = if invalid_header {
+                join_envelope_response(&[("rid2", 2, "next")], None)
+                    .body_bytes()
+                    .to_vec()
+            } else {
+                b"{".to_vec()
+            };
+            let malformed = crate::models::CosmosResponse::new(
+                body,
+                headers,
+                mocks::response(b"").status(),
+                mocks::response_with_request_diagnostics(1).diagnostics(),
+            );
+            let replacement = Box::new(
+                MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                    response: malformed,
+                    is_terminal: true,
+                })])
+                .with_feed_range(scope.clone())
+                .with_snapshot(PipelineNodeState::Request {
+                    server_continuation: Some("next".into()),
+                }),
+            );
+            let replacements = SplitReplacements::try_tiling(&scope, vec![replacement])
+                .unwrap()
+                .with_diagnostics(Some(prior));
+            let child = Box::new(MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
+                replacements,
+            })]));
+            let mut node = merge(
+                vec![ChildStream {
+                    buffered: query_response::parse_envelope_page(
+                        join_envelope_response(&[("rid", 1, "first")], Some("more")).body(),
+                        1,
+                    )
+                    .unwrap()
+                    .into(),
+                    ..ChildStream::fresh(scope, child)
+                }],
+                vec![SortOrder::Ascending],
+            );
+            if invalid_header {
+                node.children[0].pending_discard = PendingDiscard::ResumeBoundary {
+                    resume_values: node.children[0]
+                        .buffered
+                        .front()
+                        .unwrap()
+                        .keys
+                        .iter()
+                        .map(|key| key.to_resume_value().unwrap())
+                        .collect(),
+                    last_rid: "rid".into(),
+                    skip_count: 1,
+                    directions: vec![SortOrder::Ascending],
+                };
+            }
+            let mut executor = mocks::NoopRequestExecutor;
+            let mut context = PipelineContext::new(&mut executor, None);
+            let PageResult::Page {
+                response,
+                is_terminal,
+            } = node.next_page(&mut context).await.unwrap()
+            else {
+                panic!("expected partial page");
+            };
+            assert_eq!(ids(&response), vec!["first"]);
+            assert!(!is_terminal);
+            assert_eq!(response.diagnostics().request_count(), 0);
+            assert!(!response
+                .diagnostics()
+                .to_json_string(None)
+                .contains("topology_recovery"));
+            assert_eq!(
+                node.session_token.as_ref().map(SessionToken::as_str),
+                Some("0:1#20")
+            );
+            assert!(node.continuation_unsafe);
+            let error = node.next_page(&mut context).await.unwrap_err();
+            let diagnostics = error
+                .diagnostics()
+                .expect("deferred validation error must retain both attempts");
+            assert_eq!(diagnostics.request_count(), 2);
+            assert_eq!(diagnostics.effective_status(), Some(error.status()));
+            let json: serde_json::Value =
+                serde_json::from_str(diagnostics.to_json_string(None)).unwrap();
+            assert_eq!(json["topology_recovery"]["total_attempts"], 1);
+        }
+    }
+
+    #[tokio::test]
+    async fn deferred_split_exhaustion_does_not_duplicate_attempts_on_partial_page() {
+        let range = FeedRange::full();
+        let mut child: Box<dyn PipelineNode> = Box::new(
+            mocks::MockLeaf::with_pages(vec![])
+                .with_feed_range(range.clone())
+                .with_snapshot(PipelineNodeState::Request {
+                    server_continuation: Some("more".into()),
+                }),
+        );
+        for _ in 0..11 {
+            let replacements = SplitReplacements::try_tiling(&range, vec![child])
+                .unwrap()
+                .with_diagnostics(mocks::gone_error_with_diagnostics().diagnostics());
+            child = Box::new(
+                mocks::MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired { replacements })])
+                    .with_feed_range(range.clone())
+                    .with_snapshot(PipelineNodeState::Request {
+                        server_continuation: Some("more".into()),
+                    }),
+            );
+        }
+        let mut node = merge(
+            vec![ChildStream {
+                buffered: query_response::parse_envelope_page(
+                    join_envelope_response(&[("rid", 1, "first")], Some("more")).body(),
+                    1,
+                )
+                .unwrap()
+                .into(),
+                ..ChildStream::fresh(range, child)
+            }],
+            vec![SortOrder::Ascending],
+        );
+        let mut executor = mocks::NoopRequestExecutor;
+        let mut context = PipelineContext::new(&mut executor, None);
+        let PageResult::Page {
+            response,
+            is_terminal,
+        } = node.next_page(&mut context).await.unwrap()
+        else {
+            panic!("expected partial page");
+        };
+        assert_eq!(ids(&response), vec!["first"]);
+        assert!(!is_terminal);
+        assert_eq!(response.diagnostics().request_count(), 0);
+        let error = node.next_page(&mut context).await.unwrap_err();
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED
+        );
+        assert_eq!(error.diagnostics().unwrap().request_count(), 11);
+    }
+
+    #[tokio::test]
+    async fn binary_split_recovery_preserves_page_context_and_diagnostics() {
+        for malformed in [false, true] {
+            let scope = FeedRange::full();
+            let first = crate::binary_json::test_support::reference_rows(&[("first", 0)], "first");
+            let next = crate::binary_json::test_support::reference_rows(&[("next", 1)], "next");
+            let mut body = next.to_vec();
+            if malformed {
+                body.pop();
+            }
+            let mut headers = mocks::response(b"").headers().clone();
+            headers.session_token = Some(SessionToken::new("0:1#20"));
+            let replacement = Box::new(
+                MockLeaf::with_pages(vec![Ok(PageResult::Page {
+                    response: crate::models::CosmosResponse::new(
+                        body,
+                        headers,
+                        mocks::response(b"").status(),
+                        mocks::response_with_request_diagnostics(1).diagnostics(),
+                    ),
+                    is_terminal: true,
+                })])
+                .with_feed_range(scope.clone())
+                .with_snapshot(PipelineNodeState::Request {
+                    server_continuation: Some("next".into()),
+                }),
+            );
+            let replacements = SplitReplacements::try_tiling(&scope, vec![replacement])
+                .unwrap()
+                .with_diagnostics(mocks::gone_error_with_diagnostics().diagnostics());
+            let children = vec![ChildStream {
+                buffered: query_response::parse_envelope_page(mocks::response(&first).body(), 1)
+                    .unwrap()
+                    .into(),
+                ..ChildStream::fresh(
+                    scope,
+                    Box::new(MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
+                        replacements,
+                    })])),
+                )
+            }];
+            let mut node = StreamingOrderedMerge::new(
+                Arc::new(mocks::operation().with_supported_serialization_formats("CosmosBinary")),
+                vec![SortOrder::Ascending],
+                children,
+                "binary-recovery".to_owned(),
+            );
+            let mut executor = mocks::NoopRequestExecutor;
+            let mut context = PipelineContext::new(&mut executor, None);
+            let PageResult::Page {
+                response,
+                is_terminal,
+            } = node.next_page(&mut context).await.unwrap()
+            else {
+                panic!("expected a binary page");
+            };
+            let crate::models::ResponseBody::ContextualItems(views) = response.body() else {
+                panic!("recovery must preserve contextual binary items");
+            };
+            assert_eq!(views[0].source_page(), first.as_ref());
+            assert_eq!(
+                node.session_token.as_ref().map(SessionToken::as_str),
+                Some("0:1#20")
+            );
+            if malformed {
+                assert_eq!(views.len(), 1);
+                assert_eq!(ids(&response), ["first"]);
+                assert!(!is_terminal);
+                assert_eq!(response.diagnostics().request_count(), 0);
+                assert!(node.continuation_unsafe);
+                let error = node.next_page(&mut context).await.unwrap_err();
+                assert_eq!(
+                    error.status(),
+                    crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+                );
+                let diagnostics = error.diagnostics().unwrap();
+                assert_eq!(diagnostics.request_count(), 2);
+                assert_eq!(diagnostics.effective_status(), Some(error.status()));
+            } else {
+                assert_eq!(views.len(), 2);
+                assert_eq!(views[1].source_page(), next.as_ref());
+                assert_eq!(ids(&response), ["first", "next"]);
+                assert!(is_terminal);
+                assert_eq!(response.diagnostics().request_count(), 2);
+                assert!(node.take_pending_error().is_none());
+            }
+        }
     }
 
     struct SelectiveMergeMeasurements {

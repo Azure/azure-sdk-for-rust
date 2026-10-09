@@ -400,7 +400,7 @@ See 0012 (`0012-feed-operations-and-dataflow.md`) for pagination mechanics.
 
 ## 9. Distributed transactions
 
-DTX is preview-gated (`preview_dtx`) and is the one path with *per-operation*
+DTX is preview-gated (`unstable_dtx`) and is the one path with *per-operation*
 tokens rather than one token per request. In outline:
 
 - Before serialization, each sub-operation lacking an explicit token is stamped

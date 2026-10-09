@@ -26,7 +26,7 @@
 //! Time is virtualized with `tokio::time::pause()` (via `start_paused`) because
 //! the production account-refresh interval is five minutes.
 
-#[cfg(not(feature = "preview_dtx"))]
+#[cfg(not(feature = "unstable_dtx"))]
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex};
@@ -175,7 +175,7 @@ fn build_emulator_with_replication(
 }
 
 fn account_at(endpoint: &str) -> AccountReference {
-    AccountReference::with_master_key(Url::parse(endpoint).unwrap(), "ZW11bGF0b3Ita2V5")
+    AccountReference::with_account_key(Url::parse(endpoint).unwrap(), "ZW11bGF0b3Ita2V5")
 }
 
 async fn build_driver(
@@ -1618,7 +1618,7 @@ async fn delayed_catch_up_cannot_overwrite_handler_write_before_registration() {
 }
 
 /// Independent handlers share the replication barrier through registration.
-#[cfg(not(feature = "preview_dtx"))]
+#[cfg(not(feature = "unstable_dtx"))]
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn replication_registration_preserves_concurrent_handler_writes() {
     let recorder = HostRecorder::new();

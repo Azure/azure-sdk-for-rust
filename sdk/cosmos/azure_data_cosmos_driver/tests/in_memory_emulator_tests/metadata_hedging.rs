@@ -61,7 +61,7 @@ const COLL_NAME: &str = "testcoll";
 const PRIMARY_METADATA_DELAY: Duration = Duration::from_millis(2500);
 
 fn account() -> AccountReference {
-    AccountReference::with_master_key(
+    AccountReference::with_account_key(
         Url::parse(ACCOUNT_ENDPOINT).expect("valid endpoint"),
         // The emulator does not validate the signature; any base64 works.
         ACCOUNT_KEY,

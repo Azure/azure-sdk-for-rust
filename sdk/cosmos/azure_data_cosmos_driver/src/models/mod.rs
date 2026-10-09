@@ -18,7 +18,7 @@ pub(crate) mod cosmos_headers;
 mod cosmos_operation;
 mod cosmos_resource_reference;
 mod cosmos_response;
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 mod distributed_transaction;
 mod finite_f64;
 pub(crate) mod partition_key;
@@ -59,7 +59,7 @@ pub use cosmos_resource_reference::CosmosResourceReference;
 pub(crate) use cosmos_resource_reference::ResourcePaths;
 pub use cosmos_response::CosmosResponse;
 pub(crate) use cosmos_response::CosmosResponsePayload;
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub use distributed_transaction::{
     DistributedTransactionOperation, DistributedTransactionOperationKind,
     DistributedTransactionOperationResult, DistributedTransactionRequest,
@@ -439,7 +439,7 @@ pub enum ResourceType {
     /// An offer (throughput configuration).
     Offer,
     /// Distributed transaction coordinator batch.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     DistributedTransactionBatch,
 }
 
@@ -456,7 +456,7 @@ impl ResourceType {
             ResourceType::UserDefinedFunction => "user_defined_function",
             ResourceType::PartitionKeyRange => "partition_key_range",
             ResourceType::Offer => "offer",
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             ResourceType::DistributedTransactionBatch => "distributed_transaction_batch",
         }
     }
@@ -473,7 +473,7 @@ impl ResourceType {
             ResourceType::UserDefinedFunction => "udfs",
             ResourceType::PartitionKeyRange => "pkranges",
             ResourceType::Offer => "offers",
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             ResourceType::DistributedTransactionBatch => "distributedtransactionbatch",
         }
     }
@@ -561,7 +561,7 @@ impl std::str::FromStr for ResourceType {
             "user_defined_function" | "udf" => Ok(ResourceType::UserDefinedFunction),
             "partition_key_range" | "pkrange" => Ok(ResourceType::PartitionKeyRange),
             "offer" => Ok(ResourceType::Offer),
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             "distributed_transaction_batch" | "distributedtransactionbatch" => {
                 Ok(ResourceType::DistributedTransactionBatch)
             }
@@ -622,10 +622,10 @@ pub enum OperationType {
     /// and ETag-guarded [`OperationType::Replace`].
     Patch,
     /// Commit a distributed write transaction.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     CommitDistributedTransaction,
     /// Execute a distributed read transaction.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     ReadDistributedTransaction,
 }
 
@@ -687,7 +687,7 @@ impl OperationType {
             | OperationType::Batch
             | OperationType::QueryPlan
             | OperationType::Execute => Method::Post,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             OperationType::CommitDistributedTransaction
             | OperationType::ReadDistributedTransaction => Method::Post,
             OperationType::Delete => Method::Delete,
@@ -709,7 +709,7 @@ impl OperationType {
             | OperationType::QueryPlan
             | OperationType::Head
             | OperationType::HeadFeed => true,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             OperationType::ReadDistributedTransaction => true,
             _ => false,
         }
@@ -718,7 +718,7 @@ impl OperationType {
     /// Returns true if this operation must be routed to write endpoints.
     pub fn routes_to_write_endpoints(self) -> bool {
         match self {
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             OperationType::CommitDistributedTransaction
             | OperationType::ReadDistributedTransaction => true,
             _ => !self.is_read_only(),
@@ -737,7 +737,7 @@ impl OperationType {
             | OperationType::HeadFeed
             | OperationType::Replace
             | OperationType::Delete => true,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             OperationType::CommitDistributedTransaction
             | OperationType::ReadDistributedTransaction => true,
             _ => false,
@@ -761,9 +761,9 @@ impl OperationType {
             OperationType::HeadFeed => "head_feed",
             OperationType::Execute => "execute",
             OperationType::Patch => "patch",
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             OperationType::CommitDistributedTransaction => "commit_distributed_transaction",
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             OperationType::ReadDistributedTransaction => "read_distributed_transaction",
         }
     }

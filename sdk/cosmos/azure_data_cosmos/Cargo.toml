@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos"
-version = "1.0.0"
+version = "1.1.0-beta.1"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
 authors.workspace = true
@@ -17,7 +17,7 @@ categories = ["api-bindings"]
 async-lock.workspace = true
 async-trait.workspace = true
 azure_core = { workspace = true, default-features = false }
-azure_data_cosmos_driver = { version = "1.0.0", path = "../azure_data_cosmos_driver", default-features = false }
+azure_data_cosmos_driver = { version = "1.1.0-beta.1", path = "../azure_data_cosmos_driver", default-features = false }
 base64.workspace = true
 futures.workspace = true
 opentelemetry = { workspace = true, optional = true, features = ["metrics"] }
@@ -93,9 +93,9 @@ rustls = ["reqwest", "azure_data_cosmos_driver/rustls", "__tls"]
 native_tls = ["reqwest", "azure_data_cosmos_driver/native_tls", "__tls"]
 key_auth = [
 ] # Enables support for key-based authentication (Primary Keys and Resource Tokens)
-preview_opentelemetry = [
+unstable_opentelemetry = [
   "dep:opentelemetry",
-] # Enables OpenTelemetry metrics and tracing emission (off by default; OpenTelemetry is in preview)
+] # Enables unstable OpenTelemetry metrics and tracing emission (off by default; OpenTelemetry is in preview)
 control_plane = [
 ] # Enables control-plane APIs: Database and Container CRUD, and Throughput/Offer management. Disabled by default. Intentionally does NOT enable `key_auth` so a future Entra ID control-plane path can opt in without key-based authentication.
 hmac_rust = ["azure_core/hmac_rust"]
@@ -103,13 +103,13 @@ hmac_openssl = ["azure_core/hmac_openssl"]
 fault_injection = [
   "azure_data_cosmos_driver/fault_injection",
 ] # Enables support for fault injection testing
-preview_dtx = [
-  "azure_data_cosmos_driver/preview_dtx",
-] # Enables preview Distributed Transaction APIs. Disabled by default and not production-ready.
-preview_patch = [
+unstable_dtx = [
+  "azure_data_cosmos_driver/unstable_dtx",
+] # Enables unstable Distributed Transaction APIs. Disabled by default and not production-ready.
+unstable_patch = [
   "dep:uuid",
-  "azure_data_cosmos_driver/preview_patch",
-] # Enables the preview PATCH API with bounded duplicate suppression. Disabled by default.
+  "azure_data_cosmos_driver/unstable_patch",
+] # Enables the unstable PATCH API with bounded duplicate suppression. Disabled by default.
 __internal_in_memory_emulator = [
   "azure_data_cosmos_driver/__internal_in_memory_emulator",
   "key_auth",
@@ -124,9 +124,9 @@ features = [
   "hmac_openssl",
   "hmac_rust",
   "key_auth",
-  "preview_opentelemetry",
+  "unstable_opentelemetry",
   "native_tls",
-  "preview_patch",
+  "unstable_patch",
   "rustls",
 ]
 
@@ -180,9 +180,9 @@ path = "tests/e2e_tests.rs"
 required-features = [
   "key_auth",
   "control_plane",
-  "preview_patch",
+  "unstable_patch",
   "fault_injection",
-  "preview_opentelemetry",
+  "unstable_opentelemetry",
 ]
 
 # The `cosmos` example CLI exercises control-plane operations (database and
@@ -193,9 +193,9 @@ name = "cosmos"
 path = "examples/cosmos/main.rs"
 required-features = ["control_plane"]
 
-# The PATCH example calls the preview `patch_item` API, which only exists
-# when `preview_patch` is enabled.
+# The PATCH example calls the unstable `patch_item` API, which only exists
+# when `unstable_patch` is enabled.
 [[example]]
 name = "cosmos_patch"
 path = "examples/cosmos_patch.rs"
-required-features = ["preview_patch"]
+required-features = ["unstable_patch"]

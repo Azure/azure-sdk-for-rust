@@ -109,7 +109,7 @@ async fn build_fixture(rules: Vec<Arc<FaultInjectionRule>>) -> Fixture {
         .await
         .expect("runtime builds against in-memory emulator");
 
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse(PRIMARY_URL).unwrap(),
         // Master keys are base64; the emulator does not validate the
         // signature so any well-formed base64 value works.

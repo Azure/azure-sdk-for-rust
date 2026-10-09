@@ -158,7 +158,7 @@ async fn create_v1_container(
     let container_id = format!("Container-V1-{}", Uuid::new_v4());
     let connection_string = framework::resolve_connection_string()
         .ok_or("Cosmos connection string is not configured")?;
-    let account = DriverAccountReference::with_master_key(
+    let account = DriverAccountReference::with_account_key(
         connection_string.account_endpoint().parse::<url::Url>()?,
         connection_string.account_key().clone(),
     );

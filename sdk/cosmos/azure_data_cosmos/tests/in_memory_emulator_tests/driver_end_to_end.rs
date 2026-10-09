@@ -943,7 +943,7 @@ async fn paused_satellite_converges_to_latest_hub_write() {
     );
     emulator_store.pause_replication("West US");
 
-    let account = AccountReference::with_master_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
+    let account = AccountReference::with_account_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
     let driver = emulator_runtime
         .create_driver(
             DriverOptionsBuilder::new(account)
@@ -1127,7 +1127,7 @@ async fn create_retries_after_429_throttling() {
             .unwrap(),
     );
 
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse("https://eastus.emulator.local").unwrap(),
         "dGVzdGtleQ==",
     );
@@ -1303,7 +1303,7 @@ async fn read_failover_on_503_via_fault_injection() {
     );
 
     let emu_account =
-        AccountReference::with_master_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
+        AccountReference::with_account_key(Url::parse(east_url).unwrap(), "dGVzdGtleQ==");
     let emu_driver_opts = DriverOptionsBuilder::new(emu_account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
         .with_fault_injection_rules(vec![Arc::clone(&emu_rule)])
@@ -1463,7 +1463,7 @@ async fn try_real_failover_comparison(
     let conn_str: ConnectionString = conn_str_raw.parse().ok()?;
     let endpoint: Url = conn_str.account_endpoint().parse().ok()?;
     let key = conn_str.account_key().secret().to_string();
-    let account = AccountReference::with_master_key(endpoint, key);
+    let account = AccountReference::with_account_key(endpoint, key);
 
     // Reset shared hit count for the real leg.
     shared_hit_count.store(0, std::sync::atomic::Ordering::SeqCst);
