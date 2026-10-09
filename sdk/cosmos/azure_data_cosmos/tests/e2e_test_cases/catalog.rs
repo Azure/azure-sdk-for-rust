@@ -7,6 +7,7 @@ use std::{
     path::PathBuf,
 };
 
+use azure_data_cosmos::options::Region;
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -335,6 +336,68 @@ impl AccountDefinition {
     pub fn region_names(&self) -> impl Iterator<Item = &str> {
         self.regions.iter().map(|region| region.name.as_str())
     }
+
+    pub(super) fn effective_regions(&self) -> Result<Vec<Region>, String> {
+        effective_regions(
+            std::env::var("AZURE_COSMOS_E2E_BACKEND").ok().as_deref(),
+            std::env::var("AZURE_COSMOS_ACCOUNT_REGIONS")
+                .ok()
+                .as_deref(),
+            self.region_names(),
+        )
+    }
+}
+
+/// Projects single-region live profiles; multi-region topology must match in order.
+fn effective_regions<'a>(
+    backend: Option<&str>,
+    raw_regions: Option<&str>,
+    profile_regions: impl IntoIterator<Item = &'a str>,
+) -> Result<Vec<Region>, String> {
+    let parse = |names: Vec<&str>, source: &str| -> Result<Vec<Region>, String> {
+        let mut regions = Vec::new();
+        for name in names {
+            if name.trim().is_empty() {
+                return Err(format!("{source} must not contain empty region entries"));
+            }
+            let region = Region::new(name.to_owned());
+            if regions.contains(&region) {
+                return Err(format!("{source} contains duplicate region '{name}'"));
+            }
+            regions.push(region);
+        }
+        if regions.is_empty() {
+            return Err(format!("{source} must contain at least one region"));
+        }
+        Ok(regions)
+    };
+    let profile = parse(profile_regions.into_iter().collect(), "profile regions")?;
+    if backend != Some("azureLive") {
+        return Ok(profile);
+    }
+    let raw = raw_regions.ok_or("AZURE_COSMOS_ACCOUNT_REGIONS is required for Azure Live")?;
+    let live = parse(raw.split(';').collect(), "AZURE_COSMOS_ACCOUNT_REGIONS")?;
+    if live.len() != profile.len() || (profile.len() > 1 && live != profile) {
+        return Err(format!(
+            "AZURE_COSMOS_ACCOUNT_REGIONS {live:?} must match profile region count and multi-region identity/order {profile:?}"
+        ));
+    }
+    Ok(live)
+}
+
+pub(super) fn default_region() -> Result<Region, String> {
+    let selected = std::env::var("AZURE_COSMOS_E2E_PROFILE").ok();
+    if selected.is_none() && std::env::var("AZURE_COSMOS_E2E_BACKEND").as_deref() != Ok("azureLive")
+    {
+        // Historical fixture users do not select an E2E profile.
+        return Ok(Region::EAST_US);
+    }
+    let selected = selected.as_deref().unwrap_or(DEFAULT_PROFILE);
+    let profile = load_profiles()?
+        .into_iter()
+        .find(|profile| profile.id == selected)
+        .ok_or_else(|| format!("E2E profile '{selected}' does not exist"))?;
+    Ok(profile.selected_account()?.effective_regions()?.remove(0))
 }
 
 fn selected_axis<'a>(environment_variable: &str, available: &'a [&str]) -> Result<&'a str, String> {
@@ -938,7 +1001,75 @@ fn valid_slug(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::valid_scenario_id;
+    use super::{effective_regions, load_profiles, valid_scenario_id, Region};
+
+    #[test]
+    fn single_region_profiles_project_only_for_live() -> Result<(), String> {
+        for profile in load_profiles()?
+            .into_iter()
+            .filter(|profile| matches!(profile.id.as_str(), "smokeTests" | "coreOperations"))
+        {
+            assert_eq!(profile.accounts.len(), 1);
+            let account = &profile.accounts[0];
+            for backend in [
+                None,
+                Some("hostedEmulatorGatewayV1"),
+                Some("hostedEmulatorGatewayV2"),
+            ] {
+                assert_eq!(
+                    effective_regions(backend, Some("East US 2"), account.region_names())?,
+                    [Region::EAST_US]
+                );
+            }
+            for live in ["East US 2", "West US 3"] {
+                assert_eq!(
+                    effective_regions(Some("azureLive"), Some(live), account.region_names())?,
+                    [Region::new(live.to_owned())]
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn live_multi_region_identity_and_order_must_match() -> Result<(), String> {
+        let profile = ["East US 2", "West US 3"];
+        assert_eq!(
+            effective_regions(Some("azureLive"), Some(" eastus2 ; WEST US 3 "), profile)?,
+            [Region::EAST_US_2, Region::new("West US 3")]
+        );
+        for raw in ["West US 3;East US 2", "East US;West US 3", "East US 2"] {
+            assert!(
+                effective_regions(Some("azureLive"), Some(raw), profile).is_err(),
+                "{raw}"
+            );
+        }
+        assert!(
+            effective_regions(Some("azureLive"), Some("East US 2;West US 3"), ["East US"]).is_err()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn live_regions_reject_missing_empty_and_duplicate_entries() {
+        for raw in [
+            None,
+            Some(""),
+            Some(" "),
+            Some(";East US 2"),
+            Some("East US 2;"),
+            Some("East US 2;;West US 3"),
+            Some("East US 2;eastus2"),
+        ] {
+            assert!(
+                effective_regions(Some("azureLive"), raw, ["East US 2", "West US 3"]).is_err(),
+                "{raw:?}"
+            );
+        }
+        for profile in [vec![], vec![""], vec!["East US", "eastus"]] {
+            assert!(effective_regions(None, None, profile).is_err());
+        }
+    }
 
     #[test]
     fn scenario_id_matches_schema_segment_rules() {

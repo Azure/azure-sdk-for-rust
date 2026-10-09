@@ -28,7 +28,7 @@
       "false"
     ],
     "AZURE_COSMOS_ACCOUNT_REGIONS": [
-      "provisioned-primary"
+      "East US 2"
     ],
     "AZURE_COSMOS_E2E_PROFILE": [
       "smokeTests"

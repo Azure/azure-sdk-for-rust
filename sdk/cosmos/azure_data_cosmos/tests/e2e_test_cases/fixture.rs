@@ -13,14 +13,14 @@ use azure_data_cosmos::{
     models::{ContainerProperties, PartitionKeyDefinition},
     options::{
         BinaryEncodingOptions, ConnectionPoolOptions, OperationOptions, PartitionFailoverOptions,
-        ReadConsistencyStrategy, Region,
+        ReadConsistencyStrategy,
     },
     AccountEndpoint, AccountReference, CosmosClient, CosmosClientBuilder, CosmosRuntime,
     RoutingStrategy,
 };
 use futures::FutureExt;
 
-use crate::e2e_test_cases::catalog::{ClientDefinition, RuntimeDefinition};
+use crate::e2e_test_cases::catalog::{default_region, ClientDefinition, RuntimeDefinition};
 
 pub type TestResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
 
@@ -170,7 +170,7 @@ pub(super) async fn build_management_client(
     let auth_mode = parse_auth_mode(std::env::var("AZURE_COSMOS_AUTH_MODE"))?;
     select_management_client(auth_mode, data_client, async || {
         build_client_with_auth(
-            default_client_setup(RoutingStrategy::ProximityTo(Region::EAST_US)),
+            default_client_setup(RoutingStrategy::ProximityTo(default_region()?)),
             Ok,
             AuthMode::Key,
         )
@@ -354,7 +354,7 @@ impl DatabaseCleanup {
 }
 
 pub async fn build_client() -> TestResult<CosmosClient> {
-    build_client_with_routing(RoutingStrategy::ProximityTo(Region::EAST_US)).await
+    build_client_with_routing(RoutingStrategy::ProximityTo(default_region()?)).await
 }
 
 pub async fn build_client_with_routing(
@@ -506,12 +506,13 @@ mod tests {
         use super::{
             super::{
                 select_management_client, ContainerProperties, CosmosClient, E2eTestFixture,
-                Region, RoutingStrategy,
+                RoutingStrategy,
             },
             account_reference, AuthMode, MockCredential, TestResult,
         };
+        use crate::e2e_test_cases::support::{item, wait_for_item_replication_in_region};
         use azure_core::http::{StatusCode, Url};
-        use azure_data_cosmos::CosmosRuntimeBuilder;
+        use azure_data_cosmos::{options::Region, CosmosRuntimeBuilder};
         use azure_data_cosmos_driver::in_memory_emulator::{
             InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
         };
@@ -556,6 +557,45 @@ mod tests {
                 .await?
                 .is_none());
             Ok(())
+        }
+
+        #[tokio::test]
+        async fn replication_probe_rejects_matching_body_from_wrong_region() -> TestResult {
+            let emulator = emulator()?;
+            let client = client(&emulator, AuthMode::Key).await?;
+            let fixture = E2eTestFixture::new_with_clients(
+                client.clone(),
+                client,
+                ContainerProperties::new("items", "/pk".into()),
+            )
+            .await?;
+            let expected = item("replicated", "A", 1);
+            fixture
+                .container
+                .create_item("A", &expected.id, &expected, None)
+                .await?;
+            wait_for_item_replication_in_region(
+                &fixture.container,
+                "A",
+                &expected.id,
+                &expected,
+                Region::EAST_US,
+                [Region::EAST_US],
+            )
+            .await?;
+            // Incorrect metadata must not let a matching primary response prove replication.
+            let error = wait_for_item_replication_in_region(
+                &fixture.container,
+                "A",
+                &expected.id,
+                &expected,
+                Region::WEST_US,
+                [Region::WEST_US],
+            )
+            .await
+            .expect_err("the item exists only in East US");
+            assert!(error.to_string().contains("expected target"), "{error}");
+            fixture.cleanup().await
         }
 
         #[tokio::test]

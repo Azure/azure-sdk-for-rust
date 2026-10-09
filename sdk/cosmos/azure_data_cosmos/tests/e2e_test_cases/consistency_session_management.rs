@@ -118,11 +118,7 @@ async fn explicit_tokens_work_when_automatic_capture_is_disabled() -> TestResult
     let Some(profile) = selected_scenario_profile("consistency.session-management").await? else {
         return Ok(());
     };
-    let regions: Vec<_> = profile
-        .selected_account()?
-        .region_names()
-        .map(|name| Region::new(name.to_owned()))
-        .collect();
+    let regions = profile.selected_account()?.effective_regions()?;
     if regions.len() != 2 {
         return Err("session management requires exactly two configured regions".into());
     }

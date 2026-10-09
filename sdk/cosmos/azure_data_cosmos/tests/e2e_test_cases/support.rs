@@ -106,6 +106,14 @@ pub(super) async fn wait_for_item_replication_in_region(
         .await
         {
             Ok(Ok(response)) => {
+                verify_replication_region(
+                    &target_region,
+                    response
+                        .diagnostics()
+                        .requests()
+                        .iter()
+                        .map(|request| (request.status().status_code(), request.region())),
+                )?;
                 let actual = response.into_model::<Item>()?;
                 if &actual == expected {
                     return Ok(());
@@ -124,6 +132,30 @@ pub(super) async fn wait_for_item_replication_in_region(
         )
         .await;
     }
+}
+
+fn verify_replication_region<'a>(
+    target: &Region,
+    requests: impl IntoIterator<Item = (StatusCode, Option<&'a Region>)>,
+) -> TestResult {
+    let mut served_target = false;
+    for (status, region) in requests {
+        if status == StatusCode::Ok {
+            if region != Some(target) {
+                return Err(format!(
+                    "replication probe succeeded in {region:?}, expected target {target:?}"
+                )
+                .into());
+            }
+            served_target = true;
+        }
+    }
+    if !served_target {
+        return Err(
+            format!("replication probe has no successful request in target {target:?}").into(),
+        );
+    }
+    Ok(())
 }
 
 pub(super) async fn should_run(scenario_id: &str) -> TestResult<bool> {
@@ -171,6 +203,9 @@ pub(super) async fn selected_scenario_profile(scenario_id: &str) -> TestResult<O
         eprintln!("SKIP {scenario_id}: profile '{selected}' does not select it");
         return Ok(None);
     };
+    if std::env::var("AZURE_COSMOS_E2E_BACKEND").as_deref() == Ok("azureLive") {
+        profile.selected_account()?.effective_regions()?;
+    }
     enforce_required_capabilities(scenario_id).await?;
     Ok(Some(profile))
 }
@@ -493,5 +528,38 @@ where
             }
             std::panic::resume_unwind(panic)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{verify_replication_region, Region, StatusCode};
+
+    #[test]
+    fn replication_requires_success_in_the_target_region() {
+        let target = Region::WEST_US;
+        assert!(verify_replication_region(&target, [(StatusCode::Ok, Some(&target))]).is_ok());
+        assert!(
+            verify_replication_region(&target, [(StatusCode::Ok, Some(&Region::EAST_US))]).is_err()
+        );
+        assert!(verify_replication_region(&target, [(StatusCode::Ok, None)]).is_err());
+        assert!(verify_replication_region(&target, []).is_err());
+    }
+
+    #[test]
+    fn contacting_the_target_before_fallback_does_not_prove_replication() {
+        assert!(verify_replication_region(
+            &Region::WEST_US,
+            [
+                (StatusCode::NotFound, Some(&Region::WEST_US)),
+                (StatusCode::Ok, Some(&Region::EAST_US)),
+            ]
+        )
+        .is_err());
+        assert!(verify_replication_region(
+            &Region::WEST_US,
+            [(StatusCode::NotFound, Some(&Region::WEST_US)),]
+        )
+        .is_err());
     }
 }

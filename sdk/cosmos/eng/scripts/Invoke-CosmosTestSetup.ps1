@@ -127,6 +127,47 @@ function New-CosmosE2eEmulatorConfig {
     }
 }
 
+function Get-CosmosE2eLiveRegions {
+    param(
+        [AllowNull()]
+        [AllowEmptyString()]
+        [string] $RawRegions,
+
+        [string[]] $ProfileRegions
+    )
+
+    $normalize = {
+        param([string[]] $Names, [string] $Source)
+        if ($Names.Count -eq 0) {
+            throw "$Source must contain at least one region."
+        }
+        $seen = [System.Collections.Generic.HashSet[string]]::new()
+        foreach ($name in $Names) {
+            if ([string]::IsNullOrWhiteSpace($name)) {
+                throw "$Source must not contain empty region entries."
+            }
+            # Match Rust Region identity: ignore whitespace and case.
+            $normalized = ($name -replace '\s', '').ToLowerInvariant()
+            if (-not $seen.Add($normalized)) {
+                throw "$Source contains duplicate region '$name'."
+            }
+            $normalized
+        }
+    }
+    $expected = @(& $normalize $ProfileRegions 'profile regions')
+    if ([string]::IsNullOrWhiteSpace($RawRegions)) {
+        throw 'AZURE_COSMOS_ACCOUNT_REGIONS is required for Azure Live.'
+    }
+    $regions = @($RawRegions -split ';' | ForEach-Object { $_.Trim() })
+    $actual = @(& $normalize $regions 'AZURE_COSMOS_ACCOUNT_REGIONS')
+    if ($actual.Count -ne $expected.Count -or
+        ($expected.Count -gt 1 -and ($actual -join ';') -cne ($expected -join ';'))) {
+        throw "AZURE_COSMOS_ACCOUNT_REGIONS '$RawRegions' must match profile region count and multi-region identity/order '$($ProfileRegions -join ';')'."
+    }
+    # A single-region profile is projected onto the configured live region.
+    return $regions
+}
+
 function Test-CosmosE2eLiveProfile {
     param(
         [Parameter(Mandatory)]
@@ -164,13 +205,13 @@ function Test-CosmosE2eLiveProfile {
         'eventual' { 'Eventual' }
         default { throw "Unsupported account consistency '$($account.consistency)'." }
     }
-    $regions = @($env:AZURE_COSMOS_ACCOUNT_REGIONS -split ';' | Where-Object { $_ })
+    $regions = @(Get-CosmosE2eLiveRegions -RawRegions $env:AZURE_COSMOS_ACCOUNT_REGIONS `
+        -ProfileRegions @($account.regions | ForEach-Object { [string]$_.name }))
     $expectedMultiRegion = (@($account.regions).Count -gt 1).ToString().ToLowerInvariant()
     $checks = [ordered]@{
         AZURE_COSMOS_DEFAULT_CONSISTENCY  = @($env:AZURE_COSMOS_DEFAULT_CONSISTENCY, $expectedConsistency)
         AZURE_COSMOS_ACCOUNT_WRITE_MODE   = @($env:AZURE_COSMOS_ACCOUNT_WRITE_MODE, [string]$account.writeMode)
         AZURE_COSMOS_ACCOUNT_MULTI_REGION = @($env:AZURE_COSMOS_ACCOUNT_MULTI_REGION, $expectedMultiRegion)
-        AZURE_COSMOS_ACCOUNT_REGION_COUNT = @($regions.Count, @($account.regions).Count)
     }
     foreach ($check in $checks.GetEnumerator()) {
         if ($check.Value[0] -ne $check.Value[1]) {
