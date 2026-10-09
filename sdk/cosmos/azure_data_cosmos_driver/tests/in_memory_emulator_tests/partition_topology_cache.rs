@@ -486,6 +486,76 @@ async fn lazy_fanout_query_and_change_feed_still_load_topology() {
 
 #[cfg(feature = "fault_injection")]
 #[tokio::test]
+async fn lazy_topology_failure_only_affects_required_resolution() {
+    for regions in [1, 2] {
+        let recorder = HostRecorder::new();
+        let locations = [
+            VirtualRegion::new("East US", Url::parse(GATEWAY_URL).unwrap()),
+            VirtualRegion::new(
+                "West US",
+                Url::parse("https://westus.emulator.local").unwrap(),
+            ),
+        ];
+        let config = VirtualAccountConfig::new(locations.into_iter().take(regions).collect())
+            .unwrap()
+            .with_consistency(ConsistencyLevel::Eventual);
+        let emulator = emulator_with_config(recorder, config);
+        let rule = topology_failure_rule();
+        let runtime = emulator
+            .runtime_builder_with_fault_rules(vec![rule.clone()])
+            .build()
+            .await
+            .unwrap();
+        let driver = runtime
+            .create_driver(
+                DriverOptions::builder(account())
+                    .with_partition_failover_options(
+                        PartitionFailoverOptions::builder()
+                            .with_partition_topology_cache_mode(PartitionTopologyCacheMode::Lazy)
+                            .with_circuit_breaker_enabled(true)
+                            .build()
+                            .unwrap(),
+                    )
+                    .build(),
+            )
+            .await
+            .unwrap();
+        let container = driver
+            .resolve_container("testdb", "testcoll", OperationOptions::default())
+            .await
+            .unwrap();
+        create_items(&driver, &container).await;
+        assert_eq!(
+            rule.hit_count(),
+            0,
+            "single-writer creates do not require PPCB topology"
+        );
+
+        let item =
+            ItemReference::from_name(&container, PartitionKey::from("key"), "one".to_owned());
+        let response = driver
+            .execute_singleton_operation(
+                CosmosOperation::read_item(item),
+                OperationOptions::default(),
+            )
+            .await
+            .expect("logical routing survives metadata failures");
+        assert_eq!(response.status(), azure_core::http::StatusCode::Ok);
+        let document = super::parse_json_body(&response.into_body().single().unwrap()).unwrap();
+        assert_eq!(document["id"], "one");
+        if regions == 1 {
+            assert_eq!(rule.hit_count(), 0);
+        } else {
+            assert!(
+                rule.hit_count() > 0,
+                "eligible PPCB read must attempt topology resolution"
+            );
+        }
+    }
+}
+
+#[cfg(feature = "fault_injection")]
+#[tokio::test]
 async fn eager_mode_fails_name_and_rid_resolution_when_topology_load_fails() {
     let recorder = HostRecorder::new();
     let emulator = emulator(recorder);

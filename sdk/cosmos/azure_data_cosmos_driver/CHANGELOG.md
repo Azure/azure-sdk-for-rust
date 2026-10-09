@@ -8,7 +8,7 @@
 
 ### Bugs Fixed
 
-- Avoid loading partition topology for lazy-mode logical-key operations unless partition-level failover or Gateway 2.0 session-token scoping requires it.
+- Avoid loading partition topology for lazy-mode logical-key operations unless partition-level failover or Gateway 2.0 session-token scoping requires it. ([#5431](https://github.com/Azure/azure-sdk-for-rust/pull/5431))
 
 ### Other Changes
 
