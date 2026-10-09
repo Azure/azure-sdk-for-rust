@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added ranked full-text and weighted text/vector hybrid search, with per-query `FullTextScoreScope` and bounded buffered results. ([#5384](https://github.com/Azure/azure-sdk-for-rust/pull/5384))
+
 ### Breaking Changes
 
 ### Bugs Fixed
