@@ -37,7 +37,7 @@ Calling `abort()` during opening cancels TCP connection or protocol negotiation.
 
 Pending sends and sender metadata waits return when their connection or session closes. A lost acknowledgement leaves delivery uncertain. Sending the message again can produce duplicate messages.
 
-Cancelling session creation, sender attachment, CBS attachment, or an active CBS authorization retires the transport used by that operation. This releases partially attached resources and wakes other operations on the same connection. Normal receive waiting has no additional deadline.
+Dropping the future while session creation, sender attachment, CBS attachment, or an active CBS authorization is pending aborts the transport used by that operation. This releases partially attached resources and wakes other operations on the same connection. Normal receive waiting has no additional deadline.
 
 ## Testing the AMQP Client
 
