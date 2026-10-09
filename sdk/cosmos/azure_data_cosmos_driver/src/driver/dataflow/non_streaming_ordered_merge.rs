@@ -8,6 +8,7 @@ use super::{
     order_by::compare_key_tuples,
     query_plan::SortOrder,
     query_response::{parse_envelope_page, EnvelopeRow, PageAggregator},
+    recovery_diagnostics::RecoveryDiagnostics,
     PageResult, PipelineContext, PipelineNode, PipelineNodeState,
 };
 use crate::{
@@ -176,6 +177,17 @@ impl NonStreamingOrderedMerge {
             is_terminal,
         })
     }
+
+    fn attach_error(&mut self, error: CosmosError) -> CosmosError {
+        let Some(aggregator) = self.aggregator.take() else {
+            return error;
+        };
+        self.session_token = aggregator.session_token().cloned();
+        let mut next = PageAggregator::new(self.emit_binary);
+        next.seed_session_token(self.session_token.clone());
+        self.aggregator = Some(next);
+        aggregator.attach_error(error)
+    }
 }
 
 #[async_trait]
@@ -189,26 +201,35 @@ impl PipelineNode for NonStreamingOrderedMerge {
         }
 
         while !self.buffering_complete {
-            match self.child.next_page(context).await? {
+            match self
+                .child
+                .next_page(context)
+                .await
+                .map_err(|error| self.attach_error(error))?
+            {
                 PageResult::Page {
                     response,
                     is_terminal,
                 } => {
-                    let rows = parse_envelope_page(response.body(), self.directions.len())?;
                     self.aggregator
                         .as_mut()
                         .expect("aggregator exists while buffering")
-                        .absorb(&response)?;
+                        .absorb(&response)
+                        .map_err(|error| self.attach_error(error))?;
+                    let rows = parse_envelope_page(response.body(), self.directions.len())
+                        .map_err(|error| self.attach_error(error))?;
                     for row in rows {
-                        self.retain(row)?;
+                        self.retain(row).map_err(|error| self.attach_error(error))?;
                     }
                     if is_terminal {
                         self.finish_buffering();
                     }
                 }
                 PageResult::Drained => self.finish_buffering(),
-                PageResult::SplitRequired { .. } => {
-                    return Err(CosmosError::builder()
+                PageResult::SplitRequired { mut replacements } => {
+                    let mut diagnostics = RecoveryDiagnostics::default();
+                    diagnostics.absorb(replacements.take_diagnostics());
+                    let error = diagnostics.attach_error(CosmosError::builder()
                         .with_status(
                             crate::error::status_codes::CLIENT_ROOT_NODE_CANNOT_REQUEST_SPLIT,
                         )
@@ -216,11 +237,12 @@ impl PipelineNode for NonStreamingOrderedMerge {
                             "non-streaming ORDER BY child unexpectedly requested split handling",
                         )
                         .build());
+                    return Err(self.attach_error(error));
                 }
             }
         }
 
-        self.emit_page()
+        self.emit_page().map_err(|error| self.attach_error(error))
     }
 
     #[cfg(test)]
