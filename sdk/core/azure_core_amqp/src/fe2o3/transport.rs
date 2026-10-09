@@ -95,8 +95,11 @@ impl<T> Transport<T> {
             (state.reader.take(), state.writer.take())
         };
         self.closed.close();
-        for waker in [reader, writer].into_iter().flatten() {
-            waker.wake();
+        if let Some(reader) = reader {
+            reader.wake();
+        }
+        if let Some(writer) = writer {
+            writer.wake();
         }
     }
 }
