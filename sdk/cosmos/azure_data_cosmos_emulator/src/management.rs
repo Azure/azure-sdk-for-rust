@@ -1194,16 +1194,29 @@ mod tests {
         operation_id: &str,
         expected: &str,
     ) -> serde_json::Value {
-        for _ in 0..100 {
-            let operation = get_operation(State(state.clone()), ApiPath(operation_id.to_owned()))
-                .await
-                .unwrap();
-            if operation["phase"] == expected {
-                return operation.0;
+        let mut last_observed = serde_json::Value::Null;
+        let result = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                let operation =
+                    get_operation(State(state.clone()), ApiPath(operation_id.to_owned()))
+                        .await
+                        .unwrap();
+                if operation["phase"] == expected {
+                    return operation.0;
+                }
+                assert_ne!(
+                    operation["phase"], "Failed",
+                    "operation failed: {}",
+                    operation.0
+                );
+                last_observed = operation.0;
+                tokio::time::sleep(Duration::from_millis(1)).await;
             }
-            tokio::task::yield_now().await;
-        }
-        panic!("operation {operation_id} did not reach phase {expected}")
+        })
+        .await;
+        result.unwrap_or_else(|_| {
+            panic!("operation {operation_id} did not reach phase {expected}: {last_observed}")
+        })
     }
 
     #[tokio::test]
