@@ -4,7 +4,10 @@
 use crate::{
     connection::{AmqpConnectionApis, AmqpConnectionOptions, AmqpTransport},
     error::{AmqpErrorKind, Result},
-    fe2o3::error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError, Fe2o3TransportError},
+    fe2o3::{
+        error::{Fe2o3ConnectionError, Fe2o3ConnectionOpenError, Fe2o3TransportError},
+        transport::{Closed, Transport},
+    },
     value::{AmqpOrderedMap, AmqpSymbol, AmqpValue},
     AmqpError,
 };
@@ -12,24 +15,183 @@ use azure_core::http::Url;
 use fe2o3_amqp::connection::ConnectionHandle;
 #[cfg(feature = "fe2o3_amqp_rustls")]
 use rustls_platform_verifier::ConfigVerifierExt;
-use std::{borrow::BorrowMut, sync::OnceLock};
-use tokio::sync::Mutex;
+use std::{
+    borrow::BorrowMut,
+    io,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex as StdMutex, OnceLock,
+    },
+};
+use tokio::{net::TcpStream, sync::Mutex};
 use tracing::{debug, warn};
 
 #[derive(Debug, Default)]
 pub(crate) struct Fe2o3AmqpConnection {
-    connection: OnceLock<Mutex<ConnectionHandle<()>>>,
+    opening: StdMutex<Option<Arc<OpeningAttempt>>>,
+    connection: OnceLock<OpenedConnection>,
+}
+
+#[derive(Debug)]
+pub(crate) struct OpenedConnection {
+    pub handle: Mutex<ConnectionHandle<()>>,
+    pub transport: Transport<TcpStream>,
+}
+
+#[derive(Debug, Default)]
+struct OpeningAttempt {
+    aborted: AtomicBool,
+    cancelled: Closed,
+    transport: StdMutex<Option<Transport<TcpStream>>>,
+}
+
+impl OpeningAttempt {
+    fn abort(&self) {
+        self.aborted.store(true, Ordering::Release);
+        self.cancelled.close();
+        let transport = self
+            .transport
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take();
+        if let Some(transport) = transport {
+            transport.abort();
+        }
+    }
+
+    fn set_transport(&self, transport: Transport<TcpStream>) -> Result<()> {
+        let mut slot = self
+            .transport
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if self.aborted.load(Ordering::Acquire) {
+            drop(slot);
+            transport.abort();
+            return Err(opening_aborted());
+        }
+        *slot = Some(transport);
+        Ok(())
+    }
+}
+
+struct OpeningGuard<'a> {
+    connection: &'a Fe2o3AmqpConnection,
+    attempt: Arc<OpeningAttempt>,
+    committed: bool,
+}
+
+impl OpeningGuard<'_> {
+    fn publish(
+        &mut self,
+        handle: ConnectionHandle<()>,
+        transport: Transport<TcpStream>,
+    ) -> Result<()> {
+        let mut opening = self
+            .connection
+            .opening
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if self.attempt.aborted.load(Ordering::Acquire)
+            || !opening
+                .as_ref()
+                .is_some_and(|current| Arc::ptr_eq(current, &self.attempt))
+        {
+            return Err(opening_aborted());
+        }
+        self.connection
+            .connection
+            .set(OpenedConnection {
+                handle: Mutex::new(handle),
+                transport,
+            })
+            .map_err(|_| Fe2o3AmqpConnection::connection_already_set())?;
+        self.committed = true;
+        opening.take();
+        Ok(())
+    }
+}
+
+impl Drop for OpeningGuard<'_> {
+    fn drop(&mut self) {
+        if self.committed {
+            return;
+        }
+        let mut opening = self
+            .connection
+            .opening
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if opening
+            .as_ref()
+            .is_some_and(|current| Arc::ptr_eq(current, &self.attempt))
+        {
+            opening.take();
+        }
+        drop(opening);
+        self.attempt.abort();
+    }
+}
+
+fn opening_aborted() -> AmqpError {
+    azure_core::Error::from(io::Error::new(
+        io::ErrorKind::ConnectionAborted,
+        "AMQP connection opening was aborted",
+    ))
+    .into()
 }
 
 impl Fe2o3AmqpConnection {
     pub fn new() -> Self {
         Self {
+            opening: StdMutex::new(None),
             connection: OnceLock::new(),
         }
     }
 
-    pub fn get(&self) -> &OnceLock<Mutex<ConnectionHandle<()>>> {
-        &self.connection
+    fn begin_open(&self) -> Result<OpeningGuard<'_>> {
+        let mut opening = self
+            .opening
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if self.connection.get().is_some() {
+            return Err(Self::connection_already_set());
+        }
+        if opening.is_some() {
+            return Err(AmqpError::with_message(
+                "Connection opening is already in progress",
+            ));
+        }
+        let attempt = Arc::new(OpeningAttempt::default());
+        *opening = Some(attempt.clone());
+        Ok(OpeningGuard {
+            connection: self,
+            attempt,
+            committed: false,
+        })
+    }
+
+    pub fn get(&self) -> Result<&OpenedConnection> {
+        self.connection.get().ok_or_else(Self::connection_not_set)
+    }
+
+    pub fn abort(&self) {
+        let mut opening = self
+            .opening
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let attempt = opening.take();
+        if let Some(attempt) = &attempt {
+            // Reject publication under the lock, then wake the opening after release.
+            attempt.aborted.store(true, Ordering::Release);
+        }
+        let transport = self.connection.get().map(|opened| opened.transport.clone());
+        drop(opening);
+        if let Some(attempt) = attempt {
+            attempt.abort();
+        }
+        if let Some(transport) = transport {
+            transport.abort();
+        }
     }
 
     fn connection_not_set() -> AmqpError {
@@ -42,6 +204,7 @@ impl Fe2o3AmqpConnection {
 
 impl Drop for Fe2o3AmqpConnection {
     fn drop(&mut self) {
+        self.abort();
         debug!("Dropping Fe2o3AmqpConnection.");
     }
 }
@@ -72,7 +235,9 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
         url: Url,
         options: Option<AmqpConnectionOptions>,
     ) -> Result<()> {
-        {
+        let mut opening = self.begin_open()?;
+        let attempt = opening.attempt.clone();
+        let negotiate = async {
             let options = options.unwrap_or_default();
             let mut endpoint = url.clone();
 
@@ -131,41 +296,69 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
                 builder = builder.buffer_size(buffer_size);
             }
 
-            let handle = match options.transport.unwrap_or_default() {
+            let (handle, transport) = match options.transport.unwrap_or_default() {
                 AmqpTransport::Tcp => {
                     // `custom_endpoint` redirects the socket to a proxy while the
                     // AMQP `hostname` stays the real service host.
-                    if let Some(custom_endpoint) = options.custom_endpoint {
-                        endpoint = custom_endpoint;
+                    if let Some(custom_endpoint) = options.custom_endpoint.as_ref() {
+                        endpoint = custom_endpoint.clone();
                         builder = builder.hostname(url.host_str());
                     }
 
                     // Use the operating system trust store for rustls. Other TLS stacks
                     // selected through `fe2o3-amqp` keep their default connector.
                     #[cfg(feature = "fe2o3_amqp_rustls")]
-                    let builder = builder.rustls_connector(platform_verifier_connector()?);
+                    let mut builder = builder.rustls_connector(platform_verifier_connector()?);
 
-                    builder
-                        .open(endpoint)
+                    builder = builder
+                        .scheme(endpoint.scheme())
+                        .hostname(if options.custom_endpoint.is_some() {
+                            url.host_str()
+                        } else {
+                            endpoint.host_str()
+                        })
+                        .sasl_hostname(endpoint.host_str())
+                        .domain(endpoint.domain());
+                    if let Ok(profile) = fe2o3_amqp::sasl_profile::SaslProfile::try_from(&endpoint)
+                    {
+                        builder = builder.sasl_profile(profile);
+                    }
+                    let port = endpoint
+                        .port()
+                        .or_else(|| match endpoint.scheme() {
+                            "amqp" => Some(5672),
+                            "amqps" => Some(5671),
+                            _ => None,
+                        })
+                        .ok_or_else(|| AmqpError::with_message("AMQP endpoint has no port"))?;
+                    let host = endpoint
+                        .host_str()
+                        .ok_or_else(|| AmqpError::with_message("AMQP endpoint has no host"))?;
+                    // Tokio resolves names off the operation's executor thread.
+                    let socket = TcpStream::connect((host.trim_matches(['[', ']']), port))
                         .await
-                        .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?
+                        .map_err(azure_core::Error::from)?;
+                    let (transport, stream) = Transport::new(socket);
+                    attempt.set_transport(transport.clone())?;
+                    let handle = builder
+                        .open_with_stream(stream)
+                        .await
+                        .map_err(|e| AmqpError::from(Fe2o3ConnectionOpenError(e)))?;
+                    (handle, transport)
                 }
             };
 
-            self.connection
-                .set(Mutex::new(handle))
-                .map_err(|_| Self::connection_already_set())?;
-            Ok(())
+            opening.publish(handle, transport)
+        };
+        tokio::select! {
+            biased;
+            () = attempt.cancelled.wait() => Err(opening_aborted()),
+            result = negotiate => result,
         }
     }
 
     async fn close(&self) -> Result<()> {
-        let mut connection = self
-            .connection
-            .get()
-            .ok_or_else(Self::connection_not_set)?
-            .lock()
-            .await;
+        let mut connection = self.get()?.handle.lock().await;
         connection
             .borrow_mut()
             .close()
@@ -180,12 +373,7 @@ impl AmqpConnectionApis for Fe2o3AmqpConnection {
         description: Option<String>,
         info: Option<AmqpOrderedMap<AmqpSymbol, AmqpValue>>,
     ) -> Result<()> {
-        let mut connection = self
-            .connection
-            .get()
-            .ok_or_else(Self::connection_not_set)?
-            .lock()
-            .await;
+        let mut connection = self.get()?.handle.lock().await;
         let res = connection
             .borrow_mut()
             .close_with_error(fe2o3_amqp::types::definitions::Error::new(
@@ -253,10 +441,30 @@ impl From<Fe2o3ConnectionError> for AmqpError {
     }
 }
 
-#[cfg(all(test, feature = "fe2o3_amqp_rustls"))]
+#[cfg(test)]
 mod tests {
+    #[cfg(feature = "fe2o3_amqp_rustls")]
     use super::platform_verifier_connector;
+    use super::{AmqpConnectionApis, Fe2o3AmqpConnection, Transport};
+    use crate::{AmqpConnection, AmqpErrorKind};
+    use azure_core::http::Url;
+    use fe2o3_amqp::{
+        acceptor::{ConnectionAcceptor, ListenerConnectionHandle, SaslAnonymousMechanism},
+        connection::ConnectionHandle,
+        sasl_profile::SaslProfile,
+        Connection,
+    };
+    use std::{
+        sync::{Arc, Barrier},
+        time::Duration,
+    };
+    use tokio::{
+        io::{AsyncReadExt, AsyncWriteExt},
+        net::{TcpListener, TcpStream},
+        time::timeout,
+    };
 
+    #[cfg(feature = "fe2o3_amqp_rustls")]
     #[test]
     fn platform_verifier_connector_builds() {
         // `ClientConfig::builder()` panics when the process has no default
@@ -264,5 +472,323 @@ mod tests {
         // cannot read the trust store of the operating system. Both faults
         // would otherwise appear only when a connection opens.
         assert!(platform_verifier_connector().is_ok());
+    }
+
+    #[tokio::test]
+    async fn concurrent_open_is_rejected_without_connecting() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
+        let connection = Arc::new(Fe2o3AmqpConnection::new());
+        let first_connection = connection.clone();
+        let first_url = url.clone();
+        let first =
+            tokio::spawn(
+                async move { first_connection.open("first".into(), first_url, None).await },
+            );
+        let (_peer, _) = timeout(Duration::from_secs(2), listener.accept())
+            .await
+            .unwrap()
+            .unwrap();
+        let error = timeout(
+            Duration::from_millis(100),
+            connection.open("second".into(), url, None),
+        )
+        .await
+        .expect("a concurrent open must not wait for the first handshake")
+        .unwrap_err();
+        assert!(error.to_string().contains("already in progress"));
+        assert!(timeout(Duration::from_millis(20), listener.accept())
+            .await
+            .is_err());
+        first.abort();
+        assert!(first.await.unwrap_err().is_cancelled());
+        assert!(connection.opening.lock().unwrap().is_none());
+    }
+
+    async fn open_peer(connection: &AmqpConnection) -> (ListenerConnectionHandle, Url) {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
+        let peer = tokio::spawn(async move {
+            let (socket, _) = listener.accept().await.unwrap();
+            ConnectionAcceptor::builder()
+                .container_id("open-peer")
+                .sasl_acceptor(SaslAnonymousMechanism {})
+                .build()
+                .accept(socket)
+                .await
+                .unwrap()
+        });
+        timeout(
+            Duration::from_secs(2),
+            connection.open("retry".into(), url.clone(), None),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+        (peer.await.unwrap(), url)
+    }
+
+    async fn open_and_close(connection: &AmqpConnection) {
+        let (mut peer, url) = open_peer(connection).await;
+        let opened = connection.implementation.get().unwrap();
+        assert!(!opened.transport.closed.is_closed());
+        assert!(connection
+            .open("duplicate".into(), url.clone(), None)
+            .await
+            .is_err());
+        let (client_close, peer_close) = timeout(Duration::from_secs(2), async {
+            tokio::join!(connection.close(), peer.close())
+        })
+        .await
+        .unwrap();
+        client_close.unwrap();
+        peer_close.unwrap();
+        assert!(connection.open("closed".into(), url, None).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn failed_handshakes_leave_the_same_connection_reusable() {
+        let connection = AmqpConnection::new();
+        for _ in 0..2 {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
+            let peer = tokio::spawn(async move {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut header = [0; 8];
+                socket.read_exact(&mut header).await.unwrap();
+                socket.write_all(b"INVALID!").await.unwrap();
+                let mut remaining = Vec::new();
+                timeout(Duration::from_secs(2), socket.read_to_end(&mut remaining))
+                    .await
+                    .expect("a failed handshake must release its socket")
+                    .unwrap();
+            });
+            assert!(timeout(
+                Duration::from_secs(2),
+                connection.open("failure".into(), url, None),
+            )
+            .await
+            .unwrap()
+            .is_err());
+            peer.await.unwrap();
+            assert!(connection.implementation.get().is_err());
+        }
+        open_and_close(&connection).await;
+    }
+
+    #[tokio::test]
+    async fn cancelled_handshake_closes_socket_and_allows_retry() {
+        let connection = Arc::new(AmqpConnection::new());
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
+        let client = connection.clone();
+        let opening = tokio::spawn(async move { client.open("cancel".into(), url, None).await });
+        let (mut peer, _) = timeout(Duration::from_secs(2), listener.accept())
+            .await
+            .unwrap()
+            .unwrap();
+        let mut header = [0; 8];
+        peer.read_exact(&mut header).await.unwrap();
+        assert!(connection.implementation.get().is_err());
+        opening.abort();
+        assert!(opening.await.unwrap_err().is_cancelled());
+        let mut remaining = Vec::new();
+        timeout(Duration::from_secs(2), peer.read_to_end(&mut remaining))
+            .await
+            .expect("cancellation must close the provisional socket")
+            .unwrap();
+        assert!(connection.implementation.get().is_err());
+        open_and_close(&connection).await;
+    }
+
+    #[tokio::test]
+    async fn abort_interrupts_handshake_without_dropping_open_future() {
+        let connection = Arc::new(AmqpConnection::new());
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap();
+        let client = connection.clone();
+        let opening = tokio::spawn(async move { client.open("abort".into(), url, None).await });
+        let (mut peer, _) = timeout(Duration::from_secs(2), listener.accept())
+            .await
+            .unwrap()
+            .unwrap();
+        let mut header = [0; 8];
+        peer.read_exact(&mut header).await.unwrap();
+        connection.abort();
+        let error = timeout(Duration::from_secs(2), opening)
+            .await
+            .expect("abort must wake the opening without peer cooperation")
+            .unwrap()
+            .unwrap_err();
+        assert!(matches!(error.kind(), AmqpErrorKind::AzureCore(error)
+            if matches!(error.kind(), azure_core::error::ErrorKind::Io)));
+        assert!(error.to_string().contains("opening was aborted"));
+        let mut remaining = Vec::new();
+        timeout(Duration::from_secs(2), peer.read_to_end(&mut remaining))
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(connection.implementation.get().is_err());
+        open_and_close(&connection).await;
+    }
+
+    #[tokio::test]
+    async fn abort_before_tcp_completion_rejects_the_late_socket() {
+        let connection = AmqpConnection::new();
+        let opening = connection.implementation.begin_open().unwrap();
+        connection.abort();
+        timeout(Duration::from_secs(1), opening.attempt.cancelled.wait())
+            .await
+            .unwrap();
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let socket = TcpStream::connect(listener.local_addr().unwrap())
+            .await
+            .unwrap();
+        let (mut peer, _) = listener.accept().await.unwrap();
+        let (transport, _stream) = Transport::new(socket);
+        assert!(opening.attempt.set_transport(transport.clone()).is_err());
+        assert!(transport.closed.is_closed());
+        let mut remaining = Vec::new();
+        timeout(Duration::from_secs(1), peer.read_to_end(&mut remaining))
+            .await
+            .unwrap()
+            .unwrap();
+        drop(opening);
+        open_and_close(&connection).await;
+    }
+
+    #[tokio::test]
+    async fn abort_unused_connection_does_not_cancel_a_later_open() {
+        let connection = AmqpConnection::new();
+        connection.abort();
+        open_and_close(&connection).await;
+    }
+
+    #[test]
+    fn stale_cleanup_preserves_the_replacement_reservation() {
+        let connection = Fe2o3AmqpConnection::new();
+        let old = connection.begin_open().unwrap();
+        connection.abort();
+        let replacement = connection.begin_open().unwrap();
+        drop(old);
+        assert!(Arc::ptr_eq(
+            connection.opening.lock().unwrap().as_ref().unwrap(),
+            &replacement.attempt,
+        ));
+        assert!(connection.begin_open().is_err());
+        assert!(!replacement.attempt.cancelled.is_closed());
+        drop(replacement);
+        assert!(connection.begin_open().is_ok());
+    }
+
+    async fn negotiated_candidate() -> (
+        ConnectionHandle<()>,
+        Transport<TcpStream>,
+        ListenerConnectionHandle,
+    ) {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let socket = TcpStream::connect(listener.local_addr().unwrap())
+            .await
+            .unwrap();
+        let (peer, _) = listener.accept().await.unwrap();
+        let (transport, stream) = Transport::new(socket);
+        let acceptor = ConnectionAcceptor::builder()
+            .container_id("candidate-peer")
+            .sasl_acceptor(SaslAnonymousMechanism {})
+            .build();
+        let (client, peer) = timeout(Duration::from_secs(2), async {
+            tokio::join!(
+                Connection::builder()
+                    .container_id("candidate")
+                    .sasl_profile(SaslProfile::Anonymous)
+                    .open_with_stream(stream),
+                acceptor.accept(peer),
+            )
+        })
+        .await
+        .unwrap();
+        (client.unwrap(), transport, peer.unwrap())
+    }
+
+    #[tokio::test]
+    async fn stale_completion_and_cleanup_preserve_the_opened_replacement() {
+        let connection = AmqpConnection::new();
+        let mut old = connection.implementation.begin_open().unwrap();
+        let (old_handle, old_transport, mut old_peer) = negotiated_candidate().await;
+        old.attempt.set_transport(old_transport.clone()).unwrap();
+        connection.abort();
+        let (mut peer, url) = open_peer(&connection).await;
+        assert!(old.publish(old_handle, old_transport.clone()).is_err());
+        drop(old);
+        assert!(old_transport.closed.is_closed());
+        assert!(!connection
+            .implementation
+            .get()
+            .unwrap()
+            .transport
+            .closed
+            .is_closed());
+        let (client_close, peer_close) = timeout(Duration::from_secs(2), async {
+            tokio::join!(connection.close(), peer.close())
+        })
+        .await
+        .unwrap();
+        client_close.unwrap();
+        peer_close.unwrap();
+        assert!(connection.open("reopen".into(), url, None).await.is_err());
+        timeout(Duration::from_secs(2), old_peer.on_close())
+            .await
+            .unwrap()
+            .unwrap_err();
+    }
+
+    #[tokio::test]
+    async fn abort_and_publication_have_one_consistent_outcome() {
+        for _ in 0..16 {
+            let connection = Fe2o3AmqpConnection::new();
+            let mut opening = connection.begin_open().unwrap();
+            let (handle, transport, mut peer) = negotiated_candidate().await;
+            opening.attempt.set_transport(transport.clone()).unwrap();
+            let barrier = Barrier::new(2);
+            let result = std::thread::scope(|scope| {
+                scope.spawn(|| {
+                    barrier.wait();
+                    connection.abort();
+                });
+                barrier.wait();
+                opening.publish(handle, transport.clone())
+            });
+            assert_eq!(result.is_ok(), connection.get().is_ok());
+            assert!(transport.closed.is_closed());
+            drop(opening);
+            timeout(Duration::from_secs(2), peer.on_close())
+                .await
+                .unwrap()
+                .unwrap_err();
+            if result.is_ok() {
+                assert!(connection.begin_open().is_err());
+            } else {
+                assert!(connection.begin_open().is_ok());
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn publication_before_abort_keeps_the_connection_single_use() {
+        let connection = Fe2o3AmqpConnection::new();
+        let mut opening = connection.begin_open().unwrap();
+        let (handle, transport, mut peer) = negotiated_candidate().await;
+        opening.attempt.set_transport(transport.clone()).unwrap();
+        opening.publish(handle, transport.clone()).unwrap();
+        drop(opening);
+        assert!(!transport.closed.is_closed());
+        connection.abort();
+        assert!(connection.get().is_ok());
+        assert!(connection.begin_open().is_err());
+        assert!(transport.closed.is_closed());
+        timeout(Duration::from_secs(2), peer.on_close())
+            .await
+            .unwrap()
+            .unwrap_err();
     }
 }

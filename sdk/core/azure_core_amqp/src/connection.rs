@@ -71,6 +71,18 @@ pub struct AmqpConnectionOptions {
 pub trait AmqpConnectionApis {
     /// Asynchronously opens an AMQP connection.
     ///
+    /// Only one opening attempt can run on this connection at a time.
+    /// A failed or cancelled attempt can be retried on the same object.
+    /// [`AmqpConnection::abort()`] cancels an opening attempt without waiting for
+    /// TCP connection or protocol negotiation to complete.
+    /// After a successful opening, the object cannot open again, including after
+    /// [`close()`](Self::close).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if another opening attempt is in progress or this connection
+    /// has already opened successfully.
+    ///
     /// # Arguments
     /// - `name`: The name of the connection.
     /// - `url`: The URL of the AMQP broker.
@@ -133,6 +145,21 @@ impl AmqpConnectionApis for AmqpConnection {
 }
 
 impl AmqpConnection {
+    /// Terminates the transport without waiting for the peer to close it.
+    ///
+    /// Use this method to retire a failed connection when graceful shutdown cannot
+    /// finish. Pending operations fail. An opened connection cannot reopen.
+    /// An interrupted send can have reached the peer without an acknowledgement.
+    /// During opening, this method cancels the attempt and releases its provisional
+    /// transport. The pending [`open()`](AmqpConnectionApis::open) returns an error,
+    /// and a new attempt can start immediately on the same object. Cleanup from the
+    /// cancelled attempt does not affect its replacement.
+    /// Calling this method on an unused connection has no effect.
+    pub fn abort(&self) {
+        #[cfg(feature = "fe2o3_amqp")]
+        self.implementation.abort();
+    }
+
     /// Creates a new instance of `AmqpConnection`.
     pub fn new() -> Self {
         Self {

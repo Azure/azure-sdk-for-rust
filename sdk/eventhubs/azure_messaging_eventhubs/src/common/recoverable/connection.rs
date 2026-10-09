@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights reserved
 // Licensed under the MIT license.
 
-// cspell:ignore geodr georeplication sastoken
+// cspell:ignore geodr georeplication sasl sastoken
 
 use super::{
     claims_based_security::RecoverableClaimsBasedSecurity, management::RecoverableManagementClient,
@@ -23,10 +23,11 @@ use azure_core::{credentials::TokenCredential, http::Url, time::Duration, Uuid};
 use azure_core_amqp::{
     error::{AmqpErrorCondition, AmqpErrorKind},
     AmqpClaimsBasedSecurity, AmqpConnection, AmqpConnectionApis, AmqpConnectionOptions, AmqpError,
-    AmqpManagement, AmqpManagementApis, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions,
-    AmqpSender, AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource,
-    AmqpSymbol, AmqpTransport,
+    AmqpManagement, AmqpReceiver, AmqpReceiverApis, AmqpReceiverOptions, AmqpSender,
+    AmqpSenderApis, AmqpSession, AmqpSessionApis, AmqpSessionOptions, AmqpSource, AmqpSymbol,
+    AmqpTransport,
 };
+use futures::{pin_mut, select_biased, FutureExt};
 #[cfg(test)]
 use std::sync::Mutex;
 use std::{
@@ -111,6 +112,7 @@ pub(crate) struct RecoverableConnection {
     // `NotAllowed`. This lock keeps them in sequence. See `lock_claims_based_security`.
     cbs_lock: AsyncMutex<()>,
     connections: AsyncMutex<Option<Arc<AmqpConnection>>>,
+    connection_open: AsyncMutex<()>,
 
     // Set by `close_connection` and never cleared. The client that owns this
     // object is not the only holder: a public handle such as `EventReceiver`
@@ -144,6 +146,11 @@ pub(crate) struct RecoverableConnection {
     // occasional extra re-init of an unaffected type after a narrower recovery is
     // cheaper than the bookkeeping of per-type counters.
     generation: AtomicU64,
+
+    // One persistent notification per recovery generation. Hold this lock
+    // through invalidation so subscribers capture an even generation and its
+    // matching notification together. The notification stays set for old users.
+    generation_invalidation: AsyncMutex<Arc<OnceCell<()>>>,
 
     #[cfg(test)]
     forced_error: Mutex<Option<AmqpError>>,
@@ -309,12 +316,14 @@ impl RecoverableConnection {
                 retry_options,
                 cbs_lock: AsyncMutex::new(()),
                 connections: AsyncMutex::new(None),
+                connection_open: AsyncMutex::new(()),
                 session_instances: RwLock::new(HashMap::new()),
                 sender_instances: RwLock::new(HashMap::new()),
                 receiver_instances: RwLock::new(HashMap::new()),
                 mgmt_client: RwLock::new(Arc::new(OnceCell::new())),
                 authorizer,
                 generation: AtomicU64::new(0),
+                generation_invalidation: AsyncMutex::new(Arc::new(OnceCell::new())),
                 #[cfg(test)]
                 forced_error: Mutex::new(None),
                 #[cfg(test)]
@@ -336,7 +345,6 @@ impl RecoverableConnection {
     }
 
     /// Reports whether `close_connection` has run on this object.
-    #[cfg(test)]
     pub(crate) fn is_closed(&self) -> bool {
         self.closed.load(Ordering::Acquire)
     }
@@ -430,108 +438,17 @@ impl RecoverableConnection {
         // open a second connection to the service after the application closed
         // the client.
         self.closed.store(true, Ordering::Release);
-
-        self.authorizer.stop_refresh_task().await;
-
-        // Swap the cell out under the write lock, then detach without holding
-        // it. The guard is a separate binding so the lock scope is visible and
-        // a debugger can read it.
-        let mut cell_slot = self.mgmt_client.write().await;
-        let management_cell = std::mem::replace(&mut *cell_slot, Arc::new(OnceCell::new()));
-        drop(cell_slot);
-        if let Some(Some(management_client)) = Arc::try_unwrap(management_cell)
-            .ok()
-            .map(OnceCell::into_inner)
         {
-            trace!("Closing management client for {}.", self.url);
-            if let Ok(management_client) = Arc::try_unwrap(management_client) {
-                trace!("Detaching management client for {}.", self.url);
-                management_client.detach().await?;
-            } else {
-                trace!(
-                    "Failed to detach management client for {}, references exist.",
-                    self.url
-                );
-            }
+            let invalidated = self.generation_invalidation.lock().await;
+            invalidated.get_or_init(|| async {}).await;
         }
 
-        let mut sender_instances = self.sender_instances.write().await;
-        for (path, GenerationalCell { cell, .. }) in sender_instances.drain() {
-            trace!("Detaching sender for path {}.", path);
-            let Some(sender) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
-                trace!(
-                    "Failed to detach sender for path {}, references exist.",
-                    path
-                );
-                continue;
-            };
-            if let Ok(sender) = Arc::try_unwrap(sender) {
-                trace!("Detaching sender for path {}.", path);
-                sender.detach().await?;
-            } else {
-                trace!(
-                    "Failed to detach sender for path {}, references exist.",
-                    path
-                );
-            }
-        }
-
-        let mut receiver_instances = self.receiver_instances.write().await;
-        for (source_url, GenerationalCell { cell, .. }) in receiver_instances.drain() {
-            trace!("Detaching receiver for source URL {}.", source_url);
-            let Some(receiver) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
-                trace!(
-                    "Failed to detach receiver for source URL {}, references exist.",
-                    source_url
-                );
-                continue;
-            };
-            if let Ok(receiver) = Arc::try_unwrap(receiver) {
-                trace!("Detaching receiver for source URL {}.", source_url);
-                receiver.detach().await?;
-            } else {
-                trace!(
-                    "Failed to detach receiver for source URL {}, references exist.",
-                    source_url
-                );
-            }
-        }
-
-        let mut session_instances = self.session_instances.write().await;
-        for (session_id, GenerationalCell { cell, .. }) in session_instances.drain() {
-            trace!("Detaching session for ID {}.", session_id);
-            let Some(session) = Arc::try_unwrap(cell).ok().and_then(OnceCell::into_inner) else {
-                trace!(
-                    "Failed to detach session for ID {}, references exist.",
-                    session_id
-                );
-                continue;
-            };
-            if let Ok(session) = Arc::try_unwrap(session) {
-                session.end().await?;
-            } else {
-                trace!(
-                    "Failed to detach session for ID {}, references exist.",
-                    session_id
-                );
-            }
-        }
-
-        if let Some(connection) = self.connections.lock().await.take() {
-            trace!("Closing connection for {}.", self.url);
-            if let Ok(connection) = Arc::try_unwrap(connection) {
-                trace!(
-                    "No references, actually closing connection for {}.",
-                    self.url
-                );
-                connection.close().await?;
-            } else {
-                trace!(
-                    "Failed to close connection for {}, references exist.",
-                    self.url
-                );
-            }
-        }
+        self.apply_recovery_plan(
+            RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectConnection)
+                .expect("connection recovery has a plan"),
+        )
+        .await;
+        self.authorizer.stop_refresh_task().await;
         info!(
             connection_id = %self.get_connection_id(),
             url = %self.url,
@@ -553,25 +470,59 @@ impl RecoverableConnection {
     /// first operation is performed.
     ///
     pub(crate) async fn ensure_connection(&self) -> azure_core_amqp::Result<Arc<AmqpConnection>> {
-        let mut connection = self.connections.lock().await;
-        // Read the flag under the lock. `close_connection` sets it before it
-        // takes this lock, so a caller that gets here first has its connection
-        // closed by the close that waits behind it, and a caller that gets here
-        // after the close sees the flag. A check before the lock would leave a
-        // window where a caller reads the flag, loses its thread for the whole
-        // close, and then opens a connection that nothing closes.
-        if self.closed.load(Ordering::Acquire) {
-            return Err(AmqpError::with_message(
-                "The client that owns this connection is closed.",
-            ));
+        for _ in 0..MAX_GENERATION_RETRIES {
+            {
+                let connection = self.connections.lock().await;
+                if self.closed.load(Ordering::Acquire) {
+                    return Err(AmqpError::with_message(
+                        "The client that owns this connection is closed.",
+                    ));
+                }
+                if let Some(connection) = connection.as_ref() {
+                    return Ok(connection.clone());
+                }
+            }
+            let _opening = self.connection_open.lock().await;
+            let (generation, invalidated) = self.generation_invalidation().await?;
+            if let Some(connection) = self.connections.lock().await.as_ref() {
+                return Ok(connection.clone());
+            }
+            // The provisional connection is not cached yet. Invalidation must
+            // cancel its handshake rather than wait for the peer to respond.
+            let created = {
+                let opening = self.create_connection().fuse();
+                let changed = invalidated.wait().fuse();
+                pin_mut!(opening, changed);
+                select_biased! {
+                    _ = changed => {
+                        if self.closed.load(Ordering::Acquire) {
+                            return Err(AmqpError::with_message(
+                                "The client that owns this connection is closed.",
+                            ));
+                        }
+                        // Drop the unfinished opening and its transport before
+                        // retrying. The loop also releases the opening lock.
+                        continue;
+                    },
+                    result = opening => result?,
+                }
+            };
+            let mut connection = self.connections.lock().await;
+            if self.closed.load(Ordering::Acquire) {
+                created.abort();
+                return Err(AmqpError::with_message(
+                    "The client that owns this connection is closed.",
+                ));
+            }
+            if self.generation_is_current(generation) {
+                *connection = Some(created.clone());
+                return Ok(created);
+            }
+            created.abort();
         }
-        if connection.is_none() {
-            *connection = Some(self.create_connection().await?);
-        }
-        if let Some(connection) = connection.as_ref() {
-            return Ok(connection.clone());
-        }
-        Err(AmqpError::with_message("Missing Connection."))
+        Err(AmqpError::with_message(
+            "Connection preparation exceeded the generation retry limit.",
+        ))
     }
 
     /// Creates a new management client for the Event Hubs service.
@@ -596,9 +547,7 @@ impl RecoverableConnection {
     ///
     /// This sender integrates retry operations into the send operation.
     pub(crate) async fn get_sender(self: &Arc<Self>, path: Url) -> Result<RecoverableSender> {
-        // Ensure we can create a sender for the Event Hub path.
-        self.ensure_sender(&path).await?;
-
+        // Sender preparation belongs to the operation's retry and deadline scope.
         Ok(RecoverableSender::new(Arc::downgrade(self), path))
     }
 
@@ -607,6 +556,7 @@ impl RecoverableConnection {
         source_url: &Url,
         message_source: AmqpSource,
         receiver_options: AmqpReceiverOptions,
+        partition_id: &str,
         timeout: Option<Duration>,
     ) -> Result<RecoverableReceiver> {
         self.ensure_receiver(source_url, &message_source, &receiver_options)
@@ -617,6 +567,8 @@ impl RecoverableConnection {
             receiver_options,
             message_source,
             source_url.clone(),
+            self.get_connection_id().to_string(),
+            partition_id.to_string(),
             timeout,
         ))
     }
@@ -683,18 +635,30 @@ impl RecoverableConnection {
     /// * `captured` still equals the current generation, so no recovery has started
     ///   since.
     ///
-    /// Testing the parity matters on its own. `apply_recovery_plan` releases every
-    /// lock it takes, so it can stall between its two bumps under contention; a slow
-    /// path that captured an odd generation there has time to finish a whole attach
-    /// and test its capture while the value is still unchanged. Equality alone would
-    /// accept that attach.
+    /// Initializers on another executor thread can observe the odd interval.
+    /// Equality alone would accept a capture from that interval.
     pub(crate) fn generation_is_current(&self, captured: u64) -> bool {
         captured.is_multiple_of(2) && self.current_generation() == captured
     }
 
-    /// Resolves the per-path cell for `key`, runs `init` to attach the resource
-    /// without holding the map lock, and guards the result against a racing
-    /// recovery via the generation counter (#4454).
+    /// Captures a recovery generation and its persistent invalidation signal.
+    ///
+    /// Opening connections and operations share this signal. Recovery or close
+    /// wakes existing subscribers; recovery gives later subscribers a new signal.
+    pub(super) async fn generation_invalidation(
+        &self,
+    ) -> azure_core_amqp::Result<(u64, Arc<OnceCell<()>>)> {
+        let invalidated = self.generation_invalidation.lock().await;
+        if self.closed.load(Ordering::Acquire) {
+            return Err(AmqpError::with_message(
+                "The client that owns this connection is closed.",
+            ));
+        }
+        Ok((self.current_generation(), invalidated.clone()))
+    }
+
+    /// Resolves the per-path cell for `key`, prepares its dependencies, then
+    /// initializes the resource without holding the map lock.
     ///
     /// The attach (`init`) does its AMQP IO with no map lock held, so a recovery
     /// can clear the caches and bump the generation while it is in flight. After
@@ -705,17 +669,25 @@ impl RecoverableConnection {
     /// that cost an extra recovery cycle on the next operation), the stale cell is
     /// evicted and the whole attach retries against the new generation.
     ///
-    /// `init` is therefore an `FnMut`: it may run more than once if recovery keeps
+    /// Preparing a connection or session can itself cross a recovery. Check the
+    /// generation again before attaching: otherwise an old receiver cell can
+    /// attach a link on a new, cached session, discard that link as stale, then
+    /// attach the same name on that session before its detach completes.
+    ///
+    /// Both callbacks are `FnMut`: they may run more than once if recovery keeps
     /// racing. [`MAX_GENERATION_RETRIES`] bounds the loop, so a pathological storm
     /// of back-to-back recoveries surfaces an error instead of spinning forever.
-    async fn get_or_init_generational<T, F, Fut>(
+    async fn get_or_init_generational<T, D, P, Prep, F, Fut>(
         &self,
         map: &RwLock<HashMap<Url, GenerationalCell<T>>>,
         key: &Url,
+        mut prepare: P,
         mut init: F,
     ) -> azure_core_amqp::Result<Arc<T>>
     where
-        F: FnMut() -> Fut,
+        P: FnMut() -> Prep,
+        Prep: Future<Output = azure_core_amqp::Result<D>>,
+        F: FnMut(D) -> Fut,
         Fut: Future<Output = azure_core_amqp::Result<Arc<T>>>,
     {
         for _ in 0..MAX_GENERATION_RETRIES {
@@ -728,7 +700,18 @@ impl RecoverableConnection {
             self.run_peer_supersession_hook(map, key).await;
 
             let entry = or_init_cell(map, key, generation).await;
-            let value = entry.cell.get_or_try_init(&mut init).await?;
+            let result = entry
+                .cell
+                .get_or_try_init(|| async {
+                    let dependencies = prepare().await?;
+                    if !self.generation_is_current(entry.generation) {
+                        return Err(AmqpError::with_message(
+                            "Recovery superseded resource preparation.",
+                        ));
+                    }
+                    init(dependencies).await
+                })
+                .await;
 
             // If no recovery raced the attach above, the cell is valid; return it.
             // Test the cell's *own* generation, not the value captured at the top of
@@ -738,16 +721,15 @@ impl RecoverableConnection {
             // would wrongly discard (and evict) that peer's freshly-attached
             // resource. See #4454.
             if self.generation_is_current(entry.generation) {
-                return Ok(value.clone());
+                return result.map(Arc::clone);
             }
 
-            // A recovery cleared the caches mid-attach. The value we just produced
-            // (or read from a cell another racing task initialized) is bound to the
-            // old connection. Evict this cell if it is still the one mapped for
-            // `key` so the next pass re-inits against the new generation, then loop.
+            // Recovery superseded preparation or attachment, including any error
+            // from that old state. Evict only this cell, preserving a newer peer's
+            // cache entry, then retry against the current generation.
             debug!(
                 %key,
-                "Discarding stale resource produced during recovery (#4454); re-initializing."
+                "Discarding resource initialization superseded by recovery; re-initializing."
             );
             let mut guard = map.write().await;
             if let Some(current) = guard.get(key) {
@@ -785,19 +767,23 @@ impl RecoverableConnection {
         // generation guard discards a session begun against a connection that a
         // racing recovery has since replaced (#4454).
         let session = self
-            .get_or_init_generational(&self.session_instances, source_url, || async {
-                debug!(source_url = %source_url, "Creating session for partition.");
-                let connection = self.ensure_connection().await?;
+            .get_or_init_generational(
+                &self.session_instances,
+                source_url,
+                || self.ensure_connection(),
+                |connection| async move {
+                    debug!(source_url = %source_url, "Creating session for partition.");
 
-                let session = AmqpSession::new();
-                session
-                    .begin(
-                        connection.as_ref(),
-                        Some(AmqpSessionOptions::with_unbounded_windows()),
-                    )
-                    .await?;
-                Ok::<_, AmqpError>(Arc::new(session))
-            })
+                    let session = AmqpSession::new();
+                    session
+                        .begin(
+                            connection.as_ref(),
+                            Some(AmqpSessionOptions::with_unbounded_windows()),
+                        )
+                        .await?;
+                    Ok::<_, AmqpError>(Arc::new(session))
+                },
+            )
             .await?;
         debug!(source_url = %source_url, "Cloning session for partition.");
         Ok(session)
@@ -954,43 +940,48 @@ impl RecoverableConnection {
         // concurrently and steady-state receives never serialize on a shared
         // lock. See issues #2243 and #4563.
         let receiver = self
-            .get_or_init_generational(&self.receiver_instances, source_url, || async {
-                // Test seam: fail the attach with an injected error before
-                // any network activity. The error leaves this closure on the
-                // same path a rejected `receiver.attach` below takes.
-                #[cfg(test)]
-                self.get_forced_attach_error()?;
+            .get_or_init_generational(
+                &self.receiver_instances,
+                source_url,
+                || async {
+                    // Test seam: fail the attach with an injected error before
+                    // any network activity. The error leaves this closure on the
+                    // same path a rejected `receiver.attach` below takes.
+                    #[cfg(test)]
+                    self.get_forced_attach_error()?;
 
-                self.ensure_connection().await?;
-                self.authorizer.authorize_path(self, source_url).await?;
+                    self.ensure_connection().await?;
+                    self.authorizer.authorize_path(self, source_url).await?;
 
-                let session = self.get_session(source_url).await?;
-
-                debug!(source_url = %source_url, "Creating receiver on partition.");
-                let receiver = AmqpReceiver::new();
-                if let Err(e) = receiver
-                    .attach(
-                        &session,
-                        message_source.clone(),
-                        Some(receiver_options.clone()),
-                    )
-                    .await
-                {
-                    warn!(
+                    self.get_session(source_url).await
+                },
+                |session| async move {
+                    debug!(source_url = %source_url, "Creating receiver on partition.");
+                    let receiver = AmqpReceiver::new();
+                    if let Err(e) = receiver
+                        .attach(
+                            &session,
+                            message_source.clone(),
+                            Some(receiver_options.clone()),
+                        )
+                        .await
+                    {
+                        warn!(
+                            connection_id = %self.get_connection_id(),
+                            source_url = %source_url,
+                            err = %e,
+                            "Failed to attach receiver on partition."
+                        );
+                        return Err(e);
+                    }
+                    info!(
                         connection_id = %self.get_connection_id(),
                         source_url = %source_url,
-                        err = %e,
-                        "Failed to attach receiver on partition."
+                        "Attached receiver on partition."
                     );
-                    return Err(e);
-                }
-                info!(
-                    connection_id = %self.get_connection_id(),
-                    source_url = %source_url,
-                    "Attached receiver on partition."
-                );
-                Ok::<_, AmqpError>(Arc::new(receiver))
-            })
+                    Ok::<_, AmqpError>(Arc::new(receiver))
+                },
+            )
             .await?;
 
         Ok(receiver)
@@ -1027,49 +1018,55 @@ impl RecoverableConnection {
         // that senders for other partitions can be created concurrently and
         // steady-state sends never serialize on a shared lock. See issue #2243.
         let sender = self
-            .get_or_init_generational(&self.sender_instances, path, || async {
-                // Test seam: fail the attach with an injected error before any
-                // network activity. The error takes the same path as a
-                // rejected sender attach below it.
-                #[cfg(test)]
-                self.get_forced_attach_error()?;
+            .get_or_init_generational(
+                &self.sender_instances,
+                path,
+                || async {
+                    // Test seam: fail the attach with an injected error before any
+                    // network activity. The error takes the same path as a
+                    // rejected sender attach below it.
+                    #[cfg(test)]
+                    self.get_forced_attach_error()?;
 
-                // Ensure that we are authorized to access the senders path.
-                self.authorizer.authorize_path(self, path).await?;
+                    // Ensure that we are authorized to access the senders path.
+                    self.authorizer.authorize_path(self, path).await?;
 
-                // Retrieve a session for the sender from the session cache.
-                let session = self.get_session(path).await?;
-                debug!(path = %path, "Creating sender on path.");
-                let sender = AmqpSender::new();
-                if let Err(e) = sender
-                    .attach(
-                        &session,
-                        format!(
-                            "{}-rust-sender",
-                            self.application_id
-                                .as_ref()
-                                .unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
-                        ),
-                        path.to_string(),
-                        None,
-                    )
-                    .await
-                {
-                    warn!(
+                    // Retrieve a session for the sender from the session cache.
+                    self.get_session(path).await
+                },
+                |session| async move {
+                    debug!(path = %path, "Creating sender on path.");
+                    let sender = AmqpSender::new();
+                    if let Err(e) = sender
+                        .attach(
+                            &session,
+                            format!(
+                                "{}-rust-sender",
+                                self.application_id
+                                    .as_ref()
+                                    .unwrap_or(&DEFAULT_EVENTHUBS_APPLICATION.to_string())
+                            ),
+                            path.to_string(),
+                            None,
+                        )
+                        .await
+                    {
+                        warn!(
+                            connection_id = %self.get_connection_id(),
+                            path = %path,
+                            err = %e,
+                            "Failed to attach sender on path."
+                        );
+                        return Err(e);
+                    }
+                    info!(
                         connection_id = %self.get_connection_id(),
                         path = %path,
-                        err = %e,
-                        "Failed to attach sender on path."
+                        "Attached sender on path."
                     );
-                    return Err(e);
-                }
-                info!(
-                    connection_id = %self.get_connection_id(),
-                    path = %path,
-                    "Attached sender on path."
-                );
-                Ok::<_, AmqpError>(Arc::new(sender))
-            })
+                    Ok::<_, AmqpError>(Arc::new(sender))
+                },
+            )
             .await?;
 
         Ok(sender)
@@ -1147,38 +1144,38 @@ impl RecoverableConnection {
     /// mid-attach captured a generation from inside or before that bracket, so
     /// `generation_is_current` rejects it on completion and the slow path discards
     /// its result instead of caching a resource bound to the connection this
-    /// recovery just tore down. The body explains why one bump on either side alone
-    /// is not enough.
+    /// recovery just tore down. All lock acquisition precedes the first mutation.
     async fn apply_recovery_plan(&self, plan: RecoveryPlan) {
-        let connection_id = self.get_connection_id();
+        self.apply_recovery_plan_for_generation(plan, None).await;
+    }
 
-        // A plan that invalidates anything brackets the invalidation with a
-        // generation bump: one before it touches the connection or any cache, and
-        // one after the last of them. The generation is therefore odd for exactly
-        // the span in which this connection's state is inconsistent, which is the
-        // sequence-lock rule `generation_is_current` tests (#4454).
-        //
-        // Both bumps are needed, and so is the parity test:
-        //
-        // * Without the closing bump, a slow path that captured the old generation
-        //   can clone the connection, attach, and test its capture before the single
-        //   bump lands. The generation still matches, so it caches and returns a
-        //   resource bound to the connection this recovery drops a moment later.
-        // * Without the opening bump, a slow path can capture the new generation and
-        //   *then* clone the old connection, which `connections` still holds. Its
-        //   post-init test matches too, so the same stale resource reaches the
-        //   caller. The token cache has the same shape: a reader that runs after the
-        //   bump and before `clear()` gets a token that was authorized on the CBS
-        //   link of the connection being dropped.
-        // * Without the parity test, a slow path that captured a generation between
-        //   the two bumps is accepted for as long as this function has not reached
-        //   the closing one. Every lock below is released before the next is taken,
-        //   so a contended recovery can stall here long enough for that slow path to
-        //   finish a whole attach against the connection being dropped.
-        //
-        // A task that captures the final, even generation started after the last
-        // invalidation, so it finds an empty cache and builds against the new
-        // connection.
+    pub(super) async fn recover_generation(&self, generation: u64, reason: ErrorRecoveryAction) {
+        if let Some(plan) = RecoveryPlan::for_action(&reason) {
+            self.apply_recovery_plan_for_generation(plan, Some(generation))
+                .await;
+        }
+    }
+
+    async fn apply_recovery_plan_for_generation(
+        &self,
+        plan: RecoveryPlan,
+        generation: Option<u64>,
+    ) {
+        let connection_id = self.get_connection_id();
+        let mut invalidated = self.generation_invalidation.lock().await;
+        if generation.is_some_and(|generation| !self.generation_is_current(generation)) {
+            return;
+        }
+        // Acquire every cache lock before changing the generation. No await after
+        // the first mutation means cancellation cannot leave a half-cleared cache.
+        let mut connection = self.connections.lock().await;
+        let mut scopes = self.authorizer.lock_scopes().await;
+        let mut sessions = self.session_instances.write().await;
+        let mut senders = self.sender_instances.write().await;
+        let mut receivers = self.receiver_instances.write().await;
+        let mut management = self.mgmt_client.write().await;
+        // Preserve the sequence-lock guard for initializers on other threads.
+        // The odd interval has no suspension point, so cancellation cannot split it.
         let invalidates = plan.drop_connection
             || plan.clear_authorizer
             || plan.clear_sessions
@@ -1186,32 +1183,32 @@ impl RecoverableConnection {
             || plan.clear_receivers;
 
         if invalidates {
+            invalidated.get_or_init(|| async {}).await;
             self.generation.fetch_add(1, Ordering::AcqRel);
         }
 
         if plan.drop_connection {
-            self.connections.lock().await.take();
+            if let Some(connection) = connection.take() {
+                connection.abort();
+            }
             debug!(connection_id = %connection_id, "Recovery: dropped AMQP connection.");
         }
 
         if plan.clear_authorizer {
-            self.authorizer.clear().await;
+            scopes.clear();
             debug!(connection_id = %connection_id, "Recovery: cleared authorizer tokens.");
         }
         if plan.clear_sessions {
-            let mut sessions = self.session_instances.write().await;
             let count = sessions.len();
             sessions.clear();
             debug!(connection_id = %connection_id, count, "Recovery: cleared cached sessions.");
         }
         if plan.clear_senders {
-            let mut senders = self.sender_instances.write().await;
             let count = senders.len();
             senders.clear();
             debug!(connection_id = %connection_id, count, "Recovery: cleared cached senders.");
         }
         if plan.clear_receivers {
-            let mut receivers = self.receiver_instances.write().await;
             let count = receivers.len();
             receivers.clear();
             debug!(connection_id = %connection_id, count, "Recovery: cleared cached receivers.");
@@ -1221,13 +1218,14 @@ impl RecoverableConnection {
             // write lock is held only for the pointer swap, never across a build,
             // so this never waits for a management-client build in flight (which,
             // on the CBS failure path, runs on this very task).
-            *self.mgmt_client.write().await = Arc::new(OnceCell::new());
+            *management = Arc::new(OnceCell::new());
             debug!(connection_id = %connection_id, "Recovery: dropped management client.");
         }
 
         // Closing bump. See the comment above the opening one.
         if invalidates {
             self.generation.fetch_add(1, Ordering::AcqRel);
+            *invalidated = Arc::new(OnceCell::new());
         }
     }
 
@@ -1527,11 +1525,136 @@ mod tests {
         time::{Duration, OffsetDateTime},
     };
     use azure_core_test::credentials::MockCredential;
+    use fe2o3_amqp::acceptor::{ConnectionAcceptor, SaslAnonymousMechanism, SessionAcceptor};
     use std::sync::{
         atomic::{AtomicUsize, Ordering},
         Arc,
     };
-    use tokio::sync::Notify;
+    use tokio::{io::AsyncReadExt, net::TcpListener, sync::Notify, time::timeout};
+
+    fn connection_for_generation_invalidation() -> Arc<RecoverableConnection> {
+        RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            AmqpTransport::default(),
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        )
+    }
+
+    #[tokio::test]
+    async fn generation_invalidation_persists_for_late_waiters() {
+        let connection = connection_for_generation_invalidation();
+        let (_, original) = connection.generation_invalidation().await.unwrap();
+        for action in [
+            ErrorRecoveryAction::ReconnectLink,
+            ErrorRecoveryAction::ReconnectSession,
+            ErrorRecoveryAction::ReconnectConnection,
+        ] {
+            let (generation, previous) = connection.generation_invalidation().await.unwrap();
+            connection
+                .apply_recovery_plan(RecoveryPlan::for_action(&action).unwrap())
+                .await;
+            let (next_generation, next) = connection.generation_invalidation().await.unwrap();
+            assert_eq!(next_generation, generation + 2);
+            assert!(previous.get().is_some());
+            assert!(next.get().is_none());
+            assert!(!Arc::ptr_eq(&previous, &next));
+        }
+        assert!(futures::poll!(Box::pin(original.wait())).is_ready());
+    }
+
+    #[tokio::test]
+    async fn generation_subscription_waits_until_invalidation_finishes() {
+        let connection = connection_for_generation_invalidation();
+        let (_, previous) = connection.generation_invalidation().await.unwrap();
+        let sessions = connection.session_instances.write().await;
+        let recovery = connection.apply_recovery_plan(
+            RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectConnection).unwrap(),
+        );
+        futures::pin_mut!(recovery);
+        assert!(futures::poll!(&mut recovery).is_pending());
+        assert!(previous.get().is_none());
+        assert_eq!(connection.generation(), 0);
+
+        let subscription = connection.generation_invalidation();
+        futures::pin_mut!(subscription);
+        assert!(futures::poll!(&mut subscription).is_pending());
+        drop(sessions);
+        recovery.await;
+        let (generation, next) = subscription.await.unwrap();
+        assert_eq!(generation, 2);
+        assert!(next.get().is_none());
+    }
+
+    #[tokio::test]
+    async fn concurrent_generation_invalidations_wait_before_mutating_generation() {
+        let connection = connection_for_generation_invalidation();
+        let sessions = connection.session_instances.write().await;
+        let plan = RecoveryPlan::for_action(&ErrorRecoveryAction::ReconnectConnection).unwrap();
+        let first = connection.apply_recovery_plan(plan);
+        let second = connection.apply_recovery_plan(plan);
+        futures::pin_mut!(first, second);
+        assert!(futures::poll!(&mut first).is_pending());
+        assert!(futures::poll!(&mut second).is_pending());
+        assert_eq!(connection.generation(), 0);
+        drop(sessions);
+        futures::join!(first, second);
+        assert_eq!(connection.generation(), 4);
+        assert!(connection
+            .generation_invalidation()
+            .await
+            .unwrap()
+            .1
+            .get()
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn close_notifies_generation_waiters_and_rejects_new_subscriptions() {
+        let connection = connection_for_generation_invalidation();
+        let (_, invalidated) = connection.generation_invalidation().await.unwrap();
+        connection.close_connection().await.unwrap();
+        assert!(invalidated.get().is_some());
+        assert!(connection.generation_invalidation().await.is_err());
+    }
+
+    #[tokio::test]
+    async fn cancelled_recovery_leaves_generation_and_notifications_usable() {
+        let connection = connection_for_generation_invalidation();
+        let (_, notification) = connection.generation_invalidation().await.unwrap();
+        let sessions = connection.session_instances.write().await;
+        let mut recovery =
+            Box::pin(connection.recover_generation(0, ErrorRecoveryAction::ReconnectConnection));
+        assert!(futures::poll!(&mut recovery).is_pending());
+        drop(recovery);
+        assert_eq!(connection.generation(), 0);
+        assert!(notification.get().is_none());
+        drop(sessions);
+        let mut tasks = tokio::task::JoinSet::new();
+        for _ in 0..30 {
+            let connection = connection.clone();
+            tasks.spawn(async move {
+                connection
+                    .recover_generation(0, ErrorRecoveryAction::ReconnectConnection)
+                    .await
+            });
+        }
+        while let Some(result) = tasks.join_next().await {
+            result.unwrap();
+        }
+        assert_eq!(connection.generation(), 2);
+        assert!(notification.get().is_some());
+        let (_, replacement) = connection.generation_invalidation().await.unwrap();
+        connection
+            .recover_generation(0, ErrorRecoveryAction::ReconnectConnection)
+            .await;
+        assert_eq!(connection.generation(), 2);
+        assert!(replacement.get().is_none());
+    }
 
     // A close does not need exclusive ownership of the connection.
     //
@@ -1707,7 +1830,7 @@ mod tests {
         authorization
             .await
             .expect("authorize_path task panicked")
-            .expect("authorize_path returned an error");
+            .expect_err("closing the connection cancels authorization");
 
         assert_eq!(
             credential.requests.load(Ordering::SeqCst),
@@ -1878,9 +2001,8 @@ mod tests {
     // post-init check would then match and hand the caller a resource bound to the
     // connection this recovery is dropping.
     //
-    // The token cache's write lock is the seam. Holding it stops the recovery inside
-    // `authorizer.clear()`, which is after the opening bump and before the closing
-    // one, so the test can capture the generation a racing slow path would see.
+    // The token cache's write lock stops recovery before any mutation. A caller
+    // that captures this state must see a different generation after recovery.
     #[tokio::test]
     async fn recovery_generation_differs_for_a_mid_recovery_capture() {
         let url = Url::parse("amqps://example.com").unwrap();
@@ -1898,19 +2020,18 @@ mod tests {
 
         let scopes = connection.authorizer.lock_scopes_for_test().await;
 
-        let recovery = {
-            let connection = connection.clone();
-            tokio::spawn(async move { connection.simulate_reconnect().await })
-        };
-
-        // Wait for the opening bump. The recovery then blocks on the guard above.
-        while connection.generation() == 0 {
-            tokio::task::yield_now().await;
-        }
+        let recovery = connection.simulate_reconnect();
+        futures::pin_mut!(recovery);
+        assert!(futures::poll!(&mut recovery).is_pending());
+        assert_eq!(
+            connection.generation(),
+            0,
+            "blocked recovery leaves the state unchanged"
+        );
         let captured_mid_recovery = connection.generation();
 
         drop(scopes);
-        recovery.await.expect("recovery task panicked");
+        recovery.await;
 
         assert_ne!(
             connection.generation(),
@@ -1970,10 +2091,8 @@ mod tests {
     // rejected on parity alone, without waiting for the recovery to end.
     //
     // Equality against the captured value cannot catch this case: the generation
-    // has not moved since the capture. `apply_recovery_plan` releases each lock
-    // before it takes the next, so a contended recovery can stall between its bumps
-    // long enough for a slow path to finish attaching to the connection it is
-    // dropping. The test parks the generation mid-recovery to hold that state open.
+    // has not moved since the capture. The test holds the odd interval open to
+    // represent an initializer that runs on another executor thread.
     #[tokio::test]
     async fn generation_captured_mid_recovery_is_never_current() {
         let url = Url::parse("amqps://example.com").unwrap();
@@ -2000,25 +2119,29 @@ mod tests {
              while the recovery is still in flight and the value is unchanged"
         );
 
-        // An attach that runs entirely inside the recovery is therefore never
-        // cached. It retries to the budget and surfaces an error instead.
+        // An initialization known to overlap recovery must not attach a resource.
+        // It retries preparation to the budget and returns an error instead.
         let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let map: RwLock<HashMap<Url, GenerationalCell<u64>>> = RwLock::new(HashMap::new());
-        let result =
-            connection
-                .get_or_init_generational(&map, &path, || {
+        let result = connection
+            .get_or_init_generational(
+                &map,
+                &path,
+                || async { Ok(()) },
+                |()| {
                     let calls = calls.clone();
                     async move {
                         Ok::<_, AmqpError>(Arc::new(calls.fetch_add(1, Ordering::SeqCst) as u64))
                     }
-                })
-                .await;
+                },
+            )
+            .await;
 
         assert!(
             result.is_err(),
             "a resource attached during a recovery must not be handed to the caller"
         );
-        assert_eq!(calls.load(Ordering::SeqCst), MAX_GENERATION_RETRIES);
+        assert_eq!(calls.load(Ordering::SeqCst), 0);
         assert!(
             map.read().await.get(&path).is_none(),
             "no cell attached during a recovery may stay cached"
@@ -2050,20 +2173,25 @@ mod tests {
         let map: RwLock<HashMap<Url, GenerationalCell<u64>>> = RwLock::new(HashMap::new());
 
         let result = connection
-            .get_or_init_generational(&map, &path, || {
-                let calls = calls.clone();
-                let connection = &connection;
-                async move {
-                    let attempt = calls.fetch_add(1, Ordering::SeqCst);
-                    // On the first attempt only, simulate a recovery firing during
-                    // the lock-free init window. This bumps the generation, so the
-                    // value produced here is stale and must be discarded.
-                    if attempt == 0 {
-                        connection.simulate_reconnect().await;
+            .get_or_init_generational(
+                &map,
+                &path,
+                || async { Ok(()) },
+                |()| {
+                    let calls = calls.clone();
+                    let connection = &connection;
+                    async move {
+                        let attempt = calls.fetch_add(1, Ordering::SeqCst);
+                        // On the first attempt only, simulate a recovery firing during
+                        // the lock-free init window. This bumps the generation, so the
+                        // value produced here is stale and must be discarded.
+                        if attempt == 0 {
+                            connection.simulate_reconnect().await;
+                        }
+                        Ok::<_, AmqpError>(Arc::new(attempt as u64))
                     }
-                    Ok::<_, AmqpError>(Arc::new(attempt as u64))
-                }
-            })
+                },
+            )
             .await
             .expect("init should succeed on the second, stable-generation attempt");
 
@@ -2075,6 +2203,132 @@ mod tests {
         let cached = map.read().await.get(&path).cloned().unwrap();
         assert_eq!(cached.generation, connection.generation());
         assert_eq!(**cached.cell.get().unwrap(), 1);
+    }
+
+    #[tokio::test]
+    async fn nested_recovery_does_not_attach_twice_to_current_session() {
+        let connection = RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            AmqpTransport::default(),
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
+        let path = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
+        let sessions: RwLock<HashMap<Url, GenerationalCell<AtomicUsize>>> =
+            RwLock::new(HashMap::new());
+        let receivers: RwLock<HashMap<Url, GenerationalCell<()>>> = RwLock::new(HashMap::new());
+        let session_attempts = AtomicUsize::new(0);
+        let attached = AtomicUsize::new(0);
+
+        let result = connection
+            .get_or_init_generational(
+                &receivers,
+                &path,
+                || async {
+                    connection
+                        .get_or_init_generational(
+                            &sessions,
+                            &path,
+                            || async {
+                                if session_attempts.fetch_add(1, Ordering::SeqCst) == 0 {
+                                    connection.simulate_reconnect().await;
+                                }
+                                Ok(())
+                            },
+                            |()| async { Ok(Arc::new(AtomicUsize::new(0))) },
+                        )
+                        .await
+                },
+                |session| {
+                    let attached = &attached;
+                    async move {
+                        // A session reserves the link name until asynchronous detach completes.
+                        if session.fetch_add(1, Ordering::SeqCst) != 0 {
+                            return Err(AmqpError::with_message("Link name is not unique."));
+                        }
+                        attached.fetch_add(1, Ordering::SeqCst);
+                        Ok(Arc::new(()))
+                    }
+                },
+            )
+            .await;
+
+        result.expect("recovery while preparing a session must not duplicate its receiver");
+        assert_eq!(attached.load(Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn preparation_failure_preserves_error_without_attaching() {
+        let connection = RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            AmqpTransport::default(),
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
+        let path = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
+        let map: RwLock<HashMap<Url, GenerationalCell<u64>>> = RwLock::new(HashMap::new());
+        let attached = AtomicUsize::new(0);
+        let error = connection
+            .get_or_init_generational(
+                &map,
+                &path,
+                || async { Err(AmqpError::with_message("preparation failed")) },
+                |()| async {
+                    attached.fetch_add(1, Ordering::SeqCst);
+                    Ok(Arc::new(42))
+                },
+            )
+            .await
+            .expect_err("a current-generation failure must reach the caller");
+
+        assert!(error.to_string().contains("preparation failed"));
+        assert_eq!(attached.load(Ordering::SeqCst), 0);
+    }
+
+    #[tokio::test]
+    async fn cached_resource_does_not_prepare_or_attach_again() {
+        let connection = RecoverableConnection::new(
+            Url::parse("amqps://example.com").unwrap(),
+            None,
+            None,
+            AmqpTransport::default(),
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        );
+        let path = Url::parse("amqps://example.com/eh/Partitions/0").unwrap();
+        let map: RwLock<HashMap<Url, GenerationalCell<u64>>> = RwLock::new(HashMap::new());
+        let cached = Arc::new(42);
+        or_init_cell(&map, &path, connection.generation())
+            .await
+            .cell
+            .set(cached.clone())
+            .await
+            .unwrap();
+
+        let result = connection
+            .get_or_init_generational(
+                &map,
+                &path,
+                || async {
+                    Err(AmqpError::with_message(
+                        "must not prepare a cached resource",
+                    ))
+                },
+                |()| async { Err(AmqpError::with_message("must not attach a cached resource")) },
+            )
+            .await
+            .expect("the cached resource must remain usable");
+        assert!(Arc::ptr_eq(&cached, &result));
     }
 
     // #4454 regression: `or_init_cell` must never overwrite a cell at a *newer*
@@ -2159,13 +2413,18 @@ mod tests {
         connection.arm_peer_supersession_for_test();
 
         let result = connection
-            .get_or_init_generational(&map, &path, || {
-                let calls = calls.clone();
-                async move {
-                    let attempt = calls.fetch_add(1, Ordering::SeqCst);
-                    Ok::<_, AmqpError>(Arc::new(attempt as u64))
-                }
-            })
+            .get_or_init_generational(
+                &map,
+                &path,
+                || async { Ok(()) },
+                |()| {
+                    let calls = calls.clone();
+                    async move {
+                        let attempt = calls.fetch_add(1, Ordering::SeqCst);
+                        Ok::<_, AmqpError>(Arc::new(attempt as u64))
+                    }
+                },
+            )
             .await
             .expect("init should succeed against the peer's current-generation cell");
 
@@ -2595,6 +2854,113 @@ mod tests {
     fn recovery_plan_none_for_non_reconnect_actions() {
         assert!(RecoveryPlan::for_action(&ErrorRecoveryAction::RetryAction).is_none());
         assert!(RecoveryPlan::for_action(&ErrorRecoveryAction::ReturnError).is_none());
+    }
+
+    fn connection_for_listener(listener: &TcpListener) -> Arc<RecoverableConnection> {
+        RecoverableConnection::new(
+            Url::parse(&format!("amqp://{}", listener.local_addr().unwrap())).unwrap(),
+            None,
+            None,
+            AmqpTransport::Tcp,
+            None,
+            Arc::new(MockCredential),
+            Default::default(),
+            None,
+        )
+    }
+
+    #[tokio::test]
+    async fn close_cancels_stalled_connection_open() {
+        timeout(std::time::Duration::from_secs(10), async {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let connection = connection_for_listener(&listener);
+            let opening = tokio::spawn({
+                let connection = connection.clone();
+                async move { connection.ensure_connection().await }
+            });
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut header = [0; 8];
+            stream.read_exact(&mut header).await.unwrap();
+            assert_eq!(&header[..4], b"AMQP");
+            // Keep the peer silent and open. Reading the client's header proves
+            // the opening is inside the handshake before close invalidates it.
+            assert!(!opening.is_finished());
+            assert!(connection.connections.lock().await.is_none());
+            connection.close_connection().await.unwrap();
+
+            let error = opening
+                .await
+                .unwrap()
+                .err()
+                .expect("closed opening must fail");
+            assert!(error
+                .to_string()
+                .contains("client that owns this connection is closed"));
+            assert_eq!(stream.read(&mut [0]).await.unwrap(), 0);
+            assert!(connection.connection_open.try_lock().is_some());
+            assert!(connection.connections.lock().await.is_none());
+            // A later caller must fail without opening another socket.
+            assert!(connection.ensure_connection().await.is_err());
+            assert!(futures::poll!(Box::pin(listener.accept())).is_pending());
+        })
+        .await
+        .expect("close must cancel the stalled opening without a producer deadline");
+    }
+
+    #[tokio::test]
+    async fn recovery_cancels_stalled_connection_open() {
+        timeout(std::time::Duration::from_secs(10), async {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let connection = connection_for_listener(&listener);
+            let opening = tokio::spawn({
+                let connection = connection.clone();
+                async move { connection.ensure_connection().await }
+            });
+            let (mut stale_stream, _) = listener.accept().await.unwrap();
+            let mut header = [0; 8];
+            stale_stream.read_exact(&mut header).await.unwrap();
+            assert_eq!(&header[..4], b"AMQP");
+            assert!(!opening.is_finished());
+            assert!(connection.connections.lock().await.is_none());
+            let generation = connection.generation();
+            RecoverableConnection::recover_from_error(
+                Arc::downgrade(&connection),
+                ErrorRecoveryAction::ReconnectConnection,
+            )
+            .await
+            .unwrap();
+            assert!(connection.generation() > generation);
+
+            // The SDK must close the obsolete socket while the peer still holds
+            // it open. Only then allow the replacement handshake to complete.
+            assert_eq!(stale_stream.read(&mut [0]).await.unwrap(), 0);
+            let (stream, _) = listener.accept().await.unwrap();
+            let mut peer = ConnectionAcceptor::builder()
+                .container_id("replacement-peer")
+                .sasl_acceptor(SaslAnonymousMechanism {})
+                .build()
+                .accept(stream)
+                .await
+                .unwrap();
+            let replacement = opening.await.unwrap().unwrap();
+            let cached = connection.ensure_connection().await.unwrap();
+            assert!(Arc::ptr_eq(&replacement, &cached));
+            assert!(connection.connection_open.try_lock().is_some());
+
+            // Exchange another protocol frame after cleanup to prove that the
+            // old opening's destructor did not abort the replacement transport.
+            let session = AmqpSession::new();
+            let session_acceptor = SessionAcceptor::new();
+            let (begun, accepted) = tokio::join!(
+                session.begin(&replacement, None),
+                session_acceptor.accept(&mut peer),
+            );
+            begun.unwrap();
+            let _peer_session = accepted.unwrap();
+            connection.close_connection().await.unwrap();
+        })
+        .await
+        .expect("recovery must cancel the stalled opening and establish a usable replacement");
     }
 
     // The management-client build must not hold any `mgmt_client` lock.
