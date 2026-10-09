@@ -4,6 +4,7 @@
 //! Buffered, cross-partition full-text and hybrid ranking.
 //!
 //! Each component applies its global result window before candidates are coalesced and fused.
+//! Statistics placeholders are indexed independently of ranking components.
 
 use std::{
     cmp::Ordering,
@@ -119,7 +120,7 @@ impl GlobalStatistics {
     fn add(&mut self, other: Self) -> crate::error::Result<()> {
         if self.full_text_statistics.len() != other.full_text_statistics.len() {
             return Err(invalid_page(
-                "hybrid search statistics disagree on the number of full-text components",
+                "hybrid search statistics disagree on the number of full-text expressions",
             ));
         }
         self.document_count = self
@@ -170,7 +171,7 @@ struct ResultEnvelope {
     #[serde(rename = "_rid")]
     rid: String,
     component_scores: Option<Vec<Option<f64>>>,
-    payload: Option<Box<RawValue>>,
+    payload: Box<RawValue>,
 }
 
 #[derive(Deserialize)]
@@ -189,15 +190,15 @@ fn parse_result(raw: &RawValue, component_count: usize) -> crate::error::Result<
             "hybrid search result is missing a non-empty _rid",
         ));
     }
-    let (scores, payload) = match (result.component_scores, result.payload) {
-        (Some(scores), Some(payload)) => (scores, payload),
-        (None, Some(outer)) => {
-            let inner: NestedResult = serde_json::from_str(outer.get()).map_err(|error| {
-                invalid_page_json("failed to parse nested hybrid search result", error)
-            })?;
+    let (scores, payload) = match result.component_scores {
+        Some(scores) => (scores, result.payload),
+        None => {
+            let inner: NestedResult =
+                serde_json::from_str(result.payload.get()).map_err(|error| {
+                    invalid_page_json("failed to parse nested hybrid search result", error)
+                })?;
             (inner.component_scores, inner.payload)
         }
-        _ => return Err(invalid_page("hybrid search result is missing its payload")),
     };
     let scores = if scores.is_empty() {
         vec![None; component_count]
@@ -286,16 +287,20 @@ fn rank_results(rows: &mut [RankedRow], directions: &[SortOrder], weights: &[f64
 fn replace_statistics(
     query: &str,
     statistics: Option<&GlobalStatistics>,
-    indices: &[Option<usize>],
+    indices: &[usize],
 ) -> crate::error::Result<String> {
     let mut query = query_response::rewritten_query_from_beginning(query)?;
     if let Some(statistics) = statistics {
+        if indices.len() != statistics.full_text_statistics.len() {
+            return Err(invalid_page(
+                "hybrid search statistics do not match the query placeholders",
+            ));
+        }
         query = query.replace(DOCUMENT_COUNT, &statistics.document_count.to_string());
-        for (component, index) in indices.iter().enumerate() {
-            let Some(index) = index else { continue };
-            let values = &statistics.full_text_statistics[*index];
+        // Statistics are compact, even when placeholder suffixes are sparse.
+        for (index, values) in indices.iter().zip(&statistics.full_text_statistics) {
             query = query.replace(
-                &format!("{{documentdb-formattablehybridsearchquery-totalwordcount-{component}}}"),
+                &format!("{{documentdb-formattablehybridsearchquery-totalwordcount-{index}}}"),
                 &values.total_word_count.to_string(),
             );
             let hits = serde_json::to_string(&values.hit_counts).map_err(|error| {
@@ -306,7 +311,7 @@ fn replace_statistics(
                     .build()
             })?;
             query = query.replace(
-                &format!("{{documentdb-formattablehybridsearchquery-hitcountsarray-{component}}}"),
+                &format!("{{documentdb-formattablehybridsearchquery-hitcountsarray-{index}}}"),
                 &hits,
             );
         }
@@ -341,7 +346,7 @@ pub(crate) struct HybridSearch {
     component_child: Option<SequentialDrain>,
     components: Vec<Component>,
     component_weights: Vec<f64>,
-    statistic_indices: Vec<Option<usize>>,
+    statistic_indices: Vec<usize>,
     statistics: Option<GlobalStatistics>,
     next_component: usize,
     component_rows: HashMap<String, RankedRow>,
@@ -422,21 +427,32 @@ impl HybridSearch {
                 })
             })
             .collect::<crate::error::Result<_>>()?;
-        let statistic_indices = (0..components.len())
-            .scan(0, |next, component| {
-                let placeholder =
-                    format!("documentdb-formattablehybridsearchquery-totalwordcount-{component}");
-                let index = components
-                    .iter()
-                    .any(|entry| entry.query.contains(&placeholder))
-                    .then(|| {
-                        let index = *next;
-                        *next += 1;
-                        index
-                    });
-                Some(index)
-            })
-            .collect();
+        let mut statistic_indices = Vec::new();
+        for component in &components {
+            for prefix in [
+                "{documentdb-formattablehybridsearchquery-totalwordcount-",
+                "{documentdb-formattablehybridsearchquery-hitcountsarray-",
+            ] {
+                for (start, _) in component.query.match_indices(prefix) {
+                    let suffix = &component.query[start + prefix.len()..];
+                    let index = suffix
+                        .split_once('}')
+                        .map(|(index, _)| index)
+                        .filter(|index| {
+                            !index.is_empty() && index.bytes().all(|byte| byte.is_ascii_digit())
+                        })
+                        .and_then(|index| index.parse::<usize>().ok())
+                        .ok_or_else(|| {
+                            invalid_plan(
+                                "hybrid search has an invalid statistics placeholder index",
+                            )
+                        })?;
+                    statistic_indices.push(index);
+                }
+            }
+        }
+        statistic_indices.sort_unstable();
+        statistic_indices.dedup();
         let weights = if info.component_weights.is_empty() {
             vec![1.0; components.len()]
         } else {
@@ -536,15 +552,6 @@ impl HybridSearch {
             return Err(invalid_page(
                 "hybrid search statistics query returned no rows",
             ));
-        }
-        if let Some(statistics) = &self.statistics {
-            if self.statistic_indices.iter().flatten().count()
-                != statistics.full_text_statistics.len()
-            {
-                return Err(invalid_page(
-                    "hybrid search statistics do not match the component queries",
-                ));
-            }
         }
         let query = replace_statistics(
             &self.components[self.next_component].query,
@@ -869,6 +876,145 @@ mod tests {
                     .to_owned()
             })
             .collect()
+    }
+
+    #[tokio::test]
+    async fn preserves_null_payloads_in_flat_and_nested_envelopes() {
+        let mut node = HybridSearch::new(
+            operation(),
+            &single_component_plan(),
+            vec![epk_range_target().unwrap()],
+            vec![],
+            FullTextScoreScope::Local,
+            0,
+            2,
+        )
+        .unwrap();
+        let mut executor = MockRequestExecutor::new(vec![Ok(page(
+            json!([
+                {"_rid":"a", "componentScores":[1], "payload":null},
+                {"_rid":"b", "payload":{"componentScores":[0.5], "payload":null}}
+            ]),
+            1.0,
+        ))]);
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        for terminal in [false, true] {
+            let PageResult::Page {
+                response,
+                is_terminal,
+            } = node.next_page(&mut context).await.unwrap()
+            else {
+                panic!("expected ranked page");
+            };
+            let ResponseBody::Items(items) = response.body() else {
+                panic!("expected split items");
+            };
+            assert_eq!(items.len(), 1);
+            assert_eq!(&items[0][..], b"null");
+            assert_eq!(is_terminal, terminal);
+        }
+        assert!(matches!(
+            node.next_page(&mut context).await.unwrap(),
+            PageResult::Drained
+        ));
+    }
+
+    #[test]
+    fn rejects_missing_payloads_in_flat_and_nested_envelopes() {
+        for envelope in [
+            json!({"_rid":"a", "componentScores":[1]}),
+            json!({"_rid":"a"}),
+            json!({"_rid":"a", "payload":{"componentScores":[1]}}),
+            json!({"_rid":"a", "payload":null}),
+        ] {
+            assert_eq!(
+                parse_result(
+                    serde_json::value::to_raw_value(&envelope).unwrap().as_ref(),
+                    1,
+                )
+                .err()
+                .unwrap()
+                .status(),
+                status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn collects_statistics_independently_of_ranking_components() {
+        let mut info = single_component_plan();
+        info.requires_global_statistics = true;
+        info.component_query_infos[0].rewritten_query = Some(
+            "SELECT TOP 2 c FROM c WHERE \
+             {documentdb-formattablehybridsearchquery-totaldocumentcount} = 5 AND \
+             {documentdb-formattablehybridsearchquery-totalwordcount-10} = 27 AND \
+             {documentdb-formattablehybridsearchquery-totalwordcount-0} = 15 AND \
+             {documentdb-formattablehybridsearchquery-totalwordcount-10} = 27 AND \
+             ARRAY_LENGTH({documentdb-formattablehybridsearchquery-hitcountsarray-0}) = 2 AND \
+             ARRAY_LENGTH({documentdb-formattablehybridsearchquery-hitcountsarray-10}) = 1"
+                .to_owned(),
+        );
+        let target = epk_range_target().unwrap();
+        let mut node = HybridSearch::new(
+            operation(),
+            &info,
+            vec![target.clone()],
+            vec![target.clone(), target],
+            FullTextScoreScope::Global,
+            0,
+            2,
+        )
+        .unwrap();
+        let responses = [
+            page(
+                json!([{
+                    "documentCount":2,
+                    "fullTextStatistics":[
+                        {"totalWordCount":10, "hitCounts":[2, 3]},
+                        {"totalWordCount":20, "hitCounts":[4]}
+                    ]
+                }]),
+                1.0,
+            ),
+            page(
+                json!([{
+                    "documentCount":3,
+                    "fullTextStatistics":[
+                        {"totalWordCount":5, "hitCounts":[1, 2]},
+                        {"totalWordCount":7, "hitCounts":[6]}
+                    ]
+                }]),
+                1.0,
+            ),
+            page(
+                json!([{"_rid":"a", "componentScores":[1], "payload":{"id":"a"}}]),
+                1.0,
+            ),
+        ];
+        let mut executor = MockRequestExecutor::new(responses.into_iter().map(Ok).collect());
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+
+        let PageResult::Page {
+            response,
+            is_terminal,
+        } = node.next_page(&mut context).await.unwrap()
+        else {
+            panic!("expected ranked page");
+        };
+        assert_eq!(ids(&response), ["a"]);
+        assert!(is_terminal);
+        assert_eq!(executor.query_bodies.len(), 3);
+        let component: Value =
+            serde_json::from_slice(executor.query_bodies[2].as_ref().unwrap()).unwrap();
+        assert_eq!(
+            component["query"],
+            "SELECT TOP 2 c FROM c WHERE 5 = 5 AND 27 = 27 AND 15 = 15 AND 27 = 27 AND \
+             ARRAY_LENGTH([3,5]) = 2 AND ARRAY_LENGTH([10]) = 1"
+        );
+        assert_eq!(component["parameters"][0]["value"], "rust");
     }
 
     #[tokio::test]
@@ -1317,7 +1463,7 @@ mod tests {
     }
 
     #[test]
-    fn sparse_text_statistics_map_to_their_component_indices() {
+    fn sparse_text_statistics_map_to_their_placeholder_indices() {
         let info = HybridSearchQueryInfo {
             component_query_infos: vec![
                 QueryInfo {
@@ -1346,7 +1492,7 @@ mod tests {
             2,
         )
         .unwrap();
-        assert_eq!(node.statistic_indices, [None, Some(0)]);
+        assert_eq!(node.statistic_indices, [1]);
         let stats = GlobalStatistics {
             document_count: 3,
             full_text_statistics: vec![FullTextStatistics {
@@ -1363,6 +1509,100 @@ mod tests {
             .unwrap(),
             "SELECT 7 FROM c"
         );
+    }
+
+    #[test]
+    fn statistics_indices_include_hit_counts_and_deduplicate_across_components() {
+        let mut info = plan();
+        info.component_query_infos[0].rewritten_query = Some(
+            "SELECT {documentdb-formattablehybridsearchquery-hitcountsarray-10} FROM c".to_owned(),
+        );
+        info.component_query_infos[1].rewritten_query = Some(
+            "SELECT {documentdb-formattablehybridsearchquery-totalwordcount-2}, \
+             {documentdb-formattablehybridsearchquery-hitcountsarray-10}, \
+             {documentdb-formattablehybridsearchquery-totalwordcount-2} FROM c"
+                .to_owned(),
+        );
+        let node = HybridSearch::new(
+            operation(),
+            &info,
+            vec![epk_range_target().unwrap()],
+            vec![epk_range_target().unwrap()],
+            FullTextScoreScope::Local,
+            0,
+            2,
+        )
+        .unwrap();
+        assert_eq!(node.statistic_indices, [2, 10]);
+        let statistics = GlobalStatistics {
+            document_count: 3,
+            full_text_statistics: vec![
+                FullTextStatistics {
+                    total_word_count: 7,
+                    hit_counts: vec![1],
+                },
+                FullTextStatistics {
+                    total_word_count: 19,
+                    hit_counts: vec![3, 4],
+                },
+            ],
+        };
+        for (component, expected) in node
+            .components
+            .iter()
+            .zip(["SELECT [3,4] FROM c", "SELECT 7, [3,4], 7 FROM c"])
+        {
+            assert_eq!(
+                replace_statistics(&component.query, Some(&statistics), &node.statistic_indices)
+                    .unwrap(),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_statistics_placeholder_indices() {
+        for suffix in ["}", "a}", "-1}", "+1}", "18446744073709551616}", "0"] {
+            let mut info = single_component_plan();
+            info.component_query_infos[0].rewritten_query = Some(format!(
+                "SELECT {{documentdb-formattablehybridsearchquery-totalwordcount-{suffix} FROM c"
+            ));
+            assert_eq!(
+                HybridSearch::new(
+                    operation(),
+                    &info,
+                    vec![epk_range_target().unwrap()],
+                    vec![],
+                    FullTextScoreScope::Local,
+                    0,
+                    2,
+                )
+                .err()
+                .unwrap()
+                .status(),
+                status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
+                "suffix={suffix}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_statistics_counts_that_do_not_match_placeholders() {
+        let statistics = GlobalStatistics {
+            document_count: 3,
+            full_text_statistics: vec![FullTextStatistics {
+                total_word_count: 7,
+                hit_counts: vec![1],
+            }],
+        };
+        for indices in [&[][..], &[0, 1]] {
+            assert_eq!(
+                replace_statistics("SELECT c FROM c", Some(&statistics), indices)
+                    .unwrap_err()
+                    .status(),
+                status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
+            );
+        }
     }
 
     #[test]
@@ -1423,7 +1663,7 @@ mod tests {
             replace_statistics(
                 "SELECT {documentdb-formattablehybridsearchquery-totalwordcount-0} FROM c",
                 None,
-                &[Some(0)]
+                &[0]
             )
             .unwrap_err()
             .status(),

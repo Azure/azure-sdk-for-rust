@@ -206,6 +206,24 @@ async fn live_ranked_search_with_python_dataset() -> Result<(), Box<dyn Error>> 
                 assert_eq!(ranked, expected, "text ranking with binary={binary}");
                 assert!(page_count > 1, "page-size hint should paginate 13 results");
 
+                let (nulls, page_count) = collect_ranked_items::<Option<u32>>(
+                    &container,
+                    Query::from(
+                        "SELECT TOP 13 VALUE null FROM c WHERE FullTextContains(c.text, @term) \
+                         ORDER BY RANK FullTextScore(c.text, @term)",
+                    )
+                    .with_parameter("@term", "United States")?,
+                    FeedScope::full_container(),
+                    options.clone(),
+                )
+                .await?;
+                assert_eq!(
+                    nulls,
+                    vec![None; 13],
+                    "null projection with binary={binary}"
+                );
+                assert!(page_count > 1, "null projections must retain pagination");
+
                 let (all_indices, page_count) = ranked_indices(
                     &container,
                     Query::from(
