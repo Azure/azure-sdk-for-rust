@@ -334,9 +334,17 @@ async fn acknowledged_result_wins_when_deadline_is_ready() {
     assert_eq!(connection.generation(), 0);
 }
 
-#[tokio::test]
+struct ActiveConnection(Arc<AtomicUsize>);
+
+impl Drop for ActiveConnection {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::SeqCst);
+    }
+}
+
+#[tokio::test(start_paused = true)]
 async fn deadline_retires_pending_sends_and_subsequent_call_reconnects() {
-    timeout(Duration::from_secs(10), async {
+    let test = async {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let url = Url::parse(&format!("amqp://{}/hub", listener.local_addr().unwrap())).unwrap();
         let allow_ack = Arc::new(AtomicBool::new(false));
@@ -350,13 +358,20 @@ async fn deadline_retires_pending_sends_and_subsequent_call_reconnects() {
         peer.spawn(async move {
             let mut connections = JoinSet::new();
             loop {
-                let (stream, _) = listener.accept().await.unwrap();
+                let (stream, _) = tokio::select! {
+                    result = connections.join_next(), if !connections.is_empty() => {
+                        result.unwrap().expect("peer connection task failed");
+                        continue;
+                    }
+                    accepted = listener.accept() => accepted.unwrap(),
+                };
                 let allow = peer_allow.clone();
                 let active = peer_active.clone();
                 let transfers = transfers.clone();
                 peer_accepted.fetch_add(1, Ordering::SeqCst);
                 connections.spawn(async move {
                     active.fetch_add(1, Ordering::SeqCst);
+                    let _active = ActiveConnection(active);
                     let mut connection = ConnectionAcceptor::builder()
                         .container_id("deadline-peer")
                         .sasl_acceptor(SaslAnonymousMechanism {})
@@ -365,8 +380,15 @@ async fn deadline_retires_pending_sends_and_subsequent_call_reconnects() {
                         .await
                         .unwrap();
                     let mut links = JoinSet::new();
+                    let acceptor = SessionAcceptor::new();
                     loop {
-                        let session = SessionAcceptor::new().accept(&mut connection).await;
+                        let session = tokio::select! {
+                            result = links.join_next(), if !links.is_empty() => {
+                                result.unwrap().expect("peer link task failed");
+                                continue;
+                            }
+                            session = acceptor.accept(&mut connection) => session,
+                        };
                         let Ok(mut session) = session else { break };
                         let allow = allow.clone();
                         let transfers = transfers.clone();
@@ -388,73 +410,101 @@ async fn deadline_retires_pending_sends_and_subsequent_call_reconnects() {
                             drop((receiver, session, delivery));
                         });
                     }
-                    active.fetch_sub(1, Ordering::SeqCst);
                 });
             }
         });
-        let connection = RecoverableConnection::new(
-            url.clone(),
-            None,
-            None,
-            AmqpTransport::Tcp,
-            None,
-            Arc::new(MockCredential),
-            RetryOptions {
-                max_total_elapsed: azure_core::time::Duration::milliseconds(500),
-                initial_delay: azure_core::time::Duration::milliseconds(500),
-                max_delay: azure_core::time::Duration::milliseconds(500),
-                ..Default::default()
-            },
-            None,
-        );
-        connection.authorizer.disable_authorization().unwrap();
-        connection
-            .authorizer
-            .set_token_refresh_bias_for_test(azure_core::time::Duration::seconds(1))
-            .unwrap();
-        let mut sends = JoinSet::new();
-        let started = Instant::now();
-        for partition in 0..30 {
-            let sender = connection
-                .get_sender(Url::parse(&format!("{url}/Partitions/{partition}")).unwrap())
-                .await
-                .unwrap();
-            sends.spawn(async move { sender.send(AmqpMessage::default(), None).await });
-        }
-        for _ in 0..30 {
-            received.recv().await.unwrap();
-        }
-        while let Some(result) = sends.join_next().await {
-            assert_timed_out(
-                &result
-                    .unwrap()
-                    .err()
-                    .expect("unacknowledged sends must time out"),
+        let exercise = async {
+            let connection = RecoverableConnection::new(
+                url.clone(),
+                None,
+                None,
+                AmqpTransport::Tcp,
+                None,
+                Arc::new(MockCredential),
+                RetryOptions {
+                    max_total_elapsed: azure_core::time::Duration::milliseconds(500),
+                    initial_delay: azure_core::time::Duration::milliseconds(500),
+                    max_delay: azure_core::time::Duration::milliseconds(500),
+                    ..Default::default()
+                },
+                None,
             );
-        }
-        assert!(started.elapsed() < Duration::from_secs(2));
-        timeout(Duration::from_secs(1), async {
+            connection.authorizer.disable_authorization().unwrap();
+            connection
+                .authorizer
+                .set_token_refresh_bias_for_test(azure_core::time::Duration::seconds(1))
+                .unwrap();
+            let mut sends = JoinSet::new();
+            let started = tokio::time::Instant::now();
+            for partition in 0..30 {
+                let sender = connection
+                    .get_sender(Url::parse(&format!("{url}/Partitions/{partition}")).unwrap())
+                    .await
+                    .unwrap();
+                sends.spawn(async move { sender.send(AmqpMessage::default(), None).await });
+            }
+            for _ in 0..30 {
+                received.recv().await.unwrap();
+            }
+            assert!(
+                sends.try_join_next().is_none(),
+                "all sends must await settlement"
+            );
+            assert_eq!(accepted.load(Ordering::SeqCst), 1);
+            assert_eq!(started.elapsed(), Duration::ZERO);
+            // Trigger expiry only after setup and all transfers have completed.
+            tokio::time::advance(Duration::from_millis(500)).await;
+            while let Some(result) = sends.join_next().await {
+                assert_timed_out(
+                    &result
+                        .unwrap()
+                        .err()
+                        .expect("unacknowledged sends must time out"),
+                );
+            }
+            assert_eq!(started.elapsed(), Duration::from_millis(500));
+            let retired = Instant::now();
             while active.load(Ordering::SeqCst) != 0 {
+                assert!(
+                    retired.elapsed() < Duration::from_secs(1),
+                    "retired sockets and connection tasks must finish"
+                );
                 tokio::task::yield_now().await;
             }
-        })
-        .await
-        .expect("retired sockets and connection tasks must finish");
-        assert_eq!(connection.generation(), 2, "concurrent expiries coalesce");
-        allow_ack.store(true, Ordering::SeqCst);
-        let sender = connection
-            .get_sender(Url::parse(&format!("{url}/Partitions/0")).unwrap())
-            .await
-            .unwrap();
-        assert!(matches!(
-            sender.send(AmqpMessage::default(), None).await.unwrap(),
-            AmqpSendOutcome::Accepted
-        ));
-        assert_eq!(accepted.load(Ordering::SeqCst), 2);
-        connection.close_connection().await.unwrap();
-    })
-    .await
-    .unwrap();
+            assert_eq!(connection.generation(), 2, "concurrent expiries coalesce");
+            allow_ack.store(true, Ordering::SeqCst);
+            let sender = connection
+                .get_sender(Url::parse(&format!("{url}/Partitions/0")).unwrap())
+                .await
+                .unwrap();
+            assert!(matches!(
+                sender.send(AmqpMessage::default(), None).await.unwrap(),
+                AmqpSendOutcome::Accepted
+            ));
+            assert_eq!(accepted.load(Ordering::SeqCst), 2);
+            connection.close_connection().await.unwrap();
+        };
+        tokio::select! {
+            biased;
+            result = peer.join_next() => panic!("peer stopped unexpectedly: {result:?}"),
+            () = exercise => {},
+        }
+    };
+    tokio::pin!(test);
+    let started = Instant::now();
+    loop {
+        assert!(
+            started.elapsed() < Duration::from_secs(10),
+            "deadline fixture stalled"
+        );
+        tokio::select! {
+            biased;
+            () = &mut test => break,
+            // Keep the runtime runnable so paused time cannot advance while TCP
+            // setup is pending. Use wall time above to detect a stalled fixture.
+            () = tokio::task::yield_now() => {},
+        }
+    }
 }
 
 #[tokio::test]
