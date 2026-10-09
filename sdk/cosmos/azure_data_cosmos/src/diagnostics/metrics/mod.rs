@@ -3,7 +3,7 @@
 
 //! Metrics configuration and optional OpenTelemetry emission for Cosmos DB operations.
 //!
-//! With the `preview_opentelemetry` feature, this module provides
+//! With the `unstable_opentelemetry` feature, this module provides
 //! `CosmosMetricsHandler`, a
 //! [`DiagnosticsHandler`](crate::diagnostics::DiagnosticsHandler) that maps each
 //! completed operation's [`DiagnosticsContext`](crate::diagnostics::DiagnosticsContext)
@@ -33,12 +33,12 @@
 
 pub mod attributes;
 
-#[cfg(feature = "preview_opentelemetry")]
+#[cfg(feature = "unstable_opentelemetry")]
 mod handler;
-#[cfg(feature = "preview_opentelemetry")]
+#[cfg(feature = "unstable_opentelemetry")]
 mod instruments;
 mod options;
 
-#[cfg(feature = "preview_opentelemetry")]
+#[cfg(feature = "unstable_opentelemetry")]
 pub use handler::CosmosMetricsHandler;
 pub use options::MetricsOptions;

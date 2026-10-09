@@ -84,7 +84,7 @@ pub(crate) fn uses_dataplane_pipeline(
     match resource_type {
         ResourceType::Document => true,
         ResourceType::StoredProcedure => matches!(operation_type, OperationType::Execute),
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         ResourceType::DistributedTransactionBatch => true,
         _ => false,
     }

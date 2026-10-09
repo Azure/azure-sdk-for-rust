@@ -14,6 +14,7 @@ use async_trait::async_trait;
 
 use crate::models::FeedRange;
 
+use super::recovery_diagnostics::RecoveryDiagnostics;
 use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState, RangedToken};
 
 /// Maximum number of consecutive split retries before giving up.
@@ -56,17 +57,23 @@ impl PipelineNode for SequentialDrain {
         context: &mut PipelineContext<'_>,
     ) -> crate::error::Result<PageResult> {
         let mut split_retries = 0;
+        let mut recovery = RecoveryDiagnostics::default();
 
         loop {
             let Some(current) = self.children.front_mut() else {
                 return Ok(PageResult::Drained);
             };
 
-            match current.next_page(context).await? {
+            match current
+                .next_page(context)
+                .await
+                .map_err(|error| recovery.attach_error(error))?
+            {
                 PageResult::Page {
                     response,
                     is_terminal,
                 } => {
+                    let response = recovery.attach_response(response);
                     if is_terminal {
                         // The front child has emitted its last page; evict it
                         // now so a snapshot taken after this call no longer
@@ -87,18 +94,23 @@ impl PipelineNode for SequentialDrain {
                     self.children.pop_front();
                     // Loop to try the next child.
                 }
-                PageResult::SplitRequired { replacements } => {
+                PageResult::SplitRequired { mut replacements } => {
+                    recovery.absorb(replacements.take_diagnostics());
                     split_retries += 1;
                     if split_retries > MAX_SPLIT_RETRIES {
                         // This should be ridiculously rare.
                         // The topology provider already waits for splits to converge before returning.
-                        return Err(crate::error::CosmosError::builder()
-                            .with_status(crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED)
-                            .with_message(format!(
-                                "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
+                        return Err(recovery.attach_error(
+                            crate::error::CosmosError::builder()
+                                .with_status(
+                                    crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED,
+                                )
+                                .with_message(format!(
+                                    "exceeded maximum split retries ({MAX_SPLIT_RETRIES}) \
                                  in SequentialDrain"
-                            ))
-                            .build());
+                                ))
+                                .build(),
+                        ));
                     }
 
                     // The replaced child may have emitted pages before splitting, so

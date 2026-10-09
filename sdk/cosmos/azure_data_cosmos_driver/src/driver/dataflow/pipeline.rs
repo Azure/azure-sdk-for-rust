@@ -192,6 +192,11 @@ impl OperationPlan {
     ///
     /// # Errors
     ///
+    /// After the final TOP/LIMIT row page, a deferred request or response-validation
+    /// error can still be pending. Capturing a token returns that error without
+    /// consuming it; the next [`CosmosDriver::execute_plan()`](crate::driver::CosmosDriver::execute_plan)
+    /// call still delivers it.
+    ///
     /// Returns an error if a live pipeline node violates a snapshot-time
     /// invariant — for example, a child inside a `SequentialDrain` whose
     /// `feed_range` cannot be determined. These errors indicate an internal

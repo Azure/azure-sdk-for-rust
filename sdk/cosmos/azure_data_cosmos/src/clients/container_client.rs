@@ -13,7 +13,7 @@ use crate::{
     },
     PartitionKey, Query, ResourceIdentity,
 };
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use crate::{models::PatchInstructions, options::PatchItemOptions};
 
 use azure_data_cosmos_driver::models::{
@@ -42,7 +42,7 @@ pub struct ContainerClient {
 
 impl ContainerClient {
     /// Returns the resolved [`ContainerReference`] for the container this client is attached to.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub(crate) fn container_reference(&self) -> &ContainerReference {
         &self.container_ref
     }
@@ -513,7 +513,7 @@ impl ContainerClient {
     /// client-side path persists a tracking marker only when required for
     /// duplicate suppression.
     ///
-    /// **Preview.** Requires the `preview_patch` feature. This API is not
+    /// **Unstable.** Requires the `unstable_patch` feature. This API is not
     /// production-ready — see [Retry Semantics](#retry-semantics) below.
     ///
     /// The handler refuses to PATCH paths that overlap the container's
@@ -611,7 +611,7 @@ impl ContainerClient {
     /// and returned JSON and counts toward item size and indexing costs.
     /// Model-deserialization errors retain the response diagnostics and effective
     /// tracking ID so callers can safely reconcile a committed PATCH.
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     pub async fn patch_item(
         &self,
         partition_key: impl Into<PartitionKey>,
@@ -1587,7 +1587,7 @@ fn apply_batch_options(mut operation: CosmosOperation, options: &BatchOptions) -
     operation
 }
 
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 fn apply_patch_options(
     mut operation: CosmosOperation,
     options: &PatchItemOptions,
@@ -1613,7 +1613,7 @@ fn apply_patch_options(
     operation
 }
 
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 fn apply_patch_operation_options(
     mut operation_options: OperationOptions,
     strategy: Option<crate::options::PatchStrategy>,
@@ -1642,7 +1642,7 @@ fn _assert_futures_are_send() {
     let partition_key: PartitionKey = todo!();
     let item_id: &str = todo!();
     assert_send(client.read_item(partition_key.clone(), item_id, None));
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     {
         let patch: PatchInstructions = todo!();
         let options: Option<PatchItemOptions> = todo!();
@@ -1660,10 +1660,10 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     #[test]
     fn patch_options_forward_to_driver_operation() {
-        let account = azure_data_cosmos_driver::models::AccountReference::with_master_key(
+        let account = azure_data_cosmos_driver::models::AccountReference::with_account_key(
             azure_core::http::Url::parse("https://localhost").unwrap(),
             "test-key",
         );

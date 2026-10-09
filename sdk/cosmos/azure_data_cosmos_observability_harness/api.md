@@ -9,12 +9,12 @@
 - `default`
   - `fault_injection`
   - `otlp_rustls`
-  - `preview_opentelemetry`
+  - `unstable_opentelemetry`
 - `fault_injection`
 - `opentelemetry-otlp`
 - `otlp`
 - `otlp_rustls`
-- `preview_opentelemetry`
+- `unstable_opentelemetry`
 
 ```rust
 #![crate_name = "azure_data_cosmos_observability_harness"]

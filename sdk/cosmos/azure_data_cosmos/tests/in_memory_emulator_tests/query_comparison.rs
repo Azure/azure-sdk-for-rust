@@ -87,7 +87,7 @@ impl QueryComparisonHarness {
         let emulator_store = emulator.store();
 
         let emulator_driver_runtime = emulator.runtime_builder().build().await?;
-        let emulator_driver_account = DriverAccountReference::with_master_key(
+        let emulator_driver_account = DriverAccountReference::with_account_key(
             azure_core::http::Url::parse(EMULATOR_GATEWAY_URL)?,
             "dGVzdGtleQ==",
         );
@@ -253,7 +253,7 @@ async fn build_external_driver(
         .with_default_operation_options(default_options)
         .build()
         .await?;
-    let account = DriverAccountReference::with_master_key(endpoint.parse()?, key.to_owned());
+    let account = DriverAccountReference::with_account_key(endpoint.parse()?, key.to_owned());
     let mut builder = DriverOptions::builder(account);
     if let Some(region) = hub_region {
         builder = builder.with_preferred_regions(vec![region]);

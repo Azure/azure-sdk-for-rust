@@ -1,14 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-//! Preview Distributed Transaction builders.
+//! Unstable Distributed Transaction builders.
 //!
-//! **Preview / work in progress.** These APIs are gated behind the
-//! disabled-by-default `preview_dtx` feature, depend on a service-side feature
+//! **Unstable / work in progress.** These APIs are gated behind the
+//! disabled-by-default `unstable_dtx` feature, depend on a service-side feature
 //! that is not yet generally available, and may change or be removed without
 //! notice. They are **not supported for production use**.
 
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use std::borrow::Cow;
 use std::sync::Arc;
 
@@ -19,7 +19,7 @@ use serde::{de::DeserializeOwned, Serialize};
 
 use crate::clients::{ClientContext, ContainerClient};
 use crate::diagnostics::{CosmosOperationContext, DiagnosticsContext};
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use crate::models::PatchInstructions;
 use crate::models::{PartitionKey, ResponseHeaders};
 use crate::options::{Precondition, SessionToken};
@@ -49,7 +49,7 @@ impl DistributedTransactionOperationOptions {
 }
 
 /// Options for a patch operation inside a distributed transaction.
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct DistributedTransactionPatchOperationOptions {
@@ -61,7 +61,7 @@ pub struct DistributedTransactionPatchOperationOptions {
     pub filter_predicate: Option<Cow<'static, str>>,
 }
 
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 impl DistributedTransactionPatchOperationOptions {
     /// Sets the per-operation session token.
     pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
@@ -185,7 +185,7 @@ impl DistributedWriteTransaction {
     }
 
     /// Adds a patch item operation.
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     pub fn patch_item(
         mut self,
         container: &ContainerClient,
@@ -288,7 +288,7 @@ fn operation_with_options(
     operation
 }
 
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 fn patch_operation_with_options(
     container: &ContainerClient,
     partition_key: impl Into<PartitionKey>,

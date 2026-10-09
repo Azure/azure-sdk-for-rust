@@ -794,7 +794,7 @@ mod tests {
     use std::num::NonZeroU32;
 
     fn operation() -> Arc<CosmosOperation> {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             url::Url::parse("https://example.documents.azure.com/").unwrap(),
             "dGVzdA==",
         );

@@ -3,6 +3,8 @@
 
 //! Cosmos DB driver instance.
 
+#[cfg(test)]
+mod lazy_topology_tests;
 mod query_planning;
 
 use crate::{
@@ -24,12 +26,16 @@ use crate::{
             },
             hedge_budget::HedgeBudget,
             operation_pipeline::{
-                deadline_signal, ContainerRecreationRecoveryOutcome,
+                deadline_signal, operation_allows_automatic_session_token_resolution,
+                read_consistency_strategy_for_operation, ContainerRecreationRecoveryOutcome,
                 ContainerRecreationRecoveryTracker, OperationOverrides, RegionPin,
             },
         },
-        routing::{session_manager::SessionManager, CosmosEndpoint, LocationStateStore},
-        transport::uses_dataplane_pipeline,
+        routing::{
+            is_eligible_for_ppaf, is_eligible_for_ppcb, session_manager::SessionManager,
+            CosmosEndpoint, LocationStateStore,
+        },
+        transport::{is_operation_supported_by_gateway_v2, uses_dataplane_pipeline},
     },
     models::{
         effective_partition_key::EffectivePartitionKey, AccountEndpoint, AccountReference,
@@ -39,7 +45,8 @@ use crate::{
     },
     options::{
         ConnectionPoolOptions, DriverOptions, OperationOptions, OperationOptionsView,
-        PartitionTopologyCacheMode, PlanOptions, ResolvedThroughputControl, ThrottlingRetryOptions,
+        PartitionTopologyCacheMode, PlanOptions, ReadConsistencyStrategy,
+        ResolvedThroughputControl, ThrottlingRetryOptions,
     },
     ActivityId, CosmosResponse, DiagnosticsContext,
 };
@@ -105,16 +112,16 @@ fn planning_timeout_error(
         .build()
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_RETRIES: u32 = 10;
 // Matches .NET DistributedTransactionCommitter.MaxCumulativeRetryDelay (30 s).
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_CUMULATIVE_DELAY: Duration = Duration::from_secs(30);
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_BASE_DELAY: Duration = Duration::from_secs(1);
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_MAX_EXPONENT: u32 = 5;
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_OUTER_JITTER_RATIO: f64 = 0.25;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_MAX_RETRIES: u32 = 2;
 const ACCOUNT_PROPERTIES_CONNECTIVITY_BASE_DELAY: Duration = Duration::from_millis(100);
@@ -293,7 +300,7 @@ fn container_recreation_recovery_eligible(
         return false;
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     if operation.resource_type() == ResourceType::DistributedTransactionBatch {
         return false;
     }
@@ -2568,7 +2575,7 @@ impl CosmosDriver {
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
     ///
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -2755,15 +2762,15 @@ impl CosmosDriver {
             )?;
         }
 
-        #[cfg(feature = "preview_patch")]
+        #[cfg(feature = "unstable_patch")]
         let requested = self
             .operation_options_view(options)
             .patch_strategy()
             .copied()
             .unwrap_or_default();
-        #[cfg(not(feature = "preview_patch"))]
+        #[cfg(not(feature = "unstable_patch"))]
         let _ = options;
-        #[cfg(not(feature = "preview_patch"))]
+        #[cfg(not(feature = "unstable_patch"))]
         let requested = crate::options::PatchStrategy::Auto;
         let execution = resolve_patch_strategy(requested, instructions.as_ref())?;
         tracing::debug!(
@@ -2966,8 +2973,8 @@ impl CosmosDriver {
         }
     }
 
-    /// Executes a preview distributed transaction through the Gateway coordinator.
-    #[cfg(feature = "preview_dtx")]
+    /// Executes an unstable distributed transaction through the Gateway coordinator.
+    #[cfg(feature = "unstable_dtx")]
     pub async fn execute_distributed_transaction(
         &self,
         request: crate::models::DistributedTransactionRequest,
@@ -2978,7 +2985,7 @@ impl CosmosDriver {
             .map_err(crate::error::CosmosError::into_public_error)
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn execute_distributed_transaction_inner(
         &self,
         mut request: crate::models::DistributedTransactionRequest,
@@ -3126,7 +3133,7 @@ impl CosmosDriver {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn resolve_distributed_transaction_session_tokens(
         &self,
         operations: &mut [crate::models::DistributedTransactionOperation],
@@ -3343,6 +3350,110 @@ impl CosmosDriver {
         Ok(response)
     }
 
+    async fn uses_cache_only_topology(
+        &self,
+        operation: &CosmosOperation,
+        options: &OperationOptions,
+    ) -> bool {
+        if self
+            .options
+            .partition_failover_options()
+            .partition_topology_cache_mode()
+            != PartitionTopologyCacheMode::Lazy
+            || !operation.is_trivial()
+        {
+            return false;
+        }
+
+        let location = self.location_state_store.snapshot();
+        let partitioned = operation
+            .resource_type()
+            .is_partitioned(operation.operation_type());
+        if is_eligible_for_ppcb(
+            &location.partitions,
+            &location.account,
+            operation.is_read_only(),
+            partitioned,
+        ) || is_eligible_for_ppaf(
+            &location.partitions,
+            &location.account,
+            operation.is_read_only(),
+            partitioned,
+        ) {
+            return false;
+        }
+
+        let effective = self.operation_options_view(options);
+        if effective
+            .session_capturing_disabled()
+            .copied()
+            .unwrap_or(false)
+            || operation.request_headers().session_token.is_some()
+            || !operation_allows_automatic_session_token_resolution(
+                operation,
+                location.account.multiple_write_locations_enabled,
+            )
+            || self.runtime.connection_pool().gateway_v2_disabled()
+            || self
+                .location_state_store
+                .global_database_account_name()
+                .is_none()
+            || !uses_dataplane_pipeline(operation.resource_type(), operation.operation_type())
+            || !is_operation_supported_by_gateway_v2(
+                operation.resource_type(),
+                operation.operation_type(),
+                operation.request_headers().full_fidelity_feed,
+                operation.resource_reference().is_rid_addressed(),
+            )
+            || !location
+                .account
+                .preferred_endpoints(operation.is_read_only())
+                .iter()
+                .chain(
+                    location
+                        .account
+                        .preferred_write_endpoints
+                        .iter()
+                        .filter(|_| operation.prefers_write_endpoints_for_read()),
+                )
+                .filter(|endpoint| {
+                    !endpoint.region().is_some_and(|region| {
+                        effective
+                            .excluded_regions()
+                            .is_some_and(|excluded| excluded.iter().any(|r| r == region))
+                    })
+                })
+                .any(|endpoint| endpoint.uses_gateway_v2(true))
+        {
+            return true;
+        }
+
+        let Some(properties) = self
+            .runtime
+            .account_metadata_cache()
+            .get(&AccountEndpoint::from(self.account()))
+            .await
+        else {
+            tracing::debug!(
+                "account consistency unavailable; retaining session topology resolution"
+            );
+            return false;
+        };
+        let strategy = read_consistency_strategy_for_operation(
+            operation,
+            effective
+                .read_consistency_strategy()
+                .copied()
+                .unwrap_or(ReadConsistencyStrategy::Default),
+        );
+        let default_consistency = properties.user_consistency_policy.default_consistency_level;
+        // Write-endpoint verification reads can fall back to default consistency.
+        !(strategy.is_session_effective(default_consistency)
+            || (operation.prefers_write_endpoints_for_read()
+                && ReadConsistencyStrategy::Default.is_session_effective(default_consistency)))
+            || !self.session_manager.has_session_token(operation)
+    }
+
     async fn execute_plan_once(
         &self,
         plan: &mut OperationPlan,
@@ -3364,12 +3475,16 @@ impl CosmosDriver {
             container_recreation_recovery_disabled: plan.container_recreation_recovery_attempted,
             container_recreation_recovery_tracker: Arc::clone(&recovery_tracker),
         };
+        let cache_only = self
+            .uses_cache_only_topology(&plan.operation, options)
+            .await;
         let mut topology = container.map(|container| {
             CachedTopologyProvider::new(
                 &self.pk_range_cache,
                 container,
                 self.pk_range_page_fetcher(options.clone(), absolute_deadline),
             )
+            .with_cache_only(cache_only)
         });
         let mut context = PipelineContext::new(
             &mut executor,
@@ -3867,7 +3982,7 @@ impl CosmosDriver {
     ///
     /// # async fn example() -> azure_data_cosmos_driver::error::Result<()> {
     /// let runtime = CosmosDriverRuntime::builder().build().await?;
-    /// let account = AccountReference::with_master_key(
+    /// let account = AccountReference::with_account_key(
     ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
     ///     "my-key",
     /// );
@@ -4279,12 +4394,14 @@ impl CosmosDriver {
             && !(operation.operation_type() == crate::models::OperationType::Query
                 && crate::query::uses_ranked_search(operation.body()))
         {
+            let cache_only = self.uses_cache_only_topology(&operation, options).await;
             let mut topology = operation.container().cloned().map(|container| {
                 CachedTopologyProvider::new(
                     &self.pk_range_cache,
                     container,
                     self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
                 )
+                .with_cache_only(cache_only)
             });
             let pipeline = planner::build_trivial_pipeline(
                 operation.clone(),
@@ -4523,7 +4640,7 @@ impl CosmosDriver {
     }
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn distributed_transaction_outer_retry_delay(
     response: &crate::models::DistributedTransactionResponse,
     retry_after_ms: Option<u64>,
@@ -4561,7 +4678,7 @@ fn distributed_transaction_outer_retry_delay(
     Some(delay)
 }
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 fn distributed_transaction_outer_computed_delay(retry_count: u32) -> Duration {
     let exponent = retry_count.min(DTX_OUTER_MAX_EXPONENT);
     let delay_seconds = DTX_OUTER_BASE_DELAY.as_secs_f64() * 2_f64.powi(exponent as i32);
@@ -4620,11 +4737,11 @@ mod tests {
 
     use crate::{
         driver::CosmosDriverRuntimeBuilder,
-        models::AccountReference,
+        models::{AccountReference, CosmosResponseHeaders, ItemReference, SessionToken},
         options::{
             ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
-            PriorityLevel, ThrottlingRetryOptionsBuilder, ThroughputControlOptions,
-            UserAgentSuffix, WorkloadId,
+            PartitionFailoverOptions, PriorityLevel, ThrottlingRetryOptionsBuilder,
+            ThroughputControlOptions, UserAgentSuffix, WorkloadId,
         },
     };
 
@@ -4664,7 +4781,7 @@ mod tests {
     }"#;
 
     fn signed_test_account(url: &str) -> AccountReference {
-        AccountReference::with_master_key(Url::parse(url).unwrap(), "dGVzdA==")
+        AccountReference::with_account_key(Url::parse(url).unwrap(), "dGVzdA==")
     }
 
     #[test]
@@ -4789,13 +4906,13 @@ mod tests {
     }
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn dtx_response(
         status_code: azure_core::http::StatusCode,
         is_retriable: bool,
@@ -4816,7 +4933,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_stops_on_success_or_non_retriable() {
         assert!(distributed_transaction_outer_retry_delay(
@@ -4837,7 +4954,7 @@ mod tests {
         .is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_uses_larger_retry_after() {
         let delay = distributed_transaction_outer_retry_delay(
@@ -4852,7 +4969,7 @@ mod tests {
         assert_eq!(delay, Duration::from_secs(5));
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_stops_at_retry_cap_and_cumulative_budget() {
         let response = dtx_response(azure_core::http::StatusCode::from(449_u16), true);
@@ -4874,7 +4991,7 @@ mod tests {
         .is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_outer_retry_delay_stops_at_caller_deadline() {
         let response = dtx_response(azure_core::http::StatusCode::from(449_u16), true);
@@ -4901,7 +5018,7 @@ mod tests {
         .is_some());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_bodyless_infra_envelope_stops_outer_loop() {
         // Two-tier retry composition: after the inner bodyless classifier
@@ -4927,7 +5044,7 @@ mod tests {
         .is_none());
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn dtx_body_bearing_retriable_envelope_drives_outer_loop() {
         // The complement: a body-bearing coordinator envelope that declares
@@ -5408,7 +5525,7 @@ mod tests {
 
     #[test]
     fn endpoint_for_write_region_uses_service_uri() {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
             "test-key",
         );
@@ -5431,7 +5548,7 @@ mod tests {
 
     #[test]
     fn endpoint_for_write_region_falls_back_when_none() {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
             "test-key",
         );
@@ -7440,6 +7557,154 @@ mod tests {
             rid.to_owned(),
             &container_props,
         )
+    }
+
+    #[tokio::test]
+    async fn lazy_session_topology_tracks_tokens_transport_and_effective_options() {
+        for (advertised, disabled) in [(false, false), (true, true), (true, false)] {
+            let runtime = CosmosDriverRuntimeBuilder::new()
+                .with_connection_pool(
+                    ConnectionPoolOptions::builder()
+                        .with_gateway_v2_disabled(disabled)
+                        .build()
+                        .unwrap(),
+                )
+                .build()
+                .await
+                .unwrap();
+            let mut payload: serde_json::Value =
+                serde_json::from_str(ACCOUNT_PROPERTIES_PAYLOAD).unwrap();
+            if advertised {
+                let thin = serde_json::json!([{
+                    "name": "West US 2",
+                    "databaseAccountEndpoint": "https://test-westus2-thin.documents.azure.com:444/"
+                }]);
+                payload["thinClientReadableLocations"] = thin.clone();
+                payload["thinClientWritableLocations"] = thin;
+            }
+            let properties: CachedAccountProperties = serde_json::from_value(payload).unwrap();
+            let properties = runtime
+                .account_metadata_cache()
+                .get_or_fetch(AccountEndpoint::from(&test_account()), || async {
+                    Ok(properties)
+                })
+                .await
+                .unwrap();
+            let driver = CosmosDriver::new(
+                runtime,
+                DriverOptions::builder(test_account())
+                    .with_partition_failover_options(
+                        PartitionFailoverOptions::builder()
+                            .with_partition_topology_cache_mode(PartitionTopologyCacheMode::Lazy)
+                            .with_circuit_breaker_enabled(false)
+                            .build()
+                            .unwrap(),
+                    )
+                    .build(),
+            )
+            .unwrap();
+            driver.location_state_store.sync_account_properties(
+                properties,
+                driver.location_state_store.default_endpoint(),
+            );
+            let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+            let item =
+                ItemReference::from_name(&container, PartitionKey::from("key"), "one".to_owned());
+            let read = CosmosOperation::read_item(item.clone());
+            let options = OperationOptions::default();
+
+            assert!(
+                driver.uses_cache_only_topology(&read, &options).await,
+                "there is no session token to scope yet"
+            );
+            driver.session_manager.capture_session_token(
+                &read,
+                &CosmosResponseHeaders {
+                    session_token: Some(SessionToken::new("0:1#100#1=10")),
+                    ..Default::default()
+                },
+            );
+            assert_eq!(
+                driver.uses_cache_only_topology(&read, &options).await,
+                !advertised || disabled
+            );
+
+            for operation_options in [
+                OperationOptions {
+                    session_capturing_disabled: Some(true),
+                    ..Default::default()
+                },
+                OperationOptions {
+                    read_consistency_strategy: Some(ReadConsistencyStrategy::Eventual),
+                    ..Default::default()
+                },
+            ] {
+                assert!(
+                    driver
+                        .uses_cache_only_topology(&read, &operation_options)
+                        .await
+                );
+            }
+            assert!(
+                driver
+                    .uses_cache_only_topology(
+                        &read
+                            .clone()
+                            .with_session_token(SessionToken::new("0:1#100#1=10")),
+                        &options
+                    )
+                    .await
+            );
+            assert!(
+                driver
+                    .uses_cache_only_topology(&CosmosOperation::create_item(item), &options)
+                    .await,
+                "single-writer writes do not resolve automatic session tokens"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn lazy_topology_honors_account_ppcb_enablement_and_incident_override() {
+        for override_enabled in [None, Some(false), Some(true)] {
+            let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+            let mut failover = PartitionFailoverOptions::builder()
+                .with_partition_topology_cache_mode(PartitionTopologyCacheMode::Lazy)
+                .with_circuit_breaker_enabled(false);
+            if let Some(enabled) = override_enabled {
+                failover = failover.with_circuit_breaker_enabled_override(enabled);
+            }
+            let driver = CosmosDriver::new(
+                runtime,
+                DriverOptions::builder(test_account())
+                    .with_partition_failover_options(failover.build().unwrap())
+                    .build(),
+            )
+            .unwrap();
+            let mut payload: serde_json::Value =
+                serde_json::from_str(ACCOUNT_PROPERTIES_PAYLOAD).unwrap();
+            payload["enablePerPartitionFailoverBehavior"] = serde_json::json!(true);
+            payload["readableLocations"].as_array_mut().unwrap().push(serde_json::json!({
+                "name": "East US", "databaseAccountEndpoint": "https://test-eastus.documents.azure.com/"
+            }));
+            let properties: CachedAccountProperties = serde_json::from_value(payload).unwrap();
+            driver.location_state_store.sync_account_properties(
+                Arc::new(properties),
+                driver.location_state_store.default_endpoint(),
+            );
+            let container = epk_test_container(r#"{"paths":["/pk"],"version":2}"#);
+            let read = CosmosOperation::read_item(ItemReference::from_name(
+                &container,
+                PartitionKey::from("key"),
+                "one".to_owned(),
+            ));
+            assert_eq!(
+                driver
+                    .uses_cache_only_topology(&read, &OperationOptions::default())
+                    .await,
+                override_enabled == Some(false)
+            );
+        }
     }
 
     #[tokio::test]
