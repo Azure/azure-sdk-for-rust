@@ -29,6 +29,7 @@ pub(crate) struct CachedTopologyProvider<'a, F> {
     cache: &'a PartitionKeyRangeCache,
     container: ContainerReference,
     fetch_pk_ranges: F,
+    cache_only: bool,
 }
 
 impl<'a, F> CachedTopologyProvider<'a, F> {
@@ -42,7 +43,14 @@ impl<'a, F> CachedTopologyProvider<'a, F> {
             cache,
             container,
             fetch_pk_ranges,
+            cache_only: false,
         }
+    }
+
+    /// Uses optional cached identity without fetching topology, even during recovery.
+    pub(crate) fn with_cache_only(mut self, cache_only: bool) -> Self {
+        self.cache_only = cache_only;
+        self
     }
 }
 
@@ -58,18 +66,29 @@ where
     ) -> BoxFuture<'a, crate::error::Result<Vec<ResolvedRange>>> {
         let force_refresh = matches!(refresh, PartitionRoutingRefresh::ForceRefresh);
         Box::pin(async move {
-            let pk_ranges = self
-                .cache
-                .resolve_overlapping_ranges_result(
-                    &self.container,
-                    range.min_inclusive()..range.max_exclusive(),
-                    force_refresh,
-                    &self.fetch_pk_ranges,
-                )
-                .await?;
+            let epk_range = range.min_inclusive()..range.max_exclusive();
+            let pk_ranges = if self.cache_only {
+                if force_refresh {
+                    self.cache.invalidate(&self.container).await;
+                    return Ok(Vec::new());
+                }
+                self.cache
+                    .cached_overlapping_ranges(&self.container, epk_range)
+                    .await?
+            } else {
+                self.cache
+                    .resolve_overlapping_ranges_result(
+                        &self.container,
+                        epk_range,
+                        force_refresh,
+                        &self.fetch_pk_ranges,
+                    )
+                    .await?
+            };
 
             let pk_ranges = match pk_ranges {
                 Some(ranges) if !ranges.is_empty() => ranges,
+                _ if self.cache_only => return Ok(Vec::new()),
                 _ => {
                     return Err(crate::error::CosmosError::builder()
                         .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
@@ -99,7 +118,95 @@ mod tests {
         effective_partition_key::EffectivePartitionKey,
         partition_key_range::PartitionKeyRange as PkRange, ContainerProperties,
     };
+    use futures::FutureExt;
     use std::sync::Arc;
+
+    async fn unexpected_fetch(
+        _: ContainerReference,
+        _: Option<String>,
+    ) -> crate::error::Result<Option<PkRangeFetchResult>> {
+        panic!("cache-only resolution must not fetch topology")
+    }
+
+    #[tokio::test]
+    async fn cache_only_miss_does_not_initialize_topology() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container();
+        let mut provider = CachedTopologyProvider::new(&cache, container.clone(), unexpected_fetch)
+            .with_cache_only(true);
+        for refresh in [
+            PartitionRoutingRefresh::UseCached,
+            PartitionRoutingRefresh::ForceRefresh,
+        ] {
+            assert!(provider
+                .resolve_ranges(&FeedRange::full(), refresh)
+                .await
+                .unwrap()
+                .is_empty());
+        }
+
+        let mut required = CachedTopologyProvider::new(&cache, container, single_range_fetch);
+        assert_eq!(
+            required
+                .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::UseCached)
+                .await
+                .unwrap()
+                .len(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn cache_only_reuses_parent_identity_but_invalidates_on_topology_error() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container();
+        cache
+            .try_lookup_result(&container, false, single_range_fetch)
+            .await
+            .unwrap();
+        let mut provider = CachedTopologyProvider::new(&cache, container.clone(), unexpected_fetch)
+            .with_cache_only(true);
+        let ranges = provider
+            .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::UseCached)
+            .await
+            .unwrap();
+        assert_eq!(ranges.len(), 1);
+        assert_eq!(ranges[0].partition_key_range_id, "0");
+        assert_eq!(ranges[0].parents, ["parent"]);
+        assert!(provider
+            .resolve_ranges(&FeedRange::full(), PartitionRoutingRefresh::ForceRefresh)
+            .await
+            .unwrap()
+            .is_empty());
+        assert!(cache
+            .cached_overlapping_ranges(
+                &container,
+                &EffectivePartitionKey::MIN..&EffectivePartitionKey::MAX
+            )
+            .await
+            .unwrap()
+            .is_none());
+    }
+
+    #[tokio::test]
+    async fn cache_only_does_not_wait_for_in_progress_fetch() {
+        let cache = PartitionKeyRangeCache::new();
+        let container = make_container();
+        let pending = cache.try_lookup_result(&container, false, |_, _| {
+            futures::future::pending::<crate::error::Result<Option<PkRangeFetchResult>>>()
+        });
+        futures::pin_mut!(pending);
+        assert!(futures::poll!(pending.as_mut()).is_pending());
+
+        let mut provider = CachedTopologyProvider::new(&cache, container.clone(), unexpected_fetch)
+            .with_cache_only(true);
+        let range = FeedRange::full();
+        let result = provider
+            .resolve_ranges(&range, PartitionRoutingRefresh::UseCached)
+            .now_or_never()
+            .expect("optional resolution must not await the pending fetch");
+        assert!(result.unwrap().is_empty());
+    }
 
     fn make_container() -> ContainerReference {
         make_container_with_rid("c_rid")

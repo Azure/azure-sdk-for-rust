@@ -96,6 +96,22 @@ impl SessionContainer {
         None
     }
 
+    /// Checks token presence without serializing the container-wide composite.
+    pub(crate) fn has_session_token(&self, container: &ContainerReference) -> bool {
+        let guard = self.inner.read().unwrap_or_else(|e| e.into_inner());
+        let has_tokens = |rid: &str| {
+            guard
+                .tokens
+                .get(rid)
+                .is_some_and(|tokens| !tokens.is_empty())
+        };
+        has_tokens(container.rid())
+            || guard
+                .name_to_rid
+                .get(index_path(container))
+                .is_some_and(|rid| has_tokens(rid.as_str()))
+    }
+
     /// Resolves the session token for a single partition-key range as
     /// `<pk_range_id>:<vector>`.
     ///
@@ -319,6 +335,29 @@ mod tests {
         let sc = SessionContainer::new();
         let c = test_container("db1", "c1", "rid1");
         assert!(sc.resolve_session_token(&c).is_none());
+    }
+
+    #[test]
+    fn token_presence_preserves_rid_name_fallback_and_remapping() {
+        let sc = SessionContainer::new();
+        let original = test_container("db1", "c1", "rid1");
+        let replacement = test_container("db1", "c1", "rid2");
+        let unrelated = test_container("db1", "c2", "rid3");
+        assert!(!sc.has_session_token(&original));
+        sc.set_session_token(&original, "malformed");
+        assert!(!sc.has_session_token(&original));
+
+        sc.set_session_token(&original, "0:1#100#1=10,1:1#200#1=20");
+        assert!(sc.has_session_token(&original));
+        assert!(sc.has_session_token(&replacement));
+        assert!(!sc.has_session_token(&unrelated));
+
+        assert!(sc.remap_container(&original, &replacement));
+        assert!(!sc.has_session_token(&original));
+        assert!(!sc.has_session_token(&replacement));
+        sc.set_session_token(&replacement, "2:1#300#1=30");
+        assert!(sc.has_session_token(&replacement));
+        assert!(sc.has_session_token(&original));
     }
 
     #[test]

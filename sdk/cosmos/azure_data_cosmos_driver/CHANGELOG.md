@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Avoid loading partition topology for lazy-mode logical-key operations unless partition-level failover or Gateway 2.0 session-token scoping requires it.
+
 ### Other Changes
 
 ## 1.0.0 (2026-10-08)

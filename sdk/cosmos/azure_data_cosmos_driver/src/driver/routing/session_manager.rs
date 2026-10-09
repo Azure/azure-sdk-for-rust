@@ -82,6 +82,13 @@ impl SessionManager {
         self.resolve_session_token_with_parents(operation, user_token, pk_range_id, &[])
     }
 
+    /// Checks whether automatic session resolution has any cached token to scope.
+    pub(crate) fn has_session_token(&self, operation: &CosmosOperation) -> bool {
+        operation
+            .container()
+            .is_some_and(|container| self.container.has_session_token(container))
+    }
+
     /// Resolves a scoped token, falling back to parent vectors after a split.
     pub(crate) fn resolve_session_token_with_parents(
         &self,
