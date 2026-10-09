@@ -1,5 +1,17 @@
 # Release History
 
+## 0.3.0 (Unreleased)
+
+### Features Added
+
+- Added `cosmos_completion_item_count` and `cosmos_completion_item_page` to inspect original binary pages and item ranges owned by queue and cursor completions; cursor item buffers remain standalone. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
+
+### Breaking Changes
+
+### Bugs Fixed
+
+### Other Changes
+
 ## 0.2.0 (2026-10-01)
 
 ### Features Added

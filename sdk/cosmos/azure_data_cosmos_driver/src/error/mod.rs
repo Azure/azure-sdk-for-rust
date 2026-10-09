@@ -600,7 +600,8 @@ fn classify_for_azure_core(error: &CosmosError) -> azure_core::error::ErrorKind 
                     azure_core::Bytes::new(),
                 )))
             }
-            crate::models::ResponseBody::Items(_) => None,
+            crate::models::ResponseBody::Items(_)
+            | crate::models::ResponseBody::ContextualItems(_) => None,
         };
 
         return ErrorKind::HttpResponse {

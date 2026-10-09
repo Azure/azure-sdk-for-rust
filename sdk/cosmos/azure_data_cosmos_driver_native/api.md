@@ -41,6 +41,10 @@ pub mod bytes {
 }
 pub mod completion {
     #[no_mangle]
+    pub extern "C" fn cosmos_completion_item_count(completion: *const CosmosCompletion) -> usize;
+    #[no_mangle]
+    pub extern "C" fn cosmos_completion_item_page(completion: *const CosmosCompletion, item_index: usize, out_page: *mut *const u8, out_page_len: *mut usize, out_item_offset: *mut usize, out_item_len: *mut usize) -> crate::error::CosmosStatusCode;
+    #[no_mangle]
     pub extern "C" fn cosmos_completion_patch_tracking_id(completion: *const CosmosCompletion) -> *const std::ffi::c_char;
     #[no_mangle]
     pub extern "C" fn cosmos_completion_queue_create(runtime: *const crate::runtime::RuntimeContext, options: *const CosmosCompletionQueueOptions) -> *mut CompletionQueue;

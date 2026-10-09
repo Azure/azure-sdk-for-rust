@@ -81,6 +81,10 @@ fn page_documents(response: CosmosResponse) -> Vec<serde_json::Value> {
     match response.into_body() {
         ResponseBody::NoPayload => Vec::new(),
         ResponseBody::Items(items) => items.iter().map(|item| parse(item)).collect(),
+        ResponseBody::ContextualItems(items) => items
+            .iter()
+            .map(|item| item.deserialize().expect("page-backed item should decode"))
+            .collect(),
         ResponseBody::Bytes(bytes) => parse(&bytes)["Documents"]
             .as_array()
             .cloned()

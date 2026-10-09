@@ -380,18 +380,14 @@ fn array_envelope_page(rows: &[(&str, i64)], continuation: Option<&str>) -> Cosm
 /// emits binary items, so each is transcoded to text before parsing — mirroring
 /// the SDK's per-slice format-agnostic decode.
 fn ids_in_page(page: &CosmosResponse) -> Vec<String> {
-    let items = match page.body() {
-        crate::models::ResponseBody::Items(items) => items.clone(),
-        crate::models::ResponseBody::NoPayload => Vec::new(),
-        crate::models::ResponseBody::Bytes(_) => panic!("expected Items body"),
-    };
+    assert!(!matches!(
+        page.body(),
+        crate::models::ResponseBody::Bytes(_)
+    ));
+    let items: Vec<serde_json::Value> = page.body().clone().into_items().unwrap();
     items
         .iter()
-        .map(|item| {
-            let text = crate::binary_json::transcode_to_text(item).unwrap();
-            let value: serde_json::Value = serde_json::from_slice(&text).unwrap();
-            value["id"].as_str().unwrap().to_owned()
-        })
+        .map(|item| item["id"].as_str().unwrap().to_owned())
         .collect()
 }
 
@@ -405,6 +401,9 @@ fn page_is_binary(page: &CosmosResponse) -> bool {
         }
         crate::models::ResponseBody::NoPayload => true,
         crate::models::ResponseBody::Bytes(b) => crate::binary_json::is_binary(b),
+        crate::models::ResponseBody::ContextualItems(items) => items
+            .iter()
+            .all(|item| crate::binary_json::is_binary(item.source_page())),
     }
 }
 
@@ -596,6 +595,123 @@ async fn merges_two_binary_partitions_into_global_order() -> crate::error::Resul
             .collect::<Vec<_>>(),
         "binary ORDER BY pages must interleave in the same global order as text"
     );
+    Ok(())
+}
+
+fn referenced_views(response: CosmosResponse) -> Vec<crate::models::ItemView> {
+    match response.into_body() {
+        crate::models::ResponseBody::ContextualItems(items) => items,
+        body if body.is_empty() => Vec::new(),
+        _ => panic!("reference-backed binary output expected"),
+    }
+}
+
+#[tokio::test]
+async fn referenced_pages_survive_streaming_resume_and_pipeline_drop() -> crate::error::Result<()> {
+    let op = binary_order_by_operation_with_page_size(1);
+    let plan = order_by_plan();
+    let ranges = vec![resolved("", "80", "left")?, resolved("80", "FF", "right")?];
+    let left = crate::binary_json::test_support::reference_rows(&[("a", 1), ("c", 3)], "left");
+    let right = crate::binary_json::test_support::reference_rows(&[("b", 2), ("d", 4)], "right");
+    let mut topology = MockTopologyProvider::new(vec![Ok(ranges.clone())]);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(super::super::mocks::response(&left)),
+        Ok(super::super::mocks::response(&right)),
+    ]);
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None).await?;
+    let first = {
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        pipeline.next_page(&mut context).await?.unwrap()
+    };
+    let state = round_trip_state(pipeline.snapshot_state()?, &op);
+    drop(pipeline);
+    let mut topology =
+        MockTopologyProvider::new(vec![Ok(ranges.clone()), Ok(ranges.clone()), Ok(ranges)]);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(super::super::mocks::response(&left)),
+        Ok(super::super::mocks::response(&right)),
+    ]);
+    let mut pipeline =
+        build_streaming_ordered_merge(&plan, &mut topology, &op, Some(state)).await?;
+    let mut retained = referenced_views(first);
+    loop {
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        let Some(response) = pipeline.next_page(&mut context).await? else {
+            break;
+        };
+        retained.extend(referenced_views(response));
+    }
+    drop(pipeline);
+    drop(left);
+    drop(right);
+    let actual: Vec<serde_json::Value> = retained
+        .iter()
+        .map(|item| item.deserialize().unwrap())
+        .collect();
+    assert_eq!(
+        actual,
+        vec![
+            serde_json::json!({"id":"a","shared":"left"}),
+            serde_json::json!({"id":"b","shared":"right"}),
+            serde_json::json!({"id":"c","shared":"left"}),
+            serde_json::json!({"id":"d","shared":"right"}),
+        ]
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn referenced_pages_preserve_distinct_skip_take_and_split_replacements(
+) -> crate::error::Result<()> {
+    let op = binary_order_by_operation_with_page_size(1);
+    let mut plan = order_by_plan();
+    let info = plan.query_info.as_mut().unwrap();
+    info.distinct_type = DistinctType::Ordered;
+    info.offset = Some(1);
+    info.limit = Some(2);
+    let initial = crate::binary_json::test_support::reference_rows(&[("a", 1), ("b", 2)], "same");
+    let replacement =
+        crate::binary_json::test_support::reference_rows(&[("b", 2), ("c", 3)], "same");
+    let sibling = crate::binary_json::test_support::reference_rows(&[("d", 4)], "same");
+    let mut topology = MockTopologyProvider::new(vec![
+        Ok(vec![resolved("", "FF", "parent")?]),
+        Ok(vec![
+            resolved("", "80", "left")?,
+            resolved("80", "FF", "right")?,
+        ]),
+    ]);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(super::super::mocks::response_with_continuation(
+            &initial,
+            Some("next"),
+        )),
+        Err(super::super::mocks::gone_error()),
+        Ok(super::super::mocks::response(&replacement)),
+        Ok(super::super::mocks::response(&sibling)),
+    ]);
+    let mut pipeline = build_streaming_ordered_merge(&plan, &mut topology, &op, None).await?;
+    let mut retained = Vec::new();
+    loop {
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        let Some(response) = pipeline.next_page(&mut context).await? else {
+            break;
+        };
+        assert!(page_is_binary(&response));
+        retained.extend(referenced_views(response));
+    }
+    drop(pipeline);
+    let actual: Vec<serde_json::Value> = retained
+        .iter()
+        .map(|item| item.deserialize().unwrap())
+        .collect();
+    assert_eq!(
+        actual,
+        vec![
+            serde_json::json!({"id":"b","shared":"same"}),
+            serde_json::json!({"id":"c","shared":"same"})
+        ]
+    );
+    assert!(retained.iter().all(|item| item.value_range().start > 0));
     Ok(())
 }
 

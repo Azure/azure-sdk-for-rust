@@ -26,7 +26,9 @@ use std::any::Any;
 use std::future::Future;
 use std::sync::Arc;
 
-use azure_data_cosmos_driver::models::{AccountReference, ContainerReference, CosmosResponse};
+use azure_data_cosmos_driver::models::{
+    AccountReference, ContainerReference, CosmosResponse, ResponseBody,
+};
 use azure_data_cosmos_driver::options::DriverOptions;
 use azure_data_cosmos_driver::{driver::CosmosDriver, options::OperationOptions};
 
@@ -191,7 +193,7 @@ fn spawn_oneshot<Fut, R>(
                     if response.as_ref().is_some_and(|response| {
                         matches!(
                             response.body(),
-                            azure_data_cosmos_driver::models::ResponseBody::Items(_)
+                            ResponseBody::Items(_) | ResponseBody::ContextualItems(_)
                         )
                     }) {
                         PendingCompletion::error(
@@ -206,6 +208,7 @@ fn spawn_oneshot<Fut, R>(
                             ctx.op_inner.clone(),
                             response.map(|b| *b),
                             next_continuation,
+                            ctx.include_error_details,
                         )
                     }
                 }

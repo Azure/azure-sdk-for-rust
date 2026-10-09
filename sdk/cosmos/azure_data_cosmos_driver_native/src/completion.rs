@@ -28,12 +28,30 @@ use std::sync::atomic::{AtomicI32, AtomicU8, Ordering};
 use std::sync::{Arc, Condvar, Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
+#[cfg(any(feature = "test-abi", test))]
+use azure_core::http::Url;
+use azure_core::Bytes;
 use azure_data_cosmos_driver::error::CosmosError as DriverCosmosError;
 use azure_data_cosmos_driver::models::{
     ContainerReference as DriverContainerReference, CosmosResponse, CosmosResponseHeaders,
-    ResponseBody,
+    ItemView, ResponseBody,
 };
 use azure_data_cosmos_driver::DiagnosticsContext;
+#[cfg(any(feature = "test-abi", test))]
+use azure_data_cosmos_driver::{
+    in_memory_emulator::{
+        ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
+        VirtualRegion,
+    },
+    models::{
+        AccountReference, CosmosOperation, FeedRange, ItemReference, PartitionKey,
+        PartitionKeyDefinition,
+    },
+    options::{
+        BinaryEncodingOptions, DriverOptions, OperationOptions, OperationOptionsBuilder,
+        PlanOptions,
+    },
+};
 
 use crate::container_ref::ContainerRefHandle;
 use crate::diagnostics::CosmosDiagnostics;
@@ -257,7 +275,8 @@ impl OperationHandle {
 ///   response headers.
 /// - The planner-derived `next_continuation` — distinct from the
 ///   `x-ms-continuation` server header, which sits in the header list.
-/// - The `body` bytes and the degenerate `driver` / `container` owned
+/// - The `body` bytes (a standalone first item for feed responses) and the
+///   degenerate `driver` / `container` owned
 ///   side-payloads.
 ///
 /// The degenerate driver-creation and container-resolution completions
@@ -317,7 +336,9 @@ pub struct CosmosCompletion {
     pub headers: *const CosmosResponseHeader,
     /// Number of entries addressable from `headers`.
     pub headers_len: usize,
-    /// Borrowed response body bytes, or NULL when the body is empty.
+    /// Borrowed response body bytes, or NULL when the body is empty. For feed
+    /// responses, this is the first item in standalone form. Use
+    /// `cosmos_completion_item_page` to inspect each item's original page.
     pub body: *const u8,
     /// Number of bytes addressable from `body`.
     pub body_len: usize,
@@ -349,6 +370,7 @@ pub struct CosmosCompletion {
 /// pointer.
 pub struct CosmosCompletionBacking {
     response: Option<CosmosResponse>,
+    legacy_body: Option<Bytes>,
     headers: OwnedResponseHeaders,
     message: Option<CString>,
     next_continuation: Option<CString>,
@@ -372,6 +394,7 @@ pub(crate) struct PendingCompletion {
     patch_tracking_id: Option<CString>,
     headers: OwnedResponseHeaders,
     response: Option<CosmosResponse>,
+    legacy_body: Option<Bytes>,
     diagnostics: Option<Arc<DiagnosticsContext>>,
     driver: Option<Arc<DriverHandle>>,
     container: Option<DriverContainerReference>,
@@ -391,15 +414,23 @@ fn cstr_ptr(o: &Option<CString>) -> *const c_char {
     o.as_ref().map_or(std::ptr::null(), |c| c.as_ptr())
 }
 
-/// Borrowed `(ptr, len)` view of a response body, normalizing empty / feed /
-/// no-payload bodies to `(NULL, 0)`.
-fn body_view(response: &CosmosResponse) -> (*const u8, usize) {
+/// Borrowed `(ptr, len)` view of a standalone body, normalizing empty bodies
+/// to `(NULL, 0)`.
+fn body_view(response: &CosmosResponse, legacy_body: Option<&Bytes>) -> (*const u8, usize) {
     match response.body() {
         // Normalize an empty `Bytes` body to a NULL pointer so it matches the
         // documented "NULL pointer + 0 length when empty" contract.
         ResponseBody::Bytes(b) if b.is_empty() => (std::ptr::null(), 0),
         ResponseBody::Bytes(b) => (b.as_ptr(), b.len()),
-        ResponseBody::Items(_) => (std::ptr::null(), 0),
+        ResponseBody::Items(items) => items
+            .first()
+            .filter(|b| !b.is_empty())
+            .map(|b| (b.as_ptr(), b.len()))
+            .unwrap_or((std::ptr::null(), 0)),
+        ResponseBody::ContextualItems(_) => legacy_body
+            .filter(|b| !b.is_empty())
+            .map(|b| (b.as_ptr(), b.len()))
+            .unwrap_or((std::ptr::null(), 0)),
         ResponseBody::NoPayload => (std::ptr::null(), 0),
     }
 }
@@ -424,6 +455,7 @@ impl PendingCompletion {
             patch_tracking_id,
             headers: OwnedResponseHeaders::empty(),
             response: None,
+            legacy_body: None,
             diagnostics: None,
             driver: None,
             container: None,
@@ -445,13 +477,54 @@ impl PendingCompletion {
         op_inner: Arc<OperationInner>,
         response: Option<CosmosResponse>,
         next_continuation: Option<String>,
+        include_error_details: bool,
     ) -> Self {
+        Self::ok_response_with_materializer(
+            user_data,
+            op_inner,
+            response,
+            next_continuation,
+            include_error_details,
+            ItemView::to_standalone,
+        )
+    }
+
+    pub(crate) fn ok_response_with_materializer(
+        user_data: isize,
+        op_inner: Arc<OperationInner>,
+        response: Option<CosmosResponse>,
+        next_continuation: Option<String>,
+        include_error_details: bool,
+        materialize: impl FnOnce(&ItemView) -> Result<Bytes, DriverCosmosError>,
+    ) -> Self {
+        let legacy_body = if let Some(resp) = &response {
+            if let ResponseBody::ContextualItems(items) = resp.body() {
+                match items.first().map(materialize).transpose() {
+                    Ok(body) => body,
+                    Err(error) => {
+                        let error = DriverCosmosError::builder()
+                            .with_status(error.status())
+                            .with_message(format!(
+                                "failed to materialize legacy first item: {error}"
+                            ))
+                            .with_diagnostics(resp.diagnostics())
+                            .build();
+                        return Self::error(user_data, op_inner, error, include_error_details);
+                    }
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         let mut p = Self::base(
             CosmosCompletionOutcome::CosmosCompletionOutcomeOk,
             COSMOS_STATUS_SUCCESS,
             user_data,
             op_inner,
         );
+        p.legacy_body = legacy_body;
         p.next_continuation = next_continuation.and_then(to_cstring);
         if let Some(resp) = response {
             p.patch_tracking_id = resp
@@ -588,6 +661,7 @@ impl PendingCompletion {
 
         let backing = Box::new(CosmosCompletionBacking {
             response: self.response,
+            legacy_body: self.legacy_body,
             headers: self.headers,
             message: self.message,
             next_continuation: self.next_continuation,
@@ -604,7 +678,9 @@ impl PendingCompletion {
         let (body, body_len) = backing
             .response
             .as_ref()
-            .map_or((std::ptr::null(), 0), body_view);
+            .map_or((std::ptr::null(), 0), |response| {
+                body_view(response, backing.legacy_body.as_ref())
+            });
         let diagnostics = backing
             .diagnostics
             .as_ref()
@@ -677,6 +753,137 @@ pub extern "C" fn cosmos_completion_patch_tracking_id(
     // until `cosmos_completion_queue_free_completions` reclaims it.
     let backing = unsafe { &*completion.backing };
     cstr_ptr(&backing.patch_tracking_id)
+}
+
+/// Returns the number of items addressable through
+/// [`cosmos_completion_item_page()`].
+///
+/// A nonempty single-body response counts as one item. NULL and no-payload
+/// responses count as zero. The count excludes later feed pages.
+///
+/// A non-NULL `completion` must point to allocated completion storage. Queue
+/// records whose backing was released by
+/// [`cosmos_completion_queue_free_completions()`] count as zero while their
+/// caller-owned record storage remains allocated.
+///
+/// For a cursor result, pass the address of its `common` member only while
+/// the result is live. [`crate::cursor::cosmos_cursor_completion_free()`]
+/// deallocates the result; calling this accessor afterward is invalid.
+#[no_mangle]
+pub extern "C" fn cosmos_completion_item_count(completion: *const CosmosCompletion) -> usize {
+    // SAFETY: callers provide allocated completion storage, or NULL.
+    let Some(completion) = (unsafe { completion.as_ref() }) else {
+        return 0;
+    };
+    // SAFETY: the backing belongs to this completion until it is freed.
+    let Some(backing) = (unsafe { completion.backing.as_ref() }) else {
+        return 0;
+    };
+    match backing.response.as_ref().map(CosmosResponse::body) {
+        Some(ResponseBody::Bytes(body)) if !body.is_empty() => 1,
+        Some(ResponseBody::Items(items)) => items.len(),
+        Some(ResponseBody::ContextualItems(items)) => items.len(),
+        _ => 0,
+    }
+}
+
+/// Borrows the original page and absolute byte range of an item.
+///
+/// For a contextual binary item, `out_page` includes the binary preamble and
+/// reference targets outside the item. `out_item_offset` and `out_item_len`
+/// identify the value within that page; the value slice may not be
+/// independently decodable. For standalone feed items and nonempty
+/// single-body responses, the page is the item itself, starting at offset
+/// zero. Returned page pointers remain valid until the completion is freed.
+/// For a cursor result, pass the address of its `common` member and release
+/// the owning result with [`crate::cursor::cosmos_cursor_completion_free()`].
+/// That function deallocates the result; calling this accessor afterward is
+/// invalid.
+///
+/// A non-NULL `completion` must point to allocated completion storage.
+/// Non-NULL outputs must point to writable slots.
+///
+/// # Errors
+///
+/// Returns an invalid-argument status for NULL output slots, a NULL completion,
+/// an out-of-range `item_index`, or a queue record whose backing was released
+/// by [`cosmos_completion_queue_free_completions()`] but whose caller-owned
+/// record storage remains allocated. Non-NULL outputs are reset to NULL/zero
+/// on failure.
+#[no_mangle]
+pub extern "C" fn cosmos_completion_item_page(
+    completion: *const CosmosCompletion,
+    item_index: usize,
+    out_page: *mut *const u8,
+    out_page_len: *mut usize,
+    out_item_offset: *mut usize,
+    out_item_len: *mut usize,
+) -> CosmosStatusCode {
+    let invalid = CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
+    // SAFETY: each non-NULL output slot is writable by the caller's contract.
+    unsafe {
+        if !out_page.is_null() {
+            *out_page = std::ptr::null();
+        }
+        if !out_page_len.is_null() {
+            *out_page_len = 0;
+        }
+        if !out_item_offset.is_null() {
+            *out_item_offset = 0;
+        }
+        if !out_item_len.is_null() {
+            *out_item_len = 0;
+        }
+    }
+    if out_page.is_null()
+        || out_page_len.is_null()
+        || out_item_offset.is_null()
+        || out_item_len.is_null()
+    {
+        return invalid;
+    }
+    // SAFETY: callers provide allocated completion storage, or NULL.
+    let Some(completion) = (unsafe { completion.as_ref() }) else {
+        return invalid;
+    };
+    // SAFETY: the backing belongs to this completion until it is freed.
+    let Some(backing) = (unsafe { completion.backing.as_ref() }) else {
+        return invalid;
+    };
+    let Some(response) = &backing.response else {
+        return invalid;
+    };
+    let (page, range) = match response.body() {
+        ResponseBody::Bytes(body) if item_index == 0 && !body.is_empty() => {
+            (body.as_ref(), 0..body.len())
+        }
+        ResponseBody::Items(items) => {
+            let Some(item) = items.get(item_index) else {
+                return invalid;
+            };
+            (item.as_ref(), 0..item.len())
+        }
+        ResponseBody::ContextualItems(items) => {
+            let Some(item) = items.get(item_index) else {
+                return invalid;
+            };
+            (item.source_page(), item.value_range())
+        }
+        _ => return invalid,
+    };
+    // SAFETY: all output slots are non-NULL and page memory belongs to the
+    // completion backing until free_completions reclaims it.
+    unsafe {
+        *out_page = if page.is_empty() {
+            std::ptr::null()
+        } else {
+            page.as_ptr()
+        };
+        *out_page_len = page.len();
+        *out_item_offset = range.start;
+        *out_item_len = range.len();
+    }
+    COSMOS_STATUS_SUCCESS
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1462,7 +1669,7 @@ pub(crate) fn __test_only_enqueue_completion(
             // Non-error outcomes (Ok, and the reserved Cancelled / Unknown
             // slots) reuse the OK shell with the outcome + status overridden
             // so the ABI round-trip can still be exercised.
-            let mut p = PendingCompletion::ok_response(ud, op_inner, None, None);
+            let mut p = PendingCompletion::ok_response(ud, op_inner, None, None, include_error);
             p.outcome = other;
             p.status = status;
             p
@@ -1534,6 +1741,149 @@ pub extern "C" fn __test_only_enqueue_ok_completion_with_all_value_kinds(
     CompletionQueue::enqueue(queue, p).as_status_code()
 }
 
+#[cfg(any(feature = "test-abi", test))]
+async fn test_responses(binary_enabled: bool) -> (CosmosResponse, CosmosResponse) {
+    let url = Url::parse("https://native-page-test.emulator.local").unwrap();
+    let config = VirtualAccountConfig::new(vec![VirtualRegion::new("East US", url.clone())])
+        .unwrap()
+        .with_consistency(ConsistencyLevel::Session);
+    let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
+    let store = emulator.store();
+    store.create_database("testdb");
+    store.create_container_with_config(
+        "testdb",
+        "testcoll",
+        PartitionKeyDefinition::new(vec!["/pk".into()]),
+        ContainerConfig::new()
+            .with_partition_count(2)
+            .build()
+            .unwrap(),
+    );
+    let runtime = emulator.runtime_builder().build().await.unwrap();
+    let driver = runtime
+        .create_driver(
+            DriverOptions::builder(AccountReference::with_account_key(url, "ZW11bGF0b3Ita2V5"))
+                .build(),
+        )
+        .await
+        .unwrap();
+    let container = driver
+        .resolve_container("testdb", "testcoll", OperationOptions::default())
+        .await
+        .unwrap();
+    for (id, partition, rank) in [("one", "a", 2), ("two", "b", 1)] {
+        let item = ItemReference::from_name(&container, PartitionKey::from(partition), id);
+        driver
+            .execute_singleton_operation(
+                CosmosOperation::create_item(item).with_body(
+                    serde_json::to_vec(
+                        &serde_json::json!({"id": id, "pk": partition, "rank": rank}),
+                    )
+                    .unwrap(),
+                ),
+                OperationOptions::default(),
+            )
+            .await
+            .unwrap();
+    }
+    let item = ItemReference::from_name(&container, PartitionKey::from("b"), "two");
+    let single = driver
+        .execute_singleton_operation(
+            CosmosOperation::read_item(item),
+            OperationOptions::default(),
+        )
+        .await
+        .unwrap();
+    let binary = OperationOptionsBuilder::new()
+        .with_binary_encoding(BinaryEncodingOptions::new().with_enabled(binary_enabled))
+        .build();
+    let operation = CosmosOperation::query_items(container.clone(), Some(FeedRange::full()))
+        .with_body(br#"{"query":"SELECT * FROM c ORDER BY c.rank ASC","parameters":[]}"#.to_vec());
+    let mut plan =
+        Box::pin(driver.plan_operation(operation, &binary, None, &PlanOptions::default()))
+            .await
+            .unwrap();
+    let ordered = driver
+        .execute_plan(&mut plan, Some(container), binary)
+        .await
+        .unwrap()
+        .unwrap();
+    (ordered, single)
+}
+
+/// Enqueues an in-memory ORDER BY response and snapshots its first item's
+/// original page and absolute range for the C ABI test.
+///
+/// The snapshot is separately owned by the C caller; free it with
+/// [`crate::bytes::cosmos_bytes_free`]. `out_source_page` remains borrowed from
+/// the completion until that completion is freed.
+#[cfg(feature = "test-abi")]
+#[doc(hidden)]
+#[no_mangle]
+pub extern "C" fn __test_only_enqueue_ordered_item_page_fixture(
+    queue: *mut CompletionQueue,
+    binary_enabled: u8,
+    out_expected_page: *mut crate::bytes::CosmosBytes,
+    out_source_page: *mut *const u8,
+    out_item_offset: *mut usize,
+    out_item_len: *mut usize,
+) -> CosmosStatusCode {
+    let invalid = CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
+    if out_expected_page.is_null()
+        || out_source_page.is_null()
+        || out_item_offset.is_null()
+        || out_item_len.is_null()
+    {
+        return invalid;
+    }
+    crate::safety::ffi_guard(invalid, || {
+        let Some(queue_handle) = CompletionQueue::from_ptr(queue) else {
+            return invalid;
+        };
+        let (response, _) = queue_handle
+            .inner
+            .runtime
+            .tokio
+            .block_on(test_responses(binary_enabled != 0));
+        let (source_page, range) = match response.body() {
+            ResponseBody::ContextualItems(items) if binary_enabled != 0 => {
+                let item = &items[0];
+                (item.source_page(), item.value_range())
+            }
+            ResponseBody::Items(items) if binary_enabled == 0 => {
+                let item = items[0].as_ref();
+                (item, 0..item.len())
+            }
+            _ => panic!("unexpected in-memory ORDER BY response"),
+        };
+        let source_ptr = source_page.as_ptr();
+        let expected_page = source_page.to_vec();
+        let op_raw = OperationHandle::new_raw();
+        // SAFETY: `op_raw` was just allocated and is exclusively owned here.
+        let op_inner = unsafe { Arc::clone(&(*op_raw).inner) };
+        OperationHandle::drop_raw(op_raw);
+        let pending = PendingCompletion::ok_response(
+            0,
+            op_inner,
+            Some(response),
+            None,
+            queue_handle.inner.options.include_error_details,
+        );
+        let status = CompletionQueue::enqueue(queue, pending).as_status_code();
+        if status == COSMOS_STATUS_SUCCESS {
+            // SAFETY: the C test passes writable output slots. The response
+            // remains owned by the enqueued completion until it is freed.
+            unsafe {
+                out_expected_page.write(crate::bytes::into_cosmos_bytes(expected_page));
+                out_source_page.write(source_ptr);
+                out_item_offset.write(range.start);
+                out_item_len.write(range.len());
+            }
+        }
+        status
+    })
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Tests
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1542,8 +1892,9 @@ pub extern "C" fn __test_only_enqueue_ok_completion_with_all_value_kinds(
 mod tests {
     use super::*;
     use crate::runtime::__test_only_create_default_runtime;
+    use azure_data_cosmos_driver::binary_json;
     use std::ffi::CStr;
-    use std::mem::MaybeUninit;
+    use std::mem::{offset_of, size_of, MaybeUninit};
 
     #[tokio::test]
     async fn wrapped_service_completions_preserve_status_diagnostics_and_body() {
@@ -1668,6 +2019,280 @@ mod tests {
     /// Frees a single completion produced by [`wait_one_ffi`].
     fn free_one(mut c: CosmosCompletion) {
         cosmos_completion_queue_free_completions(&mut c as *mut CosmosCompletion, 1);
+    }
+
+    #[tokio::test]
+    async fn contextual_items_preserve_original_page_and_legacy_standalone_body() {
+        assert_eq!(size_of::<CosmosCompletion>(), 112);
+        assert_eq!(offset_of!(CosmosCompletion, backing), 104);
+
+        let (response, _) = test_responses(true).await;
+        let ResponseBody::ContextualItems(items) = response.body() else {
+            panic!("ordered binary query must produce contextual items");
+        };
+        assert_eq!(items.len(), 2);
+        let expected: Vec<_> = items
+            .iter()
+            .map(|item| {
+                (
+                    item.source_page().as_ptr(),
+                    item.source_page().to_vec(),
+                    item.value_range(),
+                    item.to_standalone().unwrap(),
+                )
+            })
+            .collect();
+        let pending = PendingCompletion::ok_response(
+            123,
+            Arc::new(OperationInner::new()),
+            Some(response),
+            None,
+            true,
+        );
+        let mut completion = pending.into_ffi();
+        assert_eq!(
+            completion.outcome,
+            CosmosCompletionOutcome::CosmosCompletionOutcomeOk
+        );
+        assert_eq!(completion.status, COSMOS_STATUS_SUCCESS);
+        assert_eq!(completion.user_data, 123);
+        assert_eq!(cosmos_completion_item_count(&completion), 2);
+
+        let legacy = unsafe { std::slice::from_raw_parts(completion.body, completion.body_len) };
+        assert_eq!(legacy, expected[0].3.as_ref());
+        let legacy_value: serde_json::Value = binary_json::decode(legacy).unwrap();
+        assert_eq!(legacy_value["id"], "two");
+        for (index, (original_ptr, original_page, range, standalone)) in expected.iter().enumerate()
+        {
+            let mut page = std::ptr::null();
+            let mut page_len = 0;
+            let mut offset = 0;
+            let mut item_len = 0;
+            assert_eq!(
+                cosmos_completion_item_page(
+                    &completion,
+                    index,
+                    &mut page,
+                    &mut page_len,
+                    &mut offset,
+                    &mut item_len,
+                ),
+                COSMOS_STATUS_SUCCESS
+            );
+            assert_eq!(page, *original_ptr);
+            assert_eq!(page_len, original_page.len());
+            assert_eq!(offset..offset + item_len, range.clone());
+            let borrowed = unsafe { std::slice::from_raw_parts(page, page_len) };
+            assert_eq!(borrowed, original_page);
+            assert_eq!(
+                &borrowed[offset..offset + item_len],
+                &original_page[range.clone()]
+            );
+            let item_value: serde_json::Value = binary_json::decode(standalone).unwrap();
+            assert_eq!(item_value["id"], if index == 0 { "two" } else { "one" });
+        }
+
+        let mut page = std::ptr::null();
+        let mut page_len = 1;
+        let mut offset = 1;
+        let mut item_len = 1;
+        assert_eq!(
+            cosmos_completion_item_page(
+                &completion,
+                expected.len(),
+                &mut page,
+                &mut page_len,
+                &mut offset,
+                &mut item_len,
+            ),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+        assert!(page.is_null());
+        assert_eq!((page_len, offset, item_len), (0, 0, 0));
+
+        cosmos_completion_queue_free_completions(&mut completion, 1);
+        assert_eq!(cosmos_completion_item_count(&completion), 0);
+        assert_eq!(
+            cosmos_completion_item_page(
+                &completion,
+                0,
+                &mut page,
+                &mut page_len,
+                &mut offset,
+                &mut item_len,
+            ),
+            CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code()
+        );
+    }
+
+    #[tokio::test]
+    async fn standalone_items_and_single_body_have_zero_offset() {
+        let (ordered, single) = test_responses(false).await;
+        let ResponseBody::Items(items) = ordered.body() else {
+            panic!("text query must return standalone items");
+        };
+        assert_eq!(items.len(), 2);
+        let expected_items: Vec<_> = items.iter().map(|item| item.to_vec()).collect();
+        let first_ptr = items[0].as_ptr();
+        let mut completion = PendingCompletion::ok_response(
+            0,
+            Arc::new(OperationInner::new()),
+            Some(ordered),
+            None,
+            true,
+        )
+        .into_ffi();
+        assert_eq!(cosmos_completion_item_count(&completion), 2);
+        assert_eq!(completion.body, first_ptr);
+        for (index, expected) in expected_items.iter().enumerate() {
+            let mut page = std::ptr::null();
+            let mut page_len = 0;
+            let mut offset = usize::MAX;
+            let mut item_len = 0;
+            assert_eq!(
+                cosmos_completion_item_page(
+                    &completion,
+                    index,
+                    &mut page,
+                    &mut page_len,
+                    &mut offset,
+                    &mut item_len,
+                ),
+                COSMOS_STATUS_SUCCESS
+            );
+            assert_eq!(
+                (page_len, offset, item_len),
+                (expected.len(), 0, expected.len())
+            );
+            assert_eq!(
+                unsafe { std::slice::from_raw_parts(page, page_len) },
+                expected
+            );
+        }
+        cosmos_completion_queue_free_completions(&mut completion, 1);
+
+        let ResponseBody::Bytes(bytes) = single.body() else {
+            panic!("point read must return a single body");
+        };
+        let expected = bytes.to_vec();
+        let ptr = bytes.as_ptr();
+        let mut completion = PendingCompletion::ok_response(
+            0,
+            Arc::new(OperationInner::new()),
+            Some(single),
+            None,
+            true,
+        )
+        .into_ffi();
+        let mut page = std::ptr::null();
+        let mut page_len = 0;
+        let mut offset = usize::MAX;
+        let mut item_len = 0;
+        assert_eq!(cosmos_completion_item_count(&completion), 1);
+        assert_eq!(completion.body, ptr);
+        assert_eq!(
+            cosmos_completion_item_page(
+                &completion,
+                0,
+                &mut page,
+                &mut page_len,
+                &mut offset,
+                &mut item_len,
+            ),
+            COSMOS_STATUS_SUCCESS
+        );
+        assert_eq!(page, ptr);
+        assert_eq!(
+            (page_len, offset, item_len),
+            (expected.len(), 0, expected.len())
+        );
+        assert_eq!(
+            unsafe { std::slice::from_raw_parts(page, page_len) },
+            expected
+        );
+        cosmos_completion_queue_free_completions(&mut completion, 1);
+    }
+
+    #[tokio::test]
+    async fn failed_legacy_materialization_becomes_error_completion() {
+        let (response, _) = test_responses(true).await;
+        let status =
+            azure_data_cosmos_driver::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID;
+        for include_error_details in [false, true] {
+            let pending = PendingCompletion::ok_response_with_materializer(
+                37,
+                Arc::new(OperationInner::new()),
+                Some(response.clone()),
+                Some("lost-page-token".to_owned()),
+                include_error_details,
+                |_| {
+                    Err(DriverCosmosError::builder()
+                        .with_status(status)
+                        .with_message("unreadable page")
+                        .build())
+                },
+            );
+            let mut completion = pending.into_ffi();
+            assert_eq!(
+                completion.outcome,
+                CosmosCompletionOutcome::CosmosCompletionOutcomeError
+            );
+            assert_eq!(completion.status, CosmosStatusCode::from_status(status));
+            assert_eq!(completion.user_data, 37);
+            assert!(completion.body.is_null());
+            assert_eq!(completion.body_len, 0);
+            assert_eq!(cosmos_completion_item_count(&completion), 0);
+            assert!(completion.next_continuation.is_null());
+            assert!(!completion.diagnostics.is_null());
+            if include_error_details {
+                let message = unsafe { CStr::from_ptr(completion.message) }
+                    .to_str()
+                    .unwrap();
+                assert!(message.contains("failed to materialize legacy first item"));
+                assert!(message.contains("unreadable page"));
+            } else {
+                assert!(completion.message.is_null());
+            }
+            cosmos_completion_queue_free_completions(&mut completion, 1);
+        }
+    }
+
+    #[test]
+    fn item_page_rejects_missing_outputs_and_empty_completion() {
+        let mut completion =
+            PendingCompletion::ok_response(0, Arc::new(OperationInner::new()), None, None, false)
+                .into_ffi();
+        let mut page = std::ptr::null();
+        let mut len = usize::MAX;
+        let mut offset = usize::MAX;
+        let mut item_len = usize::MAX;
+        let invalid = CosmosErrorCode::CosmosErrorCodeInvalidArgument.as_status_code();
+        assert_eq!(cosmos_completion_item_count(std::ptr::null()), 0);
+        assert_eq!(cosmos_completion_item_count(&completion), 0);
+        assert_eq!(
+            cosmos_completion_item_page(
+                &completion,
+                0,
+                std::ptr::null_mut(),
+                &mut len,
+                &mut offset,
+                &mut item_len,
+            ),
+            invalid
+        );
+        assert_eq!((len, offset, item_len), (0, 0, 0));
+        assert_eq!(
+            cosmos_completion_item_page(
+                &completion,
+                0,
+                &mut page,
+                &mut len,
+                &mut offset,
+                &mut item_len,
+            ),
+            invalid
+        );
+        cosmos_completion_queue_free_completions(&mut completion, 1);
     }
 
     #[test]

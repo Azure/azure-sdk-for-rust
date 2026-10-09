@@ -9,9 +9,9 @@ use super::{
 };
 use crate::{
     completion::{
-        cosmos_completion_queue_create, cosmos_completion_queue_free,
-        cosmos_completion_queue_shutdown, cosmos_completion_queue_wait,
-        cosmos_operation_handle_free, cosmos_operation_handle_state,
+        cosmos_completion_item_count, cosmos_completion_item_page, cosmos_completion_queue_create,
+        cosmos_completion_queue_free, cosmos_completion_queue_shutdown,
+        cosmos_completion_queue_wait, cosmos_operation_handle_free, cosmos_operation_handle_state,
         cosmos_operation_handle_status, CompletionQueue, CosmosCompletion,
         CosmosOperationHandleState, OperationHandle,
     },
@@ -543,7 +543,7 @@ fn page_and_error_diagnostics_live_until_completion_free() {
             let queue = CompletionQueue::inner_arc(fixture.queue).unwrap();
             let state = queue.cursor.as_ref().unwrap().inner.lock().unwrap();
             let diagnostics = match &state.deliveries.front().unwrap().result {
-                Ok(ResultData::Page(page)) => page.diagnostics(),
+                Ok(ResultData::Page(page)) => page.response.diagnostics(),
                 Err(error) => error.diagnostics().unwrap(),
                 _ => panic!("expected page or error diagnostics"),
             };
@@ -702,17 +702,36 @@ fn concurrent_admission_has_one_winner_and_preserves_capacity() {
 
 #[test]
 fn binary_items_survive_cursor_release() {
-    let fixture = Fixture::new(2);
+    binary_item_pages_survive_release(false);
+}
+
+#[test]
+fn referenced_binary_items_survive_cursor_release() {
+    binary_item_pages_survive_release(true);
+}
+
+fn binary_item_pages_survive_release(scripted: bool) {
+    let fixture = if scripted {
+        Fixture::scripted()
+    } else {
+        Fixture::new(2)
+    };
     let mut request = fixture.request();
-    let body = br#"{"query":"SELECT * FROM c ORDER BY c.rank"}"#;
+    let body: &[u8] = if scripted {
+        br#"{"query":"SELECT TOP 6 * FROM c ORDER BY c.rank"}"#
+    } else {
+        br#"{"query":"SELECT * FROM c ORDER BY c.rank"}"#
+    };
     request.operation.body = body.as_ptr();
     request.operation.body_len = body.len();
     request.operation.max_item_count = 2;
     let mut options = cosmos_operation_options_default();
     options.binary_encoding_enabled = 2;
+    options.query_plan_mode = if scripted { 2 } else { 0 };
     request.operation.options = &options;
     let cursor = fixture.open(&request);
     let mut pages = Vec::new();
+    let mut source_snapshots = Vec::new();
     loop {
         let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
         // SAFETY: page is a live, owned completion.
@@ -724,20 +743,87 @@ fn binary_items_survive_cursor_release() {
             }
             assert_eq!((*page).body_kind, 2);
             assert!((*page).items_len <= 2);
+            assert_eq!(
+                cosmos_completion_item_count(&(*page).common),
+                (*page).items_len
+            );
+            let mut snapshots = Vec::new();
+            for index in 0..(*page).items_len {
+                let mut source = ptr::null();
+                let mut source_len = 0;
+                let mut offset = 0;
+                let mut item_len = 0;
+                assert_eq!(
+                    cosmos_completion_item_page(
+                        &(*page).common,
+                        index,
+                        &mut source,
+                        &mut source_len,
+                        &mut offset,
+                        &mut item_len
+                    ),
+                    COSMOS_STATUS_SUCCESS
+                );
+                snapshots.push((
+                    source,
+                    std::slice::from_raw_parts(source, source_len).to_vec(),
+                    offset,
+                    item_len,
+                ));
+            }
+            source_snapshots.push(snapshots);
         }
         pages.push(page);
     }
     cosmos_cursor_free(cursor);
     let mut ranks = Vec::new();
-    for page in pages {
+    assert_eq!(pages.len(), source_snapshots.len());
+    for (page, snapshots) in pages.into_iter().zip(source_snapshots) {
         // SAFETY: each page owns its item views independently of the freed cursor.
         unsafe {
             if (*page).items_len > 0 {
-                for item in std::slice::from_raw_parts((*page).items, (*page).items_len) {
+                for (index, item) in std::slice::from_raw_parts((*page).items, (*page).items_len)
+                    .iter()
+                    .enumerate()
+                {
                     let bytes = std::slice::from_raw_parts(item.data, item.len);
                     assert_eq!(bytes.first(), Some(&0x80));
                     let value: serde_json::Value =
                         azure_data_cosmos_driver::binary_json::from_slice(bytes).unwrap();
+                    let mut source = ptr::null();
+                    let mut source_len = 0;
+                    let mut offset = 0;
+                    let mut item_len = 0;
+                    assert_eq!(
+                        cosmos_completion_item_page(
+                            &(*page).common,
+                            index,
+                            &mut source,
+                            &mut source_len,
+                            &mut offset,
+                            &mut item_len,
+                        ),
+                        COSMOS_STATUS_SUCCESS
+                    );
+                    assert!(offset > 0);
+                    assert!(item_len > 0);
+                    assert!(offset + item_len <= source_len);
+                    let source = std::slice::from_raw_parts(source, source_len);
+                    assert_eq!(source.first(), Some(&0x80));
+                    let (original_source, snapshot, original_offset, original_len) =
+                        &snapshots[index];
+                    assert_eq!(source.as_ptr(), *original_source);
+                    assert_eq!(source, snapshot);
+                    assert_eq!((offset, item_len), (*original_offset, *original_len));
+                    if scripted {
+                        assert_eq!(value["shared"], "reference outside every document");
+                    }
+                    let envelope = azure_data_cosmos_driver::binary_json::decode(source).unwrap();
+                    assert!(envelope["Documents"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .any(|item| item["payload"] == value));
                     ranks.push(value["rank"].as_i64().unwrap());
                 }
             }
@@ -750,9 +836,18 @@ fn binary_items_survive_cursor_release() {
 #[test]
 fn legacy_feeds_report_checkpoint_or_representation_errors() {
     for singleton in [false, true] {
-        for (query, expected) in [
-            ("SELECT DISTINCT TOP 6 VALUE c.group FROM c", 20124),
+        for (binary, query, expected) in [
+            (false, "SELECT DISTINCT TOP 6 VALUE c.group FROM c", 20124),
             (
+                false,
+                "SELECT * FROM c ORDER BY c.rank",
+                CosmosErrorCode::CosmosErrorCodeRepresentationUnsupported
+                    .as_status_code()
+                    .0
+                    & 0xffff,
+            ),
+            (
+                true,
                 "SELECT * FROM c ORDER BY c.rank",
                 CosmosErrorCode::CosmosErrorCodeRepresentationUnsupported
                     .as_status_code()
@@ -766,6 +861,9 @@ fn legacy_feeds_report_checkpoint_or_representation_errors() {
             let body = serde_json::to_vec(&serde_json::json!({"query":query})).unwrap();
             request.operation.body = body.as_ptr();
             request.operation.body_len = body.len();
+            let mut options = cosmos_operation_options_default();
+            options.binary_encoding_enabled = if binary { 2 } else { 1 };
+            request.operation.options = &options;
             let submit = if singleton {
                 crate::submit::cosmos_submit_singleton_operation
             } else {

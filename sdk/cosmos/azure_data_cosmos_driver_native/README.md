@@ -57,7 +57,7 @@ for the full design.
 | `cosmos_submit_operation` (legacy feeds) | ✅ with explicit errors for unrepresentable results |
 | Response status / RU / body / activity-id / session-token / etag / continuation | ✅ |
 | Retained query/read-feed/change-feed cursors | Supported through `cosmos_cursor_*` |
-| Multi-part response body iteration | All buffers in cursor completions |
+| Multi-part response body iteration | All standalone buffers in cursor completions; original page views through `cosmos_completion_item_count` / `cosmos_completion_item_page` on `common` |
 | Diagnostics accessors | Supported through completion diagnostics |
 | Patch instruction builder | ⏳ planned |
 | Transactional batch sub-operation builder | ⏳ planned |
@@ -458,6 +458,12 @@ below for the production-shape guidance.
 >   `headers` array. All borrowed output data remains valid until
 >   `cosmos_completion_queue_free_completions`. The examples print status/body;
 >   inspect the response-header value's discriminant before reading its union.
+>   For feeds, `body` / `body_len` remain a standalone copy of the first item.
+>   Call `cosmos_completion_item_count` and `cosmos_completion_item_page` to
+>   access each item's full source page and absolute value offset/length.
+>   Binary values can reference data elsewhere in their page, so copy the
+>   **whole page**, not just the value slice, before freeing the completion.
+>   Single-body and standalone feed items use offset zero.
 
 ### .NET (C# 12 / .NET 8+)
 

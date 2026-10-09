@@ -12,11 +12,11 @@
 //!   caller's parameters.
 //! - **Response**: [`parse_envelope_page`] parses a backend page into
 //!   strict [`EnvelopeRow`]s (envelope shape `{"_rid", "orderByItems",
-//!   "payload"}`), retaining `payload` as raw JSON bytes.
+//!   "payload"}`), retaining text payloads verbatim and binary payloads as
+//!   page-backed views.
 //!   [`PageAggregator`] accumulates charge/diagnostics across pages, and
-//!   [`PageAggregator::build_page`] emits the ordered payloads as a pre-split
-//!   [`ResponseBody::Items`](crate::models::ResponseBody::Items) body, so the
-//!   calling SDK reads each document directly without re-parsing an envelope.
+//!   [`PageAggregator::build_page`] emits pre-split standalone or contextual
+//!   items, so the calling SDK reads each document without re-parsing an envelope.
 //!
 //! Backend continuations are never copied onto the emitted page's headers:
 //! `OperationPlan::to_continuation_token` owns the client-issued token, and
@@ -27,9 +27,11 @@ use std::sync::Arc;
 use serde::Deserialize;
 use serde_json::value::RawValue;
 
+use crate::binary_json::reader::BinaryCursor;
 use crate::diagnostics::{DiagnosticsContext, DiagnosticsContextBuilder};
 use crate::models::{
-    ActivityId, CosmosResponse, CosmosResponseHeaders, CosmosStatus, ResponseBody, SessionToken,
+    ActivityId, CosmosResponse, CosmosResponseHeaders, CosmosStatus, ItemView, ResponseBody,
+    SessionToken,
 };
 use crate::options::DiagnosticsOptions;
 
@@ -259,15 +261,19 @@ fn serialize_query_body(
 /// merge heap. On the text path, `payload` retains the item's exact original
 /// JSON bytes (via [`RawValue`]) rather than a re-serialized value, so the
 /// emitted item is byte-identical to what the backend returned. On the
-/// binary-negotiated path the page is transcoded to text before parsing, so
-/// `payload` reflects that canonicalized text (normalized key order, collapsed
-/// duplicate keys, canonical number formatting) rather than the raw binary
-/// bytes.
+/// binary path, `payload` retains the complete page and the original value
+/// span, since reference strings may point outside that span.
 #[derive(Debug)]
 pub(crate) struct EnvelopeRow {
     pub(crate) keys: Vec<OrderByItem>,
     pub(crate) rid: String,
-    pub(crate) payload: Box<RawValue>,
+    pub(crate) payload: EnvelopePayload,
+}
+
+#[derive(Debug)]
+pub(crate) enum EnvelopePayload {
+    Text(Box<RawValue>),
+    Binary(ItemView),
 }
 
 /// A single rewritten-envelope item, as deserialized off the wire.
@@ -308,15 +314,16 @@ pub(crate) fn parse_envelope_page(
     let bytes = match body {
         ResponseBody::NoPayload => return Ok(Vec::new()),
         ResponseBody::Bytes(b) => b.clone(),
-        ResponseBody::Items(_) => {
+        ResponseBody::Items(_) | ResponseBody::ContextualItems(_) => {
             return Err(envelope_error(
                 "rewritten-query backend page returned an already-split `Items` body; \
                  expected a raw `Documents`-array feed body",
             ));
         }
     };
-    // The envelope parse below is text-only, so decode binary pages first.
-    let bytes = normalize_page_body(&bytes)?;
+    if crate::binary_json::is_binary(&bytes) {
+        return parse_binary_envelope_page(bytes, order_by_column_count);
+    }
     let feed: RawFeedBody = serde_json::from_slice(&bytes).map_err(|e| {
         body_error(
             "failed to parse rewritten-query backend page as a feed body",
@@ -346,8 +353,127 @@ fn parse_envelope_item(
     Ok(EnvelopeRow {
         keys,
         rid,
-        payload: item.payload,
+        payload: EnvelopePayload::Text(item.payload),
     })
+}
+
+fn parse_binary_envelope_page(
+    page: bytes::Bytes,
+    order_by_column_count: usize,
+) -> crate::error::Result<Vec<EnvelopeRow>> {
+    let mut cursor = BinaryCursor::new(&page).map_err(binary_page_error)?;
+    let Some(mut root) = cursor.start_object(0).map_err(binary_page_error)? else {
+        cursor.scan_value(0).map_err(binary_page_error)?;
+        cursor.finish().map_err(binary_page_error)?;
+        return Err(envelope_error(
+            "rewritten-query backend page is not a feed body",
+        ));
+    };
+
+    let mut documents = None;
+    while cursor.next(&mut root).map_err(binary_page_error)? {
+        let name = cursor.member_name(1).map_err(binary_page_error)?;
+        if name == "Documents" || name == "documents" {
+            if documents.is_some() {
+                return Err(envelope_error(
+                    "duplicate `Documents` in rewritten-query page",
+                ));
+            }
+            let Some(mut array) = cursor.start_array(1).map_err(binary_page_error)? else {
+                cursor.scan_value(1).map_err(binary_page_error)?;
+                return Err(envelope_error(
+                    "rewritten-query `Documents` is not an array",
+                ));
+            };
+            let mut rows = Vec::new();
+            while cursor.next(&mut array).map_err(binary_page_error)? {
+                rows.push(parse_binary_envelope_item(
+                    &mut cursor,
+                    &page,
+                    order_by_column_count,
+                )?);
+            }
+            documents = Some(rows);
+        } else {
+            cursor.scan_value(1).map_err(binary_page_error)?;
+        }
+    }
+    cursor.finish().map_err(binary_page_error)?;
+    documents.ok_or_else(|| envelope_error("rewritten-query backend page is missing `Documents`"))
+}
+
+fn parse_binary_envelope_item(
+    cursor: &mut BinaryCursor<'_>,
+    page: &bytes::Bytes,
+    order_by_column_count: usize,
+) -> crate::error::Result<EnvelopeRow> {
+    let Some(mut item) = cursor.start_object(2).map_err(binary_page_error)? else {
+        cursor.scan_value(2).map_err(binary_page_error)?;
+        return Err(envelope_error("rewritten envelope item is not an object"));
+    };
+    let mut rid = None;
+    let mut order_by_items = None;
+    let mut payload = None;
+    let mut seen_rid = false;
+    let mut seen_order_by_items = false;
+    while cursor.next(&mut item).map_err(binary_page_error)? {
+        let name = cursor.member_name(3).map_err(binary_page_error)?;
+        match name.as_str() {
+            "_rid" => {
+                if seen_rid {
+                    return Err(envelope_error("duplicate `_rid` in rewritten envelope"));
+                }
+                seen_rid = true;
+                rid = match cursor.read_json_value(3).map_err(binary_page_error)? {
+                    serde_json::Value::String(value) => Some(value),
+                    serde_json::Value::Null => None,
+                    _ => return Err(envelope_error("rewritten envelope `_rid` is not a string")),
+                };
+            }
+            "orderByItems" => {
+                if seen_order_by_items {
+                    return Err(envelope_error(
+                        "duplicate `orderByItems` in rewritten envelope",
+                    ));
+                }
+                seen_order_by_items = true;
+                let value = cursor.read_json_value(3).map_err(binary_page_error)?;
+                order_by_items = (!value.is_null()).then_some(value);
+            }
+            "payload" => {
+                if payload.is_some() {
+                    return Err(envelope_error("duplicate `payload` in rewritten envelope"));
+                }
+                let range = cursor.scan_value(3).map_err(binary_page_error)?;
+                payload = Some(ItemView::from_binary_page(page.clone(), range)?);
+            }
+            _ => {
+                cursor.scan_value(3).map_err(binary_page_error)?;
+            }
+        }
+    }
+
+    let rid = rid
+        .filter(|rid| !rid.is_empty())
+        .ok_or_else(|| envelope_error("rewritten envelope item is missing a non-empty `_rid`"))?;
+    let order_by_items = order_by_items
+        .ok_or_else(|| envelope_error("rewritten envelope item is missing `orderByItems`"))?;
+    let keys = order_by::parse_order_by_items(&order_by_items, order_by_column_count)?;
+    let payload =
+        payload.ok_or_else(|| envelope_error("rewritten envelope item is missing `payload`"))?;
+    Ok(EnvelopeRow {
+        keys,
+        rid,
+        payload: EnvelopePayload::Binary(payload),
+    })
+}
+
+fn binary_page_error(source: crate::binary_json::BinaryError) -> crate::error::CosmosError {
+    crate::error::CosmosError::builder()
+        .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
+        .with_message("failed to scan binary ORDER BY envelope")
+        .with_source(source)
+        .build()
 }
 
 /// Peak-memory bound on per-page diagnostics contexts retained by a single
@@ -490,14 +616,10 @@ impl PageAggregator {
         diagnostics.attach_error(error)
     }
 
-    /// Converts one raw item payload into the bytes this aggregator emits.
+    /// Prepares one payload for emission in the operation's output encoding.
     ///
-    /// Payloads always arrive as text, because [`normalize_page_body`]
-    /// transcodes every absorbed page before it is split. When the operation
-    /// negotiated binary, the item is re-encoded here so the SDK decodes it
-    /// through the binary deserializer — which coerces a service-echoed
-    /// integral `Double` into an integer target, exactly as a passthrough
-    /// binary query does. Text-negotiated queries copy verbatim.
+    /// A binary payload emitted as binary keeps its original page and byte
+    /// span. All other combinations convert only the selected item.
     ///
     /// This is deliberately separate from [`build_page`](Self::build_page) so
     /// the caller can encode an item *before* committing to having emitted it.
@@ -511,14 +633,26 @@ impl PageAggregator {
     pub(crate) fn encode_item(
         &self,
         index: usize,
-        payload: &RawValue,
-    ) -> crate::error::Result<bytes::Bytes> {
+        payload: &EnvelopePayload,
+    ) -> crate::error::Result<ItemView> {
+        if let EnvelopePayload::Binary(item) = payload {
+            if self.emit_binary {
+                return Ok(item.clone());
+            }
+            let text = serde_json::to_vec(&item.decoded_value()?)
+                .map_err(|e| body_error("failed to serialize binary ORDER BY item", e))?;
+            return Ok(ItemView::standalone(bytes::Bytes::from(text)));
+        }
+        let EnvelopePayload::Text(payload) = payload else {
+            unreachable!("binary payload was handled above")
+        };
         let text = payload.get().as_bytes();
         if !self.emit_binary {
-            return Ok(bytes::Bytes::copy_from_slice(text));
+            return Ok(ItemView::standalone(bytes::Bytes::copy_from_slice(text)));
         }
         crate::binary_json::transcode_to_binary(text)
             .map(bytes::Bytes::from)
+            .map(ItemView::standalone)
             .map_err(|e| {
                 // The payload reached here as a `RawValue`, which only checks
                 // that the bytes are *syntactically* JSON — it does not walk
@@ -538,14 +672,11 @@ impl PageAggregator {
             })
     }
 
-    /// Builds the emitted page from the accumulated aggregate plus the
-    /// final ordered list of encoded item bytes.
+    /// Builds the emitted page from the aggregate and ordered item views.
     ///
-    /// The body is a [`ResponseBody::Items`] whose entries are the ordered
-    /// `items` — one per document, each already in the emitted encoding (see
-    /// [`encode_item`](Self::encode_item)). Emitting pre-split items (rather
-    /// than re-serializing a `{"Documents":[...]}` envelope only for the SDK to
-    /// re-parse) lets the calling SDK read each document directly.
+    /// The body is a [`ResponseBody::ContextualItems`] if any item retains
+    /// its source page; otherwise it is [`ResponseBody::Items`]. Each entry
+    /// has already been prepared in the emitted encoding.
     ///
     /// Infallible by construction: every fallible step happens in
     /// `encode_item`, which the caller runs while it can still un-emit a row.
@@ -553,7 +684,7 @@ impl PageAggregator {
     /// It's valid for no backend page to have been absorbed (page
     /// assembled entirely from previously-buffered rows); it then reports
     /// zero charge and a fresh, empty [`DiagnosticsContext`].
-    pub(crate) fn build_page(self, items: Vec<bytes::Bytes>) -> CosmosResponse {
+    pub(crate) fn build_page(self, items: Vec<ItemView>) -> CosmosResponse {
         let diagnostics = DiagnosticsContext::aggregate_sub_operations(&self.diagnostics_sources)
             .map(Arc::new)
             .unwrap_or_else(empty_diagnostics);
@@ -572,7 +703,7 @@ impl PageAggregator {
         };
 
         CosmosResponse::new(
-            ResponseBody::from_items(items),
+            ResponseBody::from_item_views(items),
             headers,
             self.status,
             diagnostics,
@@ -634,9 +765,71 @@ fn body_error_msg(message: &'static str) -> crate::error::CosmosError {
 }
 
 #[cfg(test)]
+#[path = "query_response_parsing_tests.rs"]
+mod parsing_tests;
+
+#[cfg(test)]
 mod tests {
+    use std::{hint::black_box, time::Instant};
+
     use super::*;
+    use crate::binary_json::{markers, PREAMBLE};
     use crate::driver::dataflow::mocks::{self, response};
+
+    fn binary_string(value: &str) -> Vec<u8> {
+        let mut bytes = vec![markers::ENCODED_STRING_LENGTH_MIN + value.len() as u8];
+        bytes.extend_from_slice(value.as_bytes());
+        bytes
+    }
+
+    fn binary_object(fields: &[(&str, Vec<u8>)]) -> Vec<u8> {
+        let mut body = Vec::new();
+        for (name, value) in fields {
+            body.extend(binary_string(name));
+            body.extend(value);
+        }
+        let mut bytes = vec![
+            markers::OBJ_LC1,
+            u8::try_from(body.len()).unwrap(),
+            u8::try_from(fields.len()).unwrap(),
+        ];
+        bytes.extend(body);
+        bytes
+    }
+
+    fn binary_array(items: &[Vec<u8>]) -> Vec<u8> {
+        let body: Vec<u8> = items.iter().flatten().copied().collect();
+        let mut bytes = vec![
+            markers::ARR_LC1,
+            u8::try_from(body.len()).unwrap(),
+            u8::try_from(items.len()).unwrap(),
+        ];
+        bytes.extend(body);
+        bytes
+    }
+
+    fn binary_envelope(payloads: &[Vec<u8>]) -> Vec<u8> {
+        let items: Vec<_> = payloads
+            .iter()
+            .map(|payload| {
+                binary_object(&[
+                    ("_rid", binary_string("row")),
+                    (
+                        "orderByItems",
+                        binary_array(&[binary_object(&[("item", vec![1])])]),
+                    ),
+                    ("payload", payload.clone()),
+                ])
+            })
+            .collect();
+        let mut page = vec![PREAMBLE];
+        page.extend(binary_object(&[
+            ("_rid", binary_string("root")),
+            ("Documents", binary_array(&items)),
+            ("_count", vec![payloads.len() as u8]),
+        ]));
+        page
+    }
 
     #[test]
     fn rewrite_query_body_replaces_query_and_preserves_parameters() {
@@ -851,7 +1044,10 @@ mod tests {
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].rid, "r1");
         assert_eq!(rows[0].keys, vec![OrderByItem::Number(1.0.into())]);
-        assert_eq!(rows[0].payload.get(), r#"{"id":"d1"}"#);
+        assert!(matches!(
+            &rows[0].payload,
+            EnvelopePayload::Text(payload) if payload.get() == r#"{"id":"d1"}"#
+        ));
         assert_eq!(rows[1].rid, "r2");
         assert_eq!(rows[1].keys, vec![OrderByItem::Undefined]);
     }
@@ -873,7 +1069,180 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].rid, "r1");
         assert_eq!(rows[0].keys, vec![OrderByItem::Number(1.0.into())]);
-        assert_eq!(rows[0].payload.get(), r#"{"id":"d1"}"#);
+        let EnvelopePayload::Binary(item) = &rows[0].payload else {
+            panic!("expected a page-backed binary payload");
+        };
+        assert_eq!(
+            item.deserialize::<serde_json::Value>().unwrap(),
+            serde_json::json!({"id":"d1"})
+        );
+        assert_eq!(item.raw_value(), &item.source_page()[item.value_range()]);
+    }
+
+    #[test]
+    fn binary_envelope_keeps_full_page_reference_context_for_all_offset_widths() {
+        for (marker, width) in [
+            (markers::STR_R1, 1),
+            (markers::STR_R2, 2),
+            (markers::STR_R3, 3),
+            (markers::STR_R4, 4),
+        ] {
+            // The first property name in the root object starts at offset 4.
+            // After detachment, offset 4 names the payload's own "wrong" key.
+            let mut reference = vec![marker];
+            reference.extend_from_slice(&4_u32.to_le_bytes()[..width]);
+            let payload = binary_object(&[("wrong", reference)]);
+            let page = bytes::Bytes::from(binary_envelope(std::slice::from_ref(&payload)));
+            let mut rows = parse_envelope_page(&ResponseBody::from_bytes(page.clone()), 1).unwrap();
+            let EnvelopePayload::Binary(item) = &rows[0].payload else {
+                panic!("expected a page-backed item");
+            };
+            assert_eq!(item.raw_value(), payload, "reference width {width}");
+            assert_eq!(item.source_page(), page, "reference width {width}");
+            assert_eq!(item.source_page().as_ptr(), page.as_ptr());
+            assert_eq!(
+                item.deserialize::<serde_json::Value>().unwrap(),
+                serde_json::json!({"wrong":"_rid"})
+            );
+            let mut detached = vec![PREAMBLE];
+            detached.extend(payload);
+            assert_eq!(
+                crate::binary_json::decode(&detached).unwrap(),
+                serde_json::json!({"wrong":"wrong"})
+            );
+            let aggregator = PageAggregator::new(true);
+            let emitted = aggregator.encode_item(0, &rows.remove(0).payload).unwrap();
+            assert_eq!(emitted.source_page().as_ptr(), page.as_ptr());
+            assert_eq!(emitted.raw_value(), &page[emitted.value_range()]);
+            let body = aggregator.build_page(vec![emitted]);
+            assert!(matches!(body.body(), ResponseBody::ContextualItems(_)));
+            assert_eq!(
+                body.body()
+                    .clone()
+                    .into_items::<serde_json::Value>()
+                    .unwrap(),
+                vec![serde_json::json!({"wrong":"_rid"})]
+            );
+            let raw = body.body().clone().items().unwrap();
+            assert_eq!(
+                crate::binary_json::decode(&raw[0]).unwrap(),
+                serde_json::json!({"wrong":"_rid"})
+            );
+        }
+    }
+
+    #[test]
+    fn binary_envelope_validates_discarded_payloads_without_materializing_them() {
+        let good = binary_object(&[("id", binary_string("kept"))]);
+        for malformed in [
+            vec![markers::STR_R1, 255],      // No such reference target.
+            vec![markers::INT32, 1, 2],      // Truncated number.
+            vec![markers::ARR_LC1, 1, 2, 0], // Declared count exceeds contents.
+        ] {
+            let page = binary_envelope(&[good.clone(), malformed]);
+            let error = parse_envelope_page(&ResponseBody::from_bytes(page), 1).unwrap_err();
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+            );
+        }
+    }
+
+    #[test]
+    fn binary_envelope_rejects_duplicate_structural_fields() {
+        let item = binary_object(&[
+            ("_rid", binary_string("one")),
+            ("_rid", binary_string("two")),
+            (
+                "orderByItems",
+                binary_array(&[binary_object(&[("item", vec![1])])]),
+            ),
+            ("payload", vec![markers::NULL]),
+        ]);
+        let mut page = vec![PREAMBLE];
+        page.extend(binary_object(&[("Documents", binary_array(&[item]))]));
+        let error = parse_envelope_page(&ResponseBody::from_bytes(page), 1).unwrap_err();
+        assert_eq!(
+            error.status(),
+            crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
+        );
+    }
+
+    #[test]
+    fn contextual_items_keep_raw_duplicate_keys_but_typed_items_match_normalization() {
+        #[derive(Debug, PartialEq, serde::Deserialize)]
+        struct Doc {
+            id: String,
+        }
+
+        let payload = binary_object(&[("id", binary_string("old")), ("id", binary_string("new"))]);
+        let page = binary_envelope(std::slice::from_ref(&payload));
+        let mut rows = parse_envelope_page(&ResponseBody::from_bytes(page), 1).unwrap();
+        let aggregator = PageAggregator::new(true);
+        let item = aggregator.encode_item(0, &rows.remove(0).payload).unwrap();
+        assert_eq!(item.raw_value(), payload);
+        assert_eq!(item.deserialize::<Doc>().unwrap(), Doc { id: "new".into() });
+        let body = aggregator.build_page(vec![item]);
+        assert_eq!(
+            body.body().clone().into_items::<Doc>().unwrap(),
+            vec![Doc { id: "new".into() }]
+        );
+    }
+
+    #[test]
+    fn binary_page_requested_as_text_and_mixed_wire_pages_emit_text() {
+        let binary = ResponseBody::from_bytes(binary_envelope(&[binary_object(&[(
+            "id",
+            binary_string("binary"),
+        )])]));
+        let text = ResponseBody::from_bytes(br#"{"Documents":[{"_rid":"row","orderByItems":[{"item":2}],"payload":{"id":"text"}}]}"#.to_vec());
+        let binary_row = parse_envelope_page(&binary, 1).unwrap().remove(0);
+        let text_row = parse_envelope_page(&text, 1).unwrap().remove(0);
+        let aggregator = PageAggregator::new(false);
+        let items = [binary_row.payload, text_row.payload]
+            .iter()
+            .enumerate()
+            .map(|(i, payload)| aggregator.encode_item(i, payload).unwrap())
+            .collect();
+        let body = aggregator.build_page(items);
+        let ResponseBody::Items(items) = body.body() else {
+            panic!("text-requested merged output must contain standalone text");
+        };
+        assert_eq!(
+            serde_json::from_slice::<serde_json::Value>(&items[0]).unwrap()["id"],
+            "binary"
+        );
+        assert_eq!(&items[1][..], br#"{"id":"text"}"#);
+    }
+
+    #[test]
+    #[ignore = "run explicitly to characterize binary ORDER BY envelope parsing"]
+    fn measure_binary_order_by_envelope_parsing() {
+        const FAN_OUT: usize = 16;
+        const ITEMS_PER_PAGE: usize = 100;
+        const ROUNDS: usize = 40;
+
+        let pages = mocks::binary_order_by_pages(FAN_OUT, ITEMS_PER_PAGE, 1024);
+        let source_bytes: usize = pages.iter().map(bytes::Bytes::len).sum();
+
+        let start = Instant::now();
+        let mut rows_seen = 0;
+        for _ in 0..ROUNDS {
+            for page in &pages {
+                rows_seen += black_box(
+                    parse_envelope_page(&ResponseBody::from_bytes(page.clone()), 1)
+                        .unwrap()
+                        .len(),
+                );
+            }
+        }
+        let elapsed = start.elapsed();
+        assert_eq!(rows_seen, FAN_OUT * ITEMS_PER_PAGE * ROUNDS);
+        println!(
+            "ORDER BY envelope parse: fan_out={FAN_OUT} items_per_page={ITEMS_PER_PAGE} \
+             source_bytes={source_bytes} rounds={ROUNDS} elapsed_ms={:.2}",
+            elapsed.as_secs_f64() * 1000.0,
+        );
     }
 
     #[test]
@@ -1005,14 +1374,13 @@ mod tests {
         let items = encoded_items(&aggregator, &payloads).unwrap();
         let response = aggregator.build_page(items);
 
-        let items = match response.body() {
-            ResponseBody::Items(items) => items.clone(),
-            other => panic!("expected an items body, got {other:?}"),
+        let ResponseBody::ContextualItems(items) = response.body() else {
+            panic!("expected page-backed items");
         };
         assert_eq!(items.len(), 1);
-        assert!(
-            crate::binary_json::is_binary(&items[0]),
-            "a binary-negotiated query must produce binary merged items"
+        assert_eq!(
+            items[0].raw_value(),
+            &items[0].source_page()[items[0].value_range()]
         );
 
         // Exact bytes, not just an equal decode: the emitted item must be the
@@ -1023,13 +1391,9 @@ mod tests {
             "id": "d1",
             "wide": WIDE,
         }));
-        assert_eq!(
-            items[0].as_ref(),
-            expected.as_slice(),
-            "merged binary item must match the canonical encoding byte for byte"
-        );
+        assert_eq!(items[0].to_standalone().unwrap().as_ref(), expected);
 
-        let doc: Doc = crate::binary_json::from_slice(&items[0]).unwrap();
+        let doc: Doc = items[0].deserialize().unwrap();
         assert_eq!(
             doc,
             Doc {
@@ -1066,7 +1430,7 @@ mod tests {
         // re-encode, so existing text ORDER BY users are unaffected.
         let payload = serde_json::value::to_raw_value(&serde_json::json!({"id":"d1"})).unwrap();
         let aggregator = PageAggregator::new(false);
-        let items = encoded_items(&aggregator, &[payload]).unwrap();
+        let items = encoded_items(&aggregator, &[EnvelopePayload::Text(payload)]).unwrap();
         let response = aggregator.build_page(items);
         match response.body() {
             ResponseBody::Items(items) => {
@@ -1112,7 +1476,10 @@ mod tests {
         let rows = parse_envelope_page(&body, 1).unwrap();
 
         assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0].payload.get(), "null");
+        assert!(matches!(
+            &rows[0].payload,
+            EnvelopePayload::Text(payload) if payload.get() == "null"
+        ));
     }
 
     #[test]
@@ -1130,9 +1497,9 @@ mod tests {
         let mut aggregator = PageAggregator::new(false);
         aggregator.absorb(&response(b"{}")).unwrap();
         aggregator.absorb(&response(b"{}")).unwrap();
-        let payloads: Vec<Box<RawValue>> = vec![
-            RawValue::from_string(r#"{"id":"a"}"#.to_owned()).unwrap(),
-            RawValue::from_string(r#"{"id":"b"}"#.to_owned()).unwrap(),
+        let payloads = vec![
+            EnvelopePayload::Text(RawValue::from_string(r#"{"id":"a"}"#.to_owned()).unwrap()),
+            EnvelopePayload::Text(RawValue::from_string(r#"{"id":"b"}"#.to_owned()).unwrap()),
         ];
         let items = encoded_items(&aggregator, &payloads).unwrap();
         let page = aggregator.build_page(items);
@@ -1272,8 +1639,8 @@ mod tests {
     /// so the encode step is never silently skipped.
     fn encoded_items(
         aggregator: &PageAggregator,
-        payloads: &[Box<RawValue>],
-    ) -> crate::error::Result<Vec<bytes::Bytes>> {
+        payloads: &[EnvelopePayload],
+    ) -> crate::error::Result<Vec<ItemView>> {
         payloads
             .iter()
             .enumerate()
@@ -1291,6 +1658,7 @@ mod tests {
                 .collect(),
             ResponseBody::NoPayload => Vec::new(),
             ResponseBody::Bytes(_) => panic!("expected an Items feed body"),
+            ResponseBody::ContextualItems(_) => panic!("expected standalone text items"),
         }
     }
 
@@ -1308,8 +1676,9 @@ mod tests {
     fn page_aggregator_with_no_absorbed_response_builds_zero_charge_page() {
         // No new fetch needed; must still build a valid zero-charge page.
         let aggregator = PageAggregator::new(false);
-        let payloads: Vec<Box<RawValue>> =
-            vec![RawValue::from_string(r#"{"id":"a"}"#.to_owned()).unwrap()];
+        let payloads = vec![EnvelopePayload::Text(
+            RawValue::from_string(r#"{"id":"a"}"#.to_owned()).unwrap(),
+        )];
         let items = encoded_items(&aggregator, &payloads).unwrap();
         let page = aggregator.build_page(items);
         assert_eq!(

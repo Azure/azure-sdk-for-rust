@@ -507,15 +507,9 @@ async fn execute_with_dispatcher_and_deadline<D: SubOperationDispatcher + ?Sized
                 let replace_etag = replace_headers.etag.clone();
                 sub_op_diagnostics.push(replace_resp.diagnostics());
                 let replace_body = replace_resp.into_body();
-                // Replace responses are always single-payload (or empty when
-                // `content_response_on_write` is disabled). Collapse the
-                // typed body to `Vec<u8>` so the synthesis helper can treat
-                // "empty" uniformly across `NoPayload` and `Bytes(empty)`.
-                let replace_body_bytes: Vec<u8> = match replace_body {
-                    crate::models::ResponseBody::Bytes(b) => b.to_vec(),
-                    crate::models::ResponseBody::NoPayload
-                    | crate::models::ResponseBody::Items(_) => Vec::new(),
-                };
+                // A Replace response must be single-payload (or empty when
+                // `content_response_on_write` is disabled).
+                let replace_body_bytes = replace_body.single()?.to_vec();
                 // Aggregate the per-request diagnostics of every successful
                 // sub-op into a single DiagnosticsContext, so the synthesized
                 // response surfaces "one operation = one DiagnosticsContext"

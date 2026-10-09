@@ -34,9 +34,17 @@ impl ResponseBody {
         self.0.single()
     }
 
-    /// Returns the per-item raw buffers of a feed response, or wraps a
+    /// Returns standalone per-item raw buffers of a feed response, or wraps a
     /// single-payload body as a one-element vector. A no-payload body yields
     /// an empty `Vec`.
+    ///
+    /// An `ORDER BY` item retained from a binary page is materialized in its
+    /// page context. The resulting bytes decode independently but may differ
+    /// from the document's original binary encoding.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if an item cannot be materialized.
     pub fn items(self) -> crate::Result<Vec<Bytes>> {
         self.0.items()
     }
@@ -48,9 +56,9 @@ impl ResponseBody {
 
     /// Deserializes the items of a feed response as JSON of type `T`.
     ///
-    /// * An [`Items`](DriverResponseBody::Items) body — pre-split by the
-    ///   cross-partition pipeline (skip/take, streaming ORDER BY merge) — is
-    ///   decoded slice-by-slice.
+    /// * An [`Items`](DriverResponseBody::Items) body is decoded slice-by-slice.
+    /// * A [`ContextualItems`](DriverResponseBody::ContextualItems) body
+    ///   deserializes each item with its whole binary source page available.
     /// * A single-partition page that never went through those nodes arrives as
     ///   a raw `{"Documents":[...]}` envelope in a single
     ///   [`Bytes`](DriverResponseBody::Bytes) payload, parsed here via

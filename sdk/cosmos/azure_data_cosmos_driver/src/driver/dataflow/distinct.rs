@@ -54,10 +54,9 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use bytes::Bytes;
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{CosmosResponse, FeedRange, RequestCharge, ResponseBody};
+use crate::models::{CosmosResponse, FeedRange, ItemView, RequestCharge, ResponseBody};
 
 use super::distinct_hash::{hash_value, Hash128};
 use super::query_plan::DistinctType;
@@ -176,10 +175,10 @@ impl Distinct {
 
     /// Selects the items that survive deduplication, preserving order and each
     /// item's exact backend bytes.
-    fn select_survivors(&mut self, items: &[Bytes]) -> crate::error::Result<Vec<Bytes>> {
+    fn select_survivors(&mut self, items: &[ItemView]) -> crate::error::Result<Vec<ItemView>> {
         let mut keep = Vec::with_capacity(items.len());
         for item in items {
-            let value = parse_row(item)?;
+            let value = item.decoded_value()?;
             if self.map.accept(hash_value(&value)?) {
                 keep.push(item.clone());
             }
@@ -192,7 +191,7 @@ impl Distinct {
     fn rebuild(
         &mut self,
         response: &CosmosResponse,
-        survivors: Vec<Bytes>,
+        survivors: Vec<ItemView>,
         emitted: usize,
     ) -> CosmosResponse {
         let mut headers = response.headers().clone();
@@ -202,7 +201,7 @@ impl Distinct {
             headers.request_charge = Some(base + self.suppressed_charge);
         }
         let rebuilt = CosmosResponse::new(
-            ResponseBody::from_items(survivors),
+            ResponseBody::from_item_views(survivors),
             headers,
             response.status(),
             response.diagnostics(),
@@ -277,20 +276,34 @@ impl Distinct {
         response: CosmosResponse,
         is_terminal: bool,
     ) -> crate::error::Result<Option<PageResult>> {
-        // Normalize the child's page into per-document slices. A streaming
-        // ordered merge hands over pre-split `Items`, already in the encoding
-        // the operation emits; a raw backend feed page arrives as `Bytes` and
-        // is split as text, then re-encoded below. `NoPayload` is a
-        // zero-document page.
+        // An ordered merge hands over pre-split items, already in the output
+        // encoding; a raw feed page is split as text, then re-encoded below.
         let (items, needs_encode) = match response.body() {
-            ResponseBody::Items(items) => (items.clone(), false),
-            ResponseBody::Bytes(bytes) => (skip_take_page::split_feed_envelope(bytes)?, true),
+            ResponseBody::Items(items) => (
+                items.iter().cloned().map(ItemView::standalone).collect(),
+                false,
+            ),
+            ResponseBody::ContextualItems(items) => (items.clone(), false),
+            ResponseBody::Bytes(bytes) => (
+                skip_take_page::split_feed_envelope(bytes)?
+                    .into_iter()
+                    .map(ItemView::standalone)
+                    .collect(),
+                true,
+            ),
             ResponseBody::NoPayload => (Vec::new(), false),
         };
         let survivors = self.select_survivors(&items)?;
         let emitted = survivors.len();
         let survivors = if needs_encode {
-            skip_take_page::encode_items(survivors, self.emit_binary)?
+            let standalone = survivors
+                .iter()
+                .map(ItemView::to_standalone)
+                .collect::<crate::error::Result<Vec<_>>>()?;
+            skip_take_page::encode_items(standalone, self.emit_binary)?
+                .into_iter()
+                .map(ItemView::standalone)
+                .collect()
         } else {
             survivors
         };
@@ -327,30 +340,6 @@ impl Distinct {
             )
             .build()
     }
-}
-
-/// Parses one row payload into a value to hash, accepting either encoding.
-///
-/// A binary payload is decoded and its integral `Double`s normalized to
-/// integers, exactly as [`normalize_page_body`] does for a whole page, so a row
-/// hashes identically whether it reached this node as text or as binary.
-///
-/// [`normalize_page_body`]: super::query_response::normalize_page_body
-fn parse_row(item: &Bytes) -> crate::error::Result<serde_json::Value> {
-    fn row_error(e: impl std::error::Error + Send + Sync + 'static) -> crate::error::CosmosError {
-        crate::error::CosmosError::builder()
-            .with_status(crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID)
-            .with_message("failed to parse a DISTINCT row payload as JSON")
-            .with_source(e)
-            .build()
-    }
-
-    if crate::binary_json::is_binary(item) {
-        let mut value = crate::binary_json::decode(item).map_err(row_error)?;
-        crate::binary_json::normalize_integral_floats(&mut value);
-        return Ok(value);
-    }
-    serde_json::from_slice(item).map_err(row_error)
 }
 
 #[async_trait]
@@ -485,6 +474,7 @@ mod tests {
     use crate::driver::dataflow::mocks::*;
     use crate::driver::dataflow::node::SplitReplacements;
     use crate::models::ResponseBody;
+    use bytes::Bytes;
     use serde::Serialize;
 
     /// Builds a query-page body from a list of raw JSON document texts.

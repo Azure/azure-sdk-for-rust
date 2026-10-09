@@ -1945,7 +1945,7 @@ mod tests {
             effective_partition_key::EffectivePartitionKey, AccountReference, ContainerProperties,
             ContainerReference, CosmosResponse, DatabaseReference, ItemReference, MaxItemCountHint,
             OperationType, PartitionKey, PartitionKeyDefinition, RequestCharge, ResourceType,
-            ResponseBody, SystemProperties,
+            SystemProperties,
         },
     };
 
@@ -4374,11 +4374,9 @@ mod tests {
                         let session = page.headers().session_token.as_ref().unwrap().to_string();
                         assert!(session.contains("a:1#4"), "{session}");
                         assert!(session.contains("b:1#5"), "{session}");
-                        let ResponseBody::Items(items) = page.body() else {
-                            panic!("expected items")
-                        };
+                        let items = page.body().clone().items().unwrap();
                         assert!(items.len() <= 2);
-                        for item in items {
+                        for item in &items {
                             assert_eq!(crate::binary_json::is_binary(item), output_binary);
                             let value: String = if output_binary {
                                 crate::binary_json::from_slice(item).unwrap()

@@ -16,6 +16,7 @@ use crate::{
     safety::MutexExt,
     string::CosmosStringView,
 };
+use azure_core::Bytes;
 use azure_data_cosmos_driver::{
     error::{status_codes, CosmosError},
     models::{ContainerReference, CosmosResponse, ResponseBody},
@@ -52,7 +53,8 @@ pub struct CosmosCursorCompletion {
     pub result_kind: u32,
     /// 0: no payload; 1: raw bytes in `common.body`; 2: ordered items.
     pub body_kind: u32,
-    /// All driver item buffers, not just the first; NULL when empty.
+    /// All standalone item buffers, not just the first; NULL when empty.
+    /// Original page views are available through `common` completion accessors.
     pub items: *const CosmosCursorBytes,
     /// Number of item buffers.
     pub items_len: usize,
@@ -67,6 +69,7 @@ pub struct CosmosCursorCompletion {
 /// Opaque owner of the item view array.
 pub struct CursorCompletionBacking {
     _items: Vec<CosmosCursorBytes>,
+    _standalone_items: Vec<Bytes>,
 }
 
 /// Opaque retained plan. Synchronize handle free against all calls using that handle.
@@ -100,9 +103,40 @@ impl CursorInner {
 
 enum ResultData {
     Opened(Arc<CursorInner>),
-    Page(Box<CosmosResponse>),
+    Page(Box<CursorPage>),
     Checkpoint(String),
     End,
+}
+
+struct CursorPage {
+    response: CosmosResponse,
+    standalone_items: Vec<Bytes>,
+}
+
+impl CursorPage {
+    fn new(response: CosmosResponse) -> Result<Self, CosmosError> {
+        let standalone_items = if let ResponseBody::ContextualItems(items) = response.body() {
+            items
+                .iter()
+                .map(|item| item.to_standalone())
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(|error| {
+                    CosmosError::builder()
+                        .with_status(error.status())
+                        .with_message(format!(
+                            "failed to materialize cursor item buffers: {error}"
+                        ))
+                        .with_diagnostics(response.diagnostics())
+                        .build()
+                })?
+        } else {
+            Vec::new()
+        };
+        Ok(Self {
+            response,
+            standalone_items,
+        })
+    }
 }
 
 struct Delivery {
@@ -132,6 +166,7 @@ impl Delivery {
         let mut kind = 0;
         let mut body_kind = 0;
         let mut items = Vec::new();
+        let mut standalone_items = Vec::new();
         let mut opened = std::ptr::null_mut();
         let mut token_len = 0;
         let pending = match self.result {
@@ -145,7 +180,8 @@ impl Delivery {
                     }
                     ResultData::Page(page) => {
                         kind = 2;
-                        match page.body() {
+                        standalone_items = page.standalone_items;
+                        match page.response.body() {
                             ResponseBody::NoPayload => {}
                             ResponseBody::Bytes(_) => body_kind = 1,
                             ResponseBody::Items(buffers) => {
@@ -158,8 +194,18 @@ impl Delivery {
                                     })
                                     .collect();
                             }
+                            ResponseBody::ContextualItems(_) => {
+                                body_kind = 2;
+                                items = standalone_items
+                                    .iter()
+                                    .map(|bytes| CosmosCursorBytes {
+                                        data: bytes.as_ptr(),
+                                        len: bytes.len(),
+                                    })
+                                    .collect();
+                            }
                         }
-                        response = Some(*page);
+                        response = Some(page.response);
                     }
                     ResultData::Checkpoint(text) => {
                         kind = 3;
@@ -168,7 +214,19 @@ impl Delivery {
                     }
                     ResultData::End => kind = 4,
                 }
-                PendingCompletion::ok_response(self.user_data, self.op, response, token)
+                PendingCompletion::ok_response_with_materializer(
+                    self.user_data,
+                    self.op,
+                    response,
+                    token,
+                    include_details,
+                    |_| {
+                        standalone_items
+                            .first()
+                            .cloned()
+                            .ok_or_else(|| error(CosmosErrorCode::CosmosErrorCodeInternalError))
+                    },
+                )
             }
             Err(error) => PendingCompletion::error(self.user_data, self.op, error, include_details),
         };
@@ -193,7 +251,10 @@ impl Delivery {
             items_len,
             checkpoint,
             cursor: opened,
-            backing: Box::into_raw(Box::new(CursorCompletionBacking { _items: items })),
+            backing: Box::into_raw(Box::new(CursorCompletionBacking {
+                _items: items,
+                _standalone_items: standalone_items,
+            })),
         });
         // Transfer, not publication, releases the cursor. Old page owners remain independent.
         if let Some(cursor) = self.cursor {
@@ -542,14 +603,17 @@ fn submit_cursor(
             if cursor.state.lock_recover().exhausted {
                 return Ok(ResultData::End);
             }
-            OperationOptionsSnapshot::execute(
+            let page = OperationOptionsSnapshot::execute(
                 cursor.snapshot.clone(),
                 cursor
                     .driver
                     .execute_plan(plan, cursor.container.clone(), cursor.options.clone()),
             )
-            .await
-            .map(|page| page.map_or(ResultData::End, |page| ResultData::Page(Box::new(page))))
+            .await?;
+            match page {
+                Some(response) => Ok(ResultData::Page(Box::new(CursorPage::new(response)?))),
+                None => Ok(ResultData::End),
+            }
         };
         let result = run(work).await;
         {

@@ -40,6 +40,52 @@ The `emulator` marker is highly recommended when running against a local emulato
 
 If you need to disable TLS certificate validation when using a different connection string, you can also set the `AZURE_COSMOS_ALLOW_INVALID_CERT` environment variable to `true`.
 
+### Live binary ORDER BY validation
+
+The `live` test target includes an opt-in comparison of text and binary
+cross-partition `ORDER BY` queries. It creates an isolated database and two
+containers, each with **20,000 RU/s of dedicated throughput**. Obtain cost
+approval before running it; replicated regions also affect provisioned-throughput
+charges. Do not use production credentials.
+
+Load a test account connection string from a local secret file without printing
+it, then run the single test:
+
+```powershell
+$env:AZURE_COSMOS_CONNECTION_STRING = (Get-Content -LiteralPath '<local-connection-string-file>' -Raw).Trim()
+$env:AZURE_COSMOS_TEST_MODE = 'required'
+$env:AZURE_COSMOS_AUTH_MODE = 'key'
+$env:AZURE_COSMOS_ORDER_BY_LIVE_THROUGHPUT = '20000'
+cargo test -p azure_data_cosmos --all-features --test live binary_order_by::live_binary_order_by_matches_text_across_physical_ranges -- --ignored --exact --nocapture --test-threads=1
+```
+
+The explicit throughput environment variable is a provisioning guard. The test
+uses classic Gateway and separate text-enabled and binary-enabled clients,
+seeds identical documents, and verifies matching physical range boundaries with
+items in multiple ranges. Its reproducible seeded corpus includes nested,
+empty, reference-friendly string, Unicode, and numeric-boundary values.
+It compares driver and typed SDK results under
+`GatewayOnly` and `LocalPreferred` planning, including continuations,
+`TOP`, `OFFSET/LIMIT`, object/scalar/array/null projections, string sort keys,
+ties, and ordered DISTINCT with actual duplicate values. Every query runs with
+page-size hints of 1, 7, and 64. Resumable cases checkpoint up to three times,
+both on the existing client and on freshly constructed clients/runtimes.
+At most three query shapes run concurrently to bound execution time without
+reducing the matrix. Requested resume runs must exercise a checkpoint.
+Resumed results must match uninterrupted ordering on the same container,
+including tied keys. `LocalPreferred` can fall back to gateway planning.
+Binary driver
+output must contain original page-backed views; silently receiving text does
+not satisfy the test. Standalone materialization and view lifetimes are also
+checked. The expanded matrix has a 30-minute timeout; provisioned-throughput
+charges continue until cleanup completes.
+
+The framework deletes the test database on completion, error, or timeout.
+An externally terminated process can bypass cleanup: the test prints its owned
+`auto-test-...` database name so that only those temporary resources can be
+removed. This test does not force a live partition split or guarantee which
+compact binary markers the service emits.
+
 ### Saving Recordings
 
 Before opening a PR, if you've added any integration tests, or changed the HTTP interactions of existing tests, you must save the recordings.

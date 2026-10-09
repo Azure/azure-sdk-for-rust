@@ -103,6 +103,11 @@ completion backing; the handle is NULL when no diagnostics were attached.
 Bytes retain the driver's negotiated encoding and complete change envelopes
 (`current`, `previous`, metadata). Binary items are not produced by slicing an
 envelope and prepending a marker: references can address the original page.
+Contextual binary ORDER BY items are materialized once into independent buffers
+for the `items` array. The original response remains owned by `common`;
+page-aware hosts can borrow its full source pages and absolute item spans through
+`cosmos_completion_item_count` and `cosmos_completion_item_page`. Both forms
+remain valid until `cosmos_cursor_completion_free` releases the completion.
 
 ## 4. Feed and checkpoint semantics
 

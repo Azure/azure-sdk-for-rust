@@ -12,6 +12,8 @@
 
 ### Other Changes
 
+- Binary cross-partition `ORDER BY` results deserialize directly from their source pages, avoiding repeated document transcoding; raw item buffers remain independently decodable. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
+
 ## 1.0.0 (2026-10-08)
 
 ### Breaking Changes
