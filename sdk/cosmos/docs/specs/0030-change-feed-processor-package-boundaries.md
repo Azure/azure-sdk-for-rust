@@ -1,228 +1,192 @@
-<!-- cspell:ignore SHIM SHIMs checkpointing lockstep -->
+<!-- cspell:ignore checkpointing lockstep -->
 
 # Change Feed Processor Package Boundaries
 
 **Status:** Draft; package decision requested, not repository consensus
 **Date:** 2026-10-06
-**Updated:** 2026-10-06
+**Updated:** 2026-10-12
 **Authors:** Not specified
 
 ## Table of Contents
 
-- [1. Motivation and Decision Requested](#1-motivation-and-decision-requested)
-- [2. Package Dependencies](#2-package-dependencies)
-- [3. Ownership, Reuse, and Duplication](#3-ownership-reuse-and-duplication)
-- [4. Callback and Serialization Boundaries](#4-callback-and-serialization-boundaries)
-- [5. Alternatives and Compatibility Consequences](#5-alternatives-and-compatibility-consequences)
-- [6. Authentication for Feed and Lease Containers](#6-authentication-for-feed-and-lease-containers)
+- [1. Proposed Baseline](#1-proposed-baseline)
+- [2. Package Responsibilities](#2-package-responsibilities)
+- [3. Public Rust API Placement and Type Reuse](#3-public-rust-api-placement-and-type-reuse)
+- [4. Callback Completion and Checkpointing](#4-callback-completion-and-checkpointing)
+- [5. Prepared Feed Resources and Lease Stores](#5-prepared-feed-resources-and-lease-stores)
+- [6. Deployment and Release](#6-deployment-and-release)
+- [7. Remaining Boundary Decisions](#7-remaining-boundary-decisions)
 
-## 1. Motivation and Decision Requested
+## 1. Proposed Baseline
 
-The Change Feed Processor (CFP) needs an idiomatic Rust API and a shared
-coordination engine reusable by other language SDKs. Putting application typing
-inside that engine would couple reusable processing to Rust document models and
-serialization.
+Reuse `azure_data_cosmos_driver` for shared change-feed pull, lease, and
+checkpoint primitives, and `azure_data_cosmos_driver_native` as the existing
+Rust FFI wrapper. Each consuming SDK reads changes, invokes its application's
+callback, and coordinates checkpointing through these primitives.
 
-This proposal requests agreement on two library packages:
+Evaluate the public Rust API inside `azure_data_cosmos` first. This can reuse
+existing event types, prepared client state, request options, and diagnostics.
+A companion `azure_data_cosmos_change_feed_processor` remains an open
+distribution option, not a required new package.
 
-- **`azure_data_cosmos_change_feed_processor`**: public Rust API.
-- **`azure_data_cosmos_change_feed_processor_driver`**: schema-agnostic CFP
-  coordination engine.
+This replaces the earlier proposal for a separate
+`azure_data_cosmos_change_feed_processor_driver` and
+`azure_data_cosmos_change_feed_processor_native`. The draft baseline does not
+add a second driver or native artifact, or automatically put the complete CFP
+lifecycle in `azure_data_cosmos_driver`. New lease/checkpoint interfaces and
+their native bindings are proposed, not already available or approved.
 
-The engine builds on `azure_data_cosmos_driver`, not the typed
-`azure_data_cosmos` SDK. This extends the existing SDK/driver separation to CFP;
-it does not establish support or release approval.
+This document covers package responsibilities and compatibility. Detailed
+polling algorithms, scheduling, state machines, FFI protocols, and behavioral
+test plans are outside scope.
 
-This document requests agreement on packages, dependency direction, ownership,
-and distribution consequences, including the processing-completion boundary.
-It does not detail polling, lease algorithms, checkpoint state machines,
-scheduling, an FFI protocol, or implementation tests.
+## 2. Package Responsibilities
 
-## 2. Package Dependencies
+The diagram shows the in-SDK option to evaluate first; Rust API placement remains
+open. The shared cross-language baseline is independent of that choice.
 
 ```mermaid
 flowchart TB
     App["Rust application"]
-    API["azure_data_cosmos_<br/>change_feed_<br/>processor"]
-    Core["azure_data_cosmos_<br/>change_feed_<br/>processor_driver"]
-    DB["azure_data_cosmos_driver"]
-    Host["Other language SDK<br/>host-language SHIM"]
-    Native["azure_data_cosmos_<br/>change_feed_<br/>processor_native<br/>(future package)"]
-    App --> API
-    API -->|"processing"| Core
-    Core -->|"database execution"| DB
-    API -->|"configuration / codecs"| DB
+    SDK["azure_data_cosmos<br/>public Rust CFP API<br/>(proposed)"]
+    Host["Other language SDK<br/>application callback"]
+    Native["azure_data_cosmos_<br/>driver_native<br/>existing Rust FFI wrapper"]
+    Driver["azure_data_cosmos_driver<br/>shared pull / lease /<br/>checkpoint primitives"]
+    App --> SDK
+    SDK -->|"Rust calls"| Driver
     Host -->|"C ABI"| Native
-    Native -->|"processing"| Core
+    Native -->|"Rust calls"| Driver
 ```
 
-**The public Rust API also directly depends on `azure_data_cosmos_driver`** to
-set database request options, associate each feed/lease account with its
-credentials, and decode the driver's payload buffers into Rust change events
-using its JSON/binary JSON decoding facilities. It reuses these database
-capabilities directly instead of adding forwarding APIs to the shared CFP
-engine. Processing coordination still belongs to that engine; the public Rust
-API does not depend on `azure_data_cosmos`.
-
-`azure_data_cosmos_change_feed_processor_native` is the selected name for a future
-Rust FFI wrapper, not an approved third deliverable. It consumes the shared CFP
-engine rather than the public Rust API; its placement and distribution remain
-open. The existing `azure_data_cosmos_driver_native` wraps database execution,
-not CFP coordination. The CFP driver calls `azure_data_cosmos_driver` through
-Rust, not through `azure_data_cosmos_driver_native`.
-
-## 3. Ownership, Reuse, and Duplication
-
-Removing a dependency on `azure_data_cosmos` does not remove the capabilities
-implemented in `azure_data_cosmos_driver`. Duplication is primarily at the typed
-public Rust API, not in transport or database execution.
-
-| Surface | Package ownership and treatment |
+| Package or extension | Responsibility |
 | --- | --- |
-| Public Rust callback API | `azure_data_cosmos_change_feed_processor` deserializes the change feed response body, invokes the application's `handleChanges` callback, waits for it to finish, and reports success or failure to the shared CFP driver. |
-| Shared CFP engine | `azure_data_cosmos_change_feed_processor_driver` owns autonomous polling, bootstrap, lease authority, shared processing-acknowledgement handling, and checkpoint decisions. Rust and native bindings use the same completion operation. It does not invoke the application's typed callback or know the application's document type. |
-| Typed change events | For an equivalent SDK event contract, the public Rust API duplicates/adapts `ChangeFeedItem<T>`, `ChangeFeedMetadata`, `ChangeFeedOperationType`, and `LogicalSequenceNumber`, including their custom deserialization behavior. |
-| Change-feed-specific public options | The public Rust API provides equivalents/adapters for the relevant `ChangeFeedMode`, `ChangeFeedOptions`, and `FeedOptions` responsibilities, including start-position configuration. Do not copy unrelated options or the entire typed iterator implementation. |
-| SDK-only conveniences | Recreate only those the public Rust API promises: for example, `RoutingStrategy::ProximityTo` expansion, SDK binary-option environment/default resolution, and application-facing diagnostics adapters. These are not inherited merely by depending on `azure_data_cosmos_driver`. |
-| Database requests | `azure_data_cosmos_driver` sends change-feed reads and lease/checkpoint writes to Cosmos DB. It authenticates each request, selects the endpoint, and handles request retries and regional failover. CFP decides when to issue these operations; it does not duplicate request handling from `azure_data_cosmos_driver`. |
-| Wire encoding | Reuse `azure_data_cosmos_driver` binary JSON decoding, encoding, and transcoding facilities. Do not create another codec implementation in either CFP package. |
-| Rust FFI wrapper | The proposed `azure_data_cosmos_change_feed_processor_native` exposes a thin C-compatible binding that forwards batch handles and processing outcomes to the shared completion operation. Other language SDKs own application-type decoding and invocation of their application callbacks. |
+| Public Rust API in `azure_data_cosmos`, or an optional companion | Read batches, deserialize the change-feed response body, invoke and await `handleChanges`, then invoke and await the conditional checkpoint operation. Coordinate the processor's SDK-side lifecycle and surface failures. |
+| `azure_data_cosmos_driver` | Reuse feed/dataflow execution, request authentication, retries, routing, and metadata caches. Add shared lease/pull/checkpoint primitives that validate authority, associate progress with the owned work, and report persistence outcomes. |
+| `azure_data_cosmos_driver_native` | Expose C-compatible bindings to the same shared primitives. Other language SDKs retain application decoding, callback invocation, and host-runtime coordination. |
+| Prepared lease-store provider (proposed extension point) | Supply conditional lease ownership and checkpoint persistence. A built-in Cosmos implementation uses prepared Cosmos resources; another store supplies equivalent authority/persistence guarantees and its own authentication. |
 
-## 4. Callback and Serialization Boundaries
+The Rust FFI wrapper must not depend on Rust application types or the typed
+public SDK. Adding CFP inside `azure_data_cosmos` does not reverse the existing
+dependency from `azure_data_cosmos` to `azure_data_cosmos_driver`.
 
-### 4.1 Callback completion and checkpointing
+## 3. Public Rust API Placement and Type Reuse
 
-The consuming SDK owns application callback invocation. The shared CFP driver
-owns lease checkpointing. Under this proposed contract, they communicate
-through **explicit processing acknowledgements**, following the
-consumer-acknowledgement pattern without introducing a message broker.
+| Placement | Benefits | Costs and decisions |
+| --- | --- | --- |
+| Inside `azure_data_cosmos` (evaluate first) | Reuse `ChangeFeedItem<T>`, metadata, request options, decoder semantics, client state, and diagnostics without a new public package boundary. | CFP follows the SDK's release and compatibility contract. Decide its opt-in footprint and public surface. |
+| Companion `azure_data_cosmos_change_feed_processor` (open) | Separate release cadence and explicit opt-in dependency. It may reuse SDK types through a dependency on `azure_data_cosmos`. | Private client state is not directly accessible across crates. Define supported resource access and compatible SDK/driver versions; exposed SDK types couple public compatibility. |
 
-The driver supplies a raw batch with an opaque batch handle. The SDK
-deserializes the changes, invokes the application's `handleChanges` callback,
-and waits for the callback's actual work to finish. It then reports success or
-failure for that handle. The application still only provides a callback; its
-SDK reports the outcome automatically.
+Prefer reusing current event models and decoder semantics rather than selecting
+duplicate public models by default. A companion's dependency on
+`azure_data_cosmos` for type reuse is technically valid and does not place typed
+decoding in the shared driver or native path. Moving genuinely shared types to
+`azure_data_cosmos_driver` and re-exporting them is a possible compatibility
+design, not a completed migration; changed API shapes may need wrappers.
+
+Ordinary Cargo diamond dependencies are supported. Repeated paths to the same
+resolved package do not inherently duplicate Rust types, clients, or runtime
+instances. Different resolved versions or sources can produce distinct type
+identities. Exposing SDK-owned types makes their compatibility part of the
+companion's public API and constrains upgrades. Cargo has no "types-only
+dependency": `default-features = false` does not make the SDK a models-only
+package, and other dependency paths may enable features.
+
+If duplication is necessary, it carries decoder-maintenance costs and distinct
+Rust type identities; it is not a guarantee of independent versioning.
+`serde` and `serde_json` already serve the Rust layers. This proposal does not
+ban them or require replacing Rust application serialization.
+
+Raw driver payloads remain application-schema-agnostic, not necessarily text
+JSON or byte-for-byte untouched. Each consuming SDK owns application typing;
+`azure_data_cosmos_driver` may decode wire formats and process service
+envelopes. SDK-side binary decoding and direct-buffer deserialization require
+performance evidence and safe lifetimes before adoption. This draft neither
+promises zero-copy nor makes the internal binary codec a new public API.
+
+## 4. Callback Completion and Checkpointing
+
+The outer SDK owns the processing sequence; shared lease/store primitives
+enforce authority and persistence. For the initial per-batch policy:
 
 ```text
-CFP driver -> batch + handle -> SDK -> await handleChanges
-CFP driver <- handle + processing result <--------------- SDK
-
-Valid success -> conditional checkpoint
-Failure or no result -> no checkpoint
+SDK reads batch using an owned lease
+    -> deserialize and await handleChanges
+    -> if successful and still authorized, invoke conditional checkpoint
+    -> await confirmed persistence
+    -> only then read/deliver the next batch for that lease
 ```
 
-### 4.2 Why `azure_data_cosmos` is not the shared baseline
+`azure_data_cosmos_driver` supplies the shared primitives through Rust
+interfaces; other SDKs access them through `azure_data_cosmos_driver_native`.
+No separate processing-success acknowledgement followed by an independently
+controlled checkpoint protocol is selected. No extra process, message broker,
+or speculative FFI batch-handle protocol is required.
 
-`azure_data_cosmos` exposes typed
-APIs such as `ContainerClient::query_change_feed<T>`. A host-language SHIM is the
-Java/.NET/Go/Python adapter that receives native payloads and invokes its
-language's API and serializers. Raw application payloads must reach that SHIM
-without first materializing them into Rust application models.
+Lease renewal remains independent of a slow callback. Callback failure does
+not authorize checkpoint progress. A successful callback followed by an
+ambiguous checkpoint result requires persistence reconciliation, not treating
+the callback as failed. This is at-least-once, lockstep coordination, not a
+transaction with arbitrary application effects: a crash after those effects
+but before checkpoint confirmation can cause replay.
 
-Wrapping a typed Rust API with FFI is technically possible, but is rejected as
-this baseline: it would introduce a Rust representation and conversion or
-serialization step before host-language decoding. Choosing a generic Rust JSON
-value does not remove that coupling. Use `ResponseBody` from `azure_data_cosmos_driver`
-buffers and metadata instead.
+Less-frequent checkpoints are an extension to explore: they reduce lease writes
+but increase replay and change the per-batch guarantee above. No checkpoint
+interval or lease-renewal default is selected. Application code currently owns
+dead-letter handling; native dead-letter support remains open pending demand.
 
-**Raw means application-schema-agnostic, not text-only or byte-for-byte
-untouched.** `azure_data_cosmos_driver` can perform wire decoding, schema-independent
-envelope processing, and binary/text conversion. Each consuming Rust API/SHIM
-owns application typing and receives the declared payload shape and encoding,
-including supported change metadata and previous images.
+## 5. Prepared Feed Resources and Lease Stores
 
-## 5. Alternatives and Compatibility Consequences
-
-| Alternative | Package tradeoff |
-| --- | --- |
-| Add CFP to `azure_data_cosmos`, or have the shared CFP engine depend on it. | Couples processor delivery to the typed SDK and places Rust document decoding below the native boundary. Rejected as the shared baseline. |
-| Depend on `azure_data_cosmos` only from the public Rust CFP API to reuse event types. | Technically valid without affecting the shared engine or native path, but couples CFP's public types and releases to the primary SDK. Not selected for this draft. |
-| One standalone CFP package. | Fewer artifacts, but combines the typed Rust API with reusable coordination and couples their public compatibility surfaces. |
-| Two packages over `azure_data_cosmos_driver` (proposed). | Separates typing from coordination and reuses database capabilities; requires adapters and explicit compatible dependency ranges. |
-| Route all public Rust API configuration/codec access through the shared CFP engine. | Hides the direct dependency but adds forwarding APIs unrelated to coordination. The proposal instead retains the direct dependency on `azure_data_cosmos_driver`. |
-
-An internal dependency does not require re-exporting its public types. Exposing
-a driver option, error, or model in the public Rust API makes that type and
-its dependency version part of that API's compatibility contract. Use explicit
-adapters by default; any intentional shared public types need a documented
-compatibility decision. Package separation alone does not guarantee independent
-versioning or compatibility with every version of `azure_data_cosmos` or
-`azure_data_cosmos_driver`.
-
-The public Rust API is intended to provide a publishable Cargo source package. Publishing
-it to crates.io requires compatible versions of
-`azure_data_cosmos_change_feed_processor_driver` and `azure_data_cosmos_driver`
-to be available there. A local path dependency is not a distribution substitute. Publication
-and release ordering therefore cannot be decided independently, even if support
-policies and version cadence differ. A future native package has a separate
-platform-library/header and ABI distribution contract.
-
-### 5.1 Why not reuse the typed SDK's types in the public Rust API?
-
-Depending on `azure_data_cosmos` solely from
-`azure_data_cosmos_change_feed_processor` could reuse SDK event types and their
-deserialization behavior without adding that dependency to the shared CFP
-engine or native consumption path. This is a technically valid alternative,
-distinct from making the shared engine depend on the typed SDK; FFI does not
-make public-Rust-API-only type reuse impossible.
-
-The author-selected direction for this draft instead uses explicit CFP-owned
-public models to reduce coupling to the primary SDK's public API and release
-lifecycle. Exposing SDK-owned types would make their compatibility part of CFP's
-public API contract. Applications and CFP could resolve different SDK versions
-or sources, yielding distinct Rust type identities and interoperability problems.
-Ordinary diamond dependencies are supported by Cargo: repeated paths to the
-same resolved package do not inherently duplicate types, clients, or runtime
-instances. The concern is deliberate compatibility coupling, not an intrinsically
-unsafe dependency diamond.
-
-Cargo has no special "types-only dependency": using only model APIs still brings
-the package's enabled dependency graph. `default-features = false` does not
-turn `azure_data_cosmos` into a models-only package, and other dependency paths
-may enable additional features.
-
-The cost is maintaining the relevant event types and decoder semantics
-identified in the duplication table in section 3. CFP-owned models have distinct
-Rust type identities and are not automatically interchangeable with SDK types.
-This duplication is a maintenance tradeoff, not a free solution or a guarantee
-of complete versioning independence. It is neither repository approval nor a
-universal rule for Rust libraries.
-
-## 6. Authentication for Feed and Lease Containers
-
-The application supplies an account endpoint, database name, container name,
-and credential for each container. The feed and lease containers may belong to
-different accounts and use different credentials.
-
-| Container | Required access |
-| --- | --- |
-| Feed container | Read changes and the metadata needed to access the change feed. |
-| Lease container | Read and write lease documents, including checkpoints. |
-
-The public Rust API uses `azure_data_cosmos_driver` to create a driver with the
-supplied account endpoint and credential, then resolve the container by its
-database and container names. `azure_data_cosmos_change_feed_processor_driver`
-uses these drivers and resolved containers for change-feed reads and lease
-writes. If both containers use the same account, credential, and compatible
-request settings, they can share one driver instance. No dependency on
-`azure_data_cosmos` is required.
+Account, credential, and container preparation happens **before CFP
+construction**, using the application's existing clients. The proposed CFP
+inputs are a prepared, credential-bound feed resource and a prepared lease-store
+provider, not endpoints and credentials for a CFP builder to authenticate.
 
 ```text
-Application
-    │ supplies feed and lease endpoints, credentials, and container names
-    ▼
-azure_data_cosmos_change_feed_processor
-    │ uses azure_data_cosmos_driver to prepare:
-    │
-    ├─ Feed:  driver + resolved feed container ──┐
-    │                                          │
-    └─ Lease: driver + resolved lease container ┤
-                                               ▼
-                    azure_data_cosmos_change_feed_processor_driver
-                        ├─ Feed pair  → read changes
-                        └─ Lease pair → read/write leases and checkpoints
+Application prepares clients/resources with their credentials
+    -> prepared feed resource ------------------+
+    -> prepared lease-store provider -----------+-> public CFP API
+                                                    -> reuse existing primitives
 ```
 
-The public Rust API passes both pairs to
-`azure_data_cosmos_change_feed_processor_driver` during construction. This is
-a proposed construction boundary, not an existing CFP constructor signature.
+Feed and Cosmos lease resources may use the same or different accounts and
+identities. Reuse each resource's correct credential-bound context and existing
+credential provider/refresh; do not substitute credentials merely because
+endpoints match. A non-Cosmos lease store owns its own authentication.
+Preparation is not perpetual authorization, and successful metadata resolution
+does not prove permission for every later lease write.
+
+In the current SDK, `ContainerClient`'s resource/context fields are private;
+`ClientContext` and its driver handle are crate-internal. An in-SDK CFP can
+integrate with that state inside `azure_data_cosmos`. A companion must use
+supported public APIs or a deliberately designed bridge; this proposal does
+not invent an existing driver-extraction API or require exposing private state.
+Retained client/runtime lifetimes and shutdown responsibilities must be defined
+without shutting down resources the application still uses.
+
+## 6. Deployment and Release
+
+One existing `azure_data_cosmos_driver` implementation and
+`azure_data_cosmos_driver_native` library can serve multiple configured
+client/resource instances, normally within the application process. Separate
+crates do not create process isolation, contain panics, or provide high
+availability. Availability requires coordination between workers, not another
+package or native binary.
+
+An in-SDK API follows the `azure_data_cosmos` release lifecycle; a companion
+allows its own cadence but must specify compatible public SDK/driver versions
+and publishable dependencies. Compare opt-in footprint rather than assuming
+either placement is cheaper. Existing native library/header distribution and
+ABI compatibility must cover any added primitives. No release approval, new
+service, binary, or native artifact is implied.
+
+## 7. Remaining Boundary Decisions
+
+These are bounded follow-up decisions, not a complete operational specification.
+
+| Concern | Boundary to settle |
+| --- | --- |
+| API placement and resource lifetime | In-SDK versus companion; public resource access, caller-owned client/runtime lifetime, and shutdown that leaves shared resources usable. |
+| Completion and capacity | Distinguish callback failure from ambiguous checkpoint persistence; bound concurrent callbacks, outstanding batches, and buffered memory while preserving independent renewal. |
+| Lease compatibility and identity | Lease-document/continuation compatibility across rolling upgrades and rollback; stable workload identity across routing changes and correct source/mode association. |
+| Custom lease stores | Explore a provider contract with atomic conditional ownership/checkpoint and fencing semantics, not CRUD alone; do not imply all backends ship initially. |
+| Diagnostics and supported scope | Surface feed, callback, lease, checkpoint, and shutdown errors through existing diagnostics; define supported modes, starts, and topology transitions without exposing credentials or document contents. |
