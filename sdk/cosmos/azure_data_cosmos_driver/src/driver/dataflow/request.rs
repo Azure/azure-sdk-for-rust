@@ -3,12 +3,13 @@
 
 //! Request leaf node for the dataflow pipeline.
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use async_trait::async_trait;
 
 use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey};
 
+use super::recovery_diagnostics::RecoveryDiagnostics;
 use super::{
     PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode, PipelineNodeState,
     ResolvedRange,
@@ -161,7 +162,6 @@ pub(crate) struct Request {
     operation: Arc<CosmosOperation>,
     target: RequestTarget,
     state: RequestState,
-    prior_diagnostics: Vec<Arc<crate::diagnostics::DiagnosticsContext>>,
 }
 
 impl Request {
@@ -182,7 +182,6 @@ impl Request {
             operation,
             target,
             state: initial_state,
-            prior_diagnostics: Vec::new(),
         }
     }
 
@@ -238,20 +237,7 @@ impl PipelineNode for Request {
                 self.handle_partition_topology_change(context, error, continuation)
                     .await
             }
-            Err(error) => {
-                let mut sources = std::mem::take(&mut self.prior_diagnostics);
-                if sources.is_empty() {
-                    return Err(error);
-                }
-                sources.extend(error.diagnostics());
-                let mut builder = crate::CosmosErrorBuilder::from_error(error);
-                if let Some(diagnostics) =
-                    crate::DiagnosticsContext::aggregate_sub_operations(&sources)
-                {
-                    builder = builder.with_diagnostics(Arc::new(diagnostics));
-                }
-                Err(builder.build())
-            }
+            Err(error) => Err(error),
         }
     }
 
@@ -339,8 +325,6 @@ impl Request {
     }
 
     fn handle_response(&mut self, response: CosmosResponse) -> PageResult {
-        let response = response
-            .with_aggregated_prior_diagnostics(&std::mem::take(&mut self.prior_diagnostics));
         if self.operation.is_change_feed() {
             return self.handle_change_feed_response(response);
         }
@@ -405,17 +389,8 @@ impl Request {
         error: crate::error::CosmosError,
         continuation: Option<String>,
     ) -> crate::error::Result<PageResult> {
-        // Capture the failed attempt's diagnostics before consuming the
-        // error. The per-operation pipeline that produced this error
-        // owns its own `DiagnosticsContext`; the dataflow retry below
-        // will spin up another full pipeline invocation with a fresh
-        // context. Without splicing the prior context onto the
-        // retry's response, callers reading
-        // `response.diagnostics().request_count()` would only see the
-        // final successful attempt — violating the
-        // "one operation = one `DiagnosticsContext` capturing every
-        // attempt" contract. Always capture, regardless of branch, so
-        // the splice happens uniformly on every successful retry path.
+        // Each pipeline invocation owns fresh diagnostics; retain the failed
+        // invocation until its recovery produces a page or terminal error.
         let prior_diagnostics = error.diagnostics();
         match &self.target {
             RequestTarget::NonPartitioned => {
@@ -434,7 +409,9 @@ impl Request {
                     PartitionRoutingRefresh::ForceRefresh,
                 )
                 .await;
-                context
+                let mut recovery = RecoveryDiagnostics::default();
+                recovery.absorb(prior_diagnostics);
+                let response = context
                     .execute_request(
                         &self.operation,
                         self.target.clone(),
@@ -442,36 +419,8 @@ impl Request {
                         continuation,
                     )
                     .await
-                    .map_err(|error| {
-                        let mut sources = std::mem::take(&mut self.prior_diagnostics);
-                        sources.extend(prior_diagnostics.clone());
-                        sources.extend(error.diagnostics());
-                        let mut builder = crate::CosmosErrorBuilder::from_error(error);
-                        if let Some(diagnostics) =
-                            crate::DiagnosticsContext::aggregate_sub_operations(&sources)
-                        {
-                            builder = builder.with_diagnostics(Arc::new(diagnostics));
-                        }
-                        builder.build()
-                    })
-                    .map(|response| {
-                        tracing::trace!(
-                            target = ?self.target,
-                            status = ?response.status(),
-                            "retry after logical partition key topology change succeeded"
-                        );
-                        // Splice the prior failed attempt's diagnostics
-                        // onto the retry's diagnostics so the surfaced
-                        // `CosmosResponse` reflects every attempt the
-                        // operation made (see `prior_diagnostics`
-                        // capture above for rationale).
-                        let response = if let Some(prior) = prior_diagnostics {
-                            response.with_aggregated_prior_diagnostics(&[prior])
-                        } else {
-                            response
-                        };
-                        self.handle_response(response)
-                    })
+                    .map_err(|error| recovery.attach_error(error))?;
+                Ok(self.handle_response(recovery.attach_response(response)))
             }
             RequestTarget::EffectivePartitionKeyRange { .. } => {
                 let range = self
@@ -479,20 +428,14 @@ impl Request {
                     .owned_range()
                     .expect("effective partition key range target must have an owned range")
                     .clone();
-                let result = self
-                    .split_for_topology_change(context, &range, prior_diagnostics.clone())
-                    .await;
-                result.map_err(|error| {
-                    let mut sources = std::mem::take(&mut self.prior_diagnostics);
-                    sources.extend(prior_diagnostics);
-                    sources.extend(error.diagnostics());
-                    let mut builder = crate::CosmosErrorBuilder::from_error(error);
-                    if let Some(diagnostics) =
-                        crate::DiagnosticsContext::aggregate_sub_operations(&sources)
-                    {
-                        builder = builder.with_diagnostics(Arc::new(diagnostics));
-                    }
-                    builder.build()
+                let mut recovery = RecoveryDiagnostics::default();
+                recovery.absorb(prior_diagnostics);
+                let replacements = self
+                    .split_for_topology_change(context, &range, &mut recovery)
+                    .await
+                    .map_err(|error| recovery.attach_error(error))?;
+                Ok(PageResult::SplitRequired {
+                    replacements: replacements.with_diagnostics(recovery.take()),
                 })
             }
         }
@@ -504,11 +447,46 @@ impl Request {
         &self,
         context: &mut PipelineContext<'_>,
         range: &FeedRange,
-        prior: Option<Arc<crate::diagnostics::DiagnosticsContext>>,
-    ) -> crate::error::Result<PageResult> {
-        let resolved = context
+        recovery: &mut RecoveryDiagnostics,
+    ) -> crate::error::Result<super::SplitReplacements> {
+        let started = Instant::now();
+        let result = context
             .resolve_ranges(range, PartitionRoutingRefresh::ForceRefresh)
-            .await?;
+            .await;
+        let duration = started.elapsed();
+        if let Some(prior) = recovery.take() {
+            let RequestTarget::EffectivePartitionKeyRange {
+                partition_key_range_id,
+                ..
+            } = &self.target
+            else {
+                unreachable!("only EPK targets require replacement");
+            };
+            let ranges = result.as_ref().map(Vec::as_slice).unwrap_or(&[]);
+            recovery.absorb(Some(Arc::new(
+                prior.with_topology_recovery(
+                    partition_key_range_id,
+                    range,
+                    duration,
+                    result
+                        .as_ref()
+                        .err()
+                        .and_then(|error| error.diagnostics())
+                        .map_or(std::time::Duration::ZERO, |diagnostics| {
+                            diagnostics.duration()
+                        }),
+                    result.as_ref().err().map(|error| error.status()),
+                    ranges.iter().map(|resolved| {
+                        (
+                            resolved.partition_key_range_id.clone(),
+                            resolved.range.min_inclusive().to_hex(),
+                            resolved.range.max_exclusive().to_hex(),
+                        )
+                    }),
+                ),
+            )));
+        }
+        let resolved = result?;
 
         let continuation = match &self.state {
             RequestState::Continuing { continuation } => Some(continuation.clone()),
@@ -517,8 +495,7 @@ impl Request {
 
         let replacement_nodes: Vec<Box<dyn PipelineNode>> = resolved
             .into_iter()
-            .enumerate()
-            .map(|(index, resolved_range)| {
+            .map(|resolved_range| {
                 let ResolvedRange {
                     partition_key_range_id,
                     parents,
@@ -544,26 +521,15 @@ impl Request {
                     resolved_range,
                 );
 
-                let mut request = Request::new(
+                Ok(Box::new(Request::new(
                     self.operation.clone(),
                     target,
                     continuation.clone(),
-                );
-                // Attribute failed split attempts once, not once per child.
-                if index == 0 {
-                    request.prior_diagnostics = self.prior_diagnostics.clone();
-                    request.prior_diagnostics.extend(prior.clone());
-                }
-                Ok(Box::new(request) as Box<dyn PipelineNode>)
+                )) as Box<dyn PipelineNode>)
             })
             .collect::<crate::error::Result<Vec<_>>>()?;
 
-        let mut rejection_diagnostics = self.prior_diagnostics.clone();
-        rejection_diagnostics.extend(prior);
-        Ok(PageResult::SplitRequired {
-            replacements: super::node::SplitReplacements::try_tiling(range, replacement_nodes)?
-                .with_rejection_diagnostics(rejection_diagnostics),
-        })
+        super::node::SplitReplacements::try_tiling(range, replacement_nodes)
     }
 }
 
@@ -680,7 +646,7 @@ mod tests {
     }
 
     fn logical_partition_operation() -> CosmosOperation {
-        let account = crate::models::AccountReference::with_master_key(
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );

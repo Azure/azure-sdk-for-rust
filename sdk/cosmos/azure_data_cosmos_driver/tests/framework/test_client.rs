@@ -6,7 +6,7 @@
 use azure_core::http::StatusCode;
 #[cfg(feature = "fault_injection")]
 use azure_data_cosmos_driver::fault_injection::FaultInjectionRule;
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use azure_data_cosmos_driver::options::PatchStrategy;
 #[cfg(feature = "__internal_testing")]
 use azure_data_cosmos_driver::CosmosDriver;
@@ -151,7 +151,7 @@ pub fn resolve_test_env() -> Result<Option<TestEnv>, Box<dyn Error>> {
     let conn_str: ConnectionString = connection_string.parse()?;
     let endpoint = conn_str.account_endpoint().parse()?;
     let key = conn_str.account_key().secret().to_string();
-    let account = AccountReference::with_master_key(endpoint, key);
+    let account = AccountReference::with_account_key(endpoint, key);
 
     let mut connection_pool_builder = ConnectionPoolOptions::builder();
     if connection_string.eq_ignore_ascii_case(EMULATOR_CONNECTION_STRING) {
@@ -221,7 +221,7 @@ fn resolve_gateway_v2_env(test_mode: CosmosTestMode) -> Result<Option<TestEnv>, 
                     )
                     .into()
                 })?;
-            let account = AccountReference::with_master_key(endpoint, key);
+            let account = AccountReference::with_account_key(endpoint, key);
             let connection_pool = ConnectionPoolOptions::builder().build()?;
             Ok(Some(TestEnv {
                 account,
@@ -1082,7 +1082,7 @@ impl DriverTestRunContext {
     ///
     /// If `max_attempts` is `None`, the handler uses
     /// `DEFAULT_PATCH_MAX_ATTEMPTS` (5).
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     pub async fn patch_item(
         &self,
         container: &ContainerReference,

@@ -36,7 +36,7 @@ use crate::{
     },
     options::{
         resolve_effective_consistency, HedgeThreshold, OperationOptions, OperationOptionsView,
-        ReadConsistencyStrategy, Region, ResolvedThroughputControl,
+        PartitionTopologyCacheMode, ReadConsistencyStrategy, Region, ResolvedThroughputControl,
     },
 };
 
@@ -102,7 +102,7 @@ fn container_recreation_refresh_eligible(
         return false;
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     if operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch {
         return false;
     }
@@ -180,6 +180,31 @@ fn resolve_session_token_for_attempt(
         Some(partition_key_range_id),
         overrides.effective_partition_key_range_parents(partition_key_range_id),
     )
+}
+
+fn preserve_logical_session_routing(
+    routing: &mut RoutingDecision,
+    operation: &CosmosOperation,
+    overrides: &OperationOverrides,
+    partition_key_range_id: Option<&PartitionKeyRangeId>,
+    session_manager: &SessionManager,
+    session_resolution_active: bool,
+    lazy_topology: bool,
+) {
+    if lazy_topology
+        && session_resolution_active
+        && overrides.logical_partition_key_target
+        && partition_key_range_id.is_none()
+        && operation.request_headers().session_token.is_none()
+        && session_manager.has_session_token(operation)
+        && matches!(routing.transport_mode, TransportMode::GatewayV2)
+    {
+        // Routing can adopt Gateway 2.0 after cache-only planning. Classic
+        // gateway preserves the composite session until physical identity is known.
+        routing.transport_mode = TransportMode::Gateway;
+        routing.selected_url = routing.endpoint.url().clone();
+        routing.endpoint_key = routing.endpoint.endpoint_key();
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -552,6 +577,11 @@ pub(crate) async fn execute_operation_pipeline(
         )
         && operation_read_consistency_strategy.is_session_effective(account_default_consistency);
     let session_token_capture_active = !session_capturing_disabled;
+    let lazy_topology = driver
+        .options()
+        .partition_failover_options()
+        .partition_topology_cache_mode()
+        == PartitionTopologyCacheMode::Lazy;
 
     // Rule 4 (RCS validation): GlobalStrong is
     // valid only on reads against accounts whose default consistency is Strong.
@@ -659,7 +689,7 @@ pub(crate) async fn execute_operation_pipeline(
         // A pinned attempt (e.g. PartitionKeyRange pages 2..N after a first-page
         // hedge win) bypasses normal region selection and routes straight to the
         // pinned region so the change-feed continuation stays region-consistent.
-        let routing = match overrides.pinned_endpoint() {
+        let mut routing = match overrides.pinned_endpoint() {
             Some(pinned) => {
                 routing_decision_for_pinned_endpoint(pinned, pipeline_type.is_data_plane())
             }
@@ -689,6 +719,15 @@ pub(crate) async fn execute_operation_pipeline(
             )
             && attempt_read_consistency_strategy.is_session_effective(account_default_consistency);
         let attempt_session_token_capture_active = session_token_capture_active;
+        preserve_logical_session_routing(
+            &mut routing,
+            operation,
+            &overrides,
+            retry_state.partition_key_range_id.as_ref(),
+            session_manager,
+            attempt_session_token_resolution_active,
+            lazy_topology,
+        );
 
         // Emit one structured debug record per attempt with the chosen
         // routing decision. Tests and SREs filter on this to verify which
@@ -1242,7 +1281,7 @@ pub(crate) async fn execute_operation_pipeline(
                 );
                 diagnostics = enforce_deadline_or_timeout(deadline, options, diagnostics)?;
             }
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             OperationAction::DtxRetry { new_state, delay } => {
                 tracing::debug!(
                     activity_id = %activity_id,
@@ -1332,13 +1371,22 @@ pub(crate) async fn execute_operation_pipeline(
                 // triggered the upgrade — racing it again as the hedge's
                 // primary would double-pay RU on a known-bad region.
                 let location = location_state_store.snapshot();
-                let primary_routing = resolve_endpoint(
+                let mut primary_routing = resolve_endpoint(
                     operation,
                     &retry_state,
                     &location,
                     pipeline_type.is_data_plane(),
                     account_name.is_some(),
                     endpoint_unavailability_ttl,
+                );
+                preserve_logical_session_routing(
+                    &mut primary_routing,
+                    operation,
+                    &overrides,
+                    retry_state.partition_key_range_id.as_ref(),
+                    session_manager,
+                    session_token_resolution_active,
+                    lazy_topology,
                 );
                 // Re-evaluate hedge eligibility against the *post-advance*
                 // primary. After `advance_to_next_attempt` rotates the
@@ -1981,12 +2029,12 @@ fn resolve_endpoint(
 }
 
 fn is_distributed_transaction_operation(operation: &CosmosOperation) -> bool {
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     {
         operation.resource_type() == crate::models::ResourceType::DistributedTransactionBatch
     }
 
-    #[cfg(not(feature = "preview_dtx"))]
+    #[cfg(not(feature = "unstable_dtx"))]
     {
         let _ = operation;
         false
@@ -2484,7 +2532,7 @@ fn build_transport_request_with_fault_injection(
         read_consistency_strategy: ctx.read_consistency_strategy,
         url,
         headers,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         resource_type,
         body: operation.body().map(azure_core::Bytes::copy_from_slice),
         auth_context,
@@ -4504,7 +4552,7 @@ async fn execute_hedged(
     }
 }
 
-fn read_consistency_strategy_for_operation(
+pub(crate) fn read_consistency_strategy_for_operation(
     operation: &CosmosOperation,
     read_consistency_strategy: ReadConsistencyStrategy,
 ) -> ReadConsistencyStrategy {
@@ -4515,7 +4563,7 @@ fn read_consistency_strategy_for_operation(
     }
 }
 
-fn operation_allows_automatic_session_token_resolution(
+pub(crate) fn operation_allows_automatic_session_token_resolution(
     operation: &CosmosOperation,
     multiple_write_locations_enabled: bool,
 ) -> bool {
@@ -4867,7 +4915,7 @@ mod tests {
     };
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
@@ -5985,9 +6033,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -6621,7 +6669,7 @@ mod tests {
         assert_eq!(patch_routing.routing_fallback, None);
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn resolve_endpoint_uses_account_write_region_order_for_read_dtx() {
         let operation = CosmosOperation::distributed_transaction(
@@ -6670,7 +6718,7 @@ mod tests {
         assert_eq!(routing.endpoint, account_write_endpoint);
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn resolve_endpoint_uses_account_write_region_order_for_write_dtx() {
         let operation = CosmosOperation::distributed_transaction(
@@ -6756,9 +6804,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -6825,9 +6873,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -6906,9 +6954,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -7021,9 +7069,9 @@ mod tests {
             max_session_retries: 3,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_backend_failover_retries:
                 crate::driver::pipeline::components::MAX_BACKEND_FAILOVER_RETRIES,
@@ -7865,9 +7913,9 @@ mod tests {
             retry_with_state: None,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -7933,9 +7981,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -8004,9 +8052,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -8088,9 +8136,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -8183,9 +8231,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 3,
             max_backend_failover_retries: 120,
@@ -11576,9 +11624,9 @@ mod tests {
             session_token_retry_count: 0,
             backend_failover_retry_count: 0,
             backend_failover_cumulative_delay: Duration::ZERO,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_coordinator_retry_count: 0,
-            #[cfg(feature = "preview_dtx")]
+            #[cfg(feature = "unstable_dtx")]
             dtx_infra_retry_count: 0,
             max_failover_retries: 10,
             max_backend_failover_retries: 120,

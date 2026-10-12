@@ -476,7 +476,7 @@ async fn fault_injection_429_honors_configurable_throttle_retry_count() {
         .unwrap(),
     );
 
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         azure_core::http::Url::parse(GATEWAY_URL).unwrap(),
         "ZW11bGF0b3Ita2V5",
     );

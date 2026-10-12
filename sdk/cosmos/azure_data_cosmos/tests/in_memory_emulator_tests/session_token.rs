@@ -206,7 +206,7 @@ impl Harness {
         );
 
         let runtime = emulator.runtime_builder().build().await.unwrap();
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse(EMULATOR_GATEWAY_URL).unwrap(),
             EMULATOR_KEY,
         );

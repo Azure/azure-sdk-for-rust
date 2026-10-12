@@ -28,7 +28,7 @@ use azure_data_cosmos_driver::options::{
     DiagnosticsVerbosity, DriverOptions, EndToEndOperationLatencyPolicy, ExcludedRegions,
     OperationOptions, OperationOptionsBuilder, PlanOptions, Region,
 };
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use azure_data_cosmos_driver::{
     models::{PatchInstructions, PatchOperation, PatchTrackingId},
     options::PatchStrategy,
@@ -148,7 +148,7 @@ async fn build_driver_with_faults(
         .expect("runtime builds against the in-memory emulator");
 
     let account =
-        AccountReference::with_master_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+        AccountReference::with_account_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5");
 
     let driver_options = DriverOptions::builder(account.clone())
         .with_preferred_regions(vec![Region::EAST_US, Region::WEST_US])
@@ -1025,7 +1025,7 @@ async fn faulted_feed_page_reports_wrapped_status_and_original_attempts() {
 }
 
 #[tokio::test(start_paused = true)]
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 async fn faulted_patch_helpers_preserve_tracking_and_logical_diagnostics() {
     for (op, fault, original, wrapped) in [
         (

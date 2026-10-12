@@ -77,11 +77,7 @@ impl std::fmt::Debug for PageResult {
 /// The payload is a private enum so the only ways to obtain a value crate-wide
 /// are [`Self::try_tiling`] and the test-only [`Self::untiled`]; the invariant
 /// cannot be bypassed by constructing or mutating a variant directly.
-pub(crate) struct SplitReplacements {
-    nodes: Repr,
-    // Only used if the parent rejects replacements; accepted nodes already carry these attempts.
-    rejection_diagnostics: Vec<Arc<DiagnosticsContext>>,
-}
+pub(crate) struct SplitReplacements(Repr, Option<Arc<DiagnosticsContext>>);
 
 enum Repr {
     /// Validated by [`SplitReplacements::try_tiling`], stored in ascending
@@ -112,48 +108,27 @@ impl SplitReplacements {
         }
         ranged.sort_by(|a, b| a.0.min_inclusive().cmp(b.0.min_inclusive()));
         validate_exact_coverage(scope, ranged.iter().map(|(range, _)| range))?;
-        Ok(Self {
-            nodes: Repr::Tiled(ranged),
-            rejection_diagnostics: Vec::new(),
-        })
+        Ok(Self(Repr::Tiled(ranged), None))
     }
 
     /// Test-only escape hatch for mock nodes that carry no feed range and so
     /// have no tiling invariant to uphold.
     #[cfg(test)]
     pub(crate) fn untiled(nodes: Vec<Box<dyn PipelineNode>>) -> Self {
-        Self {
-            nodes: Repr::Untiled(nodes),
-            rejection_diagnostics: Vec::new(),
-        }
+        Self(Repr::Untiled(nodes), None)
     }
 
-    pub(crate) fn with_rejection_diagnostics(
-        mut self,
-        diagnostics: Vec<Arc<DiagnosticsContext>>,
-    ) -> Self {
-        self.rejection_diagnostics = diagnostics;
+    pub(super) fn with_diagnostics(mut self, diagnostics: Option<Arc<DiagnosticsContext>>) -> Self {
+        self.1 = diagnostics;
         self
     }
 
-    /// Rejects replacements without discarding the attempts they would have carried.
-    pub(crate) fn into_error(mut self, error: crate::CosmosError) -> crate::CosmosError {
-        if self.rejection_diagnostics.is_empty() {
-            return error;
-        }
-        self.rejection_diagnostics.extend(error.diagnostics());
-        let status = error.status();
-        let mut builder = crate::CosmosErrorBuilder::from_error(error);
-        if let Some(diagnostics) =
-            DiagnosticsContext::aggregate_sub_operations(&self.rejection_diagnostics)
-        {
-            builder = builder.with_diagnostics(Arc::new(diagnostics.with_operation_status(status)));
-        }
-        builder.build()
+    pub(super) fn take_diagnostics(&mut self) -> Option<Arc<DiagnosticsContext>> {
+        self.1.take()
     }
 
     pub(crate) fn len(&self) -> usize {
-        match &self.nodes {
+        match &self.0 {
             Repr::Tiled(ranged) => ranged.len(),
             #[cfg(test)]
             Repr::Untiled(nodes) => nodes.len(),
@@ -162,7 +137,7 @@ impl SplitReplacements {
 
     /// Consumes the set, yielding nodes in ascending range order.
     pub(crate) fn into_nodes(self) -> Vec<Box<dyn PipelineNode>> {
-        match self.nodes {
+        match self.0 {
             Repr::Tiled(ranged) => ranged.into_iter().map(|(_, node)| node).collect(),
             #[cfg(test)]
             Repr::Untiled(nodes) => nodes,
@@ -175,7 +150,7 @@ impl SplitReplacements {
     pub(crate) fn into_ranged(
         self,
     ) -> crate::error::Result<Vec<(FeedRange, Box<dyn PipelineNode>)>> {
-        match self.nodes {
+        match self.0 {
             Repr::Tiled(ranged) => Ok(ranged),
             #[cfg(test)]
             Repr::Untiled(nodes) => nodes
@@ -252,6 +227,12 @@ pub(crate) trait PipelineNode: Send + std::any::Any {
         &mut self,
         context: &mut PipelineContext<'_>,
     ) -> crate::error::Result<PageResult>;
+
+    /// Transfers an already-deferred error without fetching or advancing rows.
+    /// Wrappers must forward this handoff before abandoning a child's remaining pages.
+    fn take_pending_error(&mut self) -> Option<crate::error::CosmosError> {
+        None
+    }
 
     /// Consumes this node and returns its children as a `Vec`.
     ///

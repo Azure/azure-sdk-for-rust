@@ -317,7 +317,7 @@ mod tests {
     use url::Url;
 
     fn test_container() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         );

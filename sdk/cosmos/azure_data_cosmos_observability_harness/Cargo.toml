@@ -17,7 +17,7 @@ azure_core = { workspace = true }
 # `control_plane` is not optional here: the harness provisions its own soak
 # database and container before driving load, so it always needs Database and
 # Container CRUD.
-azure_data_cosmos = { path = "../azure_data_cosmos", version = "1.0.0-beta.2", features = [
+azure_data_cosmos = { path = "../azure_data_cosmos", version = "1.1.0-beta.1", features = [
   "control_plane",
   "key_auth",
 ] }
@@ -45,8 +45,8 @@ uuid = { workspace = true, features = ["v4"] }
 # Mirror the SDK's OpenTelemetry feature so the harness validates both handlers.
 # Fault injection exercises the "rich on error" behavior. Both are on by default
 # so a bare `cargo run` registers every built-in handler. `otlp` is opt-in.
-default = ["preview_opentelemetry", "fault_injection", "otlp_rustls"]
-preview_opentelemetry = ["azure_data_cosmos/preview_opentelemetry"]
+default = ["unstable_opentelemetry", "fault_injection", "otlp_rustls"]
+unstable_opentelemetry = ["azure_data_cosmos/unstable_opentelemetry"]
 fault_injection = ["azure_data_cosmos/fault_injection"]
 otlp = [
   "opentelemetry-otlp/grpc-tonic",

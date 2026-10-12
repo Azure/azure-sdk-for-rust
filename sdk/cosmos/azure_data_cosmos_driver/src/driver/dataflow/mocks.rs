@@ -27,6 +27,7 @@ use crate::{
 /// A mock leaf node that returns pre-configured page results.
 pub(crate) struct MockLeaf {
     pages: VecDeque<crate::error::Result<PageResult>>,
+    pending_error: Option<crate::error::CosmosError>,
     feed_range: Option<FeedRange>,
     snapshot: Option<PipelineNodeState>,
 }
@@ -36,6 +37,7 @@ impl MockLeaf {
     pub fn with_pages(pages: Vec<crate::error::Result<PageResult>>) -> Self {
         Self {
             pages: pages.into(),
+            pending_error: None,
             feed_range: None,
             snapshot: None,
         }
@@ -44,6 +46,11 @@ impl MockLeaf {
     /// Sets the feed range reported by [`PipelineNode::feed_range`].
     pub fn with_feed_range(mut self, range: FeedRange) -> Self {
         self.feed_range = Some(range);
+        self
+    }
+
+    pub(crate) fn with_pending_error(mut self, error: crate::error::CosmosError) -> Self {
+        self.pending_error = Some(error);
         self
     }
 
@@ -57,6 +64,10 @@ impl MockLeaf {
 
 #[async_trait::async_trait]
 impl PipelineNode for MockLeaf {
+    fn take_pending_error(&mut self) -> Option<crate::error::CosmosError> {
+        self.pending_error.take()
+    }
+
     async fn next_page(
         &mut self,
         _context: &mut PipelineContext<'_>,
@@ -281,7 +292,7 @@ pub(crate) fn assert_drained(result: crate::error::Result<PageResult>) {
 
 /// Creates a test `CosmosOperation`.
 pub(crate) fn operation() -> CosmosOperation {
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
         "dGVzdA==",
     );
@@ -416,6 +427,42 @@ pub(crate) fn gone_error() -> crate::error::CosmosError {
             Vec::new(),
             CosmosResponseHeaders::default(),
         ))
+        .build()
+}
+
+pub(crate) fn gone_error_with_diagnostics() -> crate::error::CosmosError {
+    use crate::diagnostics::{
+        ExecutionContext, PipelineKind, TransportHttpVersion, TransportKind, TransportSecurity,
+    };
+    let status = gone_error().status();
+    let mut diagnostics = DiagnosticsContextBuilder::new(
+        ActivityId::new_uuid(),
+        Arc::new(
+            DiagnosticsOptions::builder()
+                .with_max_request_diagnostics(16)
+                .build()
+                .unwrap(),
+        ),
+    );
+    let endpoint = crate::driver::routing::CosmosEndpoint::global(
+        url::Url::parse("https://acct.example/").unwrap(),
+    );
+    let handle = diagnostics.start_request(
+        ExecutionContext::Initial,
+        PipelineKind::DataPlane,
+        TransportSecurity::Secure,
+        TransportKind::Gateway,
+        TransportHttpVersion::Http11,
+        &endpoint,
+    );
+    diagnostics.update_request(handle, |request| {
+        request.with_charge(crate::models::RequestCharge::new(1.0))
+    });
+    diagnostics.complete_request(handle, status.status_code(), status.sub_status());
+    diagnostics.set_operation_status(status.status_code(), status.sub_status());
+    crate::error::CosmosError::builder()
+        .with_status(status)
+        .with_diagnostics(Arc::new(diagnostics.complete()))
         .build()
 }
 

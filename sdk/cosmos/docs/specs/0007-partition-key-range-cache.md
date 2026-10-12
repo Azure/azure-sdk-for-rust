@@ -45,7 +45,7 @@ owns that key. The `PartitionKeyRangeCache` provides this resolution layer.
    owning range ID in O(log n) time.
 2. **Predictable loading** — Load the `/pkranges` feed during container
    resolution by default, with a `Lazy` compatibility mode that defers the same
-   load until first use.
+   load until the first topology-dependent operation.
 3. **Single-pending-I/O semantics** — When multiple concurrent requests target the
    same container before / during the initial fetch, only one `/pkranges` call
    happens; all others await the shared result.
@@ -57,6 +57,34 @@ owns that key. The `PartitionKeyRangeCache` provides this resolution layer.
    serialization formats.
 
 ---
+
+### Lazy logical-key operations
+
+Point operations and queries scoped to a complete logical partition key use
+already-initialized topology without fetching it unless an active feature needs
+physical partition identity. Cache-only lookup does not wait for an in-progress
+metadata fetch. Missing optional topology leaves gateway routing by logical key
+unchanged.
+
+Network-backed resolution remains necessary for eligible per-partition circuit
+breaking or automatic failover, and for Gateway 2.0 automatic session-token
+scoping when a cached token must be sent. The decision uses effective routing
+flags, read/write eligibility, region count, transport availability, and session
+options. Explicit session tokens retain their existing precedence. PPCB is
+enabled by default, so lazy mode can still load topology for a multi-region
+point read.
+
+Session-scoping demand considers eligible read/write destinations and effective
+region exclusions. If routing adopts Gateway 2.0 after cache-only resolution,
+an unresolved logical request with an automatic session token stays on classic
+Gateway so it can send the composite token. This also applies to retry and
+hedge routing; subsequent pages can resolve identity for Gateway 2.0 normally.
+
+The same decision applies during planning and before each page, using current
+feature and session state. Optional logical-identity recovery invalidates stale
+topology without fetching it; required topology recovery retains its refresh
+behavior. Cross-partition and prefix queries, fan-out change feed, explicit
+range resolution, and eager container construction continue to load topology.
 
 ## 2. Architectural Overview
 

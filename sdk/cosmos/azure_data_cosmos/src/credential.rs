@@ -43,7 +43,7 @@ pub enum CosmosCredential {
     TokenCredential(Arc<dyn TokenCredential>),
     /// Primary or secondary account key.
     #[cfg(feature = "key_auth")]
-    MasterKey(Secret),
+    AccountKey(Secret),
 }
 
 impl From<Arc<dyn TokenCredential>> for CosmosCredential {
@@ -55,7 +55,7 @@ impl From<Arc<dyn TokenCredential>> for CosmosCredential {
 #[cfg(feature = "key_auth")]
 impl From<Secret> for CosmosCredential {
     fn from(key: Secret) -> Self {
-        Self::MasterKey(key)
+        Self::AccountKey(key)
     }
 }
 
@@ -66,7 +66,7 @@ mod tests {
     /// Locks down the exact `Debug` rendering of every [`CosmosCredential`]
     /// variant. Because we derive [`SafeDebug`] (without `#[safe(true)]`),
     /// the inner credential payload — the `Arc<dyn TokenCredential>` for
-    /// `TokenCredential`, and the `Secret` for `MasterKey` — is replaced
+    /// `TokenCredential`, and the `Secret` for `AccountKey` — is replaced
     /// with a redaction marker (`..`) at format time, so neither token-
     /// fetching state nor master-key bytes can leak through `{:?}`.
     ///
@@ -107,13 +107,13 @@ mod tests {
 
     #[cfg(feature = "key_auth")]
     #[test]
-    fn debug_master_key_redacts_secret() {
-        let cosmos = CosmosCredential::MasterKey(Secret::from("super-secret-key"));
+    fn debug_account_key_redacts_secret() {
+        let cosmos = CosmosCredential::AccountKey(Secret::from("super-secret-key"));
         let rendered = format!("{cosmos:?}");
-        assert_safe_debug_render(&rendered, "MasterKey");
+        assert_safe_debug_render(&rendered, "AccountKey");
         assert!(
             !rendered.contains("super-secret-key"),
-            "MasterKey Debug output must not contain the raw key bytes: {rendered:?}"
+            "AccountKey Debug output must not contain the raw key bytes: {rendered:?}"
         );
     }
 }

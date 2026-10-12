@@ -10,7 +10,7 @@
 //! the pipeline [`Context`](azure_core::http::Context), so both the metrics and
 //! tracing handlers can emit correct operation-scope attributes.
 //!
-//! This type is always compiled (independent of `preview_opentelemetry`) because
+//! This type is always compiled (independent of `unstable_opentelemetry`) because
 //! the SDK populates it on every completed operation; the feature-gated handlers
 //! simply read whichever fields are set.
 

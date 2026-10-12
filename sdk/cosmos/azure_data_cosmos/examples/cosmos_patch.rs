@@ -3,7 +3,7 @@
 
 //! Partial updates with PATCH.
 //!
-//! **Preview.** Requires the `preview_patch` feature.
+//! **Unstable.** Requires the `unstable_patch` feature.
 //!
 //! Demonstrates `ContainerClient::patch_item` and the `PatchInstructions`
 //! builder, exercising every variant of `PatchOperation` (`set`, `add`,
@@ -32,7 +32,7 @@
 //! ## Running
 //!
 //! ```text
-//! cargo run --features preview_patch --example cosmos_patch -- \
+//! cargo run --features unstable_patch --example cosmos_patch -- \
 //!     https://<account>.documents.azure.com:443/ --region "East US" --use-entra
 //! ```
 

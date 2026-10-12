@@ -30,7 +30,7 @@ use crate::fault_injection::FaultInjectionRule;
 /// };
 /// use url::Url;
 ///
-/// let account = AccountReference::with_master_key(
+/// let account = AccountReference::with_account_key(
 ///     Url::parse("https://myaccount.documents.azure.com:443/").unwrap(),
 ///     "my-master-key",
 /// );
@@ -331,7 +331,7 @@ mod tests {
     use url::Url;
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )
@@ -578,7 +578,7 @@ mod real_env_tests {
     use url::Url;
 
     fn test_account() -> AccountReference {
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "test-key",
         )

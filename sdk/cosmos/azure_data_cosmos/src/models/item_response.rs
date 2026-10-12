@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use crate::diagnostics::DiagnosticsContext;
 use crate::models::CosmosStatus;
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use crate::models::PatchTrackingId;
 use crate::models::{CosmosResponse, ResponseBody, ResponseHeaders};
 use azure_core::fmt::SafeDebug;
@@ -66,7 +66,7 @@ impl ItemResponse {
     /// it when retrying the same logical PATCH after an ambiguous application-
     /// level failure. Returns `None` for operations that do not require PATCH
     /// tracking.
-    #[cfg(feature = "preview_patch")]
+    #[cfg(feature = "unstable_patch")]
     pub fn patch_tracking_id(&self) -> Option<PatchTrackingId> {
         self.response.patch_tracking_id()
     }

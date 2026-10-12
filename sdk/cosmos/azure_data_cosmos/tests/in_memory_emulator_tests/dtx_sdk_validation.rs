@@ -269,7 +269,7 @@ async fn emulator_point_writes_wait_for_dtx_write_guard() -> Result<(), Box<dyn 
     let runtime = emulator.runtime_builder().build().await?;
     let driver = runtime
         .create_driver(
-            DriverOptions::builder(DriverAccountReference::with_master_key(
+            DriverOptions::builder(DriverAccountReference::with_account_key(
                 Url::parse(endpoint)?,
                 "dGVzdGtleQ==",
             ))

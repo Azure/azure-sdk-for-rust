@@ -4,7 +4,7 @@
 **Date:** 2026-07-06
 **Authors:** (team)
 **Crates:** `azure_data_cosmos_driver` (transport, models, retry), `azure_data_cosmos` (public SDK surface)
-**Feature gate:** `preview_dtx` (disabled by default)
+**Feature gate:** `unstable_dtx` (disabled by default)
 
 ---
 
@@ -68,24 +68,24 @@ offline testing.
 - **Fail closed.** An ambiguous or malformed coordinator response is never surfaced
   as success. When in doubt, the client synthesizes a `500` so callers retry or
   reconcile rather than trust partial data.
-- **Preview isolation.** The entire feature compiles out unless `preview_dtx` is
+- **Preview isolation.** The entire feature compiles out unless `unstable_dtx` is
   enabled, so no DTX surface leaks into the stable API or default builds.
 
 ---
 
 ## 2. Scope & Feature Gating
 
-| Concern               | Decision                                                                                                  |
-| --------------------- | --------------------------------------------------------------------------------------------------------- |
-| Feature flag (driver) | `preview_dtx` — gates all DTX models, serialization, retry logic, and the emulator handler.               |
-| Feature flag (SDK)    | `preview_dtx` — enables `azure_data_cosmos_driver/preview_dtx` transitively and exposes the SDK builders. |
-| Emulator tests        | require `__internal_in_memory_emulator preview_dtx`.                                                      |
-| Connectivity mode     | Gateway only. Direct mode is out of scope.                                                                |
-| Account scope         | Same-account only. Cross-account transactions are not supported.                                          |
-| Encoding              | JSON only in both directions. No HybridRow / binary encoding.                                             |
-| Stability             | **Not production-ready.** APIs may change without notice while `preview_dtx` remains off by default.      |
+| Concern               | Decision                                                                                                    |
+| --------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Feature flag (driver) | `unstable_dtx` — gates all DTX models, serialization, retry logic, and the emulator handler.                |
+| Feature flag (SDK)    | `unstable_dtx` — enables `azure_data_cosmos_driver/unstable_dtx` transitively and exposes the SDK builders. |
+| Emulator tests        | require `__internal_in_memory_emulator unstable_dtx`.                                                       |
+| Connectivity mode     | Gateway only. Direct mode is out of scope.                                                                  |
+| Account scope         | Same-account only. Cross-account transactions are not supported.                                            |
+| Encoding              | JSON only in both directions. No HybridRow / binary encoding.                                               |
+| Stability             | **Not production-ready.** APIs may change without notice while `unstable_dtx` remains off by default.       |
 
-> The `preview_dtx` gate is deliberately coarse: it wraps public types, the driver
+> The `unstable_dtx` gate is deliberately coarse: it wraps public types, the driver
 > `execute_distributed_transaction` entry point, the pipeline retry classifiers,
 > and the emulator `/operations/dtc` handler as a single unit so partial builds
 > cannot compile a half-wired feature.
@@ -164,7 +164,7 @@ Transaction documents mirror `TransactionalBatch`: callers prepare a data-only
 transaction and pass it to the account client for execution:
 
 ```rust no_run
-// Feature: preview_dtx
+// Feature: unstable_dtx
 let write_tx = DistributedWriteTransaction::new()
     .create_item(&container_a, "tenant-1", "item-1", item_1, None)?
     .delete_item(&container_b, "tenant-2", "item-2", None);
@@ -530,7 +530,7 @@ that were rejected.
 
 The wire contract and public API are still evolving, so every DTX type, driver
 entry point, pipeline classifier, and emulator handler is behind the single
-`preview_dtx` feature. The SDK re-exports the driver feature transitively.
+`unstable_dtx` feature. The SDK re-exports the driver feature transitively.
 Default builds therefore contain no DTX surface, and the coarse boundary cannot
 compile a half-wired preview. Per-module features were rejected as too granular
 and easy to misconfigure. A runtime flag was rejected because preview types
@@ -678,8 +678,8 @@ latest account write order. Normal point-operation routing is unaffected.
 Run the driver DTX suites with:
 
 ```pwsh
-cargo test -p azure_data_cosmos_driver --lib --features preview_dtx distributed
-cargo test -p azure_data_cosmos_driver --test in_memory_emulator --features "__internal_in_memory_emulator preview_dtx" dtx_
+cargo test -p azure_data_cosmos_driver --lib --features unstable_dtx distributed
+cargo test -p azure_data_cosmos_driver --test in_memory_emulator --features "__internal_in_memory_emulator unstable_dtx" dtx_
 ```
 
 ---

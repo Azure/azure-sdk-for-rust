@@ -95,7 +95,7 @@ async fn build_driver_with_defaults(
         .await
         .expect("runtime should build");
     let account =
-        AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+        AccountReference::with_account_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
     let driver = runtime
         .create_driver(
             DriverOptions::builder(account)

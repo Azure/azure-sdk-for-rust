@@ -179,13 +179,13 @@ async fn example(cosmos_client: CosmosClient) -> Result<(), Box<dyn std::error::
 }
 ```
 
-### Partial updates with PATCH (preview)
+### Partial updates with PATCH (unstable)
 
 `ContainerClient::patch_item()` applies JSON-Patch-style operations to a single item. It is
-gated behind the `preview_patch` feature and is **not production-ready**:
+gated behind the `unstable_patch` feature and is **not production-ready**:
 
 ```sh
-cargo add azure_data_cosmos --features preview_patch
+cargo add azure_data_cosmos --features unstable_patch
 ```
 
 ```rust,ignore

@@ -138,7 +138,7 @@ async fn complete_fixture(
     ppcb_enabled: bool,
 ) -> Fixture {
     let account =
-        AccountReference::with_master_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+        AccountReference::with_account_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5");
     let driver_options = DriverOptions::builder(account)
         .with_preferred_regions(preferred_regions)
         .with_partition_failover_options(
@@ -529,7 +529,7 @@ async fn stale_fallback_session_retries_before_increment_replace() {
         .await
         .expect("fallback runtime builds");
     let fallback_account =
-        AccountReference::with_master_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+        AccountReference::with_account_key(Url::parse(EAST_URL).unwrap(), "ZW11bGF0b3Ita2V5");
     let fallback_options = DriverOptions::builder(fallback_account)
         .with_preferred_regions(vec![Region::WEST_US, Region::EAST_US])
         .build();

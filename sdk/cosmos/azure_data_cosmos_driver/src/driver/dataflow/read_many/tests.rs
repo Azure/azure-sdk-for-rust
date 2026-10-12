@@ -30,7 +30,7 @@ use std::sync::Arc;
 
 fn container() -> ContainerReference {
     ContainerReference::new(
-        AccountReference::with_master_key(
+        AccountReference::with_account_key(
             "https://test.documents.azure.com".parse().unwrap(),
             "dGVzdA==",
         ),

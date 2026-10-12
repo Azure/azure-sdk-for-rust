@@ -210,28 +210,45 @@ impl PartitionKeyRangeCache {
             return Ok(None);
         };
 
+        Ok(Some(Self::overlapping_ranges(&routing_map, epk_range)))
+    }
+
+    /// Resolves only initialized topology, without starting or waiting for a fetch.
+    pub(crate) async fn cached_overlapping_ranges(
+        &self,
+        container: &ContainerReference,
+        epk_range: std::ops::Range<&EffectivePartitionKey>,
+    ) -> crate::error::Result<Option<Vec<crate::models::partition_key_range::PartitionKeyRange>>>
+    {
+        let Some(cached) = self.cache.get(container).await else {
+            return Ok(None);
+        };
+        let routing_map = cached.as_ref().as_ref().map_err(Clone::clone)?;
+        Ok(Some(Self::overlapping_ranges(routing_map, epk_range)))
+    }
+
+    fn overlapping_ranges(
+        routing_map: &ContainerRoutingMap,
+        epk_range: std::ops::Range<&EffectivePartitionKey>,
+    ) -> Vec<crate::models::partition_key_range::PartitionKeyRange> {
         if epk_range.start == epk_range.end {
             // Point range (equality / `IN` predicate resolves to the single EPK
             // `X`). `get_overlapping_ranges` treats `X..X` as an empty
             // `std::ops::Range` and misses the owning partition when `X` sits on
             // a partition's lower boundary. Resolve via the boundary-correct
             // point lookup instead (mirrors `resolve_partition_key_range_ids`).
-            return Ok(Some(
-                routing_map
-                    .get_range_by_effective_partition_key(epk_range.start)
-                    .cloned()
-                    .into_iter()
-                    .collect(),
-            ));
+            return routing_map
+                .get_range_by_effective_partition_key(epk_range.start)
+                .cloned()
+                .into_iter()
+                .collect();
         }
 
-        Ok(Some(
-            routing_map
-                .get_overlapping_ranges(epk_range)
-                .into_iter()
-                .cloned()
-                .collect(),
-        ))
+        routing_map
+            .get_overlapping_ranges(epk_range)
+            .into_iter()
+            .cloned()
+            .collect()
     }
 
     /// Resolves a partition key range by its ID.
@@ -844,7 +861,7 @@ mod tests {
     #[tokio::test]
     async fn resolve_returns_range_id() {
         let cache = PartitionKeyRangeCache::new();
-        let account = crate::models::AccountReference::with_master_key(
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key",
         );
@@ -874,7 +891,7 @@ mod tests {
     #[tokio::test]
     async fn empty_pk_returns_none() {
         let cache = PartitionKeyRangeCache::new();
-        let account = crate::models::AccountReference::with_master_key(
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key",
         );
@@ -903,7 +920,7 @@ mod tests {
     #[tokio::test]
     async fn force_refresh_uses_incremental_merge() {
         let cache = PartitionKeyRangeCache::new();
-        let account = crate::models::AccountReference::with_master_key(
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key",
         );
@@ -1035,7 +1052,7 @@ mod tests {
     // =========================================================================
 
     fn make_container(pk_json: &str) -> ContainerReference {
-        let account = crate::models::AccountReference::with_master_key(
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "key",
         );

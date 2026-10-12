@@ -125,7 +125,7 @@ async fn setup_with_config(
         .await
         .unwrap();
     let account =
-        AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+        AccountReference::with_account_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
     let mut driver_options = DriverOptions::builder(account);
     if let Some(preferred_regions) = preferred_regions {
         driver_options = driver_options.with_preferred_regions(preferred_regions);

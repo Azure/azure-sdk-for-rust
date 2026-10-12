@@ -4,11 +4,11 @@
 #![doc = include_str!("../README.md")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 //!
-//! ## Preview OpenTelemetry
+//! ## Unstable OpenTelemetry
 //!
-//! Enable the off-by-default `preview_opentelemetry` feature to emit metrics and
+//! Enable the off-by-default `unstable_opentelemetry` feature to emit metrics and
 //! distributed traces through the OpenTelemetry diagnostics handlers. This
-//! integration is in preview because the `opentelemetry` crate is still in
+//! integration is unstable because the `opentelemetry` crate is still in
 //! preview. Diagnostics contexts and non-OpenTelemetry handlers remain available
 //! without the feature.
 
@@ -20,7 +20,7 @@ pub use account_endpoint::AccountEndpoint;
 pub use account_reference::AccountReference;
 #[doc(inline)]
 pub use clients::{ContainerClient, CosmosClient, CosmosClientBuilder, DatabaseClient};
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 pub use clients::{DistributedReadTransaction, DistributedWriteTransaction};
 pub use credential::CosmosCredential;
 pub use error::{CosmosError, CosmosStatus, Result, SubStatusCode};
