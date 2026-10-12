@@ -93,6 +93,9 @@ if ([string]::IsNullOrWhiteSpace($testCategory)) { Fail "Account '$AccountSelect
 if ($null -eq $multiWriteProperty) { Fail "Account '$AccountSelector' is missing required 'multiWrite'." }
 if ($null -eq $multiRegionProperty) { Fail "Account '$AccountSelector' is missing required 'multiRegion'." }
 if ($null -eq $regionsProperty) { Fail "Account '$AccountSelector' is missing required 'regions'." }
+# Reject coercible strings, numbers, and nulls before exporting account metadata.
+if ($multiWriteProperty.Value -isnot [bool]) { Fail "Account '$AccountSelector' 'multiWrite' must be a JSON boolean." }
+if ($multiRegionProperty.Value -isnot [bool]) { Fail "Account '$AccountSelector' 'multiRegion' must be a JSON boolean." }
 $regions = @($regionsProperty.Value)
 if ($regions.Count -eq 0 -or
     @($regions | Where-Object { [string]::IsNullOrWhiteSpace([string]$_) }).Count -gt 0) {

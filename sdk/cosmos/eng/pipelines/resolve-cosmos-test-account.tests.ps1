@@ -106,6 +106,75 @@ foreach ($property in $accounts.PSObject.Properties) {
 }
 
 Write-Host ""
+Write-Host "Test 12: topology flags require actual JSON booleans before exporting variables"
+$invalidBooleans = @(
+    @{ Name = 'string false'; Json = '"false"' }
+    @{ Name = 'string true'; Json = '"true"' }
+    @{ Name = 'empty string'; Json = '""' }
+    @{ Name = 'null'; Json = 'null' }
+    @{ Name = 'zero'; Json = '0' }
+    @{ Name = 'one'; Json = '1' }
+    @{ Name = 'object'; Json = '{}' }
+    @{ Name = 'empty array'; Json = '[]' }
+    @{ Name = 'boolean array'; Json = '[false]' }
+    @{ Name = 'missing'; Json = $null }
+)
+foreach ($field in @('multiWrite', 'multiRegion')) {
+    foreach ($case in $invalidBooleans) {
+        $account = @{
+            endpoint = 'https://example.invalid'; key = 'synthetic-not-a-secret'
+            consistency = 'Session'; testCategory = 'e2e'
+            multiWrite = $false; multiRegion = $false; regions = @('East US 2')
+        }
+        if ($null -eq $case.Json) {
+            $account.Remove($field)
+            $expected = "missing required '$field'"
+        }
+        else {
+            $account[$field] = ConvertFrom-Json -InputObject $case.Json -NoEnumerate
+            $expected = "'$field' must be a JSON boolean"
+        }
+        $json = @{ version = 1; accounts = @{ synthetic = $account } } | ConvertTo-Json -Depth 6 -Compress
+        $result = Invoke-Resolver 'synthetic' $json
+        if ($result.ExitCode -ne 0 -and $result.Output.Contains($expected) -and
+            $result.Output -notmatch '(?m)^[A-Z_]+=' -and
+            $result.Output -notmatch 'synthetic-not-a-secret') {
+            Test-Ok "$field rejects $($case.Name) before exports"
+        }
+        else {
+            Test-Fail "$field must reject $($case.Name) before exports" "(rc=$($result.ExitCode))"
+        }
+    }
+}
+
+Write-Host "Test 13: valid boolean flags preserve topology exports"
+foreach ($flags in @(
+        @{ multiWrite = $false; multiRegion = $false }
+        @{ multiWrite = $false; multiRegion = $true }
+        @{ multiWrite = $true; multiRegion = $true }
+    )) {
+    $regions = @('East US 2')
+    if ($flags.multiRegion) { $regions += 'West US 3' }
+    $account = @{
+        endpoint = 'https://example.invalid'; key = 'synthetic-not-a-secret'
+        consistency = 'Session'; testCategory = 'e2e'
+        multiWrite = $flags.multiWrite; multiRegion = $flags.multiRegion; regions = $regions
+    }
+    $json = @{ version = 1; accounts = @{ synthetic = $account } } | ConvertTo-Json -Depth 6 -Compress
+    $result = Invoke-Resolver 'synthetic' $json
+    $writeMode = if ($flags.multiWrite) { 'multi' } else { 'single' }
+    $multiRegion = $flags.multiRegion.ToString().ToLowerInvariant()
+    if ($result.ExitCode -eq 0 -and
+        $result.Output.Contains("AZURE_COSMOS_ACCOUNT_WRITE_MODE=$writeMode") -and
+        $result.Output.Contains("AZURE_COSMOS_ACCOUNT_MULTI_REGION=$multiRegion")) {
+        Test-Ok "$writeMode write mode and multiRegion=$multiRegion preserved"
+    }
+    else {
+        Test-Fail "$writeMode write mode and multiRegion=$multiRegion" "(rc=$($result.ExitCode))"
+    }
+}
+
+Write-Host ""
 Write-Host "Results: $script:pass passed, $script:fail failed"
 if ($script:fail -ne 0) { exit 1 }
 exit 0
