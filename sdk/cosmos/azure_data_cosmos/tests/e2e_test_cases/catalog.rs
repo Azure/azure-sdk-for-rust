@@ -88,6 +88,7 @@ const DYNAMIC_TOPOLOGY_MATRIX: &str = include_str!("../../../e2e-dynamic-topolog
 const LIVE_FIXED_MATRIX: &str = include_str!("../../../e2e-live-fixed-matrix.json");
 const LIVE_CONFIGURATION_MATRIX: &str = include_str!("../../../e2e-live-configuration-matrix.json");
 const LIVE_AAD_MATRIX: &str = include_str!("../../../e2e-live-aad-matrix.json");
+const TEST_RESOURCES_BICEP: &str = include_str!("../../../test-resources.bicep");
 const SCENARIO_SCHEMA: &str = include_str!("../../../e2e_tests/schema/scenario.v1.json");
 const PROFILE_SCHEMA: &str = include_str!("../../../e2e_tests/schema/profile.v1.json");
 
@@ -267,8 +268,9 @@ struct ImplementationMap {
 #[serde(deny_unknown_fields)]
 struct Implementation {
     id: String,
-    test: String,
+    test: Option<String>,
     status: ImplementationStatus,
+    reason: Option<String>,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
@@ -855,7 +857,7 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
 
     let implementations: ImplementationMap =
         serde_json::from_str(RUST_IMPLEMENTATIONS).map_err(|error| error.to_string())?;
-    if implementations.schema != "../schema/implementation.v1.json"
+    if !implementations.schema.ends_with("implementation.v1.json")
         || implementations.spec_version != "1.0"
         || implementations.sdk != "rust"
         || implementations.test_target != "e2e_tests"
@@ -877,13 +879,42 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
                 implementation.id
             ));
         }
-        if implementation.status == ImplementationStatus::Active
-            && !known_tests.contains(implementation.test.as_str())
-        {
-            return Err(format!(
-                "scenario '{}' references missing test '{}'",
-                implementation.id, implementation.test
-            ));
+        match implementation.status {
+            ImplementationStatus::Active | ImplementationStatus::Planned => {
+                let test = implementation.test.as_deref().ok_or_else(|| {
+                    format!(
+                        "scenario '{}' must name a test when its implementation is {:?}",
+                        implementation.id, implementation.status
+                    )
+                })?;
+                if implementation.reason.is_some() {
+                    return Err(format!(
+                        "scenario '{}' must not include an unsupported reason when its implementation is {:?}",
+                        implementation.id, implementation.status
+                    ));
+                }
+                if implementation.status == ImplementationStatus::Active
+                    && !known_tests.contains(test)
+                {
+                    return Err(format!(
+                        "scenario '{}' references missing test '{test}'",
+                        implementation.id
+                    ));
+                }
+            }
+            ImplementationStatus::Unsupported => {
+                if implementation.test.is_some()
+                    || implementation
+                        .reason
+                        .as_deref()
+                        .is_none_or(str::is_empty)
+                {
+                    return Err(format!(
+                        "unsupported scenario '{}' must include a reason and no test",
+                        implementation.id
+                    ));
+                }
+            }
         }
     }
     if mapped_ids != scenario_ids {
@@ -1070,7 +1101,8 @@ fn valid_slug(value: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        effective_regions, load_profiles, valid_scenario_id, validate_account_configuration, Region,
+        effective_regions, load_profiles, valid_scenario_id, validate_account_configuration,
+        Implementation, ImplementationStatus, Region,
     };
 
     #[test]
@@ -1142,6 +1174,21 @@ mod tests {
     }
 
     #[test]
+    fn aad_live_region_matches_bicep_single_region() -> Result<(), String> {
+        let document: Value = serde_json::from_str(LIVE_AAD_MATRIX).map_err(|e| e.to_string())?;
+        let region = document
+            .get("matrix")
+            .and_then(|matrix| matrix.get("AZURE_COSMOS_ACCOUNT_REGIONS"))
+            .and_then(Value::as_array)
+            .and_then(|regions| regions.first())
+            .and_then(Value::as_str)
+            .ok_or("AAD live matrix must declare one region")?;
+        assert_eq!(region, "East US 2");
+        assert!(TEST_RESOURCES_BICEP.contains("locationName: 'East US 2'"));
+        Ok(())
+    }
+
+    #[test]
     fn observed_live_account_must_match_selected_profile() -> Result<(), String> {
         let profile = load_profiles()?
             .into_iter()
@@ -1206,5 +1253,18 @@ mod tests {
         assert!(valid_scenario_id("changefeed.all-versions"));
         assert!(!valid_scenario_id("change-feed.all-versions"));
         assert!(!valid_scenario_id("changefeed."));
+    }
+
+    #[test]
+    fn unsupported_implementation_uses_reason_instead_of_test() {
+        let implementation: Implementation = serde_json::from_value(serde_json::json!({
+            "id": "example.unsupported",
+            "status": "unsupported",
+            "reason": "The backend does not expose this behavior."
+        }))
+        .expect("schema-valid unsupported implementation");
+        assert_eq!(implementation.status, ImplementationStatus::Unsupported);
+        assert!(implementation.test.is_none());
+        assert!(implementation.reason.is_some());
     }
 }

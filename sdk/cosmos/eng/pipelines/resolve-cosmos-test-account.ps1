@@ -61,7 +61,8 @@ if (-not ($config.PSObject.Properties.Name -contains 'accounts') -or
     -not ($config.accounts.PSObject.Properties.Name -contains $AccountSelector)) {
     $available = if ($config.PSObject.Properties.Name -contains 'accounts') {
         ($config.accounts.PSObject.Properties.Name -join ', ')
-    } else { '<none>' }
+    }
+    else { '<none>' }
     Fail "Account selector '$AccountSelector' not found. Available: $available"
 }
 

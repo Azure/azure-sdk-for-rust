@@ -291,14 +291,16 @@ impl E2eTestFixture {
     }
 
     async fn new(client: CosmosClient, properties: ContainerProperties) -> TestResult<Self> {
+        let auth_mode = parse_auth_mode(std::env::var("AZURE_COSMOS_AUTH_MODE"))?;
         let management_client = build_management_client(&client).await?;
-        Self::new_with_clients(client, management_client, properties).await
+        Self::new_with_clients(client, management_client, properties, auth_mode).await
     }
 
     async fn new_with_clients(
         client: CosmosClient,
         management_client: CosmosClient,
         properties: ContainerProperties,
+        auth_mode: AuthMode,
     ) -> TestResult<Self> {
         // The stale-resource sweeper recognizes the test-db- prefix and ages resources by _ts.
         let database_id = format!("test-db-e2e-{}", Uuid::now_v7());
@@ -310,10 +312,14 @@ impl E2eTestFixture {
         let cleanup = DatabaseCleanup::new(management_client, database_id.clone());
         let setup = async {
             database.create_container(properties, None).await?;
-            client
+            let container = client
                 .database_client(&database_id)
                 .container_client(&container_id, None)
-                .await
+                .await?;
+            if auth_mode == AuthMode::Aad {
+                crate::framework::probe_data_plane_ready("E2E AAD client", &container).await?;
+            }
+            Ok(container)
         }
         .await;
         match setup {
@@ -582,6 +588,7 @@ mod tests {
                 client.clone(),
                 client,
                 ContainerProperties::new("items", "/pk".into()),
+                AuthMode::Key,
             )
             .await?;
             let expected = item("replicated", "A", 1);
@@ -629,6 +636,7 @@ mod tests {
                     data,
                     management.clone(),
                     ContainerProperties::new("items", "/pk".into()),
+                    auth_mode,
                 )
                 .await?;
                 let response = fixture
@@ -671,6 +679,7 @@ mod tests {
                 data.clone(),
                 management.clone(),
                 ContainerProperties::new("items", "/pk".into()),
+                AuthMode::Aad,
             )
             .await;
             assert!(result.is_err(), "the data account has no such container");

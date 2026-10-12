@@ -433,6 +433,27 @@ bidirectional profile/applicability rule would reject valid catalog entries.
 Revisit this only with an execution-evidence design that preserves that profile
 reuse.
 
+PR5 also leaves the following reviewed hardening ideas unchanged because they
+do not affect any current matrix cell:
+
+- the backup-fallback bootstrap keeps `Region::EAST_US` as a valid proximity
+  anchor; its current profiles use key authentication and the scenario tests
+  ordered endpoint discovery rather than a region-specific data operation;
+- live matrix validation compares axis unions because every profile sharing a
+  current matrix declares identical account, runtime, and client axes;
+- diagnostics-handler telemetry uses profile region names because its only
+  live profile is multi-region and live setup already validates exact region
+  identity and order;
+- successful client initialization may consume a fault rule through legitimate
+  SDK-internal recovery, so it does not emit an additional test-framework
+  warning; and
+- the nightly-matrix error retains its existing JUnit coverage wording because
+  nightly remains required for the structured output converted to JUnit.
+
+Reconsider these choices if a matrix combines profiles with different axes, a
+scenario adds a single-region live profile or AAD selection, or observed fault
+initialization behavior demonstrates a concrete budget regression.
+
 ## Pull-request workflow
 
 The five pull requests are reviewed and merged sequentially:

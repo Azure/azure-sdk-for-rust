@@ -4,25 +4,40 @@
   "title": "Cosmos live-test fixed accounts config",
   "description": "Single-secret JSON describing the fixed, self-owned Cosmos DB accounts used by the Rust Cosmos live tests (resource group 'sdk-ci' in a permanent, non-ephemeral subscription). Stored as an ADO variable-group secret and refreshed by account-provisioning/New-CosmosLiveTestAccounts.ps1 whenever an account is rotated. Each live-test matrix leg selects one account by its logical AccountSelector.",
   "type": "object",
-  "required": ["version", "accounts"],
+  "required": [
+    "version",
+    "accounts"
+  ],
   "additionalProperties": false,
   "properties": {
     "version": {
       "type": "integer",
       "description": "Schema version. resolve-cosmos-test-account.ps1 rejects versions it does not understand.",
-      "enum": [1]
+      "enum": [
+        1
+      ]
     },
     "accounts": {
       "type": "object",
       "description": "Map of logical account selector (matches AccountSelector in live-platform-matrix.json) -> account descriptor.",
       "minProperties": 1,
-      "additionalProperties": { "$ref": "#/definitions/account" }
+      "additionalProperties": {
+        "$ref": "#/definitions/account"
+      }
     }
   },
   "definitions": {
     "account": {
       "type": "object",
-      "required": ["endpoint", "key", "consistency", "testCategory", "multiWrite", "multiRegion", "regions"],
+      "required": [
+        "endpoint",
+        "key",
+        "consistency",
+        "testCategory",
+        "multiWrite",
+        "multiRegion",
+        "regions"
+      ],
       "additionalProperties": false,
       "properties": {
         "endpoint": {
@@ -46,7 +61,13 @@
         "consistency": {
           "type": "string",
           "description": "Account default consistency level, exported as AZURE_COSMOS_DEFAULT_CONSISTENCY.",
-          "enum": ["Strong", "BoundedStaleness", "Session", "ConsistentPrefix", "Eventual"]
+          "enum": [
+            "Strong",
+            "BoundedStaleness",
+            "Session",
+            "ConsistentPrefix",
+            "Eventual"
+          ]
         },
         "testCategory": {
           "type": "string",
@@ -64,7 +85,10 @@
           "type": "array",
           "description": "Regions the account is provisioned in. Exported as AZURE_COSMOS_ACCOUNT_REGIONS for E2E profile validation.",
           "minItems": 1,
-          "items": { "type": "string", "minLength": 1 }
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "fullFidelityChangeFeed": {
           "type": "boolean",
