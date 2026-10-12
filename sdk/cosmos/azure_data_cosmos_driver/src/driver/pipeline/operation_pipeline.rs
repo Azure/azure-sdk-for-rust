@@ -2959,6 +2959,9 @@ fn try_cleanup_probe_candidate(
         return;
     }
 
+    #[cfg(test)]
+    probe_cleanup_tests::before_update(location_state_store);
+
     location_state_store.apply_partition(|current| {
         let is_probe = current
             .circuit_breaker_overrides
@@ -4880,6 +4883,10 @@ fn propagate_hedge_session_unavailable(
          session-retry counter for next attempt",
     );
 }
+
+#[cfg(test)]
+#[path = "probe_cleanup_tests.rs"]
+mod probe_cleanup_tests;
 
 #[cfg(test)]
 mod tests {
