@@ -3,7 +3,7 @@
 
 use azure_core::{credentials::Secret, http::Url};
 use azure_data_cosmos::{
-    feed::{ReadManyFilter, ReadManySelection},
+    feed::{FeedRange, ReadManyFilter, ReadManySelection},
     options::{
         BinaryEncodingOptions, MaxItemCountHint, OperationOptionsBuilder, ReadFeedRangesOptions,
         ReadManyOptions, Region,
@@ -656,16 +656,54 @@ async fn read_many_hpk_prefixes_span_ranges_and_deduplicate_before_batching() {
 
 #[tokio::test]
 async fn read_many_decode_error_keeps_failing_page_diagnostics() {
-    let container = container(PartitionKeyDefinition::new(vec!["/pk".into()])).await;
-    for (id, value) in [("a", json!(1)), ("b", json!("not a number"))] {
+    let definition = PartitionKeyDefinition::new(vec!["/pk".into()]);
+    let (container, emulator) = container_with_emulator(definition.clone(), 1).await;
+    let mut keys = ["first-key", "second-key"].map(|key| {
+        let range = FeedRange::for_partition(key.into(), &definition);
+        (range.min_inclusive().clone(), key)
+    });
+    keys.sort_by(|left, right| left.0.cmp(&right.0));
+    assert!(keys[0].0 < keys[1].0);
+    let valid_key = keys[0].1;
+    let invalid_key = keys[1].1;
+    for (pk, id, value) in [
+        (invalid_key, "b", json!("not a number")),
+        (valid_key, "a", json!(1)),
+    ] {
         container
-            .create_item("pk", id, &json!({"id":id,"pk":"pk","value":value}), None)
+            .create_item(pk, id, &json!({"id":id,"pk":pk,"value":value}), None)
             .await
             .unwrap();
     }
+    let store = emulator.store();
+    store.split_partition_at_epk(
+        "read-many",
+        "items",
+        0,
+        keys[1].0.clone(),
+        std::time::Duration::ZERO,
+    );
+    store.wait_for_split("read-many", "items", 0).await;
+    let mut ranges = container
+        .read_feed_ranges(Some(
+            ReadFeedRangesOptions::default().with_force_refresh(true),
+        ))
+        .await
+        .unwrap();
+    ranges.sort_by(|left, right| left.min_inclusive().cmp(right.min_inclusive()));
+    assert_eq!(ranges.len(), 2);
+    assert!(ranges[0].min_inclusive() <= &keys[0].0 && &keys[0].0 < ranges[0].max_exclusive());
+    assert!(ranges[1].min_inclusive() <= &keys[1].0 && &keys[1].0 < ranges[1].max_exclusive());
+    // Sequential draining visits the valid item's range first, regardless of document order.
     for (selection, requests) in [
-        (ReadManySelection::Items(vec![("pk".into(), "b".into())]), 1),
-        (ReadManySelection::Partitions(vec!["pk".into()]), 2),
+        (
+            ReadManySelection::Items(vec![(invalid_key.into(), "b".into())]),
+            1,
+        ),
+        (
+            ReadManySelection::Partitions(vec![invalid_key.into(), valid_key.into()]),
+            2,
+        ),
     ] {
         let options = ReadManyOptions::default()
             .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));

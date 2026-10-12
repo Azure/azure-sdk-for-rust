@@ -114,9 +114,11 @@ impl OperationPlan {
     /// Limits all subsequent page requests to a shared absolute deadline.
     ///
     /// Use this when collecting an entire feed under one timeout budget.
-    /// This only shortens an existing deadline and does not include caller idle
-    /// time before this method is called. A timeout terminates the request using
-    /// the driver's normal error and diagnostics contract.
+    /// This only shortens an existing deadline, including the initial planning
+    /// deadline. Elapsed time, including caller idle time, still counts toward
+    /// any existing deadline; this method does not restart its budget.
+    /// A timeout terminates the request using the driver's normal error and
+    /// diagnostics contract.
     pub fn with_execution_deadline(mut self, deadline: Instant) -> Self {
         let deadline = self
             .operation
