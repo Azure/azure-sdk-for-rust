@@ -4592,6 +4592,14 @@ async fn probe_endpoint_connectivity(
     transport.send(&request).await.is_ok()
 }
 
+#[cfg(all(
+    test,
+    feature = "__internal_in_memory_emulator",
+    feature = "fault_injection"
+))]
+#[path = "hedge_feedback_tests.rs"]
+mod hedge_feedback_tests;
+
 #[cfg(test)]
 mod tests {
     use std::collections::VecDeque;

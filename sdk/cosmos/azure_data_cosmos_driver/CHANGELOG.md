@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Avoid unnecessary routing-state copies for hedge feedback and unchanged partition transitions, and skip hedge feedback when the effective partition circuit breaker is disabled without disabling transport hedging.
+
 ### Other Changes
 
 ## 1.0.0 (2026-10-08)

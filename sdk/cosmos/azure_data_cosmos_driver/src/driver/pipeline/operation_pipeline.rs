@@ -21,9 +21,12 @@ use crate::{
     driver::{
         routing::{
             can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
-            partition_endpoint_state::HealthStatus, partition_key_range_id::PartitionKeyRangeId,
-            remove_probe_succeeded_entry, session_manager::SessionManager, AccountEndpointState,
-            CosmosEndpoint, LocationEffect, LocationSnapshot, LocationStateStore,
+            partition_endpoint_state::{HealthStatus, PartitionStateUpdate},
+            partition_key_range_id::PartitionKeyRangeId,
+            remove_probe_succeeded_entry,
+            session_manager::SessionManager,
+            AccountEndpointState, CosmosEndpoint, LocationEffect, LocationSnapshot,
+            LocationStateStore,
         },
         transport::CosmosTransport,
         CosmosDriver,
@@ -2914,9 +2917,9 @@ fn try_cleanup_probe_candidate(
             .get(pk_range_id.as_str())
             .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
         if is_probe {
-            remove_probe_succeeded_entry(current, pk_range_id)
+            PartitionStateUpdate::Updated(remove_probe_succeeded_entry(current, pk_range_id))
         } else {
-            current.clone()
+            PartitionStateUpdate::Unchanged
         }
     });
 }

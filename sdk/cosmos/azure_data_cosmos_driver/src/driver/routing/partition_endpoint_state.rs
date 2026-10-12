@@ -12,6 +12,32 @@ use crate::options::{PartitionFailoverOptions, Region};
 
 use super::{partition_key_range_id::PartitionKeyRangeId, CosmosEndpoint};
 
+/// A routing transition can decline publication without copying the current state.
+#[allow(
+    clippy::large_enum_variant,
+    reason = "boxing would add an allocation to every partition update"
+)]
+pub(crate) enum PartitionStateUpdate {
+    Unchanged,
+    Updated(PartitionEndpointState),
+}
+
+impl From<PartitionEndpointState> for PartitionStateUpdate {
+    fn from(state: PartitionEndpointState) -> Self {
+        Self::Updated(state)
+    }
+}
+
+#[cfg(test)]
+impl PartitionStateUpdate {
+    pub(crate) fn apply(self, previous: &PartitionEndpointState) -> PartitionEndpointState {
+        match self {
+            Self::Unchanged => previous.clone(),
+            Self::Updated(next) => next,
+        }
+    }
+}
+
 /// Immutable partition-level endpoint routing state.
 ///
 /// Managed via CAS in `LocationStateStore` alongside `AccountEndpointState`.

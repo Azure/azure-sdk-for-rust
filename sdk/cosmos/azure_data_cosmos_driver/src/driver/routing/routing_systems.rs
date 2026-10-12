@@ -16,7 +16,9 @@ use crate::driver::{cache::AccountProperties, transport::is_emulator_host};
 use crate::options::{PartitionFailoverOptions, Region};
 
 use super::{
-    partition_endpoint_state::{HealthStatus, PartitionEndpointState, PartitionFailoverEntry},
+    partition_endpoint_state::{
+        HealthStatus, PartitionEndpointState, PartitionFailoverEntry, PartitionStateUpdate,
+    },
     partition_key_range_id::PartitionKeyRangeId,
     AccountEndpointState, CosmosEndpoint, UnavailablePartition, UnavailableReason,
 };
@@ -622,14 +624,19 @@ pub(crate) fn expire_partition_overrides(
     state: &PartitionEndpointState,
     now: Instant,
     unavailability_duration: Duration,
-) -> PartitionEndpointState {
+) -> PartitionStateUpdate {
+    let is_due = |entry: &PartitionFailoverEntry| {
+        entry.health_status == HealthStatus::Unhealthy
+            && now.saturating_duration_since(entry.first_failure_time)
+                >= unavailability_duration + entry.failback_jitter
+    };
+    if !state.circuit_breaker_overrides.values().any(is_due) {
+        return PartitionStateUpdate::Unchanged;
+    }
     let mut new_state = state.clone();
 
     for entry in new_state.circuit_breaker_overrides.values_mut() {
-        if entry.health_status == HealthStatus::Unhealthy
-            && now.saturating_duration_since(entry.first_failure_time)
-                >= unavailability_duration + entry.failback_jitter
-        {
+        if is_due(entry) {
             entry.health_status = HealthStatus::ProbeCandidate;
         }
     }
@@ -639,7 +646,7 @@ pub(crate) fn expire_partition_overrides(
     // backend signals a change (e.g., a new 403/3 from the override region).
     // Only PPCB (circuit breaker) overrides use probe-based failback.
 
-    new_state
+    PartitionStateUpdate::Updated(new_state)
 }
 
 /// Removes a probe-successful entry from the circuit breaker overrides.
@@ -798,15 +805,14 @@ pub(crate) fn record_hedge_primary_win(
     state: &PartitionEndpointState,
     partition_key_range_id: &PartitionKeyRangeId,
     primary_region: Option<&Region>,
-) -> PartitionEndpointState {
+) -> PartitionStateUpdate {
     let key = (partition_key_range_id.clone(), primary_region.cloned());
     if !state.consecutive_hedge_wins.contains_key(&key) {
-        // Fast path: no counter for this pair, no clone needed.
-        return state.clone();
+        return PartitionStateUpdate::Unchanged;
     }
     let mut new_state = state.clone();
     new_state.consecutive_hedge_wins.remove(&key);
-    new_state
+    PartitionStateUpdate::Updated(new_state)
 }
 
 #[cfg(test)]
@@ -1550,7 +1556,8 @@ mod tests {
             },
         );
 
-        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(30));
+        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(30))
+            .apply(&state);
 
         // PPCB old entry transitioned to ProbeCandidate
         assert_eq!(expired.circuit_breaker_overrides.len(), 1);
@@ -1590,7 +1597,8 @@ mod tests {
             },
         );
 
-        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(60));
+        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(60))
+            .apply(&state);
 
         assert_eq!(expired.failover_overrides.len(), 1);
     }
@@ -1614,7 +1622,8 @@ mod tests {
             },
         );
 
-        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(30));
+        let expired = expire_partition_overrides(&state, Instant::now(), Duration::from_secs(30))
+            .apply(&state);
 
         // Already ProbeCandidate, should remain ProbeCandidate (not re-transitioned)
         assert_eq!(
@@ -1715,7 +1724,8 @@ mod tests {
 
         // Sweep at exactly `first_failure + unavailability` — jitter not yet elapsed.
         let expired =
-            expire_partition_overrides(&state, first_failure + unavailability, unavailability);
+            expire_partition_overrides(&state, first_failure + unavailability, unavailability)
+                .apply(&state);
         assert_eq!(
             expired.circuit_breaker_overrides["jittered-pk"].health_status,
             HealthStatus::Unhealthy,
@@ -1727,7 +1737,8 @@ mod tests {
             &state,
             first_failure + unavailability + jitter,
             unavailability,
-        );
+        )
+        .apply(&state);
         assert_eq!(
             expired.circuit_breaker_overrides["jittered-pk"].health_status,
             HealthStatus::ProbeCandidate,
@@ -1830,7 +1841,8 @@ mod tests {
             &ps,
             Instant::now() + Duration::from_secs(60),
             Duration::from_secs(5),
-        );
+        )
+        .apply(&ps);
         assert_eq!(
             ps.circuit_breaker_overrides["pk-1"].health_status,
             HealthStatus::ProbeCandidate,
@@ -2440,7 +2452,7 @@ mod tests {
         );
 
         // Primary win clears the counter.
-        let s3 = record_hedge_primary_win(&s2, &pk_range, Some(&primary));
+        let s3 = record_hedge_primary_win(&s2, &pk_range, Some(&primary)).apply(&s2);
         assert!(s3.consecutive_hedge_wins.is_empty());
         assert!(s3.circuit_breaker_overrides.is_empty());
 
@@ -2465,7 +2477,7 @@ mod tests {
             .circuit_breaker_overrides
             .contains_key(pk_range.as_str()));
 
-        let after = record_hedge_primary_win(&state, &pk_range, Some(&primary));
+        let after = record_hedge_primary_win(&state, &pk_range, Some(&primary)).apply(&state);
         assert!(
             after
                 .circuit_breaker_overrides
