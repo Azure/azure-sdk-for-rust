@@ -99,6 +99,27 @@ an unsupported checkpoint does not stop live iteration. The Rust SDK uses the
 same plan, with an explicit `collect_all` helper for callers willing to buffer
 all results in memory.
 
+### Request unit cost
+
+A point read of a roughly 1 KB item typically costs about 1 RU with Session or
+Eventual consistency. Treat that as a reference, not a guaranteed read-many
+charge per returned item. Stronger consistency, item size, index utilization,
+filtering, and the number of contacted partitions can change the cost.
+
+Partial hierarchical keys do not inherently offer an RU advantage. They select
+a broader scope than complete keys and can require more requests and return
+more items. Even a prefix/id pair can match several documents. Read-many routes
+to relevant physical ranges and uses bounded query batches rather than one
+unbounded selection expression, but still incurs query parsing and execution
+cost. A broad prefix may span many or all physical partitions; adding a filter
+does not guarantee that fewer returned items means a lower charge.
+
+Use complete keys when known and when they express the intended selection.
+Measure RU consumption across all pages and attempts using completion
+diagnostics; the Rust SDK's `ReadManyResponse::request_charge()` reports the
+aggregate for `collect_all()`. Neither lower RU consumption nor lower latency
+relative to another API is guaranteed without measuring the workload.
+
 ## Building
 
 Version **0.2.0** is a breaking C ABI revision. Check `cosmos_version()` against

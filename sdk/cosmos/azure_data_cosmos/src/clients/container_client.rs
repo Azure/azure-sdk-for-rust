@@ -58,6 +58,17 @@ impl ContainerClient {
     /// cross-partition snapshot or durable resume. Use
     /// [`ReadManyIterator::collect_all()`] before iteration to aggregate results.
     ///
+    /// # Request unit cost
+    ///
+    /// A point read of a roughly 1 KB item typically costs about 1 RU with Session
+    /// or Eventual consistency; this is a reference, not a per-item read-many price.
+    /// A partial partition key does not inherently reduce RU cost: it can cover
+    /// more physical partitions and matching items than a complete key.
+    /// Read-many targets relevant ranges and bounds query batches, but query
+    /// parsing and execution still incur cost. Item size, consistency, index
+    /// utilization, filtering, and fan-out affect the charge. Measure the total
+    /// with [`ReadManyResponse::request_charge()`](crate::feed::ReadManyResponse::request_charge).
+    ///
     /// # Errors
     ///
     /// Returns an error for invalid selections, unbound filter parameters,
