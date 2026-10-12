@@ -66,6 +66,13 @@ pub(super) fn scripted_gated(
 }
 
 pub(super) fn create(current_thread: bool) -> Result<(*mut RuntimeContext, *mut DriverHandle)> {
+    create_with_hpk(current_thread, false)
+}
+
+pub(super) fn create_with_hpk(
+    current_thread: bool,
+    hierarchical: bool,
+) -> Result<(*mut RuntimeContext, *mut DriverHandle)> {
     let endpoint = Url::parse("https://eastus.emulator.local").unwrap();
     let config = VirtualAccountConfig::new(vec![VirtualRegion::new("East US", endpoint.clone())])?;
     let emulator = Arc::new(InMemoryEmulatorHttpClient::new(config));
@@ -73,7 +80,14 @@ pub(super) fn create(current_thread: bool) -> Result<(*mut RuntimeContext, *mut 
     emulator.store().create_container_with_config(
         "testdb",
         "testcoll",
-        PartitionKeyDefinition::new(vec!["/pk".into()]),
+        if hierarchical {
+            serde_json::from_value(
+                serde_json::json!({"paths":["/tenant","/pk"],"kind":"MultiHash","version":2}),
+            )
+            .unwrap()
+        } else {
+            PartitionKeyDefinition::new(vec!["/pk".into()])
+        },
         ContainerConfig::new().with_partition_count(2).build()?,
     );
     let tokio = if current_thread {
@@ -98,14 +112,23 @@ pub(super) fn create(current_thread: bool) -> Result<(*mut RuntimeContext, *mut 
             .resolve_container("testdb", "testcoll", OperationOptions::default())
             .await?;
         for rank in [5, 1, 4, 2, 3, 0] {
-            let id = format!("d{rank}");
+            let id = if hierarchical {
+                "shared".to_string()
+            } else {
+                format!("d{rank}")
+            };
             let pk = format!("pk-{rank}");
-            let body = serde_json::json!({"id":id,"pk":pk,"rank":rank,"group":rank % 3});
+            let body =
+                serde_json::json!({"id":id,"pk":pk,"rank":rank,"group":rank % 3,"tenant":"tenant"});
             driver
                 .execute_singleton_operation(
                     CosmosOperation::create_item(ItemReference::from_name(
                         &container,
-                        PartitionKey::from(pk),
+                        if hierarchical {
+                            PartitionKey::from(("tenant", pk))
+                        } else {
+                            PartitionKey::from(pk)
+                        },
                         id,
                     ))
                     .with_body(serde_json::to_vec(&body).unwrap()),

@@ -2093,7 +2093,7 @@ typedef struct cosmos_driver_options_config_v2_t {
  */
 typedef struct cosmos_read_many_identity_t {
   /**
-   * Counted components in container path order; must describe a complete key.
+   * Counted components in container path order: a complete key or nonempty hierarchical prefix.
    */
   const struct cosmos_partition_key_component_t *partition_key;
   /**
@@ -2140,7 +2140,8 @@ typedef struct cosmos_read_many_request_t {
    */
   struct cosmos_operation_request_t operation;
   /**
-   * 1: exact items; 2: complete logical partitions.
+   * 1: key/id pairs; 2: partition keys. Both allow nonempty hierarchical prefixes.
+   * Prefix/id pairs return every matching item across logical partitions.
    */
   uint32_t selection_kind;
   /**

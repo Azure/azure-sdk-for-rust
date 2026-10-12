@@ -59,19 +59,46 @@ pub(crate) async fn build(
     let mut groups: BTreeMap<usize, Vec<Identity>> = BTreeMap::new();
     for identity in identities {
         let epk = FeedRange::for_partition(identity.0.clone(), definition);
-        let index = ranges
+        let matching = ranges
             .iter()
-            .position(|range| epk.is_subset_of(&range.range))
-            .ok_or_else(|| {
-                invalid("read-many partition key is not covered by container topology")
-            })?;
-        groups.entry(index).or_default().push(identity);
+            .enumerate()
+            .filter(|(_, range)| {
+                if identity.0.len() == definition.paths().len() {
+                    range.range.min_inclusive() <= epk.min_inclusive()
+                        && epk.min_inclusive() < range.range.max_exclusive()
+                } else {
+                    epk.overlaps(&range.range)
+                }
+            })
+            .collect::<Vec<_>>();
+        if matching.is_empty() {
+            return Err(invalid(
+                "read-many partition key is not covered by container topology",
+            ));
+        }
+        if identity.0.len() < definition.paths().len() {
+            let covered = matching
+                .iter()
+                .map(|(_, range)| {
+                    super::intersect_feed_ranges(&epk, &range.range)
+                        .ok_or_else(|| invalid("invalid read-many prefix topology coverage"))
+                })
+                .collect::<crate::Result<Vec<_>>>()?;
+            super::validate_exact_coverage(&epk, covered.iter())?;
+        }
+        for (index, _) in matching {
+            groups.entry(index).or_default().push(identity.clone());
+        }
     }
     let width = groups.len();
     let mut children: Vec<Box<dyn PipelineNode>> = Vec::new();
     for (index, identities) in groups {
         let range = &ranges[index];
-        if identities.len() == 1 && filter.is_none() && !container.is_by_rid() {
+        if identities.len() == 1
+            && identities[0].0.len() == definition.paths().len()
+            && filter.is_none()
+            && !container.is_by_rid()
+        {
             if let (pk, Some(id)) = &identities[0] {
                 let item = ItemReference::from_name(container, pk.clone(), id.clone());
                 let mut read = CosmosOperation::read_item(item)
@@ -161,9 +188,13 @@ fn normalize(
                 pk = values.try_into()?;
             }
         }
-        if pk.is_empty() || pk.len() != definition.paths().len() {
+        if pk.is_empty()
+            || pk.len() > definition.paths().len()
+            || (pk.len() < definition.paths().len()
+                && definition.kind() != PartitionKeyKind::MultiHash)
+        {
             return Err(invalid(
-                "read-many requires complete logical partition keys",
+                "read-many requires a complete partition key or a nonempty hierarchical prefix",
             ));
         }
         for value in pk.values() {
@@ -173,7 +204,22 @@ fn normalize(
             unique.push((pk, id));
         }
     }
-    Ok(unique)
+    // Remove descendants before batching so overlapping selections cannot return a row twice.
+    unique
+        .into_iter()
+        .filter_map(|(pk, id)| {
+            for length in 1..pk.len() {
+                let prefix = match PartitionKey::try_from(pk.values()[..length].to_vec()) {
+                    Ok(prefix) => prefix,
+                    Err(error) => return Some(Err(error)),
+                };
+                if seen.contains(&(prefix, id.clone())) {
+                    return None;
+                }
+            }
+            Some(Ok((pk, id)))
+        })
+        .collect()
 }
 
 fn selectors(definition: &PartitionKeyDefinition) -> crate::Result<Vec<String>> {

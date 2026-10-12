@@ -5,7 +5,8 @@ use azure_core::{credentials::Secret, http::Url};
 use azure_data_cosmos::{
     feed::{ReadManyFilter, ReadManySelection},
     options::{
-        BinaryEncodingOptions, MaxItemCountHint, OperationOptionsBuilder, ReadManyOptions, Region,
+        BinaryEncodingOptions, MaxItemCountHint, OperationOptionsBuilder, ReadFeedRangesOptions,
+        ReadManyOptions, Region,
     },
     AccountEndpoint, AccountReference, ContainerClient, CosmosClientBuilder, CosmosRuntimeBuilder,
     PartitionKey, RoutingStrategy,
@@ -318,10 +319,15 @@ async fn read_many_hierarchical_keys_and_id_completion() {
         .unwrap();
     assert_eq!(all.items().len(), 1);
     assert_eq!(all.items()[0]["id"], "item");
-    assert!(container
+    let prefix = container
         .read_many::<Value>(ReadManySelection::Partitions(vec!["tenant".into()]), None)
         .await
-        .is_err());
+        .unwrap()
+        .collect_all()
+        .await
+        .unwrap();
+    assert_eq!(prefix.items().len(), 1);
+    assert_eq!(prefix.items()[0]["id"], "item");
     let mismatch = container
         .read_many::<Value>(
             ReadManySelection::Items(vec![
@@ -487,6 +493,165 @@ async fn read_many_object_filter_keys_keep_escape_semantics() {
             .unwrap();
         assert_eq!(identities(response.into_items()), expected, "{predicate}");
     }
+}
+
+#[tokio::test]
+async fn read_many_hpk_prefixes_span_ranges_and_deduplicate_before_batching() {
+    let definition: PartitionKeyDefinition = serde_json::from_value(json!({
+        "paths": ["/tenant", "/region", "/user"], "kind": "MultiHash", "version": 2
+    }))
+    .unwrap();
+    let (container, emulator) = container_with_emulator(definition.clone(), 1).await;
+    let mut expected = Vec::new();
+    for tenant in ["tenant-a", "tenant-b"] {
+        for region in ["west", "east"] {
+            for user in ["u1", "u2"] {
+                for id in ["shared", "other", "deleted"] {
+                    let item = json!({"id":id, "tenant":tenant, "region":region, "user":user, "active": id != "deleted"});
+                    container
+                        .create_item((tenant, region, user), id, &item, None)
+                        .await
+                        .unwrap();
+                    if tenant == "tenant-a" && id != "deleted" {
+                        expected.push(format!("{tenant}/{region}/{user}/{id}"));
+                    }
+                }
+            }
+        }
+    }
+    expected.sort();
+    let boundary = azure_data_cosmos::feed::FeedRange::for_partition(
+        ("tenant-a", "west", "u2").into(),
+        &definition,
+    )
+    .min_inclusive()
+    .clone();
+    let store = emulator.store();
+    store.split_partition_at_epk("read-many", "items", 0, boundary, std::time::Duration::ZERO);
+    store.wait_for_split("read-many", "items", 0).await;
+    assert_eq!(
+        container
+            .read_feed_ranges(Some(
+                ReadFeedRangesOptions::default().with_force_refresh(true)
+            ))
+            .await
+            .unwrap()
+            .len(),
+        2
+    );
+    let boundary_item = container
+        .read_many::<Value>(
+            ReadManySelection::Items(vec![(("tenant-a", "west", "u2").into(), "shared".into())]),
+            Some(ReadManyOptions::default().with_max_fan_out(1)),
+        )
+        .await
+        .expect("complete boundary key must route to one physical partition")
+        .collect_all()
+        .await
+        .unwrap();
+    assert_eq!(boundary_item.items().len(), 1);
+    assert_eq!(boundary_item.items()[0]["id"], "shared");
+    assert_eq!(boundary_item.items()[0]["user"], "u2");
+    assert!(
+        container
+            .read_many::<Value>(
+                ReadManySelection::Partitions(vec!["tenant-a".into()]),
+                Some(ReadManyOptions::default().with_max_fan_out(1)),
+            )
+            .await
+            .is_err(),
+        "a prefix spanning two ranges must obey the physical fan-out limit"
+    );
+
+    for item_mode in [true, false] {
+        for reverse in [false, true] {
+            let selection = if item_mode {
+                let mut pairs = (0..65)
+                    .map(|i| ("tenant-a".into(), format!("absent-{i}")))
+                    .collect::<Vec<_>>();
+                pairs.extend([
+                    (("tenant-a", "west", "u1").into(), "shared".into()),
+                    (("tenant-a", "west").into(), "shared".into()),
+                    ("tenant-a".into(), "shared".into()),
+                    ("tenant-a".into(), "other".into()),
+                    ("tenant-a".into(), "deleted".into()),
+                    ("tenant-a".into(), "shared".into()),
+                ]);
+                if reverse {
+                    pairs.reverse();
+                }
+                ReadManySelection::Items(pairs)
+            } else {
+                let mut keys = (0..65)
+                    .map(|i| PartitionKey::from(format!("absent-{i}")))
+                    .collect::<Vec<_>>();
+                keys.extend([
+                    ("tenant-a", "west", "u1").into(),
+                    ("tenant-a", "west").into(),
+                    "tenant-a".into(),
+                    "tenant-a".into(),
+                ]);
+                if reverse {
+                    keys.reverse();
+                }
+                ReadManySelection::Partitions(keys)
+            };
+            let options = ReadManyOptions::default()
+                .with_filter("c.active = true".parse().unwrap())
+                .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()));
+            let mut pages = container
+                .read_many::<Value>(selection, Some(options))
+                .await
+                .unwrap();
+            let mut actual = Vec::new();
+            let mut split_again = item_mode && !reverse;
+            while let Some(page) = pages.next().await {
+                for item in page.unwrap().into_items() {
+                    actual.push(format!(
+                        "{}/{}/{}/{}",
+                        item["tenant"].as_str().unwrap(),
+                        item["region"].as_str().unwrap(),
+                        item["user"].as_str().unwrap(),
+                        item["id"].as_str().unwrap()
+                    ));
+                }
+                if split_again && !actual.is_empty() {
+                    store.split_partition("read-many", "items", 1, std::time::Duration::ZERO);
+                    store.wait_for_split("read-many", "items", 1).await;
+                    split_again = false;
+                }
+            }
+            actual.sort();
+            assert_eq!(actual, expected, "item_mode={item_mode}, reverse={reverse}");
+        }
+    }
+    let shared = container
+        .read_many::<Value>(
+            ReadManySelection::Items(vec![("tenant-a".into(), "shared".into())]),
+            None,
+        )
+        .await
+        .unwrap()
+        .collect_all()
+        .await
+        .unwrap();
+    assert_eq!(
+        shared.items().len(),
+        4,
+        "an unfiltered singleton prefix/id must query every descendant"
+    );
+    let narrow = container
+        .read_many::<Value>(
+            ReadManySelection::Items(vec![(("tenant-a", "west").into(), "shared".into())]),
+            None,
+        )
+        .await
+        .unwrap()
+        .collect_all()
+        .await
+        .unwrap();
+    assert_eq!(narrow.items().len(), 2);
+    assert!(narrow.items().iter().all(|item| item["region"] == "west"));
 }
 
 #[tokio::test]

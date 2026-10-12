@@ -54,6 +54,117 @@ fn full_range() -> ResolvedRange {
     }
 }
 
+#[test]
+fn prefixes_normalize_per_id_and_reject_invalid_component_counts() {
+    let definition: PartitionKeyDefinition = serde_json::from_value(json!({
+        "paths":["/tenant","/region","/user"],"kind":"MultiHash","version":2
+    }))
+    .unwrap();
+    let selections = [
+        (("a", "west", "u1").into(), "one".to_owned()),
+        ("a".into(), "one".to_owned()),
+        (("a", "west").into(), "one".to_owned()),
+        (("a", "west").into(), "two".to_owned()),
+    ];
+    let actual = normalize(&ReadManySelection::Items(selections.to_vec()), &definition).unwrap();
+    assert_eq!(
+        actual,
+        vec![
+            ("a".into(), Some("one".into())),
+            (("a", "west").into(), Some("two".into()))
+        ]
+    );
+    let keys = selections.into_iter().map(|(key, _)| key).collect();
+    assert_eq!(
+        normalize(&ReadManySelection::Partitions(keys), &definition).unwrap(),
+        vec![("a".into(), None)]
+    );
+    for selection in [
+        ReadManySelection::Items(vec![(
+            Vec::<PartitionKeyValue>::new().try_into().unwrap(),
+            "one".into(),
+        )]),
+        ReadManySelection::Partitions(vec![Vec::<PartitionKeyValue>::new().try_into().unwrap()]),
+    ] {
+        assert!(normalize(&selection, &definition).is_err());
+    }
+    let hash = PartitionKeyDefinition::new(vec!["/pk".into()]);
+    assert!(normalize(
+        &ReadManySelection::Partitions(vec![("a", "b").into()]),
+        &hash
+    )
+    .is_err());
+}
+
+#[tokio::test]
+async fn prefix_routes_to_all_intersecting_ranges_and_rejects_gaps() {
+    let mut container = container();
+    // Build a real MultiHash metadata reference, not a hash-key approximation.
+    let definition: PartitionKeyDefinition = serde_json::from_value(json!({
+        "paths":["/tenant","/user"],"kind":"MultiHash","version":2
+    }))
+    .unwrap();
+    container = ContainerReference::new(
+        container.account().clone(),
+        "db",
+        "db_rid",
+        "items",
+        "items_rid",
+        &ContainerProperties {
+            id: "items".into(),
+            partition_key: definition.clone(),
+            system_properties: Default::default(),
+        },
+    );
+    let boundary = FeedRange::for_partition(("a", "user").into(), &definition)
+        .min_inclusive()
+        .clone();
+    let left = ResolvedRange {
+        partition_key_range_id: "0".into(),
+        parents: vec![],
+        range: FeedRange::new("".try_into().unwrap(), boundary.clone()).unwrap(),
+    };
+    let right = ResolvedRange {
+        partition_key_range_id: "1".into(),
+        parents: vec![],
+        range: FeedRange::new(boundary, "FF".try_into().unwrap()).unwrap(),
+    };
+    let operation = Arc::new(CosmosOperation::read_many(
+        container,
+        ReadManySelection::Items(vec![("a".into(), "shared".into())]),
+        None,
+    ));
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![left.clone(), right])]);
+    let mut pipeline = build(
+        operation.clone(),
+        operation.read_many.as_ref().unwrap(),
+        &mut topology,
+    )
+    .await
+    .unwrap();
+    assert_eq!(pipeline.fan_out_width(), 2);
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(response(br#"{"Documents":[]}"#)),
+        Ok(response(br#"{"Documents":[]}"#)),
+    ]);
+    let mut context = PipelineContext::new(&mut executor, None);
+    while pipeline.next_page(&mut context).await.unwrap().is_some() {}
+    assert_eq!(executor.query_bodies.len(), 2);
+    assert!(
+        executor.query_bodies.iter().all(Option::is_some),
+        "partial keys never use point reads"
+    );
+    assert_eq!(executor.query_bodies[0], executor.query_bodies[1]);
+    let mut incomplete = MockTopologyProvider::new(vec![Ok(vec![left])]);
+    assert!(build(
+        operation.clone(),
+        operation.read_many.as_ref().unwrap(),
+        &mut incomplete
+    )
+    .await
+    .is_err());
+}
+
 #[tokio::test]
 async fn rid_addressed_singletons_use_queries_with_or_without_filters() {
     for filter in [None, Some("true".parse().unwrap())] {
@@ -91,6 +202,45 @@ async fn rid_addressed_singletons_use_queries_with_or_without_filters() {
             json!([{"name":"@__read_many_0","value":"item"},{"name":"@__read_many_1","value":"pk"}])
         );
     }
+}
+
+#[tokio::test]
+async fn id_partition_singleton_keeps_point_read_optimization() {
+    let original = container();
+    let container = ContainerReference::new(
+        original.account().clone(),
+        "db",
+        "db_rid",
+        "items",
+        "items_rid",
+        &ContainerProperties {
+            id: "items".into(),
+            partition_key: PartitionKeyDefinition::new(vec!["/id".into()]),
+            system_properties: Default::default(),
+        },
+    );
+    let operation = Arc::new(CosmosOperation::read_many(
+        container,
+        ReadManySelection::Items(vec![("item".into(), "item".into())]),
+        None,
+    ));
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![full_range()])]);
+    let mut pipeline = build(
+        operation.clone(),
+        operation.read_many.as_ref().unwrap(),
+        &mut topology,
+    )
+    .await
+    .unwrap();
+    let mut executor = MockRequestExecutor::new(vec![Ok(response(br#"{"id":"item"}"#))]);
+    let mut context = PipelineContext::new(&mut executor, None);
+    let page = pipeline.next_page(&mut context).await.unwrap().unwrap();
+    assert_eq!(
+        page.into_body().into_items::<Value>().unwrap(),
+        vec![json!({"id":"item"})]
+    );
+    assert!(pipeline.next_page(&mut context).await.unwrap().is_none());
+    assert_eq!(executor.query_bodies, vec![None]);
 }
 
 #[tokio::test]

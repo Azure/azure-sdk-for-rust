@@ -12,16 +12,19 @@ use crate::{models::PartitionKey, query::ast::SqlScalarExpression};
 
 mod predicate;
 
-/// Items or complete logical partitions to read from one container.
+/// Items or logical partition scopes to read from one container.
 ///
-/// Duplicate selections are removed before execution. Empty selections read
-/// nothing. Results are unordered and missing items are omitted.
+/// Complete keys and nonempty hierarchical prefixes are supported. Duplicate and
+/// overlapping selections do not duplicate results. Empty selections read nothing.
+/// Results are unordered and missing items are omitted.
 #[derive(Clone, SafeDebug)]
 #[non_exhaustive]
 pub enum ReadManySelection {
-    /// Exact `(partition key, item id)` pairs.
+    /// `(partition key or hierarchical prefix, item id)` pairs.
+    ///
+    /// A prefix plus an id returns every matching item across its logical partitions.
     Items(Vec<(PartitionKey, String)>),
-    /// Complete logical partition keys; hierarchical prefixes are not supported.
+    /// Complete logical partition keys or nonempty hierarchical prefixes.
     Partitions(Vec<PartitionKey>),
 }
 
@@ -131,6 +134,9 @@ mod tests {
             "SELECT * FROM c",
             "true) OR true",
             "true ORDER BY c.id",
+            "COUNT(c.id) > 0",
+            "true GROUP BY c.id",
+            "true OFFSET 0 LIMIT 1",
             "EXISTS(SELECT * FROM c)",
             "udf.test(c.id)",
             "true; SELECT * FROM c",

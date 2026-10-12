@@ -20,15 +20,18 @@ use crate::{
     PartitionKey,
 };
 
-/// Items or complete logical partitions selected for a read-many operation.
+/// Items or logical partition scopes selected for a read-many operation.
 ///
-/// Empty selections read nothing. Duplicate selections are removed.
+/// Keys may be complete or nonempty hierarchical prefixes. Empty selections read
+/// nothing; duplicate and overlapping selections do not duplicate returned items.
 #[derive(Clone, SafeDebug)]
 #[non_exhaustive]
 pub enum ReadManySelection {
-    /// Exact `(partition key, item id)` pairs.
+    /// `(partition key or hierarchical prefix, item id)` pairs.
+    ///
+    /// A prefix plus an id returns every matching item across its logical partitions.
     Items(Vec<(PartitionKey, String)>),
-    /// Complete logical partition keys, not hierarchical prefixes.
+    /// Complete logical partition keys or nonempty hierarchical prefixes.
     Partitions(Vec<PartitionKey>),
 }
 

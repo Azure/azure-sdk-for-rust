@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added paged `ContainerClient::read_many` for item or complete-partition selections, optional scoped filters, and explicit result collection with aggregate diagnostics. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
+- Added paged `ContainerClient::read_many` for key/id or partition selections, including hierarchical prefixes, optional scoped filters, and explicit result collection with aggregate diagnostics. ([#5385](https://github.com/Azure/azure-sdk-for-rust/pull/5385))
 
 ### Breaking Changes
 

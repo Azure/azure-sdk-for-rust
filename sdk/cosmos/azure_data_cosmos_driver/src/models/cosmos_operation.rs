@@ -750,7 +750,10 @@ impl CosmosOperation {
         Self::new(operation_type, item, Some(range))
     }
 
-    /// Reads selected items or complete logical partitions, optionally filtered.
+    /// Reads selected items or logical partition scopes, optionally filtered.
+    ///
+    /// Both selection modes accept complete keys or nonempty hierarchical prefixes.
+    /// A prefix plus an id returns every matching item across logical partitions.
     ///
     /// Execute with [`CosmosDriver::plan_operation()`](crate::CosmosDriver::plan_operation)
     /// and [`CosmosDriver::execute_plan()`](crate::CosmosDriver::execute_plan).

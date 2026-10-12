@@ -21,7 +21,7 @@ use azure_data_cosmos_driver::{
 /// One selected logical key, with an item id only for item selection.
 #[repr(C)]
 pub struct CosmosReadManyIdentity {
-    /// Counted components in container path order; must describe a complete key.
+    /// Counted components in container path order: a complete key or nonempty hierarchical prefix.
     pub partition_key: *const CosmosPartitionKeyComponent,
     /// Component count (one to three).
     pub partition_key_len: usize,
@@ -50,7 +50,8 @@ pub struct CosmosReadManyRequest {
     pub abi_version: u32,
     /// Container, session, activity, page hints, and options; kind must be zero.
     pub operation: CosmosOperationRequest,
-    /// 1: exact items; 2: complete logical partitions.
+    /// 1: key/id pairs; 2: partition keys. Both allow nonempty hierarchical prefixes.
+    /// Prefix/id pairs return every matching item across logical partitions.
     pub selection_kind: u32,
     /// Selected identities. NULL/0 selects nothing, never the full container.
     pub identities: *const CosmosReadManyIdentity,

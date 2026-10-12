@@ -68,8 +68,8 @@ for the full design.
 ## Read-many cursors
 
 Initialize `cosmos_read_many_request_t` with `cosmos_read_many_request_init`,
-set its container, and select either exact items (`selection_kind = 1`) or
-complete logical partitions (`selection_kind = 2`). Supply counted identities;
+set its container, and select either key/id pairs (`selection_kind = 1`) or
+partition keys (`selection_kind = 2`). Supply counted identities;
 partition selections must leave each item id unset. Duplicate selections are
 removed, empty selections read nothing, and missing items are omitted.
 
@@ -77,7 +77,16 @@ An optional scalar SQL predicate using alias `c` narrows the selection.
 Bind values through the counted parameter array, with names including `@` and
 values encoded as JSON. Filters cannot replace the selection. Full SELECT
 queries, subqueries, projections, ordering, and aggregates belong in the query
-API. Hierarchical prefixes are not supported for partition selections.
+API. Both selection modes support complete keys and nonempty hierarchical
+prefixes. A prefix plus an item id returns every matching document across
+descendant logical partitions, not necessarily one document. Overlapping
+prefixes do not duplicate results, including across query batches. Empty keys
+are rejected; an empty selection array reads nothing.
+
+Only eligible unfiltered singleton selections with complete keys use point
+reads. Prefix selections and filtered selections use queries, including on
+containers whose final partition-key component is `/id`. When only that final
+component is omitted in a key/id pair, the SDK completes it from the supplied id.
 
 Submit through `cosmos_read_many_open_submit` on a cursor queue, then use the
 existing Next, completion, and Free APIs. Input buffers can be released as soon

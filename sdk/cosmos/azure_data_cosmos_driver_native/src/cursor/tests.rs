@@ -379,6 +379,106 @@ fn read_many_versioned_extension_requires_zero_bytes() {
     }
 }
 
+#[test]
+fn read_many_native_prefixes_return_all_matching_identities() {
+    let fixture = Fixture::from_handles(fixture::create_with_hpk(true, true).unwrap(), 2);
+    let components = [
+        CosmosPartitionKeyComponent {
+            kind: 0,
+            value: CosmosPartitionKeyComponentValue {
+                string_value: view(b"tenant"),
+            },
+        },
+        CosmosPartitionKeyComponent {
+            kind: 0,
+            value: CosmosPartitionKeyComponentValue {
+                string_value: view(b"pk-5"),
+            },
+        },
+    ];
+    for kind in [1, 2] {
+        for filtered in [false, true] {
+            let id = if kind == 1 {
+                view(b"shared")
+            } else {
+                Default::default()
+            };
+            let identities = [
+                CosmosReadManyIdentity {
+                    partition_key: components.as_ptr(),
+                    partition_key_len: 2,
+                    item_id: id,
+                },
+                CosmosReadManyIdentity {
+                    partition_key: components.as_ptr(),
+                    partition_key_len: 1,
+                    item_id: id,
+                },
+            ];
+            let mut storage = MaybeUninit::<CosmosReadManyRequest>::uninit();
+            // SAFETY: storage is writable for the complete initialized request.
+            unsafe {
+                cosmos_read_many_request_init(storage.as_mut_ptr());
+            }
+            // SAFETY: init wrote every field.
+            let mut request = unsafe { storage.assume_init() };
+            request.operation.container = fixture.container;
+            request.operation.max_item_count = 1;
+            let mut options = cosmos_operation_options_default();
+            options.binary_encoding_enabled = 1;
+            request.operation.options = &options;
+            request.selection_kind = kind;
+            request.identities = identities.as_ptr();
+            request.identities_len = identities.len();
+            if filtered {
+                request.filter = view(b"c.rank >= 3");
+            }
+            let mut status = COSMOS_STATUS_SUCCESS;
+            // SAFETY: fixture handles and input arrays remain live throughout submission.
+            let operation = unsafe {
+                cosmos_read_many_open_submit(
+                    fixture.driver,
+                    &request,
+                    fixture.queue,
+                    0,
+                    &mut status,
+                )
+            };
+            assert_eq!(status, COSMOS_STATUS_SUCCESS);
+            let opened = fixture.receive(operation);
+            // SAFETY: opened is an owned completion.
+            assert_eq!(unsafe { (*opened).common.status }, COSMOS_STATUS_SUCCESS);
+            let cursor = cosmos_cursor_completion_take_cursor(opened);
+            cosmos_cursor_completion_free(opened);
+            let mut ranks = Vec::new();
+            loop {
+                let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+                // SAFETY: page is an owned completion.
+                if unsafe { (*page).result_kind } == 4 {
+                    cosmos_cursor_completion_free(page);
+                    break;
+                }
+                ranks.extend(
+                    documents(page)
+                        .iter()
+                        .map(|doc| doc["rank"].as_i64().unwrap()),
+                );
+                cosmos_cursor_completion_free(page);
+            }
+            cosmos_cursor_free(cursor);
+            ranks.sort();
+            assert_eq!(
+                ranks,
+                if filtered {
+                    vec![3, 4, 5]
+                } else {
+                    vec![0, 1, 2, 3, 4, 5]
+                }
+            );
+        }
+    }
+}
+
 struct Fixture {
     runtime: *mut RuntimeContext,
     driver: *mut DriverHandle,

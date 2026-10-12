@@ -44,13 +44,15 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
-    /// Reads selected items or complete logical partitions as unordered pages.
+    /// Reads selected items or logical partition scopes as unordered pages.
     ///
     /// Duplicate selections are removed. Missing or filtered-out items are
     /// omitted. A filter only narrows the selection; use [`Self::query_items()`]
-    /// for container-wide queries. Hierarchical partition selections require
-    /// complete keys. Item keys missing only a final `/id` component are completed
-    /// from the supplied id.
+    /// for container-wide queries. Both selection modes accept complete keys or
+    /// nonempty hierarchical prefixes. A prefix plus an id can return multiple
+    /// items across logical partitions. Overlapping selections do not duplicate
+    /// results. Item keys missing only a final `/id` component are completed from
+    /// the supplied id.
     ///
     /// Queries consume RUs and may span multiple service requests. There is no
     /// cross-partition snapshot or durable resume. Use
