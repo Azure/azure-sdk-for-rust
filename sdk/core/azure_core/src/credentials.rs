@@ -4,15 +4,27 @@
 //! Azure authentication and authorization.
 
 use crate::Bytes;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use std::{borrow::Cow, fmt};
 use typespec_client_core::{fmt::SafeDebug, http::ClientMethodOptions, time::OffsetDateTime};
 
 /// Represents a secret.
 ///
-/// The [`Debug`] implementation will not print the secret.
-#[derive(Clone, Deserialize, Serialize, Eq)]
+/// Neither the [`Debug`] nor the [`Serialize`] implementation will print the secret.
+#[derive(Clone, Deserialize, Eq)]
 pub struct Secret(Cow<'static, str>);
+
+// `Secret` intentionally does not derive `Serialize`: the default derive for a
+// newtype serializes transparently to the inner string, which would silently
+// leak the plaintext value through any serde-based sink (JSON log field, cache
+// file, telemetry payload) even though `Debug` redacts it. Mirror the `Debug`
+// redaction here instead, so a type that wraps `Secret` and derives
+// `Serialize` (e.g. `AccessToken`) also redacts automatically.
+impl Serialize for Secret {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str("Secret")
+    }
+}
 
 impl Secret {
     /// Create a new `Secret`.
@@ -227,4 +239,29 @@ pub trait TokenCredential: Send + Sync + fmt::Debug {
         scopes: &[&str],
         options: Option<TokenRequestOptions<'_>>,
     ) -> crate::Result<AccessToken>;
+}
+
+#[cfg(test)]
+mod poc_serialize_redaction {
+    use super::{AccessToken, Secret};
+    use typespec_client_core::time::OffsetDateTime;
+
+    #[test]
+    fn secret_serialize_is_redacted() {
+        let secret = Secret::new("super-secret-token-value");
+        assert_eq!("Secret", format!("{secret:?}"));
+        let json = serde_json::to_string(&secret).unwrap();
+        println!("SERIALIZED SECRET JSON: {json}");
+        assert!(!json.contains("super-secret-token-value"));
+        assert_eq!("\"Secret\"", json);
+    }
+
+    #[test]
+    fn access_token_serialize_is_redacted() {
+        let token = AccessToken::new("bearer-plaintext-abc123", OffsetDateTime::now_utc());
+        assert!(!format!("{token:?}").contains("bearer-plaintext-abc123"));
+        let json = serde_json::to_string(&token).unwrap();
+        println!("SERIALIZED ACCESSTOKEN JSON: {json}");
+        assert!(!json.contains("bearer-plaintext-abc123"));
+    }
 }
