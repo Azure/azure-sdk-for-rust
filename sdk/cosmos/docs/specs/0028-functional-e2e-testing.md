@@ -433,6 +433,12 @@ bidirectional profile/applicability rule would reject valid catalog entries.
 Revisit this only with an execution-evidence design that preserves that profile
 reuse.
 
+The AAD fixture probes the resolved container after key-authenticated resource
+creation so authorization propagation is checked before the scenario starts.
+PR5 does not add scenario-level retries around AAD reads, queries, or pager
+consumption: a failure after that readiness check remains test evidence rather
+than being hidden by operation-specific retry behavior.
+
 PR5 also leaves the following reviewed hardening ideas unchanged because they
 do not affect any current matrix cell:
 

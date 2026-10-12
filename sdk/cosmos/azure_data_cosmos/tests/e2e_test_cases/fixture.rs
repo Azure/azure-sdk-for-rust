@@ -310,7 +310,7 @@ impl E2eTestFixture {
             .await?;
         let database = management_client.database_client(&database_id);
         let cleanup = DatabaseCleanup::new(management_client, database_id.clone());
-        let setup = async {
+        let setup: TestResult<_> = async {
             database.create_container(properties, None).await?;
             let container = client
                 .database_client(&database_id)
@@ -330,7 +330,7 @@ impl E2eTestFixture {
                 container,
             }),
             Err(setup_error) => match cleanup.cleanup().await {
-                Ok(()) => Err(setup_error.into()),
+                Ok(()) => Err(setup_error),
                 Err(cleanup_error) => Err(format!(
                     "E2E fixture setup failed: {setup_error}; database cleanup also failed: {cleanup_error}"
                 )

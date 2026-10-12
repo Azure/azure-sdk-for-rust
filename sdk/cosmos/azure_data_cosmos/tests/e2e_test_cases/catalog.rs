@@ -904,10 +904,7 @@ pub fn validate_catalog(implemented_tests: &[&str]) -> Result<(), String> {
             }
             ImplementationStatus::Unsupported => {
                 if implementation.test.is_some()
-                    || implementation
-                        .reason
-                        .as_deref()
-                        .is_none_or(str::is_empty)
+                    || implementation.reason.as_deref().is_none_or(str::is_empty)
                 {
                     return Err(format!(
                         "unsupported scenario '{}' must include a reason and no test",
@@ -1102,8 +1099,9 @@ fn valid_slug(value: &str) -> bool {
 mod tests {
     use super::{
         effective_regions, load_profiles, valid_scenario_id, validate_account_configuration,
-        Implementation, ImplementationStatus, Region,
+        Implementation, ImplementationStatus, Region, LIVE_AAD_MATRIX, TEST_RESOURCES_BICEP,
     };
+    use serde_json::Value;
 
     #[test]
     fn single_region_profiles_project_only_for_live() -> Result<(), String> {
