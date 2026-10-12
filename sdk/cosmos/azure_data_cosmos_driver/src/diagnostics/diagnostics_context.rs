@@ -1252,8 +1252,47 @@ struct DiagnosticsOutput<'a> {
     /// absent (and thus byte-identical to prior output) otherwise.
     #[serde(skip_serializing_if = "Option::is_none")]
     compaction: Option<&'a CompactionInfo>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    topology_recovery: Option<&'a TopologyRecoveryHistory>,
     #[serde(flatten)]
     payload: DiagnosticsPayload<'a>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+struct TopologyRecoveryAttempt {
+    source_range_id: String,
+    scope: [String; 2],
+    duration_ms: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error_status: Option<CosmosStatus>,
+    total_replacements: usize,
+    omitted_replacements: usize,
+    /// Physical range ID, inclusive minimum EPK, exclusive maximum EPK.
+    replacements: Vec<(String, String, String)>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+struct TopologyRecoveryHistory {
+    total_attempts: usize,
+    omitted_attempts: usize,
+    attempts: Vec<TopologyRecoveryAttempt>,
+}
+
+impl TopologyRecoveryHistory {
+    fn bounded(total_attempts: usize, attempts: Vec<TopologyRecoveryAttempt>, cap: usize) -> Self {
+        let mut attempts = bound_region_history(attempts, cap);
+        let mut remaining = cap;
+        for attempt in attempts.iter_mut().rev() {
+            attempt.replacements.truncate(remaining);
+            remaining -= attempt.replacements.len();
+            attempt.omitted_replacements = attempt.total_replacements - attempt.replacements.len();
+        }
+        Self {
+            total_attempts,
+            omitted_attempts: total_attempts - attempts.len(),
+            attempts,
+        }
+    }
 }
 
 /// Summary of requests in a single region.
@@ -2150,6 +2189,7 @@ impl DiagnosticsContextBuilder {
             fault_injection_enabled: false,
             hedge_diagnostics: self.hedge_diagnostics,
             compaction,
+            topology_recovery: None,
             #[cfg(test)]
             test_system_usage: self.test_system_usage,
             cached_json_detailed: OnceLock::new(),
@@ -2313,6 +2353,8 @@ pub struct DiagnosticsContext {
     /// to the pre-compaction behavior).
     compaction: Option<CompactionInfo>,
 
+    topology_recovery: Option<Arc<TopologyRecoveryHistory>>,
+
     /// Cached JSON string for detailed verbosity.
     cached_json_detailed: OnceLock<String>,
 
@@ -2471,6 +2513,7 @@ impl DiagnosticsContext {
             #[cfg(test)]
             test_system_usage: None,
             compaction: None,
+            topology_recovery: None,
             cached_json_detailed: OnceLock::new(),
             cached_json_summary: OnceLock::new(),
         }
@@ -2796,6 +2839,24 @@ impl DiagnosticsContext {
                         .find_map(|c| c.hedge_diagnostics.clone())
                 }),
             compaction,
+            topology_recovery: {
+                let total = sources
+                    .iter()
+                    .filter_map(|source| source.topology_recovery.as_ref())
+                    .map(|history| history.total_attempts)
+                    .sum();
+                (total > 0).then(|| {
+                    Arc::new(TopologyRecoveryHistory::bounded(
+                        total,
+                        sources
+                            .iter()
+                            .filter_map(|source| source.topology_recovery.as_ref())
+                            .flat_map(|history| history.attempts.iter().cloned())
+                            .collect(),
+                        cap,
+                    ))
+                })
+            },
             #[cfg(test)]
             test_system_usage: last.test_system_usage.clone(),
             cached_json_detailed: OnceLock::new(),
@@ -3182,6 +3243,7 @@ impl DiagnosticsContext {
             #[cfg(test)]
             test_system_usage: self.test_system_usage.clone(),
             compaction: self.compaction.clone(),
+            topology_recovery: self.topology_recovery.clone(),
             cached_json_detailed: OnceLock::new(),
             cached_json_summary: OnceLock::new(),
         }
@@ -3336,6 +3398,50 @@ impl DiagnosticsContext {
         self.cpu_monitor.as_ref().map(SystemUsageSnapshot::capture)
     }
 
+    pub(crate) fn with_topology_recovery(
+        &self,
+        source_range_id: &str,
+        scope: &crate::models::FeedRange,
+        duration: Duration,
+        recorded_duration: Duration,
+        error_status: Option<CosmosStatus>,
+        replacements: impl ExactSizeIterator<Item = (String, String, String)>,
+    ) -> Self {
+        let cap = self.options.max_request_diagnostics();
+        let attempt = TopologyRecoveryAttempt {
+            source_range_id: source_range_id.to_owned(),
+            scope: [
+                scope.min_inclusive().to_hex(),
+                scope.max_exclusive().to_hex(),
+            ],
+            duration_ms: duration.as_millis() as u64,
+            error_status,
+            total_replacements: replacements.len(),
+            omitted_replacements: replacements.len().saturating_sub(cap),
+            replacements: replacements.take(cap).collect(),
+        };
+        let mut attempts = self
+            .topology_recovery
+            .as_ref()
+            .map(|history| history.attempts.clone())
+            .unwrap_or_default();
+        let total = self
+            .topology_recovery
+            .as_ref()
+            .map_or(1, |history| history.total_attempts + 1);
+        attempts.push(attempt);
+        let mut result = self.clone();
+        result.topology_recovery = Some(Arc::new(TopologyRecoveryHistory::bounded(
+            total, attempts, cap,
+        )));
+        result.duration = result
+            .duration
+            .saturating_add(duration.saturating_sub(recorded_duration));
+        result.cached_json_detailed = OnceLock::new();
+        result.cached_json_summary = OnceLock::new();
+        result
+    }
+
     fn compute_json_detailed(&self) -> String {
         let total_duration_ms = self.duration.as_millis() as u64;
         let system_usage = self.resolve_system_usage();
@@ -3349,6 +3455,7 @@ impl DiagnosticsContext {
             system_usage,
             machine_id: self.machine_id.as_ref().map(|s| s.as_str()),
             compaction: self.compaction.as_ref(),
+            topology_recovery: self.topology_recovery.as_deref(),
             payload: DiagnosticsPayload::Requests {
                 requests: &self.requests,
             },
@@ -3388,6 +3495,7 @@ impl DiagnosticsContext {
             system_usage: self.resolve_system_usage(),
             machine_id: self.machine_id.as_ref().map(|s| s.as_str()),
             compaction: self.compaction.as_ref(),
+            topology_recovery: self.topology_recovery.as_deref(),
             payload: DiagnosticsPayload::Summary {
                 regions: region_summaries,
             },
@@ -3440,6 +3548,7 @@ impl Clone for DiagnosticsContext {
             fault_injection_enabled: self.fault_injection_enabled,
             hedge_diagnostics: self.hedge_diagnostics.clone(),
             compaction: self.compaction.clone(),
+            topology_recovery: self.topology_recovery.clone(),
             #[cfg(test)]
             test_system_usage: self.test_system_usage.clone(),
             // OnceLock does not implement Clone, so we propagate any cached
@@ -3488,6 +3597,7 @@ impl PartialEq for DiagnosticsContext {
             && self.patch_tracking_id == other.patch_tracking_id
             && self.hedge_diagnostics == other.hedge_diagnostics
             && self.compaction == other.compaction
+            && self.topology_recovery == other.topology_recovery
     }
 }
 
@@ -4397,6 +4507,101 @@ mod tests {
             info.runs.iter().map(|r| r.count).sum::<usize>(),
             total,
             "the verbatim sources' attempts must appear in the rollup"
+        );
+    }
+
+    #[test]
+    fn topology_refresh_error_duration_is_counted_once() {
+        let mut prior = DiagnosticsContextBuilder::new(
+            ActivityId::new_uuid(),
+            Arc::new(DiagnosticsOptions::default()),
+        )
+        .complete();
+        prior.duration = Duration::from_millis(10);
+        let mut refresh_error = prior.clone();
+        refresh_error.duration = Duration::from_millis(500);
+        let prior = prior.with_topology_recovery(
+            "0",
+            &crate::models::FeedRange::full(),
+            Duration::from_millis(510),
+            refresh_error.duration(),
+            Some(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED),
+            std::iter::empty(),
+        );
+        let aggregate = DiagnosticsContext::aggregate_sub_operations(&[
+            Arc::new(prior),
+            Arc::new(refresh_error),
+        ])
+        .unwrap();
+        assert_eq!(aggregate.duration(), Duration::from_millis(520));
+        assert_eq!(
+            aggregate.topology_recovery.as_ref().unwrap().attempts[0].duration_ms,
+            510
+        );
+    }
+
+    #[test]
+    fn topology_recovery_is_bounded_across_aggregation_and_cloning() {
+        let mut aggregate: Option<Arc<DiagnosticsContext>> = None;
+        for index in 0..40 {
+            let builder = DiagnosticsContextBuilder::new(
+                ActivityId::new_uuid(),
+                Arc::new(
+                    DiagnosticsOptions::builder()
+                        .with_max_request_diagnostics(16)
+                        .build()
+                        .unwrap(),
+                ),
+            );
+            let context = Arc::new(builder.complete().with_topology_recovery(
+                &index.to_string(),
+                &crate::models::FeedRange::full(),
+                Duration::from_millis(1),
+                Duration::ZERO,
+                None,
+                (0..50).map(|id| (id.to_string(), String::new(), "FF".into())),
+            ));
+            aggregate = Some(match aggregate.take() {
+                Some(previous) => Arc::new(
+                    DiagnosticsContext::aggregate_sub_operations(&[previous, context]).unwrap(),
+                ),
+                None => context,
+            });
+        }
+        let context = aggregate.unwrap();
+        let history = context.topology_recovery.as_ref().unwrap();
+        assert_eq!(history.total_attempts, 40);
+        assert_eq!(history.omitted_attempts, 24);
+        assert_eq!(history.attempts.len(), 16);
+        assert_eq!(
+            history
+                .attempts
+                .iter()
+                .map(|attempt| attempt.replacements.len())
+                .sum::<usize>(),
+            16
+        );
+        assert!(history
+            .attempts
+            .iter()
+            .all(|attempt| attempt.total_replacements
+                == attempt.replacements.len() + attempt.omitted_replacements));
+        assert_eq!(history.attempts.first().unwrap().source_range_id, "0");
+        assert_eq!(history.attempts.last().unwrap().source_range_id, "39");
+        let _ = context.to_json_string(Some(DiagnosticsVerbosity::Detailed));
+        let status = crate::error::status_codes::CLIENT_SPLIT_RETRIES_EXHAUSTED;
+        let cloned = context
+            .clone_with_operation_name(Some(Arc::from("query_items")))
+            .clone_with_status(status);
+        assert_eq!(cloned.topology_recovery, context.topology_recovery);
+        let json: serde_json::Value = serde_json::from_str(cloned.to_json_string(None)).unwrap();
+        assert_eq!(json["status"], status.to_string());
+        assert_eq!(json["topology_recovery"]["omitted_attempts"], 24);
+        assert!(
+            cloned
+                .to_json_string(Some(DiagnosticsVerbosity::Summary))
+                .len()
+                <= cloned.options.max_summary_size_bytes()
         );
     }
 
