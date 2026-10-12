@@ -1579,6 +1579,169 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn receiver_recovery_local_concurrent_latest() {
+        run_concurrent_local_recovery(StartPosition::default()).await;
+    }
+
+    #[tokio::test]
+    async fn receiver_recovery_local_concurrent_explicit_offset() {
+        run_concurrent_local_recovery(StartPosition {
+            location: StartLocation::Offset("0".to_string()),
+            inclusive: true,
+        })
+        .await;
+    }
+
+    async fn run_concurrent_local_recovery(start: StartPosition) {
+        timeout(StdDuration::from_secs(15), async {
+            let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+            let address = listener.local_addr().unwrap();
+            let source_url = Url::parse(&format!("amqp://{address}/hub/Partitions/0")).unwrap();
+            let connection = RecoverableConnection::new(
+                Url::parse(&format!("amqp://{address}/hub")).unwrap(),
+                Some("receiver-concurrent".to_string()),
+                None,
+                AmqpTransport::Tcp,
+                None,
+                Arc::new(MockCredential),
+                RetryOptions {
+                    initial_delay: azure_core::time::Duration::milliseconds(1),
+                    max_delay: azure_core::time::Duration::milliseconds(10),
+                    ..Default::default()
+                },
+                None,
+            );
+            connection.authorizer.disable_authorization().unwrap();
+            connection
+                .authorizer
+                .set_token_refresh_bias_for_test(azure_core::time::Duration::seconds(1))
+                .unwrap();
+            let source = local_source(&source_url, &start);
+            let options = AmqpReceiverOptions {
+                name: Some("receiver-concurrent".to_string()),
+                credit_mode: Some(ReceiverCreditMode::Auto(300)),
+                auto_accept: true,
+                ..Default::default()
+            };
+            let receiver = EventReceiver::new(
+                connection.clone(),
+                options.clone(),
+                source.clone(),
+                source_url.clone(),
+                "0".to_string(),
+                None,
+            );
+            let expected_resume = local_selector(&StartPosition {
+                location: StartLocation::Offset("1".to_string()),
+                inclusive: false,
+            });
+            let (selectors, mut observed_selectors) = mpsc::unbounded_channel();
+            let send_first = Arc::new(Notify::new());
+            let send_first_for_peer = send_first.clone();
+            let close_initial = Arc::new(Notify::new());
+            let close_initial_for_peer = close_initial.clone();
+            let recovered = Arc::new(Notify::new());
+            let recovered_for_peer = recovered.clone();
+            let expected_for_peer = expected_resume.clone();
+            let latest = matches!(start.location, StartLocation::Latest);
+            let peer = tokio::spawn(async move {
+                for attach_index in 0..2 {
+                    let (stream, _) = timeout(LOCAL_PEER_TIMEOUT, listener.accept())
+                        .await
+                        .unwrap()
+                        .unwrap();
+                    let mut connection = ConnectionAcceptor::builder()
+                        .container_id(format!("receiver-concurrent-peer-{attach_index}"))
+                        .sasl_acceptor(SaslAnonymousMechanism {})
+                        .build()
+                        .accept(stream)
+                        .await
+                        .unwrap();
+                    let mut session = SessionAcceptor::new()
+                        .accept(&mut connection)
+                        .await
+                        .unwrap();
+                    let LinkEndpoint::Sender(mut sender) =
+                        LinkAcceptor::new().accept(&mut session).await.unwrap()
+                    else {
+                        panic!("expected the client receiver link");
+                    };
+                    let selector = selector_from_sender(&sender);
+                    selectors.send(selector.clone()).unwrap();
+                    if attach_index == 0 {
+                        send_first_for_peer.notified().await;
+                        send_local_marker_batchable(
+                            &mut sender,
+                            1,
+                            LocalAnnotations::OffsetAndSequence,
+                        )
+                        .await;
+                        close_initial_for_peer.notified().await;
+                        let _ = connection.close().await;
+                    } else {
+                        let marker = if selector == expected_for_peer {
+                            2
+                        } else if latest {
+                            // Marker 2 arrived before this recovery attachment.
+                            6
+                        } else {
+                            1
+                        };
+                        send_local_marker_batchable(
+                            &mut sender,
+                            marker,
+                            LocalAnnotations::OffsetAndSequence,
+                        )
+                        .await;
+                        recovered_for_peer.notified().await;
+                    }
+                }
+            });
+
+            connection
+                .ensure_receiver(&source_url, &source, &options)
+                .await
+                .unwrap();
+            assert_eq!(
+                observed_selectors.recv().await.unwrap(),
+                local_selector(&start)
+            );
+
+            // Dropping an active stream must release the pending receive and its lock.
+            let mut canceled = receiver.stream_events();
+            assert!(futures::poll!(canceled.next()).is_pending());
+            drop(canceled);
+
+            let mut first = receiver.stream_events();
+            let mut second = receiver.stream_events();
+            assert!(futures::poll!(first.next()).is_pending());
+            assert!(futures::poll!(second.next()).is_pending());
+            // A canceled waiter must not prevent the other streams from advancing.
+            let mut canceled_waiter = receiver.stream_events();
+            assert!(futures::poll!(canceled_waiter.next()).is_pending());
+            drop(canceled_waiter);
+
+            send_first.notify_one();
+            assert_eq!(marker(&next_local_event(&mut first).await), 1);
+            close_initial.notify_one();
+            let resumed = next_local_event(&mut second).await;
+            assert_eq!(
+                observed_selectors.recv().await.unwrap(),
+                expected_resume,
+                "a concurrent receive must recover after the event yielded by the other stream"
+            );
+            assert_eq!(marker(&resumed), 2);
+            recovered.notify_one();
+            // Keep both streams alive through recovery to verify the lock is released at yield.
+            drop((first, second));
+            timeout(LOCAL_PEER_TIMEOUT, peer).await.unwrap().unwrap();
+            connection.close_connection().await.unwrap();
+        })
+        .await
+        .expect("concurrent receiver recovery must finish within its bound");
+    }
+
+    #[tokio::test]
     async fn receiver_recovery_local_before_first_selector_characterization() {
         timeout(StdDuration::from_secs(15), async {
             let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();

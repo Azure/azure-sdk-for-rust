@@ -7,6 +7,7 @@ use crate::{
     error::{find_link_stolen, ErrorKind, EventHubsError, Result},
     models::ReceivedEventData,
 };
+use async_lock::Mutex;
 use async_stream::try_stream;
 use azure_core::{http::Url, time::Duration};
 use azure_core_amqp::{
@@ -16,7 +17,7 @@ use azure_core_amqp::{
 use futures::Stream;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc, Mutex,
+    Arc,
 };
 use tracing::{debug, trace, warn, Instrument};
 
@@ -185,6 +186,9 @@ impl EventReceiver {
     /// effect, so a [`StartLocation::Latest`] selector can skip events that arrive before a
     /// recovery attachment.
     ///
+    /// Streams created from this receiver share the resume position and receive one event
+    /// at a time. A pending receive retains its turn until it completes or its stream is dropped.
+    ///
     /// # Returns
     ///
     /// A stream of [`ReceivedEventData`] that can be used to receive messages from the Event Hub.
@@ -228,39 +232,7 @@ impl EventReceiver {
         );
         Box::pin(try_stream! {
             loop {
-                // Stop here if `request_close` has been called; otherwise
-                // `get_receiver` below would reattach a new link.
-                if self.closed.load(Ordering::Acquire) {
-                    span.in_scope(|| debug!(
-                        partition_id = %self.partition_id,
-                        source_url = %self.source_url,
-                        "Event stream terminating: receiver was closed by request_close()."
-                    ));
-                    Err(EventHubsError::from(ErrorKind::ConsumerDisconnected(None)))?;
-                }
-
-                // Instrument each awaited operation with the stream's span so the
-                // receive loop is parented under it on every poll (see the span
-                // construction above for why this is not a fn-level attribute).
-                let message_source = self.message_source_for_receive();
-                let receiver = self.connection.get_receiver(&self.source_url,
-                    message_source,
-                    self.receiver_options.clone(),
-                    &self.partition_id,
-                    self.timeout
-                ).instrument(span.clone()).await
-                    .map_err(|e| translate_attach_error(e, &self.partition_id, &self.source_url))?;
-
-                let delivery = receiver
-                    .receive_delivery()
-                    .instrument(span.clone())
-                    .await
-                    .map_err(|e| translate_receive_error(e, &self.partition_id, &self.source_url))?;
-
-                // Now that we have a delivery, we can process it.
-                let message = delivery.into_message();
-                let message = ReceivedEventData::from(message);
-                self.update_resume_position(&message);
+                let message = self.receive_event().instrument(span.clone()).await?;
                 // SENSITIVE-DATA: `{:?}` on a ReceivedEventData dumps the
                 // raw AMQP message, including the customer payload body and any PII in
                 // application properties. This is redacted by the SafeDebug derive ONLY
@@ -275,21 +247,51 @@ impl EventReceiver {
         })
     }
 
-    fn message_source_for_receive(&self) -> AmqpSource {
-        let resume_position = self
-            .resume_position
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .clone();
-        let Some(resume_position) = resume_position else {
+    async fn receive_event(&self) -> Result<ReceivedEventData> {
+        // Serialize source selection, recovery, and cursor advancement across streams.
+        // Keep the guard outside try_stream! so it is released before yielding errors too.
+        let mut resume_position = self.resume_position.lock().await;
+        // Check after acquiring the lock so a queued receive cannot reattach after close.
+        if self.closed.load(Ordering::Acquire) {
+            debug!(
+                partition_id = %self.partition_id,
+                source_url = %self.source_url,
+                "Event stream terminating: receiver was closed by request_close()."
+            );
+            return Err(EventHubsError::from(ErrorKind::ConsumerDisconnected(None)));
+        }
+
+        let message_source = self.message_source_for_receive(&resume_position);
+        let receiver = self
+            .connection
+            .get_receiver(
+                &self.source_url,
+                message_source,
+                self.receiver_options.clone(),
+                &self.partition_id,
+                self.timeout,
+            )
+            .await
+            .map_err(|e| translate_attach_error(e, &self.partition_id, &self.source_url))?;
+        let delivery = receiver
+            .receive_delivery()
+            .await
+            .map_err(|e| translate_receive_error(e, &self.partition_id, &self.source_url))?;
+        let message = ReceivedEventData::from(delivery.into_message());
+        Self::update_resume_position(&mut resume_position, &message);
+        Ok(message)
+    }
+
+    fn message_source_for_receive(&self, resume_position: &Option<StartPosition>) -> AmqpSource {
+        if resume_position.is_none() {
             return self.message_source.clone();
-        };
+        }
 
         let mut message_source = self.message_source.clone();
         let selector_key = AmqpSourceFilter::selector_filter().description().into();
         let selector = Box::new(AmqpDescribed::new(
             AmqpSourceFilter::selector_filter().code(),
-            StartPosition::start_expression(&Some(resume_position)),
+            StartPosition::start_expression(resume_position),
         ));
         if let Some(filter) = &mut message_source.filter {
             filter.remove(&selector_key);
@@ -300,7 +302,7 @@ impl EventReceiver {
         message_source
     }
 
-    fn update_resume_position(&self, message: &ReceivedEventData) {
+    fn update_resume_position(position: &mut Option<StartPosition>, message: &ReceivedEventData) {
         let resume_position = message
             .offset()
             .as_ref()
@@ -317,10 +319,7 @@ impl EventReceiver {
                     })
             });
         if let Some(resume_position) = resume_position {
-            *self
-                .resume_position
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(resume_position);
+            *position = Some(resume_position);
         }
     }
 
@@ -350,6 +349,7 @@ impl Drop for EventReceiver {
 mod tests {
     use super::*;
     use azure_core_amqp::{error::AmqpErrorCondition, AmqpDescribedError};
+    use futures::StreamExt;
 
     fn source_url() -> Url {
         Url::parse("amqps://example.servicebus.windows.net/eh/Partitions/0").unwrap()
@@ -475,8 +475,6 @@ mod tests {
     // `ErrorKind::AmqpError` and this test fails.
     #[tokio::test]
     async fn stream_events_maps_stolen_attach_to_consumer_disconnected() {
-        use futures::StreamExt;
-
         let receiver = receiver_with_failing_attach(stolen());
         let mut stream = std::pin::pin!(receiver.stream_events());
         let error = stream
@@ -495,8 +493,6 @@ mod tests {
     // so callers cannot mistake a transport failure for a stolen partition.
     #[tokio::test]
     async fn stream_events_passes_other_attach_errors_through() {
-        use futures::StreamExt;
-
         let receiver = receiver_with_failing_attach(AmqpError::with_message("attach failed"));
         let mut stream = std::pin::pin!(receiver.stream_events());
         let error = stream
@@ -509,6 +505,26 @@ mod tests {
             "expected AmqpError, got {:?}",
             error.kind
         );
+    }
+
+    #[tokio::test]
+    async fn stream_events_releases_receive_after_error() {
+        let receiver = receiver_with_failing_attach(stolen());
+        let mut first = receiver.stream_events();
+        assert!(first.next().await.unwrap().is_err());
+
+        receiver.connection.force_attach_error(stolen()).unwrap();
+        let mut second = receiver.stream_events();
+        let error = tokio::time::timeout(std::time::Duration::from_secs(1), second.next())
+            .await
+            .expect("an errored stream must release the receive before yielding")
+            .unwrap()
+            .unwrap_err();
+        assert!(matches!(
+            error.kind,
+            ErrorKind::ConsumerDisconnected(Some(_))
+        ));
+        drop((first, second));
     }
 
     // An attach that fails for any other reason keeps its kind, so callers that
