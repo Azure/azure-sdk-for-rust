@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use super::config::ContainerConfig;
 use super::dispatch::{OperationType, ParsedRequest};
 use super::epk::{compute_epk, extract_pk_from_body, parse_partition_key_header, Epk};
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 use super::response::headers::ETAG;
 use super::response::headers::{
     ACTIVITY_ID, CONTINUATION, GLOBAL_COMMITTED_LSN, INTERNAL_PARTITION_ID, ITEM_LOCAL_LSN,
@@ -23,7 +23,7 @@ use super::response::headers::{
     QUORUM_ACKED_LOCAL_LSN, QUORUM_ACKED_LSN, RESOURCE_QUOTA, RESOURCE_USAGE, SERVICE_VERSION,
     TRANSPORT_REQUEST_ID,
 };
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 use super::response::headers::{REQUEST_CHARGE, SESSION_TOKEN, SUBSTATUS};
 use super::response::{
     error_response, success_response, success_response_with_format, ResponseBuilder, ResponseFormat,
@@ -50,13 +50,13 @@ static OFFER_REPLACE_PENDING: HeaderName = HeaderName::from_static("x-ms-offer-r
 static INTENDED_COLLECTION_RID: HeaderName =
     HeaderName::from_static("x-ms-cosmos-intended-collection-rid");
 
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 static DTX_IDEMPOTENCY_TOKEN: HeaderName =
     HeaderName::from_static(crate::models::request_header_names::DTX_IDEMPOTENCY_TOKEN);
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 static DTX_OPERATION_TYPE: HeaderName =
     HeaderName::from_static(crate::models::request_header_names::DTX_OPERATION_TYPE);
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 static DTX_RESOURCE_TYPE: HeaderName =
     HeaderName::from_static(crate::models::request_header_names::DTX_RESOURCE_TYPE);
 
@@ -80,14 +80,14 @@ fn session_consistency_active(
 /// HTTP status a prepared-then-rolled-back write operation reports in an aborted
 /// distributed transaction, paired with sub-status 5415 (DtcOperationRolledBack).
 /// Mirrors the driver's `crate::error::status_codes::substatus::DTC_OPERATION_ROLLED_BACK`.
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_ROLLED_BACK_STATUS: u16 = 453;
 /// Sub-status accompanying [`DTX_ROLLED_BACK_STATUS`] (DtcOperationRolledBack).
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_ROLLED_BACK_SUBSTATUS: u32 = 5415;
 /// Sub-status paired with `412 PreconditionFailed` when a distributed
 /// transaction patch operation's `condition` (filter predicate) is not met.
-#[cfg(feature = "preview_dtx")]
+#[cfg(feature = "unstable_dtx")]
 const DTX_PATCH_CONDITION_NOT_MET_SUBSTATUS: u16 = 1110;
 
 /// If any non-source target region's replication queue is saturated, returns
@@ -315,7 +315,7 @@ pub(crate) async fn handle_operation(
             }
             handle_replace_offer(store, region_name, parsed, request_body, start)
         }
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         OperationType::DistributedTransaction => {
             handle_distributed_transaction(store, region_name, request_headers, request_body, start)
                 .await
@@ -325,14 +325,14 @@ pub(crate) async fn handle_operation(
         OperationType::Unsupported(desc) => unsupported_response(desc, start),
     };
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Deserialize)]
     #[serde(rename_all = "camelCase")]
     struct DtxRequestBody {
         operations: Vec<DtxOperation>,
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[derive(Deserialize)]
     #[serde(rename_all = "camelCase")]
     struct DtxOperation {
@@ -352,7 +352,7 @@ pub(crate) async fn handle_operation(
         if_none_match: Option<String>,
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn handle_distributed_transaction(
         store: &Arc<EmulatorStore>,
         region_name: &str,
@@ -456,13 +456,13 @@ pub(crate) async fn handle_operation(
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     enum DtxTransactionKind {
         Write,
         Read,
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn validate_dtx_headers(headers: &Headers) -> Option<DtxTransactionKind> {
         let token = headers.get_optional_str(&DTX_IDEMPOTENCY_TOKEN)?;
         if token.trim().is_empty() || uuid::Uuid::parse_str(token).is_err() {
@@ -483,7 +483,7 @@ pub(crate) async fn handle_operation(
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn validate_dtx_operation_indexes(operations: &[DtxOperation]) -> Result<(), String> {
         let mut seen = vec![false; operations.len()];
         for (position, operation) in operations.iter().enumerate() {
@@ -511,7 +511,7 @@ pub(crate) async fn handle_operation(
     }
 
     /// Per-operation outcome captured from a nested point-operation response.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     struct DtxOpOutcome {
         status: StatusCode,
         sub_status: Option<u32>,
@@ -523,7 +523,7 @@ pub(crate) async fn handle_operation(
         resource_body: Option<serde_json::Value>,
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn dtx_point_outcome(response: AsyncRawResponse) -> DtxOpOutcome {
         let raw = match response.try_into_raw_response().await {
             Ok(raw) => raw,
@@ -584,7 +584,7 @@ pub(crate) async fn handle_operation(
 
     /// Serializes a single per-operation result into the `.NET`-shaped wire
     /// object consumed by `DistributedTransactionResponse::from_body`.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[allow(clippy::too_many_arguments)]
     fn dtx_op_json(
         index: usize,
@@ -633,7 +633,7 @@ pub(crate) async fn handle_operation(
         serde_json::Value::Object(result)
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn execute_dtx_point_operation(
         store: &Arc<EmulatorStore>,
         region_name: &str,
@@ -726,7 +726,7 @@ pub(crate) async fn handle_operation(
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn handle_dtx_patch_operation(
         store: &Arc<EmulatorStore>,
         region_name: &str,
@@ -961,7 +961,7 @@ pub(crate) async fn handle_operation(
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn parse_dtx_patch_body(
         resource_body: &serde_json::Value,
     ) -> Result<(PatchInstructions, Option<String>), String> {
@@ -979,7 +979,7 @@ pub(crate) async fn handle_operation(
         Ok((patch, condition))
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn dtx_patch_condition_matches(
         condition: Option<&str>,
         document: &serde_json::Value,
@@ -1002,7 +1002,7 @@ pub(crate) async fn handle_operation(
             .map_err(|error| format!("failed to evaluate DTX patch condition: {error}"))
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn is_dtx_write_transaction(operations: &[DtxOperation]) -> bool {
         operations
             .iter()
@@ -1019,7 +1019,7 @@ pub(crate) async fn handle_operation(
     /// so the emulator's DTX atomicity guarantee assumes a single writer per
     /// partition at a time (as in the test harness). It is not isolated against
     /// concurrent writers mutating the same partition mid-transaction.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn handle_dtx_write_transaction(
         store: &Arc<EmulatorStore>,
         region_name: &str,
@@ -1033,7 +1033,7 @@ pub(crate) async fn handle_operation(
         handle_dtx_write_transaction_locked(store, region_name, operations, start).await
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn handle_dtx_write_transaction_locked(
         store: &Arc<EmulatorStore>,
         region_name: &str,
@@ -1122,7 +1122,7 @@ pub(crate) async fn handle_operation(
     /// that individually succeeded never contributed to a snapshot, so they are
     /// rewritten to 424 FailedDependency (body stripped) and the surviving
     /// failure codes are promoted into the response envelope.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     async fn handle_dtx_read_transaction(
         store: &Arc<EmulatorStore>,
         region_name: &str,
@@ -1160,7 +1160,7 @@ pub(crate) async fn handle_operation(
 
     /// Snapshot of a document (and its partition LSN counters) before a write op
     /// is applied, used to roll the mutation back on abort.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     struct DtxPreimage {
         epk: Epk,
         document: Option<StoredDocument>,
@@ -1171,7 +1171,7 @@ pub(crate) async fn handle_operation(
 
     /// Captures the current stored document (if any) targeted by a write op so
     /// it can be restored verbatim if the transaction later aborts.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn capture_dtx_preimage(
         store: &Arc<EmulatorStore>,
         region_name: &str,
@@ -1207,7 +1207,7 @@ pub(crate) async fn handle_operation(
     }
 
     /// Restores a previously captured pre-image, undoing an applied write op.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn restore_dtx_preimage(
         store: &Arc<EmulatorStore>,
         region_name: &str,
@@ -1247,7 +1247,7 @@ pub(crate) async fn handle_operation(
         );
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn is_read_success_status(status: StatusCode) -> bool {
         matches!(u16::from(status), 200 | 304)
     }
@@ -1255,7 +1255,7 @@ pub(crate) async fn handle_operation(
     /// Promotes the distinct per-operation codes into a read envelope status,
     /// ignoring 424 FailedDependency: a single distinct code surfaces as-is,
     /// two or more distinct codes become 207 MultiStatus.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn promote_dtx_read_envelope(outcomes: &[DtxOpOutcome]) -> StatusCode {
         let mut distinct: Vec<StatusCode> = Vec::new();
         for outcome in outcomes {
@@ -1273,14 +1273,14 @@ pub(crate) async fn handle_operation(
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     struct DtxPreflightFailure {
         status: StatusCode,
         sub_status: Option<u16>,
         message: String,
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn preflight_failure(
         status: StatusCode,
         sub_status: Option<u16>,
@@ -1293,7 +1293,7 @@ pub(crate) async fn handle_operation(
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn preflight_dtx_write_operation(
         store: &Arc<EmulatorStore>,
         region_name: &str,
@@ -1496,7 +1496,7 @@ pub(crate) async fn handle_operation(
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn dtx_operation_as_parsed_request(operation: &DtxOperation) -> ParsedRequest {
         ParsedRequest {
             operation: OperationType::Read,
@@ -1532,7 +1532,7 @@ pub(crate) async fn handle_operation(
     /// Returns an item document only for DTX operations whose resource body is
     /// the document itself. PATCH carries a PatchInstructions envelope, while
     /// Delete and Read have no document body to validate against the PK header.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn dtx_partition_key_body(operation: &DtxOperation) -> serde_json::Value {
         if matches!(
             operation.operation_type.as_str(),
@@ -1549,7 +1549,7 @@ pub(crate) async fn handle_operation(
     }
 
     /// Builds the 200 envelope for a fully-committed write transaction.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn dtx_commit_response(outcomes: &[DtxOpOutcome], start: Instant) -> AsyncRawResponse {
         let mut total_charge = 0.0;
         let operation_responses: Vec<serde_json::Value> = outcomes
@@ -1583,7 +1583,7 @@ pub(crate) async fn handle_operation(
     /// the prepare phase. "No" voters keep their real failure code so the caller
     /// sees the root cause; every "Yes" voter was prepared but rolled back and
     /// surfaces as 453 (sub-status 5415, DtcOperationRolledBack).
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn dtx_write_abort_response(
         operations: &[DtxOperation],
         votes: &[Option<DtxPreflightFailure>],
@@ -1638,7 +1638,7 @@ pub(crate) async fn handle_operation(
     /// Builds the 452 abort envelope for a write transaction that failed at
     /// commit time (after prepare succeeded). The failing participant keeps its
     /// code; all others were rolled back and surface as 453 / 5415.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn dtx_write_runtime_abort_response(
         operations: &[DtxOperation],
         operation_count: usize,
@@ -1690,7 +1690,7 @@ pub(crate) async fn handle_operation(
 
     /// Builds the response envelope for a read transaction from its (possibly
     /// rewritten) per-operation outcomes.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn dtx_read_response(
         operations: &[DtxOperation],
         envelope: StatusCode,
@@ -1726,7 +1726,7 @@ pub(crate) async fn handle_operation(
             .build()
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     fn dtx_response_builder(status: StatusCode, start: Instant) -> ResponseBuilder {
         ResponseBuilder::new(status, start)
             .without_header(GLOBAL_COMMITTED_LSN.clone())
@@ -1764,7 +1764,7 @@ fn intended_collection_rid_mismatch(
         | OperationType::ReadContainer
         | OperationType::ReplaceContainer
         | OperationType::Unsupported(_) => true,
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         OperationType::DistributedTransaction => true,
         _ => false,
     };
@@ -4040,9 +4040,9 @@ async fn handle_batch(
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     let write_lock = store.document_write_lock();
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
     let _replication_guard = replication_barrier.read().await;
@@ -4813,9 +4813,9 @@ async fn handle_create(
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     let write_lock = store.document_write_lock();
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
     let _replication_guard = replication_barrier.read().await;
@@ -5258,9 +5258,9 @@ async fn handle_replace(
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     let write_lock = store.document_write_lock();
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
     let _replication_guard = replication_barrier.read().await;
@@ -5275,9 +5275,9 @@ async fn handle_patch(
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     let write_lock = store.document_write_lock();
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
     let _replication_guard = replication_barrier.read().await;
@@ -5946,9 +5946,9 @@ async fn handle_upsert(
     request_body: &[u8],
     start: Instant,
 ) -> AsyncRawResponse {
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     let write_lock = store.document_write_lock();
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
     let _replication_guard = replication_barrier.read().await;
@@ -6189,9 +6189,9 @@ async fn handle_delete(
     parsed: &ParsedRequest,
     start: Instant,
 ) -> AsyncRawResponse {
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     let write_lock = store.document_write_lock();
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     let _write_guard = write_lock.lock().await;
     let replication_barrier = store.replication_barrier();
     let _replication_guard = replication_barrier.read().await;

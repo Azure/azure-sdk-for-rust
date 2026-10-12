@@ -25,7 +25,7 @@ const EMULATOR_LOCALHOST_HOSTS: &[&str] = &["localhost", "127.0.0.1", "[::1]", "
 /// registered, plus a [`FaultActivation`] the caller arms once the load loop
 /// starts (keeping setup and seeding fault-free).
 ///
-/// When `preview_opentelemetry` is enabled, the global OpenTelemetry providers
+/// When `unstable_opentelemetry` is enabled, the global OpenTelemetry providers
 /// must already be installed (see [`crate::telemetry`]) so the metrics handler
 /// binds to a live meter at construction.
 pub async fn build_client(
@@ -172,13 +172,13 @@ impl FaultActivation {
 }
 
 /// Registers the built-in diagnostics handlers. Handlers run in registration
-/// order: metrics, then distributed tracing (both behind `preview_opentelemetry`),
+/// order: metrics, then distributed tracing (both behind `unstable_opentelemetry`),
 /// then the always-on sampled log handler.
-#[cfg_attr(not(feature = "preview_opentelemetry"), allow(unused_variables))]
+#[cfg_attr(not(feature = "unstable_opentelemetry"), allow(unused_variables))]
 fn register_handlers(builder: CosmosClientBuilder, config: &Config) -> CosmosClientBuilder {
     // Each handler is appended via cfg-gated shadowing so the chain builds
     // cleanly regardless of which handler features are enabled.
-    #[cfg(feature = "preview_opentelemetry")]
+    #[cfg(feature = "unstable_opentelemetry")]
     let builder = {
         use azure_data_cosmos::diagnostics::{CosmosMetricsHandler, MetricsOptions};
 
@@ -194,7 +194,7 @@ fn register_handlers(builder: CosmosClientBuilder, config: &Config) -> CosmosCli
         builder.with_diagnostics_handler(Arc::new(CosmosMetricsHandler::with_options(options)))
     };
 
-    #[cfg(feature = "preview_opentelemetry")]
+    #[cfg(feature = "unstable_opentelemetry")]
     let builder = {
         use azure_data_cosmos::diagnostics::CosmosTracingHandler;
 

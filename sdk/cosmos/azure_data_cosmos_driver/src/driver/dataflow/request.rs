@@ -3,12 +3,13 @@
 
 //! Request leaf node for the dataflow pipeline.
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use async_trait::async_trait;
 
 use crate::models::{CosmosOperation, CosmosResponse, FeedRange, PartitionKey};
 
+use super::recovery_diagnostics::RecoveryDiagnostics;
 use super::{
     PageResult, PartitionRoutingRefresh, PipelineContext, PipelineNode, PipelineNodeState,
     ResolvedRange,
@@ -388,17 +389,8 @@ impl Request {
         error: crate::error::CosmosError,
         continuation: Option<String>,
     ) -> crate::error::Result<PageResult> {
-        // Capture the failed attempt's diagnostics before consuming the
-        // error. The per-operation pipeline that produced this error
-        // owns its own `DiagnosticsContext`; the dataflow retry below
-        // will spin up another full pipeline invocation with a fresh
-        // context. Without splicing the prior context onto the
-        // retry's response, callers reading
-        // `response.diagnostics().request_count()` would only see the
-        // final successful attempt — violating the
-        // "one operation = one `DiagnosticsContext` capturing every
-        // attempt" contract. Always capture, regardless of branch, so
-        // the splice happens uniformly on every successful retry path.
+        // Each pipeline invocation owns fresh diagnostics; retain the failed
+        // invocation until its recovery produces a page or terminal error.
         let prior_diagnostics = error.diagnostics();
         match &self.target {
             RequestTarget::NonPartitioned => {
@@ -417,7 +409,9 @@ impl Request {
                     PartitionRoutingRefresh::ForceRefresh,
                 )
                 .await;
-                context
+                let mut recovery = RecoveryDiagnostics::default();
+                recovery.absorb(prior_diagnostics);
+                let response = context
                     .execute_request(
                         &self.operation,
                         self.target.clone(),
@@ -425,24 +419,8 @@ impl Request {
                         continuation,
                     )
                     .await
-                    .map(|response| {
-                        tracing::trace!(
-                            target = ?self.target,
-                            status = ?response.status(),
-                            "retry after logical partition key topology change succeeded"
-                        );
-                        // Splice the prior failed attempt's diagnostics
-                        // onto the retry's diagnostics so the surfaced
-                        // `CosmosResponse` reflects every attempt the
-                        // operation made (see `prior_diagnostics`
-                        // capture above for rationale).
-                        let response = if let Some(prior) = prior_diagnostics {
-                            response.with_aggregated_prior_diagnostics(&[prior])
-                        } else {
-                            response
-                        };
-                        self.handle_response(response)
-                    })
+                    .map_err(|error| recovery.attach_error(error))?;
+                Ok(self.handle_response(recovery.attach_response(response)))
             }
             RequestTarget::EffectivePartitionKeyRange { .. } => {
                 let range = self
@@ -450,19 +428,15 @@ impl Request {
                     .owned_range()
                     .expect("effective partition key range target must have an owned range")
                     .clone();
-                // TODO(diagnostics-aggregation): the split path replaces
-                // this node with one or more sub-range `Request` nodes
-                // that each execute independently in subsequent
-                // `next_page` calls. Splicing `prior_diagnostics` into
-                // every sub-node's first response would require
-                // threading the prior context through the replacement
-                // nodes; tracked as a follow-up. For now, prior
-                // attempts on the EPK-range split path are still
-                // captured by the replacement node when it triggers
-                // its own dataflow retry, but not aggregated onto the
-                // first successful sub-range response.
-                let _ = prior_diagnostics;
-                self.split_for_topology_change(context, &range).await
+                let mut recovery = RecoveryDiagnostics::default();
+                recovery.absorb(prior_diagnostics);
+                let replacements = self
+                    .split_for_topology_change(context, &range, &mut recovery)
+                    .await
+                    .map_err(|error| recovery.attach_error(error))?;
+                Ok(PageResult::SplitRequired {
+                    replacements: replacements.with_diagnostics(recovery.take()),
+                })
             }
         }
     }
@@ -473,10 +447,46 @@ impl Request {
         &self,
         context: &mut PipelineContext<'_>,
         range: &FeedRange,
-    ) -> crate::error::Result<PageResult> {
-        let resolved = context
+        recovery: &mut RecoveryDiagnostics,
+    ) -> crate::error::Result<super::SplitReplacements> {
+        let started = Instant::now();
+        let result = context
             .resolve_ranges(range, PartitionRoutingRefresh::ForceRefresh)
-            .await?;
+            .await;
+        let duration = started.elapsed();
+        if let Some(prior) = recovery.take() {
+            let RequestTarget::EffectivePartitionKeyRange {
+                partition_key_range_id,
+                ..
+            } = &self.target
+            else {
+                unreachable!("only EPK targets require replacement");
+            };
+            let ranges = result.as_ref().map(Vec::as_slice).unwrap_or(&[]);
+            recovery.absorb(Some(Arc::new(
+                prior.with_topology_recovery(
+                    partition_key_range_id,
+                    range,
+                    duration,
+                    result
+                        .as_ref()
+                        .err()
+                        .and_then(|error| error.diagnostics())
+                        .map_or(std::time::Duration::ZERO, |diagnostics| {
+                            diagnostics.duration()
+                        }),
+                    result.as_ref().err().map(|error| error.status()),
+                    ranges.iter().map(|resolved| {
+                        (
+                            resolved.partition_key_range_id.clone(),
+                            resolved.range.min_inclusive().to_hex(),
+                            resolved.range.max_exclusive().to_hex(),
+                        )
+                    }),
+                ),
+            )));
+        }
+        let resolved = result?;
 
         let continuation = match &self.state {
             RequestState::Continuing { continuation } => Some(continuation.clone()),
@@ -519,9 +529,7 @@ impl Request {
             })
             .collect::<crate::error::Result<Vec<_>>>()?;
 
-        Ok(PageResult::SplitRequired {
-            replacements: super::node::SplitReplacements::try_tiling(range, replacement_nodes)?,
-        })
+        super::node::SplitReplacements::try_tiling(range, replacement_nodes)
     }
 }
 
@@ -638,7 +646,7 @@ mod tests {
     }
 
     fn logical_partition_operation() -> CosmosOperation {
-        let account = crate::models::AccountReference::with_master_key(
+        let account = crate::models::AccountReference::with_account_key(
             url::Url::parse("https://test.documents.azure.com:443/").unwrap(),
             "dGVzdA==",
         );

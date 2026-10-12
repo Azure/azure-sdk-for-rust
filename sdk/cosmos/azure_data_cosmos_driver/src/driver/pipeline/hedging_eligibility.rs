@@ -385,7 +385,7 @@ mod tests {
     }
 
     fn fake_container_reference() -> ContainerReference {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://acct.documents.azure.com/").unwrap(),
             "k",
         );
@@ -410,7 +410,7 @@ mod tests {
     }
 
     fn read_database_operation() -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://acct.documents.azure.com/").unwrap(),
             "k",
         );
@@ -419,7 +419,7 @@ mod tests {
     }
 
     fn read_container_operation() -> CosmosOperation {
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://acct.documents.azure.com/").unwrap(),
             "k",
         );
@@ -544,7 +544,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     #[test]
     fn should_hedge_distributed_transaction_never() {
         // DTX operations carry `ResourceType::DistributedTransactionBatch`, which
@@ -555,7 +555,7 @@ mod tests {
         // pair-gating exclusion (not the classifier short-circuit) is what
         // keeps DTX out of hedging. Pin it directly.
         let state = account_state_with_regions(&[Region::EAST_US, Region::WEST_US_2]);
-        let account = AccountReference::with_master_key(
+        let account = AccountReference::with_account_key(
             Url::parse("https://acct.documents.azure.com/").unwrap(),
             "k",
         );

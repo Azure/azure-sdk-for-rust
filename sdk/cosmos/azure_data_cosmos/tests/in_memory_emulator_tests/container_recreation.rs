@@ -705,7 +705,7 @@ async fn stale_epk_range_does_not_cross_container_recreation() {
     );
 }
 
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 #[tokio::test]
 async fn patch_restarts_after_container_recreation() {
     use azure_data_cosmos::models::{PatchInstructions, PatchOperation};

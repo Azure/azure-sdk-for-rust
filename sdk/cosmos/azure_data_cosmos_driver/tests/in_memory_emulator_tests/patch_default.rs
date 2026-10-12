@@ -16,7 +16,7 @@ use azure_data_cosmos_driver::{
 async fn patch_uses_auto_without_preview_configuration() {
     let context = super::setup_single_region().await;
     let runtime = context.emulator.runtime_builder().build().await.unwrap();
-    let account = AccountReference::with_master_key(
+    let account = AccountReference::with_account_key(
         Url::parse(&context.gateway_url).unwrap(),
         "ZW11bGF0b3Ita2V5",
     );

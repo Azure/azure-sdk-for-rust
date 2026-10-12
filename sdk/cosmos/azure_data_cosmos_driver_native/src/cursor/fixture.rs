@@ -48,7 +48,7 @@ pub(super) fn scripted_gated(
     let driver = tokio
         .block_on(
             runtime.create_driver(
-                DriverOptions::builder(AccountReference::with_master_key(
+                DriverOptions::builder(AccountReference::with_account_key(
                     Url::parse("https://eastus.emulator.local").unwrap(),
                     "ZW11bGF0b3Ita2V5",
                 ))
@@ -90,7 +90,7 @@ pub(super) fn create(current_thread: bool) -> Result<(*mut RuntimeContext, *mut 
     };
     let (runtime, driver) = tokio.block_on(async {
         let runtime = emulator.runtime_builder().build().await?;
-        let account = AccountReference::with_master_key(endpoint, "ZW11bGF0b3Ita2V5");
+        let account = AccountReference::with_account_key(endpoint, "ZW11bGF0b3Ita2V5");
         let driver = runtime
             .create_driver(DriverOptions::builder(account).build())
             .await?;

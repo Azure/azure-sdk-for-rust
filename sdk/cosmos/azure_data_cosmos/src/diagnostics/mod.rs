@@ -19,7 +19,7 @@
 //! handler is present.
 //!
 //! A built-in OpenTelemetry metrics handler, `CosmosMetricsHandler`, is available
-//! behind the off-by-default `preview_opentelemetry` feature. It emits the stable
+//! behind the off-by-default `unstable_opentelemetry` feature. It emits the stable
 //! `db.client.operation.duration` histogram (and, opt-in, development-tier
 //! metrics) from each completed context.
 //!
@@ -32,7 +32,7 @@
 //!   handler, defaulting to a [`TracingLogHandler`] that logs a compact
 //!   diagnostics line through the [`tracing`](https://docs.rs/tracing) ecosystem.
 //! - `CosmosTracingHandler` — emits a backdated OpenTelemetry span tree
-//!   (behind the off-by-default `preview_opentelemetry` feature), rate-limited so
+//!   (behind the off-by-default `unstable_opentelemetry` feature), rate-limited so
 //!   an error storm can't overwhelm exporters.
 
 // =========================================================================
@@ -52,12 +52,12 @@ pub use logging::{SamplingLogHandler, TracingLogHandler};
 pub use operation_context::CosmosOperationContext;
 pub use rate_limiter::RateLimiterConfig;
 pub use region::{RequestedRegion, RequestedRegionReason};
-#[cfg(feature = "preview_opentelemetry")]
+#[cfg(feature = "unstable_opentelemetry")]
 pub use tracing::{
     CosmosTracingHandler, CosmosTracingHandlerBuilder, CosmosTracingHandlerWithTracer,
 };
 
-#[cfg(feature = "preview_opentelemetry")]
+#[cfg(feature = "unstable_opentelemetry")]
 pub use metrics::CosmosMetricsHandler;
 pub use metrics::MetricsOptions;
 
@@ -79,5 +79,5 @@ pub(crate) mod rate_limiter;
 
 pub mod metrics;
 
-#[cfg(feature = "preview_opentelemetry")]
+#[cfg(feature = "unstable_opentelemetry")]
 mod tracing;

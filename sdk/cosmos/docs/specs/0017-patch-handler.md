@@ -8,13 +8,13 @@ This document describes the contract for `OperationType::Patch` in
 The core driver always includes PATCH. Consuming SDKs decide whether and how
 to expose it as preview using conventions appropriate to each language. The
 Rust SDK, `azure_data_cosmos`, gates its public PATCH API behind the
-**`preview_patch`** Cargo feature, which is off by default.
+**`unstable_patch`** Cargo feature, which is off by default.
 This includes its PATCH instruction and increment number models, tracking
 types, PATCH item options and methods, and the
 `OperationOptions::patch_strategy` setting.
 PATCH inside a distributed write transaction additionally requires
-`preview_dtx`; non-PATCH transactions need only `preview_dtx`. The driver's
-`preview_patch` feature gates the strategy configuration API, not its core
+`unstable_dtx`; non-PATCH transactions need only `unstable_dtx`. The driver's
+`unstable_patch` feature gates the strategy configuration API, not its core
 PATCH execution, which remains available without the feature and uses `Auto`.
 
 For instruction lists that are not safe to reapply, the handler persists a
@@ -561,4 +561,4 @@ as a JSON number without precision loss.
   distinguish the operation's own committed Replace from a concurrent writer.
   Generated IDs cover one invocation; cross-process retries require callers to
   persist and reuse the same ID. The Rust SDK continues to gate PATCH behind
-  `preview_patch`; other consuming SDKs choose their own exposure policy.
+  `unstable_patch`; other consuming SDKs choose their own exposure policy.

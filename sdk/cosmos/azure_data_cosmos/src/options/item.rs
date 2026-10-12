@@ -3,11 +3,11 @@
 
 //! Options for item-level point reads, writes, and patch operations.
 
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use crate::models::PatchTrackingId;
 use azure_data_cosmos_driver::models::{Precondition, SessionToken};
 use azure_data_cosmos_driver::options::OperationOptions;
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 use azure_data_cosmos_driver::options::PatchStrategy;
 
 /// Options for item point-read operations.
@@ -98,7 +98,7 @@ impl ItemWriteOptions {
 
 /// Options for [`ContainerClient::patch_item()`](crate::clients::ContainerClient::patch_item()).
 ///
-/// **Preview.** Requires the `preview_patch` feature. Unsafe instruction lists
+/// **Unstable.** Requires the `unstable_patch` feature. Unsafe instruction lists
 /// use persisted tracking entries to suppress duplicate application after an
 /// ambiguous transport failure. See [Retry Semantics](crate::clients::ContainerClient::patch_item()).
 ///
@@ -126,7 +126,7 @@ impl ItemWriteOptions {
 /// * **SQL filter predicate** (peer SDKs' `FilterPredicate`). Predicate
 ///   evaluation requires either native wire-level PATCH (so the server
 ///   evaluates the predicate inside the same transaction) or a client-side
-///   SQL subset evaluator; neither is in scope for this preview. The
+///   SQL subset evaluator; neither is in scope for this unstable API. The
 ///   driver's [`PatchInstructions`](crate::models::PatchInstructions) has no `condition` field, so
 ///   there is no way to attach a predicate to a PATCH request.
 ///
@@ -152,7 +152,7 @@ impl ItemWriteOptions {
 /// accordingly when `ClientSide` is possible, including through `Auto`
 /// fallback. A useful rule of thumb is **≥ 2× the p99 single-RTT budget for a
 /// plain Replace**, plus headroom for 412 retries.
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 #[derive(Clone, Default)]
 #[non_exhaustive]
 pub struct PatchItemOptions {
@@ -201,7 +201,7 @@ pub struct PatchItemOptions {
     pub tracking_retention: Option<std::time::Duration>,
 }
 
-#[cfg(feature = "preview_patch")]
+#[cfg(feature = "unstable_patch")]
 impl PatchItemOptions {
     /// Sets the session token for this request.
     pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {

@@ -112,7 +112,7 @@ async fn build_driver(rules: Vec<Arc<FaultInjectionRule>>) -> Arc<CosmosDriver> 
         .expect("runtime should build against the in-memory emulator");
 
     let account =
-        AccountReference::with_master_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
+        AccountReference::with_account_key(Url::parse(GATEWAY_URL).unwrap(), "ZW11bGF0b3Ita2V5");
     runtime
         .create_driver(DriverOptions::builder(account).build())
         .await

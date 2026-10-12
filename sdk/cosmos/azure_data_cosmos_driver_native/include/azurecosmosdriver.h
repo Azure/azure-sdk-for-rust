@@ -2159,7 +2159,7 @@ void cosmos_string_free(const char *s);
  * Creates an account reference authenticated by a Cosmos master key.
  *
  * Mirrors
- * [`azure_data_cosmos_driver::models::AccountReference::with_master_key`].
+ * [`azure_data_cosmos_driver::models::AccountReference::with_account_key()`].
  *
  * # Parameters
  *

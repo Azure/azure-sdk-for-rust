@@ -145,12 +145,12 @@ impl CosmosClient {
         DatabaseClient::new(self.context.clone(), database.into())
     }
 
-    /// Commits a preview distributed write transaction.
+    /// Commits an unstable distributed write transaction.
     ///
-    /// **Preview / work in progress.** Requires the disabled-by-default
-    /// `preview_dtx` feature and a service account with the DTX feature enabled.
+    /// **Unstable / work in progress.** Requires the disabled-by-default
+    /// `unstable_dtx` feature and a service account with the DTX feature enabled.
     /// Not supported for production use; the API may change without notice.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub async fn commit_distributed_write(
         &self,
         transaction: crate::clients::DistributedWriteTransaction,
@@ -162,12 +162,12 @@ impl CosmosClient {
         .await
     }
 
-    /// Executes a preview distributed read transaction.
+    /// Executes an unstable distributed read transaction.
     ///
-    /// **Preview / work in progress.** Requires the disabled-by-default
-    /// `preview_dtx` feature and a service account with the DTX feature enabled.
+    /// **Unstable / work in progress.** Requires the disabled-by-default
+    /// `unstable_dtx` feature and a service account with the DTX feature enabled.
     /// Not supported for production use; the API may change without notice.
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     pub async fn execute_distributed_read(
         &self,
         transaction: crate::clients::DistributedReadTransaction,

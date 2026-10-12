@@ -40,7 +40,7 @@ pub(crate) enum OperationType {
     QueryOffers,
     ReadOffer,
     ReplaceOffer,
-    #[cfg(feature = "preview_dtx")]
+    #[cfg(feature = "unstable_dtx")]
     DistributedTransaction,
     Unsupported(String),
     /// Trailing-slash on a resource URL. Real Cosmos returns 400 BadRequest
@@ -396,7 +396,7 @@ fn resolve_operation(
         // GET / → ReadAccount
         ("GET", 0) => OperationType::ReadAccount,
 
-        #[cfg(feature = "preview_dtx")]
+        #[cfg(feature = "unstable_dtx")]
         ("POST", 2) if segments[0] == "operations" && segments[1] == "dtc" => {
             OperationType::DistributedTransaction
         }

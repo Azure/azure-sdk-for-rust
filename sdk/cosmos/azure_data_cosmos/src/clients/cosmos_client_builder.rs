@@ -385,8 +385,8 @@ fn build_driver_account(
             azure_data_cosmos_driver::models::AccountReference::with_credential(endpoint, tc)
         }
         #[cfg(feature = "key_auth")]
-        CosmosCredential::MasterKey(key) => {
-            azure_data_cosmos_driver::models::AccountReference::with_master_key(endpoint, key)
+        CosmosCredential::AccountKey(key) => {
+            azure_data_cosmos_driver::models::AccountReference::with_account_key(endpoint, key)
         }
     };
     base.with_backup_endpoints(backup_endpoints)
@@ -454,7 +454,7 @@ mod tests {
     }
 
     fn test_account() -> azure_data_cosmos_driver::models::AccountReference {
-        azure_data_cosmos_driver::models::AccountReference::with_master_key(
+        azure_data_cosmos_driver::models::AccountReference::with_account_key(
             "https://test.documents.azure.com/".parse().unwrap(),
             "dGVzdA==",
         )
