@@ -424,6 +424,15 @@ required scenario ran: profile selection can currently return successfully for
 unselected scenarios. Preventing false-green selection remains a separate
 test-selection concern, not a guarantee supplied by a coverage report.
 
+PR5 intentionally does not add a static rule coupling every `azureLive:
+required` scenario to a profile selected by a live matrix. The PR5 catalog was
+audited directly: all 24 required live scenarios are selected across the smoke,
+core, and live-configuration shards. Profiles remain reusable across backends,
+including scenarios that are intentionally not applicable to Azure Live, so a
+bidirectional profile/applicability rule would reject valid catalog entries.
+Revisit this only with an execution-evidence design that preserves that profile
+reuse.
+
 ## Pull-request workflow
 
 The five pull requests are reviewed and merged sequentially:

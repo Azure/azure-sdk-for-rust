@@ -43,6 +43,7 @@ if ($result.ExitCode -eq 0 -and
     $result.Output -match 'AZURE_COSMOS_E2E_BACKEND=azureLive' -and
     $result.Output -match 'AZURE_COSMOS_ACCOUNT_WRITE_MODE=multi' -and
     $result.Output -match 'AZURE_COSMOS_ACCOUNT_MULTI_REGION=true' -and
+    $result.Output -match 'AZURE_COSMOS_ACCOUNT_FULL_FIDELITY_CHANGE_FEED=false' -and
     $result.Output -match 'AZURE_COSMOS_ACCOUNT_REGIONS=East US 2;West US 3') {
     Test-Ok "resolved connection string + rustflags + profile metadata"
 }
@@ -158,7 +159,8 @@ foreach ($flags in @(
     $account = @{
         endpoint = 'https://example.invalid'; key = 'synthetic-not-a-secret'
         consistency = 'Session'; testCategory = 'e2e'
-        multiWrite = $flags.multiWrite; multiRegion = $flags.multiRegion; regions = $regions
+        multiWrite = $flags.multiWrite; multiRegion = $flags.multiRegion
+        fullFidelityChangeFeed = $false; regions = $regions
     }
     $json = @{ version = 1; accounts = @{ synthetic = $account } } | ConvertTo-Json -Depth 6 -Compress
     $result = Invoke-Resolver 'synthetic' $json
@@ -171,6 +173,43 @@ foreach ($flags in @(
     }
     else {
         Test-Fail "$writeMode write mode and multiRegion=$multiRegion" "(rc=$($result.ExitCode))"
+    }
+}
+
+Write-Host "Test 14: full-fidelity capability requires a JSON boolean"
+$invalidCapability = ($sampleJson | ConvertFrom-Json)
+$invalidCapability.accounts.'session-singlewrite'.fullFidelityChangeFeed = 'true'
+$result = Invoke-Resolver 'session-singlewrite' ($invalidCapability | ConvertTo-Json -Depth 8 -Compress)
+if ($result.ExitCode -ne 0 -and
+    $result.Output.Contains("'fullFidelityChangeFeed' must be a JSON boolean")) {
+    Test-Ok "invalid full-fidelity capability rejected"
+}
+else {
+    Test-Fail "invalid full-fidelity capability should fail" "(rc=$($result.ExitCode))"
+}
+
+Write-Host "Test 15: regions requires an array of non-empty JSON strings"
+$invalidRegions = @(
+    @{ Name = 'scalar string'; Value = 'East US 2'; Expected = "'regions' must be a JSON array" }
+    @{ Name = 'scalar number'; Value = 123; Expected = "'regions' must be a JSON array" }
+    @{ Name = 'numeric array element'; Value = @(123); Expected = "'regions' must contain only non-empty JSON strings" }
+    @{ Name = 'null array element'; Value = @($null); Expected = "'regions' must contain only non-empty JSON strings" }
+)
+foreach ($case in $invalidRegions) {
+    $account = @{
+        endpoint = 'https://example.invalid'; key = 'synthetic-not-a-secret'
+        consistency = 'Session'; testCategory = 'e2e'
+        multiWrite = $false; multiRegion = $false; regions = $case.Value
+    }
+    $json = @{ version = 1; accounts = @{ synthetic = $account } } | ConvertTo-Json -Depth 6 -Compress
+    $result = Invoke-Resolver 'synthetic' $json
+    if ($result.ExitCode -ne 0 -and $result.Output.Contains($case.Expected) -and
+        $result.Output -notmatch '(?m)^[A-Z_]+=' -and
+        $result.Output -notmatch 'synthetic-not-a-secret') {
+        Test-Ok "regions rejects $($case.Name) before exports"
+    }
+    else {
+        Test-Fail "regions must reject $($case.Name) before exports" "(rc=$($result.ExitCode))"
     }
 }
 

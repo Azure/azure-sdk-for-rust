@@ -20,7 +20,9 @@ use azure_data_cosmos::{
 };
 use futures::FutureExt;
 
-use crate::e2e_test_cases::catalog::{default_region, ClientDefinition, RuntimeDefinition};
+use crate::e2e_test_cases::catalog::{
+    default_region, validate_observed_live_account, ClientDefinition, RuntimeDefinition,
+};
 
 pub type TestResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
 
@@ -298,8 +300,8 @@ impl E2eTestFixture {
         management_client: CosmosClient,
         properties: ContainerProperties,
     ) -> TestResult<Self> {
-        // Preserve creation time in leaked resource IDs so cleanup tooling can age them out.
-        let database_id = format!("e2e-{}", Uuid::now_v7());
+        // The stale-resource sweeper recognizes the test-db- prefix and ages resources by _ts.
+        let database_id = format!("test-db-e2e-{}", Uuid::now_v7());
         let container_id = properties.id.to_string();
         management_client
             .create_database(&database_id, None)
@@ -431,9 +433,22 @@ where
         client_builder = client_builder
             .with_binary_encoding_options(BinaryEncodingOptions::new().with_enabled(enabled));
     }
-    Ok(customize(client_builder)?
+    let client = customize(client_builder)?
         .build(account, setup.routing_strategy)
-        .await?)
+        .await?;
+    if std::env::var("AZURE_COSMOS_E2E_BACKEND").as_deref() == Ok("azureLive") {
+        let (consistency, multi_write, writable_regions, readable_regions) = client
+            .cached_account_configuration_for_testing()
+            .await
+            .ok_or("live client did not cache the account configuration returned by the service")?;
+        validate_observed_live_account(
+            &consistency,
+            multi_write,
+            &writable_regions,
+            &readable_regions,
+        )?;
+    }
+    Ok(client)
 }
 
 pub(super) fn connection_string_value(connection_string: &str, key: &str) -> TestResult<String> {

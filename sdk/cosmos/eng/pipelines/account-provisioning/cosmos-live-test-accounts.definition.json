@@ -23,6 +23,7 @@
       "enableMultipleWriteLocations": false,
       "enableMultipleRegions": false,
       "enableContinuousBackup": true,
+      "requireFullFidelityChangeFeed": true,
       "testCategory": "emulator",
       "includeSecondaryKey": true
     },

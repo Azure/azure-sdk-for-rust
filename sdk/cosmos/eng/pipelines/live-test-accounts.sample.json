@@ -10,6 +10,7 @@
       "testCategory": "emulator",
       "multiWrite": false,
       "multiRegion": false,
+      "fullFidelityChangeFeed": false,
       "regions": ["East US 2"]
     },
     "session-singlewrite": {
@@ -21,6 +22,7 @@
       "testCategory": "emulator",
       "multiWrite": false,
       "multiRegion": false,
+      "fullFidelityChangeFeed": true,
       "regions": ["East US 2"]
     },
     "strong-singlewrite": {
@@ -32,6 +34,7 @@
       "testCategory": "emulator",
       "multiWrite": false,
       "multiRegion": false,
+      "fullFidelityChangeFeed": false,
       "regions": ["East US 2"]
     },
     "session-multiwrite": {
@@ -43,6 +46,7 @@
       "testCategory": "multi_write",
       "multiWrite": true,
       "multiRegion": true,
+      "fullFidelityChangeFeed": false,
       "regions": ["East US 2", "West US 3"]
     },
     "session-split": {
@@ -54,6 +58,7 @@
       "testCategory": "split",
       "multiWrite": false,
       "multiRegion": false,
+      "fullFidelityChangeFeed": false,
       "regions": ["East US 2"]
     },
     "session-mr-failover": {
@@ -65,6 +70,7 @@
       "testCategory": "multi_region",
       "multiWrite": false,
       "multiRegion": true,
+      "fullFidelityChangeFeed": false,
       "regions": ["East US 2", "West US 3"]
     }
   }

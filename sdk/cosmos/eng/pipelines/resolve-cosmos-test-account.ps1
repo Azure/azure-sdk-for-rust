@@ -84,6 +84,7 @@ $testCategory = Get-OptionalString $account 'testCategory'
 $multiWriteProperty = $account.PSObject.Properties['multiWrite']
 $multiRegionProperty = $account.PSObject.Properties['multiRegion']
 $regionsProperty = $account.PSObject.Properties['regions']
+$fullFidelityProperty = $account.PSObject.Properties['fullFidelityChangeFeed']
 
 if ([string]::IsNullOrWhiteSpace($endpoint)) { Fail "Account '$AccountSelector' is missing required 'endpoint'." }
 if ([string]::IsNullOrWhiteSpace($key)) { Fail "Account '$AccountSelector' is missing required 'key'." }
@@ -96,10 +97,20 @@ if ($null -eq $regionsProperty) { Fail "Account '$AccountSelector' is missing re
 # Reject coercible strings, numbers, and nulls before exporting account metadata.
 if ($multiWriteProperty.Value -isnot [bool]) { Fail "Account '$AccountSelector' 'multiWrite' must be a JSON boolean." }
 if ($multiRegionProperty.Value -isnot [bool]) { Fail "Account '$AccountSelector' 'multiRegion' must be a JSON boolean." }
+if ($null -ne $fullFidelityProperty -and $fullFidelityProperty.Value -isnot [bool]) {
+    Fail "Account '$AccountSelector' 'fullFidelityChangeFeed' must be a JSON boolean."
+}
+if ($regionsProperty.Value -isnot [System.Collections.IList] -or $regionsProperty.Value -is [string]) {
+    Fail "Account '$AccountSelector' 'regions' must be a JSON array."
+}
 $regions = @($regionsProperty.Value)
-if ($regions.Count -eq 0 -or
-    @($regions | Where-Object { [string]::IsNullOrWhiteSpace([string]$_) }).Count -gt 0) {
+if ($regions.Count -eq 0) {
     Fail "Account '$AccountSelector' must contain at least one non-empty region."
+}
+foreach ($region in $regions) {
+    if ($region -isnot [string] -or [string]::IsNullOrWhiteSpace($region)) {
+        Fail "Account '$AccountSelector' 'regions' must contain only non-empty JSON strings."
+    }
 }
 $multiWrite = [bool]$multiWriteProperty.Value
 $multiRegion = [bool]$multiRegionProperty.Value
@@ -153,6 +164,9 @@ Emit-Public 'AZURE_COSMOS_E2E_BACKEND' 'azureLive'
 Emit-Public 'AZURE_COSMOS_ACCOUNT_WRITE_MODE' $(if ($multiWrite) { 'multi' } else { 'single' })
 Emit-Public 'AZURE_COSMOS_ACCOUNT_MULTI_REGION' $multiRegion.ToString().ToLowerInvariant()
 Emit-Public 'AZURE_COSMOS_ACCOUNT_REGIONS' ($regions -join ';')
+if ($null -ne $fullFidelityProperty) {
+    Emit-Public 'AZURE_COSMOS_ACCOUNT_FULL_FIDELITY_CHANGE_FEED' ([bool]$fullFidelityProperty.Value).ToString().ToLowerInvariant()
+}
 if (-not [string]::IsNullOrWhiteSpace($secondaryKey)) {
     Emit-Secret 'AZURE_COSMOS_SECONDARY_KEY' $secondaryKey
 }

@@ -154,6 +154,7 @@
               "changeFeed",
               "container",
               "database",
+              "fullFidelityChangeFeed",
               "gatewayV2",
               "item",
               "partitionMerge",

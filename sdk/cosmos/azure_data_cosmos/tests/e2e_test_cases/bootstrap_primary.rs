@@ -26,7 +26,7 @@ async fn bootstrap_primary_endpoint() -> TestResult {
 
     // Resource management requires key auth, even when the data client uses AAD.
     let management_client = build_management_client(&client).await?;
-    let database_id = format!("e2e-bootstrap-{}", azure_core::Uuid::new_v4());
+    let database_id = format!("test-db-e2e-bootstrap-{}", azure_core::Uuid::now_v7());
     let response = management_client
         .create_database(&database_id, None)
         .await?;

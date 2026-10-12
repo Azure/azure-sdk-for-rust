@@ -162,6 +162,7 @@ pub(super) enum Capability {
     ChangeFeed,
     Container,
     Database,
+    FullFidelityChangeFeed,
     GatewayV2,
     Item,
     Patch,
@@ -398,6 +399,73 @@ pub(super) fn default_region() -> Result<Region, String> {
         .find(|profile| profile.id == selected)
         .ok_or_else(|| format!("E2E profile '{selected}' does not exist"))?;
     Ok(profile.selected_account()?.effective_regions()?.remove(0))
+}
+
+pub(super) fn validate_observed_live_account(
+    consistency: &str,
+    multi_write: bool,
+    writable_regions: &[Region],
+    readable_regions: &[Region],
+) -> Result<(), String> {
+    if std::env::var("AZURE_COSMOS_E2E_BACKEND").as_deref() != Ok("azureLive") {
+        return Ok(());
+    }
+    let selected =
+        std::env::var("AZURE_COSMOS_E2E_PROFILE").unwrap_or_else(|_| DEFAULT_PROFILE.to_owned());
+    let profile = load_profiles()?
+        .into_iter()
+        .find(|profile| profile.id == selected)
+        .ok_or_else(|| format!("E2E profile '{selected}' does not exist"))?;
+    let account = profile.selected_account()?;
+    let expected_regions = account.effective_regions()?;
+    validate_account_configuration(
+        account,
+        &selected,
+        &expected_regions,
+        consistency,
+        multi_write,
+        writable_regions,
+        readable_regions,
+    )
+}
+
+fn validate_account_configuration(
+    account: &AccountDefinition,
+    profile_id: &str,
+    expected_regions: &[Region],
+    consistency: &str,
+    multi_write: bool,
+    writable_regions: &[Region],
+    readable_regions: &[Region],
+) -> Result<(), String> {
+    if !consistency.eq_ignore_ascii_case(&account.consistency) {
+        return Err(format!(
+            "live account reports consistency '{consistency}', expected '{}' for profile '{profile_id}'",
+            account.consistency
+        ));
+    }
+    let expected_multi_write = account.write_mode == "multi";
+    if multi_write != expected_multi_write {
+        return Err(format!(
+            "live account reports multiWrite={multi_write}, expected {expected_multi_write} for profile '{profile_id}'"
+        ));
+    }
+    if readable_regions != expected_regions {
+        return Err(format!(
+            "live account reports readable regions {readable_regions:?}, expected {expected_regions:?} for profile '{profile_id}'"
+        ));
+    }
+    let writable_matches = if expected_multi_write {
+        writable_regions == expected_regions
+    } else {
+        writable_regions.first() == expected_regions.first()
+    };
+    if !writable_matches {
+        return Err(format!(
+            "live account reports writable regions {writable_regions:?}, expected write mode and primary region from {expected_regions:?} for profile '{profile_id}'"
+        ));
+    }
+    Ok(())
 }
 
 fn selected_axis<'a>(environment_variable: &str, available: &'a [&str]) -> Result<&'a str, String> {
@@ -1001,7 +1069,9 @@ fn valid_slug(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{effective_regions, load_profiles, valid_scenario_id, Region};
+    use super::{
+        effective_regions, load_profiles, valid_scenario_id, validate_account_configuration, Region,
+    };
 
     #[test]
     fn single_region_profiles_project_only_for_live() -> Result<(), String> {
@@ -1069,6 +1139,66 @@ mod tests {
         for profile in [vec![], vec![""], vec!["East US", "eastus"]] {
             assert!(effective_regions(None, None, profile).is_err());
         }
+    }
+
+    #[test]
+    fn observed_live_account_must_match_selected_profile() -> Result<(), String> {
+        let profile = load_profiles()?
+            .into_iter()
+            .find(|profile| profile.id == "liveConfiguration")
+            .expect("live configuration profile");
+        let account = &profile.accounts[0];
+        let regions = [Region::EAST_US_2, Region::new("West US 3")];
+        validate_account_configuration(
+            account,
+            &profile.id,
+            &regions,
+            "Session",
+            false,
+            &[Region::EAST_US_2],
+            &regions,
+        )?;
+        for result in [
+            validate_account_configuration(
+                account,
+                &profile.id,
+                &regions,
+                "Eventual",
+                false,
+                &[Region::EAST_US_2],
+                &regions,
+            ),
+            validate_account_configuration(
+                account,
+                &profile.id,
+                &regions,
+                "Session",
+                true,
+                &[Region::EAST_US_2],
+                &regions,
+            ),
+            validate_account_configuration(
+                account,
+                &profile.id,
+                &regions,
+                "Session",
+                false,
+                &[Region::EAST_US_2],
+                &[Region::EAST_US_2],
+            ),
+            validate_account_configuration(
+                account,
+                &profile.id,
+                &regions,
+                "Session",
+                false,
+                &[Region::new("West US 3")],
+                &regions,
+            ),
+        ] {
+            assert!(result.is_err());
+        }
+        Ok(())
     }
 
     #[test]

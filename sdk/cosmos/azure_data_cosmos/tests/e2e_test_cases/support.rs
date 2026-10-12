@@ -220,14 +220,24 @@ fn init_test_tracing() {
 }
 
 async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
+    if std::env::var("AZURE_COSMOS_E2E_BACKEND").as_deref() == Ok("azureLive") {
+        let requirements = required_capabilities_for(scenario_id, "azureLive")?;
+        if requirements.contains(&Capability::FullFidelityChangeFeed)
+            && std::env::var("AZURE_COSMOS_ACCOUNT_FULL_FIDELITY_CHANGE_FEED").as_deref()
+                != Ok("true")
+        {
+            return Err(format!(
+                "scenario '{scenario_id}' requires an account with full-fidelity change feed enabled"
+            )
+            .into());
+        }
+        return Ok(());
+    }
     let management_endpoint = match std::env::var("AZURE_COSMOS_INMEMORY_MANAGEMENT_ENDPOINT") {
         Ok(endpoint) => endpoint,
         Err(std::env::VarError::NotPresent)
             if std::env::var_os("AZURE_COSMOS_EMULATOR_FLAVOR").is_none() =>
         {
-            // Azure Live has no emulator management plane. Account/profile
-            // suitability is owned by live pipeline selection, so only hosted
-            // emulator runs perform capability-document validation here.
             return Ok(());
         }
         Err(error) => {
@@ -275,6 +285,7 @@ async fn enforce_required_capabilities(scenario_id: &str) -> TestResult {
             Capability::ChangeFeed => capabilities.data_plane_contains("changeFeed"),
             Capability::Container => capabilities.data_plane_contains("container"),
             Capability::Database => capabilities.data_plane_contains("database"),
+            Capability::FullFidelityChangeFeed => capabilities.data_plane_contains("changeFeed"),
             Capability::Item => capabilities.data_plane_contains("item"),
             Capability::Patch => capabilities.data_plane_contains("patch"),
             Capability::PartitionMerge => capabilities.management_contains("partitionMerge"),

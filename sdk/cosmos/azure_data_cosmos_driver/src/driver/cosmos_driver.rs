@@ -1958,6 +1958,29 @@ impl CosmosDriver {
     pub async fn cached_account_regions_for_testing(
         &self,
     ) -> Option<(Vec<crate::options::Region>, Vec<crate::options::Region>)> {
+        let (_, _, writable, readable) = self.cached_account_configuration_for_testing().await?;
+        Some((writable, readable))
+    }
+
+    /// **Internal test hook -- not part of the public API.**
+    ///
+    /// Returns the account consistency, multi-write flag, and writable/readable
+    /// regions observed in the account-properties response used to initialize
+    /// this driver.
+    #[cfg(any(
+        test,
+        feature = "__internal_in_memory_emulator",
+        feature = "fault_injection"
+    ))]
+    #[doc(hidden)]
+    pub async fn cached_account_configuration_for_testing(
+        &self,
+    ) -> Option<(
+        String,
+        bool,
+        Vec<crate::options::Region>,
+        Vec<crate::options::Region>,
+    )> {
         let endpoint = AccountEndpoint::from(self.options.account());
         let props = self.runtime.account_metadata_cache().get(&endpoint).await?;
         let writable = props
@@ -1970,7 +1993,15 @@ impl CosmosDriver {
             .iter()
             .map(|location| location.name.clone())
             .collect();
-        Some((writable, readable))
+        Some((
+            props
+                .user_consistency_policy
+                .default_consistency_level
+                .to_string(),
+            props.enable_multiple_write_locations,
+            writable,
+            readable,
+        ))
     }
 
     /// Returns the runtime.
