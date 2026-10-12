@@ -89,7 +89,7 @@ fn store_with_probe() -> (LocationStateStore, OperationRetryState) {
 }
 
 #[test]
-fn retrip_after_fast_path_check_preserves_state_and_snapshot() {
+fn failure_after_fast_path_check_preserves_state_and_snapshot() {
     let (store, retry) = store_with_probe();
     let version = store.version_for_tests();
     let captured = Arc::new(Mutex::new(None));
@@ -110,7 +110,7 @@ fn retrip_after_fast_path_check_preserves_state_and_snapshot() {
         || try_cleanup_probe_candidate(&retry, &store),
     );
 
-    let retripped = captured
+    let failed_state = captured
         .lock()
         .unwrap()
         .take()
@@ -122,9 +122,9 @@ fn retrip_after_fast_path_check_preserves_state_and_snapshot() {
     assert_eq!(
         store.version_for_tests(),
         version + 1,
-        "only the retrip may publish"
+        "only the failure update may publish"
     );
-    assert!(Arc::ptr_eq(&retripped.partitions, &after.partitions));
+    assert!(Arc::ptr_eq(&failed_state.partitions, &after.partitions));
 }
 
 #[test]
