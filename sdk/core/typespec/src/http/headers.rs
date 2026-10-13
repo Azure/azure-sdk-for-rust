@@ -172,9 +172,10 @@ impl Headers {
     /// Get a header value as a `str`, or err if it is not found.
     pub fn get_str(&self, key: &HeaderName) -> crate::Result<&str> {
         self.get_optional_str(key).ok_or_else(|| {
-            Error::with_message_fn(ErrorKind::DataConversion, || {
-                format!("header not found {}", key.as_str())
-            })
+            Error::with_message(
+                ErrorKind::DataConversion,
+                format!("header not found {}", key.as_str()),
+            )
         })
     }
 
