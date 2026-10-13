@@ -4,7 +4,7 @@
 //use async_channel::{bounded, Receiver, Sender};
 use super::{
     load_balancer::LoadBalancer,
-    models::{Checkpoint, StartPositions},
+    models::{Checkpoint, Ownership, StartPositions},
     partition_client::PartitionClient,
     CheckpointStore, ProcessorStrategy,
 };
@@ -48,7 +48,8 @@ const PROCESSOR_OWNER_LEVEL: i64 = 0;
 /// Each per-partition receiver opens with AMQP epoch `0`, matching the .NET
 /// and Java `EventProcessorClient`. When another `EventProcessor` attaches
 /// to the same partition, the broker disconnects this receiver and
-/// `stream_events()` resolves with `EventHubsError::ConsumerDisconnected`.
+/// [`PartitionClient::stream_events()`] yields
+/// [`ErrorKind::ConsumerDisconnected`](crate::error::ErrorKind::ConsumerDisconnected).
 /// To use a different epoch, open receivers directly via
 /// `ConsumerClient::open_receiver_on_partition`.
 ///
@@ -66,7 +67,10 @@ pub struct EventProcessor {
     update_interval: Duration,
     start_positions: StartPositions,
     is_running: std::sync::Mutex<bool>,
+    run_lock: AsyncMutex<()>,
+    lifecycle_lock: AsyncMutex<()>,
     partition_ids: Vec<String>,
+    consumers: Arc<ProcessorConsumersMap>,
 }
 
 struct EventProcessorOptions {
@@ -90,8 +94,8 @@ impl ProcessorConsumersMap {
     }
 
     /// Adds a partition client to the consumers map.
-    /// If a partition client already exists for the given partition ID,
-    /// it will not be added again.
+    /// Replaces a closed or dropped client for the same partition ID.
+    /// An existing open client is retained.
     /// Returns `true` if the partition client was added successfully,
     /// or `false` if it already exists.
     ///
@@ -114,7 +118,11 @@ impl ProcessorConsumersMap {
             .consumers
             .lock()
             .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
-        if consumers.contains_key(partition_id) {
+        if consumers
+            .get(partition_id)
+            .and_then(Weak::upgrade)
+            .is_some_and(|client| !client.is_closed())
+        {
             debug!(
                 partition_id = %partition_id,
                 "Partition client already exists for partition."
@@ -126,13 +134,21 @@ impl ProcessorConsumersMap {
         Ok(true)
     }
 
-    pub fn remove_partition_client(&self, partition_id: &str) -> Result<()> {
+    pub fn remove_partition_client(&self, partition_client: &PartitionClient) -> Result<()> {
+        let partition_id = partition_client.get_partition_id();
         debug!(partition_id = %partition_id, "Removing partition client for partition.");
         let mut consumers = self
             .consumers
             .lock()
             .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
-        consumers.remove(partition_id);
+        // A retained client from an earlier run must not remove its replacement.
+        if consumers.get(partition_id).is_some_and(|client| {
+            client
+                .upgrade()
+                .is_none_or(|client| client.client_id() == partition_client.client_id())
+        }) {
+            consumers.remove(partition_id);
+        }
         debug!(partitions = ?consumers.keys(), "Consumers for partition now.");
         Ok(())
     }
@@ -159,7 +175,38 @@ impl ProcessorConsumersMap {
                 .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
             partition_ids
                 .iter()
-                .filter_map(|id| consumers.remove(id).and_then(|w| w.upgrade()))
+                .filter_map(|id| {
+                    let client = consumers.get(id).and_then(Weak::upgrade);
+                    if client.is_none() {
+                        consumers.remove(id);
+                    }
+                    client
+                })
+                .collect()
+        };
+        for client in to_close {
+            // Keep the remaining clients discoverable by shutdown while detach awaits.
+            client.request_close_receiver().await;
+            self.remove_partition_client(&client)?;
+        }
+        Ok(())
+    }
+
+    /// Closes the receiver of every partition client in the map, so an
+    /// in-flight `stream_events()` resolves. The entries stay in the map,
+    /// because a client that the application still holds keeps its place
+    /// until it is replaced on restart or explicitly closed.
+    async fn close_all_receivers(&self) -> Result<()> {
+        // Collect under the sync lock, then release before awaiting:
+        // SyncMutex guards cannot be held across `.await`.
+        let to_close: Vec<Arc<PartitionClient>> = {
+            let consumers = self
+                .consumers
+                .lock()
+                .map_err(|_| EventHubsError::with_message("Could not lock consumers mutex."))?;
+            consumers
+                .values()
+                .filter_map(|client| client.upgrade())
                 .collect()
         };
         for client in to_close {
@@ -212,7 +259,10 @@ impl EventProcessor {
             next_partition_client_sender: sender,
             next_partition_clients: AsyncMutex::new(receiver),
             is_running: std::sync::Mutex::new(false),
+            run_lock: AsyncMutex::new(()),
+            lifecycle_lock: AsyncMutex::new(()),
             partition_ids: options.partition_ids,
+            consumers: Arc::new(ProcessorConsumersMap::new()),
         }))
     }
 
@@ -223,8 +273,20 @@ impl EventProcessor {
     /// to manage the ownership of partitions and distribute the load
     /// among consumers.
     /// The event processor will run until it is stopped or interrupted.
+    ///
+    /// After [`shutdown()`](Self::shutdown), this loop completes its current
+    /// dispatch and sleeps for the configured update interval before returning.
+    /// Dispatch can wait for network operations or partition-client queue capacity,
+    /// so the update interval does not bound the total time until this method returns.
+    /// Event delivery stops when `shutdown()` returns.
+    ///
+    /// After calling `shutdown()` and waiting for this method to return,
+    /// call it again to restart processing.
+    /// The restarted processor issues new partition clients; clients from the
+    /// previous run remain closed.
+    ///
     /// # Errors
-    /// Returns an error if the event processor fails to start.
+    /// Returns an error if another call to `run()` is active or if dispatch fails.
     /// # Examples
     /// ```
     /// use azure_messaging_eventhubs::EventProcessor;
@@ -239,7 +301,7 @@ impl EventProcessor {
     ///   let event_processor = EventProcessor::builder()
     ///       .with_load_balancing_strategy(ProcessorStrategy::Balanced)
     ///       .with_update_interval(Duration::seconds(30))
-    ///       .with_partition_expiration_duration(Duration::seconds(10))
+    ///       .with_partition_expiration_duration(Duration::seconds(60))
     ///       .with_prefetch(300)
     ///       .build(
     ///          consumer_client,
@@ -263,14 +325,19 @@ impl EventProcessor {
     /// ```
     ///
     pub async fn run(&self) -> Result<()> {
+        let _run = self
+            .run_lock
+            .try_lock()
+            .ok_or_else(|| EventHubsError::with_message("Event processor is already running."))?;
         {
+            // A restart cannot publish new work until the previous stop finishes.
+            let _lifecycle = self.lifecycle_lock.lock().await;
             let mut is_running = self.is_running.lock().map_err(|_| {
                 Error::new(AzureErrorKind::Io, "Could not lock is_running on startup")
             })?;
             *is_running = true;
         }
 
-        let consumers = Arc::new(ProcessorConsumersMap::new());
         let partition_ids = &self
             .partition_ids
             .iter()
@@ -278,7 +345,7 @@ impl EventProcessor {
             .collect::<Vec<&str>>();
 
         loop {
-            let result = self.dispatch(partition_ids, &consumers).await;
+            let result = self.dispatch(partition_ids, &self.consumers).await;
             match result {
                 Ok(_) => {
                     debug!("Event processor dispatched successfully.");
@@ -299,15 +366,96 @@ impl EventProcessor {
     }
 
     /// Shuts down the event processor.
+    ///
+    /// The call stops the event delivery on every partition client that this
+    /// processor issued, including a partition client that the application
+    /// still holds. Pending reads are canceled, and
+    /// [`PartitionClient::stream_events()`] yields
+    /// [`ErrorKind::ConsumerDisconnected`](crate::error::ErrorKind::ConsumerDisconnected)
+    /// when next polled. The call then releases the
+    /// ownership records of this instance after any pending ownership claims
+    /// complete, so that another instance can claim
+    /// those partitions immediately, without a wait for the expiration.
+    ///
+    /// A failure to release the ownership records does not fail the call. The
+    /// records expire on their own if the release fails.
+    ///
+    /// [`close()`](Self::close) is a superset of this call: it
+    /// consumes the processor, and it also drains the queued partition clients
+    /// and closes the consumer client.
+    ///
+    /// # Errors
+    /// Returns an error if the processor cannot read its own state.
     pub async fn shutdown(&self) -> Result<()> {
-        // Implement shutdown logic if needed
+        self.stop().await
+    }
 
-        let mut is_running = self.is_running.lock().map_err(|_| {
-            EventHubsError::with_message("Failed to acquire lock on is_running for shutdown")
-        })?;
+    /// Stops the processing loop, the event delivery, and the ownership of
+    /// this instance. Shared by [`shutdown()`](Self::shutdown) and
+    /// [`close()`](Self::close).
+    ///
+    /// Closes receivers before waiting for the claim phase to finish. The load
+    /// balancer lock covers only claims, so shutdown never waits on a queue send.
+    /// A stopped dispatch cannot begin another claim.
+    async fn stop(&self) -> Result<()> {
+        let _lifecycle = self.lifecycle_lock.lock().await;
+        {
+            let mut is_running = self.is_running.lock().map_err(|_| {
+                EventHubsError::with_message("Failed to acquire lock on is_running for shutdown")
+            })?;
+            *is_running = false;
+        }
 
-        *is_running = false;
+        self.consumers.close_all_receivers().await?;
+        let _claims = self.load_balancer.lock().await;
+        self.release_ownerships().await;
         Ok(())
+    }
+
+    /// Releases the ownership records that this instance owns.
+    ///
+    /// The call keeps the ETag that the store returned, because
+    /// `claim_ownership` rejects a record whose ETag does not match the one
+    /// the store holds. A failure must not stop the shutdown, so this logs the
+    /// error and returns.
+    async fn release_ownerships(&self) {
+        let ownerships = self
+            .checkpoint_store
+            .list_ownerships(
+                &self.client_details.fully_qualified_namespace,
+                &self.client_details.eventhub_name,
+                &self.client_details.consumer_group,
+            )
+            .await;
+        let ownerships = match ownerships {
+            Ok(ownerships) => ownerships,
+            Err(e) => {
+                warn!(err = ?e, "Failed to list the ownerships to release on shutdown.");
+                return;
+            }
+        };
+
+        let to_release: Vec<Ownership> = ownerships
+            .into_iter()
+            .filter(|ownership| {
+                ownership.owner_id.as_deref() == Some(self.client_details.client_id.as_str())
+            })
+            .map(|mut ownership| {
+                ownership.owner_id = None;
+                ownership
+            })
+            .collect();
+        if to_release.is_empty() {
+            return;
+        }
+
+        info!(
+            count = to_release.len(),
+            "Releasing the ownerships of this processor."
+        );
+        if let Err(e) = self.checkpoint_store.claim_ownership(&to_release).await {
+            warn!(err = ?e, "Failed to release the ownerships on shutdown.");
+        }
     }
 
     fn is_shutdown(&self) -> Result<bool> {
@@ -340,13 +488,24 @@ impl EventProcessor {
         consumers: &Arc<ProcessorConsumersMap>,
     ) -> Result<()> {
         debug!("Dispatch partition clients to consumers.");
-        let load_balancer = self.load_balancer.lock().await;
-
-        let ownerships = load_balancer.load_balance(partition_ids).await;
-        let ownerships = ownerships.map_err(|e| {
-            error!(err = ?e, "Error in load balancing.");
-            e
-        })?;
+        let ownerships = {
+            // Stop waits for this phase, never for receiver creation or queue sends.
+            let load_balancer = self.load_balancer.lock().await;
+            if self.is_shutdown()? {
+                return Ok(());
+            }
+            load_balancer
+                .load_balance(partition_ids)
+                .await
+                .map_err(|e| {
+                    error!(err = ?e, "Error in load balancing.");
+                    e
+                })?
+        };
+        if self.is_shutdown()? {
+            // Stop releases all completed claims while holding the same lock.
+            return Ok(());
+        }
 
         // Revoke clients for any partitions no longer in the ownership set.
         let owned_ids: std::collections::HashSet<&str> =
@@ -461,7 +620,7 @@ impl EventProcessor {
                     "Error opening receiver for partition client."
                 );
                 if let Some(strong_consumers) = consumers.upgrade() {
-                    let _ = strong_consumers.remove_partition_client(&partition_id);
+                    let _ = strong_consumers.remove_partition_client(&partition_client);
                 }
                 return Err(e);
             }
@@ -474,9 +633,25 @@ impl EventProcessor {
                 "Error setting event receiver for partition."
             );
             if let Some(strong_consumers) = consumers.upgrade() {
-                let _ = strong_consumers.remove_partition_client(&partition_id);
+                let _ = strong_consumers.remove_partition_client(&partition_client);
             }
             return Err(e);
+        }
+
+        // `stop` snapshots the map, so a receiver set after that snapshot
+        // would outlive the shutdown. The `is_running` mutex orders the two:
+        // this read sees the stop, or the snapshot sees the receiver. The map
+        // entry rolls back the same way as the two failure paths above.
+        if self.is_shutdown()? {
+            info!(
+                partition_id = %partition_id,
+                "Event processor stopped while the receiver opened, dropping the client."
+            );
+            partition_client.request_close_receiver().await;
+            if let Some(strong_consumers) = consumers.upgrade() {
+                let _ = strong_consumers.remove_partition_client(&partition_client);
+            }
+            return Ok(());
         }
 
         debug!(partition_id = %partition_id, "Adding partition client to queue.");
@@ -501,28 +676,38 @@ impl EventProcessor {
 
     /// Retrieves the next partition client for processing events.
     ///
-    /// This method returns the next available partition client.
+    /// Waits for an open partition client, skipping clients closed by an earlier
+    /// shutdown or partition revocation.
     pub async fn next_partition_client(&self) -> Result<Arc<PartitionClient>> {
         // Implement the function or remove it if not needed
         debug!("next_partition_client: Waiting to receive the next partition client.");
 
-        {
-            // Wait for the next partition client to be available
-            let mut clients = self.next_partition_clients.lock().await;
+        let mut clients = self.next_partition_clients.lock().await;
+        loop {
             let next_client = clients.next().await.ok_or_else(|| {
-                EventHubsError::with_message("No next partition client available: ")
+                EventHubsError::with_message("No next partition client available.")
             })?;
-
-            debug!(
-                partition_id = %next_client.get_partition_id(),
-                "next_partition_client: Returning partition client for partition."
-            );
-            Ok(next_client)
+            // Shutdown keeps queued clients alive. A restart only issues open clients.
+            if next_client.is_closed() {
+                continue;
+            }
+            debug!(partition_id = %next_client.get_partition_id(), "Returning partition client.");
+            return Ok(next_client);
         }
     }
 
     /// Closes the event processor.
+    ///
+    /// The call runs the same stop path as
+    /// [`shutdown()`](Self::shutdown), and it also drains the queued
+    /// partition clients and closes the consumer client.
     pub async fn close(self) -> Result<()> {
+        // Stop the delivery and release the ownership first, then continue
+        // with the close: a failure here must not leave the connection open.
+        if let Err(e) = self.stop().await {
+            error!(err = ?e, "Failed to stop the event processor on close.");
+        }
+
         // Close all partition clients.
         info!("Closing all partition clients.");
         let mut clients = self.next_partition_clients.lock().await;
@@ -837,21 +1022,31 @@ pub mod builders {
 mod tests {
     use super::builders::validate_expiration_vs_update_interval;
     use super::{
-        EventProcessor, EventProcessorOptions, PartitionClient, ProcessorConsumersMap,
-        ProcessorStrategy, StartPositions,
+        Checkpoint, CheckpointStore, ConsumerClientDetails, EventProcessor, EventProcessorOptions,
+        HashMap, PartitionClient, ProcessorConsumersMap, ProcessorStrategy, StartPositions,
     };
-    use crate::{ConsumerClient, InMemoryCheckpointStore};
-    use azure_core::time::Duration;
+    use crate::{
+        consumer::event_receiver::{
+            receiver_with_delayed_close, receiver_with_failing_attach,
+            receiver_with_pending_receive,
+        },
+        error::ErrorKind,
+        models::Ownership,
+        ConsumerClient, InMemoryCheckpointStore,
+    };
+    use azure_core::{error::ErrorKind as AzureErrorKind, time::Duration};
+    use azure_core_amqp::AmqpError;
     use azure_core_test::credentials::MockCredential;
-    use futures::SinkExt;
-    use std::sync::Arc;
+    use futures::{channel::oneshot, poll, SinkExt, StreamExt};
+    use std::sync::{Arc, Mutex};
 
     /// Builds a processor that holds `partition_ids` queued partition clients,
     /// with no connection to the service. The returned map is the one that a
     /// `PartitionClient::close` removes itself from, so a test reads it to
     /// find out which clients closed.
-    async fn processor_with_queued_clients(
+    async fn processor_with_queued_clients_and_store(
         partition_ids: &[&str],
+        checkpoint_store: Arc<dyn CheckpointStore + Send + Sync>,
     ) -> (Arc<EventProcessor>, Arc<ProcessorConsumersMap>) {
         let consumer_client = ConsumerClient::new_unconnected(
             "example.servicebus.windows.net",
@@ -860,7 +1055,6 @@ mod tests {
         )
         .expect("the client must build");
         let client_details = consumer_client.get_details().expect("details must parse");
-        let checkpoint_store = Arc::new(InMemoryCheckpointStore::new());
 
         let processor = EventProcessor::new(
             consumer_client,
@@ -876,7 +1070,7 @@ mod tests {
         )
         .expect("the processor must build");
 
-        let consumers = Arc::new(ProcessorConsumersMap::new());
+        let consumers = processor.consumers.clone();
         let mut sender = processor.next_partition_client_sender.clone();
         for partition_id in partition_ids {
             let client = Arc::new(PartitionClient::new(
@@ -893,6 +1087,245 @@ mod tests {
         }
 
         (processor, consumers)
+    }
+
+    async fn processor_with_queued_clients(
+        partition_ids: &[&str],
+    ) -> (Arc<EventProcessor>, Arc<ProcessorConsumersMap>) {
+        processor_with_queued_clients_and_store(
+            partition_ids,
+            Arc::new(InMemoryCheckpointStore::new()),
+        )
+        .await
+    }
+
+    /// Stands in for an application that holds a partition client it took.
+    fn strong_client(
+        consumers: &Arc<ProcessorConsumersMap>,
+        partition_id: &str,
+    ) -> Arc<PartitionClient> {
+        consumers
+            .consumers
+            .lock()
+            .expect("the map must lock")
+            .get(partition_id)
+            .unwrap_or_else(|| panic!("partition {partition_id} must be in the map"))
+            .upgrade()
+            .unwrap_or_else(|| panic!("partition {partition_id} must still be alive"))
+    }
+
+    /// Gives the client a receiver that answers offline. Without this the
+    /// client has an empty `event_receiver`, and `stream_events` returns a
+    /// canned "Event receiver is not set" stream that proves nothing.
+    fn install_offline_receiver(client: &Arc<PartitionClient>, partition_id: &str) {
+        client
+            .set_event_receiver(receiver_with_failing_attach(
+                partition_id,
+                AmqpError::with_message("attach failed"),
+            ))
+            .expect("the receiver must install");
+    }
+
+    async fn assert_stream_stops(client: &PartitionClient, partition_id: &str) {
+        let mut stream = std::pin::pin!(client.stream_events());
+        let error = stream
+            .next()
+            .await
+            .expect("the stream must yield an item")
+            .expect_err("the stream must stop with an error");
+        assert!(
+            matches!(error.kind, ErrorKind::ConsumerDisconnected(None)),
+            "partition {partition_id} must stop with ConsumerDisconnected, got {:?}",
+            error.kind
+        );
+    }
+
+    async fn claim_for(processor: &EventProcessor, partition_id: &str, owner: &str) -> Ownership {
+        let details = &processor.client_details;
+        let ownership = Ownership {
+            fully_qualified_namespace: details.fully_qualified_namespace.clone(),
+            event_hub_name: details.eventhub_name.clone(),
+            consumer_group: details.consumer_group.clone(),
+            partition_id: partition_id.to_string(),
+            owner_id: Some(owner.to_string()),
+            etag: None,
+            ..Default::default()
+        };
+        processor
+            .checkpoint_store
+            .claim_ownership(&[ownership])
+            .await
+            .expect("the store must accept the claim")
+            .pop()
+            .expect("the store must return the claimed record")
+    }
+
+    /// Takes the store and the details, because `close` consumes the processor.
+    async fn ownership_for(
+        checkpoint_store: &Arc<dyn CheckpointStore + Send + Sync>,
+        client_details: &ConsumerClientDetails,
+        partition_id: &str,
+    ) -> Ownership {
+        checkpoint_store
+            .list_ownerships(
+                &client_details.fully_qualified_namespace,
+                &client_details.eventhub_name,
+                &client_details.consumer_group,
+            )
+            .await
+            .expect("the store must list ownerships")
+            .into_iter()
+            .find(|o| o.partition_id == partition_id)
+            .unwrap_or_else(|| panic!("partition {partition_id} must have an ownership record"))
+    }
+
+    struct FailingCheckpointStore;
+
+    #[async_trait::async_trait]
+    impl CheckpointStore for FailingCheckpointStore {
+        async fn claim_ownership(
+            &self,
+            _ownerships: &[Ownership],
+        ) -> azure_core::Result<Vec<Ownership>> {
+            Err(azure_core::Error::with_message(
+                AzureErrorKind::Other,
+                "claim_ownership fails in this test".to_string(),
+            ))
+        }
+
+        async fn list_checkpoints(
+            &self,
+            _namespace: &str,
+            _event_hub_name: &str,
+            _consumer_group: &str,
+        ) -> azure_core::Result<Vec<Checkpoint>> {
+            Ok(Vec::new())
+        }
+
+        async fn list_ownerships(
+            &self,
+            _namespace: &str,
+            _event_hub_name: &str,
+            _consumer_group: &str,
+        ) -> azure_core::Result<Vec<Ownership>> {
+            Err(azure_core::Error::with_message(
+                AzureErrorKind::Other,
+                "list_ownerships fails in this test".to_string(),
+            ))
+        }
+
+        async fn update_checkpoint(&self, _checkpoint: Checkpoint) -> azure_core::Result<()> {
+            Ok(())
+        }
+    }
+
+    struct DelayedClaimStore {
+        inner: InMemoryCheckpointStore,
+        started: Mutex<Option<oneshot::Sender<()>>>,
+        finish: async_lock::Mutex<Option<oneshot::Receiver<()>>>,
+    }
+
+    #[async_trait::async_trait]
+    impl CheckpointStore for DelayedClaimStore {
+        async fn claim_ownership(
+            &self,
+            ownerships: &[Ownership],
+        ) -> azure_core::Result<Vec<Ownership>> {
+            let started = self.started.lock().unwrap().take();
+            if let Some(started) = started {
+                let _ = started.send(());
+                let finish = self.finish.lock().await.take().unwrap();
+                finish.await.unwrap();
+            }
+            self.inner.claim_ownership(ownerships).await
+        }
+        async fn list_checkpoints(
+            &self,
+            namespace: &str,
+            hub: &str,
+            group: &str,
+        ) -> azure_core::Result<Vec<Checkpoint>> {
+            self.inner.list_checkpoints(namespace, hub, group).await
+        }
+        async fn list_ownerships(
+            &self,
+            namespace: &str,
+            hub: &str,
+            group: &str,
+        ) -> azure_core::Result<Vec<Ownership>> {
+            self.inner.list_ownerships(namespace, hub, group).await
+        }
+        async fn update_checkpoint(&self, checkpoint: Checkpoint) -> azure_core::Result<()> {
+            self.inner.update_checkpoint(checkpoint).await
+        }
+    }
+
+    #[tokio::test]
+    async fn shutdown_waits_for_pending_ownership_claim() {
+        let (started, claiming) = oneshot::channel();
+        let (finish, delayed) = oneshot::channel();
+        let store = Arc::new(DelayedClaimStore {
+            inner: InMemoryCheckpointStore::new(),
+            started: Mutex::new(Some(started)),
+            finish: async_lock::Mutex::new(Some(delayed)),
+        });
+        let (mut processor, _consumers) =
+            processor_with_queued_clients_and_store(&["0"], store).await;
+        Arc::get_mut(&mut processor).unwrap().update_interval = Duration::milliseconds(1);
+        drain_partition_client_queue(&processor).await;
+        let running_processor = processor.clone();
+        let running = tokio::spawn(async move { running_processor.run().await });
+        tokio::time::timeout(std::time::Duration::from_secs(1), claiming)
+            .await
+            .unwrap()
+            .unwrap();
+        let mut shutdown = std::pin::pin!(processor.shutdown());
+        let waits_for_claim = poll!(shutdown.as_mut()).is_pending();
+        finish.send(()).unwrap();
+        if waits_for_claim {
+            tokio::time::timeout(std::time::Duration::from_secs(1), shutdown)
+                .await
+                .unwrap()
+                .unwrap();
+        }
+        tokio::time::timeout(std::time::Duration::from_secs(1), running)
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        let ownership =
+            ownership_for(&processor.checkpoint_store, &processor.client_details, "0").await;
+        assert!(
+            waits_for_claim,
+            "shutdown must wait until outstanding ownership claims settle"
+        );
+        assert!(
+            ownership.owner_id.is_none(),
+            "shutdown must release the completed claim"
+        );
+    }
+
+    #[tokio::test]
+    async fn shutdown_cancels_clients_being_revoked() {
+        let (processor, consumers) = processor_with_queued_clients(&["0", "1"]).await;
+        let zero = strong_client(&consumers, "0");
+        let one = strong_client(&consumers, "1");
+        let (receiver, closing, finish) = receiver_with_delayed_close("0");
+        zero.set_event_receiver(receiver).unwrap();
+        install_offline_receiver(&one, "1");
+        let ids = ["0".to_string(), "1".to_string()];
+        let mut revoking = std::pin::pin!(consumers.revoke_partition_clients(&ids));
+        assert!(poll!(revoking.as_mut()).is_pending());
+        closing.await.unwrap();
+        processor.shutdown().await.unwrap();
+        let mut stream = std::pin::pin!(one.stream_events());
+        let error = stream.next().await.unwrap().unwrap_err();
+        finish.send(()).unwrap();
+        revoking.await.unwrap();
+        assert!(
+            matches!(error.kind, ErrorKind::ConsumerDisconnected(None)),
+            "shutdown must close the second client while the first detach is pending"
+        );
     }
 
     /// `close` must not stop at a partition client that the application still
@@ -939,6 +1372,341 @@ mod tests {
         );
 
         drop(retained);
+    }
+
+    /// `shutdown` must stop delivery on every partition client it issued,
+    /// including a client the application still holds. Before the fix it only
+    /// flipped `is_running`, so a held client kept receiving events.
+    #[tokio::test]
+    async fn shutdown_closes_receivers_of_issued_partition_clients() {
+        let (processor, consumers) = processor_with_queued_clients(&["0", "1"]).await;
+        let zero = strong_client(&consumers, "0");
+        let one = strong_client(&consumers, "1");
+        install_offline_receiver(&zero, "0");
+        install_offline_receiver(&one, "1");
+
+        processor.shutdown().await.expect("shutdown must succeed");
+
+        assert_stream_stops(&zero, "0").await;
+        assert_stream_stops(&one, "1").await;
+
+        // Shutdown closes a receiver, it does not drop the map entry. This
+        // guards `close_continues_past_a_retained_partition_client`.
+        let active = consumers
+            .get_active_partition_ids()
+            .expect("the map must lock");
+        assert!(
+            active.contains(&"0".to_string()) && active.contains(&"1".to_string()),
+            "shutdown must keep the map entries, got: {active:?}"
+        );
+    }
+
+    /// `shutdown` must release the ownership records this instance holds, so
+    /// another processor can claim the partitions without waiting for the
+    /// expiration. It must not touch another instance's records.
+    #[tokio::test]
+    async fn shutdown_releases_only_this_instances_ownerships() {
+        let (processor, _consumers) = processor_with_queued_clients(&["0", "1"]).await;
+        let own_id = processor.client_details.client_id.clone();
+        claim_for(&processor, "0", &own_id).await;
+        claim_for(&processor, "1", "other-processor").await;
+
+        processor.shutdown().await.expect("shutdown must succeed");
+
+        let store = processor.checkpoint_store.clone();
+        let details = processor.client_details.clone();
+        let mine = ownership_for(&store, &details, "0").await;
+        let theirs = ownership_for(&store, &details, "1").await;
+        assert_eq!(
+            mine.owner_id, None,
+            "shutdown must release the ownership of this instance"
+        );
+        assert_eq!(
+            theirs.owner_id,
+            Some("other-processor".to_string()),
+            "shutdown must leave the ownership of another instance alone"
+        );
+        assert!(
+            mine.etag.is_some() && theirs.etag.is_some(),
+            "both records must keep an etag, so a later claim can match it"
+        );
+    }
+
+    /// A checkpoint store that rejects the ownership release must not stop
+    /// shutdown, and must not stop the receivers from closing.
+    #[tokio::test]
+    async fn shutdown_continues_when_the_ownership_release_fails() {
+        let (processor, consumers) =
+            processor_with_queued_clients_and_store(&["0", "1"], Arc::new(FailingCheckpointStore))
+                .await;
+        let zero = strong_client(&consumers, "0");
+        let one = strong_client(&consumers, "1");
+        install_offline_receiver(&zero, "0");
+        install_offline_receiver(&one, "1");
+
+        processor
+            .shutdown()
+            .await
+            .expect("a failed ownership release must not fail shutdown");
+
+        assert_stream_stops(&zero, "0").await;
+        assert_stream_stops(&one, "1").await;
+    }
+
+    /// `shutdown` is idempotent, and the second call keeps the release.
+    #[tokio::test]
+    async fn shutdown_twice_succeeds_and_keeps_ownership_released() {
+        let (processor, consumers) = processor_with_queued_clients(&["0"]).await;
+        let zero = strong_client(&consumers, "0");
+        install_offline_receiver(&zero, "0");
+        let own_id = processor.client_details.client_id.clone();
+        claim_for(&processor, "0", &own_id).await;
+
+        processor
+            .shutdown()
+            .await
+            .expect("the first shutdown must succeed");
+        processor
+            .shutdown()
+            .await
+            .expect("the second shutdown must succeed");
+
+        let store = processor.checkpoint_store.clone();
+        let details = processor.client_details.clone();
+        let record = ownership_for(&store, &details, "0").await;
+        assert_eq!(
+            record.owner_id, None,
+            "the ownership must stay released after a second shutdown"
+        );
+        assert_stream_stops(&zero, "0").await;
+    }
+
+    /// `close` must run the same stop path as `shutdown`: release this
+    /// instance's ownership and stop delivery on a client the application
+    /// still holds, which the drain loop cannot take out of its `Arc`.
+    #[tokio::test]
+    async fn close_runs_the_shutdown_stop_path() {
+        let (processor, consumers) = processor_with_queued_clients(&["0", "1"]).await;
+        let retained = strong_client(&consumers, "0");
+        install_offline_receiver(&retained, "0");
+        let own_id = processor.client_details.client_id.clone();
+        claim_for(&processor, "0", &own_id).await;
+
+        let store = processor.checkpoint_store.clone();
+        let details = processor.client_details.clone();
+
+        let connection = {
+            let Ok(processor) = Arc::try_unwrap(processor) else {
+                panic!("the test must be the only holder of the processor");
+            };
+            let connection = processor.consumer_client.recoverable_connection();
+            processor.close().await.expect("close must succeed");
+            connection
+        };
+
+        let record = ownership_for(&store, &details, "0").await;
+        assert_eq!(
+            record.owner_id, None,
+            "close must release the ownership of this instance"
+        );
+        assert_stream_stops(&retained, "0").await;
+        assert!(
+            connection.is_closed(),
+            "the consumer connection must close after the partition clients"
+        );
+    }
+
+    /// The shutdown future must stay `Send`. This passes because the stop
+    /// path drops the `is_running` guard before it awaits. It exists to
+    /// become a compile error if the stop path holds the
+    /// `std::sync::MutexGuard<bool>` across an await, because that guard is
+    /// not `Send`.
+    #[tokio::test]
+    async fn shutdown_future_is_send() {
+        fn assert_send<T: Send>(_: &T) {}
+
+        let (processor, _consumers) = processor_with_queued_clients(&["0"]).await;
+        let fut = processor.shutdown();
+        assert_send(&fut);
+        fut.await.expect("shutdown must succeed");
+    }
+
+    /// A dispatch started after shutdown must not reclaim released partitions.
+    #[tokio::test]
+    async fn dispatch_after_shutdown_does_not_reclaim_ownership() {
+        let (processor, _consumers) = processor_with_queued_clients(&["0", "1"]).await;
+        drain_partition_client_queue(&processor).await;
+        processor.shutdown().await.expect("shutdown must succeed");
+
+        processor
+            .dispatch(&["0", "1"], &processor.consumers)
+            .await
+            .expect("a dispatch after shutdown must not fail");
+
+        let own_id = processor.client_details.client_id.clone();
+        let still_ours: Vec<String> = processor
+            .checkpoint_store
+            .list_ownerships(
+                &processor.client_details.fully_qualified_namespace,
+                &processor.client_details.eventhub_name,
+                &processor.client_details.consumer_group,
+            )
+            .await
+            .expect("the store must list ownerships")
+            .into_iter()
+            .filter(|o| o.owner_id.as_deref() == Some(own_id.as_str()))
+            .map(|o| o.partition_id)
+            .collect();
+        assert!(
+            still_ours.is_empty(),
+            "a dispatch after shutdown must leave no ownership claimed, got: {still_ours:?}"
+        );
+    }
+
+    /// The other half of the same race. `close_all_receivers` either missed
+    /// this client or found it with an empty `event_receiver`, so the client
+    /// must not reach the application and must leave the map as it found it.
+    #[tokio::test]
+    async fn a_receiver_that_opens_after_shutdown_never_reaches_the_application() {
+        let (processor, consumers) = processor_with_queued_clients(&["1"]).await;
+        drain_partition_client_queue(&processor).await;
+        processor.shutdown().await.expect("shutdown must succeed");
+
+        processor
+            .add_partition_client("0".to_string(), &HashMap::new(), Arc::downgrade(&consumers))
+            .await
+            .expect("adding a partition client after shutdown must not fail");
+
+        let active = consumers
+            .get_active_partition_ids()
+            .expect("the map must lock");
+        assert!(
+            !active.contains(&"0".to_string()),
+            "a client opened after shutdown must roll its map entry back, got: {active:?}"
+        );
+
+        let mut queue = processor.next_partition_clients.lock().await;
+        assert!(
+            queue.try_recv().is_err(),
+            "a client opened after shutdown must not reach the application"
+        );
+    }
+
+    /// The queue holds one client for each partition, and its buffer is the
+    /// partition count. A test that adds one more client would park on a full
+    /// queue instead of reaching its assertion, so it drains the queue first.
+    async fn drain_partition_client_queue(processor: &EventProcessor) {
+        let mut queue = processor.next_partition_clients.lock().await;
+        while queue.try_recv().is_ok() {}
+    }
+
+    #[tokio::test]
+    async fn shutdown_cancels_pending_partition_read() {
+        let (processor, _consumers) = processor_with_queued_clients(&["0"]).await;
+        let client = processor.next_partition_client().await.unwrap();
+        let (receiver, delivery) = receiver_with_pending_receive("0");
+        client.set_event_receiver(receiver).unwrap();
+        let mut stream = std::pin::pin!(client.stream_events());
+        assert!(poll!(stream.next()).is_pending());
+        processor.shutdown().await.unwrap();
+        let result = tokio::time::timeout(std::time::Duration::from_secs(1), stream.next())
+            .await
+            .expect("shutdown must cancel a pending partition read")
+            .unwrap()
+            .unwrap_err();
+        assert!(matches!(result.kind, ErrorKind::ConsumerDisconnected(None)));
+        assert!(delivery.is_canceled());
+    }
+
+    async fn restart_replaces_client(retain_old_client: bool) {
+        let (mut processor, consumers) = processor_with_queued_clients(&["0"]).await;
+        Arc::get_mut(&mut processor).unwrap().update_interval = Duration::milliseconds(1);
+        let old_client = processor.next_partition_client().await.unwrap();
+        install_offline_receiver(&old_client, "0");
+        processor.shutdown().await.unwrap();
+        assert_stream_stops(&old_client, "0").await;
+        let retained = if retain_old_client {
+            Some(old_client)
+        } else {
+            drop(old_client);
+            None
+        };
+
+        let running_processor = processor.clone();
+        let running = tokio::spawn(async move { running_processor.run().await });
+        let replacement = tokio::time::timeout(
+            std::time::Duration::from_secs(1),
+            processor.next_partition_client(),
+        )
+        .await;
+        processor.shutdown().await.unwrap();
+        tokio::time::timeout(std::time::Duration::from_secs(1), running)
+            .await
+            .expect("run must finish after shutdown")
+            .unwrap()
+            .unwrap();
+        let replacement = replacement
+            .expect("restart must issue a replacement client")
+            .unwrap();
+        if let Some(retained) = retained {
+            let retained = Arc::try_unwrap(retained)
+                .unwrap_or_else(|_| panic!("only the application holds the old client"));
+            retained.close().await.unwrap();
+            assert!(
+                Arc::ptr_eq(&strong_client(&consumers, "0"), &replacement),
+                "closing the old client must preserve its replacement"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn run_rejects_another_active_run() {
+        let (mut processor, _consumers) = processor_with_queued_clients(&["0"]).await;
+        Arc::get_mut(&mut processor).unwrap().update_interval = Duration::milliseconds(1);
+        let mut running = std::pin::pin!(processor.run());
+        assert!(poll!(running.as_mut()).is_pending());
+        let second_run =
+            tokio::time::timeout(std::time::Duration::from_secs(1), processor.run()).await;
+        processor.shutdown().await.unwrap();
+        tokio::time::timeout(std::time::Duration::from_secs(1), running)
+            .await
+            .unwrap()
+            .unwrap();
+        let error = second_run.expect("a second run must not wait").unwrap_err();
+        assert!(error.to_string().contains("already running"));
+    }
+
+    #[tokio::test]
+    async fn restart_skips_queued_closed_clients() {
+        let (processor, consumers) = processor_with_queued_clients(&["0"]).await;
+        let old_client = strong_client(&consumers, "0");
+        install_offline_receiver(&old_client, "0");
+        processor.shutdown().await.unwrap();
+        let running_processor = processor.clone();
+        let running = tokio::spawn(async move { running_processor.run().await });
+        let replacement = tokio::time::timeout(
+            std::time::Duration::from_secs(1),
+            processor.next_partition_client(),
+        )
+        .await;
+        running.abort();
+        let _ = running.await;
+        processor.shutdown().await.unwrap();
+        let replacement = replacement.expect("restart must issue a client").unwrap();
+        assert!(
+            !Arc::ptr_eq(&old_client, &replacement),
+            "restart must skip the old queued client"
+        );
+    }
+
+    #[tokio::test]
+    async fn restart_replaces_retained_closed_client() {
+        restart_replaces_client(true).await;
+    }
+
+    #[tokio::test]
+    async fn restart_replaces_dropped_closed_client() {
+        restart_replaces_client(false).await;
     }
 
     /// The validation must reject the historical default (expiration=10s,

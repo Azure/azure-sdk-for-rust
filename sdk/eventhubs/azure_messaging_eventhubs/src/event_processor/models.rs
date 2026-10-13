@@ -91,6 +91,10 @@ pub struct Ownership {
     pub partition_id: String,
 
     /// The identifier of the owner (consumer) of the partition.
+    ///
+    /// `None` means the partition is unowned. Pass `None` with the current
+    /// [`etag`](Self::etag) to [`CheckpointStore::claim_ownership()`](crate::CheckpointStore::claim_ownership)
+    /// to release an existing ownership.
     pub owner_id: Option<String>,
     /// The ETag associated with the ownership.
     pub etag: Option<Etag>,

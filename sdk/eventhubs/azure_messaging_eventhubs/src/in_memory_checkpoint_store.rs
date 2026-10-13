@@ -224,3 +224,71 @@ impl CheckpointStore for InMemoryCheckpointStore {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{CheckpointStore, InMemoryCheckpointStore, Ownership};
+    use azure_core::Result;
+
+    #[tokio::test]
+    async fn claim_ownership_releases_and_reclaims_without_expiration() -> Result<()> {
+        let store = InMemoryCheckpointStore::new();
+        let ownership = Ownership {
+            fully_qualified_namespace: "example.servicebus.windows.net".to_string(),
+            event_hub_name: "eventhub".to_string(),
+            consumer_group: "consumer-group".to_string(),
+            partition_id: "0".to_string(),
+            owner_id: Some("first-owner".to_string()),
+            ..Default::default()
+        };
+        let first = store.claim_ownership(&[ownership]).await?;
+        assert_eq!(first.len(), 1);
+        let mut release = first[0].clone();
+        release.owner_id = None;
+
+        let released = store
+            .claim_ownership(std::slice::from_ref(&release))
+            .await?;
+        assert_eq!(released.len(), 1);
+        assert_eq!(released[0].owner_id, None);
+        assert!(released[0].etag.is_some());
+        assert_ne!(released[0].etag, first[0].etag);
+        assert!(released[0].last_modified_time.is_some());
+
+        let listed = store
+            .list_ownerships(
+                &release.fully_qualified_namespace,
+                &release.event_hub_name,
+                &release.consumer_group,
+            )
+            .await?;
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].owner_id, None);
+        assert_eq!(listed[0].etag, released[0].etag);
+
+        // Reclaim immediately, using the released record's current ETag.
+        let mut reclaim = listed[0].clone();
+        reclaim.owner_id = Some("second-owner".to_string());
+        let reclaimed = store.claim_ownership(&[reclaim]).await?;
+        assert_eq!(reclaimed.len(), 1);
+        assert_eq!(reclaimed[0].owner_id.as_deref(), Some("second-owner"));
+        assert_ne!(reclaimed[0].etag, released[0].etag);
+
+        // A release from the previous owner must not clear the new owner's claim.
+        assert!(store
+            .claim_ownership(std::slice::from_ref(&release))
+            .await
+            .is_err());
+        let listed = store
+            .list_ownerships(
+                &release.fully_qualified_namespace,
+                &release.event_hub_name,
+                &release.consumer_group,
+            )
+            .await?;
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].owner_id.as_deref(), Some("second-owner"));
+        assert_eq!(listed[0].etag, reclaimed[0].etag);
+        Ok(())
+    }
+}

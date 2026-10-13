@@ -56,9 +56,11 @@ pub enum ErrorKind {
     /// the service can store them two times.
     SendNotAccepted(Cow<'static, str>),
 
-    /// Receiver was disconnected by the broker because another receiver
-    /// attached with the same or higher epoch (owner level). The inner
-    /// `AmqpDescribedError` is for logging; match on the variant:
+    /// The partition was revoked, its processor shut down, or another receiver
+    /// attached with the same or higher epoch (owner level).
+    ///
+    /// The optional [`AmqpDescribedError`] contains broker diagnostics. Local
+    /// shutdown and revocation use `None`. Match on the variant:
     /// `matches!(err.kind, ErrorKind::ConsumerDisconnected(_))`.
     /// Mirrors `EventHubsException.FailureReason.ConsumerDisconnected` (.NET).
     ConsumerDisconnected(Option<AmqpDescribedError>),
