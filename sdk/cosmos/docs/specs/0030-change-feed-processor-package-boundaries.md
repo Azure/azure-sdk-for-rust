@@ -40,6 +40,10 @@ This document covers package responsibilities and compatibility. Detailed
 polling algorithms, scheduling, state machines, FFI protocols, and behavioral
 test plans are outside scope.
 
+The companion [public Rust API proposal](0031-change-feed-processor-public-api.md)
+and [alternate lease-store exploration](0032-change-feed-processor-alternate-lease-stores.md)
+develop those surfaces separately; neither establishes implemented or approved APIs.
+
 ## 2. Package Responsibilities
 
 The diagram shows the in-SDK option to evaluate first; Rust API placement remains
