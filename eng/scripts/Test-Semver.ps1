@@ -119,6 +119,8 @@ $packageExemptions = @{
   # packages. fe2o3-amqp 0.14 and 0.18 fail to compile with tokio-util 0.7.20. The fix is
   # merged but not released or backported: https://github.com/minghuaw/fe2o3-amqp/pull/420.
   azure_core_amqp = 'its fe2o3-amqp dependency does not compile with the resolved tokio-util version'
+  azure_messaging_eventhubs = 'its fe2o3-amqp dependency does not compile with the resolved tokio-util version'
+  azure_messaging_eventhubs_checkpointstore_blob = 'its fe2o3-amqp dependency does not compile with the resolved tokio-util version'
 
   # cargo-semver-checks cannot process these packages because their baselines contain a symlink.
   azure_security_keyvault_certificates = 'of https://github.com/Azure/azure-sdk-for-rust/issues/5143'
