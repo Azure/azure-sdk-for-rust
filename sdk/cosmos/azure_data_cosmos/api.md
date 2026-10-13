@@ -2351,6 +2351,7 @@ pub mod options {
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
         pub feed: crate::options::FeedOptions,
         pub session_token: Option<azure_data_cosmos_driver::models::SessionToken>,
+        pub utf8_decoding_mode: azure_data_cosmos_driver::options::Utf8DecodingMode,
         pub mode: ChangeFeedMode,
     }
     impl ChangeFeedOptions {
@@ -2360,6 +2361,7 @@ pub mod options {
         pub fn with_mode(self, mode: ChangeFeedMode) -> Self;
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
         pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, token: impl Into<SessionToken>) -> Self;
+        pub fn with_utf8_decoding_mode(self, mode: Utf8DecodingMode) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug)]
@@ -2590,12 +2592,14 @@ pub mod options {
     pub struct ItemReadOptions {
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
         pub session_token: Option<azure_data_cosmos_driver::models::SessionToken>,
+        pub utf8_decoding_mode: azure_data_cosmos_driver::options::Utf8DecodingMode,
         pub precondition: Option<azure_data_cosmos_driver::models::Precondition>,
     }
     impl ItemReadOptions {
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
         pub fn with_precondition(self, precondition: Precondition) -> Self;
         pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
+        pub fn with_utf8_decoding_mode(self, mode: Utf8DecodingMode) -> Self;
     }
     #[derive(Clone, Default)]
     #[non_exhaustive]
@@ -2754,6 +2758,7 @@ pub mod options {
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
         pub feed: FeedOptions,
         pub session_token: Option<azure_data_cosmos_driver::models::SessionToken>,
+        pub utf8_decoding_mode: azure_data_cosmos_driver::options::Utf8DecodingMode,
         pub populate_index_metrics: Option<bool>,
         pub populate_query_metrics: Option<bool>,
     }
@@ -2767,6 +2772,7 @@ pub mod options {
         pub fn with_populate_query_metrics(self, enable: bool) -> Self;
         pub fn with_query_plan_mode(self, mode: QueryPlanMode) -> Self;
         pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
+        pub fn with_utf8_decoding_mode(self, mode: Utf8DecodingMode) -> Self;
     }
     impl Default for QueryOptions {
         fn default() -> Self;
@@ -3274,6 +3280,14 @@ pub mod options {
     pub enum TlsBackend {
         #[default]
         Rustls,
+    }
+    #[doc(inline)]
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum Utf8DecodingMode {
+        #[default]
+        Strict,
+        Lossy,
     }
 }
 ```

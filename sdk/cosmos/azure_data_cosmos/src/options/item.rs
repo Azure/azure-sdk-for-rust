@@ -6,9 +6,9 @@
 #[cfg(feature = "unstable_patch")]
 use crate::models::PatchTrackingId;
 use azure_data_cosmos_driver::models::{Precondition, SessionToken};
-use azure_data_cosmos_driver::options::OperationOptions;
 #[cfg(feature = "unstable_patch")]
 use azure_data_cosmos_driver::options::PatchStrategy;
+use azure_data_cosmos_driver::options::{OperationOptions, Utf8DecodingMode};
 
 /// Options for item point-read operations.
 ///
@@ -26,6 +26,11 @@ pub struct ItemReadOptions {
     /// Session token for session-consistent reads.
     pub session_token: Option<SessionToken>,
 
+    /// Controls how invalid UTF-8 in the response is handled.
+    ///
+    /// Defaults to [`Utf8DecodingMode::Strict`].
+    pub utf8_decoding_mode: Utf8DecodingMode,
+
     /// Conditional ETag check. For reads, typically [`Precondition::IfNoneMatch`]
     /// (returns 304 Not Modified if unchanged).
     pub precondition: Option<Precondition>,
@@ -35,6 +40,12 @@ impl ItemReadOptions {
     /// Sets the session token for this request.
     pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
         self.session_token = Some(session_token.into());
+        self
+    }
+
+    /// Sets how invalid UTF-8 in the response is handled.
+    pub fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
+        self.utf8_decoding_mode = mode;
         self
     }
 
@@ -48,6 +59,25 @@ impl ItemReadOptions {
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
         self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn item_read_utf8_decoding_is_strict_by_default_and_configurable() {
+        assert_eq!(
+            ItemReadOptions::default().utf8_decoding_mode,
+            Utf8DecodingMode::Strict
+        );
+        assert_eq!(
+            ItemReadOptions::default()
+                .with_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .utf8_decoding_mode,
+            Utf8DecodingMode::Lossy
+        );
     }
 }
 

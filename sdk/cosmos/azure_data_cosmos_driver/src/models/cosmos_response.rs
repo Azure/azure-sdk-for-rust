@@ -48,10 +48,15 @@ impl CosmosResponsePayload {
     }
 
     /// Transcodes any binary JSON body to text JSON in place.
-    fn transcode_body_to_text(&mut self) -> crate::error::Result<()> {
+    fn transcode_body_to_text(
+        &mut self,
+        utf8_decoding_mode: crate::options::Utf8DecodingMode,
+    ) -> crate::error::Result<u64> {
         let body = std::mem::take(&mut self.body);
-        self.body = body.transcode_to_text()?;
-        Ok(())
+        let (body, invalid_utf8_sequence_count) =
+            body.transcode_to_text_with_utf8_mode_and_count(utf8_decoding_mode)?;
+        self.body = body;
+        Ok(invalid_utf8_sequence_count)
     }
 }
 /// Result of a Cosmos DB operation.
@@ -159,20 +164,17 @@ impl CosmosResponse {
         self
     }
 
-    /// Transcodes a binary JSON response body to text JSON in place.
-    ///
-    /// Applied by the driver when the operation negotiated binary on the wire
-    /// and the caller requested a text response
-    /// ([`BinaryEncodingOptions::request_text_response`](crate::options::BinaryEncodingOptions)):
-    /// the wire stays binary in both directions, and the driver converts the
-    /// binary response payload to text before returning it. A text (or empty)
-    /// body is left unchanged.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if a binary payload is malformed.
-    pub(crate) fn transcode_body_to_text(&mut self) -> crate::error::Result<()> {
-        self.payload.transcode_body_to_text()
+    pub(crate) fn transcode_body_to_text_with_utf8_mode(
+        &mut self,
+        utf8_decoding_mode: crate::options::Utf8DecodingMode,
+    ) -> crate::error::Result<()> {
+        let invalid_utf8_sequence_count =
+            self.payload.transcode_body_to_text(utf8_decoding_mode)?;
+        if invalid_utf8_sequence_count != 0 {
+            Arc::make_mut(&mut self.diagnostics)
+                .add_invalid_utf8_sequence_count(invalid_utf8_sequence_count);
+        }
+        Ok(())
     }
 
     /// Returns a reference to the extracted headers.
