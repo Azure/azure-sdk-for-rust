@@ -9,6 +9,7 @@
 ### Bugs Fixed
 
 - `check_success` would fail when error message contained escape sequences like CRLF ([#5364](https://github.com/Azure/azure-sdk-for-rust/pull/5364))
+- Updated core dependencies to avoid unnecessary error construction and backtrace capture during optional header lookup, including the `ClientRequestIdPolicy` pre-check ([#5446](https://github.com/Azure/azure-sdk-for-rust/pull/5446)).
 
 ### Other Changes
 
