@@ -91,12 +91,22 @@ design review.
 | Operation type | Phase 1 | Phase 2 | Future |
 |---|:---:|:---:|:---:|
 | Document point reads (GetItem) | ✅ | ✅ | ✅ |
-| Queries (`QueryItems`) — page-level | ❌ | ✅ | ✅ |
+| Queries (`QueryItems`) — page-level | ❌ | 🟡 partial | ✅ |
 | `ReadMany` — page-level | ❌ | ✅ | ✅ |
 | Change feed — page-level | ❌ | ✅ | ✅ |
 | Metadata operations (Database / Container / Offer / Throughput) | ❌ | ✅ | ✅ |
 | Document writes (Create/Replace/Upsert/Delete/Patch) — any topology | ❌ | ❌ | ❌ |
 | Stored procedure execution (`ExecuteJavaScript`) | ❌ | ❌ | 🟡 candidate |
+
+> **🟡 Queries are partially landed.** `(Document, Query)` is a
+> `HEDGEABLE_PAIRS` member, but `should_hedge()` narrows it to
+> **single-partition** queries via `CosmosOperation::is_trivial()`.
+> Cross-partition fan-out is still excluded: each per-pkrange leaf is its own
+> pipeline invocation, so hedging every leaf would spawn one alternate per
+> partition, and data-plane hedging has no admission budget
+> ([#4916](https://github.com/Azure/azure-sdk-for-rust/issues/4916)). A
+> single-partition query is one request per page — the same shape as a point
+> read — so it adds no amplification beyond what Phase 1 already ships.
 
 > **Triggers and UDFs** are not standalone operations — they ride along
 > as request headers on document operations and are therefore hedged
@@ -2537,7 +2547,15 @@ operations, stored procedure execution, adaptive threshold tuning.
 
 **Operation rows from §1 covered (Phase 2 column):**
 
-- `QueryItems` — hedged **per page**.
+- `QueryItems` — hedged **per page**. **Partially landed:**
+  single-partition queries only (see the §1 note). Cross-partition fan-out
+  remains blocked on data-plane hedge admission control
+  ([#4916](https://github.com/Azure/azure-sdk-for-rust/issues/4916)).
+  Per-page continuation portability across regions is assumed (query
+  continuations resume on globally stable document rids, unlike the
+  region-affine change-feed ETag) and still needs live multi-region
+  validation; a lagging region surfaces as a transient 1002 that the other
+  leg wins, so the failure mode is availability, not correctness.
 - `ReadMany` — hedged **per page**.
 - Change feed (`ReadFeed`) — hedged **per page**.
 - Metadata operations: Database / Container / Offer / Throughput
