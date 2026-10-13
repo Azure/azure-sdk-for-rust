@@ -294,6 +294,10 @@ impl<T: Send + DeserializeOwned + 'static> ChangeFeedPageIterator<T> {
     ///
     /// Snapshotting is non-mutating; the iterator may continue to be used
     /// afterwards.
+    /// Checkpoints are supported before the first poll and retain the original
+    /// start, saved per-range positions, and the next range to poll. An unpolled
+    /// [`ChangeFeedStartFrom::Now`](crate::options::ChangeFeedStartFrom::Now)
+    /// remains request-time Now; saving a checkpoint performs no feed requests.
     ///
     /// # Errors
     ///

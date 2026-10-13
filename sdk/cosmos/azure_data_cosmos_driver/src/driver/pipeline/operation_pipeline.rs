@@ -292,7 +292,7 @@ pub(crate) struct OperationOverrides {
     /// to the GW_V2 dispatcher via internal `x-ms-thinclient-pkrange-min`/`-max`
     /// headers so it can derive `StartEpkHash`/`EndEpkHash` RNTBD tokens for the
     /// full-pkrange XPK case without emitting the public EPK headers (which the
-    /// legacy gateway rejects when paired with `partitionkeyrangeid`).
+    /// legacy gateway rejects for queries when paired with `partitionkeyrangeid`).
     pub pkrange_bounds: Option<crate::models::FeedRange>,
 
     /// Physical partition key range ID (emits `x-ms-documentdb-partitionkeyrangeid`).
@@ -416,9 +416,9 @@ impl OperationOverrides {
         if let Some(feed_range) = &self.feed_range {
             // Narrowed-range XPK case (range < pkrange) AND scoped reads via
             // `FeedRange`. These public EPK headers are honored by Gateway 2.0;
-            // the standard gateway rejects them when paired with
-            // `partitionkeyrangeid` (HTTP 400, regardless of the min bound —
-            // verified against live accounts), so the full-pkrange XPK fan-out
+            // the standard gateway rejects them for queries paired with
+            // `partitionkeyrangeid`, but accepts bounded change-feed requests
+            // (verified live). The full-pkrange XPK fan-out
             // path uses the internal `pkrange_bounds` headers (below) instead
             // and leaves these absent.
             headers.insert(
@@ -5731,6 +5731,72 @@ mod tests {
             Some(request_header_names::CHANGEFEED_WIRE_FORMAT_VERSION_2021_09_15.to_string()),
             "change feed must send the wire-format-version header"
         );
+    }
+
+    #[test]
+    fn change_feed_transport_uses_only_restored_start_headers() {
+        let starts = [
+            crate::models::ChangeFeedStartFrom::Beginning,
+            crate::models::ChangeFeedStartFrom::Now,
+            crate::models::ChangeFeedStartFrom::PointInTime(
+                time::macros::datetime!(2026-08-21 12:34:56 UTC),
+            ),
+        ];
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("start-restoration".to_owned());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::OperationRetry,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        for previous in &starts {
+            for start in &starts {
+                let operation = CosmosOperation::change_feed(
+                    test_container(),
+                    Some(crate::models::FeedRange::full()),
+                )
+                .with_change_feed_start(previous.clone())
+                .with_change_feed_start(start.clone());
+                for continuation in [None, Some("\"saved-etag\"".to_owned())] {
+                    let overrides = OperationOverrides {
+                        continuation: continuation.clone(),
+                        partition_key_range_id: Some("0".to_owned()),
+                        ..Default::default()
+                    };
+                    let request =
+                        build_transport_request(&operation, &overrides, None, &ctx).unwrap();
+                    let expected_etag = continuation.as_deref().or_else(|| {
+                        matches!(start, crate::models::ChangeFeedStartFrom::Now).then_some("*")
+                    });
+                    assert_eq!(
+                        request.headers.get_optional_str(&HeaderName::from_static(
+                            request_header_names::IF_NONE_MATCH
+                        )),
+                        expected_etag,
+                    );
+                    let expected_time =
+                        matches!(start, crate::models::ChangeFeedStartFrom::PointInTime(_))
+                            .then_some("Fri, 21 Aug 2026 12:34:56 GMT");
+                    assert_eq!(
+                        request.headers.get_optional_str(&HeaderName::from_static(
+                            request_header_names::IF_MODIFIED_SINCE
+                        )),
+                        expected_time,
+                    );
+                    assert!(request
+                        .headers
+                        .get_optional_str(&HeaderName::from_static(
+                            request_header_names::CONTINUATION
+                        ))
+                        .is_none());
+                }
+            }
+        }
     }
 
     #[test]

@@ -36,6 +36,14 @@ impl Pipeline {
         Self { root }
     }
 
+    pub(crate) fn next_change_feed_range(&self) -> Option<&crate::models::FeedRange> {
+        self.root.next_change_feed_range()
+    }
+
+    pub(crate) fn resume_change_feed_at(&mut self, min_epk: &str) -> crate::error::Result<()> {
+        self.root.resume_change_feed_at(min_epk)
+    }
+
     /// Returns a reference to the root node.
     #[cfg(test)]
     pub(crate) fn root(&self) -> &dyn PipelineNode {
@@ -231,7 +239,13 @@ impl OperationPlan {
                 )
                 .build());
         }
-        ContinuationToken::encode_v1(&self.operation, &self.pipeline.snapshot_state()?)
+        ContinuationToken::encode_v1_with_next_range(
+            &self.operation,
+            &self.pipeline.snapshot_state()?,
+            self.pipeline
+                .next_change_feed_range()
+                .map(|range| range.min_inclusive().to_hex()),
+        )
     }
 
     /// Whether the driver must transcode each page's body back to text before

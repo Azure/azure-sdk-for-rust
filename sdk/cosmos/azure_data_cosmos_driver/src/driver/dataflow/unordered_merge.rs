@@ -15,7 +15,7 @@ use async_trait::async_trait;
 
 use super::recovery_diagnostics::RecoveryDiagnostics;
 use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState, RangedToken};
-use crate::models::ChangeFeedStartFrom;
+use crate::models::{ChangeFeedStartFrom, FeedRange};
 
 /// Maximum number of consecutive split retries before giving up.
 const MAX_SPLIT_RETRIES: usize = 10;
@@ -169,6 +169,24 @@ impl UnorderedMerge {
 
 #[async_trait]
 impl PipelineNode for UnorderedMerge {
+    fn next_change_feed_range(&self) -> Option<&FeedRange> {
+        self.children
+            .get(self.cursor % self.children.len().max(1))?
+            .feed_range()
+    }
+
+    fn resume_change_feed_at(&mut self, min_epk: &str) -> crate::error::Result<()> {
+        let next =
+            crate::models::effective_partition_key::EffectivePartitionKey::try_from(min_epk)?;
+        self.cursor = self.children.iter().position(|child| {
+            child.feed_range().is_some_and(|range| range.min_inclusive() <= &next && &next < range.max_exclusive())
+        }).ok_or_else(|| crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE)
+            .with_message("change-feed polling position is outside the requested feed range")
+            .build())?;
+        Ok(())
+    }
+
     async fn next_page(
         &mut self,
         context: &mut PipelineContext<'_>,

@@ -273,6 +273,21 @@ pub(crate) trait PipelineNode: Send + std::any::Any {
         None
     }
 
+    /// Returns the range that will be polled next by a change-feed root.
+    fn next_change_feed_range(&self) -> Option<&FeedRange> {
+        None
+    }
+
+    /// Restores the next change-feed poll without changing any range's ETag.
+    fn resume_change_feed_at(&mut self, _min_epk: &str) -> crate::error::Result<()> {
+        Err(crate::error::CosmosError::builder()
+            .with_status(
+                crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE,
+            )
+            .with_message("change-feed polling position requires an unordered-merge checkpoint")
+            .build())
+    }
+
     /// Returns the number of leaf request nodes this node fans out to.
     ///
     /// Leaf nodes return `1` (or `0` for a no-op leaf that issues no request).

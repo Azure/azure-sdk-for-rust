@@ -242,14 +242,10 @@ fn request_target_overrides(
             partition_key_range_id: Some(partition_key_range_id),
             resolved_partition_key_range_parents: partition_key_range_parents,
             // Only emit `x-ms-start-epk`/`x-ms-end-epk` for the narrowed case
-            // (range < partition_key_range). The public EPK headers paired with
-            // `partitionkeyrangeid` are accepted by Gateway 2.0 but rejected by
-            // the standard gateway with HTTP 400 (verified against live
-            // accounts, independent of the min bound value), so we never emit
-            // them on the full-pkrange XPK fan-out path that must also work on
-            // the standard gateway. Because the narrowed case emits both
-            // headers together, it is only valid on the wire against Gateway
-            // 2.0. The GW_V2 dispatcher derives its RNTBD
+            // (range < partition_key_range). The standard gateway rejects
+            // narrowed query scoping but accepts narrowed change-feed EPK
+            // requests (verified live). Full-pkrange fan-out omits the public
+            // bounds. The GW_V2 dispatcher derives its RNTBD
             // `StartEpkHash`/`EndEpkHash` tokens from `pkrange_bounds` (below)
             // when the public headers are absent.
             feed_range: range,
@@ -340,8 +336,13 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
         continuation: Option<String>,
     ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         let driver = self.driver;
-        let mut overrides =
-            request_target_overrides(operation.partition_key(), target, continuation);
+        let mut overrides = request_target_overrides(
+            operation
+                .partition_key()
+                .filter(|_| !operation.is_change_feed()),
+            target,
+            continuation,
+        );
         overrides.container_recreation_recovery_disabled =
             self.container_recreation_recovery_disabled;
         overrides.container_recreation_recovery_tracker =
@@ -4349,12 +4350,7 @@ impl CosmosDriver {
         // owned here alone. `execute_operation` resolves the binary options once
         // and forwards them via `resolved_binary` to avoid a second resolution;
         // the query path passes `None` and resolves lazily.
-        let operation = self.apply_response_negotiation(operation, options, resolved_binary);
-
-        // Share the operation across every Request node in the resulting plan.
-        // Per-Request differences are layered on at execution time via
-        // OperationOverrides; the operation itself is never mutated.
-        let operation = Arc::new(operation);
+        let mut operation = self.apply_response_negotiation(operation, options, resolved_binary);
 
         // Resolve the continuation token (if any) into a planner-ready resume
         // state. Server-issued tokens are only valid for trivial operations.
@@ -4363,10 +4359,15 @@ impl CosmosDriver {
         // a resume is not, because the caller already opted in to the fan-out
         // when the operation was first planned.
         let is_fresh = continuation.is_none();
+        let mut next_change_feed_range = None;
         let resume_state = match resolved_continuation {
             None => None,
             Some(ResolvedToken::ClientV1(state)) => {
                 state.is_valid_for_operation(&operation)?;
+                if let Some(start) = state.change_feed_start() {
+                    operation = operation.with_change_feed_start(start.clone());
+                }
+                next_change_feed_range = state.next_change_feed_range().map(str::to_owned);
                 Some(state.into_root_node_state())
             }
             Some(ResolvedToken::ServerOpaque(server_token)) => {
@@ -4384,6 +4385,10 @@ impl CosmosDriver {
                 })
             }
         };
+
+        // Every leaf shares the checkpoint-restored operation. Per-range ETags
+        // are applied later through OperationOverrides.
+        let operation = Arc::new(operation);
 
         // 1. Trivial plan: anything that isn't a cross-partition query.
         //    The internal pipeline only supports projection and filtering over
@@ -4432,13 +4437,16 @@ impl CosmosDriver {
                 container_ref,
                 self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
             );
-            let pipeline = planner::build_unordered_merge(
+            let mut pipeline = planner::build_unordered_merge(
                 &feed_range,
                 &mut topology,
                 &operation,
                 resume_state,
             )
             .await?;
+            if let Some(min_epk) = next_change_feed_range {
+                pipeline.resume_change_feed_at(&min_epk)?;
+            }
             return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
         }
 

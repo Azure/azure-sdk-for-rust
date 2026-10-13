@@ -8,6 +8,8 @@
 
 ### Bugs Fixed
 
+- Restore checkpoint-owned change-feed starts, preserve round-robin progress across resumes, and correctly scope hierarchical-prefix feeds across overlapping partitions.
+- Reject older single-request hierarchical-prefix checkpoints with a saved ETag because they lack safe per-range coverage; older unpolled single-request checkpoints require the original start on resume.
 - Keep CPU sampling active for long-lived clients and preserve diagnostics through partition split recovery, including `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
 
 ### Other Changes

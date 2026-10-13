@@ -56,9 +56,18 @@ impl ContinuationToken {
     }
 
     /// Encodes a [`PipelineNodeState`] as a `c1.`-prefixed token.
+    #[cfg(test)]
     pub(crate) fn encode_v1(
         operation: &CosmosOperation,
         root_state: &PipelineNodeState,
+    ) -> crate::error::Result<Self> {
+        Self::encode_v1_with_next_range(operation, root_state, None)
+    }
+
+    pub(crate) fn encode_v1_with_next_range(
+        operation: &CosmosOperation,
+        root_state: &PipelineNodeState,
+        next_range_min: Option<String>,
     ) -> crate::error::Result<Self> {
         let token_operation = TokenOperation::for_operation(operation)?;
         let container = operation.container().ok_or_else(|| {
@@ -79,6 +88,26 @@ impl ContinuationToken {
             rid: container.rid().to_string(),
             root: root_state.clone(),
             change_feed_full_fidelity,
+            change_feed_start: if operation.is_change_feed() {
+                match root_state {
+                    PipelineNodeState::UnorderedMerge {
+                        start_from: Some(start),
+                        ..
+                    } => Some(start.clone()),
+                    _ => operation.change_feed_start().cloned().or_else(|| {
+                        let headers = operation.request_headers();
+                        (headers.precondition.is_none() && headers.if_modified_since.is_none())
+                            .then_some(crate::models::ChangeFeedStartFrom::Beginning)
+                    }),
+                }
+            } else {
+                None
+            },
+            next_change_feed_range: if operation.is_change_feed() {
+                next_range_min
+            } else {
+                None
+            },
         };
 
         let json = serde_json::to_vec(&state).map_err(|e| {
@@ -191,9 +220,36 @@ pub struct TokenState {
     /// a change feed cannot switch modes across continuations.
     #[serde(rename = "cfm", default, skip_serializing_if = "Option::is_none")]
     change_feed_full_fidelity: Option<bool>,
+
+    /// Original change-feed start, including checkpoints taken before a
+    /// single-request feed has received its first ETag.
+    #[serde(rename = "cfs", default, skip_serializing_if = "Option::is_none")]
+    change_feed_start: Option<crate::models::ChangeFeedStartFrom>,
+
+    /// EPK of the next range to poll, so page-by-page resume does not starve
+    /// ranges after the first one.
+    #[serde(rename = "cfn", default, skip_serializing_if = "Option::is_none")]
+    next_change_feed_range: Option<String>,
 }
 
 impl TokenState {
+    pub(crate) fn change_feed_start(&self) -> Option<&crate::models::ChangeFeedStartFrom> {
+        if self.operation != TokenOperation::ChangeFeed {
+            return None;
+        }
+        match &self.root {
+            PipelineNodeState::UnorderedMerge { start_from, .. } => start_from.as_ref(),
+            _ => None,
+        }
+        .or(self.change_feed_start.as_ref())
+    }
+
+    pub(crate) fn next_change_feed_range(&self) -> Option<&str> {
+        (self.operation == TokenOperation::ChangeFeed)
+            .then_some(self.next_change_feed_range.as_deref())
+            .flatten()
+    }
+
     /// Validates that this token state is compatible with the provided query
     pub fn is_valid_for_operation(&self, operation: &CosmosOperation) -> crate::error::Result<()> {
         let expected = TokenOperation::for_operation(operation)?;
@@ -493,7 +549,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             decode_v1_payload(&token),
-            r#"{"op":"ChangeFeed","rid":"coll_rid","root":{"kind":"request","server_continuation":"\"etag-1\""}}"#,
+            r#"{"op":"ChangeFeed","rid":"coll_rid","root":{"kind":"request","server_continuation":"\"etag-1\""},"cfs":{"kind":"beginning"}}"#,
         );
 
         match token.resolve().unwrap() {
@@ -508,12 +564,162 @@ mod tests {
     }
 
     #[test]
+    fn change_feed_checkpoint_keeps_start_before_first_request() {
+        for start in [
+            crate::models::ChangeFeedStartFrom::Beginning,
+            crate::models::ChangeFeedStartFrom::Now,
+            crate::models::ChangeFeedStartFrom::PointInTime(
+                time::macros::datetime!(2026-08-21 12:34:56 UTC),
+            ),
+        ] {
+            for continuation in [None, Some("\"etag\"".to_owned())] {
+                let operation = change_feed_op().with_change_feed_start(start.clone());
+                let root = PipelineNodeState::Request {
+                    server_continuation: continuation,
+                };
+                let token = ContinuationToken::encode_v1(&operation, &root).unwrap();
+                assert!(token.as_str().starts_with("c1."));
+                let ResolvedToken::ClientV1(state) = token.resolve().unwrap() else {
+                    panic!("SDK-issued checkpoint");
+                };
+                assert_eq!(state.change_feed_start(), Some(&start));
+                assert_eq!(state.into_root_node_state(), root);
+            }
+        }
+    }
+
+    #[test]
+    fn change_feed_checkpoint_records_implicit_beginning_without_guessing_custom_headers() {
+        for root in [
+            PipelineNodeState::Request {
+                server_continuation: None,
+            },
+            PipelineNodeState::UnorderedMerge {
+                active_tokens: vec![],
+                start_from: None,
+            },
+        ] {
+            for (operation, expected) in [
+                (
+                    change_feed_op(),
+                    Some(crate::models::ChangeFeedStartFrom::Beginning),
+                ),
+                (
+                    change_feed_op().with_precondition(crate::models::Precondition::if_none_match(
+                        azure_core::http::Etag::from("*"),
+                    )),
+                    None,
+                ),
+                (
+                    change_feed_op().with_if_modified_since("Fri, 21 Aug 2026 12:34:56 GMT".into()),
+                    None,
+                ),
+            ] {
+                let token = ContinuationToken::encode_v1(&operation, &root).unwrap();
+                let ResolvedToken::ClientV1(state) = token.resolve().unwrap() else {
+                    panic!("SDK-issued checkpoint");
+                };
+                assert_eq!(state.change_feed_start(), expected.as_ref());
+            }
+        }
+    }
+
+    #[test]
+    fn existing_change_feed_checkpoints_remain_readable() {
+        for (json, expected_start) in [
+            (
+                r#"{"op":"ChangeFeed","rid":"coll_rid","root":{"kind":"request","server_continuation":"etag"}}"#,
+                None,
+            ),
+            (
+                r#"{"op":"ChangeFeed","rid":"coll_rid","root":{"kind":"request"}}"#,
+                None,
+            ),
+            (
+                r#"{"op":"ChangeFeed","rid":"coll_rid","root":{"kind":"unordered_merge","active_tokens":[],"start_from":{"kind":"beginning"}}}"#,
+                Some(crate::models::ChangeFeedStartFrom::Beginning),
+            ),
+            (
+                r#"{"op":"ChangeFeed","rid":"coll_rid","root":{"kind":"unordered_merge","start_from":{"kind":"now"}}}"#,
+                Some(crate::models::ChangeFeedStartFrom::Now),
+            ),
+        ] {
+            let ResolvedToken::ClientV1(state) = encode_v1_payload(json).resolve().unwrap() else {
+                panic!("existing c1 checkpoint");
+            };
+            state.is_valid_for_operation(&change_feed_op()).unwrap();
+            assert_eq!(state.change_feed_start(), expected_start.as_ref());
+        }
+    }
+
+    #[test]
+    fn fanout_checkpoint_records_restored_marker_not_resume_argument() {
+        let operation =
+            change_feed_op().with_change_feed_start(crate::models::ChangeFeedStartFrom::Now);
+        let root = PipelineNodeState::UnorderedMerge {
+            active_tokens: vec![],
+            start_from: Some(crate::models::ChangeFeedStartFrom::Beginning),
+        };
+        let token = ContinuationToken::encode_v1(&operation, &root).unwrap();
+        let ResolvedToken::ClientV1(state) = token.resolve().unwrap() else {
+            panic!("SDK-issued checkpoint");
+        };
+        assert_eq!(
+            state.change_feed_start(),
+            Some(&crate::models::ChangeFeedStartFrom::Beginning)
+        );
+    }
+    #[test]
+    fn change_feed_checkpoint_polling_position_does_not_change_query_tokens() {
+        let root = PipelineNodeState::UnorderedMerge {
+            active_tokens: vec![],
+            start_from: Some(crate::models::ChangeFeedStartFrom::Beginning),
+        };
+        let token = ContinuationToken::encode_v1_with_next_range(
+            &change_feed_op(),
+            &root,
+            Some("80".into()),
+        )
+        .unwrap();
+        let ResolvedToken::ClientV1(state) = token.resolve().unwrap() else {
+            panic!("SDK-issued checkpoint");
+        };
+        assert_eq!(state.next_change_feed_range(), Some("80"));
+        let request = PipelineNodeState::Request {
+            server_continuation: None,
+        };
+        let token =
+            ContinuationToken::encode_v1_with_next_range(&query_op(), &request, Some("80".into()))
+                .unwrap();
+        assert_eq!(
+            decode_v1_payload(&token),
+            r#"{"op":"Query","rid":"coll_rid","root":{"kind":"request"}}"#
+        );
+    }
+
+    #[test]
+    fn change_feed_root_marker_is_authoritative_when_metadata_disagrees() {
+        let token = encode_v1_payload(
+            r#"{"op":"ChangeFeed","rid":"coll_rid","root":{"kind":"unordered_merge","start_from":{"kind":"beginning"}},"cfs":{"kind":"now"}}"#,
+        );
+        let ResolvedToken::ClientV1(state) = token.resolve().unwrap() else {
+            panic!("SDK-issued checkpoint");
+        };
+        assert_eq!(
+            state.change_feed_start(),
+            Some(&crate::models::ChangeFeedStartFrom::Beginning)
+        );
+    }
+
+    #[test]
     fn is_valid_for_operation_rejects_query_token_on_change_feed() {
         let state = TokenState {
             operation: TokenOperation::Query,
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: None,
+            change_feed_start: None,
+            next_change_feed_range: None,
         };
         let err = state.is_valid_for_operation(&change_feed_op()).unwrap_err();
         assert!(err.to_string().contains("ChangeFeed"));
@@ -526,6 +732,8 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: None,
+            change_feed_start: None,
+            next_change_feed_range: None,
         };
         let err = state.is_valid_for_operation(&query_op()).unwrap_err();
         assert!(err.to_string().contains("Query"));
@@ -540,6 +748,8 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: None,
+            change_feed_start: None,
+            next_change_feed_range: None,
         };
         let err = latest
             .is_valid_for_operation(&change_feed_avad_op())
@@ -552,6 +762,8 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: Some(true),
+            change_feed_start: None,
+            next_change_feed_range: None,
         };
         let err = avad.is_valid_for_operation(&change_feed_op()).unwrap_err();
         assert!(err.to_string().contains("AllVersionsAndDeletes"));
@@ -565,6 +777,8 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: Some(true),
+            change_feed_start: None,
+            next_change_feed_range: None,
         };
         avad.is_valid_for_operation(&change_feed_avad_op())
             .expect("AllVersionsAndDeletes token resumes an AllVersionsAndDeletes operation");
@@ -696,6 +910,8 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: None,
+            change_feed_start: None,
+            next_change_feed_range: None,
         };
         state.is_valid_for_operation(&query_op()).unwrap();
     }
@@ -707,6 +923,8 @@ mod tests {
             rid: "different_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: None,
+            change_feed_start: None,
+            next_change_feed_range: None,
         };
         let err = state.is_valid_for_operation(&query_op()).unwrap_err();
         assert!(err.to_string().contains("different_rid"));
@@ -720,6 +938,8 @@ mod tests {
             rid: "coll_rid".to_string(),
             root: PipelineNodeState::Drained,
             change_feed_full_fidelity: None,
+            change_feed_start: None,
+            next_change_feed_range: None,
         };
         let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), "doc1");
         let read = CosmosOperation::read_item(item);
