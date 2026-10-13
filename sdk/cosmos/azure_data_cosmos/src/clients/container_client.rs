@@ -799,6 +799,7 @@ impl ContainerClient {
         options: Option<ItemReadOptions>,
     ) -> crate::Result<ItemResponse> {
         let options = options.unwrap_or_default();
+        let utf8_decoding_mode = options.utf8_decoding_mode;
         let (operation_options, _binary) =
             resolve_binary_encoding(options.operation, &self.context.binary_encoding);
 
@@ -810,7 +811,8 @@ impl ContainerClient {
         );
 
         // Create the driver operation.
-        let operation = CosmosOperation::read_item(item_ref);
+        let operation =
+            CosmosOperation::read_item(item_ref).with_utf8_decoding_mode(utf8_decoding_mode);
         let operation = apply_item_options(operation, options.session_token, options.precondition);
 
         // Execute through the driver, with binary encoding on the operation
@@ -991,6 +993,7 @@ impl ContainerClient {
         options: Option<QueryOptions>,
     ) -> crate::Result<QueryItemIterator<T>> {
         let options = options.unwrap_or_default();
+        let utf8_decoding_mode = options.utf8_decoding_mode;
         let plan_options = options.to_plan_options();
         let query = query.into();
 
@@ -1010,7 +1013,8 @@ impl ContainerClient {
             container_ref.clone(),
             Some(scope.into_feed_range(self.container_ref.partition_key_definition())),
         )
-        .with_body(serde_json::to_vec(&query)?);
+        .with_body(serde_json::to_vec(&query)?)
+        .with_utf8_decoding_mode(utf8_decoding_mode);
         if let Some(token) = options.session_token {
             initial_operation = initial_operation.with_session_token(token);
         }
@@ -1170,6 +1174,7 @@ impl ContainerClient {
         options: Option<ChangeFeedOptions>,
     ) -> crate::Result<ChangeFeedPageIterator<ChangeFeedItem<T>>> {
         let options = options.unwrap_or_default();
+        let utf8_decoding_mode = options.utf8_decoding_mode;
 
         let feed_range = scope.into_feed_range(self.container_ref.partition_key_definition());
 
@@ -1209,6 +1214,7 @@ impl ContainerClient {
         // been polled resume from their saved per-partition ETag, which takes
         // precedence. The driver owns the mapping to wire headers.
         initial_operation = initial_operation.with_change_feed_start(start_from);
+        initial_operation = initial_operation.with_utf8_decoding_mode(utf8_decoding_mode);
 
         let plan = Box::pin(self.context.driver.plan_operation(
             initial_operation,

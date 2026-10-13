@@ -5,7 +5,8 @@
 
 use azure_data_cosmos_driver::models::{MaxItemCountHint, SessionToken};
 use azure_data_cosmos_driver::options::{
-    OperationOptions, PlanOptions, DEFAULT_MAX_BUFFERED_QUERY_WINDOW, DEFAULT_MAX_FAN_OUT,
+    OperationOptions, PlanOptions, Utf8DecodingMode, DEFAULT_MAX_BUFFERED_QUERY_WINDOW,
+    DEFAULT_MAX_FAN_OUT,
 };
 
 use crate::{feed::ContinuationToken, options::QueryPlanMode};
@@ -146,6 +147,11 @@ pub struct QueryOptions {
     /// Session token for session-consistent queries.
     pub session_token: Option<SessionToken>,
 
+    /// Controls how invalid UTF-8 in query responses is handled.
+    ///
+    /// Defaults to [`Utf8DecodingMode::Strict`].
+    pub utf8_decoding_mode: Utf8DecodingMode,
+
     /// When `true`, request that the service include index utilization metrics
     /// in the response (`x-ms-cosmos-populateindexmetrics`). The decoded JSON is
     /// surfaced via `QueryFeedPage::index_metrics()`.
@@ -165,6 +171,7 @@ impl Default for QueryOptions {
             operation: OperationOptions::default(),
             feed: FeedOptions::default(),
             session_token: None,
+            utf8_decoding_mode: Utf8DecodingMode::Strict,
             populate_index_metrics: None,
             populate_query_metrics: None,
         }
@@ -187,6 +194,12 @@ impl QueryOptions {
     /// Sets the session token for this request.
     pub fn with_session_token(mut self, session_token: impl Into<SessionToken>) -> Self {
         self.session_token = Some(session_token.into());
+        self
+    }
+
+    /// Sets how invalid UTF-8 in query responses is handled.
+    pub fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
+        self.utf8_decoding_mode = mode;
         self
     }
 
@@ -244,7 +257,21 @@ impl QueryOptions {
 
 #[cfg(test)]
 mod tests {
-    use super::{FeedOptions, QueryOptions, QueryPlanMode, DEFAULT_MAX_FAN_OUT};
+    use super::{FeedOptions, QueryOptions, QueryPlanMode, Utf8DecodingMode, DEFAULT_MAX_FAN_OUT};
+
+    #[test]
+    fn query_utf8_decoding_is_strict_by_default_and_configurable() {
+        assert_eq!(
+            QueryOptions::default().utf8_decoding_mode,
+            Utf8DecodingMode::Strict
+        );
+        assert_eq!(
+            QueryOptions::default()
+                .with_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .utf8_decoding_mode,
+            Utf8DecodingMode::Lossy
+        );
+    }
 
     #[test]
     fn query_plan_options_preserve_defaults() {

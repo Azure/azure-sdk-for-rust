@@ -4,7 +4,7 @@
 //! Change feed options: start position and paging.
 
 use azure_data_cosmos_driver::models::{MaxItemCountHint, SessionToken};
-use azure_data_cosmos_driver::options::OperationOptions;
+use azure_data_cosmos_driver::options::{OperationOptions, Utf8DecodingMode};
 
 use crate::feed::ContinuationToken;
 use crate::options::FeedOptions;
@@ -84,6 +84,11 @@ pub struct ChangeFeedOptions {
     /// Session token for session-consistent reads.
     pub session_token: Option<SessionToken>,
 
+    /// Controls how invalid UTF-8 in change feed responses is handled.
+    ///
+    /// Defaults to [`Utf8DecodingMode::Strict`].
+    pub utf8_decoding_mode: Utf8DecodingMode,
+
     /// Which change feed mode to read. Defaults to [`ChangeFeedMode::LatestVersion`].
     pub mode: ChangeFeedMode,
 }
@@ -98,6 +103,12 @@ impl ChangeFeedOptions {
     /// Sets the session token for this request.
     pub fn with_session_token(mut self, token: impl Into<SessionToken>) -> Self {
         self.session_token = Some(token.into());
+        self
+    }
+
+    /// Sets how invalid UTF-8 in change feed responses is handled.
+    pub fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
+        self.utf8_decoding_mode = mode;
         self
     }
 
@@ -148,8 +159,11 @@ mod tests {
 
     #[test]
     fn options_builder_chain() {
-        let opts = ChangeFeedOptions::default().with_mode(ChangeFeedMode::LatestVersion);
+        let opts = ChangeFeedOptions::default()
+            .with_mode(ChangeFeedMode::LatestVersion)
+            .with_utf8_decoding_mode(Utf8DecodingMode::Lossy);
 
         assert_eq!(opts.mode, ChangeFeedMode::LatestVersion);
+        assert_eq!(opts.utf8_decoding_mode, Utf8DecodingMode::Lossy);
     }
 }

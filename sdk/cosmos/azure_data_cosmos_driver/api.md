@@ -212,6 +212,8 @@ pub mod diagnostics {
         pub fn fault_injection_enabled(&self) -> bool;
         pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
         pub fn hedging_started(&self) -> bool;
+        pub fn invalid_utf8_sequence_count(&self) -> u64;
+        pub fn invalid_utf8_was_recovered(&self) -> bool;
         pub fn is_completed(&self) -> bool;
         pub fn is_failure(&self) -> bool;
         pub fn is_threshold_violated(&self, thresholds: &DiagnosticsThresholds) -> bool;
@@ -1524,6 +1526,7 @@ pub mod models {
         pub fn resource_type(&self) -> ResourceType;
         pub fn target(&self) -> Option<&FeedRange>;
         pub fn upsert_item(item: ItemReference) -> Self;
+        pub fn utf8_decoding_mode(&self) -> Utf8DecodingMode;
         pub fn with_activity_id(self, activity_id: crate::models::ActivityId) -> Self;
         pub fn with_body(self, body: Vec<u8>) -> Self;
         pub fn with_change_feed_start(self, start_from: ChangeFeedStartFrom) -> Self;
@@ -1539,6 +1542,7 @@ pub mod models {
         pub fn with_request_headers(self, headers: CosmosRequestHeaders) -> Self;
         pub fn with_session_token<impl Into<crate::models::SessionToken>: Into<crate::models::SessionToken>>(self, session_token: impl Into<crate::models::SessionToken>) -> Self;
         pub fn with_supported_serialization_formats<impl Into<Cow<'static, str>>: Into<Cow<'static, str>>>(self, formats: impl Into<Cow<'static, str>>) -> Self;
+        pub fn with_utf8_decoding_mode(self, mode: Utf8DecodingMode) -> Self;
     }
     #[derive(Clone, Debug, Default)]
     #[non_exhaustive]
@@ -3274,6 +3278,13 @@ pub mod options {
     pub enum TlsBackend {
         #[default]
         Rustls,
+    }
+    #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+    #[non_exhaustive]
+    pub enum Utf8DecodingMode {
+        #[default]
+        Strict,
+        Lossy,
     }
     pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
     pub const DEFAULT_MAX_CONCURRENT_METADATA_ATTEMPTS: usize = 32;
