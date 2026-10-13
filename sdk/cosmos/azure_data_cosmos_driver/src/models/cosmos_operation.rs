@@ -485,8 +485,8 @@ impl CosmosOperation {
             })
     }
 
-    /// Records that the driver will transcode this operation's response back to
-    /// text before returning it to the caller.
+    /// Records that binary response options require this operation's response
+    /// to be transcoded back to text before returning it to the caller.
     pub(crate) fn transcoding_response_to_text(mut self) -> Self {
         self.transcodes_response_to_text = true;
         self
@@ -499,7 +499,7 @@ impl CosmosOperation {
     /// `request_text_response` between pages cannot desynchronize the emitted
     /// encoding from what the pipeline nodes were built to produce.
     pub(crate) fn transcodes_response_to_text(&self) -> bool {
-        self.transcodes_response_to_text
+        self.transcodes_response_to_text || self.utf8_decoding_mode == Utf8DecodingMode::Lossy
     }
 
     /// Sets how invalid UTF-8 in this operation's response is handled.
@@ -508,9 +508,6 @@ impl CosmosOperation {
     /// returns recovered text JSON so typed deserialization remains strict.
     pub fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
         self.utf8_decoding_mode = mode;
-        if mode == Utf8DecodingMode::Lossy {
-            self.transcodes_response_to_text = true;
-        }
         self
     }
 
@@ -528,7 +525,7 @@ impl CosmosOperation {
     /// while the driver transcodes on the way out, so a node emitting binary
     /// would re-encode every item only for `execute_plan` to decode it again.
     pub(crate) fn emits_binary_payload(&self) -> bool {
-        self.negotiates_binary_response() && !self.transcodes_response_to_text
+        self.negotiates_binary_response() && !self.transcodes_response_to_text()
     }
 
     /// Sets the maximum number of items the server should return per page
@@ -1464,6 +1461,33 @@ mod tests {
                 .with_utf8_decoding_mode(Utf8DecodingMode::Lossy);
 
         assert!(operation.negotiates_binary_response());
+        assert!(operation.transcodes_response_to_text());
+        assert!(!operation.emits_binary_payload());
+    }
+
+    #[test]
+    fn utf8_decoding_mode_is_reversible() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
+                .with_supported_serialization_formats("JsonText,CosmosBinary")
+                .with_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .with_utf8_decoding_mode(Utf8DecodingMode::Strict);
+
+        assert_eq!(operation.utf8_decoding_mode(), Utf8DecodingMode::Strict);
+        assert!(!operation.transcodes_response_to_text());
+        assert!(operation.emits_binary_payload());
+    }
+
+    #[test]
+    fn strict_utf8_preserves_independent_text_transcoding() {
+        let operation =
+            CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
+                .with_supported_serialization_formats("JsonText,CosmosBinary")
+                .transcoding_response_to_text()
+                .with_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .with_utf8_decoding_mode(Utf8DecodingMode::Strict);
+
+        assert_eq!(operation.utf8_decoding_mode(), Utf8DecodingMode::Strict);
         assert!(operation.transcodes_response_to_text());
         assert!(!operation.emits_binary_payload());
     }
