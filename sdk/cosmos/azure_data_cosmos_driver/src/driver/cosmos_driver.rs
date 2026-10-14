@@ -4714,8 +4714,8 @@ async fn probe_endpoint_connectivity(
     feature = "__internal_in_memory_emulator",
     feature = "fault_injection"
 ))]
-#[path = "hedge_feedback_tests.rs"]
-mod hedge_feedback_tests;
+#[path = "request_hedge_feedback_tests.rs"]
+mod request_hedge_feedback_tests;
 
 #[cfg(test)]
 mod tests {
