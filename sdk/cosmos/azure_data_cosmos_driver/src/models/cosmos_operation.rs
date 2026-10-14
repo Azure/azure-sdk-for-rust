@@ -535,6 +535,9 @@ impl CosmosOperation {
 
     /// Records the change feed start position and emits its wire header.
     ///
+    /// Replaces any previously set precondition (`If-Match` or `If-None-Match`)
+    /// and `If-Modified-Since` value.
+    ///
     /// This is the single source of truth for translating a start position into
     /// the appropriate header, so both the initial request and a resume that
     /// reconstructs the position from a continuation token stay in sync:

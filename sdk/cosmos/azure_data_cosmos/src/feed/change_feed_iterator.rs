@@ -298,6 +298,8 @@ impl<T: Send + DeserializeOwned + 'static> ChangeFeedPageIterator<T> {
     /// start, saved per-range positions, and the next range to poll. An unpolled
     /// [`ChangeFeedStartFrom::Now`](crate::options::ChangeFeedStartFrom::Now)
     /// remains request-time Now; saving a checkpoint performs no feed requests.
+    /// New checkpoints use `c2.` and cannot be read by SDKs that only support
+    /// `c1.`. Keep a compatible SDK version when restarting or redeploying.
     ///
     /// # Errors
     ///

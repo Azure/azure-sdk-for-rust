@@ -1082,6 +1082,8 @@ impl ContainerClient {
     /// Older prefix checkpoints that contain a single request's ETag cannot
     /// safely reconstruct per-range positions and are rejected. Unpolled prefix
     /// checkpoints can resume with the original `start_from`.
+    /// New change-feed checkpoints use `c2.` and are rejected by older SDKs
+    /// that only support `c1.`; query checkpoints remain unchanged.
     ///
     /// # AllVersionsAndDeletes limitations
     ///

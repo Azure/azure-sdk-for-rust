@@ -15,7 +15,7 @@ use async_trait::async_trait;
 
 use super::recovery_diagnostics::RecoveryDiagnostics;
 use super::{PageResult, PipelineContext, PipelineNode, PipelineNodeState, RangedToken};
-use crate::models::{ChangeFeedStartFrom, FeedRange};
+use crate::models::ChangeFeedStartFrom;
 
 /// Maximum number of consecutive split retries before giving up.
 const MAX_SPLIT_RETRIES: usize = 10;
@@ -31,6 +31,8 @@ pub(crate) struct UnorderedMerge {
     children: VecDeque<Box<dyn PipelineNode>>,
     /// Index of the next child to poll (wraps around).
     cursor: usize,
+    /// Saved EPK, resolved after priming has finalized the child list.
+    next_poll_min_epk: Option<crate::models::effective_partition_key::EffectivePartitionKey>,
     /// The feed's original start position, carried so it can be re-persisted in
     /// the continuation token on every checkpoint. Partitions that were never
     /// polled re-apply it on resume instead of reading from the beginning.
@@ -60,6 +62,7 @@ impl UnorderedMerge {
         Self {
             children: children.into(),
             cursor: 0,
+            next_poll_min_epk: None,
             start_marker: None,
             prime_on_first_drain: false,
         }
@@ -78,6 +81,29 @@ impl UnorderedMerge {
     pub(crate) fn with_prime_on_first_drain(mut self, prime: bool) -> Self {
         self.prime_on_first_drain = prime;
         self
+    }
+
+    pub(crate) fn with_next_poll_min_epk(
+        mut self,
+        next: Option<crate::models::effective_partition_key::EffectivePartitionKey>,
+    ) -> crate::error::Result<Self> {
+        if let Some(next) = next.as_ref() {
+            self.next_poll_index(next)?;
+        }
+        self.next_poll_min_epk = next;
+        Ok(self)
+    }
+
+    fn next_poll_index(
+        &self,
+        next: &crate::models::effective_partition_key::EffectivePartitionKey,
+    ) -> crate::error::Result<usize> {
+        self.children.iter().position(|child| {
+            child.feed_range().is_some_and(|range| range.min_inclusive() <= next && next < range.max_exclusive())
+        }).ok_or_else(|| crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE)
+            .with_message("continuation token change-feed next polling EPK is outside the requested feed range")
+            .build())
     }
 
     /// Polls every child once so each records its starting continuation.
@@ -169,24 +195,6 @@ impl UnorderedMerge {
 
 #[async_trait]
 impl PipelineNode for UnorderedMerge {
-    fn next_change_feed_range(&self) -> Option<&FeedRange> {
-        self.children
-            .get(self.cursor % self.children.len().max(1))?
-            .feed_range()
-    }
-
-    fn resume_change_feed_at(&mut self, min_epk: &str) -> crate::error::Result<()> {
-        let next =
-            crate::models::effective_partition_key::EffectivePartitionKey::try_from(min_epk)?;
-        self.cursor = self.children.iter().position(|child| {
-            child.feed_range().is_some_and(|range| range.min_inclusive() <= &next && &next < range.max_exclusive())
-        }).ok_or_else(|| crate::error::CosmosError::builder()
-            .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_UNEXPECTED_NESTED_SHAPE)
-            .with_message("change-feed polling position is outside the requested feed range")
-            .build())?;
-        Ok(())
-    }
-
     async fn next_page(
         &mut self,
         context: &mut PipelineContext<'_>,
@@ -205,6 +213,11 @@ impl PipelineNode for UnorderedMerge {
             if self.children.is_empty() {
                 return Ok(PageResult::Drained);
             }
+        }
+
+        if let Some(next) = self.next_poll_min_epk.as_ref() {
+            self.cursor = self.next_poll_index(next)?;
+            self.next_poll_min_epk = None;
         }
 
         let mut split_retries = 0;
@@ -344,6 +357,16 @@ impl PipelineNode for UnorderedMerge {
         Ok(PipelineNodeState::UnorderedMerge {
             active_tokens,
             start_from: self.start_marker.clone(),
+            next_poll_min_epk: self
+                .next_poll_min_epk
+                .as_ref()
+                .map(|next| next.to_hex())
+                .or_else(|| {
+                    self.children
+                        .get(self.cursor % self.children.len())
+                        .and_then(|child| child.feed_range())
+                        .map(|range| range.min_inclusive().to_hex())
+                }),
         })
     }
 
@@ -364,6 +387,7 @@ mod tests {
     use super::super::mocks::*;
     use super::super::SplitReplacements;
     use super::*;
+    use crate::models::FeedRange;
 
     #[test]
     fn fan_out_width_counts_children() {
@@ -590,5 +614,63 @@ mod tests {
             }
             other => panic!("expected Page, got {other:?}"),
         }
+    }
+
+    #[tokio::test]
+    async fn restores_polling_epk_after_a_split_during_priming() {
+        let range = |min: &str, max: &str| {
+            FeedRange::new(
+                crate::models::effective_partition_key::EffectivePartitionKey::try_from(min)
+                    .unwrap(),
+                crate::models::effective_partition_key::EffectivePartitionKey::try_from(max)
+                    .unwrap(),
+            )
+            .unwrap()
+        };
+        let priming_page = |etag: &str| {
+            Ok(PageResult::Page {
+                response: response_with_etag(b"", etag),
+                is_terminal: true,
+            })
+        };
+        let left = MockLeaf::with_pages(vec![Ok(PageResult::SplitRequired {
+            replacements: SplitReplacements::untiled(vec![
+                Box::new(
+                    MockLeaf::with_pages(vec![priming_page("left-1")])
+                        .with_feed_range(range("", "40")),
+                ),
+                Box::new(
+                    MockLeaf::with_pages(vec![priming_page("left-2")])
+                        .with_feed_range(range("40", "80")),
+                ),
+            ]),
+        })])
+        .with_feed_range(range("", "80"));
+        let right = MockLeaf::with_pages(vec![
+            priming_page("right-0"),
+            Ok(PageResult::Page {
+                response: response(b"right"),
+                is_terminal: false,
+            }),
+        ])
+        .with_feed_range(range("80", "FF"));
+        let mut merge = UnorderedMerge::new(vec![Box::new(left), Box::new(right)])
+            .with_prime_on_first_drain(true)
+            .with_next_poll_min_epk(Some(
+                crate::models::effective_partition_key::EffectivePartitionKey::try_from("80")
+                    .unwrap(),
+            ))
+            .unwrap();
+        let mut executor = NoopRequestExecutor;
+        let mut topology = NoopTopologyProvider;
+        let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
+        let PageResult::Page { response, .. } = merge.next_page(&mut context).await.unwrap() else {
+            panic!("expected right range page");
+        };
+        assert_eq!(response.body_bytes(), b"right");
+        assert!(
+            matches!(merge.snapshot_state().unwrap(), PipelineNodeState::UnorderedMerge {
+                next_poll_min_epk: Some(ref next), .. } if next.is_empty())
+        );
     }
 }

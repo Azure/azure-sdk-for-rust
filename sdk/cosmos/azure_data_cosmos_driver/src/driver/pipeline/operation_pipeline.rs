@@ -2574,6 +2574,10 @@ fn effective_partition_key_for_request(
             .build());
     }
 
+    if operation.is_change_feed() && !partition_key_definition.is_complete(partition_key) {
+        return Ok(None);
+    }
+
     Ok(Some(EffectivePartitionKey::compute(
         partition_key.values(),
         partition_key_definition.kind(),
@@ -4903,7 +4907,11 @@ mod tests {
                 AccountEndpointState, CosmosEndpoint, LocationEffect, LocationIndex,
                 LocationSnapshot,
             },
-            transport::EndpointKey,
+            transport::{
+                cosmos_transport_client::HttpRequest,
+                rntbd::{tokens::RntbdRequestToken, RntbdRequestFrame, Token},
+                wrap_request_for_gateway_v2, EndpointKey, WrapInputs,
+            },
         },
         models::{
             request_header_names, AccountReference, ActivityId, ContainerProperties,
@@ -5797,6 +5805,130 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn prefix_change_feed_transport_preserves_leaf_bounds_in_gateway_v2() {
+        let mut properties = test_container_props();
+        properties.partition_key = ("/tenant", "/user", "/device").into();
+        let container = ContainerReference::new(
+            test_account(),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &properties,
+        );
+        let prefix = FeedRange::for_partition(
+            PartitionKey::from("A"),
+            container.partition_key_definition(),
+        );
+        let operation = CosmosOperation::change_feed(container.clone(), Some(prefix.clone()));
+        let middle = EffectivePartitionKey::from_bytes({
+            let mut bytes = prefix.min_inclusive().as_bytes().to_vec();
+            bytes.push(0x80);
+            bytes
+        });
+        let slices = [
+            FeedRange::new(prefix.min_inclusive().clone(), middle.clone()).unwrap(),
+            FeedRange::new(middle, prefix.max_exclusive().clone()).unwrap(),
+            FeedRange::full(),
+        ];
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("00000000-0000-4000-8000-000000000001".into());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::OperationRetry,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: None,
+            throughput_control: None,
+        };
+        for slice in slices {
+            let overrides = OperationOverrides {
+                partition_key_range_id: Some("merged".into()),
+                feed_range: (slice != FeedRange::full()).then_some(slice.clone()),
+                pkrange_bounds: Some(FeedRange::full()),
+                continuation: Some("parent-etag".into()),
+                ..Default::default()
+            };
+            let mut request = build_transport_request(&operation, &overrides, None, &ctx).unwrap();
+            assert!(request.effective_partition_key.is_none());
+            request.headers.insert(
+                azure_core::http::headers::AUTHORIZATION,
+                "test-authorization",
+            );
+            request.headers.insert(
+                HeaderName::from_static("x-ms-date"),
+                "Wed, 21 Oct 2015 07:28:00 GMT",
+            );
+            let inputs = WrapInputs {
+                auth_context: &request.auth_context,
+                operation_type: operation.operation_type(),
+                resource_type: operation.resource_type(),
+                effective_partition_key: request.effective_partition_key.as_ref(),
+                effective_consistency: DefaultConsistencyLevel::Session,
+                read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+                account_name: Some("test"),
+                collection_rid: None,
+            };
+            let wrapped = wrap_request_for_gateway_v2(
+                HttpRequest {
+                    url: request.url,
+                    method: request.method,
+                    headers: request.headers,
+                    body: request.body,
+                    timeout: None,
+                    #[cfg(feature = "fault_injection")]
+                    evaluation_collector: None,
+                },
+                &inputs,
+            )
+            .unwrap();
+            let frame = RntbdRequestFrame::read(wrapped.body.as_ref().unwrap()).unwrap();
+            let bounds: Vec<_> = frame
+                .metadata
+                .iter()
+                .filter(|token| {
+                    token.id == RntbdRequestToken::StartEpkHash.into()
+                        || token.id == RntbdRequestToken::EndEpkHash.into()
+                })
+                .cloned()
+                .collect();
+            assert_eq!(
+                bounds,
+                vec![
+                    Token::start_epk_hash(slice.min_inclusive().as_bytes().to_vec()),
+                    Token::end_epk_hash(slice.max_exclusive().as_bytes().to_vec()),
+                ]
+            );
+            assert!(!frame.metadata.iter().any(|token| token.id
+                == RntbdRequestToken::EffectivePartitionKey.into()
+                || token.id == RntbdRequestToken::PartitionKey.into()));
+            assert!(frame
+                .metadata
+                .contains(&Token::partition_key_range_id("merged".into())));
+            assert!(frame
+                .metadata
+                .contains(&Token::match_condition("parent-etag".into())));
+        }
+        let complete = PartitionKey::from(("A", "one", "x"));
+        let operation = CosmosOperation::change_feed(
+            container.clone(),
+            Some(FeedRange::for_partition(
+                complete.clone(),
+                container.partition_key_definition(),
+            )),
+        );
+        assert!(super::effective_partition_key_for_request(&operation)
+            .unwrap()
+            .is_some());
+        let query = CosmosOperation::query_items(container, Some(prefix));
+        assert!(super::effective_partition_key_for_request(&query)
+            .unwrap()
+            .is_some());
     }
 
     #[test]

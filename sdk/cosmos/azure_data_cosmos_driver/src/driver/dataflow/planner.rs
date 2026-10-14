@@ -939,30 +939,46 @@ fn parse_continuation_epk(
 /// to its children, while a merge reads each saved sub-range independently
 /// without dropping a continuation — matching the per-EPK-range change feed
 /// resume used by the other Cosmos SDKs (.NET, Java, Python).
+///
+/// The driver must restore the checkpoint's start on `operation` before calling.
 pub(crate) async fn build_unordered_merge(
     feed_range: &FeedRange,
     topology_provider: &mut dyn TopologyProvider,
     operation: &Arc<CosmosOperation>,
     resume: Option<PipelineNodeState>,
 ) -> crate::error::Result<Pipeline> {
-    let (saved_tokens, resume_start) = match resume {
-        None => (None, None),
+    let (saved_tokens, resume_start, next_poll_min_epk) = match resume {
+        None => (None, None, None),
         Some(PipelineNodeState::Drained) => {
             return Ok(Pipeline::new(Box::new(DrainedLeaf)));
         }
         Some(PipelineNodeState::UnorderedMerge {
             active_tokens,
             start_from,
+            next_poll_min_epk,
         }) => (
             Some(validate_unordered_merge_tokens(active_tokens)?),
             start_from,
+            next_poll_min_epk
+                .map(|value| {
+                    parse_continuation_epk(
+                        &value,
+                        crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_INVALID_EPK_RANGE,
+                        "change-feed next polling position",
+                    )
+                })
+                .transpose()?,
         ),
         Some(PipelineNodeState::Request {
             server_continuation: None,
         }) if feed_range.partition_key().is_some() => {
             // Old prefix plans checkpointed a single request. Before its
             // first poll, no per-range progress needs to be reconstructed.
-            (Some(Vec::new()), operation.change_feed_start().cloned())
+            (
+                Some(Vec::new()),
+                operation.change_feed_start().cloned(),
+                None,
+            )
         }
         Some(PipelineNodeState::Request {
             server_continuation: Some(_),
@@ -985,6 +1001,16 @@ pub(crate) async fn build_unordered_merge(
                 .build());
         }
     };
+
+    if resume_start
+        .as_ref()
+        .is_some_and(|start| Some(start) != operation.change_feed_start())
+    {
+        return Err(crate::error::CosmosError::builder()
+            .with_status(crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_SHAPE_MISMATCH)
+            .with_message("change-feed checkpoint start must be restored before planning")
+            .build());
+    }
 
     // The start marker is carried so every checkpoint re-persists it. On a
     // fresh start it comes from the operation; on resume the token's persisted
@@ -1013,8 +1039,12 @@ pub(crate) async fn build_unordered_merge(
     let mut request_nodes: Vec<Box<dyn PipelineNode>> = Vec::new();
 
     for resolved_range in resolved {
-        let range = intersect_feed_ranges(&resolved_range.range, feed_range)
-            .expect("topology provider must return ranges that overlap the feed range");
+        let range = intersect_feed_ranges(&resolved_range.range, feed_range).ok_or_else(|| {
+            crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_TOPOLOGY_RESOLUTION_FAILED)
+                .with_message("topology provider returned a range that does not overlap the change-feed scope")
+                .build()
+        })?;
 
         // Rebuild this physical range's leaves by sweeping the saved tokens
         // that overlap it, left to right. Each saved sub-range resumes from its
@@ -1079,7 +1109,8 @@ pub(crate) async fn build_unordered_merge(
     let root = Box::new(
         UnorderedMerge::new(request_nodes)
             .with_start_marker(start_marker)
-            .with_prime_on_first_drain(prime_on_first_drain),
+            .with_prime_on_first_drain(prime_on_first_drain)
+            .with_next_poll_min_epk(next_poll_min_epk)?,
     );
     Ok(Pipeline::new(root))
 }

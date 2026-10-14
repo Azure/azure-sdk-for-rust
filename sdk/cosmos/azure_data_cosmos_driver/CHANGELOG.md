@@ -6,15 +6,19 @@
 
 ### Breaking Changes
 
+- New change-feed checkpoints use `c2.` and are rejected by older SDKs; query checkpoints remain `c1.`. Legacy change-feed checkpoints remain readable except consumed single-request prefix checkpoints, which lack safe per-range coverage; older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
 ### Bugs Fixed
 
-- Replace stale change-feed start headers, retain starts and polling positions in `c1.` checkpoints, and fan out hierarchical prefixes without incomplete logical-key headers. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
-- Reject older single-request hierarchical-prefix checkpoints with a saved ETag because they lack safe per-range coverage; older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- Replace stale change-feed start headers, retain starts and polling positions in checkpoints, and preserve hierarchical-prefix leaf bounds on both gateway transports. Invalid keyed change feeds return errors instead of panicking during planning. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - Avoid loading partition topology for lazy-mode logical-key operations unless partition-level failover or Gateway 2.0 session-token scoping requires it. ([#5431](https://github.com/Azure/azure-sdk-for-rust/pull/5431))
 - Keep CPU sampling active while runtime or diagnostics handles remain alive. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
 - Preserve bounded diagnostic history through partition split recovery, query buffering, and terminal `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
 
 ### Other Changes
+
+- Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
 ## 1.0.0 (2026-10-08)
 

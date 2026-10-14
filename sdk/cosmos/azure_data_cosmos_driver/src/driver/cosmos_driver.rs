@@ -336,6 +336,7 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
         continuation: Option<String>,
     ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
         let driver = self.driver;
+        // Change-feed EPK leaves must use their bounds, not the logical prefix.
         let mut overrides = request_target_overrides(
             operation
                 .partition_key()
@@ -4162,7 +4163,8 @@ impl CosmosDriver {
     /// `continuation` optionally provides resume state from a prior call. Two
     /// kinds of tokens are accepted:
     ///
-    /// - SDK-issued tokens (`c1.…`) carry a serialized snapshot of the
+    /// - SDK-issued tokens (`c1.…` for queries or legacy feeds, `c2.…` for new
+    ///   change-feed checkpoints) carry a serialized snapshot of the
     ///   previous pipeline's state and can resume any operation.
     /// - Opaque server-issued tokens (no `c<N>.` prefix) are accepted only
     ///   for trivial operations; passing one to a cross-partition query
@@ -4306,6 +4308,15 @@ impl CosmosDriver {
         let retargeted = self
             .canonicalize_operation_container(&mut operation)
             .await?;
+        if operation.is_change_feed() {
+            if let (Some(key), Some(container)) = (operation.partition_key(), operation.container())
+            {
+                EffectivePartitionKey::compute_range(
+                    key.values(),
+                    container.partition_key_definition(),
+                )?;
+            }
+        }
         let explicit_session_token = operation.request_headers().session_token.is_some()
             || options.custom_headers.as_ref().is_some_and(|headers| {
                 headers.contains_key(&azure_core::http::headers::HeaderName::from_static(
@@ -4359,15 +4370,13 @@ impl CosmosDriver {
         // a resume is not, because the caller already opted in to the fan-out
         // when the operation was first planned.
         let is_fresh = continuation.is_none();
-        let mut next_change_feed_range = None;
         let resume_state = match resolved_continuation {
             None => None,
-            Some(ResolvedToken::ClientV1(state)) => {
+            Some(ResolvedToken::Client(state)) => {
                 state.is_valid_for_operation(&operation)?;
                 if let Some(start) = state.change_feed_start() {
                     operation = operation.with_change_feed_start(start.clone());
                 }
-                next_change_feed_range = state.next_change_feed_range().map(str::to_owned);
                 Some(state.into_root_node_state())
             }
             Some(ResolvedToken::ServerOpaque(server_token)) => {
@@ -4437,16 +4446,13 @@ impl CosmosDriver {
                 container_ref,
                 self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
             );
-            let mut pipeline = planner::build_unordered_merge(
+            let pipeline = planner::build_unordered_merge(
                 &feed_range,
                 &mut topology,
                 &operation,
                 resume_state,
             )
             .await?;
-            if let Some(min_epk) = next_change_feed_range {
-                pipeline.resume_change_feed_at(&min_epk)?;
-            }
             return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
         }
 
@@ -5136,6 +5142,45 @@ mod tests {
             plan.take_initial_execution_deadline().is_none(),
             "the planning deadline must be consumed only once"
         );
+    }
+
+    #[tokio::test]
+    async fn change_feed_planning_rejects_invalid_partition_keys() {
+        let runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver =
+            CosmosDriver::new(runtime, DriverOptions::builder(test_account()).build()).unwrap();
+        driver.initialized.store(true, Ordering::Release);
+        for (definition, key, expected) in [
+            (
+                r#"{"paths":["/pk"],"version":2}"#,
+                PartitionKey::from(("a", "b")),
+                crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
+            ),
+            (
+                r#"{"paths":["/a","/b"],"kind":"Hash","version":2}"#,
+                PartitionKey::from("a"),
+                crate::error::status_codes::CLIENT_NON_MULTIHASH_PARTITION_KEY_ARITY_MISMATCH,
+            ),
+            (
+                r#"{"paths":["/a","/b"],"kind":"MultiHash","version":2}"#,
+                PartitionKey::from(("a", "b", "c")),
+                crate::error::status_codes::CLIENT_PARTITION_KEY_TOO_MANY_COMPONENTS,
+            ),
+        ] {
+            let container = epk_test_container(definition);
+            let range = FeedRange::for_partition(key, container.partition_key_definition());
+            let error = driver
+                .plan_operation(
+                    CosmosOperation::change_feed(container, Some(range)),
+                    &OperationOptions::default(),
+                    None,
+                    &PlanOptions::default(),
+                )
+                .await
+                .err()
+                .expect("invalid change-feed key must fail before topology planning");
+            assert_eq!(error.status(), expected);
+        }
     }
 
     #[tokio::test]

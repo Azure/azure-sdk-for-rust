@@ -156,6 +156,7 @@ async fn checkpoint_before_first_poll_ignores_conflicting_start() -> TestResult 
                     user: "B".into(),
                     device: "C".into(),
                 };
+                let before_seed = time::OffsetDateTime::now_utc() - time::Duration::minutes(5);
                 create_seed_item(&container, &item)
                     .await
                     .inspect_err(|_| eprintln!("checkpoint fixture seed setup failed"))?;
@@ -170,9 +171,7 @@ async fn checkpoint_before_first_poll_ignores_conflicting_start() -> TestResult 
                 ] {
                     for start in [
                         ChangeFeedStartFrom::Beginning,
-                        ChangeFeedStartFrom::PointInTime(
-                            time::OffsetDateTime::now_utc() - time::Duration::minutes(1),
-                        ),
+                        ChangeFeedStartFrom::PointInTime(before_seed),
                     ] {
                         let feed = container
                             .query_change_feed::<Item>(scope.clone(), start, Some(options(None)))
@@ -302,7 +301,7 @@ async fn hierarchical_prefix_filters_and_resumes_on_one_range() -> TestResult {
 }
 
 #[tokio::test]
-#[ignore = "requires a live account with AllVersionsAndDeletes already enabled"]
+#[ignore = "requires AVAD-enabled live account; run live cosmos_change_feed with --ignored"]
 async fn all_versions_and_deletes_preserves_checkpoint_start_and_mode() -> TestResult {
     require_live_account()?;
     TestClient::run_with_unique_db(
@@ -341,7 +340,12 @@ async fn all_versions_and_deletes_preserves_checkpoint_start_and_mode() -> TestR
                     )
                     .await
                 {
-                    Err(error) if error.to_string().contains("mode") => {}
+                    Err(error)
+                        if error.status().status_code()
+                            == azure_core::http::StatusCode::BadRequest
+                            && error
+                                .to_string()
+                                .contains("a change feed cannot switch modes") => {}
                     Err(error) => return Err(error.into()),
                     Ok(_) => return Err("change-feed checkpoint accepted a different mode".into()),
                 }
