@@ -3,7 +3,7 @@
 
 use super::{
     try_cleanup_probe_candidate, HealthStatus, LocationStateStore, OperationRetryState,
-    PartitionKeyRangeId,
+    PartitionKeyRangeId, PartitionStateUpdate,
 };
 use crate::{
     driver::{
@@ -81,7 +81,7 @@ fn store_with_probe() -> (LocationStateStore, OperationRetryState) {
                 failback_jitter: Duration::ZERO,
             },
         );
-        next
+        PartitionStateUpdate::Updated(next)
     });
     let mut retry = OperationRetryState::initial(0, false, Vec::new(), 3, 2);
     retry.partition_key_range_id = Some(key);
@@ -103,7 +103,7 @@ fn failure_after_fast_path_check_preserves_state_and_snapshot() {
                 assert_eq!(entry.health_status, HealthStatus::ProbeCandidate);
                 entry.health_status = HealthStatus::Unhealthy;
                 entry.read_failure_count = 42;
-                next
+                PartitionStateUpdate::Updated(next)
             });
             *saved.lock().unwrap() = Some(store.snapshot());
         },

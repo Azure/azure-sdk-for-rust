@@ -499,19 +499,19 @@ impl LocationStateStore {
         }
     }
 
-    /// CAS loop on partition-level state.
-    pub(crate) fn apply_partition<U: Into<PartitionStateUpdate>>(
+    /// CAS loop on partition-level state; returns whether an update was published.
+    pub(crate) fn apply_partition(
         &self,
-        mut f: impl FnMut(&PartitionEndpointState) -> U,
-    ) {
+        mut f: impl FnMut(&PartitionEndpointState) -> PartitionStateUpdate,
+    ) -> bool {
         let guard = epoch::pin();
 
         loop {
             let current = self.partitions.load(Ordering::Acquire, &guard);
             // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
             let current_ref = unsafe { current.deref() };
-            let PartitionStateUpdate::Updated(next_state) = f(current_ref).into() else {
-                return;
+            let PartitionStateUpdate::Updated(next_state) = f(current_ref) else {
+                return false;
             };
 
             match self.partitions.compare_exchange(
@@ -529,7 +529,7 @@ impl LocationStateStore {
                     // the pattern in apply_account above).
                     unsafe { guard.defer_destroy(current) };
                     self.account_version.fetch_add(1, Ordering::Release);
-                    return;
+                    return true;
                 }
                 Err(_) => continue,
             }
@@ -1132,19 +1132,26 @@ impl LocationStateStore {
         partition: &PartitionKeyRangeId,
         primary_region: Option<&Region>,
     ) {
-        tracing::debug!(
-            partition = %partition,
-            primary_region = ?primary_region.map(Region::as_str),
-            "recorded alternate-region hedge win",
-        );
         let mut account = None;
-        self.apply_partition(|current| {
+        let updated = self.apply_partition(|current| {
             if !current.per_partition_circuit_breaker_enabled {
                 return PartitionStateUpdate::Unchanged;
             }
             let account = account.get_or_insert_with(|| self.account_snapshot());
-            record_hedge_alternate_win(current, account, partition, primary_region).into()
+            PartitionStateUpdate::Updated(record_hedge_alternate_win(
+                current,
+                account,
+                partition,
+                primary_region,
+            ))
         });
+        if updated {
+            tracing::debug!(
+                partition = %partition,
+                primary_region = ?primary_region.map(Region::as_str),
+                "recorded alternate-region hedge win",
+            );
+        }
     }
 
     /// Records that the primary attempt won in
@@ -1161,17 +1168,19 @@ impl LocationStateStore {
         partition: &PartitionKeyRangeId,
         primary_region: Option<&Region>,
     ) {
-        tracing::debug!(
-            partition = %partition,
-            primary_region = ?primary_region.map(Region::as_str),
-            "recorded primary-region hedge win",
-        );
-        self.apply_partition(|current| {
+        let updated = self.apply_partition(|current| {
             if !current.per_partition_circuit_breaker_enabled {
                 return PartitionStateUpdate::Unchanged;
             }
             record_hedge_primary_win(current, partition, primary_region)
         });
+        if updated {
+            tracing::debug!(
+                partition = %partition,
+                primary_region = ?primary_region.map(Region::as_str),
+                "recorded primary-region hedge win",
+            );
+        }
     }
 }
 
@@ -2681,7 +2690,7 @@ mod tests {
             next.per_partition_automatic_failover_enabled =
                 !current.per_partition_automatic_failover_enabled;
             next._test_canary = Some(canary_for_closure.clone());
-            next
+            PartitionStateUpdate::Updated(next)
         });
 
         // Drop our outer strong reference. The only remaining strong ref must
@@ -3278,7 +3287,7 @@ mod tests {
                 .with_circuit_breaker_enabled(false)
                 .build()
                 .unwrap();
-            next
+            PartitionStateUpdate::Updated(next)
         });
         let key = "0".parse().unwrap();
         store.sync_account_properties(Arc::new(test_payload_with_ppaf(true, "enabled")), &endpoint);
@@ -3373,7 +3382,7 @@ mod tests {
             let mut next = current.clone();
             next.failover_overrides
                 .insert(pkrange_id.clone(), entry.clone());
-            next
+            PartitionStateUpdate::Updated(next)
         });
         assert_eq!(
             store.snapshot().partitions.failover_overrides.len(),
@@ -3446,7 +3455,7 @@ mod tests {
             let mut next = current.clone();
             next.failover_overrides
                 .insert(pkrange_id.clone(), entry.clone());
-            next
+            PartitionStateUpdate::Updated(next)
         });
 
         // true -> true with a new etag (still enabled): clear path must not fire.
@@ -3509,7 +3518,7 @@ mod tests {
             let mut next = current.clone();
             next.failover_overrides
                 .insert(pkrange_id.clone(), stale_entry.clone());
-            next
+            PartitionStateUpdate::Updated(next)
         });
         assert_eq!(
             store.snapshot().partitions.failover_overrides.len(),

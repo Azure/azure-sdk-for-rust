@@ -22,12 +22,6 @@ pub(crate) enum PartitionStateUpdate {
     Updated(PartitionEndpointState),
 }
 
-impl From<PartitionEndpointState> for PartitionStateUpdate {
-    fn from(state: PartitionEndpointState) -> Self {
-        Self::Updated(state)
-    }
-}
-
 #[cfg(test)]
 impl PartitionStateUpdate {
     pub(crate) fn apply(self, previous: &PartitionEndpointState) -> PartitionEndpointState {

@@ -2136,7 +2136,7 @@ impl CosmosDriver {
         self.location_state_store.apply_partition(|current| {
             let mut next = current.clone();
             next.per_partition_automatic_failover_enabled = true;
-            next
+            crate::driver::routing::partition_endpoint_state::PartitionStateUpdate::Updated(next)
         });
     }
 
