@@ -129,29 +129,29 @@ $packageExemptions = @{
 
 $finalExitCode = 0
 foreach ($package in $outputPackages) {
-  $packageName = $package.name
+  $currentPackageName = $package.name
 
-  if ($packageExemptions.ContainsKey($packageName)) {
-    LogWarning "Skipping $packageName because $($packageExemptions[$packageName])"
+  if ($packageExemptions.ContainsKey($currentPackageName)) {
+    LogWarning "Skipping $currentPackageName because $($packageExemptions[$currentPackageName])"
     continue
   }
 
   $manifestPath = $package.manifest_path
   $baselineRevision = Get-BaselineRevision $package
   if (!$baselineRevision) {
-    LogWarning "$packageName has not been published yet and will be ignored"
+    LogWarning "$currentPackageName has not been published yet and will be ignored"
     continue
   }
 
   Initialize-BaselineRevision $baselineRevision
   $output = Invoke-LoggedCommand "cargo +$resolvedToolchain semver-checks --manifest-path '$manifestPath' --baseline-rev '$baselineRevision'" -DoNotExitOnFailedExitCode -GroupOutput 2>&1
-  if ($output -match 'error: no library targets found in package `(?<name>[\w_]+)`' -and $Matches['name'] -eq $packageName) {
-    LogWarning "$packageName base version is a placeholder and will be ignored"
+  if ($output -match 'error: no library targets found in package `(?<name>[\w_]+)`' -and $Matches['name'] -eq $currentPackageName) {
+    LogWarning "$currentPackageName base version is a placeholder and will be ignored"
     continue
   }
 
   if ($output -match 'error: no crates with library targets selected') {
-    LogWarning "$packageName is not a lib crate and will be ignored"
+    LogWarning "$currentPackageName is not a lib crate and will be ignored"
     continue
   }
 
