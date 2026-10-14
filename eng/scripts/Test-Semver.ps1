@@ -116,9 +116,9 @@ Invoke-LoggedCommand "cargo install cargo-semver-checks --locked $($versionParam
 
 $packageExemptions = @{
   # cargo-semver-checks resolves the latest compatible transitive dependencies in generated
-  # packages. fe2o3-amqp 0.14 and 0.18 fail to compile with tokio-util 0.7.20. The fix is
-  # merged but not released or backported: https://github.com/minghuaw/fe2o3-amqp/pull/420.
-  azure_core_amqp = 'its fe2o3-amqp dependency does not compile with the resolved tokio-util version'
+  # packages. The current dependency is fixed in fe2o3-amqp 0.18.3, but the released baseline
+  # still needs the 0.14 backport: https://github.com/Azure/azure-sdk-for-rust/issues/5451.
+  azure_core_amqp = 'its baseline fe2o3-amqp dependency does not compile with the resolved tokio-util version'
 
   # cargo-semver-checks cannot process these packages because their baselines contain a symlink.
   azure_security_keyvault_certificates = 'of https://github.com/Azure/azure-sdk-for-rust/issues/5143'
