@@ -3,6 +3,7 @@
 
 use crate::{
     error::{AmqpDescribedError, AmqpError, AmqpErrorKind, Result},
+    fe2o3::session::SessionClosed,
     messaging::{AmqpMessage, AmqpTarget},
     sender::{
         AmqpSendOptions, AmqpSendOutcome, AmqpSenderApis, AmqpSenderOptions, SendModification,
@@ -18,6 +19,7 @@ use tracing::{info, warn};
 #[derive(Default)]
 pub(crate) struct Fe2o3AmqpSender {
     sender: OnceLock<Mutex<fe2o3_amqp::Sender>>,
+    closed: OnceLock<SessionClosed>,
 }
 
 impl Fe2o3AmqpSender {
@@ -95,10 +97,23 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         target: impl Into<AmqpTarget> + Send,
         options: Option<AmqpSenderOptions>,
     ) -> Result<()> {
-        let sender = build_sender_link(name, target.into(), options)
-            .attach(session.implementation.get()?.lock().await.borrow_mut())
-            .await
-            .map_err(AmqpError::from)?;
+        let closed = session.implementation.closed()?;
+        let sender = closed
+            .run(async {
+                let session = session.implementation.get()?;
+                let mut session = session.lock().await;
+                let guard = closed.guard();
+                let result = build_sender_link(name, target.into(), options)
+                    .attach(session.borrow_mut())
+                    .await
+                    .map_err(AmqpError::from);
+                guard.disarm();
+                result
+            })
+            .await?;
+        self.closed
+            .set(closed)
+            .map_err(|_| Self::could_not_set_message_sender())?;
         self.sender
             .set(Mutex::new(sender))
             .map_err(|_| Self::could_not_set_message_sender())?;
@@ -133,13 +148,19 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
     }
 
     async fn max_message_size(&self) -> Result<Option<u64>> {
-        Ok(self
-            .sender
+        self.closed
             .get()
             .ok_or_else(Self::could_not_get_message_sender)?
-            .lock()
+            .run(async {
+                Ok(self
+                    .sender
+                    .get()
+                    .ok_or_else(Self::could_not_get_message_sender)?
+                    .lock()
+                    .await
+                    .max_message_size())
+            })
             .await
-            .max_message_size())
     }
 
     async fn send<M>(&self, message: M, options: Option<AmqpSendOptions>) -> Result<AmqpSendOutcome>
@@ -173,15 +194,21 @@ impl AmqpSenderApis for Fe2o3AmqpSender {
         };
 
         let outcome = self
-            .sender
+            .closed
             .get()
             .ok_or_else(Self::could_not_get_message_sender)?
-            .lock()
-            .await
-            .borrow_mut()
-            .send(sendable)
-            .await
-            .map_err(AmqpError::from)?;
+            .run(async {
+                self.sender
+                    .get()
+                    .ok_or_else(Self::could_not_get_message_sender)?
+                    .lock()
+                    .await
+                    .borrow_mut()
+                    .send(sendable)
+                    .await
+                    .map_err(AmqpError::from)
+            })
+            .await?;
 
         Ok(match outcome {
             fe2o3_amqp_types::messaging::Outcome::Accepted(_) => AmqpSendOutcome::Accepted,
@@ -214,6 +241,7 @@ impl Fe2o3AmqpSender {
     pub fn new() -> Self {
         Self {
             sender: OnceLock::new(),
+            closed: OnceLock::new(),
         }
     }
 }

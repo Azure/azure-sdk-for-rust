@@ -49,6 +49,9 @@ impl AmqpSenderOptions {}
 pub trait AmqpSenderApis {
     /// Attach the sender to a session.
     ///
+    /// Cancelling a pending attach handshake terminates its connection to release
+    /// partially attached resources. Other operations on that connection also fail.
+    ///
     /// # Arguments
     ///
     /// * `session` - The AMQP session to attach the sender to.
@@ -67,9 +70,15 @@ pub trait AmqpSenderApis {
     async fn detach(self) -> Result<()>;
 
     /// Get the maximum message size for the sender.
+    ///
+    /// A pending request returns when the sender's session or connection closes.
     async fn max_message_size(&self) -> Result<Option<u64>>;
 
     /// Send a message.
+    ///
+    /// A pending send returns an error when its session or connection closes.
+    /// The peer can accept a message before the acknowledgement is lost.
+    /// Resending that message can produce duplicate delivery.
     ///
     /// # Arguments
     ///
@@ -88,6 +97,8 @@ pub trait AmqpSenderApis {
         M: Into<AmqpMessage> + std::fmt::Debug + Send;
 
     /// Send a message by reference.
+    ///
+    /// Closure and delivery uncertainty follow [`send()`](AmqpSenderApis::send).
     async fn send_ref<M>(
         &self,
         message: M,

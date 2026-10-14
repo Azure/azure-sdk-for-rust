@@ -8,4 +8,5 @@ pub(crate) mod messaging;
 pub(crate) mod receiver;
 pub(crate) mod sender;
 pub(crate) mod session;
+mod transport;
 pub(crate) mod value;
