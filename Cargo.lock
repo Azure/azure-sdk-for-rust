@@ -430,7 +430,7 @@ version = "1.2.0-beta.3"
 dependencies = [
  "async-trait",
  "azure_core 1.2.0-beta.2",
- "fe2o3-amqp 0.18.2",
+ "fe2o3-amqp 0.18.3",
  "fe2o3-amqp-cbs 0.18.0",
  "fe2o3-amqp-ext 0.18.0",
  "fe2o3-amqp-management 0.18.0",
@@ -805,7 +805,7 @@ dependencies = [
  "azure_storage_blob",
  "base64",
  "criterion",
- "fe2o3-amqp 0.18.2",
+ "fe2o3-amqp 0.18.3",
  "futures",
  "hmac",
  "include-file",
@@ -1721,9 +1721,9 @@ dependencies = [
 
 [[package]]
 name = "fe2o3-amqp"
-version = "0.18.2"
+version = "0.18.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ff7b603be595828b418b4f69a111d19adb55ec4dd7e8b0e8b9e63295150af945"
+checksum = "5474a3b580e12b716a34cfef7f2857fa3aca70751e96c85a477549ac3179dfe0"
 dependencies = [
  "bytes",
  "fe2o3-amqp-types 0.18.0",
@@ -1764,7 +1764,7 @@ version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aba27aa79b79e44a0365b7e30b232276efb3297253368bd303a9f19eea2e184f"
 dependencies = [
- "fe2o3-amqp 0.18.2",
+ "fe2o3-amqp 0.18.3",
  "fe2o3-amqp-management 0.18.0",
  "trait-variant",
 ]
@@ -1807,7 +1807,7 @@ version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7141df54f8a0d418bc102b5aa0dd0b3dfcac6520f4a59fa393e1faaed8e38d1b"
 dependencies = [
- "fe2o3-amqp 0.18.2",
+ "fe2o3-amqp 0.18.3",
  "fe2o3-amqp-types 0.18.0",
  "serde",
  "thiserror",
