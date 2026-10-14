@@ -12,6 +12,7 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos_macros"
 keywords = ["sdk", "cloud"]
 categories = ["development-tools"]
+exclude.workspace = true
 
 [lib]
 proc-macro = true

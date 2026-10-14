@@ -15,6 +15,7 @@ keywords = ["sdk", "cloud"]
 categories = ["api-bindings"]
 
 edition.workspace = true
+exclude.workspace = true
 
 [dependencies]
 async-lock.workspace = true
