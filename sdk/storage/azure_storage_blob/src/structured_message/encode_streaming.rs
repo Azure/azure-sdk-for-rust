@@ -136,7 +136,7 @@ impl SeekableStructuredMessageEncodingStream {
                     flags: smv1::Flags::CRC_64_NVME,
                     segment_count,
                 }
-                .as_bytes(),
+                .into(),
             ),
         })
     }
@@ -314,7 +314,7 @@ impl AsyncRead for SeekableStructuredMessageEncodingStream {
                                                 this.content_len.get() - this.content_read,
                                             ),
                                         }
-                                        .as_bytes(),
+                                        .into(),
                                     )
                                 }
                             }
@@ -362,7 +362,7 @@ impl SeekableStream for SeekableStructuredMessageEncodingStream {
                 flags: smv1::Flags::CRC_64_NVME,
                 segment_count: self.content_len.get().div_ceil(self.segment_len.get()) as u16,
             }
-            .as_bytes(),
+            .into(),
         );
         Ok(())
     }
@@ -434,7 +434,7 @@ mod tests {
                 flags: smv1::Flags::CRC_64_NVME,
                 segment_count: 1,
             }
-            .as_bytes()
+            .to_vec()
         );
         assert_eq!(
             &dst[smv1::STREAM_HEADER_LENGTH
@@ -443,7 +443,7 @@ mod tests {
                 segment_number: 1,
                 content_length: DATA_LEN as u64,
             }
-            .as_bytes()
+            .to_vec()
         );
         assert_eq!(
             &dst[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH
@@ -496,7 +496,7 @@ mod tests {
                 flags: smv1::Flags::CRC_64_NVME,
                 segment_count: 2,
             }
-            .as_bytes()
+            .to_vec()
         );
         dst_offset += smv1::STREAM_HEADER_LENGTH;
 
@@ -507,7 +507,7 @@ mod tests {
                 segment_number: 1,
                 content_length: SEGMENT_0_LEN as u64,
             }
-            .as_bytes()
+            .to_vec()
         );
         dst_offset += smv1::SEGMENT_HEADER_LENGTH;
 
@@ -532,7 +532,7 @@ mod tests {
                 segment_number: 2,
                 content_length: (DATA_LEN - SEGMENT_0_LEN) as u64,
             }
-            .as_bytes()
+            .to_vec()
         );
         dst_offset += smv1::SEGMENT_HEADER_LENGTH;
 

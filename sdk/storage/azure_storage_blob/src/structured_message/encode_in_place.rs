@@ -37,14 +37,14 @@ pub fn wrap_body_with_structured_message(
         flags: smv1::Flags::CRC_64_NVME,
         segment_count: 1,
     }
-    .as_bytes();
+    .to_vec();
     let segment_header = smv1::SegmentHeader {
         segment_number: smv1::INIT_SEGMENT_NUM,
         content_length: body_len,
     }
-    .as_bytes();
-    let segment_footer = Bytes::from(crc_64_nvme.to_le_bytes().to_vec());
-    let stream_footer = Bytes::from(crc_64_nvme.to_le_bytes().to_vec());
+    .to_vec();
+    let segment_footer = crc_64_nvme.to_le_bytes().to_vec();
+    let stream_footer = crc_64_nvme.to_le_bytes().to_vec();
 
     Ok(MultiBodyStream::new([
         stream_header.into(),
@@ -61,7 +61,7 @@ pub fn wrap_body_with_structured_message(
 pub fn encode_bytes_in_structured_message(
     content: Bytes,
     segment_len: NonZero<usize>,
-) -> impl SeekableStream {
+) -> Vec<Bytes> {
     let content_crc = crc_inline(&content);
 
     let segments_with_checksums = if content.is_empty() {
@@ -88,7 +88,7 @@ pub fn encode_bytes_in_structured_message(
         flags: smv1::Flags::CRC_64_NVME,
         segment_count: segments_with_checksums.len() as u16,
     }
-    .as_bytes();
+    .into();
 
     // stream header + (header + content + footer)-per-segment + stream footer
     let mut sequence = Vec::with_capacity(1 + segments_with_checksums.len() * 3 + 1);
@@ -99,7 +99,7 @@ pub fn encode_bytes_in_structured_message(
             segment_number: i as u16 + smv1::INIT_SEGMENT_NUM,
             content_length: segment.len() as u64,
         }
-        .as_bytes();
+        .into();
         let segment_footer = Bytes::from(crc.to_le_bytes().to_vec());
 
         sequence.push(segment_header);
@@ -108,8 +108,7 @@ pub fn encode_bytes_in_structured_message(
     }
     let stream_footer = Bytes::from(content_crc.to_le_bytes().to_vec());
     sequence.push(stream_footer);
-
-    MultiBodyStream::new(sequence.into_iter().map(|bytes| bytes.into()))
+    sequence
 }
 
 fn crc_inline(data: &[u8]) -> u64 {
@@ -156,7 +155,7 @@ mod tests {
                     flags: smv1::Flags::CRC_64_NVME,
                     segment_count: 1,
                 }
-                .as_bytes()
+                .to_vec()
             );
             assert_eq!(
                 &dst[smv1::STREAM_HEADER_LENGTH
@@ -165,7 +164,7 @@ mod tests {
                     segment_number: 1,
                     content_length: DATA_LEN as u64,
                 }
-                .as_bytes()
+                .to_vec()
             );
             assert_eq!(
                 &dst[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH
@@ -321,7 +320,7 @@ mod tests {
                     flags: smv1::Flags::CRC_64_NVME,
                     segment_count: 1,
                 }
-                .as_bytes()
+                .to_vec()
             );
             // there's still a segment even when there's no body
             assert_eq!(
@@ -331,7 +330,7 @@ mod tests {
                     segment_number: 1,
                     content_length: 0,
                 }
-                .as_bytes()
+                .to_vec()
             );
             assert_eq!(
                 &dst[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH
@@ -357,46 +356,44 @@ mod tests {
         let data = rand::random::<[u8; DATA_LEN]>();
         let expected_data_crc = crc_inline(&data);
 
-        let mut sm_stream = encode_bytes_in_structured_message(
+        let structured_body = encode_bytes_in_structured_message(
             data.to_vec().into(),
             NonZero::new(SEGMENT_LEN).unwrap(),
-        );
+        )
+        .concat();
 
-        let mut dst = Vec::new();
+        assert_eq!(structured_body.len(), TOTAL_STRUCTURED_LEN);
         assert_eq!(
-            sm_stream.read_to_end(&mut dst).await.unwrap(),
-            TOTAL_STRUCTURED_LEN
-        );
-        assert_eq!(
-            &dst[..smv1::STREAM_HEADER_LENGTH],
+            &structured_body[..smv1::STREAM_HEADER_LENGTH],
             smv1::StreamHeader {
                 message_len: TOTAL_STRUCTURED_LEN as u64,
                 flags: smv1::Flags::CRC_64_NVME,
                 segment_count: 1,
             }
-            .as_bytes()
+            .to_vec()
         );
         assert_eq!(
-            &dst[smv1::STREAM_HEADER_LENGTH
+            &structured_body[smv1::STREAM_HEADER_LENGTH
                 ..smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH],
             smv1::SegmentHeader {
                 segment_number: 1,
                 content_length: DATA_LEN as u64,
             }
-            .as_bytes()
+            .to_vec()
         );
         assert_eq!(
-            &dst[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH
+            &structured_body[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH
                 ..smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + DATA_LEN],
             &data[..],
         );
         assert_eq!(
-            &dst[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + DATA_LEN
+            &structured_body[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + DATA_LEN
                 ..smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + DATA_LEN + 8],
             &expected_data_crc.to_le_bytes()[..],
         );
         assert_eq!(
-            &dst[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + DATA_LEN + 8..],
+            &structured_body
+                [smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + DATA_LEN + 8..],
             &expected_data_crc.to_le_bytes()[..],
         );
     }
@@ -415,82 +412,82 @@ mod tests {
         let expected_segment_1_crc = crc_inline(&data[SEGMENT_0_LEN..]);
         let expected_data_crc = crc_inline(&data);
 
-        let mut sm_stream = encode_bytes_in_structured_message(
+        let structured_body = encode_bytes_in_structured_message(
             data.to_vec().into(),
             NonZero::new(SEGMENT_0_LEN).unwrap(),
-        );
+        )
+        .concat();
 
-        let mut dst = Vec::new();
-        assert_eq!(
-            sm_stream.read_to_end(&mut dst).await.unwrap(),
-            TOTAL_STRUCTURED_LEN
-        );
+        assert_eq!(structured_body.len(), TOTAL_STRUCTURED_LEN);
         let mut dst_offset = 0;
 
         // check stream header
         assert_eq!(
-            &dst[..smv1::STREAM_HEADER_LENGTH],
+            &structured_body[..smv1::STREAM_HEADER_LENGTH],
             smv1::StreamHeader {
                 message_len: TOTAL_STRUCTURED_LEN as u64,
                 flags: smv1::Flags::CRC_64_NVME,
                 segment_count: 2,
             }
-            .as_bytes()
+            .to_vec()
         );
         dst_offset += smv1::STREAM_HEADER_LENGTH;
 
         // check segment 1 header
         assert_eq!(
-            &dst[dst_offset..dst_offset + smv1::SEGMENT_HEADER_LENGTH],
+            &structured_body[dst_offset..dst_offset + smv1::SEGMENT_HEADER_LENGTH],
             smv1::SegmentHeader {
                 segment_number: 1,
                 content_length: SEGMENT_0_LEN as u64,
             }
-            .as_bytes()
+            .to_vec()
         );
         dst_offset += smv1::SEGMENT_HEADER_LENGTH;
 
         // check segment 1 content
         assert_eq!(
-            &dst[dst_offset..dst_offset + SEGMENT_0_LEN],
+            &structured_body[dst_offset..dst_offset + SEGMENT_0_LEN],
             &data[..SEGMENT_0_LEN],
         );
         dst_offset += SEGMENT_0_LEN;
 
         // check segment 1 footer
         assert_eq!(
-            &dst[dst_offset..dst_offset + 8],
+            &structured_body[dst_offset..dst_offset + 8],
             &expected_segment_0_crc.to_le_bytes()[..],
         );
         dst_offset += 8;
 
         // check segment 2 header
         assert_eq!(
-            &dst[dst_offset..dst_offset + smv1::SEGMENT_HEADER_LENGTH],
+            &structured_body[dst_offset..dst_offset + smv1::SEGMENT_HEADER_LENGTH],
             smv1::SegmentHeader {
                 segment_number: 2,
                 content_length: (DATA_LEN - SEGMENT_0_LEN) as u64,
             }
-            .as_bytes()
+            .to_vec()
         );
         dst_offset += smv1::SEGMENT_HEADER_LENGTH;
 
         // check segment 2 content
         assert_eq!(
-            &dst[dst_offset..dst_offset + DATA_LEN - SEGMENT_0_LEN],
+            &structured_body[dst_offset..dst_offset + DATA_LEN - SEGMENT_0_LEN],
             &data[SEGMENT_0_LEN..],
         );
         dst_offset += DATA_LEN - SEGMENT_0_LEN;
 
         // check segment 2 footer
         assert_eq!(
-            &dst[dst_offset..dst_offset + 8],
+            &structured_body[dst_offset..dst_offset + 8],
             &expected_segment_1_crc.to_le_bytes()[..],
         );
         dst_offset += 8;
 
         // check stream footer
-        assert_eq!(&dst[dst_offset..], &expected_data_crc.to_le_bytes()[..],);
+        assert_eq!(
+            &structured_body[dst_offset..],
+            &expected_data_crc.to_le_bytes()[..],
+        );
     }
 
     #[test]
@@ -499,12 +496,13 @@ mod tests {
         let data = rand::random::<[u8; DATA_LEN]>();
 
         for segment_len in [usize::MAX, DATA_LEN, DATA_LEN + 1, DATA_LEN - 1, 1] {
-            let sm_stream = encode_bytes_in_structured_message(
+            let structured_body = encode_bytes_in_structured_message(
                 data.to_vec().into(),
                 NonZero::new(segment_len).unwrap(),
-            );
+            )
+            .concat();
             assert_eq!(
-                sm_stream.len().unwrap(),
+                structured_body.len() as u64,
                 derive_structured_message_length(
                     DATA_LEN as u64,
                     NonZero::new(segment_len as u64).unwrap()
@@ -514,64 +512,40 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_encode_bytes_in_structured_message_reset() {
-        const DATA_LEN: usize = 1024;
-        const SEGMENT_LEN: NonZero<usize> = NonZero::new(999).unwrap();
-
-        let data = rand::random::<[u8; DATA_LEN]>();
-
-        let mut sm_stream = encode_bytes_in_structured_message(data.to_vec().into(), SEGMENT_LEN);
-
-        let mut dst_1 = Vec::new();
-        let mut dst_2 = Vec::new();
-
-        sm_stream.read_to_end(&mut dst_1).await.unwrap();
-        sm_stream.reset().await.unwrap();
-        sm_stream.read_to_end(&mut dst_2).await.unwrap();
-
-        assert_eq!(dst_1, dst_2);
-    }
-
-    #[tokio::test]
     async fn test_encode_bytes_empty_message() {
         const TOTAL_STRUCTURED_LEN: usize =
             derive_structured_message_length(0, NonZero::new(usize::MAX as u64).unwrap()) as usize;
 
-        let mut sm_stream =
-            encode_bytes_in_structured_message(vec![].into(), NonZero::new(usize::MAX).unwrap());
-
-        let mut dst = Vec::new();
-        assert_eq!(
-            sm_stream.read_to_end(&mut dst).await.unwrap(),
-            TOTAL_STRUCTURED_LEN
-        );
+        let structured_body =
+            encode_bytes_in_structured_message(vec![].into(), NonZero::new(usize::MAX).unwrap())
+                .concat();
 
         assert_eq!(
-            &dst[..smv1::STREAM_HEADER_LENGTH],
+            &structured_body[..smv1::STREAM_HEADER_LENGTH],
             smv1::StreamHeader {
                 message_len: TOTAL_STRUCTURED_LEN as u64,
                 flags: smv1::Flags::CRC_64_NVME,
                 segment_count: 1,
             }
-            .as_bytes()
+            .to_vec()
         );
         // there's still a segment even when there's no body
         assert_eq!(
-            &dst[smv1::STREAM_HEADER_LENGTH
+            &structured_body[smv1::STREAM_HEADER_LENGTH
                 ..smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH],
             smv1::SegmentHeader {
                 segment_number: 1,
                 content_length: 0,
             }
-            .as_bytes()
+            .to_vec()
         );
         assert_eq!(
-            &dst[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH
+            &structured_body[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH
                 ..smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + 8],
             &0u64.to_le_bytes()[..],
         );
         assert_eq!(
-            &dst[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + 8..],
+            &structured_body[smv1::STREAM_HEADER_LENGTH + smv1::SEGMENT_HEADER_LENGTH + 8..],
             &0u64.to_le_bytes()[..],
         );
     }
