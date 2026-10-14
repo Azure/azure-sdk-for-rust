@@ -13,8 +13,7 @@
 - Added an `arrow` feature flag, enabled by default, that controls Apache Arrow support for `BlobContainerClient::list_blobs()` and `BlobContainerClient::list_blobs_hierarchical()`. When disabled, Arrow dependencies are excluded and listing uses XML only. `end_before` requires this feature.
 - Added `end_before` to `BlobContainerClientListBlobsOptions` and `BlobContainerClientListBlobsHierarchicalOptions`. `end_before` is only supported with the Apache Arrow response format.
 - The service-calculated CRC64 is now surfaced as `content_crc64` on upload responses, alongside `content_md5`, when a content MD5 is provided with the request. This applies to `stage_block`, `stage_block_from_url`, `upload_pages`, `upload_pages_from_url`, `append_block`, `append_block_from_url`, `upload` and `upload_blob_from_url`.
-- Added the `AccessTier::Smart` and `ArchiveStatus::RehydratePendingToSmart` enum variants.
-- Added `access_tier`, `access_tier_changed_on`, `access_tier_inferred`, and `smart_access_tier` to `BlobDownloadProperties` and marked the struct as non-exhaustive.
+- Added `access_tier`, `access_tier_changed_on`, and `access_tier_inferred` to `BlobDownloadProperties` and marked the struct as non-exhaustive.
 - Added `BlobClient::start_copy_from_url()` and `BlobClient::abort_copy()` for asynchronous blob copy operations.
 
 ## 1.1.0-beta.2 (2026-08-11)
