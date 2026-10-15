@@ -168,8 +168,16 @@ impl CosmosResponse {
         &mut self,
         utf8_decoding_mode: crate::options::Utf8DecodingMode,
     ) -> crate::error::Result<()> {
-        let invalid_utf8_sequence_count =
-            self.payload.transcode_body_to_text(utf8_decoding_mode)?;
+        let diagnostics = Arc::clone(&self.diagnostics);
+        let invalid_utf8_sequence_count = self
+            .payload
+            .transcode_body_to_text(utf8_decoding_mode)
+            .map_err(|error| {
+            let diagnostics = Arc::new(diagnostics.clone_with_status(error.status()));
+            crate::error::CosmosErrorBuilder::from_error(error)
+                .with_diagnostics(diagnostics)
+                .build()
+        })?;
         if invalid_utf8_sequence_count != 0 {
             Arc::make_mut(&mut self.diagnostics)
                 .add_invalid_utf8_sequence_count(invalid_utf8_sequence_count);
@@ -400,5 +408,27 @@ mod tests {
         let diagnostics = result.diagnostics();
         let diagnostics_status = diagnostics.status().unwrap();
         assert_eq!(diagnostics_status.status_code(), StatusCode::NotFound);
+    }
+
+    #[test]
+    fn transcode_failure_preserves_response_diagnostics() {
+        let diagnostics = make_diagnostics(Some(StatusCode::Ok), None);
+        let activity_id = diagnostics.activity_id().clone();
+        let mut response = CosmosResponse::new(
+            vec![crate::binary_json::PREAMBLE],
+            CosmosResponseHeaders::new(),
+            make_status(Some(StatusCode::Ok), None),
+            diagnostics,
+        );
+
+        let error = response
+            .transcode_body_to_text_with_utf8_mode(crate::options::Utf8DecodingMode::Lossy)
+            .expect_err("a truncated binary response must fail transcoding");
+        let error_diagnostics = error
+            .diagnostics()
+            .expect("transcoding errors must retain response diagnostics");
+
+        assert_eq!(error_diagnostics.activity_id(), &activity_id);
+        assert_eq!(error_diagnostics.status().copied(), Some(error.status()));
     }
 }

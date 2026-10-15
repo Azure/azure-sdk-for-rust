@@ -8025,6 +8025,10 @@ mod tests {
             crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID,
             "got: {err}",
         );
+        assert!(
+            err.diagnostics().is_some(),
+            "the transcode error must retain the page diagnostics",
+        );
 
         let err = plan
             .to_continuation_token()
