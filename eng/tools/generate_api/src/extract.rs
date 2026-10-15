@@ -799,11 +799,11 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
     if let Some(attribute) = synthesize_pin_project_attribute(krate, item, &attributes) {
         prepend_attributes(&mut attributes, &[attribute]);
     }
-    if matches!(item.inner, ItemEnum::Trait(_)) && trait_uses_async_trait(krate, item) {
+    if let Some(mode) = trait_async_trait_mode(krate, item) {
         prepend_attributes(
             &mut attributes,
             &[ApiAttribute {
-                text: "#[async_trait]".to_string(),
+                text: mode.attribute().to_string(),
             }],
         );
     }
@@ -1168,7 +1168,12 @@ fn collect_function_declaration_path_references(
         );
     }
     if let Some(output) = async_trait_output(function) {
-        collect_type_path_references_with_elision(krate, output, &synthetic_lifetimes, references);
+        collect_type_path_references_with_elision(
+            krate,
+            output.type_,
+            &synthetic_lifetimes,
+            references,
+        );
     } else if let Some(output) = &function.sig.output {
         collect_type_path_references_with_elision(krate, output, &synthetic_lifetimes, references);
     }
@@ -1916,11 +1921,11 @@ fn extract_trait_impl(
     let self_type = render_type(&impl_block.for_);
     let declaration = render_trait_impl_declaration(impl_block, trait_path, &self_type);
     let mut attributes = extract_attributes(item);
-    if impl_uses_async_trait(krate, impl_block) {
+    if let Some(mode) = impl_async_trait_mode(krate, impl_block) {
         prepend_attributes(
             &mut attributes,
             &[ApiAttribute {
-                text: "#[async_trait]".to_string(),
+                text: mode.attribute().to_string(),
             }],
         );
     }
@@ -2862,9 +2867,12 @@ fn render_function_declaration(name: &str, function: &Function, is_public: bool)
     declaration.push(')');
 
     if let Some(output) = async_trait_output {
-        if !matches!(output, Type::Tuple(types) if types.is_empty()) {
+        if !matches!(output.type_, Type::Tuple(types) if types.is_empty()) {
             declaration.push_str(" -> ");
-            declaration.push_str(&render_type_with_elision(output, &synthetic_lifetimes));
+            declaration.push_str(&render_type_with_elision(
+                output.type_,
+                &synthetic_lifetimes,
+            ));
         }
     } else if let Some(output) = &function.sig.output {
         declaration.push_str(" -> ");
@@ -3738,32 +3746,56 @@ fn render_assoc_constraint_with_elision(
     rendered
 }
 
-fn trait_uses_async_trait(krate: &Crate, item: &Item) -> bool {
-    let ItemEnum::Trait(trait_item) = &item.inner else {
-        return false;
-    };
-
-    trait_item
-        .items
-        .iter()
-        .filter_map(|item_id| krate.index.get(item_id))
-        .filter_map(|item| match &item.inner {
-            ItemEnum::Function(function) => Some(function),
-            _ => None,
-        })
-        .any(function_uses_async_trait)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum AsyncTraitMode {
+    Send,
+    NotSend,
 }
 
-fn impl_uses_async_trait(krate: &Crate, impl_block: &Impl) -> bool {
-    impl_block
-        .items
+impl AsyncTraitMode {
+    fn attribute(self) -> &'static str {
+        match self {
+            Self::Send => "#[async_trait]",
+            Self::NotSend => "#[async_trait(?Send)]",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct AsyncTraitOutput<'a> {
+    type_: &'a Type,
+    mode: AsyncTraitMode,
+}
+
+fn trait_async_trait_mode(krate: &Crate, item: &Item) -> Option<AsyncTraitMode> {
+    let ItemEnum::Trait(trait_item) = &item.inner else {
+        return None;
+    };
+
+    async_trait_mode(krate, &trait_item.items)
+}
+
+fn impl_async_trait_mode(krate: &Crate, impl_block: &Impl) -> Option<AsyncTraitMode> {
+    async_trait_mode(krate, &impl_block.items)
+}
+
+fn async_trait_mode(krate: &Crate, item_ids: &[Id]) -> Option<AsyncTraitMode> {
+    item_ids
         .iter()
         .filter_map(|item_id| krate.index.get(item_id))
         .filter_map(|item| match &item.inner {
             ItemEnum::Function(function) => Some(function),
             _ => None,
         })
-        .any(function_uses_async_trait)
+        .filter_map(async_trait_output)
+        .map(|output| output.mode)
+        .reduce(|left, right| {
+            if left == AsyncTraitMode::NotSend || right == AsyncTraitMode::NotSend {
+                AsyncTraitMode::NotSend
+            } else {
+                AsyncTraitMode::Send
+            }
+        })
 }
 
 fn synthetic_async_trait_lifetimes(function: &Function) -> HashSet<String> {
@@ -3785,7 +3817,7 @@ fn function_uses_async_trait(function: &Function) -> bool {
     async_trait_output(function).is_some()
 }
 
-fn async_trait_output(function: &Function) -> Option<&Type> {
+fn async_trait_output(function: &Function) -> Option<AsyncTraitOutput<'_>> {
     if synthetic_async_trait_lifetimes(function).is_empty() {
         return None;
     }
@@ -3812,7 +3844,17 @@ fn async_trait_output(function: &Function) -> Option<&Type> {
         return None;
     }
 
-    dyn_trait.traits.iter().find_map(|bound| {
+    let mode = if dyn_trait
+        .traits
+        .iter()
+        .any(|bound| last_path_segment(&bound.trait_.path) == "Send")
+    {
+        AsyncTraitMode::Send
+    } else {
+        AsyncTraitMode::NotSend
+    };
+
+    let type_ = dyn_trait.traits.iter().find_map(|bound| {
         if last_path_segment(&bound.trait_.path) != "Future" {
             return None;
         }
@@ -3831,7 +3873,9 @@ fn async_trait_output(function: &Function) -> Option<&Type> {
                 _ => None,
             }
         })
-    })
+    })?;
+
+    Some(AsyncTraitOutput { type_, mode })
 }
 
 fn single_type_argument(path: &Path) -> Option<&Type> {

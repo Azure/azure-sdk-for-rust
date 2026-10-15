@@ -308,6 +308,7 @@ fn extract_item_synthesizes_async_trait_and_elides_synthetic_lifetimes() {
                 constraints: Vec::new(),
             })),
             false,
+            true,
         )
         .with_attrs(vec![
             "#[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]"
@@ -338,6 +339,7 @@ fn extract_item_synthesizes_async_trait_and_elides_synthetic_lifetimes() {
                 args: vec![GenericArg::Type(Type::Primitive("bool".to_string()))],
                 constraints: Vec::new(),
             })),
+            true,
             true,
         )
         .with_attrs(vec![
@@ -394,6 +396,99 @@ fn extract_item_synthesizes_async_trait_and_elides_synthetic_lifetimes() {
     assert!(
         extracted.members[0].attributes.is_empty(),
         "async-trait expansion attributes should be removed"
+    );
+}
+
+#[test]
+fn preserves_non_send_async_trait_mode_for_traits_and_impls() {
+    let trait_id = Id(1);
+    let trait_function_id = Id(2);
+    let struct_id = Id(3);
+    let impl_id = Id(4);
+    let impl_function_id = Id(5);
+    let krate = crate_with_items(vec![
+        item(
+            trait_id,
+            Some("LocalPolling"),
+            ItemEnum::Trait(Trait {
+                is_auto: false,
+                is_unsafe: false,
+                is_dyn_compatible: true,
+                items: vec![trait_function_id],
+                generics: empty_generics(),
+                bounds: Vec::new(),
+                implementations: vec![impl_id],
+            }),
+        ),
+        async_trait_function(
+            trait_function_id,
+            Some("poll"),
+            Type::Tuple(Vec::new()),
+            false,
+            false,
+        ),
+        item(
+            struct_id,
+            Some("LocalPoller"),
+            ItemEnum::Struct(Struct {
+                kind: StructKind::Unit,
+                generics: empty_generics(),
+                impls: vec![impl_id],
+            }),
+        ),
+        impl_item_with_items(
+            impl_id,
+            Some(path("LocalPolling", trait_id.0)),
+            "LocalPoller",
+            struct_id,
+            false,
+            vec![impl_function_id],
+        ),
+        async_trait_function(
+            impl_function_id,
+            Some("poll"),
+            Type::Tuple(Vec::new()),
+            true,
+            false,
+        ),
+    ]);
+
+    let trait_item = krate.index.get(&trait_id).expect("trait item present");
+    let extracted_trait = extract_item(&krate, trait_item);
+    assert!(
+        extracted_trait
+            .attributes
+            .iter()
+            .any(|attribute| attribute.text == "#[async_trait(?Send)]"),
+        "trait should preserve the non-Send async-trait mode"
+    );
+    assert_eq!(
+        extracted_trait.members[0].declaration,
+        "async fn poll(&self);"
+    );
+
+    let impl_item = krate.index.get(&impl_id).expect("impl item present");
+    let ItemEnum::Impl(impl_block) = &impl_item.inner else {
+        panic!("expected impl item");
+    };
+    let extracted_impl = extract_trait_impl(
+        &krate,
+        impl_item,
+        impl_block,
+        krate.index.get(&struct_id),
+        Some(ApiItemKind::Struct),
+    )
+    .expect("trait impl should be extracted");
+    assert!(
+        extracted_impl
+            .attributes
+            .iter()
+            .any(|attribute| attribute.text == "#[async_trait(?Send)]"),
+        "trait impl should preserve the non-Send async-trait mode"
+    );
+    assert_eq!(
+        extracted_impl.members[0].declaration,
+        "async fn poll(&self);"
     );
 }
 
@@ -2545,29 +2640,32 @@ fn inherent_method(id: Id, name: &str) -> Item {
     )
 }
 
-fn async_trait_function(id: Id, name: Option<&str>, output: Type, has_body: bool) -> Item {
+fn async_trait_function(
+    id: Id,
+    name: Option<&str>,
+    output: Type,
+    has_body: bool,
+    is_send: bool,
+) -> Item {
+    let mut traits = vec![rustdoc_types::PolyTrait {
+        trait_: path("::core::future::Future", 902).with_args(GenericArgs::AngleBracketed {
+            args: Vec::new(),
+            constraints: vec![rustdoc_types::AssocItemConstraint {
+                name: "Output".to_string(),
+                args: None,
+                binding: rustdoc_types::AssocItemConstraintKind::Equality(Term::Type(output)),
+            }],
+        }),
+        generic_params: Vec::new(),
+    }];
+    if is_send {
+        traits.push(rustdoc_types::PolyTrait {
+            trait_: path("::core::marker::Send", 903),
+            generic_params: Vec::new(),
+        });
+    }
     let future = Type::DynTrait(rustdoc_types::DynTrait {
-        traits: vec![
-            rustdoc_types::PolyTrait {
-                trait_: path("::core::future::Future", 902).with_args(
-                    GenericArgs::AngleBracketed {
-                        args: Vec::new(),
-                        constraints: vec![rustdoc_types::AssocItemConstraint {
-                            name: "Output".to_string(),
-                            args: None,
-                            binding: rustdoc_types::AssocItemConstraintKind::Equality(Term::Type(
-                                output,
-                            )),
-                        }],
-                    },
-                ),
-                generic_params: Vec::new(),
-            },
-            rustdoc_types::PolyTrait {
-                trait_: path("::core::marker::Send", 903),
-                generic_params: Vec::new(),
-            },
-        ],
+        traits,
         lifetime: Some("'async_trait".to_string()),
     });
     let boxed = Type::ResolvedPath(path("Box", 901).with_args(GenericArgs::AngleBracketed {

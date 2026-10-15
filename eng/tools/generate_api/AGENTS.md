@@ -209,6 +209,7 @@ Signature normalization:
 For traits and trait impls whose rustdoc-expanded methods carry synthetic async-trait lifetimes:
 
 - synthesize `#[async_trait]`
+- preserve `#[async_trait(?Send)]` when the expanded future has no `Send` bound
 - restore the original `async fn` signature and future output type
 - elide synthetic `'lifeN` and `'async_trait` lifetimes from signatures
 - remove empty generic parameter lists after elision
