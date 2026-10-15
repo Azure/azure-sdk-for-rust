@@ -84,11 +84,6 @@ pub struct ChangeFeedOptions {
     /// Session token for session-consistent reads.
     pub session_token: Option<SessionToken>,
 
-    /// Controls how invalid UTF-8 in change feed responses is handled.
-    ///
-    /// Defaults to [`Utf8DecodingMode::Strict`].
-    pub utf8_decoding_mode: Utf8DecodingMode,
-
     /// Which change feed mode to read. Defaults to [`ChangeFeedMode::LatestVersion`].
     pub mode: ChangeFeedMode,
 }
@@ -107,8 +102,11 @@ impl ChangeFeedOptions {
     }
 
     /// Sets how invalid UTF-8 in change feed responses is handled.
+    ///
+    /// This convenience method sets
+    /// [`OperationOptions::utf8_decoding_mode`] for this request.
     pub fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
-        self.utf8_decoding_mode = mode;
+        self.operation.utf8_decoding_mode = Some(mode);
         self
     }
 
@@ -164,6 +162,9 @@ mod tests {
             .with_utf8_decoding_mode(Utf8DecodingMode::Lossy);
 
         assert_eq!(opts.mode, ChangeFeedMode::LatestVersion);
-        assert_eq!(opts.utf8_decoding_mode, Utf8DecodingMode::Lossy);
+        assert_eq!(
+            opts.operation.utf8_decoding_mode,
+            Some(Utf8DecodingMode::Lossy)
+        );
     }
 }

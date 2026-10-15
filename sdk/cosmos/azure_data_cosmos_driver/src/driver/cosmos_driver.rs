@@ -2846,6 +2846,13 @@ impl CosmosDriver {
         options: &OperationOptions,
         resolved_binary: Option<crate::options::BinaryEncodingOptions>,
     ) -> CosmosOperation {
+        let utf8_decoding_mode = self
+            .operation_options_view(options)
+            .utf8_decoding_mode()
+            .copied()
+            .unwrap_or_default();
+        let operation = operation.with_utf8_decoding_mode(utf8_decoding_mode);
+
         if !Self::binary_negotiates_response(operation.resource_type(), operation.operation_type())
         {
             return operation;
@@ -8240,10 +8247,10 @@ mod tests {
 
         let options = OperationOptionsBuilder::new()
             .with_binary_encoding(crate::options::BinaryEncodingOptions::new().with_enabled(true))
+            .with_utf8_decoding_mode(crate::options::Utf8DecodingMode::Lossy)
             .build();
         let operation = driver.apply_response_negotiation(
-            binary_encoding_test_operation(b"{}".to_vec())
-                .with_utf8_decoding_mode(crate::options::Utf8DecodingMode::Lossy),
+            binary_encoding_test_operation(b"{}".to_vec()),
             &options,
             None,
         );

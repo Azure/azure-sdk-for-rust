@@ -506,13 +506,13 @@ impl CosmosOperation {
     ///
     /// [`Utf8DecodingMode::Lossy`] preserves binary response negotiation but
     /// returns recovered text JSON so typed deserialization remains strict.
-    pub fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
+    pub(crate) fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
         self.utf8_decoding_mode = mode;
         self
     }
 
     /// Returns how invalid UTF-8 in this operation's response is handled.
-    pub fn utf8_decoding_mode(&self) -> Utf8DecodingMode {
+    pub(crate) fn utf8_decoding_mode(&self) -> Utf8DecodingMode {
         self.utf8_decoding_mode
     }
 

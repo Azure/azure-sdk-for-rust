@@ -26,11 +26,6 @@ pub struct ItemReadOptions {
     /// Session token for session-consistent reads.
     pub session_token: Option<SessionToken>,
 
-    /// Controls how invalid UTF-8 in the response is handled.
-    ///
-    /// Defaults to [`Utf8DecodingMode::Strict`].
-    pub utf8_decoding_mode: Utf8DecodingMode,
-
     /// Conditional ETag check. For reads, typically [`Precondition::IfNoneMatch`]
     /// (returns 304 Not Modified if unchanged).
     pub precondition: Option<Precondition>,
@@ -44,8 +39,11 @@ impl ItemReadOptions {
     }
 
     /// Sets how invalid UTF-8 in the response is handled.
+    ///
+    /// This convenience method sets
+    /// [`OperationOptions::utf8_decoding_mode`] for this request.
     pub fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
-        self.utf8_decoding_mode = mode;
+        self.operation.utf8_decoding_mode = Some(mode);
         self
     }
 
@@ -67,16 +65,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn item_read_utf8_decoding_is_strict_by_default_and_configurable() {
+    fn item_read_utf8_decoding_is_configurable() {
         assert_eq!(
-            ItemReadOptions::default().utf8_decoding_mode,
-            Utf8DecodingMode::Strict
+            ItemReadOptions::default().operation.utf8_decoding_mode,
+            None
         );
         assert_eq!(
             ItemReadOptions::default()
                 .with_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .operation
                 .utf8_decoding_mode,
-            Utf8DecodingMode::Lossy
+            Some(Utf8DecodingMode::Lossy)
         );
     }
 }
