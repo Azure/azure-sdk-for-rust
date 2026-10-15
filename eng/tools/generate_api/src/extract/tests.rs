@@ -280,8 +280,11 @@ fn extracts_declaration_path_references_for_resolved_result_paths() {
 
 #[test]
 fn extract_item_synthesizes_async_trait_and_elides_synthetic_lifetimes() {
-    let function_id = Id(2);
+    let trait_function_id = Id(2);
     let trait_id = Id(1);
+    let struct_id = Id(3);
+    let impl_id = Id(4);
+    let impl_function_id = Id(5);
 
     let krate = crate_with_items(vec![
         item(
@@ -291,41 +294,56 @@ fn extract_item_synthesizes_async_trait_and_elides_synthetic_lifetimes() {
                 is_auto: false,
                 is_unsafe: false,
                 is_dyn_compatible: true,
-                items: vec![function_id],
+                items: vec![trait_function_id],
                 generics: empty_generics(),
                 bounds: Vec::new(),
-                implementations: Vec::new(),
+                implementations: vec![impl_id],
             }),
         ),
-        item(
-            function_id,
+        async_trait_function(
+            trait_function_id,
             Some("poll"),
-            ItemEnum::Function(Function {
-                sig: FunctionSignature {
-                    inputs: vec![(
-                        "self".to_string(),
-                        Type::BorrowedRef {
-                            lifetime: Some("'life0".to_string()),
-                            is_mutable: false,
-                            type_: Box::new(Type::Generic("Self".to_string())),
-                        },
-                    )],
-                    output: None,
-                    is_c_variadic: false,
-                },
-                generics: Generics {
-                    params: vec![lifetime_param("'life0"), lifetime_param("'async_trait")],
-                    where_predicates: Vec::new(),
-                },
-                header: FunctionHeader {
-                    is_const: false,
-                    is_unsafe: false,
-                    is_async: false,
-                    abi: Abi::Rust,
-                },
-                has_body: false,
+            Type::ResolvedPath(path("Result", 10).with_args(GenericArgs::AngleBracketed {
+                args: vec![GenericArg::Type(Type::Primitive("bool".to_string()))],
+                constraints: Vec::new(),
+            })),
+            false,
+        )
+        .with_attrs(vec![
+            "#[allow(elided_named_lifetimes, clippy::type_complexity, clippy::type_repetition_in_bounds)]"
+                .to_string(),
+            "#[must_use]".to_string(),
+        ]),
+        item(
+            struct_id,
+            Some("Poller"),
+            ItemEnum::Struct(Struct {
+                kind: StructKind::Unit,
+                generics: empty_generics(),
+                impls: vec![impl_id],
             }),
         ),
+        impl_item_with_items(
+            impl_id,
+            Some(path("Polling", trait_id.0)),
+            "Poller",
+            struct_id,
+            false,
+            vec![impl_function_id],
+        ),
+        async_trait_function(
+            impl_function_id,
+            Some("poll"),
+            Type::ResolvedPath(path("Result", 10).with_args(GenericArgs::AngleBracketed {
+                args: vec![GenericArg::Type(Type::Primitive("bool".to_string()))],
+                constraints: Vec::new(),
+            })),
+            true,
+        )
+        .with_attrs(vec![
+            "#[allow(elided_named_lifetimes, clippy::async_yields_async, clippy::type_complexity, clippy::type_repetition_in_bounds)]"
+                .to_string(),
+        ]),
     ]);
 
     let item = krate.index.get(&trait_id).expect("trait item present");
@@ -339,7 +357,44 @@ fn extract_item_synthesizes_async_trait_and_elides_synthetic_lifetimes() {
         "trait should synthesize #[async_trait]"
     );
     assert_eq!(extracted.members.len(), 1);
-    assert_eq!(extracted.members[0].declaration, "fn poll(&self);");
+    assert_eq!(
+        extracted.members[0].declaration,
+        "async fn poll(&self) -> Result<bool>;"
+    );
+    assert!(
+        extracted.members[0].attributes.is_empty(),
+        "async-trait expansion attributes should be removed"
+    );
+
+    let impl_item = krate.index.get(&impl_id).expect("impl item present");
+    let ItemEnum::Impl(impl_block) = &impl_item.inner else {
+        panic!("expected impl item");
+    };
+    let extracted = extract_trait_impl(
+        &krate,
+        impl_item,
+        impl_block,
+        krate.index.get(&struct_id),
+        Some(ApiItemKind::Struct),
+    )
+    .expect("trait impl should be extracted");
+
+    assert!(
+        extracted
+            .attributes
+            .iter()
+            .any(|attribute| attribute.text == "#[async_trait]"),
+        "trait impl should synthesize #[async_trait]"
+    );
+    assert_eq!(extracted.members.len(), 1);
+    assert_eq!(
+        extracted.members[0].declaration,
+        "async fn poll(&self) -> Result<bool>;"
+    );
+    assert!(
+        extracted.members[0].attributes.is_empty(),
+        "async-trait expansion attributes should be removed"
+    );
 }
 
 #[test]
@@ -2486,6 +2541,82 @@ fn inherent_method(id: Id, name: &str) -> Item {
                 abi: Abi::Rust,
             },
             has_body: true,
+        }),
+    )
+}
+
+fn async_trait_function(id: Id, name: Option<&str>, output: Type, has_body: bool) -> Item {
+    let future = Type::DynTrait(rustdoc_types::DynTrait {
+        traits: vec![
+            rustdoc_types::PolyTrait {
+                trait_: path("::core::future::Future", 902).with_args(
+                    GenericArgs::AngleBracketed {
+                        args: Vec::new(),
+                        constraints: vec![rustdoc_types::AssocItemConstraint {
+                            name: "Output".to_string(),
+                            args: None,
+                            binding: rustdoc_types::AssocItemConstraintKind::Equality(Term::Type(
+                                output,
+                            )),
+                        }],
+                    },
+                ),
+                generic_params: Vec::new(),
+            },
+            rustdoc_types::PolyTrait {
+                trait_: path("::core::marker::Send", 903),
+                generic_params: Vec::new(),
+            },
+        ],
+        lifetime: Some("'async_trait".to_string()),
+    });
+    let boxed = Type::ResolvedPath(path("Box", 901).with_args(GenericArgs::AngleBracketed {
+        args: vec![GenericArg::Type(future)],
+        constraints: Vec::new(),
+    }));
+    let pinned = Type::ResolvedPath(path("::core::pin::Pin", 900).with_args(
+        GenericArgs::AngleBracketed {
+            args: vec![GenericArg::Type(boxed)],
+            constraints: Vec::new(),
+        },
+    ));
+
+    item(
+        id,
+        name,
+        ItemEnum::Function(Function {
+            sig: FunctionSignature {
+                inputs: vec![(
+                    "self".to_string(),
+                    Type::BorrowedRef {
+                        lifetime: Some("'life0".to_string()),
+                        is_mutable: false,
+                        type_: Box::new(Type::Generic("Self".to_string())),
+                    },
+                )],
+                output: Some(pinned),
+                is_c_variadic: false,
+            },
+            generics: Generics {
+                params: vec![lifetime_param("'life0"), lifetime_param("'async_trait")],
+                where_predicates: vec![
+                    bound_predicate(
+                        Type::Generic("Self".to_string()),
+                        vec![GenericBound::Outlives("'async_trait".to_string())],
+                    ),
+                    WherePredicate::LifetimePredicate {
+                        lifetime: "'life0".to_string(),
+                        outlives: vec!["'async_trait".to_string()],
+                    },
+                ],
+            },
+            header: FunctionHeader {
+                is_const: false,
+                is_unsafe: false,
+                is_async: false,
+                abi: Abi::Rust,
+            },
+            has_body,
         }),
     )
 }
