@@ -128,10 +128,10 @@ pub(crate) fn transcode_to_text_with_utf8_mode_and_count(
     if !is_binary(buffer) {
         return match utf8_decoding_mode {
             Utf8DecodingMode::Strict => Ok((buffer.to_vec(), 0)),
-            Utf8DecodingMode::Lossy => Ok((
-                String::from_utf8_lossy(buffer).into_owned().into_bytes(),
-                invalid_utf8_sequence_count(buffer),
-            )),
+            Utf8DecodingMode::Lossy => {
+                let (text, invalid_utf8_sequence_count) = decode_utf8_lossy(buffer);
+                Ok((text.into_bytes(), invalid_utf8_sequence_count))
+            }
         };
     }
     let (mut value, invalid_utf8_sequence_count) =
@@ -142,17 +142,19 @@ pub(crate) fn transcode_to_text_with_utf8_mode_and_count(
         .map_err(|e| BinaryError::Custom(format!("failed to re-serialize decoded value: {e}")))
 }
 
-pub(crate) fn invalid_utf8_sequence_count(mut buffer: &[u8]) -> u64 {
-    let mut count = 0;
-    while let Err(error) = std::str::from_utf8(buffer) {
-        count += 1;
-        let invalid_start = error.valid_up_to();
-        match error.error_len() {
-            Some(invalid_len) => buffer = &buffer[invalid_start + invalid_len..],
-            None => break,
+pub(crate) fn decode_utf8_lossy(buffer: &[u8]) -> (String, u64) {
+    let mut text = String::with_capacity(buffer.len());
+    let mut invalid_utf8_sequence_count = 0;
+
+    for chunk in buffer.utf8_chunks() {
+        text.push_str(chunk.valid());
+        if !chunk.invalid().is_empty() {
+            text.push('\u{FFFD}');
+            invalid_utf8_sequence_count += 1;
         }
     }
-    count
+
+    (text, invalid_utf8_sequence_count)
 }
 
 /// The integer form of an integral `Double`, or `None` when the value must stay
@@ -350,6 +352,24 @@ mod tests {
         assert!(!is_binary(&[]));
         // A different leading byte is not binary even if 0x80 appears later.
         assert!(!is_binary(&[0x00, PREAMBLE]));
+    }
+
+    #[test]
+    fn lossy_utf8_decoding_matches_standard_replacement_and_counts_sequences() {
+        let cases: &[(&[u8], u64)] = &[
+            (b"valid", 0),
+            (&[b'a', 0xFF, b'b'], 1),
+            (&[0xF0, 0x28, 0x8C, 0x28], 2),
+            (&[0xFF, 0xFE], 2),
+            (&[0xE2, 0x82], 1),
+            (&[0xEF, 0xBF, 0xBD], 0),
+        ];
+
+        for &(input, expected_count) in cases {
+            let (actual, count) = decode_utf8_lossy(input);
+            assert_eq!(actual, String::from_utf8_lossy(input));
+            assert_eq!(count, expected_count, "input: {input:?}");
+        }
     }
 
     /// Builds `depth` nested arrays around a scalar without parsing, so the

@@ -334,11 +334,10 @@ impl<'a> Reader<'a> {
                 })
             }
             Utf8DecodingMode::Lossy => {
-                self.invalid_utf8_sequence_count.set(
-                    self.invalid_utf8_sequence_count.get()
-                        + super::invalid_utf8_sequence_count(bytes),
-                );
-                Ok(String::from_utf8_lossy(bytes).into_owned())
+                let (value, count) = super::decode_utf8_lossy(bytes);
+                self.invalid_utf8_sequence_count
+                    .set(self.invalid_utf8_sequence_count.get() + count);
+                Ok(value)
             }
         }
     }
