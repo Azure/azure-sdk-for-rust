@@ -1501,6 +1501,12 @@ routing snapshot cache. Partition transitions re-evaluate this decision after a
 failed CAS. Idle failback sweeps and unchanged partition enablement flags likewise
 avoid publication.
 
+Real counter updates still clone partition state before CAS publication.
+The store holds the published state in an Arc behind its epoch pointer, so a
+subsequent snapshot refresh shares that state rather than copying its maps again.
+Existing snapshots remain immutable and retain their state across later updates.
+Alternate-win bookkeeping continues to use the account-only snapshot accessor.
+
 **Mechanism (sketch — pending PPCB owner sign-off):**
 
 ```rust

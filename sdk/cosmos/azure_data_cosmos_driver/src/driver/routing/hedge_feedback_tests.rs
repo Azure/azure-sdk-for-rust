@@ -119,6 +119,7 @@ fn disabled_feedback_preserves_existing_counter() {
 #[test]
 fn concurrent_alternate_wins_are_not_lost() {
     let store = store();
+    let before = store.snapshot();
     std::thread::scope(|scope| {
         for _ in 0..4 {
             scope.spawn(|| {
@@ -132,6 +133,68 @@ fn concurrent_alternate_wins_are_not_lost() {
         store.snapshot().partitions.consecutive_hedge_wins[&("same".parse().unwrap(), None)],
         64
     );
+    assert_eq!(before.partitions.consecutive_hedge_wins.len(), 100);
+    assert!(!before
+        .partitions
+        .consecutive_hedge_wins
+        .contains_key(&("same".parse().unwrap(), None)));
+}
+
+#[test]
+fn account_updates_share_unchanged_partition_snapshots() {
+    let store = store();
+    let initial = store.snapshot();
+    let version = store.version_for_tests();
+    let mut readers = Vec::new();
+    for generation in 1..=32 {
+        store.apply_account(|account| {
+            let mut next = account.clone();
+            next.generation = generation;
+            next
+        });
+        readers.push(store.snapshot());
+    }
+    assert_eq!(store.version_for_tests(), version + 32);
+    for (index, snapshot) in readers.iter().enumerate() {
+        assert_eq!(snapshot.account.generation, index as u64 + 1);
+        assert!(Arc::ptr_eq(&initial.partitions, &snapshot.partitions));
+    }
+}
+
+#[test]
+fn partition_snapshots_outlive_store_and_release_retired_state() {
+    let store = store();
+    let before = store.snapshot();
+    let retired = Arc::downgrade(&before.partitions);
+    let key = "0".parse().unwrap();
+    store.record_primary_win(&key, Some(&Region::EAST_US));
+    let after = store.snapshot();
+    let current = Arc::downgrade(&after.partitions);
+    assert!(!Arc::ptr_eq(&before.partitions, &after.partitions));
+    assert_eq!(
+        before.partitions.consecutive_hedge_wins[&(key.clone(), Some(Region::EAST_US))],
+        1
+    );
+    assert!(!after
+        .partitions
+        .consecutive_hedge_wins
+        .contains_key(&(key, Some(Region::EAST_US))));
+    drop(store);
+    assert_eq!(before.partitions.consecutive_hedge_wins.len(), 100);
+    assert_eq!(after.partitions.consecutive_hedge_wins.len(), 99);
+    drop(before);
+    drop(after);
+    assert!(current.upgrade().is_none());
+
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while retired.upgrade().is_some() && Instant::now() < deadline {
+        {
+            let guard = epoch::pin();
+            guard.flush();
+        }
+        std::thread::yield_now();
+    }
+    assert!(retired.upgrade().is_none());
 }
 
 #[test]

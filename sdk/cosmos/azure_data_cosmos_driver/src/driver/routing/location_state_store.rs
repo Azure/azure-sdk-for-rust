@@ -110,7 +110,7 @@ pub(crate) fn background_refresh_interval(get_env: &dyn Fn(&str) -> Option<Strin
 /// Unified location state store with lock-free reads and CAS-loop writes.
 pub(crate) struct LocationStateStore {
     account: Atomic<AccountEndpointState>,
-    partitions: Atomic<PartitionEndpointState>,
+    partitions: Atomic<Arc<PartitionEndpointState>>,
     account_metadata_cache: Arc<AccountMetadataCache>,
     account_endpoint: AccountEndpoint,
     account_refresh_fn: AccountRefreshFn,
@@ -245,11 +245,11 @@ impl LocationStateStore {
         connectivity_probe: Option<Arc<dyn ConnectivityProbe>>,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
-        let partition_state = PartitionEndpointState::new(partition_failover_options);
+        let partition_state = Arc::new(PartitionEndpointState::new(partition_failover_options));
 
         let initial_snapshot = LocationSnapshot {
             account: Arc::new(account_state.clone()),
-            partitions: Arc::new(partition_state.clone()),
+            partitions: Arc::clone(&partition_state),
             cross_region_hedging_disabled: false,
         };
 
@@ -312,8 +312,8 @@ impl LocationStateStore {
     /// Uses a fast path when the version hasn't changed since the last
     /// snapshot: the cached `Arc` is cloned without touching the
     /// epoch-protected pointers. On a version mismatch (slow path),
-    /// the current state is loaded under an epoch guard, cloned into
-    /// fresh `Arc`s, and cached for subsequent callers.
+    /// the account state is copied and the partition `Arc` is shared under
+    /// an epoch guard, then cached for subsequent callers.
     pub fn snapshot(&self) -> LocationSnapshot {
         let current_version = self.account_version.load(Ordering::Acquire);
 
@@ -335,7 +335,7 @@ impl LocationStateStore {
         let partitions = {
             // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
             let current = unsafe { self.partitions.load(Ordering::Acquire, &guard).deref() };
-            Arc::new(current.clone())
+            Arc::clone(current)
         };
 
         let snapshot = LocationSnapshot {
@@ -516,7 +516,7 @@ impl LocationStateStore {
 
             match self.partitions.compare_exchange(
                 current,
-                Owned::new(next_state),
+                Owned::new(Arc::new(next_state)),
                 Ordering::AcqRel,
                 Ordering::Acquire,
                 &guard,
