@@ -46,6 +46,7 @@ impl AmqpComposite {
 pub struct AmqpConnection {
 }
 impl AmqpConnection {
+    pub fn abort(&self);
     pub fn new() -> Self;
 }
 impl AmqpConnectionApis for AmqpConnection {
