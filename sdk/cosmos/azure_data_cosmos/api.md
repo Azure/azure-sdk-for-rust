@@ -2353,7 +2353,6 @@ pub mod options {
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
         pub feed: crate::options::FeedOptions,
         pub session_token: Option<azure_data_cosmos_driver::models::SessionToken>,
-        pub utf8_decoding_mode: azure_data_cosmos_driver::options::Utf8DecodingMode,
         pub mode: ChangeFeedMode,
     }
     impl ChangeFeedOptions {
@@ -2594,7 +2593,6 @@ pub mod options {
     pub struct ItemReadOptions {
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
         pub session_token: Option<azure_data_cosmos_driver::models::SessionToken>,
-        pub utf8_decoding_mode: azure_data_cosmos_driver::options::Utf8DecodingMode,
         pub precondition: Option<azure_data_cosmos_driver::models::Precondition>,
     }
     impl ItemReadOptions {
@@ -2635,6 +2633,7 @@ pub mod options {
         pub availability_strategy: Option<crate::options::AvailabilityStrategy>,
         pub custom_headers: Option<std::collections::HashMap<azure_core::http::headers::HeaderName, azure_core::http::headers::HeaderValue>>,
         pub binary_encoding: Option<crate::options::BinaryEncodingOptions>,
+        pub utf8_decoding_mode: Option<crate::options::Utf8DecodingMode>,
     }
     #[doc(inline)]
     #[automatically_derived]
@@ -2668,6 +2667,7 @@ pub mod options {
         pub fn with_session_capturing_disabled(self, value: bool) -> Self;
         pub fn with_throttling_retry_options(self, value: ThrottlingRetryOptions) -> Self;
         pub fn with_throughput_control(self, value: ThroughputControlOptions) -> Self;
+        pub fn with_utf8_decoding_mode(self, value: Utf8DecodingMode) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug)]
@@ -2760,7 +2760,6 @@ pub mod options {
         pub operation: azure_data_cosmos_driver::options::OperationOptions,
         pub feed: FeedOptions,
         pub session_token: Option<azure_data_cosmos_driver::models::SessionToken>,
-        pub utf8_decoding_mode: azure_data_cosmos_driver::options::Utf8DecodingMode,
         pub populate_index_metrics: Option<bool>,
         pub populate_query_metrics: Option<bool>,
     }

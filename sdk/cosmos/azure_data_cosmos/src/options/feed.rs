@@ -147,11 +147,6 @@ pub struct QueryOptions {
     /// Session token for session-consistent queries.
     pub session_token: Option<SessionToken>,
 
-    /// Controls how invalid UTF-8 in query responses is handled.
-    ///
-    /// Defaults to [`Utf8DecodingMode::Strict`].
-    pub utf8_decoding_mode: Utf8DecodingMode,
-
     /// When `true`, request that the service include index utilization metrics
     /// in the response (`x-ms-cosmos-populateindexmetrics`). The decoded JSON is
     /// surfaced via `QueryFeedPage::index_metrics()`.
@@ -171,7 +166,6 @@ impl Default for QueryOptions {
             operation: OperationOptions::default(),
             feed: FeedOptions::default(),
             session_token: None,
-            utf8_decoding_mode: Utf8DecodingMode::Strict,
             populate_index_metrics: None,
             populate_query_metrics: None,
         }
@@ -198,8 +192,11 @@ impl QueryOptions {
     }
 
     /// Sets how invalid UTF-8 in query responses is handled.
+    ///
+    /// This convenience method sets
+    /// [`OperationOptions::utf8_decoding_mode`] for this query.
     pub fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
-        self.utf8_decoding_mode = mode;
+        self.operation.utf8_decoding_mode = Some(mode);
         self
     }
 
@@ -260,16 +257,14 @@ mod tests {
     use super::{FeedOptions, QueryOptions, QueryPlanMode, Utf8DecodingMode, DEFAULT_MAX_FAN_OUT};
 
     #[test]
-    fn query_utf8_decoding_is_strict_by_default_and_configurable() {
-        assert_eq!(
-            QueryOptions::default().utf8_decoding_mode,
-            Utf8DecodingMode::Strict
-        );
+    fn query_utf8_decoding_is_configurable() {
+        assert_eq!(QueryOptions::default().operation.utf8_decoding_mode, None);
         assert_eq!(
             QueryOptions::default()
                 .with_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .operation
                 .utf8_decoding_mode,
-            Utf8DecodingMode::Lossy
+            Some(Utf8DecodingMode::Lossy)
         );
     }
 
