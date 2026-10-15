@@ -6,11 +6,17 @@
 
 ### Breaking Changes
 
+- New change-feed checkpoints use `c2.` and are rejected by older SDKs; query checkpoints remain `c1.`. Legacy change-feed checkpoints remain readable except consumed single-request prefix checkpoints, which lack safe per-range coverage; older unpolled single-request checkpoints require the original start on resume. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+- A checkpoint's saved start takes precedence over a newly supplied change-feed start. Omit the continuation token to start a new feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
+
 ### Bugs Fixed
 
+- Restore checkpoint-owned change-feed starts, preserve round-robin progress across resumes, and correctly scope hierarchical-prefix feeds across overlapping partitions. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 - Keep CPU sampling active for long-lived clients and preserve diagnostics through partition split recovery, including `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
 
 ### Other Changes
+
+- Hierarchical-prefix change feeds can poll multiple overlapping physical ranges, increasing request cost and latency compared with a single-range feed. ([#5448](https://github.com/Azure/azure-sdk-for-rust/pull/5448))
 
 ## 1.0.0 (2026-10-08)
 

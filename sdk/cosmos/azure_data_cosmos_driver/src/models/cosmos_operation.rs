@@ -49,21 +49,20 @@ pub enum ChangeFeedStartFrom {
 
     /// Start from the current point in time (wire header `If-None-Match: *`).
     ///
-    /// "Now" is evaluated when the request is sent, so on resume a never-polled
-    /// partition starts from resume time rather than the original start time.
-    /// This is acceptable for LatestVersion (it still converges to the latest
-    /// state under at-least-once delivery). For AllVersionsAndDeletes it is a
-    /// documented limitation: a range that is never polled before a checkpoint
-    /// can drop the intermediate versions and deletes that occurred between the
-    /// original start and the resume. "Now" is deliberately not pinned to a
-    /// concrete start position before persisting, because that would change its
-    /// semantics; lossless per-range "Now" resolution is a future improvement.
+    /// "Now" is evaluated when each range's first request is sent, not when the
+    /// iterator is created or a checkpoint is saved. In LatestVersion mode, ranges not
+    /// polled before a checkpoint start at their first request after resume;
+    /// changes made before that request aren't included.
+    ///
+    /// AllVersionsAndDeletes fan-out polls every range to capture its starting
+    /// ETag before returning the first page. Saving a checkpoint before the first poll
+    /// does not perform this I/O; priming occurs when the resumed feed is polled.
     Now,
 
     /// Start from a specific point in time (wire header `If-Modified-Since`).
     ///
-    /// The timestamp is persisted in the continuation token as RFC 3339 so
-    /// resume is exact, and formatted as RFC 1123 for the wire header.
+    /// The timestamp is persisted in the continuation token as RFC 3339 and
+    /// formatted as RFC 1123 for the wire header, with one-second precision.
     PointInTime(#[serde(with = "time::serde::rfc3339")] OffsetDateTime),
 }
 
@@ -536,6 +535,9 @@ impl CosmosOperation {
 
     /// Records the change feed start position and emits its wire header.
     ///
+    /// Replaces any previously set precondition (`If-Match` or `If-None-Match`)
+    /// and `If-Modified-Since` value.
+    ///
     /// This is the single source of truth for translating a start position into
     /// the appropriate header, so both the initial request and a resume that
     /// reconstructs the position from a continuation token stay in sync:
@@ -544,6 +546,8 @@ impl CosmosOperation {
     /// - [`ChangeFeedStartFrom::Now`] → `If-None-Match: *`
     /// - [`ChangeFeedStartFrom::PointInTime`] → `If-Modified-Since: <RFC 1123>`
     pub fn with_change_feed_start(mut self, start_from: ChangeFeedStartFrom) -> Self {
+        self.request_headers.precondition = None;
+        self.request_headers.if_modified_since = None;
         match &start_from {
             ChangeFeedStartFrom::Beginning => {}
             ChangeFeedStartFrom::Now => {
@@ -1321,7 +1325,13 @@ impl CosmosOperation {
             // Change feed is trivial only when targeting a specific logical partition key.
             // Full-container (target=None) and EPK range targets require fan-out.
             if self.is_change_feed() {
-                return self.target().and_then(|t| t.partition_key()).is_some();
+                return self
+                    .target()
+                    .and_then(|target| target.partition_key())
+                    .zip(self.container())
+                    .is_some_and(|(key, container)| {
+                        container.partition_key_definition().is_complete(key)
+                    });
             }
             // For now, at least, all other non-query operations are trivial.
             return true;
@@ -1677,6 +1687,66 @@ mod tests {
         assert!(op.request_headers().incremental_feed);
         assert!(!op.request_headers().full_fidelity_feed);
         assert!(op.request_headers().changefeed_wire_format_version);
+    }
+
+    #[test]
+    fn change_feed_start_replaces_previous_headers() {
+        let starts = [
+            ChangeFeedStartFrom::Beginning,
+            ChangeFeedStartFrom::Now,
+            ChangeFeedStartFrom::PointInTime(time::macros::datetime!(2026-08-21 12:34:56 UTC)),
+        ];
+        for previous in &starts {
+            for start in &starts {
+                let operation =
+                    CosmosOperation::change_feed(test_container(), Some(FeedRange::full()))
+                        .with_change_feed_start(previous.clone())
+                        .with_change_feed_start(start.clone());
+                assert_eq!(operation.change_feed_start(), Some(start));
+                let expected_precondition = matches!(start, ChangeFeedStartFrom::Now)
+                    .then(|| Precondition::if_none_match(Etag::from("*")));
+                assert_eq!(operation.precondition(), expected_precondition.as_ref());
+                let expected_time = match start {
+                    ChangeFeedStartFrom::PointInTime(timestamp) => Some(format_rfc1123(timestamp)),
+                    _ => None,
+                };
+                assert_eq!(operation.request_headers().if_modified_since, expected_time);
+            }
+        }
+    }
+
+    #[test]
+    fn change_feed_prefix_requires_fanout_but_complete_key_does_not() {
+        let properties = ContainerProperties {
+            id: "hpk".into(),
+            partition_key: ("/tenant", "/user", "/device").into(),
+            system_properties: SystemProperties::default(),
+        };
+        let container = ContainerReference::new(
+            test_account(),
+            "db",
+            "db_rid",
+            "hpk",
+            "hpk_rid",
+            &properties,
+        );
+        for key in [
+            PartitionKey::from("tenant"),
+            PartitionKey::from(("tenant", "user")),
+            PartitionKey::from(("tenant", "user", "device")),
+        ] {
+            let complete = container.partition_key_definition().is_complete(&key);
+            let range = FeedRange::for_partition(key, container.partition_key_definition());
+            for operation in [
+                CosmosOperation::change_feed(container.clone(), Some(range.clone())),
+                CosmosOperation::change_feed_all_versions_and_deletes(
+                    container.clone(),
+                    Some(range.clone()),
+                ),
+            ] {
+                assert_eq!(operation.is_trivial(), complete);
+            }
+        }
     }
 
     /// The full-fidelity (AllVersionsAndDeletes) factory sets the

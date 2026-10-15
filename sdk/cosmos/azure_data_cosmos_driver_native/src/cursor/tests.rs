@@ -23,6 +23,7 @@ use crate::{
     },
     driver::{cosmos_driver_free, DriverHandle},
     error::{CosmosErrorCode, COSMOS_STATUS_SUCCESS},
+    feed_range::{cosmos_feed_range_for_partition_key, cosmos_feed_range_free},
     op_request::cosmos_operation_options_default,
     partition_key::{cosmos_partition_key_free, PartitionKeyHandle},
     runtime::{cosmos_runtime_free, RuntimeContext},
@@ -182,6 +183,140 @@ fn non_streaming_order_by_retains_all_rows_after_unsupported_checkpoint() {
         assert_eq!(ranks, vec![0, 1, 2, 3, 4, 5]);
         assert!(unsupported);
         cosmos_cursor_free(cursor);
+    }
+}
+
+#[test]
+fn change_feed_checkpoint_before_next_preserves_start() {
+    for mode in [1, 2] {
+        for start in [1, 2, 3] {
+            if mode == 2 && start != 2 {
+                continue;
+            }
+            for logical in [false, true] {
+                let fixture = Fixture::scripted();
+                let mut range = ptr::null_mut();
+                if logical {
+                    assert_eq!(
+                        cosmos_feed_range_for_partition_key(
+                            fixture.container,
+                            fixture.partition_key,
+                            &mut range,
+                        ),
+                        COSMOS_STATUS_SUCCESS
+                    );
+                }
+                let mut request = fixture.request();
+                request.operation.kind = 0;
+                request.operation.feed_range = range;
+                request.change_feed_mode = mode;
+                request.start_from = start;
+                if start == 3 {
+                    request.start_time = view(b"2023-11-14T00:00:00Z");
+                }
+                let cursor = fixture.open(&request);
+                for supplied_start in [0, if start == 2 { 1 } else { 2 }] {
+                    let checkpoint = fixture.receive(cosmos_cursor_checkpoint_submit(
+                        cursor,
+                        0,
+                        ptr::null_mut(),
+                    ));
+                    // SAFETY: the borrowed checkpoint remains live through Open.
+                    unsafe {
+                        request.operation.continuation_token = (*checkpoint).checkpoint;
+                    }
+                    request.start_from = supplied_start;
+                    request.start_time = Default::default();
+                    let resumed = fixture.open(&request);
+                    cosmos_cursor_completion_free(checkpoint);
+                    let page =
+                        fixture.receive(cosmos_cursor_next_submit(resumed, 0, ptr::null_mut()));
+                    // SAFETY: the owned completion remains live until freed below.
+                    unsafe {
+                        assert_eq!((*page).common.status, COSMOS_STATUS_SUCCESS);
+                        assert_eq!(
+                            (*page).common.http_status_code,
+                            if start == 2 && (mode == 1 || logical) {
+                                304
+                            } else {
+                                200
+                            }
+                        );
+                    }
+                    cosmos_cursor_completion_free(page);
+                    cosmos_cursor_free(resumed);
+                }
+                cosmos_cursor_free(cursor);
+                cosmos_feed_range_free(range);
+            }
+        }
+    }
+}
+
+#[test]
+fn hierarchical_prefix_cursor_checkpoints_traverse_both_overlapping_ranges() {
+    for (mode, key) in [
+        (
+            1,
+            azure_data_cosmos_driver::models::PartitionKey::from("tenant"),
+        ),
+        (
+            1,
+            azure_data_cosmos_driver::models::PartitionKey::from(("tenant", "user")),
+        ),
+        (
+            2,
+            azure_data_cosmos_driver::models::PartitionKey::from("tenant"),
+        ),
+        (
+            2,
+            azure_data_cosmos_driver::models::PartitionKey::from(("tenant", "user")),
+        ),
+    ] {
+        let fixture = Fixture::from_handles(fixture::scripted_hpk(true), 2);
+        let key = Box::into_raw(Box::new(PartitionKeyHandle { inner: key }));
+        let mut range = ptr::null_mut();
+        assert_eq!(
+            cosmos_feed_range_for_partition_key(fixture.container, key, &mut range),
+            COSMOS_STATUS_SUCCESS
+        );
+        let mut request = fixture.request();
+        request.operation.kind = 0;
+        request.operation.feed_range = range;
+        request.change_feed_mode = mode;
+        request.start_from = if mode == 2 { 2 } else { 1 };
+        let mut cursor = fixture.open(&request);
+        let mut ids = Vec::new();
+        for poll in 0..5 {
+            let checkpoint =
+                fixture.receive(cosmos_cursor_checkpoint_submit(cursor, 0, ptr::null_mut()));
+            // SAFETY: checkpoint stays live until the resumed cursor copies it.
+            unsafe {
+                request.operation.continuation_token = (*checkpoint).checkpoint;
+            }
+            request.start_from = if poll % 2 != 0 {
+                0
+            } else if mode == 2 {
+                1
+            } else {
+                2
+            };
+            let resumed = fixture.open(&request);
+            cosmos_cursor_completion_free(checkpoint);
+            cosmos_cursor_free(cursor);
+            cursor = resumed;
+            let page = fixture.receive(cosmos_cursor_next_submit(cursor, 0, ptr::null_mut()));
+            ids.extend(documents(page).into_iter().map(|doc| {
+                let item = if mode == 2 { &doc["current"] } else { &doc };
+                item["id"].as_str().unwrap().to_owned()
+            }));
+            cosmos_cursor_completion_free(page);
+        }
+        ids.sort();
+        assert_eq!(ids, ["0d0", "0d1", "1d0", "1d1"]);
+        cosmos_cursor_free(cursor);
+        cosmos_feed_range_free(range);
+        cosmos_partition_key_free(key);
     }
 }
 
