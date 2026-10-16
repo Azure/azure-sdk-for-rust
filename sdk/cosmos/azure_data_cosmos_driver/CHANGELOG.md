@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Single-partition queries are now eligible for cross-region hedging, bounding tail latency on a degraded region at the cost of a second request on pages that exceed the hedge threshold. Cross-partition queries are not yet hedged.
+
 ### Breaking Changes
 
 ### Bugs Fixed
