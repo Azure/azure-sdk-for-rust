@@ -5,7 +5,8 @@
 
 use azure_data_cosmos_driver::models::{MaxItemCountHint, SessionToken};
 use azure_data_cosmos_driver::options::{
-    OperationOptions, PlanOptions, DEFAULT_MAX_BUFFERED_QUERY_WINDOW, DEFAULT_MAX_FAN_OUT,
+    OperationOptions, PlanOptions, Utf8DecodingMode, DEFAULT_MAX_BUFFERED_QUERY_WINDOW,
+    DEFAULT_MAX_FAN_OUT,
 };
 
 use crate::{feed::ContinuationToken, options::QueryPlanMode};
@@ -190,6 +191,15 @@ impl QueryOptions {
         self
     }
 
+    /// Sets how invalid UTF-8 in query responses is handled.
+    ///
+    /// This convenience method sets
+    /// [`OperationOptions::utf8_decoding_mode`] for this query.
+    pub fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
+        self.operation.utf8_decoding_mode = Some(mode);
+        self
+    }
+
     /// Sets the [`OperationOptions`] for this request.
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
@@ -244,7 +254,19 @@ impl QueryOptions {
 
 #[cfg(test)]
 mod tests {
-    use super::{FeedOptions, QueryOptions, QueryPlanMode, DEFAULT_MAX_FAN_OUT};
+    use super::{FeedOptions, QueryOptions, QueryPlanMode, Utf8DecodingMode, DEFAULT_MAX_FAN_OUT};
+
+    #[test]
+    fn query_utf8_decoding_is_configurable() {
+        assert_eq!(QueryOptions::default().operation.utf8_decoding_mode, None);
+        assert_eq!(
+            QueryOptions::default()
+                .with_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .operation
+                .utf8_decoding_mode,
+            Some(Utf8DecodingMode::Lossy)
+        );
+    }
 
     #[test]
     fn query_plan_options_preserve_defaults() {

@@ -4,6 +4,8 @@
 
 ### Features Added
 
+- Added layered `OperationOptions::utf8_decoding_mode` for opt-in lossy recovery of invalid UTF-8 in response JSON strings, with strict decoding by default and recovery counts in `DiagnosticsContext`. ([#5367](https://github.com/Azure/azure-sdk-for-rust/issues/5367))
+
 ### Breaking Changes
 
 ### Bugs Fixed
