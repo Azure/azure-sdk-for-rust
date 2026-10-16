@@ -4,7 +4,7 @@
   "id": "query.feed-ranges",
   "title": "Feed ranges cover container routing space",
   "requirement": "Physical feed ranges are distinct and a full partition key maps deterministically to exactly one of them.",
-  "maturity": "candidate",
+  "maturity": "stable",
   "precedents": [
     {
       "sdk": "rust",
@@ -37,7 +37,7 @@
       ]
     },
     "azureLive": {
-      "applicability": "supported",
+      "applicability": "required",
       "fidelity": "full"
     }
   }
