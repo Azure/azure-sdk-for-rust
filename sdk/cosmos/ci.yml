@@ -11,6 +11,26 @@ trigger:
     - sdk/cosmos/
 
 parameters:
+- name: EnableWeeklyPerf
+  displayName: Enable calibrated weekly performance gate
+  type: boolean
+  default: false
+- name: RunPerfTests
+  displayName: Run performance gate on this source commit
+  type: boolean
+  default: false
+- name: CalibratePerf
+  displayName: Collect performance baseline (manual runs only, not a gate)
+  type: boolean
+  default: false
+- name: PerfPool
+  displayName: Dedicated colocated performance agent pool
+  type: string
+  default: cosmos-perf
+- name: PerfServiceConnection
+  displayName: Read-only connection for fixed-account metadata
+  type: string
+  default: cosmos-perf-reader
 - name: RunLiveTests
   displayName: Run live tests
   type: boolean
@@ -86,6 +106,17 @@ extends:
       AZURE_COSMOS_GW_V2_MULTI_REGION_KEY: $(thin-client-canary-multi-region-session-key)
     VariableGroups:
     - 'Test Secrets for Cosmos Live Tests - user administered'
+    AdditionalStages:
+    - ${{ if and(eq(variables['System.TeamProject'], 'internal'), or(and(parameters.EnableWeeklyPerf, endsWith(variables['Build.DefinitionName'], '- weekly')), and(eq(variables['Build.Reason'], 'Manual'), or(parameters.RunPerfTests, parameters.CalibratePerf)))) }}:
+      - template: /sdk/cosmos/eng/pipelines/perf-stage.yml
+        parameters:
+          Pool: ${{ parameters.PerfPool }}
+          ServiceConnection: ${{ parameters.PerfServiceConnection }}
+          Calibrate: ${{ and(eq(variables['Build.Reason'], 'Manual'), parameters.CalibratePerf) }}
+          DependsOn:
+          - Build
+          - ${{ if or(parameters.RunLiveTests, eq(variables['Build.Reason'], 'Schedule'), endsWith(variables['Build.DefinitionName'], '- weekly')) }}:
+            - Public
     MatrixConfigs:
       - Name: Cosmos_native
         Path: sdk/cosmos/native-test-matrix.json

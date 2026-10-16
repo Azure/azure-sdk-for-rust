@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "duration_seconds": 2700,
+  "warmup_seconds": 300,
+  "report_seconds": 60,
+  "request_timeout_seconds": 30,
+  "seed_count": 1000,
+  "payload_bytes": 1024,
+  "throughput_per_container": 10000,
+  "max_pages": 4,
+  "vm_size": "Standard_D8s_v5",
+  "consistency": "Session",
+  "operations": [
+    { "operation": "ReadItem", "workers": 4 },
+    { "operation": "CreateItem", "workers": 4 },
+    { "operation": "UpsertItem", "workers": 4 },
+    { "operation": "ReplaceItem", "workers": 4 },
+    { "operation": "PatchItem", "workers": 4 },
+    { "operation": "DeleteItem", "workers": 4 },
+    { "operation": "QueryItems", "workers": 4 },
+    { "operation": "FeedRangeQuery", "workers": 4 },
+    { "operation": "ChangeFeed", "workers": 4 },
+    { "operation": "CrossPartitionQuery", "workers": 4 },
+    { "operation": "OrderByQuery", "workers": 4 },
+    { "operation": "AggregateQuery", "workers": 4 },
+    { "operation": "DistinctQuery", "workers": 4 },
+    { "operation": "TransactionalBatch", "workers": 4 }
+  ]
+}

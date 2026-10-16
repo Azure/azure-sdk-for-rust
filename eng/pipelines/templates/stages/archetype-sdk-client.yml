@@ -97,6 +97,9 @@ parameters:
 - name: VariableGroups
   type: object
   default: []
+- name: AdditionalStages
+  type: stageList
+  default: []
 
 extends:
   template: /eng/pipelines/templates/stages/1es-redirect.yml
@@ -217,6 +220,8 @@ extends:
                       SubscriptionConfiguration: ${{ cloud.value.SubscriptionConfiguration }}
                       SubscriptionConfigurations: ${{ cloud.value.SubscriptionConfigurations }}
                       SubscriptionConfigurationFilePaths: ${{ cloud.value.SubscriptionConfigurationFilePaths }}
+
+    - ${{ parameters.AdditionalStages }}
 
     # The Prerelease and Release stages are conditioned on:
     # 1. Internal trigger, not Pull Request trigger

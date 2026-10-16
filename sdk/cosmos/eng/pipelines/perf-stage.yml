@@ -1,0 +1,91 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT License.
+
+parameters:
+- name: Pool
+  type: string
+- name: ServiceConnection
+  type: string
+- name: Calibrate
+  type: boolean
+  default: false
+- name: DependsOn
+  type: object
+  default: []
+
+stages:
+- stage: CosmosPerf
+  displayName: Cosmos Gateway V2 performance
+  dependsOn: ${{ parameters.DependsOn }}
+  lockBehavior: sequential
+  variables:
+  - template: /eng/pipelines/templates/variables/rust.yml
+  # Require an exclusive-lock check on this shared resource, including live-test consumers.
+  - group: Test Secrets for Cosmos Live Tests - user administered
+  - name: PerfOutput
+    value: $(Build.ArtifactStagingDirectory)/cosmos-perf
+  jobs:
+  - job: Perf
+    timeoutInMinutes: 120
+    cancelTimeoutInMinutes: 5
+    pool:
+      name: ${{ parameters.Pool }}
+      os: linux
+    workspace:
+      clean: all
+    steps:
+    - checkout: self
+      clean: true
+      fetchDepth: 0
+      persistCredentials: false
+    - pwsh: New-Item -ItemType Directory -Force -Path $env:COSMOS_PERF_OUTPUT | Out-Null
+      displayName: Initialize performance artifact directory
+      env:
+        COSMOS_PERF_OUTPUT: $(PerfOutput)
+    - template: /eng/pipelines/templates/steps/use-rust.yml
+      parameters:
+        Toolchain: stable
+    - task: AzureCLI@2
+      displayName: Verify source, baseline, fixed account, and VM region
+      inputs:
+        azureSubscription: ${{ parameters.ServiceConnection }}
+        scriptType: pscore
+        scriptLocation: scriptPath
+        scriptPath: sdk/cosmos/eng/pipelines/prepare-cosmos-perf.ps1
+      env:
+        COSMOS_PERF_OUTPUT: $(PerfOutput)
+        COSMOS_PERF_BASELINE_COMMIT: $(cosmos-perf-baseline-commit)
+        COSMOS_PERF_ACCOUNT_RESOURCE_ID: $(cosmos-perf-account-resource-id)
+        COSMOS_PERF_CALIBRATE: ${{ parameters.Calibrate }}
+        AZURE_COSMOS_ENDPOINT: $(thinclient-test-endpoint)
+    - pwsh: |
+        . ./eng/scripts/shared/common.ps1
+        Invoke-LoggedCommand 'cargo build --release --locked -p azure_data_cosmos_perf --bin azure_data_cosmos_perf --features weekly-gate' -GroupOutput
+      displayName: Build perf crate at the pipeline source commit
+    - task: PowerShell@2
+      displayName: Run concurrent workload (5-minute warm-up, 40-minute measurement)
+      inputs:
+        pwsh: true
+        filePath: sdk/cosmos/eng/pipelines/run-cosmos-perf.ps1
+      env:
+        COSMOS_PERF_OUTPUT: $(PerfOutput)
+        COSMOS_PERF_CALIBRATE: ${{ parameters.Calibrate }}
+        AZURE_COSMOS_ENDPOINT: $(thinclient-test-endpoint)
+        AZURE_COSMOS_KEY: $(thinclient-test-key)
+    - task: PowerShell@2
+      displayName: Clean up this run's benchmark database
+      condition: always()
+      inputs:
+        pwsh: true
+        filePath: sdk/cosmos/eng/pipelines/cleanup-cosmos-perf.ps1
+      env:
+        COSMOS_PERF_OUTPUT: $(PerfOutput)
+        AZURE_COSMOS_ENDPOINT: $(thinclient-test-endpoint)
+        AZURE_COSMOS_KEY: $(thinclient-test-key)
+    - task: 1ES.PublishPipelineArtifact@1
+      displayName: Publish performance evidence
+      condition: always()
+      inputs:
+        targetPath: $(PerfOutput)
+        artifactName: cosmos-perf-$(System.JobAttempt)
+        sbomEnabled: false
