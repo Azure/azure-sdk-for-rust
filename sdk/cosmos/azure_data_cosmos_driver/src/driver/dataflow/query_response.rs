@@ -22,6 +22,7 @@
 //! `OperationPlan::to_continuation_token` owns the client-issued token, and
 //! a raw per-partition backend token would be meaningless to the caller.
 
+use crate::driver::dataflow::{ItemView, PipelineBody, PipelineResponse};
 use std::sync::Arc;
 
 use serde::Deserialize;
@@ -29,10 +30,7 @@ use serde_json::value::RawValue;
 
 use crate::binary_json::reader::BinaryCursor;
 use crate::diagnostics::{DiagnosticsContext, DiagnosticsContextBuilder};
-use crate::models::{
-    ActivityId, CosmosResponse, CosmosResponseHeaders, CosmosStatus, ItemView, ResponseBody,
-    SessionToken,
-};
+use crate::models::{ActivityId, CosmosResponseHeaders, CosmosStatus, SessionToken};
 use crate::options::DiagnosticsOptions;
 
 use super::order_by::{self, OrderByItem, OrderByResumeValue};
@@ -308,13 +306,13 @@ struct RawFeedBody {
 /// non-empty `_rid`, or an `orderByItems` array whose length does not
 /// match `order_by_column_count`.
 pub(crate) fn parse_envelope_page(
-    body: &ResponseBody,
+    body: &PipelineBody,
     order_by_column_count: usize,
 ) -> crate::error::Result<Vec<EnvelopeRow>> {
     let bytes = match body {
-        ResponseBody::NoPayload => return Ok(Vec::new()),
-        ResponseBody::Bytes(b) => b.clone(),
-        ResponseBody::Items(_) | ResponseBody::ContextualItems(_) => {
+        PipelineBody::NoPayload => return Ok(Vec::new()),
+        PipelineBody::Bytes(b) => b.clone(),
+        PipelineBody::Items(_) | PipelineBody::ContextualItems(_) => {
             return Err(envelope_error(
                 "rewritten-query backend page returned an already-split `Items` body; \
                  expected a raw `Documents`-array feed body",
@@ -484,7 +482,7 @@ const MAX_RETAINED_DIAGNOSTICS_SOURCES: usize = 32;
 
 /// Accumulates request charge and diagnostics across every backend page
 /// consumed while assembling one emitted output page, then reconstructs a
-/// single [`CosmosResponse`] carrying only the raw payload items.
+/// single [`PipelineResponse`] carrying only the raw payload items.
 pub(crate) struct PageAggregator {
     request_charge: crate::models::RequestCharge,
     diagnostics_sources: Vec<Arc<DiagnosticsContext>>,
@@ -535,7 +533,7 @@ impl PageAggregator {
     /// surfaces "the most recent" status to callers). Query/index metrics
     /// retain the latest non-empty service-formatted value; request charge is
     /// summed across every absorbed response.
-    pub(crate) fn absorb(&mut self, response: &CosmosResponse) -> crate::error::Result<()> {
+    pub(crate) fn absorb(&mut self, response: &PipelineResponse) -> crate::error::Result<()> {
         self.absorb_session_token(response).map_err(|error| {
             let mut diagnostics = super::recovery_diagnostics::RecoveryDiagnostics::default();
             diagnostics.absorb(Some(response.diagnostics()));
@@ -548,7 +546,7 @@ impl PageAggregator {
     /// Commits session progress even when the page body later fails validation.
     pub(crate) fn absorb_session_token(
         &mut self,
-        response: &CosmosResponse,
+        response: &PipelineResponse,
     ) -> crate::error::Result<()> {
         if let Some(token) = &response.headers().session_token {
             self.session_token = Some(match &self.session_token {
@@ -560,7 +558,7 @@ impl PageAggregator {
     }
 
     /// Records a validated page whose session token has already been merged.
-    pub(crate) fn absorb_validated(&mut self, response: &CosmosResponse) {
+    pub(crate) fn absorb_validated(&mut self, response: &PipelineResponse) {
         let charge = response.headers().request_charge.unwrap_or_default();
         self.request_charge = self.request_charge + charge;
         self.diagnostics_sources.push(response.diagnostics());
@@ -616,10 +614,10 @@ impl PageAggregator {
         diagnostics.attach_error(error)
     }
 
-    /// Prepares one payload for emission in the operation's output encoding.
+    /// Prepares one payload for the private output page.
     ///
-    /// A binary payload emitted as binary keeps its original page and byte
-    /// span. All other combinations convert only the selected item.
+    /// Binary payloads keep their original page and byte span until final
+    /// materialization. Text payloads use the operation's output encoding.
     ///
     /// This is deliberately separate from [`build_page`](Self::build_page) so
     /// the caller can encode an item *before* committing to having emitted it.
@@ -636,12 +634,7 @@ impl PageAggregator {
         payload: &EnvelopePayload,
     ) -> crate::error::Result<ItemView> {
         if let EnvelopePayload::Binary(item) = payload {
-            if self.emit_binary {
-                return Ok(item.clone());
-            }
-            let text = serde_json::to_vec(&item.decoded_value()?)
-                .map_err(|e| body_error("failed to serialize binary ORDER BY item", e))?;
-            return Ok(ItemView::standalone(bytes::Bytes::from(text)));
+            return Ok(item.clone());
         }
         let EnvelopePayload::Text(payload) = payload else {
             unreachable!("binary payload was handled above")
@@ -674,17 +667,18 @@ impl PageAggregator {
 
     /// Builds the emitted page from the aggregate and ordered item views.
     ///
-    /// The body is a [`ResponseBody::ContextualItems`] if any item retains
-    /// its source page; otherwise it is [`ResponseBody::Items`]. Each entry
-    /// has already been prepared in the emitted encoding.
+    /// The body is a [`PipelineBody::ContextualItems`] if any item retains
+    /// its source page; otherwise it is [`PipelineBody::Items`]. Binary views
+    /// are materialized into the output encoding at the public boundary.
     ///
-    /// Infallible by construction: every fallible step happens in
-    /// `encode_item`, which the caller runs while it can still un-emit a row.
+    /// Preparing text payloads can fail in `encode_item`, before the caller
+    /// commits a row. Final materialization can fail after the root commits
+    /// progress; that failure poisons further execution and continuation capture.
     ///
     /// It's valid for no backend page to have been absorbed (page
     /// assembled entirely from previously-buffered rows); it then reports
     /// zero charge and a fresh, empty [`DiagnosticsContext`].
-    pub(crate) fn build_page(self, items: Vec<ItemView>) -> CosmosResponse {
+    pub(crate) fn build_page(self, items: Vec<ItemView>) -> PipelineResponse {
         let diagnostics = DiagnosticsContext::aggregate_sub_operations(&self.diagnostics_sources)
             .map(Arc::new)
             .unwrap_or_else(empty_diagnostics);
@@ -702,8 +696,8 @@ impl PageAggregator {
             ..Default::default()
         };
 
-        CosmosResponse::new(
-            ResponseBody::from_item_views(items),
+        PipelineResponse::new(
+            PipelineBody::from_item_views(items),
             headers,
             self.status,
             diagnostics,
@@ -1037,7 +1031,7 @@ mod tests {
 
     #[test]
     fn parse_envelope_page_parses_documents_array() {
-        let body = ResponseBody::from_bytes(
+        let body = PipelineBody::from_bytes(
             br#"{"_rid":"abc","Documents":[{"_rid":"r1","orderByItems":[{"item":1}],"payload":{"id":"d1"}},{"_rid":"r2","orderByItems":[{}],"payload":{"id":"d2"}}],"_count":2}"#.to_vec(),
         );
         let rows = parse_envelope_page(&body, 1).unwrap();
@@ -1063,7 +1057,7 @@ mod tests {
             }],
             "_count": 1
         });
-        let body = ResponseBody::from_bytes(crate::binary_json::encode(&value));
+        let body = PipelineBody::from_bytes(crate::binary_json::encode(&value));
         let rows = parse_envelope_page(&body, 1).unwrap();
 
         assert_eq!(rows.len(), 1);
@@ -1093,7 +1087,7 @@ mod tests {
             reference.extend_from_slice(&4_u32.to_le_bytes()[..width]);
             let payload = binary_object(&[("wrong", reference)]);
             let page = bytes::Bytes::from(binary_envelope(std::slice::from_ref(&payload)));
-            let mut rows = parse_envelope_page(&ResponseBody::from_bytes(page.clone()), 1).unwrap();
+            let mut rows = parse_envelope_page(&PipelineBody::from_bytes(page.clone()), 1).unwrap();
             let EnvelopePayload::Binary(item) = &rows[0].payload else {
                 panic!("expected a page-backed item");
             };
@@ -1115,7 +1109,7 @@ mod tests {
             assert_eq!(emitted.source_page().as_ptr(), page.as_ptr());
             assert_eq!(emitted.raw_value(), &page[emitted.value_range()]);
             let body = aggregator.build_page(vec![emitted]);
-            assert!(matches!(body.body(), ResponseBody::ContextualItems(_)));
+            assert!(matches!(body.body(), PipelineBody::ContextualItems(_)));
             assert_eq!(
                 body.body()
                     .clone()
@@ -1140,7 +1134,7 @@ mod tests {
             vec![markers::ARR_LC1, 1, 2, 0], // Declared count exceeds contents.
         ] {
             let page = binary_envelope(&[good.clone(), malformed]);
-            let error = parse_envelope_page(&ResponseBody::from_bytes(page), 1).unwrap_err();
+            let error = parse_envelope_page(&PipelineBody::from_bytes(page), 1).unwrap_err();
             assert_eq!(
                 error.status(),
                 crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
@@ -1161,7 +1155,7 @@ mod tests {
         ]);
         let mut page = vec![PREAMBLE];
         page.extend(binary_object(&[("Documents", binary_array(&[item]))]));
-        let error = parse_envelope_page(&ResponseBody::from_bytes(page), 1).unwrap_err();
+        let error = parse_envelope_page(&PipelineBody::from_bytes(page), 1).unwrap_err();
         assert_eq!(
             error.status(),
             crate::error::status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
@@ -1177,7 +1171,7 @@ mod tests {
 
         let payload = binary_object(&[("id", binary_string("old")), ("id", binary_string("new"))]);
         let page = binary_envelope(std::slice::from_ref(&payload));
-        let mut rows = parse_envelope_page(&ResponseBody::from_bytes(page), 1).unwrap();
+        let mut rows = parse_envelope_page(&PipelineBody::from_bytes(page), 1).unwrap();
         let aggregator = PageAggregator::new(true);
         let item = aggregator.encode_item(0, &rows.remove(0).payload).unwrap();
         assert_eq!(item.raw_value(), payload);
@@ -1191,11 +1185,11 @@ mod tests {
 
     #[test]
     fn binary_page_requested_as_text_and_mixed_wire_pages_emit_text() {
-        let binary = ResponseBody::from_bytes(binary_envelope(&[binary_object(&[(
+        let binary = PipelineBody::from_bytes(binary_envelope(&[binary_object(&[(
             "id",
             binary_string("binary"),
         )])]));
-        let text = ResponseBody::from_bytes(br#"{"Documents":[{"_rid":"row","orderByItems":[{"item":2}],"payload":{"id":"text"}}]}"#.to_vec());
+        let text = PipelineBody::from_bytes(br#"{"Documents":[{"_rid":"row","orderByItems":[{"item":2}],"payload":{"id":"text"}}]}"#.to_vec());
         let binary_row = parse_envelope_page(&binary, 1).unwrap().remove(0);
         let text_row = parse_envelope_page(&text, 1).unwrap().remove(0);
         let aggregator = PageAggregator::new(false);
@@ -1204,8 +1198,10 @@ mod tests {
             .enumerate()
             .map(|(i, payload)| aggregator.encode_item(i, payload).unwrap())
             .collect();
-        let body = aggregator.build_page(items);
-        let ResponseBody::Items(items) = body.body() else {
+        let private = aggregator.build_page(items);
+        assert!(matches!(private.body(), PipelineBody::ContextualItems(_)));
+        let body = private.into_response(true, false).unwrap();
+        let crate::models::ResponseBody::Items(items) = body.body() else {
             panic!("text-requested merged output must contain standalone text");
         };
         assert_eq!(
@@ -1230,7 +1226,7 @@ mod tests {
         for _ in 0..ROUNDS {
             for page in &pages {
                 rows_seen += black_box(
-                    parse_envelope_page(&ResponseBody::from_bytes(page.clone()), 1)
+                    parse_envelope_page(&PipelineBody::from_bytes(page.clone()), 1)
                         .unwrap()
                         .len(),
                 );
@@ -1280,7 +1276,7 @@ mod tests {
 
     #[test]
     fn parse_envelope_page_empty_body_yields_no_rows() {
-        let rows = parse_envelope_page(&ResponseBody::NoPayload, 1).unwrap();
+        let rows = parse_envelope_page(&PipelineBody::NoPayload, 1).unwrap();
         assert!(rows.is_empty());
     }
 
@@ -1307,7 +1303,7 @@ mod tests {
         }));
 
         let resume_filter = |body: Vec<u8>| {
-            let rows = parse_envelope_page(&ResponseBody::from_bytes(body), 1).unwrap();
+            let rows = parse_envelope_page(&PipelineBody::from_bytes(body), 1).unwrap();
             let values: Vec<_> = rows[0]
                 .keys
                 .iter()
@@ -1368,13 +1364,13 @@ mod tests {
             "_count": 1,
         }));
 
-        let rows = parse_envelope_page(&ResponseBody::from_bytes(page), 1).unwrap();
+        let rows = parse_envelope_page(&PipelineBody::from_bytes(page), 1).unwrap();
         let payloads: Vec<_> = rows.into_iter().map(|row| row.payload).collect();
         let aggregator = PageAggregator::new(true);
         let items = encoded_items(&aggregator, &payloads).unwrap();
         let response = aggregator.build_page(items);
 
-        let ResponseBody::ContextualItems(items) = response.body() else {
+        let PipelineBody::ContextualItems(items) = response.body() else {
             panic!("expected page-backed items");
         };
         assert_eq!(items.len(), 1);
@@ -1433,7 +1429,7 @@ mod tests {
         let items = encoded_items(&aggregator, &[EnvelopePayload::Text(payload)]).unwrap();
         let response = aggregator.build_page(items);
         match response.body() {
-            ResponseBody::Items(items) => {
+            PipelineBody::Items(items) => {
                 assert_eq!(items.len(), 1);
                 assert!(
                     !crate::binary_json::is_binary(&items[0]),
@@ -1446,7 +1442,7 @@ mod tests {
 
     #[test]
     fn parse_envelope_page_rejects_missing_rid() {
-        let body = ResponseBody::from_bytes(
+        let body = PipelineBody::from_bytes(
             br#"{"Documents":[{"orderByItems":[{"item":1}],"payload":{"id":"d1"}}]}"#.to_vec(),
         );
         let err = parse_envelope_page(&body, 1).unwrap_err();
@@ -1458,7 +1454,7 @@ mod tests {
 
     #[test]
     fn parse_envelope_page_rejects_missing_payload() {
-        let body = ResponseBody::from_bytes(
+        let body = PipelineBody::from_bytes(
             br#"{"Documents":[{"_rid":"r1","orderByItems":[{"item":1}]}]}"#.to_vec(),
         );
         let err = parse_envelope_page(&body, 1).unwrap_err();
@@ -1470,7 +1466,7 @@ mod tests {
 
     #[test]
     fn parse_envelope_page_preserves_explicit_null_payload() {
-        let body = ResponseBody::from_bytes(
+        let body = PipelineBody::from_bytes(
             br#"{"Documents":[{"_rid":"r1","orderByItems":[{"item":1}],"payload":null}]}"#.to_vec(),
         );
         let rows = parse_envelope_page(&body, 1).unwrap();
@@ -1484,7 +1480,7 @@ mod tests {
 
     #[test]
     fn parse_envelope_page_rejects_items_body_shape() {
-        let body = ResponseBody::from_items(vec![]);
+        let body = PipelineBody::from_items(vec![]);
         let err = parse_envelope_page(&body, 1).unwrap_err();
         assert_eq!(
             err.status(),
@@ -1511,11 +1507,11 @@ mod tests {
 
     #[test]
     fn page_aggregator_merges_session_tokens() {
-        fn response_with_token(token: &'static str) -> CosmosResponse {
+        fn response_with_token(token: &'static str) -> PipelineResponse {
             let mut headers = CosmosResponseHeaders::default();
             headers.session_token = Some(SessionToken::new(token));
-            CosmosResponse::new(
-                ResponseBody::NoPayload,
+            PipelineResponse::new(
+                PipelineBody::NoPayload,
                 headers,
                 CosmosStatus::new(azure_core::http::StatusCode::Ok),
                 empty_diagnostics(),
@@ -1598,14 +1594,14 @@ mod tests {
         fn response_with_metrics(
             index_metrics: Option<&str>,
             query_metrics: Option<&str>,
-        ) -> CosmosResponse {
+        ) -> PipelineResponse {
             let headers = CosmosResponseHeaders {
                 index_metrics: index_metrics.map(str::to_owned),
                 query_metrics: query_metrics.map(str::to_owned),
                 ..Default::default()
             };
-            CosmosResponse::new(
-                ResponseBody::NoPayload,
+            PipelineResponse::new(
+                PipelineBody::NoPayload,
                 headers,
                 CosmosStatus::new(azure_core::http::StatusCode::Ok),
                 empty_diagnostics(),
@@ -1650,15 +1646,15 @@ mod tests {
 
     /// The exact per-item bytes of a feed page's `Items` body, so tests assert
     /// the emitted output directly rather than a re-parsed shape.
-    fn item_bytes(page: &CosmosResponse) -> Vec<String> {
+    fn item_bytes(page: &PipelineResponse) -> Vec<String> {
         match page.body() {
-            ResponseBody::Items(items) => items
+            PipelineBody::Items(items) => items
                 .iter()
                 .map(|b| String::from_utf8(b.to_vec()).unwrap())
                 .collect(),
-            ResponseBody::NoPayload => Vec::new(),
-            ResponseBody::Bytes(_) => panic!("expected an Items feed body"),
-            ResponseBody::ContextualItems(_) => panic!("expected standalone text items"),
+            PipelineBody::NoPayload => Vec::new(),
+            PipelineBody::Bytes(_) => panic!("expected an Items feed body"),
+            PipelineBody::ContextualItems(_) => panic!("expected standalone text items"),
         }
     }
 

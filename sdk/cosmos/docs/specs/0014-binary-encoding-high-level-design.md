@@ -648,8 +648,8 @@ non-binary work · **N/A** out of scope by design.
 Previously, an `ORDER BY` binary page was converted to text, parsed again as
 JSON, and its selected payloads re-encoded. The binary cursor now scans the
 entire page to validate structure, reads only `_rid` and `orderByItems` into
-merge metadata, and retains each payload as a `ResponseBody::ContextualItems`
-view: the original shared page `Bytes` and an absolute value range. Thus
+merge metadata, and retains each payload as a private pipeline view:
+the original shared page `Bytes` and an absolute value range. Thus
 discarded payloads are validated but never transcoded. An emitted binary
 view's raw value bytes match the service's original span exactly.
 
@@ -662,14 +662,16 @@ view's raw value bytes match the service's original span exactly.
 
 A view keeps its full page alive so a buffered row can pin more bytes than its
 own payload (up to one page per distinct backing retained across the fan-out).
-`ItemView::deserialize` resolves references in that page; `to_standalone` and
-`ResponseBody::items` decode and re-encode on demand when a caller needs an
-independent binary buffer. That buffer preserves the value, not the source's
-binary representation. The SDK uses contextual typed decoding directly. Native
-cursor completions retain the original page-backed response and materialize
-independent buffers for their `items` array. Page-aware hosts use
-`cosmos_completion_item_page` on the cursor completion's `common` member.
-Legacy one-shot feeds reject item-list responses rather than truncating them.
+The public boundary materializes only the root pipeline's surviving documents
+into standalone `ResponseBody::Items(Vec<Bytes>)` buffers. That conversion
+preserves the value, not the source's binary representation. The SDK decodes
+these independent buffers using the existing response-body API; no public
+contextual variant or page-view API is introduced. Native cursor completions
+borrow those same standalone buffers for their `items` array, without another
+conversion. Legacy one-shot feeds reject item-list responses rather than
+truncating them. Final materialization failures retain diagnostics and poison
+both further execution and continuation capture because the root has already
+advanced its progress.
 
 The test-only retention observer samples unique binary source pages held by
 buffered child rows, a newly fetched page, and the output currently being
@@ -677,10 +679,11 @@ assembled. It records only addresses and lengths, without retaining additional
 page ownership. For 16 partitions with 100 items per page and 1 KiB payloads,
 the selective `OFFSET 20 LIMIT 10` characterization measured a peak of
 1,773,658 backing-page bytes, compared with 1,108,540 bytes reachable from the
-ten output survivors. Shared pages are counted once. These are page-buffer
+ten output survivors before final materialization. Shared pages are counted once. These are page-buffer
 lengths, not total heap allocations or process peak memory; retained output
 from earlier calls, transport buffers, and decoded metadata are outside the
-measurement. Instrumentation is compiled only for unit tests, and its timings
+measurement. Public standalone output buffers do not retain the binary source
+pages. Instrumentation is compiled only for unit tests, and its timings
 are not an uninstrumented performance comparison.
 
 Note also that the emitted encoding follows the **negotiated operation**, not the

@@ -38,13 +38,9 @@ impl ResponseBody {
     /// single-payload body as a one-element vector. A no-payload body yields
     /// an empty `Vec`.
     ///
-    /// An `ORDER BY` item retained from a binary page is materialized in its
-    /// page context. The resulting bytes decode independently but may differ
-    /// from the document's original binary encoding.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if an item cannot be materialized.
+    /// Binary `ORDER BY` items are materialized by the driver after sorting
+    /// and filtering. Their bytes decode independently but may differ from
+    /// the original source encoding.
     pub fn items(self) -> crate::Result<Vec<Bytes>> {
         self.0.items()
     }
@@ -57,8 +53,6 @@ impl ResponseBody {
     /// Deserializes the items of a feed response as JSON of type `T`.
     ///
     /// * An [`Items`](DriverResponseBody::Items) body is decoded slice-by-slice.
-    /// * A [`ContextualItems`](DriverResponseBody::ContextualItems) body
-    ///   deserializes each item with its whole binary source page available.
     /// * A single-partition page that never went through those nodes arrives as
     ///   a raw `{"Documents":[...]}` envelope in a single
     ///   [`Bytes`](DriverResponseBody::Bytes) payload, parsed here via

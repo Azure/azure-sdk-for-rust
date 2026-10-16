@@ -11,6 +11,8 @@ use super::{
     recovery_diagnostics::RecoveryDiagnostics,
     PageResult, PipelineContext, PipelineNode, PipelineNodeState,
 };
+#[cfg(test)]
+use crate::driver::dataflow::PipelineBody;
 use crate::{
     error::CosmosError,
     models::{FeedRange, MaxItemCountHint, SessionToken},
@@ -274,13 +276,10 @@ impl PipelineNode for NonStreamingOrderedMerge {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        driver::dataflow::{
-            mocks::{response_with_charge, MockLeaf, NoopRequestExecutor, NoopTopologyProvider},
-            order_by::{OrderByItem, OrderByNumber},
-            PipelineContext,
-        },
-        models::ResponseBody,
+    use crate::driver::dataflow::{
+        mocks::{response_with_charge, MockLeaf, NoopRequestExecutor, NoopTopologyProvider},
+        order_by::{OrderByItem, OrderByNumber},
+        PipelineContext,
     };
     use serde_json::json;
     use serde_json::value::RawValue;
@@ -322,8 +321,8 @@ mod tests {
         )
     }
 
-    fn ids(response: &crate::models::CosmosResponse) -> Vec<String> {
-        let ResponseBody::Items(items) = response.body() else {
+    fn ids(response: &crate::driver::dataflow::PipelineResponse) -> Vec<String> {
+        let PipelineBody::Items(items) = response.body() else {
             panic!("expected items response");
         };
         items
@@ -484,7 +483,7 @@ mod tests {
         let PageResult::Page { response, .. } = node.next_page(&mut context).await.unwrap() else {
             panic!("expected page");
         };
-        let ResponseBody::Items(items) = response.body() else {
+        let PipelineBody::Items(items) = response.body() else {
             panic!("expected items response");
         };
         assert_eq!(items.len(), 1);
@@ -534,7 +533,7 @@ mod tests {
             else {
                 panic!("page")
             };
-            let ResponseBody::ContextualItems(items) = response.into_body() else {
+            let PipelineBody::ContextualItems(items) = response.into_body() else {
                 panic!("contextual")
             };
             retained.extend(items);
@@ -659,7 +658,7 @@ mod tests {
                     assert!(!terminal);
                     terminal = is_terminal;
                     charge += response.headers().request_charge.unwrap().value();
-                    let ResponseBody::Items(items) = response.body() else {
+                    let PipelineBody::Items(items) = response.body() else {
                         panic!("expected items");
                     };
                     assert!(items.len() <= 2);

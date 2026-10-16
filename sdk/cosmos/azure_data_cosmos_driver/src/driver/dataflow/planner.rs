@@ -12,6 +12,8 @@
 //! [`QueryPlan`](super::query_plan::QueryPlan) and resolves the query's EPK
 //! ranges against the current topology to produce a fan-out pipeline.
 
+#[cfg(test)]
+use crate::driver::dataflow::PipelineResponse;
 use std::sync::Arc;
 
 use crate::{
@@ -1943,9 +1945,8 @@ mod tests {
         },
         models::{
             effective_partition_key::EffectivePartitionKey, AccountReference, ContainerProperties,
-            ContainerReference, CosmosResponse, DatabaseReference, ItemReference, MaxItemCountHint,
-            OperationType, PartitionKey, PartitionKeyDefinition, RequestCharge, ResourceType,
-            SystemProperties,
+            ContainerReference, DatabaseReference, ItemReference, MaxItemCountHint, OperationType,
+            PartitionKey, PartitionKeyDefinition, RequestCharge, ResourceType, SystemProperties,
         },
     };
 
@@ -4363,13 +4364,14 @@ mod tests {
                         let mut headers = response.headers().clone();
                         headers.request_charge = Some(RequestCharge::new(1.25));
                         headers.session_token = Some(crate::models::SessionToken::new(session));
-                        Ok(CosmosResponse::new(body, headers, response.status(), response.diagnostics()))
+                        Ok(PipelineResponse::new(body, headers, response.status(), response.diagnostics()))
                     }).collect();
                     let mut executor = MockRequestExecutor::new(responses);
                     let mut context = PipelineContext::new(&mut executor, Some(&mut topology));
                     let mut actual = Vec::new();
                     let mut charge = 0.0;
                     while let Some(page) = pipeline.next_page(&mut context).await.unwrap() {
+                        let page = page.into_response(false, output_binary).unwrap();
                         charge += page.headers().request_charge.unwrap().value();
                         let session = page.headers().session_token.as_ref().unwrap().to_string();
                         assert!(session.contains("a:1#4"), "{session}");

@@ -74,11 +74,15 @@ At most three query shapes run concurrently to bound execution time without
 reducing the matrix. Requested resume runs must exercise a checkpoint.
 Resumed results must match uninterrupted ordering on the same container,
 including tied keys. `LocalPreferred` can fall back to gateway planning.
-Binary driver
-output must contain original page-backed views; silently receiving text does
-not satisfy the test. Standalone materialization and view lifetimes are also
-checked. The expanded matrix has a 30-minute timeout; provisioned-throughput
-charges continue until cleanup completes.
+Driver output must contain independently decodable binary items. A test-only
+HTTP/1.1 transport counts actual binary query pages before the driver parses
+them, so re-encoding text fallback alone does not satisfy the test. Retained
+standalone items must remain readable after their plan and driver handles are dropped.
+Private source-page ownership is covered by deterministic pipeline tests.
+Each run has a 30-minute timeout; provisioned-throughput charges continue until
+cleanup completes. To run the full matrix in two separate bounded runs, set
+`AZURE_COSMOS_ORDER_BY_LIVE_PLAN_MODE` to `GatewayOnly` for one run and
+`LocalPreferred` for the other. Leave it unset to exercise both in one run.
 
 The framework deletes the test database on completion, error, or timeout.
 An externally terminated process can bypass cleanup: the test prints its owned

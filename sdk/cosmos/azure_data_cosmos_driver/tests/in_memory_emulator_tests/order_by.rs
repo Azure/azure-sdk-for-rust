@@ -78,7 +78,7 @@ async fn setup() -> (
 }
 
 #[tokio::test]
-async fn binary_order_by_preserves_page_backed_items_across_physical_ranges() {
+async fn binary_order_by_emits_standalone_items_across_physical_ranges() {
     let (_emulator, driver) = setup().await;
     let container = driver
         .resolve_container("testdb", "testcoll", OperationOptions::default())
@@ -134,22 +134,14 @@ async fn binary_order_by_preserves_page_backed_items_across_physical_ranges() {
             if response.body().is_empty() {
                 continue;
             }
-            let ResponseBody::ContextualItems(items) = response.into_body() else {
-                panic!("binary ORDER BY should retain backend page context");
+            let ResponseBody::Items(items) = response.into_body() else {
+                panic!("binary ORDER BY should emit standalone items");
             };
             assert!(items.len() <= 2);
             for item in items {
-                let range = item.value_range();
-                assert_eq!(item.raw_value(), &item.source_page()[range]);
-                assert!(azure_data_cosmos_driver::binary_json::is_binary(
-                    item.source_page()
-                ));
-                let value: serde_json::Value = item.deserialize().unwrap();
-                let standalone = item.to_standalone().unwrap();
-                assert_eq!(
-                    azure_data_cosmos_driver::binary_json::decode(&standalone).unwrap(),
-                    value
-                );
+                assert!(azure_data_cosmos_driver::binary_json::is_binary(&item));
+                let value: serde_json::Value =
+                    azure_data_cosmos_driver::binary_json::from_slice(&item).unwrap();
                 ranks.push(value["rank"].as_i64().unwrap());
             }
         }

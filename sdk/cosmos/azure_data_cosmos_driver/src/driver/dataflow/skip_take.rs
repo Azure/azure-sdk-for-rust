@@ -23,12 +23,13 @@
 //! It stops early once `take` is satisfied, so a `TOP n` query
 //! never drains partitions it doesn't need.
 
+use crate::driver::dataflow::{ItemView, PipelineBody, PipelineResponse};
 use std::sync::Arc;
 
 use async_trait::async_trait;
 
 use crate::diagnostics::DiagnosticsContext;
-use crate::models::{CosmosResponse, FeedRange, ItemView, RequestCharge, ResponseBody};
+use crate::models::{FeedRange, RequestCharge};
 
 use super::{
     recovery_diagnostics::RecoveryDiagnostics, skip_take_page, PageResult, PipelineContext,
@@ -57,7 +58,7 @@ pub(crate) struct SkipTake {
     /// skip consumed the very last backend page without a terminal marker) the
     /// accumulated charge/diagnostics can still be flushed as a final empty
     /// page rather than being dropped.
-    pending_flush: Option<CosmosResponse>,
+    pending_flush: Option<PipelineResponse>,
     /// Whether a re-split page is emitted as Cosmos binary JSON. Derived from
     /// the negotiated operation, never from the bytes of a received page, so
     /// this node agrees with [`PageAggregator`] on the same query.
@@ -110,10 +111,10 @@ impl SkipTake {
     /// contextual items so the SDK need not re-parse an envelope.
     fn rebuild(
         &mut self,
-        response: &CosmosResponse,
+        response: &PipelineResponse,
         items: Vec<ItemView>,
         emitted: u64,
-    ) -> CosmosResponse {
+    ) -> PipelineResponse {
         let mut headers = response.headers().clone();
         headers.item_count = Some(emitted as u32);
         // Fold RUs charged by fully-skipped pages into this public page so the
@@ -122,8 +123,8 @@ impl SkipTake {
             let base = headers.request_charge.unwrap_or_default();
             headers.request_charge = Some(base + self.suppressed_charge);
         }
-        let rebuilt = CosmosResponse::new(
-            ResponseBody::from_item_views(items),
+        let rebuilt = PipelineResponse::new(
+            PipelineBody::from_item_views(items),
             headers,
             response.status(),
             response.diagnostics(),
@@ -137,7 +138,7 @@ impl SkipTake {
 
     /// Accumulates a fully-skipped page's request charge and diagnostics, and
     /// retains it as the flush template (see [`pending_flush`](Self::pending_flush)).
-    fn suppress(&mut self, response: CosmosResponse) {
+    fn suppress(&mut self, response: PipelineResponse) {
         self.suppressed_charge =
             self.suppressed_charge + response.headers().request_charge.unwrap_or_default();
         self.suppressed_diagnostics
@@ -178,8 +179,8 @@ impl SkipTake {
         headers.request_charge = Some(self.suppressed_charge);
         // An empty ordered/unordered page is an empty item list, not an empty
         // re-serialized envelope.
-        let response = CosmosResponse::new(
-            ResponseBody::from_items(Vec::new()),
+        let response = PipelineResponse::new(
+            PipelineBody::from_items(Vec::new()),
             headers,
             template.status(),
             diagnostics,
@@ -207,25 +208,25 @@ impl SkipTake {
     /// whole page at once and cannot return part of it.
     fn process_page(
         &mut self,
-        response: CosmosResponse,
+        response: PipelineResponse,
         is_terminal: bool,
     ) -> crate::error::Result<Option<PageResult>> {
         // An ordered merge hands us pre-split items. A raw backend feed page
         // arrives as `Bytes` and is split as text, then re-encoded below.
         let (items, needs_encode) = match response.body() {
-            ResponseBody::Items(items) => (
+            PipelineBody::Items(items) => (
                 items.iter().cloned().map(ItemView::standalone).collect(),
                 false,
             ),
-            ResponseBody::ContextualItems(items) => (items.clone(), false),
-            ResponseBody::Bytes(b) => (
+            PipelineBody::ContextualItems(items) => (items.clone(), false),
+            PipelineBody::Bytes(b) => (
                 skip_take_page::split_feed_envelope(b)?
                     .into_iter()
                     .map(ItemView::standalone)
                     .collect(),
                 true,
             ),
-            ResponseBody::NoPayload => (Vec::new(), false),
+            PipelineBody::NoPayload => (Vec::new(), false),
         };
 
         let outcome =
@@ -425,7 +426,6 @@ impl PipelineNode for SkipTake {
 mod tests {
     use super::*;
     use crate::driver::dataflow::mocks::*;
-    use crate::models::ResponseBody;
 
     #[tokio::test]
     async fn completed_window_without_pending_error_does_not_poll_child_again() {
@@ -467,14 +467,14 @@ mod tests {
         })
     }
 
-    fn ids_of(response: &CosmosResponse) -> Vec<u64> {
+    fn ids_of(response: &PipelineResponse) -> Vec<u64> {
         // SkipTake now emits a pre-split `Items` body; each item is one
         // document's exact bytes.
         let items = match response.body() {
-            ResponseBody::Items(items) => items.clone(),
-            ResponseBody::NoPayload => Vec::new(),
-            ResponseBody::Bytes(_) => panic!("expected Items body"),
-            ResponseBody::ContextualItems(items) => items
+            PipelineBody::Items(items) => items.clone(),
+            PipelineBody::NoPayload => Vec::new(),
+            PipelineBody::Bytes(_) => panic!("expected Items body"),
+            PipelineBody::ContextualItems(items) => items
                 .iter()
                 .map(|item| item.to_standalone().unwrap())
                 .collect(),
@@ -714,7 +714,7 @@ mod tests {
         })
     }
 
-    fn request_charge_of(response: &CosmosResponse) -> f64 {
+    fn request_charge_of(response: &PipelineResponse) -> f64 {
         response
             .headers()
             .request_charge

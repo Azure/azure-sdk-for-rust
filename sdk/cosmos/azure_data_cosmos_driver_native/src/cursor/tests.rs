@@ -9,9 +9,9 @@ use super::{
 };
 use crate::{
     completion::{
-        cosmos_completion_item_count, cosmos_completion_item_page, cosmos_completion_queue_create,
-        cosmos_completion_queue_free, cosmos_completion_queue_shutdown,
-        cosmos_completion_queue_wait, cosmos_operation_handle_free, cosmos_operation_handle_state,
+        cosmos_completion_queue_create, cosmos_completion_queue_free,
+        cosmos_completion_queue_shutdown, cosmos_completion_queue_wait,
+        cosmos_operation_handle_free, cosmos_operation_handle_state,
         cosmos_operation_handle_status, CompletionQueue, CosmosCompletion,
         CosmosOperationHandleState, OperationHandle,
     },
@@ -543,7 +543,7 @@ fn page_and_error_diagnostics_live_until_completion_free() {
             let queue = CompletionQueue::inner_arc(fixture.queue).unwrap();
             let state = queue.cursor.as_ref().unwrap().inner.lock().unwrap();
             let diagnostics = match &state.deliveries.front().unwrap().result {
-                Ok(ResultData::Page(page)) => page.response.diagnostics(),
+                Ok(ResultData::Page(page)) => page.diagnostics(),
                 Err(error) => error.diagnostics().unwrap(),
                 _ => panic!("expected page or error diagnostics"),
             };
@@ -743,32 +743,13 @@ fn binary_item_pages_survive_release(scripted: bool) {
             }
             assert_eq!((*page).body_kind, 2);
             assert!((*page).items_len <= 2);
-            assert_eq!(
-                cosmos_completion_item_count(&(*page).common),
-                (*page).items_len
-            );
+            assert!((*page).common.body.is_null());
+            assert_eq!((*page).common.body_len, 0);
             let mut snapshots = Vec::new();
-            for index in 0..(*page).items_len {
-                let mut source = ptr::null();
-                let mut source_len = 0;
-                let mut offset = 0;
-                let mut item_len = 0;
-                assert_eq!(
-                    cosmos_completion_item_page(
-                        &(*page).common,
-                        index,
-                        &mut source,
-                        &mut source_len,
-                        &mut offset,
-                        &mut item_len
-                    ),
-                    COSMOS_STATUS_SUCCESS
-                );
+            for item in std::slice::from_raw_parts((*page).items, (*page).items_len) {
                 snapshots.push((
-                    source,
-                    std::slice::from_raw_parts(source, source_len).to_vec(),
-                    offset,
-                    item_len,
+                    item.data,
+                    std::slice::from_raw_parts(item.data, item.len).to_vec(),
                 ));
             }
             source_snapshots.push(snapshots);
@@ -790,40 +771,12 @@ fn binary_item_pages_survive_release(scripted: bool) {
                     assert_eq!(bytes.first(), Some(&0x80));
                     let value: serde_json::Value =
                         azure_data_cosmos_driver::binary_json::from_slice(bytes).unwrap();
-                    let mut source = ptr::null();
-                    let mut source_len = 0;
-                    let mut offset = 0;
-                    let mut item_len = 0;
-                    assert_eq!(
-                        cosmos_completion_item_page(
-                            &(*page).common,
-                            index,
-                            &mut source,
-                            &mut source_len,
-                            &mut offset,
-                            &mut item_len,
-                        ),
-                        COSMOS_STATUS_SUCCESS
-                    );
-                    assert!(offset > 0);
-                    assert!(item_len > 0);
-                    assert!(offset + item_len <= source_len);
-                    let source = std::slice::from_raw_parts(source, source_len);
-                    assert_eq!(source.first(), Some(&0x80));
-                    let (original_source, snapshot, original_offset, original_len) =
-                        &snapshots[index];
-                    assert_eq!(source.as_ptr(), *original_source);
-                    assert_eq!(source, snapshot);
-                    assert_eq!((offset, item_len), (*original_offset, *original_len));
+                    let (original_source, snapshot) = &snapshots[index];
+                    assert_eq!(bytes.as_ptr(), *original_source);
+                    assert_eq!(bytes, snapshot);
                     if scripted {
                         assert_eq!(value["shared"], "reference outside every document");
                     }
-                    let envelope = azure_data_cosmos_driver::binary_json::decode(source).unwrap();
-                    assert!(envelope["Documents"]
-                        .as_array()
-                        .unwrap()
-                        .iter()
-                        .any(|item| item["payload"] == value));
                     ranks.push(value["rank"].as_i64().unwrap());
                 }
             }

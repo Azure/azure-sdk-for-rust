@@ -4,7 +4,11 @@
 //! Live binary ORDER BY comparisons using isolated, matched physical partitions.
 
 use crate::framework::{self, seeded_json::SplitMix64, TestClient, TestOptions, TestRunContext};
-use azure_core::fmt::SafeDebug;
+use azure_core::{
+    fmt::SafeDebug,
+    http::headers::{HeaderName, HeaderValue, Headers},
+    Bytes,
+};
 use azure_data_cosmos::{
     clients::{ContainerClient, DatabaseClient},
     feed::FeedScope,
@@ -20,31 +24,56 @@ use azure_data_cosmos::{
 };
 use azure_data_cosmos_driver::{
     binary_json,
+    diagnostics::RequestSentStatus,
+    error::{status_codes, CosmosError},
     models::{
         AccountReference as DriverAccountReference, ConnectionString, ContainerReference,
-        CosmosOperation, FeedRange, ItemView, PartitionKey, ResponseBody,
+        CosmosOperation, FeedRange, PartitionKey, ResponseBody,
     },
     options::{DriverOptions, OperationOptions, OperationOptionsBuilder, PlanOptions},
+    test::{
+        HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse, TransportClient,
+        TransportError,
+    },
     CosmosDriver, CosmosDriverRuntime,
 };
 use futures::{stream, StreamExt, TryStreamExt};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::BTreeSet,
     error::Error,
     num::NonZeroU32,
-    sync::Arc,
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
     time::{Duration, Instant},
 };
 
 type TestResult<T = ()> = Result<T, Box<dyn Error>>;
 
 const THROUGHPUT_APPROVAL: &str = "AZURE_COSMOS_ORDER_BY_LIVE_THROUGHPUT";
+const PLAN_MODE: &str = "AZURE_COSMOS_ORDER_BY_LIVE_PLAN_MODE";
 const THROUGHPUT: u64 = 20_000;
 const ITEM_COUNT: i64 = 160;
 const PAGE_SIZE: u32 = 7;
 const FIXTURE_SEED: u64 = 0x5283_5409;
+
+fn planning_modes(value: Option<&str>) -> TestResult<Vec<QueryPlanMode>> {
+    match value {
+        None => Ok(vec![
+            QueryPlanMode::GatewayOnly,
+            QueryPlanMode::LocalPreferred,
+        ]),
+        Some("GatewayOnly") => Ok(vec![QueryPlanMode::GatewayOnly]),
+        Some("LocalPreferred") => Ok(vec![QueryPlanMode::LocalPreferred]),
+        Some(value) => Err(format!(
+            "invalid {PLAN_MODE}={value:?}; expected GatewayOnly or LocalPreferred"
+        )
+        .into()),
+    }
+}
 
 #[derive(Clone, SafeDebug, Serialize, Deserialize, PartialEq)]
 struct LiveItem {
@@ -90,6 +119,126 @@ struct DriverSource {
     connection: ConnectionString,
     database: String,
     name: &'static str,
+    binary_pages: Arc<AtomicU64>,
+}
+
+#[derive(Debug)]
+struct ObservedGatewayFactory(Arc<AtomicU64>);
+
+#[derive(Debug)]
+struct ObservedGatewayClient {
+    client: reqwest::Client,
+    binary_pages: Arc<AtomicU64>,
+}
+
+impl HttpClientFactory for ObservedGatewayFactory {
+    fn build(
+        &self,
+        pool: &ConnectionPoolOptions,
+        _config: HttpClientConfig,
+    ) -> azure_data_cosmos_driver::error::Result<Arc<dyn TransportClient>> {
+        let client = reqwest::Client::builder()
+            .http1_only()
+            .tls_backend_rustls()
+            .connect_timeout(pool.max_connect_timeout())
+            .timeout(
+                pool.max_dataplane_request_timeout()
+                    .max(pool.max_metadata_request_timeout()),
+            )
+            .build()
+            .map_err(|source| {
+                CosmosError::builder()
+                    .with_status(status_codes::CLIENT_HTTP_CLIENT_CONSTRUCTION_FAILED)
+                    .with_message("failed to create live observation transport")
+                    .with_source(source)
+                    .build()
+            })?;
+        Ok(Arc::new(ObservedGatewayClient {
+            client,
+            binary_pages: self.0.clone(),
+        }))
+    }
+}
+
+#[async_trait::async_trait]
+impl TransportClient for ObservedGatewayClient {
+    async fn send(&self, request: &HttpRequest) -> Result<HttpResponse, TransportError> {
+        let method = reqwest::Method::from_bytes(request.method.as_str().as_bytes())
+            .expect("driver HTTP method is valid");
+        let mut builder = self.client.request(method, request.url.clone());
+        for (name, value) in request.headers.iter() {
+            builder = builder.header(name.as_str(), value.as_str());
+        }
+        if let Some(body) = &request.body {
+            builder = builder.body(body.clone());
+        }
+        if let Some(timeout) = request.timeout {
+            builder = builder.timeout(timeout);
+        }
+        let response = builder.send().await.map_err(|source| {
+            let (status, sent) = if source.is_connect() {
+                (
+                    status_codes::TRANSPORT_CONNECTION_FAILED,
+                    RequestSentStatus::NotSent,
+                )
+            } else {
+                (
+                    status_codes::TRANSPORT_IO_FAILED,
+                    RequestSentStatus::Unknown,
+                )
+            };
+            TransportError::new(
+                CosmosError::builder()
+                    .with_status(status)
+                    .with_message("live observation request failed")
+                    .with_source(source)
+                    .build(),
+                sent,
+            )
+        })?;
+        let status = response.status().as_u16();
+        let mut headers = Headers::new();
+        for (name, value) in response.headers() {
+            let value = value.to_str().map_err(|source| {
+                TransportError::new(
+                    CosmosError::builder()
+                        .with_status(status_codes::TRANSPORT_IO_FAILED)
+                        .with_message("invalid live response header")
+                        .with_source(source)
+                        .build(),
+                    RequestSentStatus::Sent,
+                )
+            })?;
+            headers.insert(
+                HeaderName::from(name.as_str().to_owned()),
+                HeaderValue::from(value.to_owned()),
+            );
+        }
+        let body = response.bytes().await.map_err(|source| {
+            TransportError::new(
+                CosmosError::builder()
+                    .with_status(status_codes::TRANSPORT_BODY_READ_FAILED)
+                    .with_message("failed to read live observation response")
+                    .with_source(source)
+                    .build(),
+                RequestSentStatus::Sent,
+            )
+        })?;
+        if (200..300).contains(&status)
+            && binary_json::is_binary(&body)
+            && request.headers.iter().any(|(name, value)| {
+                name.as_str() == "x-ms-documentdb-isquery"
+                    && value.as_str().eq_ignore_ascii_case("true")
+            })
+        {
+            self.binary_pages.fetch_add(1, Ordering::Relaxed);
+        }
+        Ok(HttpResponse {
+            status,
+            headers,
+            body: body.to_vec(),
+        })
+    }
 }
 
 impl Resume {
@@ -102,9 +251,8 @@ impl Resume {
 struct DriverMeasurements {
     pages: u32,
     resumes: u32,
-    contextual_items: u64,
+    binary_items: u64,
     standalone_bytes: u64,
-    maximum_retained_page_bytes: usize,
     request_charge: f64,
 }
 
@@ -116,8 +264,12 @@ fn require(condition: bool, message: impl Into<String>) -> TestResult {
 }
 
 fn items() -> Vec<LiveItem> {
+    items_with_count(ITEM_COUNT)
+}
+
+fn items_with_count(count: i64) -> Vec<LiveItem> {
     let mut rng = SplitMix64::new(FIXTURE_SEED);
-    (0..ITEM_COUNT)
+    (0..count)
         .map(|rank| LiveItem {
             id: format!("item-{rank:04}"),
             pk: format!("pk-{}", rank % 64),
@@ -396,13 +548,31 @@ async fn driver_container(
     connection: &ConnectionString,
     database: &str,
     container: &str,
+    binary_pages: Arc<AtomicU64>,
+) -> TestResult<(Arc<CosmosDriver>, ContainerReference)> {
+    driver_container_with_factory(
+        connection,
+        database,
+        container,
+        Arc::new(ObservedGatewayFactory(binary_pages)),
+    )
+    .await
+}
+
+async fn driver_container_with_factory(
+    connection: &ConnectionString,
+    database: &str,
+    container: &str,
+    factory: Arc<dyn HttpClientFactory>,
 ) -> TestResult<(Arc<CosmosDriver>, ContainerReference)> {
     let runtime = CosmosDriverRuntime::builder()
         .with_connection_pool(
             ConnectionPoolOptions::builder()
                 .with_gateway_v2_disabled(true)
+                .with_is_http2_allowed(false)
                 .build()?,
         )
+        .with_mock_http_client_factory(factory)
         .build()
         .await?;
     let driver = runtime
@@ -497,7 +667,7 @@ async fn run_driver_case(
         .plan_operation(operation.clone(), &options, None, &plan_options)
         .await?;
     let mut actual = Vec::new();
-    let mut retained: Option<ItemView> = None;
+    let mut retained: Option<Bytes> = None;
     let mut measurements = DriverMeasurements::default();
     let started = Instant::now();
     while let Some(response) = driver
@@ -526,38 +696,28 @@ async fn run_driver_case(
         )?;
         if !values.is_empty() {
             if binary && !text_response {
-                let ResponseBody::ContextualItems(views) = &body else {
+                let ResponseBody::Items(items) = &body else {
                     return Err(format!(
-                        "{}: service did not supply page-backed binary ORDER BY items",
+                        "{}: driver did not supply standalone binary ORDER BY items",
                         case.name
                     )
                     .into());
                 };
-                let mut backings = BTreeMap::new();
-                for view in views {
+                for item in items {
                     require(
-                        binary_json::is_binary(view.source_page()),
-                        "source page is not binary",
+                        binary_json::is_binary(item),
+                        "standalone item is not binary",
                     )?;
+                    let standalone_value: Value = binary_json::from_slice(item)?;
+                    let decoded: Value = binary_json::decode(item)?;
                     require(
-                        view.raw_value() == &view.source_page()[view.value_range()],
-                        "item span differs from source bytes",
+                        standalone_value == decoded,
+                        "standalone binary decoders disagree",
                     )?;
-                    let contextual: serde_json::Value = view.deserialize()?;
-                    let standalone = view.to_standalone()?;
-                    let standalone_value: Value = binary_json::from_slice(&standalone)?;
-                    require(
-                        standalone_value == contextual,
-                        "standalone materialization changed the item",
-                    )?;
-                    measurements.standalone_bytes += standalone.len() as u64;
-                    measurements.contextual_items += 1;
-                    backings.insert(view.source_page().as_ptr(), view.source_page().len());
-                    retained.get_or_insert_with(|| view.clone());
+                    measurements.standalone_bytes += item.len() as u64;
+                    measurements.binary_items += 1;
+                    retained.get_or_insert_with(|| item.clone());
                 }
-                measurements.maximum_retained_page_bytes = measurements
-                    .maximum_retained_page_bytes
-                    .max(backings.values().sum());
             } else {
                 for item in body.items()? {
                     require(
@@ -572,8 +732,13 @@ async fn run_driver_case(
             let token = plan.to_continuation_token()?;
             drop(plan);
             if matches!(resume, Resume::FreshRuntime) {
-                (driver, container) =
-                    driver_container(&source.connection, &source.database, source.name).await?;
+                (driver, container) = driver_container(
+                    &source.connection,
+                    &source.database,
+                    source.name,
+                    source.binary_pages.clone(),
+                )
+                .await?;
             }
             plan = driver
                 .plan_operation(operation.clone(), &options, Some(&token), &plan_options)
@@ -583,8 +748,8 @@ async fn run_driver_case(
     }
     drop(plan);
     drop(driver);
-    if let Some(view) = retained {
-        let _: Value = view.deserialize()?;
+    if let Some(item) = retained {
+        let _: Value = binary_json::from_slice(&item)?;
     }
     require(
         matches!(resume, Resume::Never) || measurements.resumes > 0,
@@ -592,9 +757,9 @@ async fn run_driver_case(
     )?;
     compare(actual.clone(), case, "driver")?;
     println!(
-        "driver case={} plan={mode:?} binary={binary} text_response={text_response} page_size={page_size} resume={resume:?} resumes={} items={} pages={} contextual_items={} retained_output_page_bytes={} materialized_bytes={} ru={:.2} elapsed_ms={:.2}",
-        case.name, measurements.resumes, case.expected.len(), measurements.pages, measurements.contextual_items,
-        measurements.maximum_retained_page_bytes, measurements.standalone_bytes,
+        "driver case={} plan={mode:?} binary={binary} text_response={text_response} page_size={page_size} resume={resume:?} resumes={} items={} pages={} binary_items={} materialized_bytes={} ru={:.2} elapsed_ms={:.2}",
+        case.name, measurements.resumes, case.expected.len(), measurements.pages, measurements.binary_items,
+        measurements.standalone_bytes,
         measurements.request_charge, started.elapsed().as_secs_f64() * 1000.0,
     );
     Ok(actual)
@@ -712,6 +877,12 @@ async fn live_binary_order_by_matches_text_across_physical_ranges() -> TestResul
         std::env::var("AZURE_COSMOS_TEST_MODE").as_deref() == Ok("required"),
         "live validation requires AZURE_COSMOS_TEST_MODE=required",
     )?;
+    let selected_mode = match std::env::var(PLAN_MODE) {
+        Ok(value) => Some(value),
+        Err(std::env::VarError::NotPresent) => None,
+        Err(error) => return Err(error.into()),
+    };
+    let modes = planning_modes(selected_mode.as_deref())?;
     TestClient::run_with_unique_db(
         async |context, database| {
             println!("Owned live validation database: {}", context.db_name());
@@ -740,22 +911,24 @@ async fn live_binary_order_by_matches_text_across_physical_ranges() -> TestResul
             .buffer_unordered(8)
             .try_collect::<Vec<_>>()
             .await?;
+            let text_binary_pages = Arc::new(AtomicU64::new(0));
+            let binary_pages = Arc::new(AtomicU64::new(0));
             let (text_driver, text_ref) =
-                driver_container(&connection, &context.db_name(), "order-by-text").await?;
+                driver_container(&connection, &context.db_name(), "order-by-text", text_binary_pages.clone()).await?;
             let (binary_driver, binary_ref) =
-                driver_container(&connection, &context.db_name(), "order-by-binary").await?;
+                driver_container(&connection, &context.db_name(), "order-by-binary", binary_pages.clone()).await?;
             let text_ranges = validate_ranges(&text_driver, &text_ref, &fixture).await?;
             let binary_ranges = validate_ranges(&binary_driver, &binary_ref, &fixture).await?;
             require(
                 text_ranges == binary_ranges,
                 "paired containers have different physical range boundaries",
             )?;
-            let text_source = DriverSource { driver: text_driver, container: text_ref, connection: connection.clone(), database: context.db_name(), name: "order-by-text" };
-            let binary_source = DriverSource { driver: binary_driver, container: binary_ref, connection: connection.clone(), database: context.db_name(), name: "order-by-binary" };
+            let text_source = DriverSource { driver: text_driver, container: text_ref, connection: connection.clone(), database: context.db_name(), name: "order-by-text", binary_pages: text_binary_pages.clone() };
+            let binary_source = DriverSource { driver: binary_driver, container: binary_ref, connection: connection.clone(), database: context.db_name(), name: "order-by-binary", binary_pages: binary_pages.clone() };
             let query_cases = cases(&fixture);
             let database_name = context.db_name();
             println!("fixture_seed={FIXTURE_SEED} query_shapes={} concurrent_shapes=3", query_cases.len());
-            for mode in [QueryPlanMode::GatewayOnly, QueryPlanMode::LocalPreferred] {
+            for mode in modes.iter().copied() {
                 stream::iter(query_cases.iter().map(|case| {
                     let text_source = &text_source;
                     let binary_source = &binary_source;
@@ -795,6 +968,10 @@ async fn live_binary_order_by_matches_text_across_physical_ranges() -> TestResul
                 .try_collect::<Vec<_>>()
                 .await?;
             }
+            let observed = binary_pages.load(Ordering::Relaxed);
+            require(observed > 0, "service supplied no binary query pages on the observed transport")?;
+            require(text_binary_pages.load(Ordering::Relaxed) == 0, "text-only driver received binary query pages")?;
+            println!("observed_binary_wire_query_pages={observed}");
             Ok(())
         },
         Some(
@@ -808,7 +985,25 @@ async fn live_binary_order_by_matches_text_across_physical_ranges() -> TestResul
 
 #[cfg(test)]
 mod tests {
-    use super::{cases, compare, items, ITEM_COUNT};
+    use super::{cases, compare, items, planning_modes, ITEM_COUNT};
+    use azure_data_cosmos::options::QueryPlanMode;
+
+    #[test]
+    fn planning_mode_selection_preserves_full_default_matrix_and_rejects_invalid_values() {
+        assert!(matches!(
+            planning_modes(None).unwrap().as_slice(),
+            [QueryPlanMode::GatewayOnly, QueryPlanMode::LocalPreferred]
+        ));
+        assert!(matches!(
+            planning_modes(Some("GatewayOnly")).unwrap().as_slice(),
+            [QueryPlanMode::GatewayOnly]
+        ));
+        assert!(matches!(
+            planning_modes(Some("LocalPreferred")).unwrap().as_slice(),
+            [QueryPlanMode::LocalPreferred]
+        ));
+        assert!(planning_modes(Some("invalid")).is_err());
+    }
 
     #[test]
     fn fixture_and_expected_windows_are_consistent() {

@@ -51,6 +51,9 @@
 //! `CLIENT_STREAMING_MERGE_SPLIT_REPLACEMENT_INVALID` rather than guessing at
 //! an unknown stream's position.
 
+use crate::driver::dataflow::ItemView;
+#[cfg(test)]
+use crate::driver::dataflow::{PipelineBody, PipelineResponse};
 use std::cmp::Ordering;
 use std::collections::VecDeque;
 use std::sync::Arc;
@@ -58,7 +61,7 @@ use std::sync::Arc;
 use super::recovery_diagnostics::RecoveryDiagnostics;
 use async_trait::async_trait;
 
-use crate::models::{CosmosOperation, FeedRange, ItemView, MaxItemCountHint, SessionToken};
+use crate::models::{CosmosOperation, FeedRange, MaxItemCountHint, SessionToken};
 
 use super::binary_heap;
 use super::order_by::{
@@ -316,7 +319,7 @@ impl ChildStream {
                     is_terminal,
                 } => {
                     #[cfg(test)]
-                    if let (Some(retention), crate::models::ResponseBody::Bytes(page)) =
+                    if let (Some(retention), PipelineBody::Bytes(page)) =
                         (&retention, response.body())
                     {
                         retention.record(Some(page));
@@ -1175,12 +1178,12 @@ mod tests {
         )
     }
 
-    /// Builds a rewritten-envelope backend `CosmosResponse` with one row per
+    /// Builds a rewritten-envelope backend `PipelineResponse` with one row per
     /// `(rid, rank)` pair (for a `MockRequestExecutor` reply).
     fn envelope_response(
         rows: &[(&str, i64)],
         continuation: Option<&str>,
-    ) -> crate::models::CosmosResponse {
+    ) -> crate::driver::dataflow::PipelineResponse {
         let documents: Vec<serde_json::Value> = rows
             .iter()
             .map(|(rid, rank)| {
@@ -1217,7 +1220,7 @@ mod tests {
             ..Default::default()
         };
         Ok(PageResult::Page {
-            response: crate::models::CosmosResponse::new(
+            response: crate::driver::dataflow::PipelineResponse::new(
                 response.body_bytes().to_vec(),
                 headers,
                 response.status(),
@@ -1237,7 +1240,7 @@ mod tests {
             ..Default::default()
         };
         Ok(PageResult::Page {
-            response: crate::models::CosmosResponse::new(
+            response: crate::driver::dataflow::PipelineResponse::new(
                 response.body_bytes().to_vec(),
                 headers,
                 response.status(),
@@ -1247,14 +1250,14 @@ mod tests {
         })
     }
 
-    /// A single-column complex (array) envelope backend `CosmosResponse`:
+    /// A single-column complex (array) envelope backend `PipelineResponse`:
     /// each row's sort key is the array `[value]`. Shared by
     /// [`array_envelope_page`] (MockLeaf pages) and `MockRequestExecutor`
     /// replies for the resume-filtered split test.
     fn array_envelope_response(
         rows: &[(&str, i64)],
         continuation: Option<&str>,
-    ) -> crate::models::CosmosResponse {
+    ) -> crate::driver::dataflow::PipelineResponse {
         let documents: Vec<serde_json::Value> = rows
             .iter()
             .map(|(rid, value)| {
@@ -1282,7 +1285,7 @@ mod tests {
         })
     }
 
-    /// A JOIN-shaped envelope backend `CosmosResponse`: `(rid, rank, id)` rows
+    /// A JOIN-shaped envelope backend `PipelineResponse`: `(rid, rank, id)` rows
     /// where several rows can share one `_rid` (a single document expanded by a
     /// JOIN) while carrying distinct payload `id`s. Shared by
     /// [`join_envelope_page`] (MockLeaf pages) and `MockRequestExecutor` replies
@@ -1290,7 +1293,7 @@ mod tests {
     fn join_envelope_response(
         rows: &[(&str, i64, &str)],
         continuation: Option<&str>,
-    ) -> crate::models::CosmosResponse {
+    ) -> crate::driver::dataflow::PipelineResponse {
         let documents: Vec<serde_json::Value> = rows
             .iter()
             .map(|(rid, rank, id)| {
@@ -1321,10 +1324,10 @@ mod tests {
         })
     }
 
-    fn ids(response: &crate::models::CosmosResponse) -> Vec<String> {
+    fn ids(response: &crate::driver::dataflow::PipelineResponse) -> Vec<String> {
         assert!(!matches!(
             response.body(),
-            crate::models::ResponseBody::Bytes(_)
+            crate::driver::dataflow::PipelineBody::Bytes(_)
         ));
         let items: Vec<serde_json::Value> = response.body().clone().into_items().unwrap();
         items
@@ -1435,7 +1438,7 @@ mod tests {
             },
             driver::dataflow::{query_plan::DistinctType, Distinct, SkipTake},
             error::status_codes,
-            models::{CosmosResponse, RequestCharge},
+            models::RequestCharge,
         };
         use std::error::Error as _;
 
@@ -1466,7 +1469,7 @@ mod tests {
             } else {
                 distinct
             };
-            let charged = |response: CosmosResponse| {
+            let charged = |response: PipelineResponse| {
                 let mut headers = response.headers().clone();
                 headers.request_charge = Some(RequestCharge::new(1.0));
                 let mut diagnostics = DiagnosticsContextBuilder::new(
@@ -1489,7 +1492,7 @@ mod tests {
                 });
                 diagnostics.complete_request(handle, response.status().status_code(), None);
                 diagnostics.set_operation_status(response.status().status_code(), None);
-                CosmosResponse::new(
+                PipelineResponse::new(
                     response.body().clone(),
                     headers,
                     response.status(),
@@ -1560,7 +1563,7 @@ mod tests {
     #[tokio::test]
     async fn terminal_window_hands_off_deferred_recovery_error_without_polling() {
         use crate::driver::dataflow::{query_plan::DistinctType, Distinct, SkipTake};
-        use crate::models::{CosmosResponse, RequestCharge};
+        use crate::models::RequestCharge;
 
         for (wrapper, skip) in (0..3).flat_map(|wrapper| [0, 1].map(|skip| (wrapper, skip))) {
             let left_range = range("", "80").unwrap();
@@ -1595,11 +1598,11 @@ mod tests {
                 )),
             };
             let mut window = SkipTake::new(child, skip, Some(2 - skip), false);
-            let charged = |response: CosmosResponse| {
+            let charged = |response: PipelineResponse| {
                 let mut headers = response.headers().clone();
                 headers.request_charge = Some(RequestCharge::new(1.0));
                 let diagnostics = mocks::gone_error_with_diagnostics().diagnostics().unwrap();
-                CosmosResponse::new(
+                PipelineResponse::new(
                     response.body().clone(),
                     headers,
                     response.status(),
@@ -1720,7 +1723,7 @@ mod tests {
             } else {
                 b"{".to_vec()
             };
-            let malformed = crate::models::CosmosResponse::new(
+            let malformed = crate::driver::dataflow::PipelineResponse::new(
                 body,
                 headers,
                 mocks::response(b"").status(),
@@ -1870,7 +1873,7 @@ mod tests {
             headers.session_token = Some(SessionToken::new("0:1#20"));
             let replacement = Box::new(
                 MockLeaf::with_pages(vec![Ok(PageResult::Page {
-                    response: crate::models::CosmosResponse::new(
+                    response: crate::driver::dataflow::PipelineResponse::new(
                         body,
                         headers,
                         mocks::response(b"").status(),
@@ -1912,7 +1915,8 @@ mod tests {
             else {
                 panic!("expected a binary page");
             };
-            let crate::models::ResponseBody::ContextualItems(views) = response.body() else {
+            let crate::driver::dataflow::PipelineBody::ContextualItems(views) = response.body()
+            else {
                 panic!("recovery must preserve contextual binary items");
             };
             assert_eq!(views[0].source_page(), first.as_ref());
@@ -2013,7 +2017,8 @@ mod tests {
                 panic!("expected a page from the selective merge");
             };
             assert!(is_terminal);
-            let crate::models::ResponseBody::ContextualItems(views) = response.body() else {
+            let crate::driver::dataflow::PipelineBody::ContextualItems(views) = response.body()
+            else {
                 panic!("binary ORDER BY survivors must retain their original pages");
             };
             let mut retained = HashMap::new();
@@ -2637,7 +2642,7 @@ mod tests {
                 ..Default::default()
             };
             Ok(PageResult::Page {
-                response: crate::models::CosmosResponse::new(
+                response: crate::driver::dataflow::PipelineResponse::new(
                     response.body_bytes().to_vec(),
                     headers,
                     response.status(),
@@ -3536,7 +3541,7 @@ mod tests {
             panic!("expected the successfully-encoded rows as a partial page");
         };
         let items = match response.body() {
-            crate::models::ResponseBody::Items(items) => items.clone(),
+            crate::driver::dataflow::PipelineBody::Items(items) => items.clone(),
             other => panic!("expected an Items body, got {other:?}"),
         };
         assert_eq!(items.len(), 1, "only `d1` encodes");
@@ -3607,7 +3612,7 @@ mod tests {
         let child = ChildStream::fresh(
             range("", "FF")?,
             Box::new(MockLeaf::with_pages(vec![Ok(PageResult::Page {
-                response: crate::models::CosmosResponse::new(
+                response: crate::driver::dataflow::PipelineResponse::new(
                     response.body_bytes().to_vec(),
                     headers,
                     response.status(),

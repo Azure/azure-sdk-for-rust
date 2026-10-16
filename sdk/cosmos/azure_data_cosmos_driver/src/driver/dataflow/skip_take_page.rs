@@ -15,7 +15,7 @@
 //! [`slice_ref`](bytes::Bytes::slice_ref) of the text page buffer — and trim
 //! that list. Binary pages are first normalized into one text buffer.
 //! [`SkipTake`] emits the surviving slices directly as a
-//! [`ResponseBody::Items`](crate::models::ResponseBody::Items) body.
+//! [`PipelineBody::Items`](crate::driver::dataflow::PipelineBody::Items) body.
 //!
 //! A **text**-negotiated query splits with
 //! [`slice_ref`](bytes::Bytes::slice_ref), so each surviving document is a

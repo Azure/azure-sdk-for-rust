@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 use super::{parse_envelope_page, EnvelopePayload, PageAggregator};
+use crate::driver::dataflow::PipelineBody;
 use crate::{
     binary_json::{
         self, markers,
@@ -12,7 +13,6 @@ use crate::{
         PREAMBLE,
     },
     error::status_codes,
-    models::ResponseBody,
 };
 use bytes::Bytes;
 use serde_json::{json, Value};
@@ -24,13 +24,13 @@ fn page(root: Vec<u8>) -> Bytes {
 }
 
 fn check_against_full_decode(bytes: Bytes) {
-    let Ok(rows) = parse_envelope_page(&ResponseBody::from_bytes(bytes.clone()), 1) else {
+    let Ok(rows) = parse_envelope_page(&PipelineBody::from_bytes(bytes.clone()), 1) else {
         return;
     };
     let mut decoded = binary_json::decode(&bytes).expect("scanner accepted invalid binary");
     binary_json::normalize_integral_floats(&mut decoded);
     let text = serde_json::to_vec(&decoded).unwrap();
-    let reference = parse_envelope_page(&ResponseBody::from_bytes(text), 1).unwrap();
+    let reference = parse_envelope_page(&PipelineBody::from_bytes(text), 1).unwrap();
     assert_eq!(rows.len(), reference.len());
     let aggregator = PageAggregator::new(true);
     for (row, expected) in rows.iter().zip(reference) {
@@ -64,7 +64,7 @@ fn generated_envelopes_match_full_decode_and_text_parser() {
                 .collect();
             let bytes = envelope(&payloads);
             assert_eq!(
-                parse_envelope_page(&ResponseBody::from_bytes(bytes.clone()), 1)
+                parse_envelope_page(&PipelineBody::from_bytes(bytes.clone()), 1)
                     .unwrap()
                     .len(),
                 payloads.len()
@@ -89,10 +89,10 @@ fn generated_sort_metadata_matches_full_decode() {
             "unknown": rng.value(2),
         });
         let bytes = Bytes::from(binary_json::encode(&envelope));
-        let parsed = parse_envelope_page(&ResponseBody::from_bytes(bytes.clone()), 1);
+        let parsed = parse_envelope_page(&PipelineBody::from_bytes(bytes.clone()), 1);
         if key.is_array() || key.is_object() {
             let text = parse_envelope_page(
-                &ResponseBody::from_bytes(serde_json::to_vec(&envelope).unwrap()),
+                &PipelineBody::from_bytes(serde_json::to_vec(&envelope).unwrap()),
                 1,
             );
             assert_eq!(parsed.unwrap_err().status(), text.unwrap_err().status());
@@ -108,7 +108,7 @@ fn envelope_truncations_corruptions_and_random_bytes_never_panic() {
     let bytes = reference_rows(&[("a", 1), ("b", 2)], "referenced string");
     for cut in 1..bytes.len() {
         assert!(
-            parse_envelope_page(&ResponseBody::from_bytes(bytes.slice(..cut)), 1).is_err(),
+            parse_envelope_page(&PipelineBody::from_bytes(bytes.slice(..cut)), 1).is_err(),
             "cut {cut}"
         );
     }
@@ -137,7 +137,7 @@ fn golden_wire_forms_decode_in_payloads_and_unknown_fields() {
         }
         let payload = vector.binary[1..].to_vec();
         let bytes = envelope(std::slice::from_ref(&payload));
-        parse_envelope_page(&ResponseBody::from_bytes(bytes.clone()), 1)
+        parse_envelope_page(&PipelineBody::from_bytes(bytes.clone()), 1)
             .unwrap_or_else(|e| panic!("{}: {e}", vector.name));
         check_against_full_decode(bytes);
         let bytes = page(object(&[
@@ -152,7 +152,7 @@ fn golden_wire_forms_decode_in_payloads_and_unknown_fields() {
                 ])]),
             ),
         ]));
-        parse_envelope_page(&ResponseBody::from_bytes(bytes.clone()), 1)
+        parse_envelope_page(&PipelineBody::from_bytes(bytes.clone()), 1)
             .unwrap_or_else(|e| panic!("unknown {}: {e}", vector.name));
         check_against_full_decode(bytes);
     }
@@ -192,7 +192,7 @@ fn reference_offsets_cross_width_boundaries_and_can_point_forward() {
                 string("needle")
             );
             check_against_full_decode(bytes.clone());
-            let rows = parse_envelope_page(&ResponseBody::from_bytes(bytes), 1).unwrap();
+            let rows = parse_envelope_page(&PipelineBody::from_bytes(bytes), 1).unwrap();
             let EnvelopePayload::Binary(item) = &rows[0].payload else {
                 panic!("binary")
             };
@@ -238,7 +238,7 @@ fn reference_offsets_cross_width_boundaries_and_can_point_forward() {
         reference[1..].copy_from_slice(&(target as u32).to_le_bytes());
         let bytes = make(reference);
         check_against_full_decode(bytes.clone());
-        let rows = parse_envelope_page(&ResponseBody::from_bytes(bytes), 1).unwrap();
+        let rows = parse_envelope_page(&PipelineBody::from_bytes(bytes), 1).unwrap();
         let EnvelopePayload::Binary(item) = &rows[0].payload else {
             panic!("binary")
         };
@@ -263,7 +263,7 @@ fn payload_references_can_target_another_document() {
     reference[1..].copy_from_slice(&(target as u32).to_le_bytes());
     let bytes = envelope(&[first, reference]);
     check_against_full_decode(bytes.clone());
-    let rows = parse_envelope_page(&ResponseBody::from_bytes(bytes), 1).unwrap();
+    let rows = parse_envelope_page(&PipelineBody::from_bytes(bytes), 1).unwrap();
     let EnvelopePayload::Binary(item) = &rows[1].payload else {
         panic!("binary")
     };
@@ -293,7 +293,7 @@ fn structural_field_permutations_and_null_payloads_are_valid() {
             let item = object(&order.map(|i| fields[i].clone()));
             let bytes = page(object(&[(name, array(&[item]))]));
             assert_eq!(
-                parse_envelope_page(&ResponseBody::from_bytes(bytes.clone()), 1)
+                parse_envelope_page(&PipelineBody::from_bytes(bytes.clone()), 1)
                     .unwrap()
                     .len(),
                 1
@@ -318,7 +318,7 @@ fn malformed_structural_fields_are_envelope_errors() {
         for fields in [missing, duplicate] {
             let bytes = page(object(&[("Documents", array(&[object(&fields)]))]));
             assert_eq!(
-                parse_envelope_page(&ResponseBody::from_bytes(bytes), 1)
+                parse_envelope_page(&PipelineBody::from_bytes(bytes), 1)
                     .unwrap_err()
                     .status(),
                 status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
@@ -344,7 +344,7 @@ fn malformed_structural_fields_are_envelope_errors() {
             .1 = invalid;
         let bytes = page(object(&[("Documents", array(&[object(&fields)]))]));
         assert_eq!(
-            parse_envelope_page(&ResponseBody::from_bytes(bytes), 1)
+            parse_envelope_page(&PipelineBody::from_bytes(bytes), 1)
                 .unwrap_err()
                 .status(),
             status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
@@ -357,7 +357,7 @@ fn malformed_structural_fields_are_envelope_errors() {
         object(&[("Documents", array(&[])), ("documents", array(&[]))]),
     ] {
         assert_eq!(
-            parse_envelope_page(&ResponseBody::from_bytes(page(root)), 1)
+            parse_envelope_page(&PipelineBody::from_bytes(page(root)), 1)
                 .unwrap_err()
                 .status(),
             status_codes::SERVICE_ORDER_BY_ENVELOPE_INVALID
@@ -402,7 +402,7 @@ fn invalid_references_and_unknown_values_are_serialization_errors() {
                 ])]),
             )])),
         ] {
-            let error = parse_envelope_page(&ResponseBody::from_bytes(bytes), 1)
+            let error = parse_envelope_page(&PipelineBody::from_bytes(bytes), 1)
                 .expect_err(&format!("malformed value must be rejected: {invalid:02x?}"));
             assert_eq!(
                 error.status(),
@@ -417,13 +417,13 @@ fn envelope_depth_and_trailing_bytes_are_checked() {
     for (depth, valid) in [(MAX_DEPTH - 3, true), (MAX_DEPTH - 2, false)] {
         let mut payload = vec![markers::ARR1; depth];
         payload.push(markers::NULL);
-        let result = parse_envelope_page(&ResponseBody::from_bytes(envelope(&[payload])), 1);
+        let result = parse_envelope_page(&PipelineBody::from_bytes(envelope(&[payload])), 1);
         assert_eq!(result.is_ok(), valid, "depth {depth}");
     }
     let mut bytes = envelope(&[vec![markers::NULL]]).to_vec();
     bytes.push(markers::NULL);
     assert_eq!(
-        parse_envelope_page(&ResponseBody::from_bytes(bytes), 1)
+        parse_envelope_page(&PipelineBody::from_bytes(bytes), 1)
             .unwrap_err()
             .status(),
         status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
@@ -447,7 +447,7 @@ fn string_and_container_length_forms_keep_exact_item_spans() {
             encoded.extend_from_slice(text.as_bytes());
             let bytes = envelope(&[encoded.clone(), object(&[(&text, encoded)])]);
             assert_eq!(
-                parse_envelope_page(&ResponseBody::from_bytes(bytes.clone()), 1)
+                parse_envelope_page(&PipelineBody::from_bytes(bytes.clone()), 1)
                     .unwrap()
                     .len(),
                 2
@@ -486,14 +486,14 @@ fn string_and_container_length_forms_keep_exact_item_spans() {
             encoded.extend(body);
             check_against_full_decode(envelope(std::slice::from_ref(&encoded)));
             assert!(parse_envelope_page(
-                &ResponseBody::from_bytes(envelope(std::slice::from_ref(&encoded))),
+                &PipelineBody::from_bytes(envelope(std::slice::from_ref(&encoded))),
                 1
             )
             .is_ok());
             if counted {
                 encoded[1 + width] = (count + 1) as u8;
                 assert!(
-                    parse_envelope_page(&ResponseBody::from_bytes(envelope(&[encoded])), 1)
+                    parse_envelope_page(&PipelineBody::from_bytes(envelope(&[encoded])), 1)
                         .is_err()
                 );
             }
@@ -521,7 +521,7 @@ fn reference_chains_and_cycles_are_rejected_in_context() {
         }
         assert!(binary_json::decode(&bytes).is_err());
         assert_eq!(
-            parse_envelope_page(&ResponseBody::from_bytes(bytes), 1)
+            parse_envelope_page(&PipelineBody::from_bytes(bytes), 1)
                 .unwrap_err()
                 .status(),
             status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
@@ -538,7 +538,7 @@ fn contextual_typed_numbers_match_standalone_at_integer_boundaries() {
         json!(9_007_199_254_740_992_u64),
     ] {
         let bytes = envelope(&[binary_json::encode(&value)[1..].to_vec()]);
-        let rows = parse_envelope_page(&ResponseBody::from_bytes(bytes), 1).unwrap();
+        let rows = parse_envelope_page(&PipelineBody::from_bytes(bytes), 1).unwrap();
         let EnvelopePayload::Binary(item) = &rows[0].payload else {
             panic!("binary")
         };
