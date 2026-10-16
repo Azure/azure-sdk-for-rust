@@ -6,6 +6,12 @@
   "files.associations": {
     "CODEOWNERS": "ignore"
   },
+  "files.readonlyInclude": {
+    "**/api.documentation.patch": true,
+    "**/api.md": true,
+    "**/api.md.map": true,
+    "**/api.metadata.yml": true
+  },
   "github.copilot.chat.commitMessageGeneration.instructions": [
     {
       "file": ".github/instructions/git-commit.instructions.md"
