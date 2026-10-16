@@ -19,6 +19,7 @@ pub use iterator::{QueryItemIterator, QueryPageIterator};
 pub use page::FeedPage;
 pub use query::{FeedScope, Query};
 pub use query_page::QueryFeedPage;
+pub use read_many::{ReadManyFilter, ReadManyIterator, ReadManyResponse, ReadManySelection};
 
 // =========================================================================
 // Crate-internal re-exports
@@ -37,6 +38,7 @@ mod iterator;
 mod page;
 mod query;
 mod query_page;
+mod read_many;
 
 /// Dispatches a completed feed page's diagnostics to the registered handler
 /// chain, carrying the paged operation's identity ([`query_items`] /

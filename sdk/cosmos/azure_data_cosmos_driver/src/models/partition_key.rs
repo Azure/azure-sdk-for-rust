@@ -12,6 +12,60 @@ use std::{borrow::Cow, hash::Hash};
 pub(crate) const PARTITION_KEY: HeaderName =
     HeaderName::from_static("x-ms-documentdb-partitionkey");
 
+pub(crate) fn parse_path(path: &str) -> crate::Result<Vec<String>> {
+    let bytes = path.as_bytes();
+    let mut segments = Vec::new();
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] != b'/' {
+            return Err(crate::read_many::invalid("invalid partition key path"));
+        }
+        index += 1;
+        if index == bytes.len() {
+            break;
+        }
+        if matches!(bytes[index], b'\'' | b'"') {
+            let quote = bytes[index];
+            let start = index + 1;
+            index = start;
+            loop {
+                let Some(relative) = bytes[index..].iter().position(|value| *value == quote) else {
+                    return Err(crate::read_many::invalid(
+                        "unterminated partition key path segment",
+                    ));
+                };
+                index += relative;
+                let escaped = bytes[..index]
+                    .iter()
+                    .rev()
+                    .take_while(|value| **value == b'\\')
+                    .count()
+                    % 2
+                    == 1;
+                if !escaped {
+                    break;
+                }
+                index += 1;
+            }
+            segments.push(path[start..index].to_owned());
+            index += 1;
+            if index < bytes.len() && bytes[index] != b'/' {
+                return Err(crate::read_many::invalid(
+                    "invalid partition key path separator",
+                ));
+            }
+        } else {
+            let end = bytes[index..]
+                .iter()
+                .position(|value| *value == b'/')
+                .map_or(bytes.len(), |relative| index + relative);
+            segments.push(path[index..end].trim().to_owned());
+            index = end;
+        }
+    }
+    Ok(segments)
+}
+
 // =============================================================================
 // PartitionKeyValue
 // =============================================================================
@@ -198,6 +252,20 @@ impl PartitionKeyValue {
     /// Returns `true` if this value is the special Infinity sentinel.
     pub(crate) fn is_infinity(&self) -> bool {
         matches!(self.0, InnerPartitionKeyValue::Infinity)
+    }
+
+    pub(crate) fn query_value(&self) -> crate::Result<Option<serde_json::Value>> {
+        use serde_json::Value;
+        Ok(Some(match &self.0 {
+            InnerPartitionKeyValue::Null => Value::Null,
+            InnerPartitionKeyValue::String(value) => Value::String(value.to_string()),
+            InnerPartitionKeyValue::Number(value) => serde_json::to_value(value.value())?,
+            InnerPartitionKeyValue::Bool(value) => Value::Bool(*value),
+            InnerPartitionKeyValue::Undefined => return Ok(None),
+            InnerPartitionKeyValue::Infinity => {
+                return Err(crate::read_many::invalid("invalid partition key sentinel"))
+            }
+        }))
     }
 }
 

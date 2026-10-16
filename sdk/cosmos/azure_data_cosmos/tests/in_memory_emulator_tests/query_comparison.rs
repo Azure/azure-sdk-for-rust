@@ -26,7 +26,7 @@ use azure_data_cosmos::{
 };
 use azure_data_cosmos_driver::{
     driver::CosmosDriverRuntime,
-    error::CosmosError,
+    error::{status_codes, CosmosError},
     in_memory_emulator::{
         ConsistencyLevel, ContainerConfig, InMemoryEmulatorHttpClient, VirtualAccountConfig,
         VirtualRegion,
@@ -156,7 +156,7 @@ async fn resolve_external_backend() -> Result<Option<Backend>, Box<dyn Error>> {
     let endpoint = connection.account_endpoint().to_owned();
     let key = connection.account_key().secret().to_string();
 
-    let initial_driver = retry_transport_generated_503("initial external driver", || {
+    let initial_driver = retry_setup_transport_failure("initial external driver", || {
         build_external_driver(&endpoint, &key, OperationOptions::default(), None)
     })
     .await?;
@@ -164,11 +164,11 @@ async fn resolve_external_backend() -> Result<Option<Backend>, Box<dyn Error>> {
     let mut default_options = OperationOptions::default();
     default_options.excluded_regions = excluded_regions;
 
-    let client = retry_transport_generated_503("external client", || {
+    let client = retry_setup_transport_failure("external client", || {
         build_external_client(&endpoint, &key, default_options.clone(), hub_region.clone())
     })
     .await?;
-    let driver = retry_transport_generated_503("external driver", || {
+    let driver = retry_setup_transport_failure("external driver", || {
         build_external_driver(
             &endpoint,
             &key,
@@ -180,18 +180,19 @@ async fn resolve_external_backend() -> Result<Option<Backend>, Box<dyn Error>> {
     Ok(Some(Backend { client, driver }))
 }
 
-fn is_transport_generated_503(error: &(dyn Error + 'static)) -> bool {
+fn is_setup_transport_failure(error: &(dyn Error + 'static)) -> bool {
     let mut current = Some(error);
     while let Some(error) = current {
         if let Some(cosmos) = error.downcast_ref::<CosmosError>() {
-            return cosmos.status().is_transport_generated_503();
+            return cosmos.status().is_transport_generated_503()
+                || cosmos.status() == status_codes::TRANSPORT_CONNECTION_FAILED;
         }
         current = error.source();
     }
     false
 }
 
-async fn retry_transport_generated_503<T, F, Fut>(
+async fn retry_setup_transport_failure<T, F, Fut>(
     description: &str,
     mut operation: F,
 ) -> Result<T, Box<dyn Error>>
@@ -205,9 +206,9 @@ where
     for attempt in 1..=MAX_ATTEMPTS {
         match operation().await {
             Ok(result) => return Ok(result),
-            Err(error) if is_transport_generated_503(error.as_ref()) && attempt < MAX_ATTEMPTS => {
+            Err(error) if is_setup_transport_failure(error.as_ref()) && attempt < MAX_ATTEMPTS => {
                 eprintln!(
-                    "[query-comparison] {description} hit a transport-generated 503 on attempt \
+                    "[query-comparison] {description} hit a transport failure on attempt \
                      {attempt}/{MAX_ATTEMPTS}; retrying in {backoff:?}: {error}"
                 );
                 tokio::time::sleep(backoff).await;
@@ -1743,4 +1744,90 @@ fn sort_items(items: &mut [Value]) {
             .unwrap_or_default()
             .cmp(right["id"].as_str().unwrap_or_default())
     });
+}
+
+#[cfg(test)]
+mod setup_retry_tests {
+    use super::{retry_setup_transport_failure, status_codes, CosmosError, Error, StatusCode};
+    use azure_data_cosmos_driver::CosmosStatus;
+    use std::{cell::Cell, time::Duration};
+
+    fn failure(status: CosmosStatus, attempt: u32) -> Box<dyn Error> {
+        Box::new(
+            CosmosError::builder()
+                .with_status(status)
+                .with_message(format!("setup attempt {attempt}"))
+                .build(),
+        )
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn retries_connection_and_generated_transport_failures_before_success() {
+        let attempts = Cell::new(0);
+        let started = tokio::time::Instant::now();
+        let result = retry_setup_transport_failure("test setup", || {
+            let attempt = attempts.get() + 1;
+            attempts.set(attempt);
+            std::future::ready(match attempt {
+                1 => Err(failure(status_codes::TRANSPORT_CONNECTION_FAILED, attempt)),
+                2 => Err(failure(status_codes::TRANSPORT_GENERATED_503, attempt)),
+                _ => Ok("ready"),
+            })
+        })
+        .await
+        .unwrap();
+        assert_eq!(result, "ready");
+        assert_eq!(attempts.get(), 3);
+        assert_eq!(started.elapsed(), Duration::from_millis(750));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn persistent_connection_failure_exhausts_existing_retry_budget() {
+        let attempts = Cell::new(0);
+        let started = tokio::time::Instant::now();
+        let error = retry_setup_transport_failure::<(), _, _>("test setup", || {
+            let attempt = attempts.get() + 1;
+            attempts.set(attempt);
+            std::future::ready(Err(failure(
+                status_codes::TRANSPORT_CONNECTION_FAILED,
+                attempt,
+            )))
+        })
+        .await
+        .unwrap_err();
+        assert_eq!(attempts.get(), 12);
+        assert_eq!(started.elapsed(), Duration::from_millis(37_750));
+        let error = error.downcast_ref::<CosmosError>().unwrap();
+        assert_eq!(error.status(), status_codes::TRANSPORT_CONNECTION_FAILED);
+        assert!(error.to_string().contains("setup attempt 12"));
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn authentication_and_unclassified_service_errors_are_not_retried() {
+        for status in [
+            StatusCode::Unauthorized,
+            StatusCode::Forbidden,
+            StatusCode::BadRequest,
+            StatusCode::ServiceUnavailable,
+        ] {
+            let attempts = Cell::new(0);
+            let started = tokio::time::Instant::now();
+            let error = retry_setup_transport_failure::<(), _, _>("test setup", || {
+                attempts.set(attempts.get() + 1);
+                std::future::ready(Err(failure(CosmosStatus::new(status), 1)))
+            })
+            .await
+            .unwrap_err();
+            assert_eq!(attempts.get(), 1);
+            assert_eq!(started.elapsed(), Duration::ZERO);
+            assert_eq!(
+                error
+                    .downcast_ref::<CosmosError>()
+                    .unwrap()
+                    .status()
+                    .status_code(),
+                status
+            );
+        }
+    }
 }
