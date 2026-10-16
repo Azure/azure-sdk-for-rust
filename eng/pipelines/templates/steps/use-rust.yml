@@ -32,7 +32,7 @@ steps:
 # subcommands there, but tools invoked directly (taplo, cargo2junit) need it on PATH.
 - pwsh: |
     . ([System.IO.Path]::Combine(
-      '$(Build.SourcesDirectory)',
+      '${{ parameters.SourcesDir }}',
       'eng',
       'scripts',
       'shared',
@@ -49,7 +49,7 @@ steps:
 - ${{ if parameters.ConfigureRegistry }}:
   - pwsh: |
       . ([System.IO.Path]::Combine(
-        '$(Build.SourcesDirectory)',
+        '${{ parameters.SourcesDir }}',
         'eng',
         'scripts',
         'shared',

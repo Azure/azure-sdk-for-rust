@@ -121,7 +121,7 @@ fn resolve_repository_root(request: &cli::Request) -> Result<std::path::PathBuf,
     };
 
     verify_repository_root(&repository_root)?;
-    std::path::absolute(&repository_root).map_err(|error| {
+    std::fs::canonicalize(&repository_root).map_err(|error| {
         format!(
             "Failed to resolve repository root '{}': {error}",
             repository_root.display()
@@ -139,3 +139,6 @@ fn verify_repository_root(repository_root: &Path) -> Result<(), String> {
         ))
     }
 }
+
+#[cfg(test)]
+mod tests;
