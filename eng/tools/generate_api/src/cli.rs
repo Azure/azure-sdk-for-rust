@@ -34,10 +34,6 @@ struct Args {
     /// Directory where generated files will be written. Defaults to the crate directory.
     #[arg(long = "output-dir", alias = "output", value_name = "DIR")]
     output_dir: Option<PathBuf>,
-
-    /// Directory where Markdown review state is written. Defaults to --output-dir.
-    #[arg(long, value_name = "DIR")]
-    working_dir: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone)]
@@ -48,7 +44,6 @@ pub(crate) struct Request {
     pub(crate) review: bool,
     pub(crate) check: bool,
     pub(crate) output_dir: Option<PathBuf>,
-    pub(crate) working_dir: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, ValueEnum)]
@@ -61,9 +56,6 @@ pub(crate) enum OutputFormat {
 pub(crate) const DOCUMENTATION_PATCH_FILE_NAME: &str = "api.documentation.patch";
 pub(crate) const MARKDOWN_METADATA_FILE_NAME: &str = "api.metadata.yml";
 pub(crate) const SOURCE_MAP_FILE_NAME: &str = "api.md.map";
-pub(crate) const STATE_DIRECTORY_NAME: &str = "state";
-pub(crate) const PACKAGE_RELATIVE_PATH_FILE_NAME: &str = "package-relative-path.txt";
-pub(crate) const VERSION_FILE_NAME: &str = "version.txt";
 
 impl OutputFormat {
     pub(crate) fn default_file_name(self) -> &'static str {
@@ -77,13 +69,6 @@ impl OutputFormat {
 impl Request {
     pub(crate) fn output_dir<'a>(&'a self, package_dir: &'a Path) -> &'a Path {
         self.output_dir.as_deref().unwrap_or(package_dir)
-    }
-
-    pub(crate) fn working_dir<'a>(&'a self, package_dir: &'a Path) -> &'a Path {
-        self.working_dir
-            .as_deref()
-            .or(self.output_dir.as_deref())
-            .unwrap_or(package_dir)
     }
 }
 
@@ -100,12 +85,6 @@ impl TryFrom<Args> for Request {
             return Err("--review can only be used with --format markdown".to_string());
         }
 
-        if args.working_dir.is_some() && (!args.review || args.format != OutputFormat::Markdown) {
-            return Err(
-                "--working-dir can only be used with --format markdown --review".to_string(),
-            );
-        }
-
         Ok(Self {
             manifest_path: args.manifest_path,
             root: args.root,
@@ -113,7 +92,6 @@ impl TryFrom<Args> for Request {
             review: args.review,
             check: args.check,
             output_dir: args.output_dir,
-            working_dir: args.working_dir,
         })
     }
 }

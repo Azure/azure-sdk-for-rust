@@ -16,7 +16,6 @@ fn defaults_to_markdown_format() {
     assert!(!args.review);
     assert!(!args.check);
     assert_eq!(args.output_dir, None);
-    assert_eq!(args.working_dir, None);
 }
 
 #[test]
@@ -121,61 +120,7 @@ fn accepts_legacy_output_alias() {
 }
 
 #[test]
-fn accepts_working_directory_for_markdown_review() {
-    let args = Args::parse_from([
-        "generate_api",
-        "--manifest-path",
-        "sdk/core/azure_core/Cargo.toml",
-        "--review",
-        "--working-dir",
-        "/tmp/generate_api_work",
-    ]);
-
-    let request = Request::try_from(args).unwrap();
-
-    assert_eq!(
-        request.working_dir,
-        Some(PathBuf::from("/tmp/generate_api_work"))
-    );
-}
-
-#[test]
-fn rejects_working_directory_without_review() {
-    let args = Args::parse_from([
-        "generate_api",
-        "--manifest-path",
-        "sdk/core/azure_core/Cargo.toml",
-        "--working-dir",
-        "/tmp/generate_api_work",
-    ]);
-
-    assert_eq!(
-        Request::try_from(args).unwrap_err(),
-        "--working-dir can only be used with --format markdown --review"
-    );
-}
-
-#[test]
-fn defaults_working_directory_to_output_directory() {
-    let request = Request::try_from(Args {
-        manifest_path: PathBuf::from("sdk/core/azure_core/Cargo.toml"),
-        root: None,
-        format: OutputFormat::Markdown,
-        review: true,
-        check: false,
-        output_dir: Some(PathBuf::from("/tmp/generate_api")),
-        working_dir: None,
-    })
-    .unwrap();
-
-    assert_eq!(
-        request.working_dir(Path::new("/tmp/crate")),
-        Path::new("/tmp/generate_api")
-    );
-}
-
-#[test]
-fn defaults_output_and_working_directory_to_crate_directory() {
+fn defaults_output_directory_to_crate_directory() {
     let request = Request::try_from(Args {
         manifest_path: PathBuf::from("sdk/core/azure_core/Cargo.toml"),
         root: None,
@@ -183,11 +128,9 @@ fn defaults_output_and_working_directory_to_crate_directory() {
         review: true,
         check: false,
         output_dir: None,
-        working_dir: None,
     })
     .unwrap();
 
     let crate_dir = Path::new("/tmp/crate");
     assert_eq!(request.output_dir(crate_dir), crate_dir);
-    assert_eq!(request.working_dir(crate_dir), crate_dir);
 }

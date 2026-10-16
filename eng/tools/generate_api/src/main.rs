@@ -46,7 +46,6 @@ fn run() -> Result<(), String> {
 
     let loaded_package = driver::load_model(&request)?;
     let output_dir = request.output_dir(&loaded_package.package_dir);
-    let working_dir = request.working_dir(&loaded_package.package_dir);
     let model = &loaded_package.model;
     let output_path = output::output_path(output_dir, request.format);
     diagnostics::info(format!("Generating file: {}", output_path.display()));
@@ -64,6 +63,7 @@ fn run() -> Result<(), String> {
                 let metadata = output::render_markdown_metadata(
                     &rendered,
                     &model.package_version,
+                    &loaded_package.package_relative_path,
                     &model.parser_version,
                     &rust_version,
                 )?;
@@ -84,21 +84,6 @@ fn run() -> Result<(), String> {
                 let file_name = request.format.default_file_name();
                 let patch = render::patch::render(&lines, file_name);
                 save_or_check(&request, &patch_path, &patch)?;
-
-                let version_path = output::state_file_path(working_dir, cli::VERSION_FILE_NAME);
-                save_or_check(
-                    &request,
-                    &version_path,
-                    &format!("{}\n", model.package_version),
-                )?;
-
-                let package_relative_path =
-                    output::state_file_path(working_dir, cli::PACKAGE_RELATIVE_PATH_FILE_NAME);
-                save_or_check(
-                    &request,
-                    &package_relative_path,
-                    &format!("{}\n", loaded_package.package_relative_path),
-                )?;
             }
         }
         cli::OutputFormat::Apiview => {
@@ -145,11 +130,11 @@ fn resolve_repository_root(request: &cli::Request) -> Result<std::path::PathBuf,
 }
 
 fn verify_repository_root(repository_root: &Path) -> Result<(), String> {
-    if repository_root.join("eng/tools/generate_api").exists() {
+    if repository_root.join("Cargo.toml").is_file() {
         Ok(())
     } else {
         Err(format!(
-            "Repository root '{}' does not contain eng/tools/generate_api.",
+            "Repository root '{}' does not contain Cargo.toml.",
             repository_root.display()
         ))
     }

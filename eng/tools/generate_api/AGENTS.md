@@ -9,7 +9,6 @@
 3. `api.md.map` — an ECMA-426 source map for declaration lines in `api.md`
 4. `api.documentation.patch` — a unified diff that adds doc comments back to `api.md`
 5. `apiview.json` — an APIView tree-style `CodeFile`
-6. `state/version.txt` and `state/package-relative-path.txt` — Markdown review package state
 
 ## Scope
 
@@ -29,13 +28,11 @@ The tool exposes:
 - `--review` emits Markdown review sidecars and is valid only with `markdown`
 - `--check` compares generated content with existing files without writing; missing files pass
 - `--output-dir <directory>` defaults to the target crate directory; `--output` remains a CLI alias
-- `--working-dir <directory>` defaults to the resolved output directory and is valid only with `markdown --review`
 
 Behavior:
 
 - default `markdown` writes `api.md`
 - `markdown --review` also writes `api.md.map`, `api.documentation.patch`, and `api.metadata.yml`
-- `markdown --review` writes package state under `<working-dir>/state`
 - `--format apiview` writes `apiview.json`
 - check comparisons ignore line-ending differences and mismatches exit `1`
 - progress goes to stdout
@@ -45,7 +42,7 @@ Behavior:
 
 - Standalone bin crate in the `eng/tools` workspace
 - Uses `eng/tools/rust-toolchain.toml` toolchain `nightly-2026-04-14`
-- API Review Hub builds the tool once from `<ApiReviewSourceDir>/eng/tools/Cargo.toml`, stages the executable in `<ApiReviewToolingDir>`, and invokes it with `--root <ApiReviewSourceDir>`
+- API Review Hub stages only the executable, uses the checkout's normal nightly setup, and invokes it from `$(BinDirectory)` with `--root $(Build.SourcesDirectory)`
 - Keep rustdoc schema compatibility logic isolated from the tool-owned model and renderers
 - Current deps: `rustdoc-types`, `serde`, `serde_json`, `clap`, `sha2`
 - Add common dependencies to the `eng/tools` workspace using versions already used by the repository
@@ -188,7 +185,7 @@ Documentation handling:
 Package metadata rendering:
 
 - Markdown renders the crate name first; APIView uses only the top-level `PackageName`
-- Markdown review output also writes `api.metadata.yml` with `apiMdSha256`, `packageVersion`, `parserVersion`, and `rustVersion`
+- Markdown review output also writes `api.metadata.yml` with `apiHash`, `packageVersion`, `packageRelativePath`, `parserVersion`, and `rustVersion`
 - missing description, edition, or rust-version values are omitted
 - multiline descriptions render with the `Description` label on its own line
 - features use `default` plus `package.metadata.docs.rs.features` when present
@@ -325,10 +322,10 @@ Current API review caller chain under `eng/pipelines/`:
 
 ### API Review Hub integration
 
-- `eng/scripts/Resolve-ApiReviewHubRustToolchain.ps1` normalizes ARH `rustVersion` inputs through `eng/scripts/Language-Settings.ps1`, including metadata values such as `1.97.0-nightly`.
-- `eng/scripts/Build-ApiReviewHubTool.ps1` builds `generate_api`, stages its executable, and publishes that path for later ARH steps.
-- `eng/scripts/Export-API.ps1 -Review` is the ARH entrypoint for Markdown review generation. It forwards `-OutputDir` and `-WorkingDir`, uses `-ToolPath` when available, and falls back to `cargo run`.
-- The built binary still runs from the checked-out source repo root and uses the toolchain pinned by `eng/tools/rust-toolchain.toml` for rustdoc extraction.
+- `eng/pipelines/templates/jobs/apireview-hub-build-tools-rust.yml` builds `generate_api` and stages the executable plus `rust-toolchain.toml` in `$(BinOutputDirectory)`.
+- `eng/pipelines/templates/jobs/apireview-hub-generate-artifact-rust.yml` installs the staged toolchain and invokes the staged executable against the requested package checkout.
+- Generation passes the checked-out repository as `--root` because `$(BinDirectory)` may be outside the repository.
+- The complete review bundle is written to `$(ArtifactOutputDirectory)`.
 
 ## Rustdoc / librustdoc alignment
 
