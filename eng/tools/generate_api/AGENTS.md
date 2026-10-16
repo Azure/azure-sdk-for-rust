@@ -42,7 +42,7 @@ Behavior:
 
 - Standalone bin crate in the `eng/tools` workspace
 - Uses `eng/tools/rust-toolchain.toml` toolchain `nightly-2026-04-14`
-- API Review Hub stages only the executable, uses the checkout's normal nightly setup, and invokes it from `$(BinDirectory)` with `--root $(Build.SourcesDirectory)`
+- API Review Hub uses the compiler and setup files from `languageToolsRef` to keep base and target generation consistent; see [README.md](README.md#api-review-hub) for toolchain setup.
 - Keep rustdoc schema compatibility logic isolated from the tool-owned model and renderers
 - Current deps: `rustdoc-types`, `serde`, `serde_json`, `clap`, `sha2`
 - Add common dependencies to the `eng/tools` workspace using versions already used by the repository
@@ -322,8 +322,8 @@ Current API review caller chain under `eng/pipelines/`:
 
 ### API Review Hub integration
 
-- `eng/pipelines/templates/jobs/apireview-hub-build-tools-rust.yml` builds `generate_api` and stages the executable plus `rust-toolchain.toml` in `$(BinOutputDirectory)`.
-- `eng/pipelines/templates/jobs/apireview-hub-generate-artifact-rust.yml` installs the staged toolchain and invokes the staged executable against the requested package checkout.
+- `eng/pipelines/templates/jobs/apireview-hub-build-tools-rust.yml` stages the executable and a few setup files from `languageToolsRef` in `$(BinOutputDirectory)` so historical checkouts do not need current engineering helpers.
+- `eng/pipelines/templates/jobs/apireview-hub-generate-artifact-rust.yml` installs the staged manifest's channel using staged repo-local helpers and checkout `eng/common`, then invokes the executable against the requested package checkout.
 - Generation passes the checked-out repository as `--root` because `$(BinDirectory)` may be outside the repository.
 - The complete review bundle is written to `$(ArtifactOutputDirectory)`.
 

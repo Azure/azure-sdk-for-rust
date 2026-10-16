@@ -44,6 +44,20 @@ jobs:
                 -LiteralPath ([System.IO.Path]::Combine($targetDir, 'release', $fileName)) `
                 -Destination $env:BIN_OUTPUT_DIRECTORY `
                 -Force
+              Copy-Item -LiteralPath @(
+                ([System.IO.Path]::Combine($toolsDir, 'rust-toolchain.toml')),
+                ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'Use-Rust.ps1')),
+                ([System.IO.Path]::Combine($RepoRoot, 'eng', 'templates', 'config.toml.template'))
+              ) -Destination $env:BIN_OUTPUT_DIRECTORY -Force
+
+              $sharedDir = ([System.IO.Path]::Combine($env:BIN_OUTPUT_DIRECTORY, 'shared'))
+              New-Item -ItemType Directory -Path $sharedDir -Force | Out-Null
+              foreach ($helper in @('Cargo.ps1', 'Process.ps1', 'Rustup.ps1')) {
+                Copy-Item `
+                  -LiteralPath ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'shared', $helper)) `
+                  -Destination $sharedDir `
+                  -Force
+              }
             workingDirectory: $(Build.SourcesDirectory)/eng/tools
           env:
             SOURCE_DIRECTORY: $(Build.SourcesDirectory)
