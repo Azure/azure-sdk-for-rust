@@ -4390,7 +4390,10 @@ impl CosmosDriver {
         //    a sequential drain, with no support for ordering. Trivial
         //    operations (targeting a single logical partition) are sent directly
         //    to the gateway without query planning.
-        if operation.is_trivial() {
+        if operation.is_trivial()
+            && !(operation.operation_type() == crate::models::OperationType::Query
+                && crate::query::uses_ranked_search(operation.body()))
+        {
             let cache_only = self.uses_cache_only_topology(&operation, options).await;
             let mut topology = operation.container().cloned().map(|container| {
                 CachedTopologyProvider::new(
@@ -4486,6 +4489,19 @@ impl CosmosDriver {
             container_ref,
             self.pk_range_page_fetcher(options.clone(), operation.absolute_deadline()),
         );
+
+        if query_plan.hybrid_search_query_info.is_some() {
+            let pipeline = planner::build_hybrid_search(
+                &query_plan,
+                &mut topology,
+                &operation,
+                resume_state,
+                plan_options.full_text_score_scope,
+                plan_options.max_buffered_query_window,
+            )
+            .await?;
+            return planner::finalize_plan(pipeline, operation, is_fresh, plan_options);
+        }
 
         // Route streaming ORDER BY queries to the k-way merge instead of
         // the natural-order sequential drain.
