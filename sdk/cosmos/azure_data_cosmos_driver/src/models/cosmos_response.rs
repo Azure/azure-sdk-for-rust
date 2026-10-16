@@ -46,13 +46,6 @@ impl CosmosResponsePayload {
     pub(crate) fn headers(&self) -> &CosmosResponseHeaders {
         &self.headers
     }
-
-    /// Transcodes any binary JSON body to text JSON in place.
-    fn transcode_body_to_text(&mut self) -> crate::error::Result<()> {
-        let body = std::mem::take(&mut self.body);
-        self.body = body.transcode_to_text()?;
-        Ok(())
-    }
 }
 /// Result of a Cosmos DB operation.
 ///
@@ -137,19 +130,18 @@ impl CosmosResponse {
         self.payload.body()
     }
 
-    /// Test-only helper: returns the body as raw bytes, panicking if the body is
-    /// not a [`ResponseBody::Bytes`] variant.
-    #[cfg(test)]
-    pub(crate) fn body_bytes(&self) -> &[u8] {
-        match self.body() {
-            ResponseBody::Bytes(b) => b.as_ref(),
-            _ => panic!("expected ResponseBody::Bytes"),
-        }
-    }
-
     /// Consumes the response and returns the body.
     pub fn into_body(self) -> ResponseBody {
         self.payload.into_body()
+    }
+
+    pub(crate) fn take_body(&mut self) -> ResponseBody {
+        std::mem::take(&mut self.payload.body)
+    }
+
+    pub(crate) fn with_body(mut self, body: ResponseBody) -> Self {
+        self.payload.body = body;
+        self
     }
 
     /// Suppresses the response payload while preserving status, headers,
@@ -157,22 +149,6 @@ impl CosmosResponse {
     pub(crate) fn without_body(mut self) -> Self {
         self.payload.body = ResponseBody::NoPayload;
         self
-    }
-
-    /// Transcodes a binary JSON response body to text JSON in place.
-    ///
-    /// Applied by the driver when the operation negotiated binary on the wire
-    /// and the caller requested a text response
-    /// ([`BinaryEncodingOptions::request_text_response`](crate::options::BinaryEncodingOptions)):
-    /// the wire stays binary in both directions, and the driver converts the
-    /// binary response payload to text before returning it. A text (or empty)
-    /// body is left unchanged.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if a binary payload is malformed.
-    pub(crate) fn transcode_body_to_text(&mut self) -> crate::error::Result<()> {
-        self.payload.transcode_body_to_text()
     }
 
     /// Returns a reference to the extracted headers.

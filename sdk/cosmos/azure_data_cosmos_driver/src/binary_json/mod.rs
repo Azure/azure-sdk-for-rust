@@ -41,7 +41,12 @@ mod conformance;
 #[cfg(test)]
 mod fuzz_tests;
 #[cfg(test)]
-mod vectors;
+#[path = "../../../test_support/seeded_json.rs"]
+pub(crate) mod test_samples;
+#[cfg(test)]
+pub(crate) mod test_support;
+#[cfg(test)]
+pub(crate) mod vectors;
 
 pub use de::from_slice;
 pub use error::{BinaryError, Result};

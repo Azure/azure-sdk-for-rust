@@ -1,12 +1,12 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
+use crate::driver::dataflow::PipelineResponse;
 use std::sync::Arc;
 
 use crate::{
     diagnostics::DiagnosticsContext,
     error::{CosmosError, CosmosErrorBuilder},
-    models::CosmosResponse,
 };
 
 /// Request diagnostics awaiting exactly one surfaced page or error.
@@ -29,7 +29,7 @@ impl RecoveryDiagnostics {
         self.0.take()
     }
 
-    pub(super) fn attach_response(&mut self, response: CosmosResponse) -> CosmosResponse {
+    pub(super) fn attach_response(&mut self, response: PipelineResponse) -> PipelineResponse {
         match self.take() {
             Some(prior) => response.with_aggregated_prior_diagnostics(&[prior]),
             None => response,

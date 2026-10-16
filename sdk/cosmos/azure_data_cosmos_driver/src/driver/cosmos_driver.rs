@@ -16,8 +16,8 @@ use crate::{
         cache::{PartitionKeyRangeCache, PkRangeFetchResult},
         dataflow::{
             planner, CachedTopologyProvider, DrainedLeaf, OperationPlan, PartitionRoutingRefresh,
-            Pipeline, PipelineContext, PipelineNodeState, RequestExecutor, RequestTarget,
-            TopologyProvider,
+            Pipeline, PipelineContext, PipelineNodeState, PipelineResponse, RequestExecutor,
+            RequestTarget, TopologyProvider,
         },
         pipeline::{
             components::{
@@ -338,7 +338,7 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
         target: RequestTarget,
         _partition_routing_refresh: PartitionRoutingRefresh,
         continuation: Option<String>,
-    ) -> BoxFuture<'a, crate::error::Result<CosmosResponse>> {
+    ) -> BoxFuture<'a, crate::error::Result<PipelineResponse>> {
         let driver = self.driver;
         let mut overrides =
             request_target_overrides(operation.partition_key(), target, continuation);
@@ -357,7 +357,7 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
             if result.is_ok() {
                 self.successful_requests += 1;
             }
-            result
+            result.map(Into::into)
         })
     }
 }
@@ -3192,8 +3192,8 @@ impl CosmosDriver {
     /// # Errors
     ///
     /// Once a page has advanced the plan without reaching the caller — a
-    /// response body that failed to transcode to text — the plan is spent, and
-    /// every later call fails with
+    /// response body that failed standalone materialization or text conversion —
+    /// the plan is spent, and every later call fails with
     /// [`SERIALIZATION_RESPONSE_BODY_INVALID`](crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID).
     /// Returning the following page instead would hand back the page *after*
     /// the one that was lost, with nothing to signal the gap.
@@ -3328,26 +3328,23 @@ impl CosmosDriver {
 
     fn finalize_plan_response(
         plan: &mut OperationPlan,
-        response: crate::error::Result<Option<CosmosResponse>>,
+        response: crate::error::Result<Option<PipelineResponse>>,
     ) -> crate::error::Result<Option<CosmosResponse>> {
-        let response = response?;
-
-        // Driver-side transcoding: hand back text while the wire stayed
-        // binary. Read from the plan, not from this call's `options`: the
-        // decision was fixed when the plan was built.
-        if plan.transcodes_response_to_text() {
-            if let Some(mut response) = response {
-                // `next_page` already committed every node's resume position.
-                // Poison the plan if transcoding fails so a later page or token
-                // cannot silently skip the lost page.
-                if let Err(error) = response.transcode_body_to_text() {
-                    plan.poison_continuation();
-                    return Err(error);
-                }
-                return Ok(Some(response));
+        let Some(response) = response? else {
+            return Ok(None);
+        };
+        match response.into_response(
+            plan.transcodes_response_to_text(),
+            plan.operation.emits_binary_payload(),
+        ) {
+            Ok(response) => Ok(Some(response)),
+            Err(error) => {
+                // The root already committed progress; never skip a page that
+                // failed final standalone materialization or text conversion.
+                plan.poison_continuation();
+                Err(error)
             }
         }
-        Ok(response)
     }
 
     async fn uses_cache_only_topology(
@@ -3461,7 +3458,7 @@ impl CosmosDriver {
         options: &OperationOptions,
         absolute_deadline: Option<Instant>,
     ) -> (
-        crate::error::Result<Option<CosmosResponse>>,
+        crate::error::Result<Option<PipelineResponse>>,
         usize,
         ContainerRecreationRecoveryOutcome,
     ) {
@@ -8019,6 +8016,92 @@ mod tests {
             Some(crate::error::status_codes::substatus::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE),
             "got: {err}",
         );
+    }
+
+    #[tokio::test]
+    async fn final_item_materialization_failure_preserves_diagnostics_and_poisons_plan() {
+        use crate::driver::dataflow::{
+            mocks::{response, response_with_request_diagnostics, MockLeaf},
+            ItemView, PageResult, PipelineBody, PipelineResponse,
+        };
+
+        let driver = transcoding_test_driver().await;
+        for text_response in [false, true] {
+            let options = OperationOptionsBuilder::new()
+                .with_binary_encoding(
+                    crate::options::BinaryEncodingOptions::new()
+                        .with_enabled(true)
+                        .with_request_text_response(text_response),
+                )
+                .build();
+            let operation = driver.apply_response_negotiation(
+                binary_encoding_test_operation(b"{}".to_vec()),
+                &options,
+                None,
+            );
+            let diagnostics = response_with_request_diagnostics(1).diagnostics();
+            let item = ItemView::from_binary_page(
+                azure_core::Bytes::from_static(&[
+                    crate::binary_json::PREAMBLE,
+                    crate::binary_json::markers::STR_R1,
+                    255,
+                ]),
+                1..3,
+            )
+            .unwrap();
+            let page = PipelineResponse::new(
+                PipelineBody::from_item_views(vec![item]),
+                crate::models::CosmosResponseHeaders::default(),
+                crate::models::CosmosStatus::new(azure_core::http::StatusCode::Ok),
+                diagnostics.clone(),
+            );
+            let mut plan = OperationPlan::new(
+                Pipeline::new(Box::new(MockLeaf::with_pages(vec![
+                    Ok(PageResult::Page {
+                        response: page,
+                        is_terminal: false,
+                    }),
+                    Ok(PageResult::Page {
+                        response: response(br#"{"id":"not-delivered"}"#),
+                        is_terminal: true,
+                    }),
+                ]))),
+                Arc::new(operation),
+                PlanOptions::default(),
+                false,
+            );
+            let error = driver
+                .execute_plan(&mut plan, None, options.clone())
+                .await
+                .unwrap_err();
+            assert_eq!(
+                error.status(),
+                crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+            );
+            let failure_diagnostics = error.diagnostics().unwrap();
+            assert_eq!(failure_diagnostics.effective_status(), Some(error.status()));
+            assert_eq!(
+                failure_diagnostics.request_count(),
+                diagnostics.request_count()
+            );
+            assert!(Arc::ptr_eq(
+                &failure_diagnostics.requests(),
+                &diagnostics.requests()
+            ));
+            assert!(plan.continuation_poisoned());
+            assert_eq!(
+                plan.to_continuation_token().unwrap_err().status(),
+                crate::error::status_codes::CLIENT_CONTINUATION_TOKEN_AFTER_TRANSCODE_FAILURE
+            );
+            assert_eq!(
+                driver
+                    .execute_plan(&mut plan, None, options)
+                    .await
+                    .unwrap_err()
+                    .status(),
+                crate::error::status_codes::SERIALIZATION_RESPONSE_BODY_INVALID
+            );
+        }
     }
 
     /// The token exit is the loud one; this is the quiet one. A caller that

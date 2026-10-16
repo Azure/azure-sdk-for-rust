@@ -12,6 +12,8 @@
 
 ### Other Changes
 
+- Binary cross-partition `ORDER BY` avoids intermediate document transcoding during sorting and filtering; final raw item buffers remain independently decodable without changing the response-body API. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
+
 ## 1.0.0 (2026-10-08)
 
 ### Breaking Changes

@@ -3,6 +3,7 @@
 
 use async_trait::async_trait;
 use azure_core::http::headers::{HeaderName, Headers};
+use azure_data_cosmos_driver::binary_json::{encode, markers, PREAMBLE};
 use azure_data_cosmos_driver::test::{
     ConnectionPoolOptions, HttpClientConfig, HttpClientFactory, HttpRequest, HttpResponse,
     TransportClient, TransportError,
@@ -39,6 +40,52 @@ fn header<'a>(request: &'a HttpRequest, name: &'static str) -> Option<&'a str> {
     request
         .headers
         .get_optional_str(&HeaderName::from_static(name))
+}
+
+fn referenced_feed(body: &serde_json::Value) -> Vec<u8> {
+    fn object(fields: &[(&str, Vec<u8>)]) -> Vec<u8> {
+        let mut payload = Vec::new();
+        for (name, value) in fields {
+            payload.extend(&encode(&serde_json::json!(name))[1..]);
+            payload.extend(value);
+        }
+        frame(markers::OBJ_LC4, fields.len(), payload)
+    }
+    fn frame(marker: u8, count: usize, payload: Vec<u8>) -> Vec<u8> {
+        let mut bytes = vec![marker];
+        bytes.extend_from_slice(&(payload.len() as u32).to_le_bytes());
+        bytes.extend_from_slice(&(count as u32).to_le_bytes());
+        bytes.extend(payload);
+        bytes
+    }
+    let target = 10 + encode(&serde_json::json!("shared")).len() - 1;
+    let mut reference = vec![markers::STR_R4];
+    reference.extend_from_slice(&(target as u32).to_le_bytes());
+    let documents = body["Documents"].as_array().unwrap();
+    let rows: Vec<u8> = documents
+        .iter()
+        .flat_map(|row| {
+            let payload = object(&[
+                ("id", encode(&row["payload"]["id"])[1..].to_vec()),
+                ("rank", encode(&row["payload"]["rank"])[1..].to_vec()),
+                ("shared", reference.clone()),
+            ]);
+            object(&[
+                ("_rid", encode(&row["_rid"])[1..].to_vec()),
+                ("orderByItems", encode(&row["orderByItems"])[1..].to_vec()),
+                ("payload", payload),
+            ])
+        })
+        .collect();
+    let mut bytes = vec![PREAMBLE];
+    bytes.extend(object(&[
+        (
+            "shared",
+            encode(&serde_json::json!("reference outside every document"))[1..].to_vec(),
+        ),
+        ("Documents", frame(markers::ARR_LC4, documents.len(), rows)),
+    ]));
+    bytes
 }
 
 #[async_trait]
@@ -162,11 +209,18 @@ impl TransportClient for ScriptedTransport {
             path => panic!("unexpected scripted request {path}"),
         };
         headers.insert("x-ms-request-charge", "1.5");
+        let binary_ordered = request.url.path().ends_with("/docs")
+            && header(request, "x-ms-cosmos-is-query-plan-request").is_none()
+            && header(request, "a-im").is_none()
+            && header(request, "x-ms-cosmos-supported-serialization-formats")
+                .is_some_and(|formats| formats.contains("CosmosBinary"));
         Ok(HttpResponse {
             status,
             headers,
             body: if status == 304 {
                 Vec::new()
+            } else if binary_ordered {
+                referenced_feed(&body)
             } else {
                 serde_json::to_vec(&body).unwrap()
             },

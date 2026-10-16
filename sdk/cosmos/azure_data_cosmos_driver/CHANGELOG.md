@@ -16,6 +16,8 @@
 
 ### Other Changes
 
+- Preserve binary `ORDER BY` source pages internally through merges, DISTINCT, and pagination windows, materializing only final output items into the existing standalone response buffers. ([#5409](https://github.com/Azure/azure-sdk-for-rust/pull/5409))
+
 ## 1.0.0 (2026-10-08)
 
 ### Features Added

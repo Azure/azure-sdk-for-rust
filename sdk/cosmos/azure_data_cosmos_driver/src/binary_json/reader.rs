@@ -20,7 +20,7 @@
 use base64::Engine;
 use serde_json::{Map, Value};
 
-use std::cell::Cell;
+use std::{cell::Cell, ops::Range};
 
 use super::markers::{
     ARR0, ARR1, ARR_ARR_NUM_C1C1, ARR_ARR_NUM_C2C2, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2,
@@ -93,6 +93,205 @@ pub(super) enum ContainerHeader {
     Object(Frame),
 }
 
+/// Cursor for locating values without materializing entire binary documents.
+pub(crate) struct BinaryCursor<'a> {
+    reader: Reader<'a>,
+}
+
+/// Framing for a container being inspected by [`BinaryCursor`].
+pub(crate) struct BinaryFrame {
+    frame: Frame,
+    seen: usize,
+}
+
+impl<'a> BinaryCursor<'a> {
+    pub(crate) fn new(page: &'a [u8]) -> Result<Self> {
+        if !is_binary(page) {
+            return Err(match page.first() {
+                Some(&found) => BinaryError::MissingPreamble { found },
+                None => BinaryError::UnexpectedEof { needed: 1 },
+            });
+        }
+        Ok(Self {
+            reader: Reader::new(page, 1),
+        })
+    }
+
+    pub(crate) fn start_object(&mut self, depth: usize) -> Result<Option<BinaryFrame>> {
+        self.start_container(depth, false)
+    }
+
+    pub(crate) fn start_array(&mut self, depth: usize) -> Result<Option<BinaryFrame>> {
+        self.start_container(depth, true)
+    }
+
+    fn start_container(&mut self, depth: usize, array: bool) -> Result<Option<BinaryFrame>> {
+        if depth > MAX_DEPTH {
+            return Err(BinaryError::DepthLimitExceeded { limit: MAX_DEPTH });
+        }
+        let start = self.reader.pos;
+        let header = self.reader.read_container_header()?;
+        let frame = match header {
+            Some(ContainerHeader::Array(frame)) if array => frame,
+            Some(ContainerHeader::Object(frame)) if !array => frame,
+            _ => {
+                self.reader.pos = start;
+                return Ok(None);
+            }
+        };
+        Ok(Some(BinaryFrame { frame, seen: 0 }))
+    }
+
+    /// Returns whether the container has another member or element, checking
+    /// both its declared byte length and its optional item count.
+    pub(crate) fn next(&mut self, container: &mut BinaryFrame) -> Result<bool> {
+        let frame = &container.frame;
+        if frame.exact_end && self.reader.pos > frame.end {
+            return Err(BinaryError::InvalidLength {
+                detail: "container value extends past its declared length",
+            });
+        }
+        if frame.count.is_some_and(|count| container.seen == count) {
+            if frame.exact_end && self.reader.pos != frame.end {
+                return Err(BinaryError::InvalidLength {
+                    detail: "container item count does not match its declared length",
+                });
+            }
+            return Ok(false);
+        }
+        if frame.exact_end && self.reader.pos == frame.end {
+            if frame.count.is_some() {
+                return Err(BinaryError::InvalidLength {
+                    detail: "container item count does not match its declared count",
+                });
+            }
+            return Ok(false);
+        }
+        container.seen += 1;
+        Ok(true)
+    }
+
+    /// Reads one object member name, which must be a string.
+    pub(crate) fn member_name(&mut self, depth: usize) -> Result<String> {
+        let offset = self.reader.pos;
+        let marker = self.reader.peek_u8()?;
+        match self.reader.read_value(depth)? {
+            Value::String(name) => Ok(name),
+            _ => Err(BinaryError::InvalidMarker { marker, offset }),
+        }
+    }
+
+    fn skip_member_name(&mut self, depth: usize) -> Result<()> {
+        if depth > MAX_DEPTH {
+            return Err(BinaryError::DepthLimitExceeded { limit: MAX_DEPTH });
+        }
+        let offset = self.reader.pos;
+        let marker = self.reader.peek_u8()?;
+        match self.reader.try_read_native_scalar()? {
+            Some(ScalarToken::Str(_)) => Ok(()),
+            Some(_) => Err(BinaryError::InvalidMarker { marker, offset }),
+            None => match self.reader.read_value(depth)? {
+                Value::String(_) => Ok(()),
+                _ => Err(BinaryError::InvalidMarker { marker, offset }),
+            },
+        }
+    }
+
+    /// Decodes only metadata selected by the caller, preserving the same
+    /// integral-Double spelling as binary-to-text normalization.
+    pub(crate) fn read_json_value(&mut self, depth: usize) -> Result<Value> {
+        let mut value = self.reader.read_value(depth)?;
+        super::normalize_integral_floats(&mut value);
+        Ok(value)
+    }
+
+    /// Validates a value and returns its original, page-absolute byte span.
+    /// Ordinary scalar payloads are borrowed or skipped without constructing
+    /// a JSON tree; exotic leaf forms use the decoder's existing validation.
+    pub(crate) fn scan_value(&mut self, depth: usize) -> Result<Range<usize>> {
+        if depth > MAX_DEPTH {
+            return Err(BinaryError::DepthLimitExceeded { limit: MAX_DEPTH });
+        }
+        let start = self.reader.pos;
+        match self.reader.peek_u8()? {
+            BINARY_1BYTE_LENGTH | BINARY_2BYTE_LENGTH | BINARY_4BYTE_LENGTH => {
+                let marker = self.reader.read_u8()?;
+                let width = match marker {
+                    BINARY_1BYTE_LENGTH => FieldWidth::U8,
+                    BINARY_2BYTE_LENGTH => FieldWidth::U16,
+                    _ => FieldWidth::U32,
+                };
+                let length = self.reader.read_len(width)?;
+                self.reader.read_bytes(length)?;
+                return Ok(start..self.reader.pos);
+            }
+            GUID => {
+                self.reader.read_u8()?;
+                self.reader.read_bytes(16)?;
+                return Ok(start..self.reader.pos);
+            }
+            ARR_NUM_C1 => {
+                self.reader.read_u8()?;
+                self.reader.scan_uniform_number_array(FieldWidth::U8)?;
+                return Ok(start..self.reader.pos);
+            }
+            ARR_NUM_C2 => {
+                self.reader.read_u8()?;
+                self.reader.scan_uniform_number_array(FieldWidth::U16)?;
+                return Ok(start..self.reader.pos);
+            }
+            ARR_ARR_NUM_C1C1 => {
+                self.reader.read_u8()?;
+                self.reader
+                    .scan_uniform_array_of_number_arrays(FieldWidth::U8)?;
+                return Ok(start..self.reader.pos);
+            }
+            ARR_ARR_NUM_C2C2 => {
+                self.reader.read_u8()?;
+                self.reader
+                    .scan_uniform_array_of_number_arrays(FieldWidth::U16)?;
+                return Ok(start..self.reader.pos);
+            }
+            _ => {}
+        }
+        match self.reader.read_container_header()? {
+            Some(ContainerHeader::Array(frame)) => {
+                let mut frame = BinaryFrame { frame, seen: 0 };
+                while self.next(&mut frame)? {
+                    self.scan_value(depth + 1)?;
+                }
+            }
+            Some(ContainerHeader::Object(frame)) => {
+                let mut frame = BinaryFrame { frame, seen: 0 };
+                while self.next(&mut frame)? {
+                    self.skip_member_name(depth + 1)?;
+                    self.scan_value(depth + 1)?;
+                }
+            }
+            None => match self.reader.try_read_native_scalar()? {
+                Some(ScalarToken::F64(float)) if !float.is_finite() => {
+                    return Err(BinaryError::InvalidNumber {
+                        detail: "non-finite double (NaN or infinity)",
+                    });
+                }
+                Some(_) => {}
+                None => {
+                    self.reader.read_value(depth)?;
+                }
+            },
+        }
+        Ok(start..self.reader.pos)
+    }
+
+    pub(crate) fn finish(self) -> Result<()> {
+        let remaining = self.reader.buf.len() - self.reader.pos;
+        if remaining != 0 {
+            return Err(BinaryError::TrailingBytes { remaining });
+        }
+        Ok(())
+    }
+}
+
 /// Width in bytes of a little-endian length or count field.
 ///
 /// Length- and count-prefixed forms encode their field in 1, 2, or 4 bytes
@@ -144,6 +343,29 @@ pub fn decode(buffer: &[u8]) -> Result<Value> {
     let remaining = buffer.len() - reader.pos;
     if remaining != 0 {
         return Err(BinaryError::TrailingBytes { remaining });
+    }
+    Ok(value)
+}
+
+/// Decodes one value at a page-absolute range without relocating references.
+pub(crate) fn decode_at(buffer: &[u8], range: Range<usize>) -> Result<Value> {
+    if !is_binary(buffer) {
+        return Err(match buffer.first() {
+            Some(&found) => BinaryError::MissingPreamble { found },
+            None => BinaryError::UnexpectedEof { needed: 1 },
+        });
+    }
+    if range.start == 0 || range.start > range.end || range.end > buffer.len() {
+        return Err(BinaryError::InvalidLength {
+            detail: "value range lies outside its binary page",
+        });
+    }
+    let mut reader = Reader::new(buffer, range.start);
+    let value = reader.read_value(0)?;
+    if reader.pos != range.end {
+        return Err(BinaryError::InvalidLength {
+            detail: "decoded value does not fill its declared range",
+        });
     }
     Ok(value)
 }
@@ -1156,6 +1378,16 @@ impl<'a> Reader<'a> {
         Ok(Value::Array(items))
     }
 
+    fn scan_uniform_number_array(&mut self, count_width: FieldWidth) -> Result<()> {
+        let item_marker_offset = self.pos;
+        let item_marker = self.read_u8()?;
+        let count = self.read_len(count_width)?;
+        for _ in 0..count {
+            self.read_bare_number(item_marker, item_marker_offset)?;
+        }
+        Ok(())
+    }
+
     /// Reads a uniform array of uniform number arrays (`ArrArrNumC1C1` /
     /// `ArrArrNumC2C2`). The prefix is the inner-array type marker, the shared
     /// number item-type marker, the per-inner-array number count, then the outer
@@ -1204,6 +1436,37 @@ impl<'a> Reader<'a> {
             outer.push(Value::Array(inner));
         }
         Ok(Value::Array(outer))
+    }
+
+    fn scan_uniform_array_of_number_arrays(&mut self, count_width: FieldWidth) -> Result<()> {
+        let inner_marker_offset = self.pos;
+        let inner_marker = self.read_u8()?;
+        let expected = match count_width {
+            FieldWidth::U8 => ARR_NUM_C1,
+            FieldWidth::U16 | FieldWidth::U32 => ARR_NUM_C2,
+        };
+        if inner_marker != expected {
+            return Err(BinaryError::InvalidMarker {
+                marker: inner_marker,
+                offset: inner_marker_offset,
+            });
+        }
+        let item_marker_offset = self.pos;
+        let item_marker = self.read_u8()?;
+        let inner_count = self.read_len(count_width)?;
+        let outer_count = self.read_len(count_width)?;
+        if inner_count == 0 && outer_count > empty_element_budget(self.buf.len()) {
+            return Err(BinaryError::InvalidLength {
+                detail:
+                    "uniform array of empty number arrays declares more elements than the input can justify",
+            });
+        }
+        for _ in 0..outer_count {
+            for _ in 0..inner_count {
+                self.read_bare_number(item_marker, item_marker_offset)?;
+            }
+        }
+        Ok(())
     }
 
     /// Resolves a reference string ([`STR_R1`]-[`STR_R4`]) whose `target` is an
@@ -1309,6 +1572,81 @@ mod tests {
         v
     }
 
+    fn small_string(value: &str) -> Vec<u8> {
+        let bytes = value.as_bytes();
+        assert!(bytes.len() < 64);
+        let mut encoded = vec![markers::ENCODED_STRING_LENGTH_MIN + bytes.len() as u8];
+        encoded.extend_from_slice(bytes);
+        encoded
+    }
+
+    fn small_array(items: &[Vec<u8>]) -> Vec<u8> {
+        let body: Vec<u8> = items.iter().flat_map(|item| item.iter().copied()).collect();
+        let mut encoded = vec![
+            markers::ARR_LC1,
+            u8::try_from(body.len()).unwrap(),
+            u8::try_from(items.len()).unwrap(),
+        ];
+        encoded.extend(body);
+        encoded
+    }
+
+    fn small_object(fields: &[(&str, Vec<u8>)]) -> Vec<u8> {
+        let mut body = Vec::new();
+        for (name, value) in fields {
+            body.extend(small_string(name));
+            body.extend(value);
+        }
+        let mut encoded = vec![
+            markers::OBJ_LC1,
+            u8::try_from(body.len()).unwrap(),
+            u8::try_from(fields.len()).unwrap(),
+        ];
+        encoded.extend(body);
+        encoded
+    }
+
+    #[test]
+    fn envelope_payload_reference_needs_full_page_even_if_detached_slice_decodes() {
+        // Offset 4 is the first root property name, "_rid". The payload's
+        // first property name sits at offset 4 after a detached preamble.
+        let payload = small_object(&[("wrong", vec![markers::STR_R1, 4])]);
+        let item = small_object(&[
+            ("_rid", small_string("row")),
+            (
+                "orderByItems",
+                small_array(&[small_object(&[("item", vec![1])])]),
+            ),
+            ("payload", payload.clone()),
+        ]);
+        let page = buf(&small_object(&[
+            ("_rid", small_string("root")),
+            ("Documents", small_array(&[item])),
+            ("_count", vec![1]),
+        ]));
+        let offset = page
+            .windows(payload.len())
+            .position(|window| window == payload)
+            .unwrap();
+
+        let complete = decode(&page).unwrap();
+        assert_eq!(complete["Documents"][0]["payload"]["wrong"], "_rid");
+
+        let mut reader = Reader::new(&page, offset);
+        assert_eq!(
+            reader.read_value(0).unwrap(),
+            serde_json::json!({"wrong": "_rid"})
+        );
+        assert_eq!(reader.pos, offset + payload.len());
+
+        let detached = buf(&payload);
+        assert_eq!(
+            decode(&detached).unwrap(),
+            serde_json::json!({"wrong": "wrong"}),
+            "re-prefixing a document can decode to the wrong valid string"
+        );
+    }
+
     /// The decoder reproduces every golden vector's JSON.
     #[test]
     fn decodes_golden_corpus() {
@@ -1316,8 +1654,37 @@ mod tests {
             let decoded = decode(&vector.binary).unwrap_or_else(|e| {
                 panic!("case {}: decode failed: {e}", vector.name);
             });
+            let mut cursor = BinaryCursor::new(&vector.binary).unwrap();
+            assert_eq!(
+                cursor.scan_value(0).unwrap(),
+                1..vector.binary.len(),
+                "case {}",
+                vector.name
+            );
+            cursor.finish().unwrap();
             let expected: Value = serde_json::from_str(&vector.json).unwrap();
             assert_eq!(decoded, expected, "case {}", vector.name);
+        }
+    }
+
+    #[test]
+    fn cursor_rejects_malformed_values_in_skipped_fields() {
+        let mut too_deep = vec![markers::ARR1; MAX_DEPTH + 1];
+        too_deep.push(markers::NULL);
+        for malformed in [
+            vec![markers::INT32, 1, 2],
+            vec![markers::STR_R1, 255],
+            vec![markers::ARR_LC1, 1, 2, 0],
+            vec![markers::BINARY_2BYTE_LENGTH, 3, 0, 1],
+            too_deep,
+        ] {
+            let page = buf(&malformed);
+            assert!(decode(&page).is_err());
+            let mut cursor = BinaryCursor::new(&page).unwrap();
+            assert!(
+                cursor.scan_value(0).is_err(),
+                "cursor accepted a malformed value: {malformed:?}"
+            );
         }
     }
 
