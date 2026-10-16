@@ -1500,6 +1500,23 @@ partition is consistently slow on this access pattern. The
 the circuit breaker can transition the primary partition to a degraded
 state after a configurable number of consecutive wins.
 
+Feedback is recorded only while the effective PPCB flag is enabled. This gate
+does not disable transport hedging or its diagnostics. PPCB enablement changes
+clear accumulated hedge counters so disabling and re-enabling the feature cannot
+reuse stale failure history.
+
+A primary win with no counter to clear is an unchanged transition: it does not
+clone partition state, publish a replacement, retire state, or invalidate the
+routing snapshot cache. Partition transitions re-evaluate this decision after a
+failed CAS. Idle failback sweeps and unchanged partition enablement flags likewise
+avoid publication.
+
+Real counter updates still clone partition state before CAS publication.
+The store holds the published state in an Arc behind its epoch pointer, so a
+subsequent snapshot refresh shares that state rather than copying its maps again.
+Existing snapshots remain immutable and retain their state across later updates.
+Alternate-win bookkeeping continues to use the account-only snapshot accessor.
+
 **Mechanism (sketch — pending PPCB owner sign-off):**
 
 ```rust

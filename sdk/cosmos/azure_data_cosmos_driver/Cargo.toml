@@ -12,7 +12,7 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_cosmos_driver"
 keywords = ["sdk", "internal"]
 categories = ["api-bindings"]
-
+exclude.workspace = true
 
 [dependencies]
 arc-swap.workspace = true
