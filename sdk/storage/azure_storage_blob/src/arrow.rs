@@ -138,8 +138,6 @@ fn row_to_blob_item(batch: &RecordBatch, row: usize) -> BlobItem {
             .and_then(|value| value.parse().ok()),
         remaining_retention_days: i32_at(batch, "RemainingRetentionDays", row),
         server_encrypted: bool_at(batch, "ServerEncrypted", row),
-        smart_access_tier: string_at(batch, "SmartAccessTier", row)
-            .and_then(|value| value.parse().ok()),
         tag_count: i32_at(batch, "TagCount", row),
         ..Default::default()
     };
@@ -738,7 +736,6 @@ mod tests {
             rehydrate_priority: _,
             remaining_retention_days: _,
             server_encrypted: _,
-            smart_access_tier: _,
             tag_count: _,
         } = properties.expect("properties should be set");
     }

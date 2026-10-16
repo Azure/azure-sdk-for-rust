@@ -54,9 +54,6 @@ pub enum AccessTier {
     /// The Premium access tier.
     Premium,
 
-    /// The Smart access tier.
-    Smart,
-
     /// Any other value not defined in `AccessTier`.
     UnknownValue(String),
 }
@@ -91,9 +88,6 @@ pub enum ArchiveStatus {
 
     /// The archive status is rehydrating pending to Hot.
     RehydratePendingToHot,
-
-    /// The archive status is rehydrating pending to Smart.
-    RehydratePendingToSmart,
 
     /// Any other value not defined in `ArchiveStatus`.
     UnknownValue(String),

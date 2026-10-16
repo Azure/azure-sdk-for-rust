@@ -194,11 +194,6 @@ pub struct BlobDownloadProperties {
     /// Whether the access tier was inferred rather than explicitly set
     /// (`x-ms-access-tier-inferred` header).
     pub access_tier_inferred: Option<bool>,
-
-    /// The underlying tier of a smart tier blob (`x-ms-smart-access-tier` header).
-    ///
-    /// Only returned if the blob is in the Smart tier.
-    pub smart_access_tier: Option<AccessTier>,
 }
 
 impl BlobClientDownloadResult {
@@ -296,8 +291,6 @@ impl BlobDownloadProperties {
             )?,
             access_tier_inferred: headers
                 .get_optional_as(&HeaderName::from_static("x-ms-access-tier-inferred"))?,
-            smart_access_tier: headers
-                .get_optional_as(&HeaderName::from_static("x-ms-smart-access-tier"))?,
             metadata,
             object_replication_rules,
         })
