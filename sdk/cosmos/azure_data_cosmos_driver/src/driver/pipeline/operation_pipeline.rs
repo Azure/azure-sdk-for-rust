@@ -4845,9 +4845,9 @@ fn try_advance_after_both_transient(
 
 /// Flips the per-state and shared `hub_region_processing_only` latches
 /// when a hedge leg observed a 1002 the non-hedged
-/// `build_session_retry_state` would have latched on, and advances
-/// `session_token_retry_count` symmetrically so `max_session_retries`
-/// is honored across both non-hedged and hedge-fallback flows.
+/// `build_session_retry_state` would have latched on, and applies the same
+/// session-retry transition so the retry counter and single-master
+/// write-endpoint routing match the non-hedged flow.
 fn propagate_hedge_session_unavailable(
     retry_state: &mut OperationRetryState,
     observed_session_unavailable: bool,
@@ -4855,12 +4855,9 @@ fn propagate_hedge_session_unavailable(
     if !observed_session_unavailable {
         return;
     }
-    // Mirror `.advance_session_retry()` in the non-hedged path so the
-    // hedge fallback can't exceed `max_session_retries`. Gate on
-    // `can_retry_session` to avoid overflowing past the cap.
+    // Gate on `can_retry_session` to avoid advancing past the cap.
     if retry_state.can_retry_session() {
-        retry_state.session_token_retry_count =
-            retry_state.session_token_retry_count.saturating_add(1);
+        *retry_state = retry_state.clone().advance_session_retry();
     }
     // The `hub_region_processing_only` latch is a single-master-only concept:
     // multi-master accounts never emit the hub-region header and must not enter
@@ -10632,6 +10629,10 @@ mod tests {
             state.session_token_retry_count, 1,
             "session-retry counter must still advance on multi-master",
         );
+        assert_eq!(
+            state.session_retry_routing,
+            crate::driver::pipeline::components::SessionRetryRouting::PreferredEndpoints,
+        );
     }
 
     /// Single-master: the hedge-fallback setter latches
@@ -10649,6 +10650,60 @@ mod tests {
             "single-master must latch hub_region_processing_only",
         );
         assert_eq!(state.session_token_retry_count, 1);
+        assert_eq!(
+            state.session_retry_routing,
+            crate::driver::pipeline::components::SessionRetryRouting::PreferredWriteEndpoints,
+        );
+    }
+
+    /// A failed hedge race that observed 404/1002 must route the fallback to
+    /// the write region, not the next read region, so the hub-only retry does
+    /// not hit a non-hub region and receive 403/3.
+    #[test]
+    fn hedge_session_unavailable_fallback_routes_to_write_region() {
+        let read_endpoints: Vec<CosmosEndpoint> =
+            ["region-r1", "region-r2", "region-r3", "region-w"]
+                .into_iter()
+                .map(make_endpoint)
+                .collect();
+        let write_endpoint = make_endpoint("region-w");
+        let location = LocationSnapshot::for_tests(Arc::new(AccountEndpointState {
+            generation: 0,
+            preferred_read_endpoints: read_endpoints.clone().into(),
+            preferred_write_endpoints: vec![write_endpoint.clone()].into(),
+            account_write_endpoints: vec![write_endpoint.clone()].into(),
+            unavailable_endpoints: Default::default(),
+            multiple_write_locations_enabled: false,
+            default_endpoint: write_endpoint.clone(),
+        }));
+        let mut state = make_advance_test_state(0, read_endpoints.len());
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "doc1",
+        ));
+
+        super::propagate_hedge_session_unavailable(&mut state, true);
+        super::try_advance_after_both_transient(
+            &mut state,
+            &location,
+            operation.is_read_only(),
+            Some(&crate::options::Region::new("region-r1")),
+            Some(&crate::options::Region::new("region-r2")),
+            dummy_last_error(),
+        )
+        .expect("budget should allow advance");
+
+        let routing = super::resolve_endpoint(
+            &operation,
+            &state,
+            &location,
+            false,
+            true,
+            Duration::from_secs(60),
+        );
+        assert_eq!(routing.endpoint, write_endpoint);
+        assert!(state.hub_region_processing_only);
     }
 
     // ── apply_tentative_writes_header ────────────────────────────────
