@@ -109,7 +109,7 @@ fn clear_session_headers(request: &mut Request) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::session::provider::StubSessionProvider;
+    use crate::{clients::STORAGE_SCOPE, session::provider::StubSessionProvider};
     use azure_core::credentials::TokenCredential;
     use azure_core::http::policies::auth::BearerTokenAuthorizationPolicy;
     use azure_core::{
@@ -157,7 +157,7 @@ mod tests {
         let credential: Arc<dyn TokenCredential> = MockCredential::new().unwrap();
         Arc::new(BearerTokenAuthorizationPolicy::new(
             credential,
-            vec!["https://storage.azure.com/.default"],
+            vec![STORAGE_SCOPE],
         ))
     }
 

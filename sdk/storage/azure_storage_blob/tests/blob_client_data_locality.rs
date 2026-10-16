@@ -1271,11 +1271,8 @@ struct RoutingObserver {
 #[derive(Debug)]
 struct RoutedRequest {
     kind: RequestKind,
-    range: Option<String>,
-    sent_to: Option<String>,
     original_host: Option<String>,
     session: bool,
-    download_hint: Option<String>,
     status: StatusCode,
 }
 
@@ -1288,11 +1285,6 @@ impl Policy for RoutingObserver {
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
         let kind = RequestKind::of(request.url());
-        let range = request
-            .headers()
-            .get_optional_str(&"range".into())
-            .map(str::to_owned);
-        let sent_to = request.url().host_str().map(str::to_owned);
         let original_host = request
             .headers()
             .get_optional_str(&"host".into())
@@ -1302,17 +1294,10 @@ impl Policy for RoutingObserver {
             .get_optional_str(&"authorization".into())
             .is_some_and(|auth| auth.starts_with("Session "));
         let response = next[0].send(ctx, request, &next[1..]).await?;
-        let download_hint = response
-            .headers()
-            .get_optional_str(&"x-ms-download-hint".into())
-            .map(str::to_owned);
         self.seen.lock().unwrap().push(RoutedRequest {
             kind,
-            range,
-            sent_to,
             original_host,
             session,
-            download_hint,
             status: response.status(),
         });
         Ok(response)
@@ -1384,57 +1369,15 @@ async fn test_download_layout_aware_routing() -> Result<(), Box<dyn Error>> {
     assert_eq!(&buffer[..], &data[..]);
 
     let observed = observed.lock().unwrap();
-    let layout_calls = observed
-        .iter()
-        .filter(|request| request.kind == RequestKind::Layout)
-        .count();
-    let data_chunks = observed
-        .iter()
-        .filter(|request| request.kind == RequestKind::Data)
-        .count();
-    let routed: Vec<&RoutedRequest> = observed
+    for request in observed
         .iter()
         .filter(|request| request.kind == RequestKind::Data && request.original_host.is_some())
-        .collect();
-
-    eprintln!();
-    eprintln!("=== layout-aware routing ======================================");
-    eprintln!("  account host          : {account_host}");
-    eprintln!("  Get Blob Layout calls : {layout_calls}");
-    eprintln!(
-        "  data chunks           : {data_chunks} ({} routed)",
-        routed.len()
-    );
-    for request in observed.iter() {
-        let kind = match request.kind {
-            RequestKind::CreateSession => "session",
-            RequestKind::Layout => "layout",
-            RequestKind::Data => "data",
-        };
-        let range = request.range.as_deref().unwrap_or("(whole blob)");
-        let sent_to = request.sent_to.as_deref().unwrap_or("?");
-        let hint = request.download_hint.as_deref().unwrap_or("-");
-        let routed = if request.original_host.is_some() {
-            "yes"
-        } else {
-            "no"
-        };
-        let status = request.status;
-        eprintln!("  {kind:<6}  {status:<3}  {range:<24}  {routed:<7}  {hint:<7}  {sent_to}");
-    }
-
-    if routed.is_empty() {
-        eprintln!(
-            "NOTE: no chunk was rewritten - the account returned no layout hint for this blob"
+    {
+        assert_eq!(
+            request.original_host.as_deref(),
+            Some(account_host.as_str()),
+            "a rewritten chunk did not preserve the account Host header"
         );
-    } else {
-        for request in &routed {
-            assert_eq!(
-                request.original_host.as_deref(),
-                Some(account_host.as_str()),
-                "a rewritten chunk did not preserve the account Host header"
-            );
-        }
     }
 
     Ok(())
@@ -1515,16 +1458,9 @@ async fn test_download_session_with_layout_aware_routing() -> Result<(), Box<dyn
         let routed = data_requests()
             .filter(|request| request.original_host.is_some())
             .count();
-        let rejected = data_requests()
-            .filter(|request| request.status == StatusCode::Unauthorized)
-            .count();
         let layout_fetched = observed
             .iter()
             .any(|request| request.kind == RequestKind::Layout && request.status.is_success());
-        eprintln!(
-            "parallel={parallel}: {} data requests ({session_ok} session ok, {routed} routed, {rejected} rejected), layout fetched: {layout_fetched}",
-            data_requests().count(),
-        );
 
         assert!(
             session_ok > 0,
@@ -1535,8 +1471,6 @@ async fn test_download_session_with_layout_aware_routing() -> Result<(), Box<dyn
                 routed > 0,
                 "parallel={parallel}: a layout was fetched but no chunk was routed"
             );
-        } else {
-            eprintln!("NOTE: the account returned no layout, so no chunk was routed");
         }
     }
 

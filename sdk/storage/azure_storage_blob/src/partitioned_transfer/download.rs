@@ -41,13 +41,8 @@ pub(crate) trait PartitionedDownloadBehavior {
 
     /// Called once after the initial response and before any subsequent range
     /// requests are issued, so the behavior can prepare per-download state.
-    async fn prepare(
-        &self,
-        _initial_headers: &Headers,
-        _etag_lock: Option<&Etag>,
-    ) -> AzureResult<()> {
-        Ok(())
-    }
+    async fn prepare(&self, initial_headers: &Headers, etag_lock: Option<&Etag>)
+        -> AzureResult<()>;
 }
 
 /// Returns a stream that runs up to parallel-many ranged downloads at a time.
@@ -641,6 +636,14 @@ mod tests {
 
     #[async_trait::async_trait]
     impl PartitionedDownloadBehavior for MockPartitionedDownloadBehavior {
+        async fn prepare(
+            &self,
+            _initial_headers: &Headers,
+            _etag_lock: Option<&Etag>,
+        ) -> AzureResult<()> {
+            Ok(())
+        }
+
         async fn transfer_range(
             &self,
             requested_range: Option<Range<usize>>,

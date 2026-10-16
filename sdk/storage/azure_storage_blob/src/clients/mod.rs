@@ -58,7 +58,7 @@ fn apply_client_defaults(options: &mut ClientOptions) {
 }
 
 /// The OAuth scope used for Entra ID authentication against Storage.
-const STORAGE_SCOPE: &str = "https://storage.azure.com/.default";
+pub(crate) const STORAGE_SCOPE: &str = "https://storage.azure.com/.default";
 
 /// Builds a client pipeline, sharing the configured transport with the session
 /// provider so session creation and authenticated requests use the same network context.
