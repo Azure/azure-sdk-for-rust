@@ -116,19 +116,24 @@ Rust API Review Hub uses two job wrappers:
 
 1. `eng/pipelines/templates/jobs/apireview-hub-build-tools-rust.yml` uses the normal
    `use-rust.yml` setup in `eng/tools` to install its specified toolchain, builds
-   `generate_api` in release mode, and copies only the executable (`generate_api.exe` on
-   Windows) into `$(BinOutputDirectory)` for the shared pipeline to publish.
-2. `eng/pipelines/templates/jobs/apireview-hub-generate-artifact-rust.yml` uses the normal
-   nightly Rust setup and existing Cargo helpers from the base or target checkout to
-   locate the requested package, then invokes the prebuilt executable from `$(BinDirectory)`.
-   No scripts, helpers, toolchain manifests, or build-time dependencies are staged.
+   `generate_api` in release mode, and stages the executable, its toolchain manifest,
+   and a few setup files in `$(BinOutputDirectory)`. All come from the same
+   `languageToolsRef` checkout so historical source refs do not need current
+   engineering helpers.
+2. `eng/pipelines/templates/jobs/apireview-hub-generate-artifact-rust.yml` uses
+   `use-rust.yml` with the staged setup script and manifest to install that exact
+   toolchain for both base and target. It uses the staged Cargo helpers to locate
+   the requested package, then invokes the prebuilt executable from `$(BinDirectory)`.
+   Setup and generation reuse `eng/common` from the reviewed checkout, assuming its
+   common utilities remain compatible; no `eng/common` files are staged.
 3. The generation job passes `--root $(Build.SourcesDirectory)` because the executable is outside
    the package checkout, and writes the complete review bundle to `$(ArtifactOutputDirectory)`.
 
 The executable embeds its toolchain channel at build time and runs Cargo itself to build
-the package and generate rustdoc JSON. The base and target branches are expected to share
-the normal nightly setup from `main`. Generation invokes `cargo rustdoc` with the embedded
-channel and records the resulting rustc release in `api.metadata.yml`. Cargo build output
+the package and generate rustdoc JSON. The staged manifest installs that same channel,
+independently of the base or target checkout's toolchain and engineering helpers.
+Generation invokes `cargo rustdoc` with the embedded channel and records the resulting
+rustc release in `api.metadata.yml`. Cargo build output
 stays in the source workspace; only the review bundle goes to `$(ArtifactOutputDirectory)`.
 
 ## Toolchain

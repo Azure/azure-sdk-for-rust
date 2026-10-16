@@ -45,7 +45,9 @@ jobs:
         - template: /eng/pipelines/templates/steps/use-rust.yml
           parameters:
             SourcesDir: $(Build.SourcesDirectory)
-            Toolchain: nightly
+            ToolsDirectory: $(BinDirectory)
+            ToolchainManifest: $(BinDirectory)/rust-toolchain.toml
+            WorkingDirectory: $(Build.SourcesDirectory)
 
         - task: PowerShell@2
           displayName: Generate ${{ parameters.kind }} Rust API review bundle
@@ -55,7 +57,8 @@ jobs:
             script: |
               $ErrorActionPreference = 'Stop'
               . ([System.IO.Path]::Combine($env:SOURCE_DIRECTORY, 'eng', 'common', 'scripts', 'common.ps1'))
-              . ([System.IO.Path]::Combine($RepoRoot, 'eng', 'scripts', 'shared', 'common.ps1'))
+              . ([System.IO.Path]::Combine($env:BIN_DIRECTORY, 'shared', 'Cargo.ps1'))
+              . ([System.IO.Path]::Combine($env:BIN_DIRECTORY, 'shared', 'Process.ps1'))
               $package = Get-CargoPackageByName -WorkspacePackages (Get-CargoPackages) -PackageName $env:PACKAGE_NAME
               $arguments = @(
                 '--root', $env:SOURCE_DIRECTORY,
