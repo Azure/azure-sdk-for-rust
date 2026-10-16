@@ -23,16 +23,6 @@ cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
   --review
 ```
 
-To keep `api.*` files in one directory but write review state under a different working directory:
-
-```sh
-cargo run --manifest-path eng/tools/Cargo.toml -p generate_api -- \
-  --manifest-path sdk/core/azure_core/Cargo.toml \
-  --output-dir target/generate_api/azure_core \
-  --working-dir target/generate_api/work/azure_core \
-  --review
-```
-
 To verify the default output without writing it:
 
 ```sh
@@ -58,16 +48,12 @@ cargo run --manifest-path /path/to/azure-sdk-for-rust/eng/tools/Cargo.toml -p ge
 - `--review`: emit Markdown review sidecars; valid only with `--format markdown`
 - `--check`: compare generated content with existing output files without writing them
 - `--output-dir <dir>`: directory where generated files are written; defaults to the crate directory
-- `--working-dir <dir>`: optional directory for Markdown review state; defaults to the resolved
-  `--output-dir` and is valid only with `--format markdown --review`
 
 ### Outputs
 
 - default `markdown` output writes `api.md`
 - `--format markdown --review` also writes `api.metadata.yml`, `api.md.map`, and
   `api.documentation.patch`
-- `--format markdown --review` writes `state/version.txt` and
-  `state/package-relative-path.txt` under the working directory
 - `--format apiview` writes `apiview.json`
 - `--check` succeeds when output files are absent or match after normalizing line endings; a mismatch
   writes an error to stderr and exits with code `1`
@@ -78,8 +64,9 @@ starts with the crate name. Multiline descriptions render with the `Description`
 line before the description text. Children of the `default` feature are also listed. `api.md` never
 contains
 documentation comments.
-`api.metadata.yml` is written next to `api.md` and records the normalized SHA-256 of `api.md`, the
-crate version, the `generate_api` version, and the rustc version used for generation.
+`api.metadata.yml` is written next to `api.md` and records `apiHash` as the normalized SHA-256 of
+`api.md`, the crate version, the repository-relative package path, the `generate_api` version, and
+the rustc version used for generation.
 `api.documentation.patch` is a unified diff that adds them back, so it can be applied to toggle
 documentation comments on. Each comment hunk uses all attributes and the first declaration line as
 context:
@@ -101,11 +88,6 @@ Alternatively, keep the generated relative `sourceRoot` and the source map at th
 location within an unchanged repository directory structure; the source paths will then continue
 to resolve relative to `api.md.map` or a custom map path. Keep the `sources` entries unchanged in
 all cases.
-
-For Markdown review output, the `state` directory under the resolved working directory contains the
-crate version in `version.txt` and the repository-relative crate directory in
-`package-relative-path.txt`. If `--working-dir` is omitted, it defaults to `--output-dir`; if
-`--output-dir` is also omitted, both directories default to the crate directory.
 
 ## Workflow
 
@@ -130,30 +112,24 @@ today.
 
 ### API Review Hub
 
-Rust API Review Hub uses repo-local PowerShell scripts rather than invoking `generate_api` inline
-from YAML:
+Rust API Review Hub uses two job wrappers:
 
-1. `eng/pipelines/templates/jobs/apireview-hub-job-rust.yml` resolves the requested Rust version
-  through `eng/scripts/Resolve-ApiReviewHubRustToolchain.ps1`, which maps aliases and metadata
-  values such as `1.97.0-nightly` back to the repository-managed channels from
-  `eng/scripts/Language-Settings.ps1`.
-2. The same job calls `eng/scripts/Build-ApiReviewHubTool.ps1`, which builds
-  `eng/tools/generate_api` from the checked-out source repository, copies the built executable
-  into the API Review Hub tooling directory, and publishes that staged executable path for later
-  steps.
-3. `eng/pipelines/templates/steps/create-apireview-hub-artifacts-rust.yml` then calls
-  `eng/scripts/Export-API.ps1` with `-WorkspacePath`, `-OutputDir`, `-WorkingDir`, `-Review`, and
-  the staged `-ToolPath` for each requested package/ref bundle. Review state is written under
-  `<working>/state`.
-4. In that mode, `Export-API.ps1` runs the staged `generate_api` executable directly with
-  `--root <ApiReviewSourceDir>`. If the executable is unavailable, it falls back to
-  `cargo +<resolved-toolchain> run --manifest-path <ApiReviewSourceDir>/eng/tools/Cargo.toml -p generate_api ...`.
+1. `eng/pipelines/templates/jobs/apireview-hub-build-tools-rust.yml` uses the normal
+   `use-rust.yml` setup in `eng/tools` to install its specified toolchain, builds
+   `generate_api` in release mode, and copies only the executable (`generate_api.exe` on
+   Windows) into `$(BinOutputDirectory)` for the shared pipeline to publish.
+2. `eng/pipelines/templates/jobs/apireview-hub-generate-artifact-rust.yml` uses the normal
+   nightly Rust setup and existing Cargo helpers from the base or target checkout to
+   locate the requested package, then invokes the prebuilt executable from `$(BinDirectory)`.
+   No scripts, helpers, toolchain manifests, or build-time dependencies are staged.
+3. The generation job passes `--root $(Build.SourcesDirectory)` because the executable is outside
+   the package checkout, and writes the complete review bundle to `$(ArtifactOutputDirectory)`.
 
-The ARH scripts no longer copy a tooling workspace. They build once from the checked-out source
-repo, then invoke the staged binary with `--root` so `generate_api` still reads and writes through
-that repo's `target/doc` layout. The executable itself still uses the toolchain pinned by
-`eng/tools/rust-toolchain.toml` when it invokes `cargo rustdoc` and records the resulting rustc
-release in `api.metadata.yml`.
+The executable embeds its toolchain channel at build time and runs Cargo itself to build
+the package and generate rustdoc JSON. The base and target branches are expected to share
+the normal nightly setup from `main`. Generation invokes `cargo rustdoc` with the embedded
+channel and records the resulting rustc release in `api.metadata.yml`. Cargo build output
+stays in the source workspace; only the review bundle goes to `$(ArtifactOutputDirectory)`.
 
 ## Toolchain
 
