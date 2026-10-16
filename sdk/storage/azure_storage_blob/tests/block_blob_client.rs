@@ -21,7 +21,7 @@ use azure_storage_blob::{
 use bytes::{BufMut, BytesMut};
 use common::{
     block_lookup, create_test_blob, get_blob_name, get_container_client, predicates,
-    ClientOptionsExt, StorageAccount, TestPolicy, KB, MB,
+    ClientOptionsExt, StorageAccount, TestPolicy, KB, MB, STORAGE_SCOPE,
 };
 use std::{
     collections::HashMap,
@@ -214,7 +214,7 @@ async fn test_upload_blob_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         "Bearer {}",
         recording
             .credential()
-            .get_token(&["https://storage.azure.com/.default"], None)
+            .get_token(&[STORAGE_SCOPE], None)
             .await?
             .token
             .secret()
@@ -342,7 +342,7 @@ async fn test_stage_block_from_url(ctx: TestContext) -> Result<(), Box<dyn Error
         "Bearer {}",
         recording
             .credential()
-            .get_token(&["https://storage.azure.com/.default"], None)
+            .get_token(&[STORAGE_SCOPE], None)
             .await?
             .token
             .secret()

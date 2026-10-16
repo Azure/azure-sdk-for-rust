@@ -11,6 +11,7 @@
 
 use crate::{
     cache::{AcquireFn, AutoRefreshingCache, RefreshableValue},
+    clients::is_path_style,
     models::{
         AuthenticationType, CreateSessionConfiguration, CreateSessionResponse, StorageErrorCode,
     },
@@ -237,10 +238,7 @@ impl SessionProvider for ContainerSessionProvider {
             return false;
         }
         let url = request.url();
-        let Some(segments) = url.path_segments() else {
-            return false;
-        };
-        let mut segments = segments.filter(|segment| !segment.is_empty());
+        let mut segments = resource_segments(url);
         let has_container = segments.next().is_some();
         let has_blob = segments.next().is_some();
         // Eligible only for blob-level GET downloads, not sub-resource operations
@@ -298,20 +296,37 @@ fn fallback_cooldown(error: &Error) -> Option<Duration> {
 }
 
 /// Reduces `url` to the account's blob service endpoint by discarding the
-/// container and blob path segments and every query-string component.
+/// container and blob path segments and every query-string component. Path-style
+/// URLs keep their leading account segment.
 fn service_endpoint(url: &Url) -> Url {
     let mut endpoint = url.clone();
-    endpoint.set_path("");
+    let account = is_path_style(url)
+        .then(|| {
+            url.path_segments()
+                .into_iter()
+                .flatten()
+                .find(|segment| !segment.is_empty())
+        })
+        .flatten();
+    endpoint.set_path(account.unwrap_or_default());
     endpoint.set_query(None);
     endpoint.set_fragment(None);
     endpoint
 }
 
-/// Extracts the container name (the first non-empty path segment) from `url`.
+/// The non-empty path segments that address a resource within the account,
+/// skipping the account segment that leads path-style URLs.
+fn resource_segments(url: &Url) -> impl Iterator<Item = &str> {
+    url.path_segments()
+        .into_iter()
+        .flatten()
+        .filter(|segment| !segment.is_empty())
+        .skip(usize::from(is_path_style(url)))
+}
+
+/// Extracts the container name from `url`.
 fn container_name(url: &Url) -> Option<String> {
-    url.path_segments()?
-        .find(|segment| !segment.is_empty())
-        .map(str::to_string)
+    resource_segments(url).next().map(str::to_string)
 }
 
 /// The header set on structured-message downloads, which are not session-eligible.
@@ -404,6 +419,7 @@ mod tests {
     };
     use azure_core_test::{credentials::MockCredential, http::MockHttpClient};
     use futures::FutureExt as _;
+    use std::sync::Mutex;
 
     const SESSION_XML: &str = r#"<?xml version="1.0" encoding="utf-8"?>
 <CreateSessionResult>
@@ -418,6 +434,43 @@ mod tests {
 
     fn get_request(url: &str) -> Request {
         Request::new(Url::parse(url).unwrap(), Method::Get)
+    }
+
+    /// A provider for `service_url` that answers every request with `status` and `body`,
+    /// recording each request URL.
+    fn recording_provider(
+        service_url: &str,
+        status: StatusCode,
+        body: &'static [u8],
+    ) -> (Arc<ContainerSessionProvider>, Arc<Mutex<Vec<Url>>>) {
+        let requests = Arc::new(Mutex::new(Vec::new()));
+        let capture = requests.clone();
+        let mock = Arc::new(MockHttpClient::new(move |req| {
+            capture.lock().unwrap().push(req.url().clone());
+            async move {
+                Ok(AsyncRawResponse::from_bytes(
+                    status,
+                    Headers::new(),
+                    Bytes::from_static(body),
+                ))
+            }
+            .boxed()
+        }));
+        let options = BlobServiceClientOptions {
+            client_options: ClientOptions {
+                transport: Some(Transport::new(mock)),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let credential: Arc<dyn TokenCredential> = MockCredential::new().unwrap();
+        let provider = ContainerSessionProvider::new(
+            &Url::parse(service_url).unwrap(),
+            credential,
+            Some(options),
+        )
+        .unwrap();
+        (Arc::new(provider), requests)
     }
 
     fn http_error(status: StatusCode, error_code: Option<&str>) -> Error {
@@ -580,5 +633,46 @@ mod tests {
         let info = provider.get_session(&request).await.unwrap();
         assert!(info.is_fallback_to_bearer());
         assert_eq!(info.credentials(), None);
+    }
+
+    #[tokio::test]
+    async fn path_style_endpoint_creates_session_for_the_blob_container() {
+        let (provider, requests) = recording_provider(
+            "https://10.0.0.1/devstoreaccount1",
+            StatusCode::Created,
+            SESSION_XML.as_bytes(),
+        );
+        let request = get_request("https://10.0.0.1/devstoreaccount1/mycontainer/myblob");
+
+        assert!(provider.is_request_eligible(&request));
+        provider.get_session(&request).await.unwrap();
+
+        let requests = requests.lock().unwrap();
+        assert_eq!(requests.len(), 1);
+        assert_eq!(
+            requests[0].path(),
+            "/devstoreaccount1/mycontainer",
+            "Create Session should target the blob's container under the account path segment"
+        );
+    }
+
+    #[test]
+    fn path_style_urls_skip_the_account_segment() {
+        let url = Url::parse("https://10.0.0.1:10000/devstoreaccount1/mycontainer/myblob?comp=x")
+            .unwrap();
+        assert_eq!(
+            service_endpoint(&url).as_str(),
+            "https://10.0.0.1:10000/devstoreaccount1"
+        );
+        assert_eq!(container_name(&url).as_deref(), Some("mycontainer"));
+
+        let provider = provider_returning(StatusCode::Created, SESSION_XML.as_bytes());
+        assert!(provider.is_request_eligible(&get_request(
+            "https://localhost:10000/devstoreaccount1/mycontainer/myblob"
+        )));
+        // A container-level request is not a blob download.
+        assert!(!provider.is_request_eligible(&get_request(
+            "https://localhost:10000/devstoreaccount1/mycontainer"
+        )));
     }
 }
