@@ -190,7 +190,7 @@ pub struct BlobContainerClientListBlobsOptions<'a> {
 }
 
 impl BlobContainerClientListBlobsOptions<'_> {
-    pub(crate) fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static> {
+    pub fn into_owned(self) -> BlobContainerClientListBlobsOptions<'static> {
         BlobContainerClientListBlobsOptions {
             #[cfg(feature = "arrow")]
             end_before: self.end_before,
@@ -257,7 +257,7 @@ pub struct BlobContainerClientListBlobsHierarchicalOptions<'a> {
 }
 
 impl BlobContainerClientListBlobsHierarchicalOptions<'_> {
-    pub(crate) fn into_owned(self) -> BlobContainerClientListBlobsHierarchicalOptions<'static> {
+    pub fn into_owned(self) -> BlobContainerClientListBlobsHierarchicalOptions<'static> {
         BlobContainerClientListBlobsHierarchicalOptions {
             #[cfg(feature = "arrow")]
             end_before: self.end_before,

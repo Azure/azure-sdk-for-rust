@@ -662,7 +662,6 @@ impl BlobClient {
     /// * [`object_replication_rules`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::object_replication_rules) - x-ms-or
     /// * [`object_replication_policy_id`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::object_replication_policy_id) - x-ms-or-policy-id
     /// * [`is_server_encrypted`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::is_server_encrypted) - x-ms-server-encrypted
-    /// * [`smart_access_tier`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::smart_access_tier) - x-ms-smart-access-tier
     /// * [`tag_count`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::tag_count) - x-ms-tag-count
     /// * [`version_id`()](crate::generated::models::BlobClientDownloadInternalResultHeaders::version_id) - x-ms-version-id
     ///
@@ -901,7 +900,6 @@ impl BlobClient {
     /// * [`object_replication_policy_id`()](crate::generated::models::BlobLayoutHeaders::object_replication_policy_id) - x-ms-or-policy-id
     /// * [`rehydrate_priority`()](crate::generated::models::BlobLayoutHeaders::rehydrate_priority) - x-ms-rehydrate-priority
     /// * [`is_server_encrypted`()](crate::generated::models::BlobLayoutHeaders::is_server_encrypted) - x-ms-server-encrypted
-    /// * [`smart_access_tier`()](crate::generated::models::BlobLayoutHeaders::smart_access_tier) - x-ms-smart-access-tier
     /// * [`tag_count`()](crate::generated::models::BlobLayoutHeaders::tag_count) - x-ms-tag-count
     /// * [`version_id`()](crate::generated::models::BlobLayoutHeaders::version_id) - x-ms-version-id
     ///
@@ -1087,7 +1085,6 @@ impl BlobClient {
     /// * [`object_replication_policy_id`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::object_replication_policy_id) - x-ms-or-policy-id
     /// * [`rehydrate_priority`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::rehydrate_priority) - x-ms-rehydrate-priority
     /// * [`is_server_encrypted`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::is_server_encrypted) - x-ms-server-encrypted
-    /// * [`smart_access_tier`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::smart_access_tier) - x-ms-smart-access-tier
     /// * [`tag_count`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::tag_count) - x-ms-tag-count
     /// * [`version_id`()](crate::generated::models::BlobClientGetPropertiesResultHeaders::version_id) - x-ms-version-id
     ///
