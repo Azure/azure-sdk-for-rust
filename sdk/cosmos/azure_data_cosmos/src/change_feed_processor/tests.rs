@@ -9,8 +9,7 @@ use crate::{
     feed::ContinuationToken,
     models::ChangeFeedItem,
     options::{ChangeFeedMode, MaxItemCountHint, Region},
-    AccountReference, ContainerClient, CosmosClientBuilder, CosmosRuntimeBuilder, FeedScope,
-    RoutingStrategy,
+    AccountReference, ContainerClient, CosmosClientBuilder, CosmosRuntimeBuilder, RoutingStrategy,
 };
 use azure_core::{
     credentials::Secret,
@@ -19,12 +18,6 @@ use azure_core::{
 use azure_data_cosmos_driver::in_memory_emulator::{
     InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
 };
-use azure_data_cosmos_driver::{
-    models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
-    options::{DriverOptions, OperationOptions},
-};
-use futures::TryStreamExt;
-use serde_json::Value;
 use std::{error::Error, num::NonZeroU32, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 
@@ -47,41 +40,17 @@ async fn containers() -> Result<(ContainerClient, ContainerClient), Box<dyn Erro
     )?));
     let store = emulator.store();
     store.create_database("processor-tests");
-    store.create_container(
-        "processor-tests",
-        "monitored",
-        serde_json::from_value(serde_json::json!({
-            "paths": ["/id"],
-            "kind": "Hash",
-            "version": 2
-        }))?,
-    );
-    let driver = emulator
-        .runtime_builder()
-        .build()
-        .await?
-        .create_driver(
-            DriverOptions::builder(DriverAccountReference::with_account_key(
-                endpoint.parse()?,
-                "dGVzdGtleQ==",
-            ))
-            .build(),
-        )
-        .await?;
-    driver
-        .execute_singleton_operation(
-            CosmosOperation::create_container(DatabaseReference::from_name(
-                driver.account().clone(),
-                "processor-tests",
-            ))
-            .with_body(serde_json::to_vec(&serde_json::json!({
-                "id": "leases",
-                "partitionKey": {"paths": ["/id"], "kind": "Hash", "version": 2},
-                "defaultTtl": -1
-            }))?),
-            OperationOptions::default(),
-        )
-        .await?;
+    for name in ["monitored", "leases"] {
+        store.create_container(
+            "processor-tests",
+            name,
+            serde_json::from_value(serde_json::json!({
+                "paths": ["/id"],
+                "kind": "Hash",
+                "version": 2
+            }))?,
+        );
+    }
     let client = CosmosClientBuilder::new()
         .with_runtime(
             CosmosRuntimeBuilder::from(emulator.runtime_builder())
@@ -400,101 +369,4 @@ async fn latest_version_build_validates_configuration() -> Result<(), Box<dyn Er
 #[tokio::test]
 async fn all_versions_and_deletes_build_validates_configuration() -> Result<(), Box<dyn Error>> {
     build_validation(AllVersionsAndDeletes).await
-}
-
-async fn lease_records(leases: &ContainerClient) -> Result<Vec<Value>, Box<dyn Error>> {
-    let mut records = Box::pin(
-        leases
-            .query_items::<Value>("SELECT * FROM c", FeedScope::full_container(), None)
-            .await?,
-    )
-    .try_collect::<Vec<_>>()
-    .await?;
-    records.sort_by(|a, b| a["id"].as_str().cmp(&b["id"].as_str()));
-    Ok(records)
-}
-
-async fn start_bootstraps_only<M: ChangeFeedProcessorMode>(
-    mode: M,
-    expected_mode: &str,
-) -> Result<(), Box<dyn Error>> {
-    let (source, leases) = containers().await?;
-    let processor =
-        ChangeFeedProcessorBuilder::new(mode, source, leases.clone(), "orders", "worker")
-            .handle_change_feed(|_, _: Vec<ChangeFeedItem<String>>| async {
-                panic!("bootstrap must not invoke callbacks");
-            })
-            .build()?;
-    assert!(lease_records(&leases).await?.is_empty());
-    assert_eq!(
-        processor.start().await.unwrap_err().status().status_code(),
-        StatusCode::NotImplemented
-    );
-    assert!(!processor.is_started());
-    let before = lease_records(&leases).await?;
-    assert!(before
-        .iter()
-        .any(|r| r["id"].as_str().unwrap().ends_with(".info")));
-    let range_leases = before
-        .iter()
-        .filter(|r| r.get("range").is_some())
-        .collect::<Vec<_>>();
-    assert!(!range_leases.is_empty());
-    for lease in range_leases {
-        assert_eq!(lease["workload"]["mode"], expected_mode);
-        assert!(lease["owner"].is_null());
-        assert!(lease["continuation"].is_null());
-    }
-    assert_eq!(
-        processor.start().await.unwrap_err().status().status_code(),
-        StatusCode::NotImplemented
-    );
-    assert_eq!(lease_records(&leases).await?, before);
-    assert!(!processor.is_started());
-    Ok(())
-}
-
-#[tokio::test]
-async fn latest_version_start_bootstraps_only() -> Result<(), Box<dyn Error>> {
-    start_bootstraps_only(LatestVersion, "latestVersion").await
-}
-
-#[tokio::test]
-async fn all_versions_start_bootstraps_only() -> Result<(), Box<dyn Error>> {
-    start_bootstraps_only(AllVersionsAndDeletes, "allVersionsAndDeletes").await
-}
-
-#[tokio::test]
-async fn start_propagates_bootstrap_mode_conflict() -> Result<(), Box<dyn Error>> {
-    let (source, leases) = containers().await?;
-    let first = ChangeFeedProcessorBuilder::new(
-        LatestVersion,
-        source.clone(),
-        leases.clone(),
-        "orders",
-        "first",
-    )
-    .handle_change_feed(|_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
-    .build()?;
-    assert_eq!(
-        first.start().await.unwrap_err().status().status_code(),
-        StatusCode::NotImplemented
-    );
-    let before = lease_records(&leases).await?;
-    let other = ChangeFeedProcessorBuilder::new(
-        AllVersionsAndDeletes,
-        source,
-        leases.clone(),
-        "orders",
-        "other",
-    )
-    .handle_change_feed(|_, _: Vec<ChangeFeedItem<String>>| async { Ok(()) })
-    .build()?;
-    assert_eq!(
-        other.start().await.unwrap_err().status().status_code(),
-        StatusCode::Conflict
-    );
-    assert_eq!(lease_records(&leases).await?, before);
-    assert!(!other.is_started());
-    Ok(())
 }

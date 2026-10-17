@@ -16,8 +16,9 @@ use crate::{
 #[cfg(feature = "unstable_patch")]
 use crate::{models::PatchInstructions, options::PatchItemOptions};
 
-use azure_data_cosmos_driver::models::{
-    ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind,
+use azure_data_cosmos_driver::{
+    change_feed_processor as driver_processor,
+    models::{ContainerReference, CosmosOperation, ItemReference, PartitionKeyKind},
 };
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -41,19 +42,35 @@ pub struct ContainerClient {
 }
 
 impl ContainerClient {
-    pub(crate) async fn bootstrap_change_feed_processor(
+    pub(crate) async fn start_change_feed_processor(
         &self,
         lease_container: &Self,
-        options: &azure_data_cosmos_driver::change_feed_processor::BootstrapOptions,
-    ) -> crate::Result<()> {
-        azure_data_cosmos_driver::change_feed_processor::bootstrap(
-            &self.context.driver,
-            &self.container_ref,
-            &lease_container.context.driver,
-            &lease_container.container_ref,
+        options: driver_processor::ProcessorOptions,
+    ) -> crate::Result<driver_processor::Processor> {
+        driver_processor::Processor::start(
+            self.context.driver.clone(),
+            self.container_ref.clone(),
+            lease_container.context.driver.clone(),
+            lease_container.container_ref.clone(),
             options,
         )
         .await
+    }
+
+    pub(crate) fn deserialize_processor_batch<T: DeserializeOwned>(
+        &self,
+        response: azure_data_cosmos_driver::models::CosmosResponse,
+    ) -> crate::Result<Vec<ChangeFeedItem<T>>> {
+        let response = crate::driver_bridge::driver_response_to_cosmos_response(response);
+        let diagnostics = response.diagnostics();
+        let result = response.into_model::<crate::feed::FeedBody<ChangeFeedItem<T>>>();
+        crate::feed::dispatch_page_diagnostics(
+            &self.context.diagnostics_handlers,
+            &self.operation_context("change_feed_processor"),
+            &diagnostics,
+            result.as_ref().ok().map(|body| body.items.len() as u64),
+        );
+        result.map(|body| body.items)
     }
 
     /// Returns the resolved [`ContainerReference`] for the container this client is attached to.
