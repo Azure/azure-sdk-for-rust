@@ -6,6 +6,7 @@
 
 - Added driver-owned change feed workload bootstrap with RID-based identity, persisted mode checks, TTL initialization claims, bounded retries, and create-only range leases without initial continuations.
 - Added `change_feed_processor::Processor` with equal lease balancing, renewal, progress watchdogs, and schema-agnostic batch receipts that gate durable checkpoints and subsequent polls.
+- Added automatic online processor split recovery with fenced parent retirement, recoverable child leases, independent merge checkpoints, and balanced child acquisition.
 
 ### Breaking Changes
 

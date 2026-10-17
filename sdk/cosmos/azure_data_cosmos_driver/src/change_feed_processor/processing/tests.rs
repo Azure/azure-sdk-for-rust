@@ -19,6 +19,8 @@ use crate::{
 };
 use std::{num::NonZeroU32, sync::Arc, time::Duration};
 
+mod topology;
+
 fn options(worker: &str) -> ProcessorOptions {
     let mut options = ProcessorOptions::new(BootstrapOptions::new(
         ChangeFeedProcessorMode::LatestVersion,
@@ -32,6 +34,17 @@ fn options(worker: &str) -> ProcessorOptions {
 }
 
 async fn fixture() -> Result<Arc<Context>> {
+    Ok(
+        fixture_with_emulator(ChangeFeedProcessorMode::LatestVersion, 3)
+            .await?
+            .0,
+    )
+}
+
+async fn fixture_with_emulator(
+    mode: ChangeFeedProcessorMode,
+    partitions: u32,
+) -> Result<(Arc<Context>, Arc<InMemoryEmulatorHttpClient>)> {
     let endpoint = "https://eastus.emulator.local";
     let emulator = Arc::new(InMemoryEmulatorHttpClient::new(VirtualAccountConfig::new(
         vec![VirtualRegion::new("East US", endpoint.parse()?)],
@@ -44,7 +57,7 @@ async fn fixture() -> Result<Arc<Context>> {
         "polling",
         "source",
         pk,
-        ContainerConfig::default().with_partition_count(3),
+        ContainerConfig::default().with_partition_count(partitions),
     );
     store.create_container_with_properties_internal(
         "polling",
@@ -71,24 +84,31 @@ async fn fixture() -> Result<Arc<Context>> {
     let leases = driver
         .resolve_container("polling", "leases", OperationOptions::default())
         .await?;
-    let options = options("first");
+    let mut options = options("first");
+    options.bootstrap.mode = mode;
+    if mode == ChangeFeedProcessorMode::AllVersionsAndDeletes {
+        options.start = ChangeFeedStartFrom::Now;
+    }
     bootstrap(&driver, &source, &driver, &leases, &options.bootstrap).await?;
     let identity = Identity {
         version: SCHEMA_VERSION,
         account: source.account().endpoint().origin().ascii_serialization(),
         container_rid: source.rid().into(),
         processor_name: "workload".into(),
-        mode: ChangeFeedProcessorMode::LatestVersion,
+        mode,
     };
-    Ok(Arc::new(Context {
-        source_driver: driver.clone(),
-        source,
-        lease_driver: driver,
-        leases,
-        namespace: namespace(&identity)?,
-        identity,
-        options,
-    }))
+    Ok((
+        Arc::new(Context {
+            source_driver: driver.clone(),
+            source,
+            lease_driver: driver,
+            leases,
+            namespace: namespace(&identity)?,
+            identity,
+            options,
+        }),
+        emulator,
+    ))
 }
 
 async fn start(context: &Context, options: ProcessorOptions) -> Result<Processor> {
@@ -150,6 +170,7 @@ fn leases(owners: &[Option<&str>]) -> Vec<Lease> {
             },
             incarnation: Some(index.to_string()),
             renewed_at: Some(1000),
+            children: None,
         })
         .collect()
 }
