@@ -3,6 +3,10 @@
 This directory implements fixed, self-owned Cosmos DB accounts for the
 `Cosmos_live_test` CI leg.
 
+The optional weekly performance gate uses the separate existing Gateway V2
+account credentials. See [the performance runbook](perf.md) for colocated
+runner setup, shared-account locking, calibration, and manual PR-commit runs.
+
 ## Why
 
 `Cosmos_live_test` previously deployed a fresh Cosmos account per CI run (via

@@ -71,7 +71,7 @@ cargo run -p azure_data_cosmos_perf -- \
 ### Options
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| ------ | --------- | ------------- |
 | `--endpoint` | *required* | Cosmos DB account endpoint URL |
 | `--database` | `perfdb` | Database name |
 | `--container` | `perfcontainer` | Container name (partition key path must be `/partition_key`) |
@@ -136,6 +136,32 @@ cargo run -p azure_data_cosmos_perf -- \
   --application-region "East US 2" \
   --concurrency 200 --seed-count 5000
 ```
+
+## Weekly performance gate
+
+Build with `--features weekly-gate` to enable `--perf-profile`, `--thresholds`,
+`--perf-environment`, and `--perf-output`. This opt-in mode uses fixed workers
+per operation in one process and a shared SDK client. Existing CLI workloads
+and Cosmos result publishing are unchanged when `--perf-profile` is omitted.
+The feature enables the SDK's opt-in patch API.
+
+The weekly workload runs for 45 minutes after setup, excluding the first
+5 minutes from every gated metric. It checks successful operations/second,
+p99 latency, and error rate separately for every operation. Thresholds are
+fixed, reviewed baseline values, not automatically learned from the candidate.
+All performance evidence is written locally; it does not add result-publishing
+traffic to the account under test.
+
+The full profile includes point read/create/upsert/replace/patch/delete,
+single-partition and feed-range queries, cross-partition scans and ORDER BY,
+a single-partition aggregate, bounded cross-partition DISTINCT, change feed,
+and a five-operation transactional batch. Cross-partition aggregates are not
+currently supported by the SDK. DISTINCT uses a finite `TOP 100` window.
+Management operations, preview distributed transactions, and read-many are
+not included.
+
+See the [weekly performance pipeline runbook](https://github.com/Azure/azure-sdk-for-rust/blob/main/sdk/cosmos/eng/pipelines/perf.md)
+for setup, calibration, exact-commit execution, and measurement semantics.
 
 ## Output
 
@@ -231,7 +257,7 @@ processes, and forwards `Ctrl+C` to all children for graceful shutdown.
 The launcher supports these additional flags:
 
 | Flag | Default | Description |
-|------|---------|-------------|
+| ------ | --------- | ------------- |
 | `--processes N` | `1` | Number of OS processes to spawn |
 | `--cosmos-commit REF` | — | Build against a specific SDK commit/branch/tag |
 | `--poll-branch BRANCH` | — | Continuously poll a remote branch for new commits |
