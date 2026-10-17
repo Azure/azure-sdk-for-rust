@@ -172,6 +172,17 @@ pub mod binary_json {
 }
 pub mod change_feed_processor {
     pub async fn bootstrap(source_driver: &crate::CosmosDriver, source: &crate::models::ContainerReference, lease_driver: &crate::CosmosDriver, leases: &crate::models::ContainerReference, options: &crate::change_feed_processor::BootstrapOptions) -> crate::Result<()>;
+    pub struct Batch {
+    }
+    impl Batch {
+        pub fn into_parts(self) -> (String, CosmosResponse, BatchReceipt);
+    }
+    pub struct BatchReceipt {
+    }
+    impl BatchReceipt {
+        pub async fn cancelled(&self);
+        pub async fn checkpoint(self) -> Result<()>;
+    }
     #[derive(Clone, Debug)]
     pub struct BootstrapOptions {
     }
@@ -179,6 +190,27 @@ pub mod change_feed_processor {
         pub fn new<impl Into<String>: Into<String>, impl Into<String>: Into<String>>(mode: ChangeFeedProcessorMode, processor_name: impl Into<String>, instance_name: impl Into<String>) -> Self;
         pub fn with_lease_verification_enabled_on_restart(self, enabled: bool) -> Self;
         pub fn with_timeout(self, timeout: Duration) -> Self;
+    }
+    #[derive(Clone)]
+    pub struct Processor {
+    }
+    impl Processor {
+        pub fn is_running(&self) -> bool;
+        pub async fn next_batch(&self) -> Option<Batch>;
+        pub fn request_stop(&self);
+        pub async fn start(source_driver: Arc<CosmosDriver>, source: ContainerReference, lease_driver: Arc<CosmosDriver>, leases: ContainerReference, options: ProcessorOptions) -> Result<Self>;
+        pub async fn stop(&self);
+    }
+    #[derive(Clone, Debug)]
+    pub struct ProcessorOptions {
+    }
+    impl ProcessorOptions {
+        pub fn new(bootstrap: BootstrapOptions) -> Self;
+        pub fn with_continuation(self, continuation: ContinuationToken) -> Self;
+        pub fn with_lease_counts(self, minimum: u32, maximum: u32) -> Self;
+        pub fn with_max_item_count(self, hint: MaxItemCountHint) -> Self;
+        pub fn with_poll_delay(self, delay: Duration) -> Self;
+        pub fn with_start(self, start: ChangeFeedStartFrom) -> Self;
     }
     #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Deserialize, serde::Serialize)]
     #[non_exhaustive]

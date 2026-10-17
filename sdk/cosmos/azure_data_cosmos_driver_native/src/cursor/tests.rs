@@ -541,13 +541,14 @@ fn page_and_error_diagnostics_live_until_completion_free() {
         fixture.drive(op);
         let weak = {
             let queue = CompletionQueue::inner_arc(fixture.queue).unwrap();
-            let state = queue.cursor.as_ref().unwrap().inner.lock().unwrap();
-            let diagnostics = match &state.deliveries.front().unwrap().result {
-                Ok(ResultData::Page(page)) => page.diagnostics(),
-                Err(error) => error.diagnostics().unwrap(),
-                _ => panic!("expected page or error diagnostics"),
-            };
-            Arc::downgrade(&diagnostics)
+            queue.cursor.as_ref().unwrap().with_front(|delivery| {
+                let diagnostics = match &delivery.result {
+                    Ok(ResultData::Page(page)) => page.diagnostics(),
+                    Err(error) => error.diagnostics().unwrap(),
+                    _ => panic!("expected page or error diagnostics"),
+                };
+                Arc::downgrade(&diagnostics)
+            })
         };
         let page = fixture.receive(op);
         // SAFETY: the page owns this borrowed handle until completion free.

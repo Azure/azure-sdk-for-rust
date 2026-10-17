@@ -1056,6 +1056,30 @@ typedef struct cosmos_operation_options_snapshot_t cosmos_operation_options_snap
 typedef struct cosmos_partition_key_t cosmos_partition_key_t;
 
 /**
+ * Opaque owner of borrowed completion views.
+ */
+typedef struct cosmos_processor_completion_backing_t cosmos_processor_completion_backing_t;
+
+/**
+ * A running processor bound to its opening queue and runtime.
+ *
+ * Synchronize handle free against calls that use the same raw pointer.
+ */
+typedef struct cosmos_processor_t cosmos_processor_t;
+
+/**
+ * A format-isolated processor completion queue.
+ *
+ * Freeing or shutting down this queue requests shutdown of its processors.
+ */
+typedef struct cosmos_processor_queue_t cosmos_processor_queue_t;
+
+/**
+ * A one-use processing receipt. Free without acknowledgment on callback failure.
+ */
+typedef struct cosmos_processor_receipt_t cosmos_processor_receipt_t;
+
+/**
  * The C ABI handle for the async runtime (`cosmos_runtime_t`).
  *
  * Reference-counted via `Arc` so completion queues can keep the runtime
@@ -2089,6 +2113,118 @@ typedef struct cosmos_driver_options_config_v2_t {
 } cosmos_driver_options_config_v2_t;
 
 /**
+ * Versioned processor configuration. Initialize with `cosmos_processor_request_init`.
+ */
+typedef struct cosmos_processor_request_t {
+  /**
+   * Full readable allocation size, including zero extension bytes.
+   */
+  uint32_t struct_size_bytes;
+  /**
+   * Must be 1.
+   */
+  uint32_t abi_version;
+  /**
+   * Workload name; copied during submission.
+   */
+  struct cosmos_string_view_t processor_name;
+  /**
+   * Worker identity; copied during submission.
+   */
+  struct cosmos_string_view_t instance_name;
+  /**
+   * 1: latest version; 2: all versions and deletes.
+   */
+  uint32_t mode;
+  /**
+   * 1: beginning; 2: now; 3: RFC 3339 time. Resume takes precedence.
+   */
+  uint32_t start_from;
+  /**
+   * Required only for a time-based start.
+   */
+  struct cosmos_string_view_t start_time;
+  /**
+   * Optional initial lease-scoped composite continuation.
+   */
+  struct cosmos_string_view_t continuation;
+  /**
+   * Positive item-count hint, or -1 for the service default.
+   */
+  int32_t max_item_count;
+  /**
+   * Per-lease idle delay in milliseconds. Zero is permitted.
+   */
+  uint64_t poll_delay_ms;
+  /**
+   * Minimum target lease count.
+   */
+  uint32_t min_leases;
+  /**
+   * Maximum target lease count, or zero for uncapped.
+   */
+  uint32_t max_leases;
+  /**
+   * 0: fast bootstrap restart; 1: verify initial leases.
+   */
+  uint32_t verify_on_restart;
+  /**
+   * Must be zero.
+   */
+  uint32_t reserved[4];
+} cosmos_processor_request_t;
+
+/**
+ * Owned processor result. All borrowed views live until completion free.
+ */
+typedef struct cosmos_processor_completion_t {
+  /**
+   * Complete allocated record size.
+   */
+  uint32_t struct_size_bytes;
+  /**
+   * Currently 1.
+   */
+  uint32_t abi_version;
+  /**
+   * Common status, error, diagnostics, correlation, headers, and raw body.
+   */
+  struct cosmos_completion_t common;
+  /**
+   * 0: error; 1: started; 2: batch; 3: checkpoint saved; 4: stopped; 5: end.
+   */
+  uint32_t result_kind;
+  /**
+   * 0: no payload; 1: common raw bytes; 2: ordered item buffers.
+   */
+  uint32_t body_kind;
+  /**
+   * Complete item array, preserving envelopes and encoding.
+   */
+  const struct cosmos_cursor_bytes_t *items;
+  /**
+   * Number of item buffers.
+   */
+  uintptr_t items_len;
+  /**
+   * Workload-scoped lease identity for a batch.
+   */
+  struct cosmos_string_view_t lease_token;
+  /**
+   * Started processor; detach once before freeing this completion.
+   */
+  struct cosmos_processor_t *processor;
+  /**
+   * Batch receipt; detach once, then checkpoint after successful processing.
+   */
+  struct cosmos_processor_receipt_t *receipt;
+  /**
+   * Private allocation owner.
+   */
+  struct cosmos_processor_completion_backing_t *backing;
+} cosmos_processor_completion_t;
+
+/**
  * Flat C ABI options for building a `cosmos_runtime_t` in a single call.
  *
  * Every field is sentinel-encoded so a zeroed struct (or a NULL pointer
@@ -2919,6 +3055,109 @@ uintptr_t cosmos_partition_key_component_count(const struct cosmos_partition_key
  * returning `0`).
  */
 bool cosmos_partition_key_is_empty(const struct cosmos_partition_key_t *pk);
+
+/**
+ * Initializes a full-size caller-owned request with default timing and page size.
+ */
+void cosmos_processor_request_init(struct cosmos_processor_request_t *out);
+
+/**
+ * Creates a queue. Capacity bounds admitted start/next results; zero is uncapped.
+ *
+ * Acknowledgment and stop results use separate control admission so an outstanding
+ * next request cannot block the checkpoint that would enable its next page.
+ */
+struct cosmos_processor_queue_t *cosmos_processor_queue_create(const struct cosmos_runtime_t *runtime,
+                                                               uint32_t capacity);
+
+/**
+ * Starts a processor asynchronously. All input strings are copied during this call.
+ *
+ * Handles and input allocations must be live for the call. The completion owns the
+ * started handle until `cosmos_processor_completion_take_processor` detaches it.
+ */
+struct cosmos_operation_handle_t *cosmos_processor_start_submit(const struct cosmos_driver_t *source_driver,
+                                                                const struct cosmos_container_ref_t *source,
+                                                                const struct cosmos_driver_t *lease_driver,
+                                                                const struct cosmos_container_ref_t *leases,
+                                                                const struct cosmos_processor_request_t *request,
+                                                                struct cosmos_processor_queue_t *queue,
+                                                                intptr_t user_data,
+                                                                cosmos_status_code_t *out_pre_error);
+
+/**
+ * Requests the next batch. Only one undelivered next request is allowed per processor.
+ *
+ * After transfer, request further batches to process other leases concurrently.
+ * The driver still permits only one unacknowledged batch for each lease.
+ */
+struct cosmos_operation_handle_t *cosmos_processor_next_submit(const struct cosmos_processor_t *processor,
+                                                               intptr_t user_data,
+                                                               cosmos_status_code_t *out_pre_error);
+
+/**
+ * Stops coordination and cancels outstanding receipts, then delivers a stopped result.
+ */
+struct cosmos_operation_handle_t *cosmos_processor_stop_submit(const struct cosmos_processor_t *processor,
+                                                               intptr_t user_data,
+                                                               cosmos_status_code_t *out_pre_error);
+
+/**
+ * Acknowledges successful callback completion and persists the batch checkpoint.
+ *
+ * The receipt is consumed only after submission is accepted. Free its handle
+ * after this call; the admitted operation owns the pending acknowledgment.
+ * A successful result means persistence, not just receipt of this command.
+ */
+struct cosmos_operation_handle_t *cosmos_processor_checkpoint_submit(const struct cosmos_processor_receipt_t *receipt,
+                                                                     intptr_t user_data,
+                                                                     cosmos_status_code_t *out);
+
+/**
+ * Transfers up to `max` owned completion pointers. Timeout/empty is success with zero results.
+ *
+ * Supply writable pointer slots and count; synchronize concurrent waits and queue free.
+ */
+cosmos_status_code_t cosmos_processor_queue_wait(const struct cosmos_processor_queue_t *queue,
+                                                 struct cosmos_processor_completion_t **out,
+                                                 uintptr_t max,
+                                                 uint32_t timeout_ms,
+                                                 uintptr_t *out_count);
+
+/**
+ * Detaches a started processor exactly once, or returns NULL.
+ */
+struct cosmos_processor_t *cosmos_processor_completion_take_processor(struct cosmos_processor_completion_t *completion);
+
+/**
+ * Detaches a batch receipt exactly once, or returns NULL.
+ */
+struct cosmos_processor_receipt_t *cosmos_processor_completion_take_receipt(struct cosmos_processor_completion_t *completion);
+
+/**
+ * Frees a receipt. An unacknowledged receipt abandons its batch without saving progress.
+ */
+void cosmos_processor_receipt_free(struct cosmos_processor_receipt_t *receipt);
+
+/**
+ * Requests shutdown without waiting and frees the caller's processor handle.
+ */
+void cosmos_processor_free(struct cosmos_processor_t *processor);
+
+/**
+ * Releases a completion, its payload views, and any undetached handles.
+ */
+void cosmos_processor_completion_free(struct cosmos_processor_completion_t *completion);
+
+/**
+ * Stops admission and requests processor shutdown. Previously admitted results can drain.
+ */
+void cosmos_processor_queue_shutdown(const struct cosmos_processor_queue_t *queue);
+
+/**
+ * Frees the queue, abandons pending delivery, and requests processor shutdown.
+ */
+void cosmos_processor_queue_free(struct cosmos_processor_queue_t *queue);
 
 /**
  * Returns the canonical wire header name (NUL-terminated UTF-8) for a header

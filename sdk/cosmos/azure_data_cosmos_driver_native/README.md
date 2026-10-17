@@ -57,6 +57,7 @@ for the full design.
 | `cosmos_submit_operation` (legacy feeds) | ✅ with explicit errors for unrepresentable results |
 | Response status / RU / body / activity-id / session-token / etag / continuation | ✅ |
 | Retained query/read-feed/change-feed cursors | Supported through `cosmos_cursor_*` |
+| Change feed processor with acknowledged batches | Supported through `cosmos_processor_*` |
 | Multi-part response body iteration | All buffers in cursor completions |
 | Diagnostics accessors | Supported through completion diagnostics |
 | Patch instruction builder | ⏳ planned |
@@ -70,6 +71,48 @@ Version **0.2.0** is a breaking C ABI revision. Check `cosmos_version()` against
 `AZURECOSMOSDRIVER_H_VERSION` before any layout-sensitive call, including options
 returned by value. Rebuild host bindings and vendor the generated header together
 with the matching library; do not mix 0.1.x headers and 0.2.x libraries.
+
+### Change feed processor delivery
+
+The processor API is an additive, format-isolated completion-queue interface.
+It does not invoke application callbacks from native code. The shared driver owns
+bootstrap, lease acquisition/stealing, renewal, feed polling, and checkpoint writes;
+the host SDK owns deserialization and callback execution.
+
+1. Create a `cosmos_processor_queue_t` and initialize a
+   `cosmos_processor_request_t`. Supply resolved source/lease container and driver
+   handles to `cosmos_processor_start_submit`.
+2. Wait with `cosmos_processor_queue_wait`; detach the started processor with
+   `cosmos_processor_completion_take_processor`, then free the completion.
+3. Submit `cosmos_processor_next_submit`. A batch completion contains the complete
+   payload, its encoding-preserving body shape, lease identity, and a receipt.
+   Detach the receipt before freeing the completion. Keep the completion alive
+   as long as its borrowed payload views are in use.
+4. Invoke and await the application's callback in the host language.
+5. On success, submit `cosmos_processor_checkpoint_submit`. A successful
+   checkpoint result means the lease write completed, not merely that the driver
+   received the acknowledgment. On failure, free the receipt without submitting;
+   its lease is abandoned without advancing progress.
+6. Free receipt and operation handles. On shutdown, submit
+   `cosmos_processor_stop_submit`, drain results, and free the processor and queue.
+
+Only one undelivered Next is admitted per processor. After transferring it, the
+host may request other leases' batches while callbacks run concurrently. Each
+active lease session still has one outstanding batch; it cannot advance until
+checkpoint success. Receipts are one-use and tied to the acquisition incarnation.
+Late acknowledgments after ownership loss, watchdog expiration, or stop fail.
+
+Queue capacity bounds admitted Start/Next results, including in-flight requests.
+Checkpoint and Stop use control admission independently of that data capacity:
+otherwise a pending Next could occupy the slot needed by the acknowledgment
+that enables its next page. Renewal never waits on queue space. This does not
+bound payloads retained by the host or all active leases by a global byte limit.
+
+Freeing a completion also frees any undetached receipt/processor. Queue shutdown
+stops admission and requests processor shutdown while admitted results drain.
+Queue free abandons results and marks their operation handles as delivery-lost.
+Neither shutdown nor checkpoint writes can roll back callback side effects; consumers
+must tolerate at-least-once delivery.
 
 ### Operation defaults and admission snapshots
 
