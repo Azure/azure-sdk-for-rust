@@ -12,7 +12,7 @@
 
 ### Breaking Changes
 
-- `ChangeFeedProcessor::stop()` now drains issued callbacks and reports incomplete shutdown or lease cleanup; use `abort()` for explicit callback cancellation.
+- `ChangeFeedProcessor::stop()` now drains issued callbacks and reports incomplete shutdown or lease cleanup; use `abort()` for explicit callback cancellation. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 
 ### Bugs Fixed
 
@@ -20,7 +20,7 @@
 
 ### Other Changes
 
-- Keep processor lease maintenance independent of feed poll delay and remove the implicit callback timeout.
+- Keep processor lease maintenance independent of feed poll delay and remove the implicit callback timeout. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 
 ## 1.0.0 (2026-10-08)
 
