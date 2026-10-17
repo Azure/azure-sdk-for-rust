@@ -71,8 +71,6 @@ pub struct AllVersionsAndDeletes;
 impl ChangeFeedProcessorMode for AllVersionsAndDeletes {
 }
 #[must_use]
-#[cfg_attr(not(all(test, feature = "__internal_in_memory_emulator")), expect(dead_code, reason = "Configuration is retained for future execution."))]
-#[expect(dead_code, reason = "Configuration is retained for future execution.")]
 pub struct ChangeFeedProcessor<M: ChangeFeedProcessorMode, T, H> {
 }
 impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
