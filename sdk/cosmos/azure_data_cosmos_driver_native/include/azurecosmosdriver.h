@@ -3096,11 +3096,27 @@ struct cosmos_operation_handle_t *cosmos_processor_next_submit(const struct cosm
                                                                cosmos_status_code_t *out_pre_error);
 
 /**
- * Stops coordination and cancels outstanding receipts, then delivers a stopped result.
+ * Drains issued batches and releases leases, then delivers a stopped result.
+ *
+ * Keep receiving batches and submitting checkpoints until shutdown completes.
+ * Keep the queue open: queue shutdown instead requests forced cancellation.
+ * Concurrent stops await the same shutdown. An incomplete drain or failed
+ * release produces an error completion. No implicit callback timeout applies.
  */
 struct cosmos_operation_handle_t *cosmos_processor_stop_submit(const struct cosmos_processor_t *processor,
                                                                intptr_t user_data,
                                                                cosmos_status_code_t *out_pre_error);
+
+/**
+ * Cancels receipts and asynchronously waits for conditional lease release.
+ *
+ * Foreign callbacks are owned by the host and cannot be terminated here.
+ * Outstanding completion and receipt handles must still be freed by the host.
+ * In-flight service writes can complete; failed cleanup produces an error.
+ */
+struct cosmos_operation_handle_t *cosmos_processor_abort_submit(const struct cosmos_processor_t *processor,
+                                                                intptr_t user_data,
+                                                                cosmos_status_code_t *out_pre_error);
 
 /**
  * Acknowledges successful callback completion and persists the batch checkpoint.

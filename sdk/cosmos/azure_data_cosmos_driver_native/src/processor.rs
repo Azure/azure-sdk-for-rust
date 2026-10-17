@@ -111,17 +111,6 @@ struct ProcessorInner {
     driver: Processor,
     queue: Weak<QueueInner>,
     next_pending: AtomicBool,
-    stop_pending: AtomicBool,
-}
-
-impl ProcessorInner {
-    fn pending(&self, stop: bool) -> &AtomicBool {
-        if stop {
-            &self.stop_pending
-        } else {
-            &self.next_pending
-        }
-    }
 }
 
 /// A one-use processing receipt. Free without acknowledgment on callback failure.
@@ -177,9 +166,14 @@ struct Delivery {
     user_data: isize,
     queue: Weak<QueueInner>,
     admission: Option<(Arc<ProcessorInner>, bool)>,
+    control: bool,
 }
 
 impl QueuedDelivery for Delivery {
+    fn is_control(&self) -> bool {
+        self.control
+    }
+
     fn published(&self) {
         let (state, status) = match &self.result {
             Ok(_) => (
@@ -210,7 +204,9 @@ impl QueuedDelivery for Delivery {
             processor.driver.request_stop();
         }
         if let Some((processor, stop)) = &self.admission {
-            processor.pending(*stop).store(false, Ordering::Release);
+            if !stop {
+                processor.next_pending.store(false, Ordering::Release);
+            }
             processor.driver.request_stop();
         }
     }
@@ -288,7 +284,9 @@ impl Delivery {
             })),
         };
         if let Some((processor, stop)) = self.admission {
-            processor.pending(stop).store(false, Ordering::Release);
+            if !stop {
+                processor.next_pending.store(false, Ordering::Release);
+            }
         }
         Box::into_raw(Box::new(result))
     }
@@ -315,6 +313,7 @@ fn launch(
     queue: Arc<QueueInner>,
     user_data: isize,
     admission: Option<(Arc<ProcessorInner>, bool)>,
+    control: bool,
     work: impl Future<Output = Result<ResultData, CosmosError>> + Send + 'static,
 ) -> *mut OperationHandle {
     let handle = OperationHandle::allocate();
@@ -331,6 +330,7 @@ fn launch(
             user_data,
             queue: Arc::downgrade(&queue),
             admission,
+            control,
         });
     });
     handle
@@ -512,7 +512,7 @@ pub extern "C" fn cosmos_processor_start_submit(
         };
     pre_error(out_pre_error, COSMOS_STATUS_SUCCESS);
     let weak = Arc::downgrade(&queue);
-    launch(queue, user_data, None, async move {
+    launch(queue, user_data, None, false, async move {
         let driver = Processor::start(
             source_driver.inner.clone(),
             source,
@@ -525,7 +525,6 @@ pub extern "C" fn cosmos_processor_start_submit(
             driver,
             queue: weak.clone(),
             next_pending: AtomicBool::new(false),
-            stop_pending: AtomicBool::new(false),
         });
         if let Some(queue) = weak.upgrade() {
             let mut processors = queue.processors.lock_recover();
@@ -551,17 +550,36 @@ pub extern "C" fn cosmos_processor_next_submit(
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
-    submit_processor(processor, user_data, out_pre_error, false)
+    submit_processor(processor, user_data, out_pre_error, false, false)
 }
 
-/// Stops coordination and cancels outstanding receipts, then delivers a stopped result.
+/// Drains issued batches and releases leases, then delivers a stopped result.
+///
+/// Keep receiving batches and submitting checkpoints until shutdown completes.
+/// Keep the queue open: queue shutdown instead requests forced cancellation.
+/// Concurrent stops await the same shutdown. An incomplete drain or failed
+/// release produces an error completion. No implicit callback timeout applies.
 #[no_mangle]
 pub extern "C" fn cosmos_processor_stop_submit(
     processor: *const ProcessorHandle,
     user_data: isize,
     out_pre_error: *mut CosmosStatusCode,
 ) -> *mut OperationHandle {
-    submit_processor(processor, user_data, out_pre_error, true)
+    submit_processor(processor, user_data, out_pre_error, true, false)
+}
+
+/// Cancels receipts and asynchronously waits for conditional lease release.
+///
+/// Foreign callbacks are owned by the host and cannot be terminated here.
+/// Outstanding completion and receipt handles must still be freed by the host.
+/// In-flight service writes can complete; failed cleanup produces an error.
+#[no_mangle]
+pub extern "C" fn cosmos_processor_abort_submit(
+    processor: *const ProcessorHandle,
+    user_data: isize,
+    out_pre_error: *mut CosmosStatusCode,
+) -> *mut OperationHandle {
+    submit_processor(processor, user_data, out_pre_error, true, true)
 }
 
 fn submit_processor(
@@ -569,6 +587,7 @@ fn submit_processor(
     user_data: isize,
     out: *mut CosmosStatusCode,
     stop: bool,
+    force: bool,
 ) -> *mut OperationHandle {
     // SAFETY: caller keeps the processor handle live during this call.
     let Some(processor) = (unsafe { processor.as_ref() }) else {
@@ -584,8 +603,7 @@ fn submit_processor(
             .queue
             .upgrade()
             .ok_or(CosmosErrorCode::CosmosErrorCodeQueueShutdown)?;
-        let busy = processor.pending(stop);
-        if busy.swap(true, Ordering::AcqRel) {
+        if !stop && processor.next_pending.swap(true, Ordering::AcqRel) {
             return Err(CosmosErrorCode::CosmosErrorCodeCursorBusy);
         }
         let admitted = if stop {
@@ -594,7 +612,9 @@ fn submit_processor(
             queue.deliveries.reserve()
         };
         if let Err(err) = admitted {
-            busy.store(false, Ordering::Release);
+            if !stop {
+                processor.next_pending.store(false, Ordering::Release);
+            }
             return Err(err);
         }
         Ok(queue)
@@ -608,9 +628,13 @@ fn submit_processor(
     };
     pre_error(out, COSMOS_STATUS_SUCCESS);
     let admission = Some((processor.clone(), stop));
-    launch(queue, user_data, admission, async move {
+    launch(queue, user_data, admission, stop, async move {
         if stop {
-            processor.driver.stop().await;
+            if force {
+                processor.driver.abort().await?;
+            } else {
+                processor.driver.stop().await?;
+            }
             Ok(ResultData::Stopped)
         } else {
             Ok(processor
@@ -661,7 +685,7 @@ pub extern "C" fn cosmos_processor_checkpoint_submit(
         }
     };
     pre_error(out, COSMOS_STATUS_SUCCESS);
-    launch(queue, user_data, None, async move {
+    launch(queue, user_data, None, true, async move {
         receipt.checkpoint().await?;
         Ok(ResultData::CheckpointSaved)
     })

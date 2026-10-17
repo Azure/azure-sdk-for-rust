@@ -183,6 +183,64 @@ allowing known replay; mocked backend tokens separately verify progress mapping.
 Real-service full-fidelity retention and historical-event behavior require an
 eligible account and separate live validation.
 
+### Processor worker shutdown
+
+The driver owns both graceful draining and forced cancellation. Language wrappers
+adapt this lifecycle without exposing Rust queues, futures, or receipts across
+the C ABI. Application signal handling, including AKS pod termination, remains
+an application concern. Removing a pod from readiness alone does not stop its
+processor.
+
+`stop()` closes acquisition and feed-delivery admission, then drains the finite
+set of already-issued receipts, including queued batches. Wrappers continue
+dispatching those batches. An in-flight acquisition is allowed to settle and
+every successfully acquired lease is retained for conditional release.
+Renewal continues until the lease's outstanding processing and checkpoint work
+finishes. Checkpoint and renewal writes serialize with release; shutdown does
+not cancel a lease mutation in flight. A split retirement already in flight can
+finish, but the stopping worker does not acquire its descendants.
+
+A successful drain saves acknowledged progress before releasing ownership.
+Failed or abandoned callbacks remain replayable and cause an incomplete-drain
+error. Checkpoint, renewal, ownership-loss, release, and worker failures during
+shutdown are surfaced. Previously recovered processing failures are not
+retroactively shutdown failures. Failed releases remain tracked even before
+shutdown and are retried during cleanup without clearing replacement owners.
+Acquisition attempts are tracked before their conditional write so that an
+ambiguous write outcome cannot leave an untracked owner behind.
+A successful release removes this acquisition's
+ownership, not any replacement owner's ownership: another worker may have
+already acquired the lease when stop returns.
+
+Concurrent stop callers observe the same completion. Canceling a Rust stop wait
+does not discard cleanup or the ability to await it again. Starting an instance
+still shutting down returns a conflict. There is no implicit callback or drain
+timeout. `abort()` requests explicit cancellation and waits for local cleanup;
+an interrupted graceful waiter receives an error. Started service writes may
+still complete. Callback cancellation cannot undo external effects or terminate
+separately spawned application work.
+
+The native `cosmos_processor_stop_submit` drains while the host continues
+receiving batches and submitting checkpoints. Control completions do not consume
+data-admission capacity. The host must keep the queue and runtime alive until
+shutdown completes, then release all owned completion, receipt, and operation
+handles. `cosmos_processor_abort_submit`, queue shutdown, and handle disposal
+request forced cancellation, but cannot terminate foreign callback code.
+
+Drop/disposal only requests cancellation without waiting. Abrupt process death
+may leave an owner in the lease document; surviving workers acquire it after
+expiration and resume its durable checkpoint. Conditional writes and acquisition
+incarnations fence stale owners and receipts. None of these paths promises
+exactly-once external side effects.
+
+Lease maintenance uses a single 60-second expiration budget, independent of
+feed poll delay. Renewal targets one third of that budget since the last
+successful lease write, including checkpoints; acquisition checks use one sixth.
+Successful checkpoints avoid redundant renewal writes. Missing renewals make an
+owner eligible for takeover, whereas a long callback with healthy renewal does
+not imply worker death. These fractions reserve retry headroom and bound routine
+lease-discovery delay; they are scheduling policies, not callback deadlines.
+
 ### Running a real-account processor split test
 
 The `split` test target uses the service directly, not recordings. Use a disposable

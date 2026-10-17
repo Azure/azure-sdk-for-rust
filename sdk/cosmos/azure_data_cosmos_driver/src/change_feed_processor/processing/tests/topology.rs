@@ -37,7 +37,7 @@ fn config(context: &Context, worker: &str, limit: u32) -> ProcessorOptions {
         .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(1).unwrap()))
         .with_lease_counts(0, limit);
     options.bootstrap.instance_name = worker.into();
-    options.renew_interval = Duration::from_millis(20);
+    options.expiration = Duration::from_millis(600);
     options.bootstrap.verify_leases_on_restart = true;
     options
 }
@@ -269,8 +269,8 @@ async fn split_with_pending_batch_preserves_coverage_and_rebalances_children() -
         );
         assert!(first.is_running());
         assert!(second.is_running());
-        first.stop().await;
-        second.stop().await;
+        first.abort().await?;
+        second.abort().await?;
         assert_eq!(context.list().await?.len(), 2);
     }
     Ok(())
@@ -292,7 +292,7 @@ async fn split_during_pending_batch_replays_after_shutdown_and_restart() -> Resu
         .store()
         .split_partition_and_wait("polling", "source", 0, Epk::try_from("20")?, Duration::ZERO)
         .await?;
-    first.stop().await;
+    first.abort().await?;
     assert!(receipt.checkpoint().await.is_err());
     assert_eq!(
         stored(&context, &id).await.value.base.continuation,
@@ -305,7 +305,45 @@ async fn split_during_pending_batch_replays_after_shutdown_and_restart() -> Resu
         receipt.checkpoint().await?;
     }
     sink.complete(&expected);
-    restarted.stop().await;
+    restarted.abort().await?;
+    assert_eq!(context.list().await?.len(), 2);
+    Ok(())
+}
+
+#[tokio::test]
+async fn graceful_exit_during_split_saves_parent_progress_for_the_next_owner() -> Result<()> {
+    let (context, emulator) =
+        fixture_with_emulator(ChangeFeedProcessorMode::LatestVersion, 1).await?;
+    let mut expected = BTreeMap::new();
+    let keys = keys(&[range("", "20"), range("20", "FF")]);
+    publish(&context, &keys, 0..4, &mut expected).await?;
+    let first = start(&context, config(&context, "first", 1)).await?;
+    let (id, response, receipt) = next(&first).await.into_parts();
+    let mut sink = Sink::default();
+    sink.observe(response, &expected)?;
+    emulator
+        .store()
+        .split_partition_and_wait("polling", "source", 0, Epk::try_from("20")?, Duration::ZERO)
+        .await?;
+    let mut stopping = Box::pin(first.stop());
+    assert!(futures::poll!(stopping.as_mut()).is_pending());
+    receipt.checkpoint().await?;
+    stopping.await?;
+    let parent = stored(&context, &id).await.value;
+    assert!(parent.base.owner.is_none());
+    assert!(parent.base.continuation.is_some());
+    assert!(
+        parent.children.is_none(),
+        "the stopping worker must not start topology recovery"
+    );
+    let replacement = start(&context, config(&context, "replacement", 2)).await?;
+    while sink.seen.len() < expected.len() {
+        let (_, response, receipt) = next(&replacement).await.into_parts();
+        sink.observe(response, &expected)?;
+        receipt.checkpoint().await?;
+    }
+    sink.complete(&expected);
+    replacement.abort().await?;
     assert_eq!(context.list().await?.len(), 2);
     Ok(())
 }
@@ -370,8 +408,8 @@ async fn exercise_merge(mode: ChangeFeedProcessorMode) -> Result<()> {
         other_checkpoint
     );
     other_receipt.checkpoint().await?;
-    first.stop().await;
-    second.stop().await;
+    first.abort().await?;
+    second.abort().await?;
     assert!(held_receipt.checkpoint().await.is_err());
     let restarted = start(&context, config(&context, "replacement", 2)).await?;
     publish(&context, &keys, 6..9, &mut expected).await?;
@@ -381,7 +419,7 @@ async fn exercise_merge(mode: ChangeFeedProcessorMode) -> Result<()> {
         receipt.checkpoint().await?;
     }
     sink.complete(&expected);
-    restarted.stop().await;
+    restarted.abort().await?;
     let active = context.list().await?;
     assert_eq!(
         active
@@ -423,7 +461,7 @@ async fn exercise_merge(mode: ChangeFeedProcessorMode) -> Result<()> {
         receipt.checkpoint().await?;
     }
     sink.complete(&expected);
-    restarted.stop().await;
+    restarted.abort().await?;
     assert_eq!(context.list().await?.len(), 3);
     Ok(())
 }

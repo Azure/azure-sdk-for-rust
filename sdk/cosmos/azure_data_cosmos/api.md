@@ -74,6 +74,7 @@ impl ChangeFeedProcessorMode for AllVersionsAndDeletes {
 pub struct ChangeFeedProcessor<M: ChangeFeedProcessorMode, T, H> {
 }
 impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
+    pub async fn abort(&self) -> crate::Result<()>;
     pub async fn current_state(&self) -> crate::Result<Vec<ChangeFeedProcessorState>>;
     pub fn is_started(&self) -> bool;
     pub async fn start<Fut>(&self) -> crate::Result<()> where T: DeserializeOwned + Send + 'static, H: Fn(ChangeFeedProcessorContext, Vec<ChangeFeedItem<T>>) -> Fut + Send + Sync + 'static, Fut: Future<Output = crate::Result<()>> + Send + 'static;

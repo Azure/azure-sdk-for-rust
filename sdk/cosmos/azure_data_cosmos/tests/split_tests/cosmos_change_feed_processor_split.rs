@@ -398,7 +398,12 @@ async fn exercise(source: &ContainerClient, leases: &ContainerClient) -> TestRes
     }.await;
     let mut outcome = result;
     for worker in &workers {
-        if let Err(error) = worker.stop().await {
+        let cleanup = if outcome.is_ok() {
+            worker.stop().await
+        } else {
+            worker.abort().await
+        };
+        if let Err(error) = cleanup {
             eprintln!("Processor cleanup failed: {error}");
             if outcome.is_ok() {
                 outcome = Err(error.into());

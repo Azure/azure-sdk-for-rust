@@ -761,10 +761,10 @@ async fn exercise(
                 if held.worker != a || !held.fences.is_empty() { return Err("Unexpected restart hold.".into()); }
                 wait_owned(&leases, &sink, &BTreeSet::from([a.clone()]), true).await?;
                 let before = progress(&leases, &held.lease).await?;
-                first.stop().await?;
+                first.abort().await?;
                 wait_canceled(&held, &sink).await?;
                 if progress(&leases, &held.lease).await?.continuation != before.continuation {
-                    return Err("Stopping advanced an unfinished callback's checkpoint.".into());
+                    return Err("Aborting advanced an unfinished callback's checkpoint.".into());
                 }
                 second.start().await?;
                 workload.publish_fences(&source).await?;
@@ -806,7 +806,7 @@ async fn exercise(
                 workload.publish(&source, GROUPS, groups).await?;
                 let departing = gate(&mut receiver, &sink).await?;
                 if departing.worker != b || !departing.fences.is_empty() { return Err("Expected a blocked tail callback on the departing worker.".into()); }
-                second.stop().await?;
+                second.abort().await?;
                 wait_canceled(&departing, &sink).await?;
                 wait_owned(&leases, &sink, &BTreeSet::from([a.clone()]), true).await?;
             }
@@ -819,7 +819,12 @@ async fn exercise(
         failures.push(error.to_string());
     }
     for worker in [&first, &second] {
-        if let Err(error) = worker.stop().await {
+        let cleanup = if failures.is_empty() {
+            worker.stop().await
+        } else {
+            worker.abort().await
+        };
+        if let Err(error) = cleanup {
             failures.push(format!("Stop failed: {error}"));
         }
     }
