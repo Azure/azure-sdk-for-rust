@@ -31,9 +31,9 @@ use futures::future::BoxFuture;
 
 use super::super::{
     mocks::{MockRequestExecutor, MockTopologyProvider, NoopTopologyProvider},
-    planner::build_unordered_merge,
-    PartitionRoutingRefresh, Pipeline, PipelineContext, PipelineNodeState, RequestExecutor,
-    RequestTarget, ResolvedRange,
+    planner::{build_change_feed, build_unordered_merge, project_change_feed_state},
+    PartitionRoutingRefresh, Pipeline, PipelineContext, PipelineNodeState, RangedToken,
+    RequestExecutor, RequestTarget, ResolvedRange,
 };
 use crate::{
     diagnostics::DiagnosticsContextBuilder,
@@ -243,6 +243,187 @@ fn assert_merged_parent_targets(executor: &MockRequestExecutor) -> crate::error:
         ],
         "the merged physical range must retain both parent EPK slices",
     );
+    Ok(())
+}
+
+#[tokio::test]
+async fn processor_surfaces_topology_errors_without_advancing_or_retrying() -> crate::Result<()> {
+    for full_fidelity in [false, true] {
+        for status in [
+            crate::error::status_codes::PARTITION_KEY_RANGE_GONE,
+            crate::error::status_codes::COMPLETING_SPLIT,
+            crate::error::status_codes::COMPLETING_PARTITION_MIGRATION,
+        ] {
+            let op = if full_fidelity {
+                avad_change_feed_operation(Some(ChangeFeedStartFrom::Now))
+            } else {
+                change_feed_operation(Some(ChangeFeedStartFrom::Beginning))
+            };
+            let state = PipelineNodeState::UnorderedMerge {
+                active_tokens: vec![RangedToken {
+                    min_epk: "".into(),
+                    max_epk: "FF".into(),
+                    server_continuation: "acknowledged".into(),
+                }],
+                start_from: op.change_feed_start().cloned(),
+            };
+            let mut topology =
+                MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "parent")?])]);
+            let mut plan = build_change_feed(
+                &FeedRange::full(),
+                &mut topology,
+                &op,
+                Some(state.clone()),
+                true,
+            )
+            .await?;
+            let mut executor = MockRequestExecutor::new(vec![Err(crate::CosmosError::builder()
+                .with_status(status)
+                .build())]);
+            let mut no_topology = NoopTopologyProvider;
+            let mut context = PipelineContext::new(&mut executor, Some(&mut no_topology));
+            assert_eq!(
+                plan.next_page(&mut context).await.unwrap_err().status(),
+                status
+            );
+            assert_eq!(plan.snapshot_state()?, state);
+            assert_eq!(executor.continuation_calls, [Some("acknowledged".into())]);
+            assert_eq!(executor.target_calls.len(), 1);
+        }
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn processor_rejects_offline_split_but_pull_reader_fans_out() -> crate::Result<()> {
+    for processor in [true, false] {
+        let mut topology = MockTopologyProvider::new(vec![Ok(vec![
+            resolved("", "80", "left")?,
+            resolved("80", "FF", "right")?,
+        ])]);
+        let op = change_feed_operation(Some(ChangeFeedStartFrom::Beginning));
+        let result =
+            build_change_feed(&FeedRange::full(), &mut topology, &op, None, processor).await;
+        if processor {
+            assert_eq!(
+                result.unwrap_err().status(),
+                crate::error::status_codes::PARTITION_KEY_RANGE_GONE
+            );
+        } else {
+            assert_eq!(result?.fan_out_width(), 2);
+        }
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn processor_avad_exposes_start_checkpoint_before_fetching_changes() -> crate::Result<()> {
+    let op = avad_change_feed_operation(Some(ChangeFeedStartFrom::Now));
+    let mut topology = MockTopologyProvider::new(vec![Ok(vec![resolved("", "FF", "parent")?])]);
+    let mut pipeline =
+        build_change_feed(&FeedRange::full(), &mut topology, &op, None, true).await?;
+    let mut headers = CosmosResponseHeaders::new();
+    headers.etag = Some(Etag::from("pinned"));
+    let idle = CosmosResponse::new(
+        Vec::new(),
+        headers,
+        CosmosStatus::new(StatusCode::NotModified),
+        cf_page(b"", "pinned").diagnostics().clone(),
+    );
+    let mut executor = MockRequestExecutor::new(vec![
+        Ok(idle),
+        Ok(cf_page(b"create,replace,delete", "next")),
+    ]);
+    let mut no_topology = NoopTopologyProvider;
+    let mut context = PipelineContext::new(&mut executor, Some(&mut no_topology));
+    let response = pipeline.next_page(&mut context).await?.unwrap();
+    assert_eq!(response.status().status_code(), StatusCode::NotModified);
+    assert_unordered_snapshot(
+        &pipeline.snapshot_state()?,
+        Some(ChangeFeedStartFrom::Now),
+        &[("", "FF", "pinned")],
+    );
+    assert_eq!(executor.continuation_calls, [None]);
+    assert_eq!(
+        drain_pages(&mut pipeline, &mut executor, 1).await,
+        [b"create,replace,delete".to_vec()]
+    );
+    assert_eq!(executor.continuation_calls, [None, Some("pinned".into())]);
+    Ok(())
+}
+
+#[test]
+fn processor_projects_every_predecessor_without_combining_progress() -> crate::Result<()> {
+    for full_fidelity in [false, true] {
+        let state = PipelineNodeState::UnorderedMerge {
+            active_tokens: vec![
+                RangedToken {
+                    min_epk: "".into(),
+                    max_epk: "40".into(),
+                    server_continuation: "left:900".into(),
+                },
+                RangedToken {
+                    min_epk: "40".into(),
+                    max_epk: "FF".into(),
+                    server_continuation: "right:7".into(),
+                },
+            ],
+            start_from: Some(ChangeFeedStartFrom::Now),
+        };
+        let left = project_change_feed_state(
+            state.clone(),
+            &FeedRange::full(),
+            &fr("", "80")?,
+            full_fidelity,
+        )?;
+        assert_unordered_snapshot(
+            &left,
+            Some(ChangeFeedStartFrom::Now),
+            &[("", "40", "left:900"), ("40", "80", "right:7")],
+        );
+        let right =
+            project_change_feed_state(state, &FeedRange::full(), &fr("80", "FF")?, full_fidelity)?;
+        assert_unordered_snapshot(
+            &right,
+            Some(ChangeFeedStartFrom::Now),
+            &[("80", "FF", "right:7")],
+        );
+    }
+    Ok(())
+}
+
+#[test]
+fn processor_rejects_unprovable_checkpoint_coverage() -> crate::Result<()> {
+    for (min, max, full_fidelity, start) in [
+        ("", "80", true, ChangeFeedStartFrom::Now),
+        ("", "80", false, ChangeFeedStartFrom::Now),
+        ("80", "", false, ChangeFeedStartFrom::Beginning),
+    ] {
+        let state = PipelineNodeState::UnorderedMerge {
+            active_tokens: vec![RangedToken {
+                min_epk: min.into(),
+                max_epk: max.into(),
+                server_continuation: "progress".into(),
+            }],
+            start_from: Some(start),
+        };
+        assert!(project_change_feed_state(
+            state,
+            &FeedRange::full(),
+            &FeedRange::full(),
+            full_fidelity
+        )
+        .is_err());
+    }
+    let state = PipelineNodeState::UnorderedMerge {
+        active_tokens: vec![RangedToken {
+            min_epk: "".into(),
+            max_epk: "FF".into(),
+            server_continuation: "foreign-scope".into(),
+        }],
+        start_from: Some(ChangeFeedStartFrom::Beginning),
+    };
+    assert!(project_change_feed_state(state, &fr("", "80")?, &fr("", "80")?, false).is_err());
     Ok(())
 }
 

@@ -405,7 +405,7 @@ impl BootstrapContext<'_> {
                         })?
                 }
             };
-            self.validate(&existing.value.record, &expected.record)?;
+            validate_lease(&existing.value, &self.identity, &self.namespace)?;
             if existing.value.range != expected.range {
                 return Err(error(
                     StatusCode::Conflict,
@@ -480,7 +480,32 @@ pub(super) fn namespace(identity: &Identity) -> Result<String> {
     Ok(format!("cfp1.{}", URL_SAFE_NO_PAD.encode(key)))
 }
 
-fn validate_ranges(ranges: &[FeedRange]) -> Result<()> {
+pub(super) fn lease_id(namespace: &str, range: &FeedRange) -> String {
+    format!(
+        "{namespace}.lease.{}-{}",
+        range.min_inclusive(),
+        range.max_exclusive()
+    )
+}
+
+pub(super) fn validate_lease(
+    lease: &ProcessingLease,
+    identity: &Identity,
+    namespace: &str,
+) -> Result<()> {
+    if lease.record.workload != *identity
+        || lease.record.ttl != -1
+        || lease.record.id != lease_id(namespace, &lease.range)
+    {
+        return Err(error(
+            StatusCode::Conflict,
+            "Incompatible processing lease.",
+        ));
+    }
+    Ok(())
+}
+
+pub(super) fn validate_ranges(ranges: &[FeedRange]) -> Result<()> {
     let mut next = &EffectivePartitionKey::MIN;
     for range in ranges {
         if range.min_inclusive() != next || range.min_inclusive() >= range.max_exclusive() {

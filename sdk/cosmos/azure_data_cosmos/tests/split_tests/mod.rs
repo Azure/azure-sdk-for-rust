@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
+mod cosmos_change_feed_processor_split;
 mod cosmos_change_feed_split;
 mod cosmos_partition_merge;
 mod cosmos_query_distinct_split;
