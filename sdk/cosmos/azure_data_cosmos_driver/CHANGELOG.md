@@ -8,6 +8,7 @@
 
 ### Bugs Fixed
 
+- Preserve explicit EPK range filters in Gateway 2.0 query and feed requests separately from physical-partition routing hashes.
 - Avoid unnecessary routing-state copies for hedge feedback and unchanged partition transitions, and skip hedge feedback when the effective partition circuit breaker is disabled without disabling transport hedging. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))
 - Share immutable partition routing state across snapshot refreshes instead of copying its maps, while preserving older snapshots for active readers. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))
 - Avoid loading partition topology for lazy-mode logical-key operations unless partition-level failover or Gateway 2.0 session-token scoping requires it. ([#5431](https://github.com/Azure/azure-sdk-for-rust/pull/5431))

@@ -17,8 +17,8 @@ use azure_data_cosmos::options::{
     PartitionFailoverOptions, Precondition, QueryOptions, ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
-    AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, CosmosStatus, FeedScope, Query,
-    RoutingStrategy, TransactionalBatch,
+    feed::FeedRange, AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, CosmosStatus,
+    FeedScope, Query, RoutingStrategy, TransactionalBatch,
 };
 use azure_data_cosmos_driver::{
     error::status_codes,
@@ -28,7 +28,7 @@ use azure_data_cosmos_driver::{
 };
 use futures::{FutureExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use std::{num::NonZeroU32, panic::AssertUnwindSafe};
+use std::{future::Future, num::NonZeroU32, panic::AssertUnwindSafe, time::Duration};
 
 fn read_env(name: &str) -> Option<String> {
     std::env::var(name).ok().filter(|v| !v.trim().is_empty())
@@ -1980,6 +1980,276 @@ pub async fn gateway_v2_cross_partition_query_via_feed_range_full(
 
     drop_database(&client, &db_name).await;
     Ok(())
+}
+
+async fn query_range_ids(
+    container: &azure_data_cosmos::clients::ContainerClient,
+    scope: FeedScope,
+) -> Result<(Vec<String>, usize), Box<dyn std::error::Error>> {
+    let options = QueryOptions::default()
+        .with_max_item_count(MaxItemCountHint::Limit(NonZeroU32::new(2).unwrap()));
+    let mut pages = container
+        .query_items::<serde_json::Value>(Query::from("SELECT * FROM c"), scope, Some(options))
+        .await?
+        .into_pages();
+    let mut ids = Vec::new();
+    let mut page_count = 0;
+    while let Some(page) = pages.next().await {
+        let page = page?;
+        page_count += 1;
+        assert!(page_count <= 32, "range query did not terminate");
+        assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
+        for item in page.items() {
+            ids.push(
+                item["id"]
+                    .as_str()
+                    .ok_or("query item is missing id")?
+                    .to_owned(),
+            );
+        }
+    }
+    ids.sort();
+    Ok((ids, page_count))
+}
+
+async fn reconcile_range_test_database<F, Fut>(
+    creation_confirmed: bool,
+    mut delete_and_check: F,
+) -> Result<(), Box<dyn std::error::Error>>
+where
+    F: FnMut() -> Fut,
+    Fut: Future<Output = Result<bool, Box<dyn std::error::Error>>>,
+{
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(20);
+    loop {
+        let absent = delete_and_check().await?;
+        if creation_confirmed && absent {
+            return Ok(());
+        }
+        if tokio::time::Instant::now() >= deadline {
+            return Err(if creation_confirmed {
+                "database remained visible after cleanup reconciliation"
+            } else {
+                "database creation outcome is unknown; bounded cleanup cannot exclude late creation, \
+                 so orphan cleanup is required"
+            }.into());
+        }
+        tokio::time::sleep(Duration::from_secs(2)).await;
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn range_cleanup_reconciles_late_creation_after_initial_absence() {
+    let mut calls = 0;
+    let mut deletions = 0;
+    let mut database_exists = false;
+    let started = tokio::time::Instant::now();
+    let error = reconcile_range_test_database(false, || {
+        calls += 1;
+        if calls == 3 {
+            database_exists = true;
+        }
+        if database_exists {
+            deletions += 1;
+            database_exists = false;
+        }
+        std::future::ready(Ok(!database_exists))
+    })
+    .await
+    .unwrap_err();
+    assert_eq!(calls, 11);
+    assert_eq!(deletions, 1);
+    assert_eq!(started.elapsed(), Duration::from_secs(20));
+    assert!(error.to_string().contains("creation outcome is unknown"));
+}
+
+#[tokio::test(start_paused = true)]
+async fn range_cleanup_accepts_absence_after_confirmed_creation() {
+    let mut calls = 0;
+    reconcile_range_test_database(true, || {
+        calls += 1;
+        std::future::ready(Ok(true))
+    })
+    .await
+    .unwrap();
+    assert_eq!(calls, 1);
+}
+
+#[tokio::test(start_paused = true)]
+async fn range_cleanup_retries_while_database_remains_visible() {
+    let mut calls = 0;
+    reconcile_range_test_database(true, || {
+        calls += 1;
+        std::future::ready(Ok(calls == 3))
+    })
+    .await
+    .unwrap();
+    assert_eq!(calls, 3);
+}
+
+#[tokio::test]
+async fn range_cleanup_surfaces_probe_errors() {
+    let error = reconcile_range_test_database(true, || {
+        std::future::ready(Err("cleanup probe failed".into()))
+    })
+    .await
+    .unwrap_err();
+    assert_eq!(error.to_string(), "cleanup probe failed");
+}
+
+async fn query_range_filtering_live(open_minimum: bool) -> Result<(), Box<dyn std::error::Error>> {
+    let (endpoint, key) = live_credentials()
+        .ok_or("Gateway 2.0 range tests require the selected CI category's endpoint and key")?;
+    let client =
+        tokio::time::timeout(Duration::from_secs(90), build_client(&endpoint, &key)).await??;
+    let db_name = format!("test-db-gwv2-range-{}", azure_core::Uuid::new_v4());
+    eprintln!("Gateway 2.0 range-test cleanup target: {endpoint} dbs/{db_name}");
+    let db = client.database_client(&db_name);
+    let mut creation_confirmed = false;
+    let result = AssertUnwindSafe(tokio::time::timeout(Duration::from_secs(240), async {
+        client.create_database(&db_name, None).await?;
+        creation_confirmed = true;
+        db.create_container(
+            ContainerProperties::new("range-filter", PartitionKeyDefinition::from("/pk")),
+            None,
+        )
+        .await?;
+        let container = wait_for_container_ready(&client, &db, "range-filter").await?;
+        let properties = container.read(None).await?.into_body().single()?;
+        let properties: ContainerProperties = serde_json::from_slice(&properties)?;
+        assert_eq!(properties.partition_key.version(), PartitionKeyVersion::V2);
+        let physical = container.read_feed_ranges(None).await?;
+        let first = physical
+            .iter()
+            .min_by_key(|range| range.min_inclusive())
+            .ok_or("container has no physical ranges")?;
+        assert_eq!(first.min_inclusive().to_hex(), "");
+
+        // Pick keys in one actual physical range so routing cannot hide a missing filter.
+        let mut rows = Vec::new();
+        for index in 0..256 {
+            let pk = format!("range-pk-{index:03}");
+            let logical = FeedRange::for_partition(pk.clone().into(), &properties.partition_key);
+            let epk = logical.min_inclusive();
+            if epk >= first.min_inclusive() && epk < first.max_exclusive() {
+                rows.push((epk.clone(), format!("range-doc-{index:03}"), pk));
+                if rows.len() == 8 {
+                    break;
+                }
+            }
+        }
+        assert_eq!(
+            rows.len(),
+            8,
+            "could not find enough keys in the first physical partition"
+        );
+        rows.sort();
+        for (_, id, pk) in &rows {
+            let item = serde_json::json!({"id":id, "pk":pk});
+            create_seed_item(&container, pk, id, &item).await?;
+        }
+        let mut expected_all: Vec<_> = rows.iter().map(|(_, id, _)| id.clone()).collect();
+        expected_all.sort();
+        let (all, _) = retry_query_owner_not_found(|| {
+            query_range_ids(&container, FeedScope::full_container())
+        })
+        .await?;
+        assert_eq!(all, expected_all, "full-container control");
+        let (lower_index, upper_index) = if open_minimum { (0, 4) } else { (2, 6) };
+        let lower = if open_minimum {
+            first.min_inclusive().clone()
+        } else {
+            rows[lower_index].0.clone()
+        };
+        let range = FeedRange::new(lower, rows[upper_index].0.clone())?;
+        let mut expected: Vec<_> = rows[lower_index..upper_index]
+            .iter()
+            .map(|(_, id, _)| id.clone())
+            .collect();
+        expected.sort();
+        let (actual, pages) = retry_query_owner_not_found(|| {
+            query_range_ids(&container, FeedScope::range(range.clone()))
+        })
+        .await?;
+        assert_eq!(
+            actual, expected,
+            "range {range:?}, open_minimum={open_minimum}"
+        );
+        assert!(
+            pages > 1,
+            "the regression must exercise continuation pagination"
+        );
+        let (logical, _) = retry_query_owner_not_found(|| {
+            query_range_ids(
+                &container,
+                FeedScope::partition(rows[lower_index].2.clone()),
+            )
+        })
+        .await?;
+        assert_eq!(
+            logical,
+            vec![rows[lower_index].1.clone()],
+            "logical-partition control"
+        );
+        Ok::<(), Box<dyn std::error::Error>>(())
+    }))
+    .catch_unwind()
+    .await;
+
+    let cleanup = tokio::time::timeout(
+        Duration::from_secs(90),
+        reconcile_range_test_database(creation_confirmed, || async {
+            match db.delete(None).await {
+                Ok(_) => {}
+                Err(error) if error.status().status_code() == StatusCode::NotFound => {}
+                Err(error) => return Err(Box::<dyn std::error::Error>::from(error)),
+            }
+            match db.read(None).await {
+                Err(error) if error.status().status_code() == StatusCode::NotFound => Ok(true),
+                Err(error) => Err(Box::<dyn std::error::Error>::from(error)),
+                Ok(_) => Ok(false),
+            }
+        }),
+    )
+    .await;
+    match cleanup {
+        Ok(Ok(())) => {}
+        Ok(Err(error)) => {
+            panic!("range test database {db_name} cleanup failed: {error}; test result: {result:?}")
+        }
+        Err(error) => panic!(
+            "range test database {db_name} cleanup timed out: {error}; test result: {result:?}"
+        ),
+    }
+    match result {
+        Ok(result) => result?,
+        Err(panic) => std::panic::resume_unwind(panic),
+    }
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires a Gateway 2.0 live CI category and its endpoint/key"
+)]
+async fn gateway_v2_query_filters_strict_epk_subrange() -> Result<(), Box<dyn std::error::Error>> {
+    query_range_filtering_live(false).await
+}
+
+#[tokio::test]
+#[cfg_attr(
+    not(any(
+        test_category = "gateway_v2",
+        test_category = "gateway_v2_multi_region"
+    )),
+    ignore = "requires a Gateway 2.0 live CI category and its endpoint/key"
+)]
+async fn gateway_v2_query_filters_open_minimum_epk_subrange(
+) -> Result<(), Box<dyn std::error::Error>> {
+    query_range_filtering_live(true).await
 }
 
 /// Read-your-writes across multiple physical partitions on Gateway 2.0 with the

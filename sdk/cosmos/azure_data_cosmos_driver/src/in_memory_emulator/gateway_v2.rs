@@ -12,17 +12,19 @@ use azure_core::{
 };
 use uuid::Uuid;
 
-use crate::models::effective_partition_key::prefix_range_end_hex;
 use crate::{
     driver::transport::rntbd::{
         tokens::{RntbdRequestToken, TokenValue},
         RntbdRequestFrame, RntbdResponse,
     },
-    models::{CosmosStatus, OperationType, ResourceType},
+    models::{
+        cosmos_headers::request_header_names, effective_partition_key::EffectivePartitionKey,
+        CosmosStatus, OperationType, ResourceType,
+    },
     options::ReadConsistencyStrategy,
 };
 
-use super::{ConsistencyLevel, InMemoryEmulatorHttpClient};
+use super::{dispatch::EFFECTIVE_PARTITION_KEY, ConsistencyLevel, InMemoryEmulatorHttpClient};
 
 /// Binary-wire observations for one hosted Gateway V2 request.
 #[doc(hidden)]
@@ -139,8 +141,11 @@ struct RequestMetadata {
     a_im: Option<String>,
     change_feed_wire_format_version: Option<String>,
     effective_partition_key: Option<String>,
+    start_epk_hash: Option<String>,
+    end_epk_hash: Option<String>,
     start_epk: Option<String>,
     end_epk: Option<String>,
+    read_feed_key_type: Option<&'static str>,
     page_size: Option<u32>,
     return_minimal: bool,
     supported_query_features: Option<String>,
@@ -163,7 +168,7 @@ fn decode_request(
         )));
     }
     let body_present = frame.body.is_some();
-    let mut metadata = decode_metadata(frame.metadata)?;
+    let metadata = decode_metadata(frame.metadata)?;
     let payload_present = metadata
         .payload_present
         .ok_or_else(|| gateway_v2_bad_request("RNTBD request is missing PayloadPresent"))?;
@@ -191,24 +196,6 @@ fn decode_request(
             return Err(gateway_v2_bad_request(
                 "hosted Gateway V2 does not yet support per-request consistency overrides",
             ));
-        }
-    }
-    if matches!(
-        frame.operation_type,
-        OperationType::Query | OperationType::SqlQuery | OperationType::ReadFeed
-    ) && metadata.start_epk.is_none()
-    {
-        if let Some(effective_partition_key) = metadata.effective_partition_key.as_ref() {
-            metadata.start_epk = Some(effective_partition_key.clone());
-            let bytes = effective_partition_key
-                .as_bytes()
-                .chunks_exact(2)
-                .map(|pair| {
-                    let value = std::str::from_utf8(pair).map_err(gateway_v2_bad_request)?;
-                    u8::from_str_radix(value, 16).map_err(gateway_v2_bad_request)
-                })
-                .collect::<crate::error::Result<Vec<_>>>()?;
-            metadata.end_epk = Some(prefix_range_end_hex(&bytes));
         }
     }
     if matches!(
@@ -299,6 +286,9 @@ fn decode_request(
             .headers_mut()
             .insert("x-ms-documentdb-partitionkeyrangeid", value);
     }
+    if let Some(value) = metadata.effective_partition_key {
+        request.headers_mut().insert(EFFECTIVE_PARTITION_KEY, value);
+    }
     if let Some(value) = metadata.continuation {
         request.headers_mut().insert("x-ms-continuation", value);
     }
@@ -338,15 +328,24 @@ fn decode_request(
     }
     if let Some(value) = metadata.start_epk {
         request.headers_mut().insert("x-ms-start-epk", value);
-        request
-            .headers_mut()
-            .insert("x-ms-read-key-type", "EffectivePartitionKeyRange");
     }
     if let Some(value) = metadata.end_epk {
         request.headers_mut().insert("x-ms-end-epk", value);
+    }
+    if let Some(value) = metadata.read_feed_key_type {
         request
             .headers_mut()
-            .insert("x-ms-read-key-type", "EffectivePartitionKeyRange");
+            .insert(request_header_names::READ_FEED_KEY_TYPE, value);
+    }
+    if let Some(value) = metadata.start_epk_hash {
+        request
+            .headers_mut()
+            .insert(request_header_names::THINCLIENT_PKRANGE_MIN, value);
+    }
+    if let Some(value) = metadata.end_epk_hash {
+        request
+            .headers_mut()
+            .insert(request_header_names::THINCLIENT_PKRANGE_MAX, value);
     }
     if metadata.return_minimal {
         request.headers_mut().insert("prefer", "return=minimal");
@@ -455,10 +454,24 @@ fn decode_metadata(
                 metadata.change_feed_wire_format_version = Some(expect_string(kind, token.value)?);
             }
             RntbdRequestToken::StartEpkHash => {
-                metadata.start_epk = Some(expect_hex(kind, token.value)?);
+                metadata.start_epk_hash = Some(expect_hex(kind, token.value)?);
             }
             RntbdRequestToken::EndEpkHash => {
-                metadata.end_epk = Some(expect_hex(kind, token.value)?);
+                metadata.end_epk_hash = Some(expect_hex(kind, token.value)?);
+            }
+            RntbdRequestToken::StartEpk => {
+                metadata.start_epk = Some(expect_epk_text(kind, token.value)?);
+            }
+            RntbdRequestToken::EndEpk => {
+                metadata.end_epk = Some(expect_epk_text(kind, token.value)?);
+            }
+            RntbdRequestToken::ReadFeedKeyType => {
+                metadata.read_feed_key_type = Some(match expect_byte(kind, token.value)? {
+                    1 => "ResourceId",
+                    2 => "EffectivePartitionKey",
+                    3 => request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE,
+                    _ => return Err(gateway_v2_bad_request("unknown ReadFeedKeyType value")),
+                });
             }
             RntbdRequestToken::EffectivePartitionKey => {
                 metadata.effective_partition_key = Some(expect_hex(kind, token.value)?);
@@ -521,6 +534,12 @@ fn expect_string(kind: RntbdRequestToken, value: TokenValue) -> crate::error::Re
         TokenValue::String(value) => Ok(value),
         other => Err(wrong_token_type(kind, "String", other)),
     }
+}
+
+fn expect_epk_text(kind: RntbdRequestToken, value: TokenValue) -> crate::error::Result<String> {
+    let value = String::from_utf8(expect_bytes(kind, value)?).map_err(gateway_v2_bad_request)?;
+    EffectivePartitionKey::try_from(value.as_str()).map_err(gateway_v2_bad_request)?;
+    Ok(value)
 }
 
 fn expect_small_string(kind: RntbdRequestToken, value: TokenValue) -> crate::error::Result<String> {
@@ -691,7 +710,10 @@ mod tests {
             AuthorizationContext, WrapInputs,
         },
         in_memory_emulator::{ContainerConfig, VirtualAccountConfig, VirtualRegion},
-        models::{DefaultConsistencyLevel, PartitionKeyDefinition},
+        models::{
+            DefaultConsistencyLevel, FeedRange, PartitionKey, PartitionKeyDefinition,
+            PartitionKeyValue,
+        },
     };
     use url::Url;
 
@@ -1221,7 +1243,459 @@ mod tests {
     }
 
     #[test]
-    fn effective_partition_key_scopes_query_range() {
+    fn filtering_tokens_preserve_text_and_do_not_infer_key_type() {
+        let outer = Request::new(
+            "http://127.0.0.1:18444/dbs/db/colls/coll/docs"
+                .parse()
+                .unwrap(),
+            Method::Post,
+        );
+        for key_type in [None, Some(3)] {
+            let mut metadata = vec![
+                Token::database_name("db".into()),
+                Token::collection_name("coll".into()),
+                Token::payload_present(false),
+                Token::start_epk("10AB".into()),
+                Token::end_epk("20CD".into()),
+                Token::start_epk_hash(vec![0x10, 0xAB]),
+                Token::end_epk_hash(vec![0x20, 0xCD]),
+            ];
+            if let Some(value) = key_type {
+                metadata.push(Token::read_feed_key_type(value));
+            }
+            let frame = RntbdRequestFrame {
+                resource_type: ResourceType::Document,
+                operation_type: OperationType::ReadFeed,
+                activity_id: Uuid::new_v4(),
+                metadata,
+                body: None,
+            };
+            let request = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
+            assert_eq!(
+                request
+                    .headers()
+                    .get_optional_str(&HeaderName::from_static(request_header_names::START_EPK)),
+                Some("10AB")
+            );
+            assert_eq!(
+                request
+                    .headers()
+                    .get_optional_str(&HeaderName::from_static(request_header_names::END_EPK)),
+                Some("20CD")
+            );
+            assert_eq!(
+                request.headers().get_optional_str(&HeaderName::from_static(
+                    request_header_names::READ_FEED_KEY_TYPE
+                )),
+                key_type.map(|_| "EffectivePartitionKeyRange")
+            );
+            if key_type.is_none() {
+                assert!(matches!(
+                    super::super::dispatch::parse_request(&request).operation,
+                    super::super::dispatch::OperationType::InvalidInput(_)
+                ));
+            }
+        }
+    }
+
+    #[test]
+    fn rejects_malformed_filtering_tokens() {
+        for token in [
+            Token::new(RntbdRequestToken::StartEpk, TokenValue::Bytes(vec![0xFF])),
+            Token::start_epk("not-hex".into()),
+            Token::end_epk("ABC".into()),
+            Token::read_feed_key_type(0),
+            Token::read_feed_key_type(4),
+        ] {
+            assert!(decode_metadata(vec![token]).is_err());
+        }
+    }
+
+    #[tokio::test]
+    async fn range_filters_apply_to_documents_but_hashes_only_route_partitions() {
+        let thin_url: Url = "http://127.0.0.1:18444/".parse().unwrap();
+        let gateway_url: Url = "http://127.0.0.1:18081/".parse().unwrap();
+        let emulator = InMemoryEmulatorHttpClient::new(
+            VirtualAccountConfig::new(vec![VirtualRegion::new("East US", gateway_url.clone())
+                .with_gateway_v2_url(thin_url.clone())])
+            .unwrap(),
+        );
+        let store = emulator.store();
+        store.create_database("db");
+        let definition: PartitionKeyDefinition = "/pk".into();
+        store.create_container_with_config(
+            "db",
+            "coll",
+            definition.clone(),
+            ContainerConfig::new()
+                .with_partition_count(2)
+                .build()
+                .unwrap(),
+        );
+        let first_max = store
+            .region("East US")
+            .unwrap()
+            .with_container("db", "coll", |state| {
+                state.physical_partitions[0].epk_max.clone()
+            })
+            .unwrap();
+        let mut first_partition = Vec::new();
+        for index in 0..32 {
+            let pk = format!("range-pk-{index:02}");
+            let id = format!("doc-{index:02}");
+            let epk = FeedRange::for_partition(PartitionKey::from(pk.clone()), &definition)
+                .min_inclusive()
+                .clone();
+            let mut seed = Request::new(
+                gateway_url.join("dbs/db/colls/coll/docs").unwrap(),
+                Method::Post,
+            );
+            seed.headers_mut().insert(
+                request_header_names::PARTITION_KEY,
+                serde_json::to_string(&[&pk]).unwrap(),
+            );
+            seed.set_body(serde_json::to_vec(&serde_json::json!({"id":id,"pk":pk})).unwrap());
+            assert_eq!(
+                emulator.execute_request(&seed).await.unwrap().status(),
+                StatusCode::Created
+            );
+            if epk < first_max {
+                first_partition.push((epk, id));
+            }
+        }
+        first_partition.sort();
+        assert!(first_partition.len() > 6 && first_partition.len() < 32);
+        for (operation, change_feed) in [
+            (OperationType::Query, false),
+            (OperationType::ReadFeed, false),
+            (OperationType::ReadFeed, true),
+        ] {
+            for open_min in [false, true] {
+                for with_filters in [true, false] {
+                    let start = if open_min {
+                        EffectivePartitionKey::MIN.clone()
+                    } else {
+                        first_partition[2].0.clone()
+                    };
+                    let end = first_partition[6].0.clone();
+                    let mut continuation: Option<String> = None;
+                    let mut ids = Vec::new();
+                    let mut page_count = 0;
+                    loop {
+                        page_count += 1;
+                        assert!(page_count <= 32, "pagination must terminate");
+                        let mut headers = Headers::new();
+                        headers.insert("authorization", "auth-token");
+                        headers.insert("x-ms-date", "Wed, 21 Oct 2015 07:28:00 GMT");
+                        headers.insert("x-ms-activity-id", Uuid::new_v4().to_string());
+                        headers.insert(request_header_names::START_EPK, start.to_hex());
+                        headers.insert(request_header_names::END_EPK, end.to_hex());
+                        headers.insert(
+                            request_header_names::READ_FEED_KEY_TYPE,
+                            "EffectivePartitionKeyRange",
+                        );
+                        headers.insert(request_header_names::MAX_ITEM_COUNT, "2");
+                        let previous = continuation.take();
+                        if change_feed {
+                            headers.insert(request_header_names::A_IM, "Incremental Feed");
+                        }
+                        if let Some(value) = previous.as_ref() {
+                            headers.insert(
+                                if change_feed {
+                                    request_header_names::IF_NONE_MATCH
+                                } else {
+                                    request_header_names::CONTINUATION
+                                },
+                                value.clone(),
+                            );
+                        }
+                        let body = (operation == OperationType::Query)
+                            .then(|| Bytes::from_static(br#"{"query":"SELECT * FROM c"}"#));
+                        let request = HttpRequest {
+                            url: thin_url.join("dbs/db/colls/coll/docs").unwrap(),
+                            method: Method::Post,
+                            headers,
+                            body,
+                            timeout: None,
+                            #[cfg(feature = "fault_injection")]
+                            evaluation_collector: None,
+                        };
+                        let auth_context = AuthorizationContext::new(
+                            Method::Post,
+                            ResourceType::Document,
+                            "dbs/db/colls/coll/docs",
+                        );
+                        let wrapped = wrap_request_for_gateway_v2(
+                            request,
+                            &WrapInputs {
+                                auth_context: &auth_context,
+                                operation_type: operation,
+                                resource_type: ResourceType::Document,
+                                effective_partition_key: None,
+                                effective_consistency: DefaultConsistencyLevel::Session,
+                                read_consistency_strategy: ReadConsistencyStrategy::Default,
+                                account_name: Some("account"),
+                                collection_rid: None,
+                            },
+                        )
+                        .unwrap();
+                        let mut frame =
+                            RntbdRequestFrame::read(wrapped.body.as_ref().unwrap()).unwrap();
+                        if change_feed {
+                            assert!(!frame
+                                .metadata
+                                .iter()
+                                .any(|token| token.id.value() == 0x0006));
+                            assert_eq!(
+                                frame
+                                    .metadata
+                                    .iter()
+                                    .find(|token| token.id.value() == 0x0008)
+                                    .map(|token| &token.value),
+                                previous
+                                    .as_ref()
+                                    .map(|value| TokenValue::String(value.clone()))
+                                    .as_ref(),
+                            );
+                        }
+                        if !with_filters {
+                            frame
+                                .metadata
+                                .retain(|token| !matches!(token.id.value(), 0x0062..=0x0064));
+                        }
+                        let response = execute_frame(&emulator, &thin_url, frame).await;
+                        if change_feed && response.status.status_code() == StatusCode::NotModified {
+                            assert!(previous.is_some());
+                            assert_eq!(response.etag, previous);
+                            assert!(response.continuation_token.is_none());
+                            assert!(response.body.is_empty());
+                            break;
+                        }
+                        assert_eq!(response.status.status_code(), StatusCode::Ok);
+                        let body: serde_json::Value =
+                            serde_json::from_slice(&response.body).unwrap();
+                        ids.extend(
+                            body["Documents"]
+                                .as_array()
+                                .unwrap()
+                                .iter()
+                                .map(|item| item["id"].as_str().unwrap().to_owned()),
+                        );
+                        continuation = if change_feed {
+                            assert!(response.continuation_token.is_none());
+                            let etag = response.etag.expect("change-feed pages require ETag");
+                            assert_ne!(previous.as_ref(), Some(&etag));
+                            Some(etag)
+                        } else {
+                            response.continuation_token
+                        };
+                        if continuation.is_none() {
+                            break;
+                        }
+                    }
+                    let mut expected: Vec<_> = first_partition
+                        .iter()
+                        .filter(|(epk, _)| !with_filters || (*epk >= start && *epk < end))
+                        .map(|(_, id)| id.clone())
+                        .collect();
+                    ids.sort();
+                    expected.sort();
+                    assert_eq!(
+                        ids, expected,
+                        "{operation:?}, change_feed={change_feed}, open_min={open_min}, filters={with_filters}"
+                    );
+                    assert!(page_count > 1);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn effective_partition_key_does_not_repair_invalid_filter_key_type() {
+        for key_type in [None, Some(2)] {
+            let mut metadata = vec![
+                Token::database_name("db".into()),
+                Token::collection_name("coll".into()),
+                Token::payload_present(false),
+                Token::effective_partition_key(vec![0x10]),
+                Token::end_epk("FF".into()),
+            ];
+            if let Some(key_type) = key_type {
+                metadata.push(Token::read_feed_key_type(key_type));
+            }
+            let frame = RntbdRequestFrame {
+                resource_type: ResourceType::Document,
+                operation_type: OperationType::ReadFeed,
+                activity_id: Uuid::new_v4(),
+                metadata,
+                body: None,
+            };
+            let outer = Request::new(
+                "http://127.0.0.1:18444/dbs/db/colls/coll/docs"
+                    .parse()
+                    .unwrap(),
+                Method::Post,
+            );
+            let decoded = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
+            assert!(matches!(
+                super::super::dispatch::parse_request(&decoded).operation,
+                super::super::dispatch::OperationType::InvalidInput(_)
+            ));
+        }
+    }
+
+    #[tokio::test]
+    async fn effective_partition_scope_intersects_explicit_filters() {
+        for hierarchical in [false, true] {
+            let thin_url: Url = "http://127.0.0.1:18444/".parse().unwrap();
+            let gateway_url: Url = "http://127.0.0.1:18081/".parse().unwrap();
+            let emulator = InMemoryEmulatorHttpClient::new(
+                VirtualAccountConfig::new(vec![VirtualRegion::new("East US", gateway_url.clone())
+                    .with_gateway_v2_url(thin_url.clone())])
+                .unwrap(),
+            );
+            let store = emulator.store();
+            store.create_database("db");
+            let definition: PartitionKeyDefinition = if hierarchical {
+                serde_json::from_value(serde_json::json!({
+                    "paths":["/tenant", "/pk"], "kind":"MultiHash", "version":2
+                }))
+                .unwrap()
+            } else {
+                "/pk".into()
+            };
+            store.create_container_with_config(
+                "db",
+                "coll",
+                definition.clone(),
+                ContainerConfig::new()
+                    .with_partition_count(2)
+                    .build()
+                    .unwrap(),
+            );
+            let first_max = store
+                .region("East US")
+                .unwrap()
+                .with_container("db", "coll", |state| {
+                    state.physical_partitions[0].epk_max.clone()
+                })
+                .unwrap();
+            let mut rows = Vec::new();
+            for index in 0..32 {
+                let pk = format!("pk-{index:02}");
+                let tenant = format!("tenant-{:02}", index / 4);
+                let components = if hierarchical {
+                    vec![tenant.clone(), pk.clone()]
+                } else {
+                    vec![pk.clone()]
+                };
+                let key = PartitionKey::try_from(
+                    components
+                        .iter()
+                        .cloned()
+                        .map(PartitionKeyValue::from)
+                        .collect::<Vec<_>>(),
+                )
+                .unwrap();
+                let epk = FeedRange::for_partition(key, &definition)
+                    .min_inclusive()
+                    .clone();
+                let id = format!("doc-{index:02}");
+                let mut seed = Request::new(
+                    gateway_url.join("dbs/db/colls/coll/docs").unwrap(),
+                    Method::Post,
+                );
+                seed.headers_mut().insert(
+                    request_header_names::PARTITION_KEY,
+                    serde_json::to_string(&components).unwrap(),
+                );
+                seed.set_body(
+                    serde_json::to_vec(&serde_json::json!({"id":id, "pk":pk, "tenant":tenant}))
+                        .unwrap(),
+                );
+                assert_eq!(
+                    emulator.execute_request(&seed).await.unwrap().status(),
+                    StatusCode::Created
+                );
+                rows.push((epk, id, if hierarchical { tenant } else { pk }));
+            }
+            rows.sort();
+            assert!(rows[0].0 < first_max);
+            assert!(
+                rows.last().unwrap().0 >= first_max,
+                "seed both physical partitions"
+            );
+            let target = &rows[0].2;
+            let scope_key = PartitionKey::from(target.clone());
+            let scope = FeedRange::for_partition(scope_key, &definition);
+            let scoped: Vec<_> = rows.iter().filter(|row| &row.2 == target).collect();
+            assert_eq!(scoped.len(), if hierarchical { 4 } else { 1 });
+            let upper = scoped.last().unwrap().0.clone();
+            for operation in [OperationType::Query, OperationType::ReadFeed] {
+                for with_partition_key in [false, true] {
+                    for (start, end) in [
+                        (
+                            EffectivePartitionKey::MIN.clone(),
+                            EffectivePartitionKey::MAX.clone(),
+                        ),
+                        (rows[0].0.clone(), upper.clone()),
+                        (first_max.clone(), EffectivePartitionKey::MAX.clone()),
+                    ] {
+                        let mut metadata = vec![
+                            Token::database_name("db".into()),
+                            Token::collection_name("coll".into()),
+                            Token::effective_partition_key(
+                                scope.min_inclusive().as_bytes().to_vec(),
+                            ),
+                            Token::start_epk(start.to_hex()),
+                            Token::end_epk(end.to_hex()),
+                            Token::read_feed_key_type(3),
+                            Token::payload_present(operation == OperationType::Query),
+                        ];
+                        if with_partition_key {
+                            metadata.push(Token::partition_key(
+                                serde_json::to_string(&[target]).unwrap(),
+                            ));
+                        }
+                        let response = execute_frame(
+                            &emulator,
+                            &thin_url,
+                            RntbdRequestFrame {
+                                resource_type: ResourceType::Document,
+                                operation_type: operation,
+                                activity_id: Uuid::new_v4(),
+                                metadata,
+                                body: (operation == OperationType::Query)
+                                    .then(|| br#"{"query":"SELECT * FROM c"}"#.to_vec()),
+                            },
+                        )
+                        .await;
+                        assert_eq!(response.status.status_code(), StatusCode::Ok);
+                        let body: serde_json::Value =
+                            serde_json::from_slice(&response.body).unwrap();
+                        let mut actual: Vec<_> = body["Documents"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|doc| doc["id"].as_str().unwrap().to_owned())
+                            .collect();
+                        let mut expected: Vec<_> = scoped
+                            .iter()
+                            .filter(|row| row.0 >= start && row.0 < end)
+                            .map(|row| row.1.clone())
+                            .collect();
+                        actual.sort();
+                        expected.sort();
+                        assert_eq!(actual, expected,
+                            "{operation:?}, hierarchical={hierarchical}, with_partition_key={with_partition_key}");
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn effective_partition_key_remains_independent_of_filter_headers() {
         let frame = RntbdRequestFrame {
             resource_type: ResourceType::Document,
             operation_type: OperationType::Query,
@@ -1241,17 +1715,19 @@ mod tests {
 
         let request = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
         assert_eq!(
-            request
-                .headers()
-                .get_optional_str(&HeaderName::from_static("x-ms-start-epk")),
+            request.headers().get_optional_str(&EFFECTIVE_PARTITION_KEY),
             Some("1020")
         );
-        assert_eq!(
-            request
+        for name in [
+            request_header_names::START_EPK,
+            request_header_names::END_EPK,
+            request_header_names::READ_FEED_KEY_TYPE,
+        ] {
+            assert!(request
                 .headers()
-                .get_optional_str(&HeaderName::from_static("x-ms-end-epk")),
-            Some("1020FF")
-        );
+                .get_optional_str(&HeaderName::from_static(name))
+                .is_none());
+        }
     }
 
     #[test]
@@ -1448,6 +1924,9 @@ mod tests {
             ),
             Token::new(RntbdRequestToken::StartEpkHash, TokenValue::Byte(1)),
             Token::new(RntbdRequestToken::EndEpkHash, TokenValue::Byte(1)),
+            Token::new(RntbdRequestToken::StartEpk, TokenValue::String("10".into())),
+            Token::new(RntbdRequestToken::EndEpk, TokenValue::Byte(1)),
+            Token::new(RntbdRequestToken::ReadFeedKeyType, TokenValue::ULong(3)),
         ] {
             let frame = RntbdRequestFrame {
                 resource_type: ResourceType::Document,
