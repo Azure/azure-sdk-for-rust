@@ -5,13 +5,14 @@
 ### Features Added
 
 - Added `resource_manager` feature to support Azure Resource Manager (ARM)-specific functionality.
-- Added `http::poller::resource_manager::new_poller` to create a `Poller` using ARM-specific heuristics.
+- Added `http::resource_manager::{new_poller, PollerOptions, FinalStateVia}` for ARM polling with optional final-state selection, method- and response-based fallbacks, and a callback for inline operation-location results.
 - `Error` now captures a `std::backtrace::Backtrace` at construction time and includes it in `Debug` output (e.g., `{:?}`) when `RUST_BACKTRACE=1` is set.
 
 ### Breaking Changes
 
 ### Bugs Fixed
 
+- Awaiting a `Poller` after fully consuming its stream no longer panics.
 - `check_success` would fail when error message contained escape sequences like CRLF ([#5364](https://github.com/Azure/azure-sdk-for-rust/pull/5364))
 - Avoided unnecessary error construction and backtrace capture in `Headers::get_optional_str()` when a header is absent ([#5446](https://github.com/Azure/azure-sdk-for-rust/pull/5446)).
 
