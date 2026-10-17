@@ -121,6 +121,99 @@ The leaf node is responsible for **splitting itself** to restore the invariant:
 
 After a merge, multiple leaf nodes may point to different EPK ranges on the same physical partition. This is acceptable — the leaf still targets a single partition and uses EPK min/max headers to scope its request to its intended slice. No pipeline restructuring is needed. (Consolidating redundant leaves after a merge is a potential future optimization but is out of scope to avoid complicating the design.)
 
+### Change feed processor lease recovery
+
+Processor reads opt out of transparent topology repair. A processor plan that
+already spans multiple physical partitions returns `410/1002`, and request-time
+`410/1002`, `410/1007`, and `410/1008` responses reach lease coordination without
+automatic reader replacement. Ordinary pull-reader behavior is unchanged.
+The coordinator refreshes topology and validates that the intersected ranges
+exactly cover the lease before treating the event as a split. A merge or an
+unfinished transition retains the lease and retries through normal acquisition.
+
+Each lease permits one outstanding batch. A topology transition cannot advance
+past that batch until its receipt saves the checkpoint. Full-fidelity processor
+reads expose the initial `304` before fetching data, allowing its starting ETag
+to be persisted independently of the first application batch. A response without
+an ETag is an error, not a usable checkpoint.
+
+Splits use the existing lease container and conditional writes:
+
+1. Re-read the parent and validate its owner and acquisition incarnation.
+2. Conditionally replace the parent with an immutable retirement record. It
+   retains the latest durable continuation, records the ordered child EPK
+   ranges, and clears ownership. This write is the transition's commit point.
+3. Discover descendants through that record, creating missing child documents
+   with deterministic range IDs and projected continuations. Existing children
+   are validated but never reset. Children start unowned and are acquired
+   through normal count balancing, including the configured maximum.
+
+The parent record is the authority to create and acquire descendants. A crash
+before retirement leaves the original lease active; a crash after retirement
+leaves a complete plan from which any worker can finish child creation. Partial
+creation can delay coverage but cannot discard the missing child's starting
+position. Strictly smaller child ranges and retained parent records make repeated
+splits acyclic. Retired parent documents must not be deleted.
+
+Bootstrap's immutable initial range plan remains the root inventory. Restart
+verification validates those original records without replacing retired parents.
+Ongoing processing discovers and repairs their descendant leases; it does not
+replace bootstrap's plan with the current physical topology.
+
+On a physical merge, independent EPK-slice leases retain their own continuations
+and route to the merged partition with EPK bounds. No min/max continuation is
+selected. If an older composite checkpoint contains multiple positions, splitting
+projects every intersecting position onto the child without comparing opaque
+backend tokens. Partially pinned `Now` or full-fidelity checkpoints are rejected
+rather than resetting an uncovered slice to a later starting time.
+
+Bootstrap records, active leases, and retired parents all use the initial schema
+version 1. A split changes lease state, not workload identity or schema version.
+The running processors retire the affected lease session and acquire its
+children automatically; customers do not stop or restart workers for a split
+or merge. Ownership incarnations, conditional writes, and the retired-parent
+state fence stale lease operations.
+
+Local tests cover error propagation, acknowledgment fencing, child creation
+races, interrupted transitions, independent merge progress, and restarts.
+The in-memory emulator is not a service change-log implementation: it lacks
+historical versions/deletes and rebases document LSNs during merges. Its
+create-only workloads verify coverage and per-key first-delivery ordering while
+allowing known replay; mocked backend tokens separately verify progress mapping.
+Real-service full-fidelity retention and historical-event behavior require an
+eligible account and separate live validation.
+
+### Running a real-account processor split test
+
+The `split` test target uses the service directly, not recordings. Use a disposable
+provisioned-throughput account and supply `AZURE_COSMOS_CONNECTION_STRING` through
+your normal secret-management process; do not put keys in command history.
+
+The CFP test creates a unique `auto-test-*` database, a source container at
+1,000 RU/s, and a lease container at 400 RU/s. It temporarily raises only the test
+source to 13,000 RU/s to force a physical split. The harness deletes its test
+database afterward, including on returned errors or timeouts. A terminated test
+process may require manual cleanup of the exact database printed by the test.
+Existing databases are not changed.
+
+From the repository root in PowerShell:
+
+```powershell
+$env:AZURE_COSMOS_TEST_MODE = 'required'
+$env:AZURE_COSMOS_AUTH_MODE = 'key'
+cargo test -p azure_data_cosmos --all-features --test split `
+  split_tests::cosmos_change_feed_processor_split::processor_recovers_online_after_real_split `
+  -- --ignored --exact --nocapture --test-threads=1
+```
+
+The test uses LatestVersion mode and fails rather than silently skipping if
+credentials are missing. Both workers start before the split. Writes continue
+during the throughput change; assertions verify child-lease coverage, one lease
+per worker, complete expected delivery, per-key first-delivery order, and
+acknowledgment-before-checkpoint behavior. Known replay is allowed. A split that
+does not complete within the helper's 15-minute budget is not a pass.
+Full-fidelity history and merges require separate eligible-account tests.
+
 ---
 
 ## 6. Current Implementation Focus

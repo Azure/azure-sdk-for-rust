@@ -77,7 +77,11 @@ impl Store<'_> {
         }
     }
 
-    pub(super) async fn create<T: Serialize>(&self, id: &str, value: &T) -> Result<bool> {
+    pub(in crate::change_feed_processor) async fn create<T: Serialize>(
+        &self,
+        id: &str,
+        value: &T,
+    ) -> Result<bool> {
         let operation =
             CosmosOperation::create_item(self.item(id)?).with_body(serde_json::to_vec(value)?);
         match self.execute(operation).await {

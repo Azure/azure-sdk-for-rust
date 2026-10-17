@@ -162,6 +162,7 @@ pub(crate) struct Request {
     operation: Arc<CosmosOperation>,
     target: RequestTarget,
     state: RequestState,
+    recover_topology: bool,
 }
 
 impl Request {
@@ -182,7 +183,13 @@ impl Request {
             operation,
             target,
             state: initial_state,
+            recover_topology: true,
         }
+    }
+
+    pub(crate) fn with_topology_recovery(mut self, enabled: bool) -> Self {
+        self.recover_topology = enabled;
+        self
     }
 
     #[cfg(test)]
@@ -233,7 +240,9 @@ impl PipelineNode for Request {
             .await
         {
             Ok(response) => Ok(self.handle_response(response)),
-            Err(error) if error.status().is_partition_topology_change() => {
+            Err(error)
+                if self.recover_topology && error.status().is_partition_topology_change() =>
+            {
                 self.handle_partition_topology_change(context, error, continuation)
                     .await
             }

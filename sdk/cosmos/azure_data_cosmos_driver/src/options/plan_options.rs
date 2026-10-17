@@ -23,6 +23,8 @@ pub const DEFAULT_MAX_BUFFERED_QUERY_WINDOW: u64 = 1000;
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub struct PlanOptions {
+    pub(crate) change_feed_processor: bool,
+
     /// Maximum global OFFSET plus effective take for client-buffered queries.
     ///
     /// Requires a finite TOP or LIMIT; when both exist, the smaller is used.
@@ -56,6 +58,7 @@ pub struct PlanOptions {
 impl Default for PlanOptions {
     fn default() -> Self {
         Self {
+            change_feed_processor: false,
             max_buffered_query_window: DEFAULT_MAX_BUFFERED_QUERY_WINDOW,
             query_plan_mode: QueryPlanMode::LocalPreferred,
             max_fan_out: DEFAULT_MAX_FAN_OUT,
