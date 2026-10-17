@@ -10,7 +10,7 @@
 
 ### Breaking Changes
 
-- `Processor::stop()` now drains issued receipts and returns shutdown errors; use `abort()` or `request_stop()` for forced cancellation.
+- `Processor::stop()` now drains issued receipts and returns shutdown errors; use `abort()` or `request_stop()` for forced cancellation. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 
 ### Bugs Fixed
 
@@ -22,7 +22,7 @@
 
 ### Other Changes
 
-- Derive processor renewal and acquisition schedules from the lease expiration budget, reuse checkpoint writes for renewal, and remove the implicit callback progress timeout.
+- Derive processor renewal and acquisition schedules from the lease expiration budget, reuse checkpoint writes for renewal, and remove the implicit callback progress timeout. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 
 ## 1.0.0 (2026-10-08)
 
