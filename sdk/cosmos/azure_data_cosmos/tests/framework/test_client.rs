@@ -578,15 +578,20 @@ impl TestOptions {
 fn effective_binary_encoding(
     binary_encoding: Option<BinaryEncodingOptions>,
 ) -> Option<BinaryEncodingOptions> {
-    #[cfg(test_category = "emulator_vnext")]
+    #[cfg(any(
+        test_category = "emulator_vnext",
+        test_category = "emulator_vnext_gateway_v2"
+    ))]
     {
-        // Temporary workaround for #5240; product code should eventually
-        // negotiate vNext binary support. The driver crate's
-        // `driver_vnext_binary_encoding_canary` test signals when it can go.
-        Some(binary_encoding.unwrap_or_else(|| BinaryEncodingOptions::new().with_enabled(false)))
+        Some(binary_encoding.unwrap_or_else(|| {
+            BinaryEncodingOptions::new().with_enabled(cfg!(test_category = "emulator_vnext_binary"))
+        }))
     }
 
-    #[cfg(not(test_category = "emulator_vnext"))]
+    #[cfg(not(any(
+        test_category = "emulator_vnext",
+        test_category = "emulator_vnext_gateway_v2"
+    )))]
     {
         binary_encoding
     }
@@ -828,6 +833,7 @@ impl TestClient {
         binary_encoding: Option<BinaryEncodingOptions>,
         gateway_v2_disabled: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
+        let gateway_v2_disabled = gateway_v2_disabled || cfg!(test_category = "emulator_vnext");
         let connection_string: ConnectionString = connection_string.parse()?;
 
         if let Ok(val) = std::env::var(ALLOW_INVALID_CERTS_ENV_VAR) {
@@ -1881,6 +1887,7 @@ impl TestRunContext {
         region: Region,
         gateway_v2_disabled: bool,
     ) -> Result<CosmosClient, azure_data_cosmos::CosmosError> {
+        let gateway_v2_disabled = gateway_v2_disabled || cfg!(test_category = "emulator_vnext");
         let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)
             .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
 
@@ -2043,6 +2050,7 @@ pub async fn build_aad_client_from_env(
 ) -> Result<(CosmosClient, Option<super::CredentialRecorder>), Box<dyn std::error::Error>> {
     use super::CosmosEmulatorCredential;
 
+    let gateway_v2_disabled = gateway_v2_disabled || cfg!(test_category = "emulator_vnext");
     let env_var = std::env::var(CONNECTION_STRING_ENV_VAR)?;
     let is_emulator_shorthand = env_var == "emulator";
     let connection_string_str = if is_emulator_shorthand {
@@ -2458,13 +2466,18 @@ mod tests {
     }
 
     #[test]
-    #[cfg(test_category = "emulator_vnext")]
-    fn vnext_disables_binary_encoding_by_default() {
-        assert!(!effective_binary_encoding(None).unwrap().enabled);
-        assert!(
-            effective_binary_encoding(Some(BinaryEncodingOptions::new()))
+    #[cfg(any(
+        test_category = "emulator_vnext",
+        test_category = "emulator_vnext_gateway_v2"
+    ))]
+    fn vnext_encoding_default_preserves_explicit_overrides() {
+        let selected = cfg!(test_category = "emulator_vnext_binary");
+        assert_eq!(effective_binary_encoding(None).unwrap().enabled, selected);
+        assert_eq!(
+            effective_binary_encoding(Some(BinaryEncodingOptions::new().with_enabled(!selected)))
                 .unwrap()
-                .enabled
+                .enabled,
+            !selected
         );
     }
 
