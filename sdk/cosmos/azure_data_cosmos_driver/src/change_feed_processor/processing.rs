@@ -34,7 +34,8 @@ use futures::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{HashSet, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
+    panic::AssertUnwindSafe,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, Mutex as StdMutex,
@@ -60,16 +61,15 @@ pub struct ProcessorOptions {
     poll_delay: Duration,
     min_leases: u32,
     max_leases: u32,
-    acquire_interval: Duration,
-    renew_interval: Duration,
     expiration: Duration,
 }
 
 impl ProcessorOptions {
-    /// Creates options with Java-compatible lease timing defaults.
+    /// Creates options with a 60-second lease expiration budget.
     ///
-    /// Acquisition runs every 13 seconds, renewal every 17 seconds, and leases
-    /// expire after 60 seconds. The progress watchdog is 25 renewal intervals.
+    /// Renewal is scheduled after one third of the budget without a successful
+    /// lease write. Acquisition checks run every one sixth of the budget.
+    /// These schedules are independent of feed polling and callback duration.
     /// Fresh feeds start from now, request 100 items, and wait five seconds
     /// after idle responses. Lease counts are uncapped.
     pub fn new(bootstrap: BootstrapOptions) -> Self {
@@ -81,8 +81,6 @@ impl ProcessorOptions {
             poll_delay: Duration::from_secs(5),
             min_leases: 0,
             max_leases: 0,
-            acquire_interval: Duration::from_secs(13),
-            renew_interval: Duration::from_secs(17),
             expiration: Duration::from_secs(60),
         }
     }
@@ -125,6 +123,14 @@ impl ProcessorOptions {
         self.max_leases = maximum;
         self
     }
+
+    fn renew_interval(&self) -> Duration {
+        self.expiration / 3
+    }
+
+    fn acquire_interval(&self) -> Duration {
+        self.expiration / 6
+    }
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -137,6 +143,8 @@ struct Lease {
     renewed_at: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     children: Option<Vec<FeedRange>>,
+    #[serde(skip)]
+    renewed: Option<Instant>,
 }
 
 struct Context {
@@ -175,7 +183,16 @@ impl Context {
         Ok(())
     }
 
+    #[cfg(all(test, feature = "__internal_in_memory_emulator"))]
     async fn acquire(&self, observed: &Lease) -> Result<Stored<Lease>> {
+        self.acquire_tracked(observed, None).await
+    }
+
+    async fn acquire_tracked(
+        &self,
+        observed: &Lease,
+        state: Option<&SharedState>,
+    ) -> Result<Stored<Lease>> {
         let id = &observed.base.record.id;
         let mut current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
         self.validate(&current.value)?;
@@ -188,7 +205,26 @@ impl Context {
         current.value.base.owner = Some(self.options.bootstrap.instance_name.clone());
         current.value.incarnation = Some(Uuid::new_v4().to_string());
         current.value.renewed_at = Some(now_millis());
-        self.store().replace(id, &current.value, current.etag).await
+        current.value.renewed = Some(Instant::now());
+        let key = (id.clone(), current.value.incarnation.clone());
+        if let Some(state) = state {
+            state
+                .unreleased
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .insert(key.clone(), current.value.clone());
+        }
+        let result = self.store().replace(id, &current.value, current.etag).await;
+        if result.is_ok() {
+            if let Some(state) = state {
+                state
+                    .unreleased
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .remove(&key);
+            }
+        }
+        result
     }
 
     async fn update(&self, lease: &mut Stored<Lease>, update: Update<'_>) -> Result<()> {
@@ -216,6 +252,7 @@ impl Context {
                 }
             }
             current.value.renewed_at = Some(now_millis());
+            current.value.renewed = Some(Instant::now());
             match self
                 .store()
                 .replace(&id, &current.value, current.etag)
@@ -305,7 +342,7 @@ impl BatchReceipt {
         rx.await.map_err(|_| lost())?
     }
 
-    /// Waits until this lease session stops, including ownership loss or timeout.
+    /// Waits until this lease session ends, including ownership loss or forced shutdown.
     ///
     /// Consumers can race their callback against this signal. Cancellation
     /// cannot undo application side effects already performed.
@@ -335,22 +372,57 @@ struct SharedState {
     ready: StdMutex<VecDeque<Batch>>,
     waker: AtomicWaker,
     running: AtomicBool,
+    stopping: AtomicBool,
+    forced: AtomicBool,
+    failure: StdMutex<Option<crate::CosmosError>>,
+    unreleased: StdMutex<HashMap<(String, Option<String>), Lease>>,
 }
 
 impl SharedState {
-    fn deliver(&self, batch: Batch) {
+    fn deliver(&self, batch: Batch) -> bool {
         let mut queue = self.ready.lock().unwrap_or_else(|e| e.into_inner());
+        if self.stopping.load(Ordering::Acquire) {
+            return false;
+        }
         queue.retain(|batch| !batch.receipt.sender.is_canceled());
         queue.push_back(batch);
         drop(queue);
         self.waker.wake();
+        true
+    }
+
+    fn close(&self, force: bool) {
+        let mut queue = self.ready.lock().unwrap_or_else(|e| e.into_inner());
+        self.stopping.store(true, Ordering::Release);
+        if force {
+            self.forced.store(true, Ordering::Release);
+            queue.clear();
+        }
+        self.waker.wake();
+    }
+
+    fn failed(&self, err: crate::CosmosError) {
+        tracing::warn!(error = %err, "Processor lease operation failed");
+        if self.stopping.load(Ordering::Acquire) {
+            self.failure
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .get_or_insert(err);
+        }
     }
 }
 
 struct Owner {
     stop: StdMutex<Option<oneshot::Sender<()>>>,
-    stopped: Signal,
+    force: StdMutex<Option<oneshot::Sender<()>>>,
+    stopped: Shared<BoxFuture<'static, Result<bool>>>,
     state: Arc<SharedState>,
+}
+
+impl Drop for Owner {
+    fn drop(&mut self) {
+        self.state.close(true);
+    }
 }
 
 /// A running, schema-agnostic change feed processor.
@@ -407,7 +479,7 @@ impl Processor {
     ///         process(response).await?;
     ///         receipt.checkpoint().await?;
     ///     }
-    ///     processor.stop().await;
+    ///     processor.stop().await?;
     ///     Ok(())
     /// }
     /// ```
@@ -462,17 +534,40 @@ impl Processor {
             ready: StdMutex::new(VecDeque::new()),
             waker: AtomicWaker::new(),
             running: AtomicBool::new(true),
+            stopping: AtomicBool::new(false),
+            forced: AtomicBool::new(false),
+            failure: StdMutex::new(None),
+            unreleased: StdMutex::new(HashMap::new()),
         });
         let (stop, stopping) = signal();
-        let (done, stopped) = signal();
+        let (force, forced) = signal();
+        let (done, stopped) = oneshot::channel();
         let owner = Arc::new(Owner {
             stop: StdMutex::new(Some(stop)),
-            stopped,
+            force: StdMutex::new(Some(force)),
+            stopped: async move {
+                stopped.await.map_err(|_| {
+                    error(
+                        StatusCode::InternalServerError,
+                        "Processor task did not complete.",
+                    )
+                })?
+            }
+            .boxed()
+            .shared(),
             state: state.clone(),
         });
         // The task holds state, not Owner, so the last public handle closes stop.
         let task = azure_core::async_runtime::get_async_runtime().spawn(Box::pin(async move {
-            run(context, state.clone(), stopping).await;
+            let result = AssertUnwindSafe(run(context, state.clone(), stopping, forced))
+                .catch_unwind()
+                .await
+                .unwrap_or_else(|_| {
+                    Err(error(
+                        StatusCode::InternalServerError,
+                        "Processor task panicked.",
+                    ))
+                });
             state.running.store(false, Ordering::Release);
             state
                 .ready
@@ -480,7 +575,7 @@ impl Processor {
                 .unwrap_or_else(|e| e.into_inner())
                 .clear();
             state.waker.wake();
-            let _ = done.send(());
+            let _ = done.send(result);
         }));
         drop(task);
         Ok(Self { owner })
@@ -491,10 +586,12 @@ impl Processor {
         self.owner.state.running.load(Ordering::Acquire)
     }
 
-    /// Waits for an owned batch, or returns `None` after shutdown.
+    /// Waits for an owned batch, or returns `None` when delivery has drained.
     ///
     /// Canceling this wait does not consume a batch. Progress from 304 responses
     /// is saved internally without invoking application callbacks.
+    /// During graceful shutdown, continue consuming already-issued batches and
+    /// completing their receipts. `None` does not mean all receipts are settled.
     pub async fn next_batch(&self) -> Option<Batch> {
         futures::future::poll_fn(|cx| {
             self.owner.state.waker.register(cx.waker());
@@ -509,7 +606,7 @@ impl Processor {
                     return Poll::Ready(Some(batch));
                 }
             }
-            if self.is_running() {
+            if self.is_running() && !self.owner.state.stopping.load(Ordering::Acquire) {
                 Poll::Pending
             } else {
                 Poll::Ready(None)
@@ -518,20 +615,19 @@ impl Processor {
         .await
     }
 
-    /// Requests shutdown and waits for lease tasks and release attempts.
+    /// Drains issued batches, saves acknowledged progress, and releases owned leases.
     ///
-    /// In-flight callbacks belong to the consumer. Their receipts are canceled
-    /// and cannot checkpoint after ownership ends. Release failures are logged;
-    /// unreleased leases remain recoverable through expiration.
-    pub async fn stop(&self) {
-        self.request_stop();
-        self.owner.stopped.clone().await;
-    }
-
-    /// Requests shutdown without waiting, including from a destructor.
+    /// Stops new acquisition and polling. Consumers must keep draining deliveries
+    /// and completing receipts while waiting. Renewal continues during the drain.
+    /// There is no callback timeout. Canceling this wait does not cancel cleanup.
+    /// Concurrent callers observe the same outcome.
     ///
-    /// Use [`stop()`](Self::stop) when the caller must wait for lease cleanup.
-    pub fn request_stop(&self) {
+    /// # Errors
+    ///
+    /// Returns an error if draining or release fails, ownership is lost during
+    /// draining, or shutdown is forced. Failed batches may be replayed.
+    pub async fn stop(&self) -> Result<()> {
+        self.owner.state.close(false);
         if let Some(stop) = self
             .owner
             .stop
@@ -541,15 +637,66 @@ impl Processor {
         {
             let _ = stop.send(());
         }
+        if self.owner.stopped.clone().await? {
+            return Err(error(
+                StatusCode::Conflict,
+                "Processor shutdown was forced; batches may replay.",
+            ));
+        }
+        Ok(())
+    }
+
+    /// Cancels outstanding receipts and waits for conditional lease release.
+    ///
+    /// Does not wait for consumer callbacks. Already-started service operations
+    /// can still complete; cancellation cannot undo their writes or side effects.
+    ///
+    /// # Errors
+    ///
+    /// Returns cleanup and worker errors. Other workers recover unreleased leases
+    /// after expiration. Concurrent graceful stop waiters report forced shutdown.
+    pub async fn abort(&self) -> Result<()> {
+        self.request_stop();
+        self.owner.stopped.clone().await.map(|_| ())
+    }
+
+    /// Requests forced shutdown without waiting, including from a destructor.
+    ///
+    /// Use [`stop()`](Self::stop) to drain or [`abort()`](Self::abort) to await cleanup.
+    pub fn request_stop(&self) {
+        self.owner.state.close(true);
+        if let Some(stop) = self
+            .owner
+            .force
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .take()
+        {
+            let _ = stop.send(());
+        }
     }
 }
 
-async fn run(context: Arc<Context>, state: Arc<SharedState>, stop: Signal) {
+async fn run(
+    context: Arc<Context>,
+    state: Arc<SharedState>,
+    stop: Signal,
+    force: Signal,
+) -> Result<bool> {
     let mut workers = FuturesUnordered::<BoxFuture<'static, String>>::new();
     let mut owned = HashSet::new();
-    let mut balancing = balance(context.clone(), owned.clone(), Duration::ZERO).boxed();
+    let mut balancing = balance(
+        context.clone(),
+        state.clone(),
+        owned.clone(),
+        Duration::ZERO,
+        stop.clone(),
+        force.clone(),
+    )
+    .boxed();
     loop {
         futures::select! {
+            _ = force.clone().fuse() => break,
             _ = stop.clone().fuse() => break,
             id = async {
                 if workers.is_empty() {
@@ -567,40 +714,102 @@ async fn run(context: Arc<Context>, state: Arc<SharedState>, stop: Signal) {
                         let context = context.clone();
                         let state = state.clone();
                         let stop = stop.clone();
+                        let force = force.clone();
                         workers.push(async move {
-                            supervise(context, state, lease, stop).await;
+                            supervise(context, state, lease, stop, force).await;
                             id
                         }.boxed());
                     }
                 }
-                balancing = balance(context.clone(), owned.clone(), context.options.acquire_interval).boxed();
+                balancing = balance(context.clone(), state.clone(), owned.clone(), context.options.acquire_interval(), stop.clone(), force.clone()).boxed();
             },
         }
     }
-    // Every supervisor observes stop and conditionally releases its own lease.
+    // Finish acquisition writes and retain every acquired lease for cleanup.
+    for lease in balancing.await {
+        let context = context.clone();
+        let state = state.clone();
+        let stop = stop.clone();
+        let force = force.clone();
+        workers.push(
+            async move {
+                let id = lease.value.base.record.id.clone();
+                supervise(context, state, lease, stop, force).await;
+                id
+            }
+            .boxed(),
+        );
+    }
     while workers.next().await.is_some() {}
+    let unreleased =
+        std::mem::take(&mut *state.unreleased.lock().unwrap_or_else(|e| e.into_inner()));
+    for observed in unreleased.into_values() {
+        let result = async {
+            let Some(mut current) = context
+                .store()
+                .read::<Lease>(&observed.base.record.id)
+                .await?
+            else {
+                return Ok(());
+            };
+            context.validate(&current.value)?;
+            if current.value.children.is_none()
+                && current.value.base.owner == observed.base.owner
+                && current.value.incarnation == observed.incarnation
+            {
+                context.update(&mut current, Update::Release).await?;
+            }
+            Ok(())
+        }
+        .await;
+        if let Err(err) = result {
+            state.failed(err);
+        }
+    }
+    match state
+        .failure
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .take()
+    {
+        Some(err) => Err(err),
+        None => Ok(state.forced.load(Ordering::Acquire)),
+    }
 }
 
 async fn balance(
     context: Arc<Context>,
+    state: Arc<SharedState>,
     owned: HashSet<String>,
     delay: Duration,
+    stop: Signal,
+    force: Signal,
 ) -> Vec<Stored<Lease>> {
-    sleep(delay).await;
+    futures::select! {
+        _ = sleep(delay).fuse() => {},
+        _ = stop.fuse() => return Vec::new(),
+        _ = force.fuse() => return Vec::new(),
+    }
+    if state.stopping.load(Ordering::Acquire) {
+        return Vec::new();
+    }
     let result = async {
         let all = context.list().await?;
         let selected = balancing::select(&all, &context.options, now_millis());
         let mut acquired = Vec::new();
         for index in selected {
+            if state.stopping.load(Ordering::Acquire) {
+                break;
+            }
             if owned.contains(&all[index].base.record.id) {
                 continue;
             }
-            match context.acquire(&all[index]).await {
+            match context.acquire_tracked(&all[index], Some(&state)).await {
                 Ok(lease) => acquired.push(lease),
                 Err(err) if err.status().is_precondition_failed() => {
                     tracing::debug!(error = %err, "Lease acquisition lost a race");
                 }
-                Err(err) => tracing::warn!(error = %err, "Lease acquisition failed"),
+                Err(err) => state.failed(err),
             }
         }
         Ok::<_, crate::CosmosError>(acquired)
@@ -609,7 +818,7 @@ async fn balance(
     match result {
         Ok(acquired) => acquired,
         Err(err) => {
-            tracing::warn!(error = %err, "Lease balancing failed; retrying on the next cycle");
+            state.failed(err);
             Vec::new()
         }
     }
@@ -620,33 +829,41 @@ async fn supervise(
     state: Arc<SharedState>,
     lease: Stored<Lease>,
     stop: Signal,
+    force: Signal,
 ) {
     let token = lease.value.base.record.id.clone();
     let lease = Arc::new(Mutex::new(lease));
-    let progress = Arc::new(StdMutex::new(Instant::now()));
     let (cancel, cancelled) = signal();
+    let mut cancel = Some(cancel);
     let result = {
         let processing = poll(
             context.clone(),
-            state,
+            state.clone(),
             lease.clone(),
-            progress.clone(),
-            cancelled,
+            cancelled.clone(),
+            stop,
+            force,
         )
         .fuse();
-        let renewing = renew(context.clone(), lease.clone()).fuse();
-        let watchdog = watchdog(progress, context.options.renew_interval * 25).fuse();
-        futures::pin_mut!(processing, renewing, watchdog);
+        let renewing = renew(context.clone(), lease.clone(), cancelled).fuse();
+        futures::pin_mut!(processing, renewing);
         futures::select! {
-            result = processing => result,
-            result = renewing => result,
-            _ = watchdog => Err(error(StatusCode::RequestTimeout, "Lease progress watchdog expired.")),
-            _ = stop.fuse() => Ok(()),
+            result = processing => {
+                drop(cancel.take());
+                let renewed = renewing.await;
+                result.and(renewed)
+            },
+            result = renewing => {
+                drop(cancel.take());
+                let processed = processing.await;
+                result.and(processed)
+            },
         }
     };
     drop(cancel);
     if let Err(err) = result {
         tracing::warn!(lease = %token, error = %err, "Lease processing stopped");
+        state.failed(err);
     }
     let mut lease = lease.lock().await;
     if lease.value.children.is_some() {
@@ -654,32 +871,71 @@ async fn supervise(
     }
     if let Err(err) = context.update(&mut lease, Update::Release).await {
         tracing::warn!(lease = %token, error = %err, "Lease release failed; ownership will expire");
+        state.failed(err);
+        state
+            .unreleased
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(
+                (token, lease.value.incarnation.clone()),
+                lease.value.clone(),
+            );
     }
 }
 
-async fn renew(context: Arc<Context>, lease: Arc<Mutex<Stored<Lease>>>) -> Result<()> {
+async fn renew(
+    context: Arc<Context>,
+    lease: Arc<Mutex<Stored<Lease>>>,
+    stopped: Signal,
+) -> Result<()> {
+    let interval = context.options.renew_interval();
     loop {
-        sleep(context.options.renew_interval).await;
+        let delay = {
+            let lease = lease.lock().await;
+            interval.saturating_sub(
+                lease
+                    .value
+                    .renewed
+                    .map(|updated| updated.elapsed())
+                    .unwrap_or_default(),
+            )
+        };
+        futures::select_biased! {
+            _ = stopped.clone().fuse() => return Ok(()),
+            _ = sleep(delay).fuse() => {},
+        }
         let mut lease = lease.lock().await;
+        if stopped.clone().now_or_never().is_some() {
+            return Ok(());
+        }
+        let elapsed = lease
+            .value
+            .renewed
+            .map(|updated| updated.elapsed())
+            .unwrap_or(context.options.expiration);
+        if elapsed < interval {
+            continue;
+        }
+        if elapsed >= context.options.expiration {
+            return Err(error(
+                StatusCode::RequestTimeout,
+                "Lease renewal budget expired.",
+            ));
+        }
         match context.update(&mut lease, Update::Renew).await {
             Ok(()) => {}
             Err(err) if err.status().is_precondition_failed() || err.status().is_not_found() => {
                 return Err(err)
             }
             Err(err) => {
-                tracing::warn!(error = %err, "Lease renewal failed; retrying at the next interval")
+                tracing::warn!(error = %err, "Lease renewal failed; retrying within the expiration budget");
+                drop(lease);
+                futures::select_biased! {
+                    _ = stopped.clone().fuse() => return Ok(()),
+                    _ = sleep(interval).fuse() => {},
+                }
             }
         }
-    }
-}
-
-async fn watchdog(progress: Arc<StdMutex<Instant>>, timeout: Duration) {
-    loop {
-        let elapsed = progress.lock().unwrap_or_else(|e| e.into_inner()).elapsed();
-        if elapsed >= timeout {
-            return;
-        }
-        sleep(timeout - elapsed).await;
     }
 }
 
@@ -687,12 +943,24 @@ async fn poll(
     context: Arc<Context>,
     state: Arc<SharedState>,
     lease: Arc<Mutex<Stored<Lease>>>,
-    progress: Arc<StdMutex<Instant>>,
     cancelled: Signal,
+    stop: Signal,
+    force: Signal,
 ) -> Result<()> {
-    let result = poll_feed(context.clone(), state, lease.clone(), progress, cancelled).await;
+    let result = poll_feed(
+        context.clone(),
+        state.clone(),
+        lease.clone(),
+        cancelled,
+        stop,
+        force,
+    )
+    .await;
     match result {
         Err(err) if err.status().is_partition_topology_change() => {
+            if state.stopping.load(Ordering::Acquire) {
+                return Ok(());
+            }
             if context.recover(lease).await? {
                 Ok(())
             } else {
@@ -708,9 +976,13 @@ async fn poll_feed(
     context: Arc<Context>,
     state: Arc<SharedState>,
     lease: Arc<Mutex<Stored<Lease>>>,
-    progress: Arc<StdMutex<Instant>>,
     cancelled: Signal,
+    stop: Signal,
+    force: Signal,
 ) -> Result<()> {
+    if state.stopping.load(Ordering::Acquire) {
+        return Ok(());
+    }
     let initial = lease.lock().await.value.clone();
     let operation = context
         .operation(&initial.base.range)
@@ -730,6 +1002,12 @@ async fn poll_feed(
         )
         .await?;
     loop {
+        if cancelled.clone().now_or_never().is_some() {
+            return Err(lost());
+        }
+        if state.stopping.load(Ordering::Acquire) {
+            return Ok(());
+        }
         let response = context
             .source_driver
             .execute_plan(
@@ -744,7 +1022,9 @@ async fn poll_feed(
                     "Change feed unexpectedly drained.",
                 )
             })?;
-        *progress.lock().unwrap_or_else(|e| e.into_inner()) = Instant::now();
+        if state.stopping.load(Ordering::Acquire) {
+            return Ok(());
+        }
         if response.headers().etag.is_none() {
             return Err(error(
                 StatusCode::InternalServerError,
@@ -768,25 +1048,43 @@ async fn poll_feed(
                     .await?;
             }
             drop(lease);
-            sleep(context.options.poll_delay).await;
+            futures::select! {
+                _ = sleep(context.options.poll_delay).fuse() => {},
+                _ = force.clone().fuse() => return Ok(()),
+                _ = stop.clone().fuse() => return Ok(()),
+                _ = cancelled.clone().fuse() => return Err(lost()),
+            }
             continue;
         }
         let (sender, received) = oneshot::channel();
-        state.deliver(Batch {
+        if !state.deliver(Batch {
             lease_token: initial.base.record.id.clone(),
             response,
             receipt: BatchReceipt {
                 sender,
                 cancelled: cancelled.clone(),
             },
-        });
-        let acknowledgment: Acknowledgment = received.await.map_err(|_| {
+        }) {
+            return Ok(());
+        }
+        let acknowledgment = futures::select_biased! {
+            _ = force.clone().fuse() => return Ok(()),
+            _ = cancelled.clone().fuse() => return Err(lost()),
+            result = received.fuse() => result,
+        };
+        if acknowledgment.is_err() && state.forced.load(Ordering::Acquire) {
+            return Ok(());
+        }
+        let acknowledgment: Acknowledgment = acknowledgment.map_err(|_| {
             error(
                 StatusCode::Conflict,
                 "Batch was abandoned without successful processing.",
             )
         })?;
         let mut lease = lease.lock().await;
+        if cancelled.clone().now_or_never().is_some() {
+            return Err(lost());
+        }
         let result = context.update(&mut lease, Update::Checkpoint(&token)).await;
         let failed = result.is_err();
         let _ = acknowledgment.result.send(result);

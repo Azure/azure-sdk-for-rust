@@ -299,14 +299,14 @@ mod processor_lifecycle_tests {
         models::{AccountReference as DriverAccountReference, CosmosOperation, DatabaseReference},
         options::{DriverOptions, OperationOptions},
     };
-    use futures::TryStreamExt;
+    use futures::{channel::oneshot, TryStreamExt};
     use serde_json::Value;
     use std::{
         error::Error,
         num::NonZeroU32,
         sync::{
             atomic::{AtomicUsize, Ordering},
-            Arc,
+            Arc, Mutex,
         },
         time::Duration,
     };
@@ -722,7 +722,7 @@ mod processor_lifecycle_tests {
     }
 
     #[tokio::test]
-    async fn stop_cancels_pending_callback_without_checkpoint() -> Result<(), Box<dyn Error>> {
+    async fn abort_cancels_pending_callback_without_checkpoint() -> Result<(), Box<dyn Error>> {
         let (source, leases) = setup_processor().await?;
         source
             .create_item(PARTITION_KEY, "pending", TestItem::new("pending", 1), None)
@@ -754,7 +754,7 @@ mod processor_lifecycle_tests {
             }
         })
         .await?;
-        tokio::time::timeout(Duration::from_secs(5), processor.stop()).await??;
+        tokio::time::timeout(Duration::from_secs(5), processor.abort()).await??;
         assert!(!processor.is_started());
         let stored = records(&leases).await?;
         let id = lease_token.lock().unwrap().clone();
@@ -769,6 +769,85 @@ mod processor_lifecycle_tests {
             .filter(|r| r.get("range").is_some())
             .all(|r| r.get("owner").is_none()));
         Ok(())
+    }
+
+    async fn exercise_graceful_stop(fail: bool) -> Result<(), Box<dyn Error>> {
+        let (source, leases) = setup_processor().await?;
+        source
+            .create_item(
+                PARTITION_KEY,
+                "draining",
+                TestItem::new("draining", 1),
+                None,
+            )
+            .await?;
+        let (entered, entered_rx) = oneshot::channel();
+        let (release, released) = oneshot::channel();
+        let entered = Mutex::new(Some(entered));
+        let released = Mutex::new(Some(released));
+        let processor = ChangeFeedProcessorBuilder::new(
+            LatestVersion,
+            source,
+            leases.clone(),
+            "drain",
+            "worker",
+        )
+        .with_start_from_beginning()
+        .handle_change_feed(
+            move |context: ChangeFeedProcessorContext, _: Vec<ChangeFeedItem<TestItem>>| {
+                let entered = entered.lock().unwrap().take().expect("one callback");
+                let released = released.lock().unwrap().take().expect("one callback");
+                async move {
+                    entered.send(context.lease_token().to_owned()).unwrap();
+                    released.await.unwrap();
+                    if fail {
+                        return Err(azure_data_cosmos::CosmosError::builder()
+                            .with_status(azure_data_cosmos::CosmosStatus::new(
+                                StatusCode::BadRequest,
+                            ))
+                            .with_message("Application rejected the batch.")
+                            .build());
+                    }
+                    Ok(())
+                }
+            },
+        )
+        .build()?;
+        processor.start().await?;
+        let id = tokio::time::timeout(Duration::from_secs(5), entered_rx).await??;
+        let mut stopping = Box::pin(processor.stop());
+        assert!(futures::poll!(stopping.as_mut()).is_pending());
+        assert!(processor.is_started());
+        assert!(processor.start().await.is_err());
+        let pending = records(&leases).await?;
+        let lease = pending.iter().find(|lease| lease["id"] == id).unwrap();
+        assert_eq!(lease["owner"], "worker");
+        assert!(lease.get("continuation").is_none());
+        drop(stopping);
+        release.send(()).unwrap();
+        let (first, second) = tokio::time::timeout(Duration::from_secs(5), async {
+            futures::join!(processor.stop(), processor.stop())
+        })
+        .await?;
+        assert_eq!(first.is_err(), fail);
+        assert_eq!(second.is_err(), fail);
+        assert!(!processor.is_started());
+        let saved = records(&leases).await?;
+        let lease = saved.iter().find(|lease| lease["id"] == id).unwrap();
+        assert!(lease.get("owner").is_none());
+        assert_eq!(lease.get("continuation").is_none(), fail);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn graceful_stop_drains_callback_and_survives_cancelled_wait(
+    ) -> Result<(), Box<dyn Error>> {
+        exercise_graceful_stop(false).await
+    }
+
+    #[tokio::test]
+    async fn graceful_stop_reports_callback_failure_and_releases() -> Result<(), Box<dyn Error>> {
+        exercise_graceful_stop(true).await
     }
 
     #[tokio::test]

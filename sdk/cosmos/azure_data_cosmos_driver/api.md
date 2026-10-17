@@ -195,11 +195,12 @@ pub mod change_feed_processor {
     pub struct Processor {
     }
     impl Processor {
+        pub async fn abort(&self) -> Result<()>;
         pub fn is_running(&self) -> bool;
         pub async fn next_batch(&self) -> Option<Batch>;
         pub fn request_stop(&self);
         pub async fn start(source_driver: Arc<CosmosDriver>, source: ContainerReference, lease_driver: Arc<CosmosDriver>, leases: ContainerReference, options: ProcessorOptions) -> Result<Self>;
-        pub async fn stop(&self);
+        pub async fn stop(&self) -> Result<()>;
     }
     #[derive(Clone, Debug)]
     pub struct ProcessorOptions {

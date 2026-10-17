@@ -15,6 +15,9 @@ use std::{
 pub(crate) trait QueuedDelivery {
     fn published(&self);
     fn lost(&self);
+    fn is_control(&self) -> bool {
+        false
+    }
 }
 
 pub(crate) struct DeliveryQueue<T> {
@@ -26,6 +29,7 @@ pub(crate) struct DeliveryQueue<T> {
 struct State<T> {
     deliveries: VecDeque<T>,
     reserved: u32,
+    data_reserved: u32,
     shutdown: bool,
     abandoned: bool,
 }
@@ -36,6 +40,7 @@ impl<T: QueuedDelivery> DeliveryQueue<T> {
             inner: Mutex::new(State {
                 deliveries: VecDeque::new(),
                 reserved: 0,
+                data_reserved: 0,
                 shutdown: false,
                 abandoned: false,
             }),
@@ -74,11 +79,14 @@ impl<T: QueuedDelivery> DeliveryQueue<T> {
         if state.reserved == u32::MAX
             || (!control
                 && self.options.max_capacity > 0
-                && state.reserved >= self.options.max_capacity)
+                && state.data_reserved >= self.options.max_capacity)
         {
             return Err(CosmosErrorCode::CosmosErrorCodeQueueFull);
         }
         state.reserved += 1;
+        if !control {
+            state.data_reserved += 1;
+        }
         Ok(commit(validated))
     }
 
@@ -86,6 +94,9 @@ impl<T: QueuedDelivery> DeliveryQueue<T> {
         let mut state = self.inner.lock_recover();
         if state.abandoned {
             state.reserved -= 1;
+            if !delivery.is_control() {
+                state.data_reserved -= 1;
+            }
             delivery.lost();
         } else {
             delivery.published();
@@ -101,6 +112,9 @@ impl<T: QueuedDelivery> DeliveryQueue<T> {
         loop {
             if let Some(delivery) = state.deliveries.pop_front() {
                 state.reserved -= 1;
+                if !delivery.is_control() {
+                    state.data_reserved -= 1;
+                }
                 return Some(delivery);
             }
             if state.abandoned || (state.shutdown && state.reserved == 0) {
@@ -149,6 +163,9 @@ impl<T: QueuedDelivery> DeliveryQueue<T> {
         let deliveries = std::mem::take(&mut state.deliveries);
         state.reserved -= deliveries.len() as u32;
         for delivery in deliveries {
+            if !delivery.is_control() {
+                state.data_reserved -= 1;
+            }
             delivery.lost();
         }
         self.available.notify_all();
