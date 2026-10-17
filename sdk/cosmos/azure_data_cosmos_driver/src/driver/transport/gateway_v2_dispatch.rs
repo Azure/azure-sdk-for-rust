@@ -177,6 +177,40 @@ pub(crate) fn wrap_request_for_gateway_v2(
     }
     metadata.push(Token::authorization_token(authorization));
     metadata.push(Token::date(date));
+    // Filtering uses UTF-8 hex text, unlike the binary routing hashes above.
+    for (name, constructor) in [
+        (
+            request_header_names::START_EPK,
+            Token::start_epk as fn(String) -> Token,
+        ),
+        (request_header_names::END_EPK, Token::end_epk),
+    ] {
+        if let Some(value) = request
+            .headers
+            .get_optional_str(&HeaderName::from_static(name))
+            .filter(|value| !value.is_empty())
+        {
+            metadata.push(constructor(value.to_owned()));
+        }
+    }
+    if let Some(value) = request
+        .headers
+        .get_optional_str(&HeaderName::from_static(
+            request_header_names::READ_FEED_KEY_TYPE,
+        ))
+        .filter(|value| !value.is_empty())
+    {
+        let key_type = if value.eq_ignore_ascii_case("ResourceId") {
+            1
+        } else if value.eq_ignore_ascii_case("EffectivePartitionKey") {
+            2
+        } else if value.eq_ignore_ascii_case(request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE) {
+            3
+        } else {
+            return Err(data_conversion_error("invalid x-ms-read-key-type header"));
+        };
+        metadata.push(Token::read_feed_key_type(key_type));
+    }
     // String-form partition key (e.g. `["pk1"]`) emitted alongside
     // EffectivePartitionKey. The V1 request already carries it as the
     // x-ms-documentdb-partitionkey header, so forward that JSON unchanged.
@@ -1358,6 +1392,184 @@ mod tests {
 
         assert!(!parsed.tokens.contains_key(&0x0035));
         assert!(!parsed.tokens.contains_key(&0x0000));
+    }
+
+    #[test]
+    fn wrap_preserves_range_filters_separately_from_routing_hashes() {
+        for operation in [OperationType::Query, OperationType::ReadFeed] {
+            let mut request = signed_request(None);
+            for (name, value) in [
+                (request_header_names::START_EPK, "10AB"),
+                (request_header_names::END_EPK, "20CD"),
+                (
+                    request_header_names::READ_FEED_KEY_TYPE,
+                    "EffectivePartitionKeyRange",
+                ),
+                (request_header_names::THINCLIENT_PKRANGE_MIN, ""),
+                (request_header_names::THINCLIENT_PKRANGE_MAX, "FF"),
+            ] {
+                request.headers.insert(HeaderName::from_static(name), value);
+            }
+            let auth_context = AuthorizationContext::new(
+                Method::Post,
+                ResourceType::Document,
+                "dbs/db1/colls/coll1/docs",
+            );
+            let wrapped =
+                wrap_request_for_gateway_v2(request, &wrap_inputs(&auth_context, operation, None))
+                    .unwrap();
+            let parsed = parse_wrapped_request(&wrapped, 0);
+            assert_eq!(parsed.tokens[&0x0064], ParsedTokenValue::Byte(3));
+            assert_eq!(
+                parsed.tokens[&0x0062],
+                ParsedTokenValue::Bytes(b"10AB".to_vec())
+            );
+            assert_eq!(
+                parsed.tokens[&0x0063],
+                ParsedTokenValue::Bytes(b"20CD".to_vec())
+            );
+            assert_eq!(
+                parsed.tokens[&0x00D2],
+                ParsedTokenValue::Bytes(vec![0x10, 0xAB])
+            );
+            assert_eq!(
+                parsed.tokens[&0x00D3],
+                ParsedTokenValue::Bytes(vec![0x20, 0xCD])
+            );
+            for name in [
+                request_header_names::START_EPK,
+                request_header_names::END_EPK,
+                request_header_names::READ_FEED_KEY_TYPE,
+            ] {
+                assert!(wrapped
+                    .headers
+                    .get_optional_str(&HeaderName::from_static(name))
+                    .is_none());
+            }
+            let frame = RntbdRequestFrame::read(wrapped.body.as_ref().unwrap()).unwrap();
+            let ids: Vec<_> = frame
+                .metadata
+                .iter()
+                .map(|token| token.id.value())
+                .collect();
+            assert_eq!(&ids[..2], &[0x00D2, 0x00D3]);
+            let date = ids.iter().position(|id| *id == 0x0003).unwrap();
+            for id in [0x0062, 0x0063, 0x0064] {
+                assert!(ids.iter().position(|value| *value == id).unwrap() > date);
+            }
+        }
+    }
+
+    #[test]
+    fn wrap_preserves_open_minimum_filter_with_point_or_range_routing() {
+        let epk = EffectivePartitionKey::try_from("10").unwrap();
+        for routing_epk in [None, Some(&epk)] {
+            let mut request = signed_request(None);
+            for (name, value) in [
+                (request_header_names::START_EPK, ""),
+                (request_header_names::END_EPK, "20"),
+                (
+                    request_header_names::READ_FEED_KEY_TYPE,
+                    "EffectivePartitionKeyRange",
+                ),
+            ] {
+                request.headers.insert(HeaderName::from_static(name), value);
+            }
+            let auth_context = AuthorizationContext::new(
+                Method::Post,
+                ResourceType::Document,
+                "dbs/db1/colls/coll1/docs",
+            );
+            let wrapped = wrap_request_for_gateway_v2(
+                request,
+                &wrap_inputs(&auth_context, OperationType::Query, routing_epk),
+            )
+            .unwrap();
+            let parsed = parse_wrapped_request(&wrapped, 0);
+            assert!(!parsed.tokens.contains_key(&0x0062));
+            assert_eq!(
+                parsed.tokens[&0x0063],
+                ParsedTokenValue::Bytes(b"20".to_vec())
+            );
+            assert_eq!(parsed.tokens[&0x0064], ParsedTokenValue::Byte(3));
+            if routing_epk.is_some() {
+                assert_eq!(parsed.tokens[&0x005A], ParsedTokenValue::Bytes(vec![0x10]));
+                assert!(!parsed.tokens.contains_key(&0x00D2));
+                assert!(!parsed.tokens.contains_key(&0x00D3));
+            } else {
+                assert_eq!(parsed.tokens[&0x00D2], ParsedTokenValue::Bytes(Vec::new()));
+            }
+        }
+    }
+
+    #[test]
+    fn wrap_does_not_invent_filters_from_physical_range_bounds() {
+        let mut request = signed_request(None);
+        request
+            .headers
+            .insert(request_header_names::THINCLIENT_PKRANGE_MIN, "");
+        request
+            .headers
+            .insert(request_header_names::THINCLIENT_PKRANGE_MAX, "FF");
+        let auth_context = AuthorizationContext::new(
+            Method::Post,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs",
+        );
+        let wrapped = wrap_request_for_gateway_v2(
+            request,
+            &wrap_inputs(&auth_context, OperationType::Query, None),
+        )
+        .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+        assert_eq!(parsed.tokens[&0x00D2], ParsedTokenValue::Bytes(Vec::new()));
+        assert_eq!(parsed.tokens[&0x00D3], ParsedTokenValue::Bytes(vec![0xFF]));
+        for id in [0x0062, 0x0063, 0x0064] {
+            assert!(!parsed.tokens.contains_key(&id));
+        }
+    }
+
+    #[test]
+    fn wrap_validates_read_feed_key_type() {
+        let auth_context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs",
+        );
+        for (header, expected) in [
+            ("ResourceId", Some(1)),
+            ("EffectivePartitionKey", Some(2)),
+            ("EffectivePartitionKeyRange", Some(3)),
+            ("", None),
+        ] {
+            let mut request = signed_request(None);
+            request.headers.insert(
+                request_header_names::READ_FEED_KEY_TYPE,
+                header.to_ascii_lowercase(),
+            );
+            let wrapped = wrap_request_for_gateway_v2(
+                request,
+                &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
+            )
+            .unwrap();
+            let parsed = parse_wrapped_request(&wrapped, 0);
+            assert_eq!(
+                parsed.tokens.get(&0x0064),
+                expected.map(ParsedTokenValue::Byte).as_ref()
+            );
+            assert!(!parsed.tokens.contains_key(&0x0062));
+            assert!(!parsed.tokens.contains_key(&0x0063));
+        }
+        let mut request = signed_request(None);
+        request
+            .headers
+            .insert(request_header_names::READ_FEED_KEY_TYPE, "unsupported");
+        let error = wrap_request_for_gateway_v2(
+            request,
+            &wrap_inputs(&auth_context, OperationType::ReadFeed, None),
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("x-ms-read-key-type"));
     }
 
     #[test]
