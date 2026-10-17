@@ -7,17 +7,19 @@ use super::{
 use crate::{
     models::ChangeFeedItem, options::ChangeFeedMode, ContainerClient, CosmosError, CosmosStatus,
 };
-use azure_core::{
-    async_runtime::{get_async_runtime, SpawnedTask},
-    http::StatusCode,
-};
+use azure_core::{async_runtime::get_async_runtime, http::StatusCode};
 use azure_data_cosmos_driver::{
     change_feed_processor::{
         Batch, BootstrapOptions, ChangeFeedProcessorMode as DriverMode, Processor, ProcessorOptions,
     },
     models::ChangeFeedStartFrom,
 };
-use futures::{future::BoxFuture, stream::FuturesUnordered, FutureExt, StreamExt};
+use futures::{
+    channel::oneshot,
+    future::{BoxFuture, Shared},
+    stream::FuturesUnordered,
+    FutureExt, StreamExt,
+};
 use serde::de::DeserializeOwned;
 use std::{
     future::Future,
@@ -27,7 +29,7 @@ use std::{
 
 pub(super) struct Running {
     driver: Processor,
-    task: Option<SpawnedTask>,
+    stopped: Shared<BoxFuture<'static, crate::Result<()>>>,
 }
 
 impl Drop for Running {
@@ -83,7 +85,9 @@ where
     let handler = config.handler.clone();
     let started = processor.started.clone();
     started.store(true, Ordering::Release);
+    let (done, stopped) = oneshot::channel();
     let task = get_async_runtime().spawn(Box::pin(async move {
+        let dispatching = async {
         let mut callbacks = FuturesUnordered::<BoxFuture<'static, ()>>::new();
         loop {
             futures::select! {
@@ -98,11 +102,33 @@ where
             }
         }
         while callbacks.next().await.is_some() {}
+        };
+        let result = AssertUnwindSafe(dispatching).catch_unwind().await.map_err(|_| {
+            dispatcher.request_stop();
+            CosmosError::builder()
+                .with_status(CosmosStatus::new(StatusCode::InternalServerError))
+                .with_message("Change feed dispatcher panicked.")
+                .build()
+        });
+        if let Err(err) = dispatcher.stop().await {
+            tracing::debug!(error = %err, "Processor shutdown completed with an error");
+        }
         started.store(false, Ordering::Release);
+        let _ = done.send(result);
     }));
+    drop(task);
     *running = Some(Running {
         driver,
-        task: Some(task),
+        stopped: async move {
+            stopped.await.map_err(|_| {
+                CosmosError::builder()
+                    .with_status(CosmosStatus::new(StatusCode::InternalServerError))
+                    .with_message("Change feed dispatcher did not complete.")
+                    .build()
+            })?
+        }
+        .boxed()
+        .shared(),
     });
     Ok(())
 }
@@ -156,19 +182,22 @@ where
 
 pub(super) async fn stop<M: ChangeFeedProcessorMode, T, H>(
     processor: &ChangeFeedProcessor<M, T, H>,
+    force: bool,
 ) -> crate::Result<()> {
-    let mut running = processor.running.lock().await;
-    if let Some(mut running) = running.take() {
-        running.driver.stop().await;
-        if let Some(task) = running.task.take() {
-            task.await.map_err(|err| {
-                CosmosError::builder()
-                    .with_status(CosmosStatus::new(StatusCode::InternalServerError))
-                    .with_message(format!("Change feed dispatcher failed: {err}"))
-                    .build()
-            })?;
-        }
-    }
-    processor.started.store(false, Ordering::Release);
-    Ok(())
+    let running = processor
+        .running
+        .lock()
+        .await
+        .as_ref()
+        .map(|running| (running.driver.clone(), running.stopped.clone()));
+    let Some((driver, stopped)) = running else {
+        return Ok(());
+    };
+    let result = if force {
+        driver.abort().await
+    } else {
+        driver.stop().await
+    };
+    let dispatched = stopped.await;
+    result.and(dispatched)
 }

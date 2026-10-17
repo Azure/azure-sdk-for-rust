@@ -136,6 +136,7 @@ impl Context {
                         incarnation: None,
                         renewed_at: None,
                         children: None,
+                        renewed: None,
                     };
                     self.store().create(&id, &child).await?;
                     self.store().read::<Lease>(&id).await?.ok_or_else(|| {

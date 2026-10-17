@@ -592,7 +592,12 @@ async fn exercise<M: ChangeFeedProcessorMode>(
         verify_source(source, workload).await
     }
     .await;
-    combine(result, processor.stop().await.map_err(Into::into))
+    let cleanup = if result.is_ok() {
+        processor.stop().await
+    } else {
+        processor.abort().await
+    };
+    combine(result, cleanup.map_err(Into::into))
 }
 
 async fn verify_source(source: &ContainerClient, workload: &Workload) -> TestResult {

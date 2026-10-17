@@ -680,6 +680,8 @@ pub mod partition_key {
 }
 pub mod processor {
     #[no_mangle]
+    pub extern "C" fn cosmos_processor_abort_submit(processor: *const ProcessorHandle, user_data: isize, out_pre_error: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
+    #[no_mangle]
     pub extern "C" fn cosmos_processor_checkpoint_submit(receipt: *const ProcessorReceipt, user_data: isize, out: *mut crate::error::CosmosStatusCode) -> *mut crate::completion::OperationHandle;
     #[no_mangle]
     pub extern "C" fn cosmos_processor_completion_free(completion: *mut CosmosProcessorCompletion);

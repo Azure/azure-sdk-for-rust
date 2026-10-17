@@ -12,11 +12,15 @@
 
 ### Breaking Changes
 
+- `ChangeFeedProcessor::stop()` now drains issued callbacks and reports incomplete shutdown or lease cleanup; use `abort()` for explicit callback cancellation.
+
 ### Bugs Fixed
 
 - Keep CPU sampling active for long-lived clients and preserve diagnostics through partition split recovery, including `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
 
 ### Other Changes
+
+- Keep processor lease maintenance independent of feed poll delay and remove the implicit callback timeout.
 
 ## 1.0.0 (2026-10-08)
 

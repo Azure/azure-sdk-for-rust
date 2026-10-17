@@ -760,8 +760,9 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
     ///
     /// Starts background balancing, renewal, polling, and callback dispatch after
     /// bootstrap succeeds. Initial read settings apply only without saved progress.
-    /// The progress watchdog abandons a lease after 425 seconds without a successful
-    /// feed response, including time spent waiting for its callback.
+    /// Lease maintenance is independent of feed polling and callback duration.
+    /// Expiration uses a 60-second budget; renewal and acquisition schedules are
+    /// derived from that budget. Callbacks have no implicit timeout.
     ///
     /// # Errors
     ///
@@ -779,18 +780,38 @@ impl<M: ChangeFeedProcessorMode, T, H> ChangeFeedProcessor<M, T, H> {
         execution::start(self).await
     }
 
-    /// Requests that change feed processing stop.
+    /// Drains issued batches, persists successful callbacks, and releases owned leases.
     ///
-    /// Cancels pending callbacks, waits for local tasks, and attempts conditional
-    /// lease release. Callback cancellation cannot undo external side effects.
-    /// An unacknowledged batch can be replayed. Stopping an idle instance succeeds.
+    /// Stops new acquisition and polling, but continues lease renewal while issued
+    /// callbacks finish. There is no implicit timeout; a callback that never
+    /// finishes prevents graceful shutdown. Use [`abort()`](Self::abort) to force
+    /// cancellation. Canceling this wait leaves shutdown running.
+    ///
+    /// Concurrent calls await the same shutdown. Stopping an idle instance succeeds.
+    /// Released leases may already have new owners when this method returns.
     ///
     /// # Errors
     ///
-    /// Returns an error if the callback-dispatch task fails. Lease release failures
-    /// are logged; other workers can recover those leases after expiration.
+    /// Returns an error for incomplete draining, ownership loss, failed checkpoint
+    /// or release operations, worker failure, or forced cancellation. Unsaved
+    /// progress can replay; shutdown cannot undo external callback side effects.
     pub async fn stop(&self) -> crate::Result<()> {
-        execution::stop(self).await
+        execution::stop(self, false).await
+    }
+
+    /// Cancels pending callback futures and waits for local lease cleanup.
+    ///
+    /// Already-started service writes can complete. External callback effects and
+    /// separately spawned application tasks cannot be undone or canceled here.
+    /// Unacknowledged batches remain replayable. A concurrent graceful stop reports
+    /// that shutdown was forced.
+    ///
+    /// # Errors
+    ///
+    /// Returns worker or cleanup errors. Unreleased leases remain recoverable
+    /// through expiration. Dropping this wait does not stop background cleanup.
+    pub async fn abort(&self) -> crate::Result<()> {
+        execution::stop(self, true).await
     }
 }
 

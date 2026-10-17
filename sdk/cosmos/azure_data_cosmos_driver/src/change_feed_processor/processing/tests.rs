@@ -19,6 +19,7 @@ use crate::{
 };
 use std::{num::NonZeroU32, sync::Arc, time::Duration};
 
+mod shutdown;
 mod topology;
 
 fn options(worker: &str) -> ProcessorOptions {
@@ -28,7 +29,7 @@ fn options(worker: &str) -> ProcessorOptions {
         worker,
     ))
     .with_start(ChangeFeedStartFrom::Beginning);
-    options.acquire_interval = Duration::from_millis(20);
+    options.expiration = Duration::from_millis(600);
     options.poll_delay = Duration::from_millis(10);
     options
 }
@@ -171,6 +172,7 @@ fn leases(owners: &[Option<&str>]) -> Vec<Lease> {
             incarnation: Some(index.to_string()),
             renewed_at: Some(1000),
             children: None,
+            renewed: None,
         })
         .collect()
 }
@@ -205,7 +207,7 @@ fn donor_threshold_does_not_oscillate_uneven_distribution() {
 async fn workers_converge_on_scale_out_and_reclaim_on_scale_down() -> Result<()> {
     let context = fixture().await?;
     let mut first_options = options("first");
-    first_options.renew_interval = Duration::from_millis(20);
+    first_options.expiration = Duration::from_millis(600);
     let first = start(&context, first_options).await?;
     let wait_counts = |first_count, second_count| {
         let context = context.clone();
@@ -233,12 +235,12 @@ async fn workers_converge_on_scale_out_and_reclaim_on_scale_down() -> Result<()>
     };
     wait_counts(3, 0).await;
     let mut second_options = options("second");
-    second_options.renew_interval = Duration::from_millis(20);
+    second_options.expiration = Duration::from_millis(600);
     let second = start(&context, second_options).await?;
     wait_counts(2, 1).await;
-    second.stop().await;
+    second.stop().await?;
     wait_counts(3, 0).await;
-    first.stop().await;
+    first.stop().await?;
     Ok(())
 }
 
@@ -325,7 +327,7 @@ async fn callback_receipt_gates_next_page_and_saved_progress() -> Result<()> {
         saved.as_str()
     );
     drop(second_receipt);
-    processor.stop().await;
+    processor.abort().await?;
     assert!(!processor.is_running());
     let restarted = start(
         &context,
@@ -335,19 +337,17 @@ async fn callback_receipt_gates_next_page_and_saved_progress() -> Result<()> {
     let (resumed_id, _, resumed_receipt) = next(&restarted).await.into_parts();
     assert_eq!(resumed_id, id);
     resumed_receipt.checkpoint().await?;
-    restarted.stop().await;
+    restarted.stop().await?;
     Ok(())
 }
 
 #[tokio::test]
-async fn watchdog_cancels_receipt_without_saving_progress() -> Result<()> {
+async fn forced_stop_cancels_receipt_without_saving_progress() -> Result<()> {
     let context = fixture().await?;
     insert(&context, "one").await?;
-    let mut opts = options("first");
-    opts.renew_interval = Duration::from_millis(10);
-    opts.acquire_interval = Duration::from_secs(2);
-    let processor = start(&context, opts).await?;
+    let processor = start(&context, options("first")).await?;
     let (id, _, receipt) = next(&processor).await.into_parts();
+    processor.abort().await?;
     tokio::time::timeout(Duration::from_secs(2), receipt.cancelled())
         .await
         .unwrap();
@@ -366,7 +366,7 @@ async fn watchdog_cancels_receipt_without_saving_progress() -> Result<()> {
         .base
         .continuation
         .is_none());
-    processor.stop().await;
+    assert!(processor.stop().await.is_err());
     Ok(())
 }
 
@@ -404,7 +404,7 @@ async fn now_start_pins_idle_position_before_new_changes() -> Result<()> {
     assert_eq!(items.len(), 1);
     assert_eq!(items[0]["current"]["id"], "after");
     receipt.checkpoint().await?;
-    processor.stop().await;
+    processor.stop().await?;
     assert!(context
         .list()
         .await?
