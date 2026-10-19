@@ -18,11 +18,6 @@ and verified cleanup; production accounts require explicit acknowledgment of
 production impact. Playback tests and SDK-local fault injection do not exercise
 this service behavior.
 
-Select and review a live Rust workload before running the skill. The observability
-harness can create databases and containers and seed or write documents, so its
-defaults are not a production-safe test configuration. Do not run the general
-integration suite against production as a substitute for a scoped workload.
-
 ## Running Integration Tests
 
 Our integration tests are designed to run against either the Cosmos DB Emulator, or an actual Azure Cosmos DB account.
