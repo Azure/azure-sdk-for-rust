@@ -359,7 +359,7 @@ pub async fn hedging_primary_slow_alternate_wins() -> Result<(), Box<dyn Error>>
                  alternate); elapsed={elapsed:?} against injected delay {delay:?}. \
                  The alternate is only spawned at the threshold, so it had \
                  {margin:?} to finish a cold request to the alternate region — raise \
-                 AZURE_COSMOS_HEDGE_DELAY_MARGIN_MS if that is simply too short from \
+                 AZURE_COSMOS_PRIMARY_DELAY_MS if that is simply too short from \
                  this client; hedge_diag = {hedge_diag:?}; trail = [{trail}]",
                 margin = hedge_delay_margin(),
             );
