@@ -4744,12 +4744,13 @@ mod tests {
     use url::Url;
 
     use crate::{
+        diagnostics::TransportKind,
         driver::CosmosDriverRuntimeBuilder,
         models::{AccountReference, CosmosResponseHeaders, ItemReference, SessionToken},
         options::{
             ContentResponseOnWrite, CorrelationId, DriverOptionsBuilder, OperationOptionsBuilder,
-            PartitionFailoverOptions, PriorityLevel, ThrottlingRetryOptionsBuilder,
-            ThroughputControlOptions, UserAgentSuffix, WorkloadId,
+            PartitionFailoverOptions, PriorityLevel, ServerCertificateValidation,
+            ThrottlingRetryOptionsBuilder, ThroughputControlOptions, UserAgentSuffix, WorkloadId,
         },
     };
 
@@ -5755,29 +5756,59 @@ mod tests {
         }));
     }
 
-    #[test]
-    fn connectivity_probe_uses_emulator_certificate_policy() {
-        let connection_pool = ConnectionPoolOptions::builder()
-            .with_server_certificate_validation(
-                crate::options::ServerCertificateValidation::RequiredUnlessEmulator,
-            )
-            .build()
-            .unwrap();
-        let emulator = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
-        let production =
-            AccountEndpoint::try_from("https://test.documents.azure.com:443/").unwrap();
+    #[tokio::test]
+    async fn connectivity_probe_uses_emulator_certificate_policy() {
+        for policy in [
+            ServerCertificateValidation::Required,
+            ServerCertificateValidation::RequiredUnlessEmulator,
+        ] {
+            for endpoint in [
+                "https://localhost:8081/",
+                "https://test.documents.azure.com:443/",
+            ] {
+                let connection_pool = ConnectionPoolOptions::builder()
+                    .with_server_certificate_validation(policy)
+                    .with_is_http2_allowed(true)
+                    .with_gateway_v2_disabled(false)
+                    .build()
+                    .unwrap();
+                let factory = Arc::new(ScriptedFactory::new([]));
+                let runtime = CosmosDriverRuntimeBuilder::new()
+                    .with_connection_pool(connection_pool)
+                    .with_http_client_factory(factory.clone())
+                    .build()
+                    .await
+                    .unwrap();
+                let bootstrap_client_count = factory.configs().len();
 
-        let emulator_config =
-            CosmosDriver::connectivity_probe_http_client_config(&connection_pool, &emulator);
-        let production_config =
-            CosmosDriver::connectivity_probe_http_client_config(&connection_pool, &production);
+                let _driver = CosmosDriver::new(
+                    runtime,
+                    DriverOptions::builder(signed_test_account(endpoint)).build(),
+                )
+                .unwrap();
 
-        assert!(emulator_config.allow_invalid_cert);
-        assert!(!production_config.allow_invalid_cert);
-        assert!(matches!(
-            emulator_config.version_policy,
-            HttpVersionPolicy::Http2Only
-        ));
+                // Isolate the probe client from the runtime's bootstrap clients.
+                let configs = factory.configs();
+                let [probe_config] = &configs[bootstrap_client_count..] else {
+                    panic!("expected exactly one probe client for {policy:?}, {endpoint}");
+                };
+                assert_eq!(probe_config.transport_kind, Some(TransportKind::GatewayV2));
+                assert_eq!(probe_config.version_policy, HttpVersionPolicy::Http2Only);
+                if policy == ServerCertificateValidation::RequiredUnlessEmulator
+                    && endpoint == "https://localhost:8081/"
+                {
+                    assert!(
+                        probe_config.allow_invalid_cert,
+                        "emulator probe must honor {policy:?}"
+                    );
+                } else {
+                    assert!(
+                        !probe_config.allow_invalid_cert,
+                        "probe must validate certificates for {policy:?}, {endpoint}"
+                    );
+                }
+            }
+        }
     }
 
     #[tokio::test]
