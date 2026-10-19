@@ -6,7 +6,7 @@
 use crate::{
     error::ErrorKind,
     http::{
-        headers::{HeaderName, Headers, RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
+        headers::{HeaderName, Headers, ACCEPT, RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
         poller::{PollerContinuation, PollerResult, PollerState, PollerStatus, StatusMonitor},
         Context, Method, Pipeline, Poller, RawResponse, Request, Response, StatusCode, Url,
     },
@@ -55,24 +55,16 @@ impl<'a> PollerOptions<'a> {
     }
 }
 
-impl<'a> From<crate::http::resource_manager::PollerOptions<'a>>
+impl<'a> From<crate::http::resourcemanager::PollerOptions<'a>>
     for crate::http::poller::PollerOptions<'a>
 {
-    fn from(options: crate::http::resource_manager::PollerOptions<'a>) -> Self {
+    fn from(options: crate::http::resourcemanager::PollerOptions<'a>) -> Self {
         Self {
             context: options.context,
             frequency: options.frequency,
         }
     }
 }
-
-/// Extracts the final result response from an operation-location monitor response.
-///
-/// Used by [`FinalStateVia::OperationLocation`] when no final GET is required.
-pub type OperationLocationResultCallback<M> =
-    fn(
-        Response<M>,
-    ) -> crate::Result<Response<<M as StatusMonitor>::Output, <M as StatusMonitor>::Format>>;
 
 /// Selects the final response for an Azure Resource Manager long-running operation.
 ///
@@ -121,7 +113,7 @@ pub enum FinalStateVia<M: StatusMonitor> {
     ///     http::{
     ///         headers::Headers,
     ///         poller::{PollerStatus, StatusMonitor},
-    ///         resource_manager::FinalStateVia,
+    ///         resourcemanager::FinalStateVia,
     ///         JsonFormat, RawResponse, Response, StatusCode,
     ///     },
     ///     Bytes,
@@ -174,9 +166,11 @@ pub enum FinalStateVia<M: StatusMonitor> {
     /// }
     /// # Ok::<(), azure_core::Error>(())
     /// ```
-    OperationLocation(OperationLocationResultCallback<M>),
+    #[allow(clippy::type_complexity)]
+    OperationLocation(fn(Response<M>) -> crate::Result<Response<M::Output, M::Format>>),
 }
 
+// Deriving Clone and Copy would unnecessarily require M to implement those traits.
 impl<M: StatusMonitor> Clone for FinalStateVia<M> {
     fn clone(&self) -> Self {
         *self
@@ -218,6 +212,8 @@ impl<M: StatusMonitor> Copy for FinalStateVia<M> {}
 /// `resourceLocation`, the original URL for PUT or PATCH, and `location` for POST. Otherwise,
 /// the terminal response supplies the result.
 ///
+/// Final GET requests preserve the original request's `accept` header, if present.
+///
 /// The stream yields unmodified monitor responses. Awaiting the poller returns the final resource
 /// response or the response selected by [`FinalStateVia::OperationLocation`].
 ///
@@ -252,6 +248,7 @@ where
                 None
             });
             let context = poller_options.context.clone();
+            let accept = request.headers().get_optional_string(&ACCEPT);
             let mut request = request.clone();
 
             Box::pin(async move {
@@ -362,10 +359,9 @@ where
                                     }
 
                                     let mut request = Request::new(final_link, Method::Get);
-                                    request.insert_header(
-                                        crate::http::headers::ACCEPT,
-                                        "application/json",
-                                    );
+                                    if let Some(accept) = accept {
+                                        request.insert_header(ACCEPT, accept);
+                                    }
                                     let response =
                                         pipeline.send(&context, &mut request, None).await?;
                                     let (status, headers, body) = response.deconstruct();

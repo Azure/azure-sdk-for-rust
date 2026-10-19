@@ -8,7 +8,7 @@ use crate::{
     http::poller::{PollerStatus, StatusMonitor},
     http::{
         headers::{
-            HeaderName, Headers, CLIENT_REQUEST_ID, RETRY_AFTER, RETRY_AFTER_MS,
+            HeaderName, Headers, ACCEPT, CLIENT_REQUEST_ID, RETRY_AFTER, RETRY_AFTER_MS,
             X_MS_RETRY_AFTER_MS,
         },
         request::options::ClientRequestId,
@@ -1816,6 +1816,110 @@ async fn borrowed_context_flows_to_initial_poll_and_final_requests() {
         }),
     );
     drop(context);
+    assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
+    assert_eq!(calls.load(Ordering::SeqCst), 3);
+}
+
+#[tokio::test]
+async fn final_request_preserves_original_accept_header() {
+    for accept in [
+        None,
+        Some("application/json"),
+        Some("application/xml"),
+        Some("application/custom+json, application/json;q=0.5"),
+    ] {
+        for header in [AZURE_ASYNC_OPERATION, OPERATION_LOCATION] {
+            for method in [Method::Post, Method::Put] {
+                let calls = Arc::new(AtomicUsize::new(0));
+                let calls_for_mock = calls.clone();
+                let header = header.clone();
+                let mock = MockHttpClient::new(move |request| {
+                    assert_eq!(request.headers().get_optional_str(&ACCEPT), accept);
+                    let call = calls_for_mock.fetch_add(1, Ordering::SeqCst);
+                    let response = match call {
+                        0 => {
+                            assert_eq!(request.method(), method);
+                            assert_eq!(request.url().as_str(), RESOURCE_URL);
+                            operation_response(header.clone(), true)
+                        }
+                        1 => {
+                            assert_eq!(request.method(), Method::Get);
+                            assert_eq!(request.url().as_str(), POLLING_URL);
+                            monitor_response(br#"{"status":"Succeeded"}"#)
+                        }
+                        2 => {
+                            assert_eq!(request.method(), Method::Get);
+                            assert_eq!(
+                                request.url().as_str(),
+                                if method == Method::Put {
+                                    RESOURCE_URL
+                                } else {
+                                    LOCATION_URL
+                                }
+                            );
+                            monitor_response(br#"{"id":"finished"}"#)
+                        }
+                        _ => panic!("unexpected request"),
+                    };
+                    async move { Ok(response) }.boxed()
+                });
+                let mut request = Request::new(RESOURCE_URL.parse().unwrap(), method);
+                if let Some(accept) = accept {
+                    request.insert_header(ACCEPT, accept);
+                }
+                let poller: Poller<ArmOperationStatus> =
+                    new_poller(pipeline_with(Arc::new(mock)), request, None, None);
+                assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
+                assert_eq!(calls.load(Ordering::SeqCst), 3);
+            }
+        }
+    }
+}
+
+#[cfg(feature = "xml")]
+#[tokio::test]
+async fn final_request_accepts_xml_resource() {
+    #[derive(SafeDebug, serde::Deserialize)]
+    struct Monitor {
+        status: PollerStatus,
+    }
+
+    impl StatusMonitor for Monitor {
+        type Output = ArmResource;
+        type Format = crate::http::XmlFormat;
+
+        fn status(&self) -> PollerStatus {
+            self.status.clone()
+        }
+    }
+
+    let calls = Arc::new(AtomicUsize::new(0));
+    let calls_for_mock = calls.clone();
+    let mock = MockHttpClient::new(move |request| {
+        assert_eq!(
+            request.headers().get_optional_str(&ACCEPT),
+            Some("application/xml")
+        );
+        let call = calls_for_mock.fetch_add(1, Ordering::SeqCst);
+        let response = match call {
+            0 => operation_response(OPERATION_LOCATION, false),
+            1 => monitor_response(br#"{"status":"Succeeded"}"#),
+            2 => {
+                assert_eq!(request.method(), Method::Get);
+                assert_eq!(request.url().as_str(), RESOURCE_URL);
+                AsyncRawResponse::from_bytes(
+                    StatusCode::Ok,
+                    Headers::new(),
+                    "<resource><id>finished</id></resource>",
+                )
+            }
+            _ => panic!("unexpected request"),
+        };
+        async move { Ok(response) }.boxed()
+    });
+    let mut request = Request::new(RESOURCE_URL.parse().unwrap(), Method::Put);
+    request.insert_header(ACCEPT, "application/xml");
+    let poller: Poller<Monitor> = new_poller(pipeline_with(Arc::new(mock)), request, None, None);
     assert_eq!(poller.await.unwrap().into_model().unwrap().id, "finished");
     assert_eq!(calls.load(Ordering::SeqCst), 3);
 }

@@ -20,7 +20,7 @@
 - `reqwest_deflate`
 - `reqwest_gzip`
 - `reqwest_rustls`
-- `resource_manager`
+- `resourcemanager`
 - `tokio`
 - `xml`
 
@@ -1317,7 +1317,7 @@ pub mod http {
             fn default() -> Self;
         }
         impl<'a> From<PollerOptions<'a>> for crate::http::poller::PollerOptions<'a> {
-            fn from(options: crate::http::resource_manager::PollerOptions<'a>) -> Self;
+            fn from(options: crate::http::resourcemanager::PollerOptions<'a>) -> Self;
         }
         #[derive(Clone, Debug, Eq, PartialEq)]
         #[non_exhaustive]
@@ -1609,8 +1609,8 @@ pub mod http {
             }
         }
     }
-    #[cfg(feature = "resource_manager")]
-    pub mod resource_manager {
+    #[cfg(feature = "resourcemanager")]
+    pub mod resourcemanager {
         pub fn new_poller<'a, M>(pipeline: crate::http::Pipeline, request: crate::http::Request, final_state_via: Option<FinalStateVia<M>>, options: Option<PollerOptions<'a>>) -> crate::http::Poller<M> where M: StatusMonitor + DeserializeOwned + Send + 'static, <M as >::Output: DeserializeOwned + Send + 'static, <M as >::Format: Send + 'static;
         #[derive(Clone, Debug)]
         pub struct PollerOptions<'a> {
@@ -1625,21 +1625,21 @@ pub mod http {
             fn default() -> Self;
         }
         impl<'a> From<PollerOptions<'a>> for crate::http::poller::PollerOptions<'a> {
-            fn from(options: crate::http::resource_manager::PollerOptions<'a>) -> Self;
+            fn from(options: crate::http::resourcemanager::PollerOptions<'a>) -> Self;
         }
         #[derive(Debug)]
         pub enum FinalStateVia<M: StatusMonitor> {
             AzureAsyncOperation,
             Location,
             OriginalUri,
-            OperationLocation(OperationLocationResultCallback<M>),
+            #[allow(clippy::type_complexity)]
+            OperationLocation(fn(crate::http::Response<M>) -> crate::Result<crate::http::Response<<M as >::Output, <M as >::Format>>),
         }
         impl<M: StatusMonitor> Clone for FinalStateVia<M> {
             fn clone(&self) -> Self;
         }
         impl<M: StatusMonitor> Copy for FinalStateVia<M> {
         }
-        pub type OperationLocationResultCallback<M> = fn(crate::http::Response<M>) -> crate::Result<crate::http::Response<<M as StatusMonitor>::Output, <M as StatusMonitor>::Format>>;
     }
     pub mod response {
         #[derive(Debug)]

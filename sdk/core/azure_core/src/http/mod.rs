@@ -11,8 +11,8 @@ mod pipeline;
 pub mod policies;
 pub mod poller;
 pub mod request;
-#[cfg(feature = "resource_manager")]
-pub mod resource_manager;
+#[cfg(feature = "resourcemanager")]
+pub mod resourcemanager;
 
 pub use models::*;
 pub use options::*;
