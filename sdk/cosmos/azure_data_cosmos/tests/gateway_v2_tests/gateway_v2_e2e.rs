@@ -12,13 +12,14 @@ use azure_data_cosmos::models::{
     ThroughputProperties,
 };
 use azure_data_cosmos::options::{
-    BinaryEncodingOptions, ChangeFeedStartFrom, ConnectionPoolOptions, CreateContainerOptions,
-    ExcludedRegions, ItemReadOptions, ItemWriteOptions, MaxItemCountHint, OperationOptionsBuilder,
-    PartitionFailoverOptions, Precondition, QueryOptions, ReadConsistencyStrategy, Region,
+    AvailabilityStrategy, BinaryEncodingOptions, ChangeFeedStartFrom, ConnectionPoolOptions,
+    CreateContainerOptions, ExcludedRegions, ItemReadOptions, ItemWriteOptions, MaxItemCountHint,
+    OperationOptionsBuilder, PartitionFailoverOptions, Precondition, QueryOptions,
+    ReadConsistencyStrategy, Region,
 };
 use azure_data_cosmos::{
-    feed::FeedRange, AccountEndpoint, AccountReference, CosmosClient, CosmosRuntime, CosmosStatus,
-    FeedScope, Query, RoutingStrategy, TransactionalBatch,
+    clients::DatabaseClient, feed::FeedRange, AccountEndpoint, AccountReference, CosmosClient,
+    CosmosRuntime, CosmosStatus, FeedScope, Query, RoutingStrategy, TransactionalBatch,
 };
 use azure_data_cosmos_driver::{
     error::status_codes,
@@ -1469,27 +1470,17 @@ pub async fn gateway_v2_diagnostics_validation() -> Result<(), Box<dyn std::erro
     Ok(())
 }
 
-/// Provisions a fresh database + 3-component HPK container and returns the
-/// db name (for cleanup) and a container client. Mirrors
-/// [`provision_database_and_container`] but uses
-/// `(/tenantId, /userId, /sessionId)` as the partition key paths so the
-/// container exercises hierarchical partitioning end-to-end.
+const HPK_CONTAINER: &str = "hpk-filter";
+
+/// Creates a three-component HPK container in an isolated test database.
 async fn provision_database_and_hpk_container(
     client: &CosmosClient,
-) -> Result<(String, azure_data_cosmos::clients::ContainerClient), Box<dyn std::error::Error>> {
-    let unique = azure_core::Uuid::new_v4();
-    let db_name = format!("gw_v2-test-db-{unique}");
-    let container_name = format!("gw_v2-test-hpk-container-{unique}");
-
-    client.create_database(&db_name, None).await?;
-    let db_client = client.database_client(&db_name);
-
+    db_client: &DatabaseClient,
+) -> Result<azure_data_cosmos::clients::ContainerClient, Box<dyn std::error::Error>> {
     let pk_def = PartitionKeyDefinition::from(("/tenantId", "/userId", "/sessionId"));
-    let properties = ContainerProperties::new(container_name.clone(), pk_def);
+    let properties = ContainerProperties::new(HPK_CONTAINER, pk_def);
     db_client.create_container(properties, None).await?;
-    let container_client = wait_for_container_ready(client, &db_client, &container_name).await?;
-
-    Ok((db_name, container_client))
+    wait_for_container_ready(client, db_client, HPK_CONTAINER).await
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
@@ -1504,22 +1495,7 @@ struct GwV2HpkItem {
     value: i64,
 }
 
-/// Round-trip exercises Gateway 2.0 against a 3-component hierarchical
-/// partition key container, asserting both the **full PK** point-op path
-/// and the **partial PK** range-dispatch path (`x-ms-thinclient-range-min`
-/// / `-max`) discussed in the Gateway 2.0 spec test matrix
-/// ("HPK + Gateway 2.0: full vs partial PK").
-///
-/// 1. Inserts items spread across two tenants × two users.
-/// 2. Reads each item back via its full 3-component PK (point op → EPK token).
-/// 3. Queries with a **1-component prefix** (`tenantId` only) and asserts
-///    the items for that tenant come back across however many pages the
-///    proxy fans out into.
-///
-/// The point-vs-range header emission is asserted at unit level in
-/// `gateway_v2_dispatch::tests`; this E2E test guards the SDK-public surface
-/// against regressions where partial-PK queries silently degrade to
-/// single-partition or fail.
+/// Checks full-key reads and resumed prefix queries in every region over both gateways.
 #[tokio::test]
 #[cfg_attr(
     not(any(
@@ -1530,102 +1506,170 @@ struct GwV2HpkItem {
 )]
 pub async fn gateway_v2_hpk_full_and_partial_partition_key_round_trip(
 ) -> Result<(), Box<dyn std::error::Error>> {
-    use azure_data_cosmos::models::PartitionKeyValue;
-    use azure_data_cosmos::PartitionKey;
-
-    let Some((endpoint, key)) = live_credentials() else {
-        return Ok(());
-    };
-
-    let client = build_client(&endpoint, &key).await?;
-    let (db_name, container) = provision_database_and_hpk_container(&client).await?;
-
-    let target_tenant = format!("tenant-{}", azure_core::Uuid::new_v4());
-    let other_tenant = format!("tenant-{}", azure_core::Uuid::new_v4());
-
-    // Two users × two sessions per tenant => 4 items per tenant.
-    let mut expected_target_ids = Vec::new();
-    for tenant in [target_tenant.as_str(), other_tenant.as_str()] {
-        for user_idx in 0..2 {
-            for session_idx in 0..2 {
-                let user_id = format!("user-{user_idx}");
-                let session_id = format!("session-{session_idx}");
-                let id = format!("{tenant}-{user_id}-{session_id}");
-                if tenant == target_tenant {
-                    expected_target_ids.push(id.clone());
+    let (endpoint, key) = live_credentials()
+        .ok_or("Gateway 2.0 HPK tests require the selected category's endpoint and key")?;
+    let client =
+        tokio::time::timeout(Duration::from_secs(90), build_client(&endpoint, &key)).await??;
+    let db_name = format!("test-db-gwv2-hpk-{}", azure_core::Uuid::new_v4());
+    eprintln!("Gateway HPK test cleanup target: {endpoint} dbs/{db_name}");
+    let database = client.database_client(&db_name);
+    let mut creation_confirmed = false;
+    let result = AssertUnwindSafe(tokio::time::timeout(Duration::from_secs(360), async {
+        client.create_database(&db_name, None).await?;
+        creation_confirmed = true;
+        let container = provision_database_and_hpk_container(&client, &database).await?;
+        let tenants = ["tenant-a", "tenant-b"];
+        let mut written = Vec::new();
+        for tenant in tenants {
+            for user_idx in 0..2 {
+                for session_idx in 0..2 {
+                    let item = GwV2HpkItem {
+                        id: format!("{tenant}-{user_idx}-{session_idx}"),
+                        tenant_id: tenant.to_owned(),
+                        user_id: format!("user-{user_idx}"),
+                        session_id: format!("session-{session_idx}"),
+                        value: i64::from(user_idx * 10 + session_idx),
+                    };
+                    let response = create_seed_item(
+                        &container,
+                        (
+                            item.tenant_id.clone(),
+                            item.user_id.clone(),
+                            item.session_id.clone(),
+                        ),
+                        &item.id,
+                        &item,
+                    )
+                    .await?;
+                    let token = response
+                        .headers()
+                        .session_token()
+                        .ok_or("seed write did not return its session token")?
+                        .clone();
+                    written.push((item, token));
                 }
-                let item = GwV2HpkItem {
-                    id: id.clone(),
-                    tenant_id: tenant.to_string(),
-                    user_id: user_id.clone(),
-                    session_id: session_id.clone(),
-                    value: i64::from(user_idx * 10 + session_idx),
-                };
-                // PartitionKey tuple impls require owned types (the underlying
-                // `PartitionKeyValue: From<&'static str>` impl is the only
-                // borrow-friendly one) — clone strings into the tuple.
-                let pk = PartitionKey::from((tenant.to_string(), user_id, session_id));
-                create_seed_item(&container, pk, &id, &item).await?;
             }
         }
+        let (_, regions) = client
+            .cached_account_regions_for_testing()
+            .await
+            .ok_or("account topology must be available")?;
+        assert!(!regions.is_empty());
+        let classic = build_client_with_gateway_v2_disabled(&endpoint, &key, true).await?;
+        for (reader, transport) in [
+            (client.clone(), TransportKind::GatewayV2),
+            (classic, TransportKind::Gateway),
+        ] {
+            let container = reader
+                .database_client(&db_name)
+                .container_client(HPK_CONTAINER, None)
+                .await?;
+            for region in &regions {
+                let operation = OperationOptionsBuilder::new()
+                    .with_read_consistency_strategy(ReadConsistencyStrategy::Session)
+                    .with_availability_strategy(AvailabilityStrategy::Disabled)
+                    .with_excluded_regions(
+                        regions
+                            .iter()
+                            .filter(|other| *other != region)
+                            .cloned()
+                            .collect::<ExcludedRegions>(),
+                    )
+                    .build();
+                for (item, token) in &written {
+                    let response = container
+                        .read_item(
+                            (
+                                item.tenant_id.clone(),
+                                item.user_id.clone(),
+                                item.session_id.clone(),
+                            ),
+                            &item.id,
+                            Some(
+                                ItemReadOptions::default()
+                                    .with_operation_options(operation.clone())
+                                    .with_session_token(token.clone()),
+                            ),
+                        )
+                        .await?;
+                    assert_transport_kind(&response.diagnostics(), transport);
+                    assert!(response
+                        .diagnostics()
+                        .requests()
+                        .iter()
+                        .all(|request| request.region() == Some(region)));
+                    assert_eq!(response.into_model::<GwV2HpkItem>()?, *item);
+                }
+                for tenant in tenants {
+                    let mut expected: Vec<_> = written
+                        .iter()
+                        .filter(|(item, _)| item.tenant_id == tenant)
+                        .map(|(item, _)| item.id.clone())
+                        .collect();
+                    expected.sort();
+                    let mut actual = retry_query_owner_not_found(|| async {
+                        let scope = FeedScope::partition(tenant.to_owned());
+                        let options = QueryOptions::default()
+                            .with_operation_options(operation.clone())
+                            .with_max_item_count(MaxItemCountHint::Limit(
+                                NonZeroU32::new(1).unwrap(),
+                            ));
+                        let mut pages = container
+                            .query_items::<GwV2HpkItem>(
+                                "SELECT * FROM c",
+                                scope.clone(),
+                                Some(options.clone()),
+                            )
+                            .await?
+                            .into_pages();
+                        let mut ids = Vec::new();
+                        let mut page_count = 0;
+                        while let Some(page) = pages.next().await {
+                            let page = page?;
+                            page_count += 1;
+                            assert!(page_count <= 32, "HPK query did not terminate");
+                            assert_transport_kind(&page.diagnostics(), transport);
+                            assert!(page
+                                .diagnostics()
+                                .requests()
+                                .iter()
+                                .all(|request| request.region() == Some(region)));
+                            for item in page.into_items() {
+                                assert_eq!(item.tenant_id, tenant);
+                                ids.push(item.id);
+                            }
+                            if page_count == 1 {
+                                let token = pages.to_continuation_token()?;
+                                pages = container
+                                    .query_items::<GwV2HpkItem>(
+                                        "SELECT * FROM c",
+                                        scope.clone(),
+                                        Some(options.clone().with_continuation_token(token)),
+                                    )
+                                    .await?
+                                    .into_pages();
+                            }
+                        }
+                        assert!(page_count > 1, "HPK regression must exercise pagination");
+                        Ok(ids)
+                    })
+                    .await?;
+                    actual.sort();
+                    assert_eq!(actual, expected, "{region:?}/{transport:?}");
+                }
+            }
+        }
+        Ok::<(), Box<dyn std::error::Error>>(())
+    }))
+    .catch_unwind()
+    .await;
+    if let Err(error) = cleanup_range_test_database(&database, creation_confirmed).await {
+        panic!("HPK database {db_name} cleanup failed: {error}; test result: {result:?}");
     }
-
-    // Full HPK point read (3-of-3 components → EPK token path).
-    let full_pk = PartitionKey::from((
-        target_tenant.clone(),
-        "user-0".to_string(),
-        "session-0".to_string(),
-    ));
-    let full_id = format!("{target_tenant}-user-0-session-0");
-    let read_resp = container.read_item(full_pk, &full_id, None).await?;
-    assert_transport_kind(&read_resp.diagnostics(), TransportKind::GatewayV2);
-    let item: GwV2HpkItem = read_resp.into_model()?;
-    assert_eq!(item.id, full_id);
-    assert_eq!(item.tenant_id, target_tenant);
-
-    // Partial HPK query (1-of-3 components → range header path).
-    // PartitionKey only has tuple From-impls for 2 and 3 components; for a
-    // single-component prefix, construct it from a Vec<PartitionKeyValue> so
-    // the dispatcher sees a 1-component value against a 3-path container.
-    let (mut returned_ids, pages_seen) = retry_query_owner_not_found(|| {
-        let query = Query::from("SELECT * FROM c");
-        let partial_pk =
-            PartitionKey::try_from(vec![PartitionKeyValue::from(target_tenant.clone())])
-                .expect("valid one-component partition key");
-        let target_tenant = &target_tenant;
-        let container = &container;
-        async move {
-            let mut pages = container
-                .query_items::<GwV2HpkItem>(query, FeedScope::partition(partial_pk), None)
-                .await?
-                .into_pages();
-
-            let mut returned_ids: Vec<String> = Vec::new();
-            let mut pages_seen = 0_usize;
-            while let Some(page) = pages.next().await {
-                let page = page?;
-                pages_seen += 1;
-                assert_transport_kind(&page.diagnostics(), TransportKind::GatewayV2);
-                assert!(!page.diagnostics().activity_id().as_str().is_empty());
-                for it in page.items() {
-                    assert_eq!(
-                        &it.tenant_id, target_tenant,
-                        "partial-PK query must not bleed across tenants"
-                    );
-                    returned_ids.push(it.id.clone());
-                }
-            }
-            Ok((returned_ids, pages_seen))
-        }
-    })
-    .await?;
-    assert!(pages_seen >= 1, "expected at least one query page");
-    expected_target_ids.sort();
-    returned_ids.sort();
-    assert_eq!(returned_ids, expected_target_ids);
-
-    drop_database(&client, &db_name).await;
-    Ok(())
+    match result {
+        Ok(result) => result?,
+        Err(panic) => std::panic::resume_unwind(panic),
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -2038,6 +2082,28 @@ where
     }
 }
 
+async fn cleanup_range_test_database(
+    database: &DatabaseClient,
+    creation_confirmed: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    tokio::time::timeout(
+        Duration::from_secs(90),
+        reconcile_range_test_database(creation_confirmed, || async {
+            match database.delete(None).await {
+                Ok(_) => {}
+                Err(error) if error.status().status_code() == StatusCode::NotFound => {}
+                Err(error) => return Err(Box::<dyn std::error::Error>::from(error)),
+            }
+            match database.read(None).await {
+                Err(error) if error.status().status_code() == StatusCode::NotFound => Ok(true),
+                Err(error) => Err(Box::<dyn std::error::Error>::from(error)),
+                Ok(_) => Ok(false),
+            }
+        }),
+    )
+    .await?
+}
+
 #[tokio::test(start_paused = true)]
 async fn range_cleanup_reconciles_late_creation_after_initial_absence() {
     let mut calls = 0;
@@ -2196,30 +2262,8 @@ async fn query_range_filtering_live(open_minimum: bool) -> Result<(), Box<dyn st
     .catch_unwind()
     .await;
 
-    let cleanup = tokio::time::timeout(
-        Duration::from_secs(90),
-        reconcile_range_test_database(creation_confirmed, || async {
-            match db.delete(None).await {
-                Ok(_) => {}
-                Err(error) if error.status().status_code() == StatusCode::NotFound => {}
-                Err(error) => return Err(Box::<dyn std::error::Error>::from(error)),
-            }
-            match db.read(None).await {
-                Err(error) if error.status().status_code() == StatusCode::NotFound => Ok(true),
-                Err(error) => Err(Box::<dyn std::error::Error>::from(error)),
-                Ok(_) => Ok(false),
-            }
-        }),
-    )
-    .await;
-    match cleanup {
-        Ok(Ok(())) => {}
-        Ok(Err(error)) => {
-            panic!("range test database {db_name} cleanup failed: {error}; test result: {result:?}")
-        }
-        Err(error) => panic!(
-            "range test database {db_name} cleanup timed out: {error}; test result: {result:?}"
-        ),
+    if let Err(error) = cleanup_range_test_database(&db, creation_confirmed).await {
+        panic!("range test database {db_name} cleanup failed: {error}; test result: {result:?}");
     }
     match result {
         Ok(result) => result?,

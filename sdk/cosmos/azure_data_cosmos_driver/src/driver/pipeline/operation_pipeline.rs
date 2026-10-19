@@ -421,13 +421,7 @@ impl OperationOverrides {
         continuation_as_if_none_match: bool,
     ) -> crate::error::Result<()> {
         if let Some(feed_range) = &self.feed_range {
-            // Narrowed-range XPK case (range < pkrange) AND scoped reads via
-            // `FeedRange`. These public EPK headers are honored by Gateway 2.0;
-            // the standard gateway rejects them when paired with
-            // `partitionkeyrangeid` (HTTP 400, regardless of the min bound —
-            // verified against live accounts), so the full-pkrange XPK fan-out
-            // path uses the internal `pkrange_bounds` headers (below) instead
-            // and leaves these absent.
+            // Narrowed slices need explicit filters in addition to physical routing.
             headers.insert(
                 HeaderName::from_static(request_header_names::START_EPK),
                 HeaderValue::from(feed_range.min_inclusive().to_hex()),
@@ -2504,6 +2498,15 @@ fn build_transport_request_with_fault_injection(
     // `x-ms-continuation`.
     overrides.apply_headers(&mut headers, operation.is_change_feed())?;
 
+    let effective_partition_key = effective_partition_key_for_request(operation)?;
+    let effective_partition_key = if overrides.partition_key_range_id.is_some() {
+        // Range targets already preserve the logical scope in their EPK bounds.
+        headers.remove(HeaderName::from_static(request_header_names::PARTITION_KEY));
+        None
+    } else {
+        effective_partition_key
+    };
+
     // Add resolved session token
     if let Some(token) = &ctx.resolved_session_token {
         headers.insert(
@@ -2534,7 +2537,7 @@ fn build_transport_request_with_fault_injection(
         endpoint: ctx.routing.endpoint.clone(),
         transport_mode: ctx.routing.transport_mode,
         operation_type: operation.operation_type(),
-        effective_partition_key: effective_partition_key_for_request(operation)?,
+        effective_partition_key,
         effective_consistency: ctx.effective_consistency,
         read_consistency_strategy: ctx.read_consistency_strategy,
         url,
@@ -4894,7 +4897,7 @@ mod probe_cleanup_tests;
 mod tests {
     use std::{sync::Arc, time::Duration};
 
-    use azure_core::http::headers::HeaderName;
+    use azure_core::http::headers::{HeaderName, HeaderValue};
     use url::Url;
 
     #[cfg(feature = "fault_injection")]
@@ -5261,6 +5264,95 @@ mod tests {
                 request_header_names::PARTITION_KEY_RANGE_ID
             ),)
             .is_none());
+    }
+
+    #[test]
+    fn range_requests_keep_exact_scope_without_logical_selectors_on_every_attempt() {
+        let mut properties = test_container_props();
+        properties.partition_key = serde_json::from_value(serde_json::json!({
+            "paths": ["/tenant", "/user", "/session"], "kind": "MultiHash", "version": 2
+        }))
+        .unwrap();
+        let container = ContainerReference::new(
+            test_account(),
+            "testdb",
+            "testdb_rid",
+            "testcontainer",
+            "testcontainer_rid",
+            &properties,
+        );
+        let prefix =
+            FeedRange::for_partition(PartitionKey::from("tenant"), &properties.partition_key);
+        let operation = CosmosOperation::query_items(container, Some(prefix.clone()));
+        let overrides = OperationOverrides {
+            partition_key_range_id: Some("7".into()),
+            feed_range: Some(prefix.clone()),
+            pkrange_bounds: Some(FeedRange::full()),
+            continuation: Some("page-two".into()),
+            ..Default::default()
+        };
+        let custom_headers = [(
+            HeaderName::from_static(request_header_names::PARTITION_KEY),
+            HeaderValue::from_static(r#"["stale"]"#),
+        )]
+        .into_iter()
+        .collect();
+        let activity_id = ActivityId::from_string("hpk-prefix".into());
+        for mode in [TransportMode::GatewayV2, TransportMode::Gateway] {
+            for execution_context in [ExecutionContext::Initial, ExecutionContext::OperationRetry] {
+                let mut routing = test_routing();
+                routing.transport_mode = mode;
+                let context = TransportRequestContext {
+                    routing: &routing,
+                    activity_id: &activity_id,
+                    execution_context,
+                    deadline: None,
+                    effective_consistency: DefaultConsistencyLevel::Session,
+                    read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+                    resolved_session_token: Some(SessionToken::new("7:1#100")),
+                    throughput_control: None,
+                };
+                let request = build_transport_request(
+                    &operation,
+                    &overrides,
+                    Some(&custom_headers),
+                    &context,
+                )
+                .unwrap();
+                assert!(request.effective_partition_key.is_none());
+                assert!(request
+                    .headers
+                    .get_optional_str(&HeaderName::from_static(
+                        request_header_names::PARTITION_KEY
+                    ))
+                    .is_none());
+                for (name, expected) in [
+                    (
+                        request_header_names::START_EPK,
+                        prefix.min_inclusive().to_hex(),
+                    ),
+                    (
+                        request_header_names::END_EPK,
+                        prefix.max_exclusive().to_hex(),
+                    ),
+                    (request_header_names::PARTITION_KEY_RANGE_ID, "7".into()),
+                    (request_header_names::CONTINUATION, "page-two".into()),
+                    (request_header_names::SESSION_TOKEN, "7:1#100".into()),
+                    (
+                        request_header_names::READ_FEED_KEY_TYPE,
+                        request_header_names::READ_FEED_KEY_TYPE_EPK_RANGE.into(),
+                    ),
+                ] {
+                    assert_eq!(
+                        request
+                            .headers
+                            .get_optional_str(&HeaderName::from_static(name)),
+                        Some(expected.as_str()),
+                        "{name} on {mode:?}/{execution_context:?}",
+                    );
+                }
+            }
+        }
     }
 
     #[test]

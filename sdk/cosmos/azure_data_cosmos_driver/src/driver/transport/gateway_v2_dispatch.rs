@@ -127,14 +127,7 @@ pub(crate) fn wrap_request_for_gateway_v2(
     // valid value — it means the partition's min EPK boundary (`MinValue`
     // sentinel), which serializes to a zero-byte token.
     if !emitted_point_epk {
-        // Try the public `x-ms-start-epk`/`x-ms-end-epk` headers first
-        // (narrowed-range XPK / scoped reads via `FeedRange`). If absent,
-        // fall back to the internal `x-ms-thinclient-pkrange-min`/`-max`
-        // headers that carry the full physical pkrange bounds (set by
-        // `OperationOverrides::apply_headers` for the full-pkrange XPK
-        // fan-out path, where the public EPK headers must NOT be emitted —
-        // the standard gateway rejects public EPK headers paired with
-        // `partitionkeyrangeid` with HTTP 400, regardless of the min bound).
+        // Prefer explicit narrowed bounds; otherwise use the physical partition's routing bounds.
         let start_epk_header = HeaderName::from_static(request_header_names::START_EPK);
         let start_fallback = HeaderName::from_static(request_header_names::THINCLIENT_PKRANGE_MIN);
         if let Some(epk_hex) = request
@@ -729,12 +722,8 @@ fn proxy_resource_type_name(rt: ResourceType) -> &'static str {
 /// canonical, un-padded hex EPK string.
 /// Encapsulates the EPK information for a Gateway 2.0 request.
 ///
-/// The proxy routes by `EffectivePartitionKey` (binary EPK token in the RNTBD
-/// body) when a partition key is present (point EPK for full keys, prefix EPK
-/// for partial-HPK keys). For cross-partition requests with no partition key,
-/// the dispatcher instead emits `StartEpkHash`/`EndEpkHash` body tokens
-/// (sourced from the request's `x-ms-start-epk`/`x-ms-end-epk` HTTP headers)
-/// — that path doesn't use this enum.
+/// Logical targets use `EffectivePartitionKey`; range targets, including planned
+/// HPK prefixes, omit it and use `StartEpkHash`/`EndEpkHash` routing tokens.
 enum EpkPayload {
     Point(Vec<u8>),
 }
@@ -751,12 +740,7 @@ fn effective_partition_key_payload(
         return Ok(None);
     }
 
-    // The EPK was computed in the operation pipeline via the shared routing-core
-    // routine, which selects the v1/v2/multi-hash binary encoder by the
-    // collection's partition-key kind/version. For partial-HPK keys this is a
-    // prefix EPK (16 * N bytes for N supplied components) which the proxy treats
-    // as a partition-key prefix scope. Emitted whenever a partition key is
-    // present, point or prefix.
+    // The pipeline supplies a computed EPK only for logical targets, never range leaves.
     Ok(Some(EpkPayload::Point(
         effective_partition_key.as_bytes().to_vec(),
     )))

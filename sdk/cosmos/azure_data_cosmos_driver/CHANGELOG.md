@@ -8,7 +8,9 @@
 
 ### Bugs Fixed
 
-- Scope automatic classic Gateway session tokens to a validated partition range and its parents, retaining composite fallback for missing or stale topology and preserving explicit caller tokens.
+- Avoid conflicting logical partition-key and EPK-range selectors in hierarchical partition-key prefix queries, including regional retries and continuation requests. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+- Retry transient account-discovery I/O failures within a bounded budget, including requests whose send outcome is uncertain. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
+- Scope automatic classic Gateway session tokens to a validated partition range and its parents, retaining composite fallback for missing or stale topology and preserving explicit caller tokens. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Preserve explicit EPK range filters in Gateway 2.0 query and feed requests separately from physical-partition routing hashes. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Avoid unnecessary routing-state copies for hedge feedback and unchanged partition transitions, and skip hedge feedback when the effective partition circuit breaker is disabled without disabling transport hedging. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))
 - Share immutable partition routing state across snapshot refreshes instead of copying its maps, while preserving older snapshots for active readers. ([#5438](https://github.com/Azure/azure-sdk-for-rust/pull/5438))
