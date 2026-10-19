@@ -212,7 +212,6 @@ pub mod diagnostics {
         pub fn fault_injection_enabled(&self) -> bool;
         pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
         pub fn hedging_started(&self) -> bool;
-        pub fn invalid_utf8_sequence_count(&self) -> u64;
         pub fn invalid_utf8_was_recovered(&self) -> bool;
         pub fn is_completed(&self) -> bool;
         pub fn is_failure(&self) -> bool;

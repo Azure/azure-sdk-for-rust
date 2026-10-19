@@ -581,7 +581,6 @@ pub mod diagnostics {
         pub fn fault_injection_enabled(&self) -> bool;
         pub fn hedge_diagnostics(&self) -> Option<&HedgeDiagnostics>;
         pub fn hedging_started(&self) -> bool;
-        pub fn invalid_utf8_sequence_count(&self) -> u64;
         pub fn invalid_utf8_was_recovered(&self) -> bool;
         pub fn is_completed(&self) -> bool;
         pub fn is_failure(&self) -> bool;
@@ -2362,7 +2361,6 @@ pub mod options {
         pub fn with_mode(self, mode: ChangeFeedMode) -> Self;
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
         pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, token: impl Into<SessionToken>) -> Self;
-        pub fn with_utf8_decoding_mode(self, mode: Utf8DecodingMode) -> Self;
     }
     #[doc(inline)]
     #[derive(Clone, Debug)]
@@ -2599,7 +2597,6 @@ pub mod options {
         pub fn with_operation_options(self, operation: OperationOptions) -> Self;
         pub fn with_precondition(self, precondition: Precondition) -> Self;
         pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
-        pub fn with_utf8_decoding_mode(self, mode: Utf8DecodingMode) -> Self;
     }
     #[derive(Clone, Default)]
     #[non_exhaustive]
@@ -2773,7 +2770,6 @@ pub mod options {
         pub fn with_populate_query_metrics(self, enable: bool) -> Self;
         pub fn with_query_plan_mode(self, mode: QueryPlanMode) -> Self;
         pub fn with_session_token<impl Into<SessionToken>: Into<SessionToken>>(self, session_token: impl Into<SessionToken>) -> Self;
-        pub fn with_utf8_decoding_mode(self, mode: Utf8DecodingMode) -> Self;
     }
     impl Default for QueryOptions {
         fn default() -> Self;

@@ -4,7 +4,7 @@
 
 ### Features Added
 
-- Added `OperationOptions::utf8_decoding_mode` and convenience setters on item-read, query, and change-feed options for opt-in lossy recovery of invalid UTF-8 in response JSON strings. ([#5367](https://github.com/Azure/azure-sdk-for-rust/issues/5367))
+- Added `OperationOptions::utf8_decoding_mode` for opt-in lossy recovery of invalid UTF-8 in response JSON strings. ([#5367](https://github.com/Azure/azure-sdk-for-rust/issues/5367))
 
 ### Breaking Changes
 

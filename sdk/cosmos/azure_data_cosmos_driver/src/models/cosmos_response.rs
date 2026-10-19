@@ -51,12 +51,12 @@ impl CosmosResponsePayload {
     fn transcode_body_to_text(
         &mut self,
         utf8_decoding_mode: crate::options::Utf8DecodingMode,
-    ) -> crate::error::Result<u64> {
+    ) -> crate::error::Result<bool> {
         let body = std::mem::take(&mut self.body);
-        let (body, invalid_utf8_sequence_count) =
-            body.transcode_to_text_with_utf8_mode_and_count(utf8_decoding_mode)?;
+        let (body, invalid_utf8_was_recovered) =
+            body.transcode_to_text_with_utf8_mode_and_recovery(utf8_decoding_mode)?;
         self.body = body;
-        Ok(invalid_utf8_sequence_count)
+        Ok(invalid_utf8_was_recovered)
     }
 }
 /// Result of a Cosmos DB operation.
@@ -169,18 +169,17 @@ impl CosmosResponse {
         utf8_decoding_mode: crate::options::Utf8DecodingMode,
     ) -> crate::error::Result<()> {
         let diagnostics = Arc::clone(&self.diagnostics);
-        let invalid_utf8_sequence_count = self
+        let invalid_utf8_was_recovered = self
             .payload
             .transcode_body_to_text(utf8_decoding_mode)
             .map_err(|error| {
-            let diagnostics = Arc::new(diagnostics.clone_with_status(error.status()));
-            crate::error::CosmosErrorBuilder::from_error(error)
-                .with_diagnostics(diagnostics)
-                .build()
-        })?;
-        if invalid_utf8_sequence_count != 0 {
-            Arc::make_mut(&mut self.diagnostics)
-                .add_invalid_utf8_sequence_count(invalid_utf8_sequence_count);
+                let diagnostics = Arc::new(diagnostics.clone_with_status(error.status()));
+                crate::error::CosmosErrorBuilder::from_error(error)
+                    .with_diagnostics(diagnostics)
+                    .build()
+            })?;
+        if invalid_utf8_was_recovered {
+            Arc::make_mut(&mut self.diagnostics).mark_invalid_utf8_recovered();
         }
         Ok(())
     }

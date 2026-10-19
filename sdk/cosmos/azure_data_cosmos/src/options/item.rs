@@ -6,9 +6,9 @@
 #[cfg(feature = "unstable_patch")]
 use crate::models::PatchTrackingId;
 use azure_data_cosmos_driver::models::{Precondition, SessionToken};
+use azure_data_cosmos_driver::options::OperationOptions;
 #[cfg(feature = "unstable_patch")]
 use azure_data_cosmos_driver::options::PatchStrategy;
-use azure_data_cosmos_driver::options::{OperationOptions, Utf8DecodingMode};
 
 /// Options for item point-read operations.
 ///
@@ -38,15 +38,6 @@ impl ItemReadOptions {
         self
     }
 
-    /// Sets how invalid UTF-8 in the response is handled.
-    ///
-    /// This convenience method sets
-    /// [`OperationOptions::utf8_decoding_mode`] for this request.
-    pub fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
-        self.operation.utf8_decoding_mode = Some(mode);
-        self
-    }
-
     /// Sets a conditional ETag check for this request.
     pub fn with_precondition(mut self, precondition: Precondition) -> Self {
         self.precondition = Some(precondition);
@@ -57,26 +48,6 @@ impl ItemReadOptions {
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
         self
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn item_read_utf8_decoding_is_configurable() {
-        assert_eq!(
-            ItemReadOptions::default().operation.utf8_decoding_mode,
-            None
-        );
-        assert_eq!(
-            ItemReadOptions::default()
-                .with_utf8_decoding_mode(Utf8DecodingMode::Lossy)
-                .operation
-                .utf8_decoding_mode,
-            Some(Utf8DecodingMode::Lossy)
-        );
     }
 }
 

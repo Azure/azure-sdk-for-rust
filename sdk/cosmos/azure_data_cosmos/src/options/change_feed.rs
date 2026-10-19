@@ -4,7 +4,7 @@
 //! Change feed options: start position and paging.
 
 use azure_data_cosmos_driver::models::{MaxItemCountHint, SessionToken};
-use azure_data_cosmos_driver::options::{OperationOptions, Utf8DecodingMode};
+use azure_data_cosmos_driver::options::OperationOptions;
 
 use crate::feed::ContinuationToken;
 use crate::options::FeedOptions;
@@ -101,15 +101,6 @@ impl ChangeFeedOptions {
         self
     }
 
-    /// Sets how invalid UTF-8 in change feed responses is handled.
-    ///
-    /// This convenience method sets
-    /// [`OperationOptions::utf8_decoding_mode`] for this request.
-    pub fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
-        self.operation.utf8_decoding_mode = Some(mode);
-        self
-    }
-
     /// Sets the [`OperationOptions`] for this request.
     pub fn with_operation_options(mut self, operation: OperationOptions) -> Self {
         self.operation = operation;
@@ -152,19 +143,6 @@ mod tests {
         assert_eq!(
             ChangeFeedOptions::default().mode,
             ChangeFeedMode::LatestVersion
-        );
-    }
-
-    #[test]
-    fn options_builder_chain() {
-        let opts = ChangeFeedOptions::default()
-            .with_mode(ChangeFeedMode::LatestVersion)
-            .with_utf8_decoding_mode(Utf8DecodingMode::Lossy);
-
-        assert_eq!(opts.mode, ChangeFeedMode::LatestVersion);
-        assert_eq!(
-            opts.operation.utf8_decoding_mode,
-            Some(Utf8DecodingMode::Lossy)
         );
     }
 }

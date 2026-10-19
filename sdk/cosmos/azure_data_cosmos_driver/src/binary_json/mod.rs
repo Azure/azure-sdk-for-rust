@@ -50,6 +50,7 @@ pub use ser::to_vec;
 pub use writer::encode;
 
 use crate::options::Utf8DecodingMode;
+use std::borrow::Cow;
 
 /// The Cosmos binary JSON preamble byte.
 ///
@@ -118,43 +119,28 @@ pub(crate) fn transcode_to_text_with_utf8_mode(
     buffer: &[u8],
     utf8_decoding_mode: Utf8DecodingMode,
 ) -> Result<Vec<u8>> {
-    transcode_to_text_with_utf8_mode_and_count(buffer, utf8_decoding_mode).map(|(text, _)| text)
+    transcode_to_text_with_utf8_mode_and_recovery(buffer, utf8_decoding_mode).map(|(text, _)| text)
 }
 
-pub(crate) fn transcode_to_text_with_utf8_mode_and_count(
+pub(crate) fn transcode_to_text_with_utf8_mode_and_recovery(
     buffer: &[u8],
     utf8_decoding_mode: Utf8DecodingMode,
-) -> Result<(Vec<u8>, u64)> {
+) -> Result<(Vec<u8>, bool)> {
     if !is_binary(buffer) {
         return match utf8_decoding_mode {
-            Utf8DecodingMode::Strict => Ok((buffer.to_vec(), 0)),
-            Utf8DecodingMode::Lossy => {
-                let (text, invalid_utf8_sequence_count) = decode_utf8_lossy(buffer);
-                Ok((text.into_bytes(), invalid_utf8_sequence_count))
-            }
+            Utf8DecodingMode::Strict => Ok((buffer.to_vec(), false)),
+            Utf8DecodingMode::Lossy => match String::from_utf8_lossy(buffer) {
+                Cow::Borrowed(text) => Ok((text.as_bytes().to_vec(), false)),
+                Cow::Owned(text) => Ok((text.into_bytes(), true)),
+            },
         };
     }
-    let (mut value, invalid_utf8_sequence_count) =
-        reader::decode_with_utf8_mode_and_count(buffer, utf8_decoding_mode)?;
+    let (mut value, invalid_utf8_was_recovered) =
+        reader::decode_with_utf8_mode_and_recovery(buffer, utf8_decoding_mode)?;
     normalize_integral_floats(&mut value);
     serde_json::to_vec(&value)
-        .map(|text| (text, invalid_utf8_sequence_count))
+        .map(|text| (text, invalid_utf8_was_recovered))
         .map_err(|e| BinaryError::Custom(format!("failed to re-serialize decoded value: {e}")))
-}
-
-pub(crate) fn decode_utf8_lossy(buffer: &[u8]) -> (String, u64) {
-    let mut text = String::with_capacity(buffer.len());
-    let mut invalid_utf8_sequence_count = 0;
-
-    for chunk in buffer.utf8_chunks() {
-        text.push_str(chunk.valid());
-        if !chunk.invalid().is_empty() {
-            text.push('\u{FFFD}');
-            invalid_utf8_sequence_count += 1;
-        }
-    }
-
-    (text, invalid_utf8_sequence_count)
 }
 
 /// The integer form of an integral `Double`, or `None` when the value must stay
@@ -352,24 +338,6 @@ mod tests {
         assert!(!is_binary(&[]));
         // A different leading byte is not binary even if 0x80 appears later.
         assert!(!is_binary(&[0x00, PREAMBLE]));
-    }
-
-    #[test]
-    fn lossy_utf8_decoding_matches_standard_replacement_and_counts_sequences() {
-        let cases: &[(&[u8], u64)] = &[
-            (b"valid", 0),
-            (&[b'a', 0xFF, b'b'], 1),
-            (&[0xF0, 0x28, 0x8C, 0x28], 2),
-            (&[0xFF, 0xFE], 2),
-            (&[0xE2, 0x82], 1),
-            (&[0xEF, 0xBF, 0xBD], 0),
-        ];
-
-        for &(input, expected_count) in cases {
-            let (actual, count) = decode_utf8_lossy(input);
-            assert_eq!(actual, String::from_utf8_lossy(input));
-            assert_eq!(count, expected_count, "input: {input:?}");
-        }
     }
 
     /// Builds `depth` nested arrays around a scalar without parsing, so the

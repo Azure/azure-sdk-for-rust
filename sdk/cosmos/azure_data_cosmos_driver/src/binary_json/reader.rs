@@ -20,7 +20,7 @@
 use base64::Engine;
 use serde_json::{Map, Value};
 
-use std::cell::Cell;
+use std::{borrow::Cow, cell::Cell};
 
 use super::markers::{
     ARR0, ARR1, ARR_ARR_NUM_C1C1, ARR_ARR_NUM_C2C2, ARR_L1, ARR_L2, ARR_L4, ARR_LC1, ARR_LC2,
@@ -138,13 +138,13 @@ pub(crate) fn decode_with_utf8_mode(
     buffer: &[u8],
     utf8_decoding_mode: Utf8DecodingMode,
 ) -> Result<Value> {
-    decode_with_utf8_mode_and_count(buffer, utf8_decoding_mode).map(|(value, _)| value)
+    decode_with_utf8_mode_and_recovery(buffer, utf8_decoding_mode).map(|(value, _)| value)
 }
 
-pub(crate) fn decode_with_utf8_mode_and_count(
+pub(crate) fn decode_with_utf8_mode_and_recovery(
     buffer: &[u8],
     utf8_decoding_mode: Utf8DecodingMode,
-) -> Result<(Value, u64)> {
+) -> Result<(Value, bool)> {
     if !is_binary(buffer) {
         return Err(match buffer.first() {
             Some(&found) => BinaryError::MissingPreamble { found },
@@ -160,7 +160,7 @@ pub(crate) fn decode_with_utf8_mode_and_count(
     if remaining != 0 {
         return Err(BinaryError::TrailingBytes { remaining });
     }
-    Ok((value, reader.invalid_utf8_sequence_count.get()))
+    Ok((value, reader.invalid_utf8_was_recovered.get()))
 }
 
 /// A bounds-checked forward cursor over a binary JSON buffer.
@@ -172,7 +172,7 @@ pub(super) struct Reader<'a> {
     pub(super) buf: &'a [u8],
     pub(super) pos: usize,
     utf8_decoding_mode: Utf8DecodingMode,
-    invalid_utf8_sequence_count: Cell<u64>,
+    invalid_utf8_was_recovered: Cell<bool>,
     /// Remaining budget, in bytes, for text materialized by **reference-string**
     /// resolution ([`STR_R1`](super::markers::STR_R1)-[`STR_R4`](super::markers::STR_R4)).
     ///
@@ -224,7 +224,7 @@ impl<'a> Reader<'a> {
             buf,
             pos,
             utf8_decoding_mode,
-            invalid_utf8_sequence_count: Cell::new(0),
+            invalid_utf8_was_recovered: Cell::new(false),
             ref_budget,
         }
     }
@@ -333,12 +333,13 @@ impl<'a> Reader<'a> {
                     }
                 })
             }
-            Utf8DecodingMode::Lossy => {
-                let (value, count) = super::decode_utf8_lossy(bytes);
-                self.invalid_utf8_sequence_count
-                    .set(self.invalid_utf8_sequence_count.get() + count);
-                Ok(value)
-            }
+            Utf8DecodingMode::Lossy => match String::from_utf8_lossy(bytes) {
+                Cow::Borrowed(value) => Ok(value.to_owned()),
+                Cow::Owned(value) => {
+                    self.invalid_utf8_was_recovered.set(true);
+                    Ok(value)
+                }
+            },
         }
     }
 
@@ -1272,8 +1273,8 @@ impl<'a> Reader<'a> {
         // resolves no further references and needs no shared budget.
         let mut sub = Reader::new_with_utf8_mode(self.buf, target, self.utf8_decoding_mode);
         let value = sub.read_value(0)?;
-        self.invalid_utf8_sequence_count
-            .set(self.invalid_utf8_sequence_count.get() + sub.invalid_utf8_sequence_count.get());
+        self.invalid_utf8_was_recovered
+            .set(self.invalid_utf8_was_recovered.get() || sub.invalid_utf8_was_recovered.get());
 
         // Charge the materialized text against the shared reference-expansion
         // budget so many references to one large string cannot amplify a

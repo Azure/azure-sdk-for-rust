@@ -184,28 +184,28 @@ impl ResponseBody {
         self,
         utf8_decoding_mode: crate::options::Utf8DecodingMode,
     ) -> crate::error::Result<Self> {
-        self.transcode_to_text_with_utf8_mode_and_count(utf8_decoding_mode)
+        self.transcode_to_text_with_utf8_mode_and_recovery(utf8_decoding_mode)
             .map(|(body, _)| body)
     }
 
-    pub(crate) fn transcode_to_text_with_utf8_mode_and_count(
+    pub(crate) fn transcode_to_text_with_utf8_mode_and_recovery(
         self,
         utf8_decoding_mode: crate::options::Utf8DecodingMode,
-    ) -> crate::error::Result<(Self, u64)> {
+    ) -> crate::error::Result<(Self, bool)> {
         fn convert(
             bytes: &Bytes,
             utf8_decoding_mode: crate::options::Utf8DecodingMode,
-        ) -> crate::error::Result<(Bytes, u64)> {
+        ) -> crate::error::Result<(Bytes, bool)> {
             // Already-text payloads are left unchanged: return a cheap refcount
             // clone instead of round-tripping through `transcode_to_text` (which
             // would copy the buffer into a fresh `Vec<u8>`).
             if !crate::binary_json::is_binary(bytes)
                 && utf8_decoding_mode == crate::options::Utf8DecodingMode::Strict
             {
-                return Ok((bytes.clone(), 0));
+                return Ok((bytes.clone(), false));
             }
-            let (text, invalid_utf8_sequence_count) =
-                crate::binary_json::transcode_to_text_with_utf8_mode_and_count(
+            let (text, invalid_utf8_was_recovered) =
+                crate::binary_json::transcode_to_text_with_utf8_mode_and_recovery(
                     bytes,
                     utf8_decoding_mode,
                 )
@@ -218,26 +218,26 @@ impl ResponseBody {
                         .with_source(e)
                         .build()
                 })?;
-            Ok((Bytes::from(text), invalid_utf8_sequence_count))
+            Ok((Bytes::from(text), invalid_utf8_was_recovered))
         }
 
         match self {
-            Self::NoPayload => Ok((Self::NoPayload, 0)),
+            Self::NoPayload => Ok((Self::NoPayload, false)),
             Self::Bytes(b) => {
-                let (body, count) = convert(&b, utf8_decoding_mode)?;
-                Ok((Self::Bytes(body), count))
+                let (body, was_recovered) = convert(&b, utf8_decoding_mode)?;
+                Ok((Self::Bytes(body), was_recovered))
             }
             Self::Items(items) => {
-                let mut count = 0;
+                let mut was_recovered = false;
                 let converted = items
                     .into_iter()
                     .map(|b| {
-                        let (body, item_count) = convert(&b, utf8_decoding_mode)?;
-                        count += item_count;
+                        let (body, item_was_recovered) = convert(&b, utf8_decoding_mode)?;
+                        was_recovered |= item_was_recovered;
                         Ok(body)
                     })
                     .collect::<crate::error::Result<Vec<_>>>()?;
-                Ok((Self::Items(converted), count))
+                Ok((Self::Items(converted), was_recovered))
             }
         }
     }
@@ -750,24 +750,24 @@ mod tests {
             b'{', b'"', b'n', b'a', b'm', b'e', b'"', b':', b'"', b'a', 0xFF, b'b', b'"', b'}',
         ]));
 
-        let (text, invalid_utf8_sequence_count) = body
-            .transcode_to_text_with_utf8_mode_and_count(crate::options::Utf8DecodingMode::Lossy)
+        let (text, invalid_utf8_was_recovered) = body
+            .transcode_to_text_with_utf8_mode_and_recovery(crate::options::Utf8DecodingMode::Lossy)
             .unwrap();
         let value: serde_json::Value = text.into_single().unwrap();
         assert_eq!(value["name"], "a\u{FFFD}b");
-        assert_eq!(invalid_utf8_sequence_count, 1);
+        assert!(invalid_utf8_was_recovered);
     }
 
     #[test]
     fn lossy_transcode_does_not_repair_malformed_json_structure() {
         let body = ResponseBody::Bytes(Bytes::from(vec![b'{', 0xFF, b'}']));
 
-        let (text, invalid_utf8_sequence_count) = body
-            .transcode_to_text_with_utf8_mode_and_count(crate::options::Utf8DecodingMode::Lossy)
+        let (text, invalid_utf8_was_recovered) = body
+            .transcode_to_text_with_utf8_mode_and_recovery(crate::options::Utf8DecodingMode::Lossy)
             .unwrap();
         let result: crate::error::Result<serde_json::Value> = text.into_single();
         assert!(result.is_err());
-        assert_eq!(invalid_utf8_sequence_count, 1);
+        assert!(invalid_utf8_was_recovered);
     }
 
     #[test]
@@ -779,23 +779,23 @@ mod tests {
             0xFF,
         ]));
 
-        let (text, invalid_utf8_sequence_count) = body
-            .transcode_to_text_with_utf8_mode_and_count(crate::options::Utf8DecodingMode::Lossy)
+        let (text, invalid_utf8_was_recovered) = body
+            .transcode_to_text_with_utf8_mode_and_recovery(crate::options::Utf8DecodingMode::Lossy)
             .unwrap();
         let value: serde_json::Value = text.into_single().unwrap();
         assert_eq!(value, "\u{FFFD}");
-        assert_eq!(invalid_utf8_sequence_count, 1);
+        assert!(invalid_utf8_was_recovered);
     }
 
     #[test]
     fn lossy_transcode_does_not_count_valid_replacement_character() {
         let body = ResponseBody::Bytes(Bytes::from_static(&[b'"', 0xEF, 0xBF, 0xBD, b'"']));
 
-        let (text, invalid_utf8_sequence_count) = body
-            .transcode_to_text_with_utf8_mode_and_count(crate::options::Utf8DecodingMode::Lossy)
+        let (text, invalid_utf8_was_recovered) = body
+            .transcode_to_text_with_utf8_mode_and_recovery(crate::options::Utf8DecodingMode::Lossy)
             .unwrap();
         let value: serde_json::Value = text.into_single().unwrap();
         assert_eq!(value, "\u{FFFD}");
-        assert_eq!(invalid_utf8_sequence_count, 0);
+        assert!(!invalid_utf8_was_recovered);
     }
 }
