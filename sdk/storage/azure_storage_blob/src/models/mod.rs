@@ -21,9 +21,9 @@ pub use download_result::{
 };
 pub(crate) use format::decode_next_marker;
 pub use format::AutoFormat;
-pub use method_options::BlobClientDownloadOptions;
 pub use method_options::BlockBlobClientUploadOptions;
 pub use method_options::BlockBlobClientUploadOptions as BlobClientUploadOptions;
+pub use method_options::{BlobClientDownloadOptions, LayoutAwareRouting};
 pub use method_options::{
     BlobContainerClientListBlobsHierarchicalOptions, BlobContainerClientListBlobsOptions,
 };

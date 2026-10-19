@@ -13,17 +13,24 @@
 mod common;
 
 use async_trait::async_trait;
-use azure_core::http::{
-    headers::{AUTHORIZATION, ERROR_CODE},
-    new_http_client,
-    policies::{Policy, PolicyResult},
-    Context, HttpClientOptions, Method, Request, RequestContent, StatusCode, Transport, Url,
+use azure_core::{
+    http::{
+        headers::{AUTHORIZATION, ERROR_CODE},
+        new_http_client,
+        policies::{Policy, PolicyResult},
+        Context, HttpClientOptions, Method, Request, RequestContent, StatusCode, Transport, Url,
+    },
+    time::{Duration, OffsetDateTime},
 };
 use azure_core_test::{recorded, BodyRegexSanitizer, Recording, TestContext};
 use azure_storage_blob::{
-    models::{BlobClientDownloadOptions, BlockListType},
-    BlobServiceClient, BlobServiceClientOptions, ContainerSessionProvider, SessionMode,
-    SessionOptions, SessionProvider,
+    models::{
+        BlobClientAcquireLeaseResultHeaders, BlobClientCreateSnapshotResultHeaders,
+        BlobClientDownloadOptions, BlobClientGetPropertiesResultHeaders,
+        BlockBlobClientUploadOptions, BlockListType,
+    },
+    BlobClient, BlobClientOptions, BlobServiceClient, BlobServiceClientOptions,
+    ContainerSessionProvider, SessionMode, SessionOptions, SessionProvider,
 };
 use common::{ClientOptionsExt, StorageAccount};
 use serial_test::serial;
@@ -560,6 +567,266 @@ async fn session_download_partitioned_serially_reuses_one_session(
             non_get_session: 0,
         },
         "sequential partitions should all reuse the one session without bearer fallback"
+    );
+
+    container.delete(None).await?;
+    Ok(())
+}
+
+/// Blob names the session signature's percent-encoded canonical path must agree with the
+/// service on: reserved and unreserved punctuation, characters the `url` crate leaves
+/// unencoded, non-ASCII, and path-like names.
+const ENCODED_BLOB_NAMES: &[&str] = &[
+    "a b",
+    "a+b",
+    "a%b",
+    "a'b(c)!*~",
+    "a#b?c",
+    "a&b=c;d",
+    "a[b]^c|d",
+    "a{b}\"c<d>`e",
+    "a@b$c,d:e",
+    "a\\b",
+    "üñï-文字",
+    "dir/sub/b",
+    ".hidden",
+    "a.",
+];
+
+/// Each blob name is downloaded with a single request on the connection the session was
+/// minted on, so a mismatched signature is the only reason a download would not use it.
+#[recorded::test(live)]
+#[serial(blob_session)]
+async fn session_download_signs_encoded_blob_names(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let counts = Arc::new(SessionAuthCounts::default());
+    let policy = Arc::new(SessionAuthCountingPolicy {
+        counts: counts.clone(),
+    });
+
+    let service = session_service_client(recording, SessionMode::Enabled, policy).await?;
+    let container = service.blob_container_client(&common::get_container_name(recording));
+    container.create(None).await?;
+
+    let mut names: Vec<String> = ENCODED_BLOB_NAMES
+        .iter()
+        .map(|name| (*name).to_owned())
+        .collect();
+    // The longest name the service accepts.
+    names.push(format!("long-{}", "x".repeat(1024 - 5)));
+
+    let data = b"encoded blob name".to_vec();
+    for name in &names {
+        let blob = container.blob_client(name);
+        common::create_test_blob(&blob, Some(RequestContent::from(data.clone())), None).await?;
+        let mut buffer = vec![0u8; data.len()];
+        blob.download_into(&mut buffer, None).await?;
+        assert_eq!(buffer, data, "{name:?}");
+    }
+
+    assert_eq!(
+        counts.snapshot(),
+        SessionAuthCountsSnapshot {
+            create_session: 1,
+            session_get: names.len(),
+            session_unauthorized: 0,
+            session_error_codes: Vec::new(),
+            bearer_get: 0,
+            non_get_session: 0,
+        },
+        "every blob name should be signed so the service accepts the session"
+    );
+
+    container.delete(None).await?;
+    Ok(())
+}
+
+/// A blob URL that keeps `/` in the blob name raw, as `BlobClient::new` callers commonly
+/// pass, should sign the same way as the `%2F` form `blob_client` produces.
+#[recorded::test(live)]
+#[serial(blob_session)]
+async fn session_download_signs_raw_slash_blob_url(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let counts = Arc::new(SessionAuthCounts::default());
+    let policy = Arc::new(SessionAuthCountingPolicy {
+        counts: counts.clone(),
+    });
+
+    let service = session_service_client(recording, SessionMode::Enabled, policy.clone()).await?;
+    let container = service.blob_container_client(&common::get_container_name(recording));
+    container.create(None).await?;
+
+    let data = b"raw slash blob name".to_vec();
+    common::create_test_blob(
+        &container.blob_client("dir/sub/b"),
+        Some(RequestContent::from(data.clone())),
+        None,
+    )
+    .await?;
+
+    let mut url = container.url().clone();
+    url.path_segments_mut()
+        .expect("container URL must be a base")
+        .extend(["dir", "sub", "b"]);
+    let mut options = BlobClientOptions::default().with_per_try_policy(policy);
+    common::recorded_test_setup(
+        recording,
+        StorageAccount::Standard,
+        &mut options.client_options,
+    );
+    options.session_options = Some(SessionOptions {
+        mode: SessionMode::Enabled,
+        account_name: Some(
+            recording
+                .var("AZURE_STORAGE_ACCOUNT_NAME", None)
+                .as_str()
+                .to_string(),
+        ),
+        ..Default::default()
+    });
+    let blob = BlobClient::new(url, Some(recording.credential()), Some(options))?;
+
+    let mut buffer = vec![0u8; data.len()];
+    blob.download_into(&mut buffer, None).await?;
+    assert_eq!(buffer, data);
+
+    assert_eq!(
+        counts.snapshot(),
+        SessionAuthCountsSnapshot {
+            create_session: 1,
+            session_get: 1,
+            session_unauthorized: 0,
+            session_error_codes: Vec::new(),
+            bearer_get: 0,
+            non_get_session: 0,
+        },
+        "a raw-slash blob URL should be signed so the service accepts the session"
+    );
+
+    container.delete(None).await?;
+    Ok(())
+}
+
+/// Download options that add signed query values or headers (snapshot, customer-provided key,
+/// range, lease, conditions, `timeout`, per-range CRC64) should all authenticate with the
+/// session. Each download is a single request on the session's connection.
+#[recorded::test(live)]
+#[serial(blob_session)]
+async fn session_download_signs_request_options(ctx: TestContext) -> Result<(), Box<dyn Error>> {
+    let recording = ctx.recording();
+    let counts = Arc::new(SessionAuthCounts::default());
+    let policy = Arc::new(SessionAuthCountingPolicy {
+        counts: counts.clone(),
+    });
+
+    let service = session_service_client(recording, SessionMode::Enabled, policy).await?;
+    let container = service.blob_container_client(&common::get_container_name(recording));
+    container.create(None).await?;
+
+    let data: Vec<u8> = (0..1024).map(|index| (index % 251) as u8).collect();
+    let blob = container.blob_client(&common::get_blob_name(recording));
+    common::create_test_blob(&blob, Some(RequestContent::from(data.clone())), None).await?;
+    let mut downloads = 0;
+
+    // Snapshot: a `snapshot` query value.
+    let snapshot = blob
+        .create_snapshot(None)
+        .await?
+        .snapshot()?
+        .expect("Create Snapshot should return a snapshot id");
+    assert_eq!(
+        blob.with_snapshot(&snapshot)?
+            .download(None)
+            .await?
+            .body
+            .collect()
+            .await?,
+        data
+    );
+    downloads += 1;
+
+    // Range, `timeout`, and per-range CRC64.
+    let response = blob
+        .download(Some(BlobClientDownloadOptions {
+            range: Some((100u64..900).into()),
+            timeout: Some(30),
+            range_get_content_crc64: Some(true),
+            ..Default::default()
+        }))
+        .await?;
+    assert_eq!(response.body.collect().await?, &data[100..900]);
+    downloads += 1;
+
+    // Conditions signed as standard headers.
+    let etag = blob
+        .get_properties(None)
+        .await?
+        .etag()?
+        .expect("Get Properties should return an ETag");
+    let now = OffsetDateTime::now_utc();
+    let response = blob
+        .download(Some(BlobClientDownloadOptions {
+            if_match: Some(etag),
+            if_modified_since: Some(now - Duration::days(3650)),
+            if_unmodified_since: Some(now + Duration::days(1)),
+            ..Default::default()
+        }))
+        .await?;
+    assert_eq!(response.body.collect().await?, data);
+    downloads += 1;
+
+    // Lease: an `x-ms-lease-id` header.
+    let lease_id = blob
+        .acquire_lease(15, None)
+        .await?
+        .lease_id()?
+        .expect("Acquire Lease should return a lease id");
+    let response = blob
+        .download(Some(BlobClientDownloadOptions {
+            lease_id: Some(lease_id.clone()),
+            ..Default::default()
+        }))
+        .await?;
+    assert_eq!(response.body.collect().await?, data);
+    blob.release_lease(lease_id, None).await?;
+    downloads += 1;
+
+    // Customer-provided key: `x-ms-encryption-*` headers.
+    let (algorithm, key, key_sha256) = common::get_cpk();
+    let cpk_blob = container.blob_client(&format!("{}-cpk", common::get_blob_name(recording)));
+    common::create_test_blob(
+        &cpk_blob,
+        Some(RequestContent::from(data.clone())),
+        Some(BlockBlobClientUploadOptions {
+            encryption_algorithm: Some(algorithm),
+            encryption_key: Some(key.clone()),
+            encryption_key_sha256: Some(key_sha256.clone()),
+            ..Default::default()
+        }),
+    )
+    .await?;
+    let response = cpk_blob
+        .download(Some(BlobClientDownloadOptions {
+            encryption_algorithm: Some(algorithm),
+            encryption_key: Some(key),
+            encryption_key_sha256: Some(key_sha256),
+            ..Default::default()
+        }))
+        .await?;
+    assert_eq!(response.body.collect().await?, data);
+    downloads += 1;
+
+    assert_eq!(
+        counts.snapshot(),
+        SessionAuthCountsSnapshot {
+            create_session: 1,
+            session_get: downloads,
+            session_unauthorized: 0,
+            session_error_codes: Vec::new(),
+            bearer_get: 0,
+            non_get_session: 0,
+        },
+        "every download option should be signed so the service accepts the session"
     );
 
     container.delete(None).await?;
