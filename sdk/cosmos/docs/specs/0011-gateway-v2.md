@@ -438,27 +438,6 @@ physical-range fallback headers produce routing hashes only. Routing a request
 to the correct partition does not restrict its results to a smaller EPK window.
 Preserve the supplied canonical hex without adding padding.
 
-Live regressions run in both existing `gateway_v2` and
-`gateway_v2_multi_region` CI categories. They compare exact paginated results
-for narrow ranges and empty lower bounds within one physical partition,
-with full-range and logical-key controls. They require credentials and actual
-Gateway 2.0 dispatch, and clean up their isolated test databases on failure.
-
-The range tests log their isolated `test-db-gwv2-range-<UUID>` database names
-before creation. A cancelled or failed create has an ambiguous outcome:
-initial DELETE/READ `404` responses do not prove it cannot complete later.
-Cleanup repeats delete/read reconciliation for a bounded window and reports
-unconfirmed creation explicitly rather than claiming cleanup succeeded.
-Confirmed creates can finish cleanup once the database is absent.
-
-Bounded cleanup cannot exclude arbitrarily late service completion or survive
-agent termination. For orphan cleanup, use
-`sdk/cosmos/eng/pipelines/account-provisioning/Remove-StaleCosmosTestDatabases.ps1`
-with `-DatabaseNamePrefix test-db-gwv2-range-`, the actual CI account
-subscription/resource group/account prefix, and the existing age threshold.
-Preview with `-WhatIf` before deleting. This maintenance fallback is not
-automatically scheduled by the tests.
-
 > **`Range` semantics pitfall** (from PR #4087): `compute_range` returns a Rust `std::ops::Range<EffectivePartitionKey>` where `start == end` denotes a **point operation**. Standard `Range` iteration treats that as empty, so code that uses `.contains()` or iterates the range directly will misbehave. Always treat `start == end` as the point case explicitly.
 
 #### Gateway 2.0 Header Injection Flow
