@@ -341,7 +341,7 @@ impl CosmosOperation {
         }
     }
 
-    /// Validates that this operation does not mix name and RID addressing.
+    /// Validates request-path names and name/RID addressing consistency.
     ///
     /// Delegates to
     /// [`CosmosResourceReference::validate_addressing`], telling it whether the

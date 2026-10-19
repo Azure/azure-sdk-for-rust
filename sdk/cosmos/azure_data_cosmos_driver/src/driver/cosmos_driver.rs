@@ -4233,20 +4233,9 @@ impl CosmosDriver {
         let planning_operation_name = operation.db_operation_name();
         let operation = operation.with_absolute_deadline(effective_deadline);
 
-        // Reject mixed name/RID addressing before any IO work is done. The
-        // service classifies a request as name-based or RID-based from its `dbs`
-        // segment alone, so a reference that mixes a name-addressed parent with
-        // a RID-addressed child (or vice versa) signs and routes inconsistently
-        // and the gateway rejects it with an opaque 401, while a name leaf under
-        // a RID-addressed parent is rejected with a 400 the caller cannot act
-        // on. Validating here — the single choke point every externally
-        // executable operation passes through on its way to a plan — turns both
-        // into deterministic client-side errors for references built through any
-        // path (including direct `plan_operation` + `execute_plan` callers and
-        // multi-page queries), not just `execute_operation`. The check is a cheap
-        // in-memory field comparison and a no-op for every consistently-addressed
-        // reference, so it issues no additional network calls and does not change
-        // the request flow.
+        // Reject invalid path segments and mixed name/RID addressing before any
+        // I/O work is done. Every executable operation passes this choke point,
+        // including direct plan callers and multi-page queries.
         operation.validate_addressing()?;
 
         // Planning holds the whole pipeline-builder state across several await
@@ -5095,6 +5084,33 @@ mod tests {
             err.status(),
             crate::error::status_codes::CLIENT_MIXED_NAME_RID_ADDRESSING
         );
+    }
+
+    #[tokio::test]
+    async fn plan_operation_rejects_invalid_resource_path_name() {
+        let cosmos_runtime = CosmosDriverRuntimeBuilder::new().build().await.unwrap();
+        let driver_options = DriverOptions::builder(test_account()).build();
+        let driver = CosmosDriver::new(cosmos_runtime, driver_options)
+            .expect("CosmosDriver::new should succeed in tests");
+        let item = ItemReference::from_name(
+            &epk_test_container(r#"{"paths":["/pk"],"version":2}"#),
+            PartitionKey::from("pk1"),
+            "../../../../other-db/colls/other-container/docs/target",
+        );
+        let operation = CosmosOperation::read_item(item);
+
+        let err = match Box::pin(driver.plan_operation(
+            operation,
+            &OperationOptions::default(),
+            None,
+            &PlanOptions::default(),
+        ))
+        .await
+        {
+            Ok(_) => panic!("invalid path name must be rejected before planning"),
+            Err(e) => e,
+        };
+        assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
     }
 
     #[tokio::test]

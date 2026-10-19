@@ -470,9 +470,49 @@ impl CosmosResourceReference {
         None
     }
 
-    /// Validates that this reference does not mix name and RID addressing.
+    /// Returns the first invalid name that would be used as a request-path segment.
+    fn invalid_path_name(&self, leaf_in_path: bool) -> Option<&'static str> {
+        let invalid = |name: &str| {
+            name.is_empty()
+                || matches!(name, "." | "..")
+                || name
+                    .bytes()
+                    .any(|byte| matches!(byte, b'/' | b'\\' | b'?' | b'#'))
+        };
+
+        match &self.scope {
+            ResourceScope::Database(database) => {
+                if database.name().is_some_and(invalid) {
+                    return Some("database");
+                }
+            }
+            ResourceScope::Container(container) if !container.is_by_rid() => {
+                if container.database_name().is_some_and(invalid) {
+                    return Some("database");
+                }
+                if invalid(container.name()) {
+                    return Some("container");
+                }
+            }
+            ResourceScope::Account | ResourceScope::Container(_) => {}
+        }
+
+        if leaf_in_path
+            && self
+                .id
+                .as_ref()
+                .and_then(ResourceIdentifier::name)
+                .is_some_and(invalid)
+        {
+            return Some(self.resource_type.as_str());
+        }
+
+        None
+    }
+
+    /// Validates that this reference can be safely and consistently addressed.
     ///
-    /// This is the release-mode counterpart to
+    /// Mixed-addressing validation is the release-mode counterpart to
     /// [`debug_assert_addressing_consistent`](Self::debug_assert_addressing_consistent):
     /// the debug assert turns a mixed reference into a loud panic during tests,
     /// while this returns a deterministic [`CLIENT_MIXED_NAME_RID_ADDRESSING`]
@@ -482,6 +522,9 @@ impl CosmosResourceReference {
     /// client-side failure. The driver calls this once per operation so the
     /// guarantee holds for references built through any construction path, not
     /// just the SDK's `ContainerClient`.
+    ///
+    /// Names used as path segments are rejected when empty, equal to a dot
+    /// segment, or containing a separator or delimiter forbidden by Cosmos DB.
     ///
     /// See [`addressing_conflict`](Self::addressing_conflict) for `leaf_in_path`.
     ///
@@ -498,6 +541,20 @@ impl CosmosResourceReference {
                 .with_source(std::io::Error::other("mixed name/RID addressing"))
                 .build());
         }
+
+        if let Some(resource_type) = self.invalid_path_name(leaf_in_path) {
+            return Err(crate::error::CosmosError::builder()
+                .with_status(crate::error::status_codes::CLIENT_BAD_REQUEST)
+                .with_message(format!(
+                    "{resource_type} name cannot be used as a request-path segment; names must be \
+                     non-empty and cannot contain '/', '\\', '?', '#', or equal '.' or '..'"
+                ))
+                .with_source(std::io::Error::other(
+                    "invalid Cosmos resource path segment",
+                ))
+                .build());
+        }
+
         Ok(())
     }
 
@@ -1373,6 +1430,81 @@ mod tests {
         let r = CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
         r.validate_addressing(false)
             .expect("a name leaf that never reaches the path is allowed");
+    }
+
+    #[test]
+    fn validate_addressing_rejects_invalid_path_names() {
+        for name in [
+            "",
+            ".",
+            "..",
+            "other/container",
+            r"other\container",
+            "item?query",
+            "item#fragment",
+            "../../../../other-db/colls/other-container/docs/target",
+        ] {
+            let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), name);
+            let reference =
+                CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
+
+            let err = reference
+                .validate_addressing(true)
+                .expect_err("invalid request-path names must be rejected");
+            assert_eq!(
+                err.status(),
+                crate::error::status_codes::CLIENT_BAD_REQUEST,
+                "name: {name:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn validate_addressing_rejects_invalid_parent_names() {
+        let database = DatabaseReference::from_name(test_account(), "../other-db");
+        let reference = CosmosResourceReference::from(database)
+            .with_resource_type(ResourceType::DocumentCollection)
+            .into_feed_reference();
+
+        let err = reference
+            .validate_addressing(false)
+            .expect_err("invalid parent names must be rejected");
+        assert_eq!(err.status(), crate::error::status_codes::CLIENT_BAD_REQUEST);
+    }
+
+    #[test]
+    fn validate_addressing_accepts_path_legal_names() {
+        for name in [
+            "item",
+            "item with spaces",
+            "item@scope",
+            "item+value=1",
+            "item%41",
+            "item..backup",
+        ] {
+            let item = ItemReference::from_name(&test_container(), PartitionKey::from("pk1"), name);
+            let reference =
+                CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
+
+            reference
+                .validate_addressing(true)
+                .expect("path-legal names must remain supported");
+        }
+    }
+
+    #[test]
+    fn validate_addressing_ignores_invalid_leaf_when_leaf_not_in_path() {
+        let item = ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk1"),
+            "../other-container",
+        );
+        let reference =
+            CosmosResourceReference::from(item).with_resource_type(ResourceType::Document);
+
+        reference
+            .validate_addressing(false)
+            .expect("feed-style operations do not put the item name in the path");
     }
 
     #[test]
