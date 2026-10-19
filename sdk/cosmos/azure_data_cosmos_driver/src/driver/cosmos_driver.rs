@@ -6,6 +6,8 @@
 #[cfg(test)]
 mod lazy_topology_tests;
 mod query_planning;
+#[cfg(all(test, feature = "reqwest", feature = "__internal_mocking"))]
+mod session_scope_live_tests;
 
 use crate::{
     diagnostics::{
@@ -3576,6 +3578,16 @@ impl CosmosDriver {
             // not affect wire routing, so clear it and continue by logical key.
             overrides.clear_resolved_partition_key_range();
         }
+        overrides.session_token_routing_map = match operation.container() {
+            Some(container) => match self.pk_range_cache.cached_routing_map(container).await {
+                Ok(map) => map,
+                Err(error) => {
+                    tracing::debug!(error = %error, "session scoping has no usable topology snapshot");
+                    None
+                }
+            },
+            None => None,
+        };
         tracing::debug!(
             operation_type = ?operation.operation_type(),
             resource_type = ?operation.resource_type(),

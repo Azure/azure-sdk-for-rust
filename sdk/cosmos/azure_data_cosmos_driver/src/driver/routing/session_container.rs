@@ -3,9 +3,12 @@
 
 //! In-memory session token cache keyed by collection resource ID.
 
-use crate::models::{
-    resource_id::ResourceId, vector_session_token::SessionTokenValue, ContainerReference,
-    SessionToken,
+use crate::{
+    driver::cache::ContainerRoutingMap,
+    models::{
+        resource_id::ResourceId, vector_session_token::SessionTokenValue, ContainerReference,
+        SessionToken,
+    },
 };
 use std::collections::HashMap;
 use std::sync::RwLock;
@@ -166,6 +169,14 @@ impl SessionContainer {
                 .and_then(|resolved_rid| guard.tokens.get(resolved_rid))
         })?;
 
+        Self::build_parent_token(pk_map, partition_key_range_id, parents)
+    }
+
+    fn build_parent_token(
+        pk_map: &HashMap<String, SessionTokenValue>,
+        partition_key_range_id: &str,
+        parents: &[String],
+    ) -> Option<SessionToken> {
         let mut merged: Option<SessionTokenValue> = None;
         for parent in parents {
             let Some(parent_token) = pk_map.get(parent) else {
@@ -180,6 +191,48 @@ impl SessionContainer {
         }
 
         merged.map(|token| SessionToken::new(format!("{partition_key_range_id}:{token}")))
+    }
+
+    /// Validates topology and selects the classic Gateway token under the same session-cache lock.
+    pub(crate) fn resolve_session_token_for_gateway(
+        &self,
+        container: &ContainerReference,
+        partition_key_range_id: Option<&str>,
+        topology: Option<&ContainerRoutingMap>,
+    ) -> Option<SessionToken> {
+        let guard = self.inner.read().unwrap_or_else(|error| error.into_inner());
+        let rid = if guard
+            .tokens
+            .get(container.rid())
+            .is_some_and(|tokens| !tokens.is_empty())
+        {
+            container.rid()
+        } else {
+            guard.name_to_rid.get(index_path(container))?.as_str()
+        };
+        let tokens = guard.tokens.get(rid)?;
+        let composite = || Self::build_composite_token(&guard, rid);
+        let Some((map, range)) = topology.and_then(|map| {
+            partition_key_range_id
+                .and_then(|id| map.range(id))
+                .map(|range| (map, range))
+        }) else {
+            return composite();
+        };
+        // A newly observed child can contradict a cached parent even when refresh falls back to an old map.
+        if tokens
+            .keys()
+            .any(|id| map.range(id).is_none() && !map.is_gone(id))
+        {
+            return composite();
+        }
+        tokens
+            .get(&range.id)
+            .map(|token| SessionToken::new(format!("{}:{token}", range.id)))
+            .or_else(|| {
+                Self::build_parent_token(tokens, &range.id, range.parents.as_deref().unwrap_or(&[]))
+            })
+            .or_else(composite)
     }
 
     /// Stores (or merges) a session token for a given container.

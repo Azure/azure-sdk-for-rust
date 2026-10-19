@@ -46,6 +46,10 @@ enum Scenario {
     Success,
     ActivateBeforeRetry,
     ActivateBeforeHedge,
+    SplitOnWrite,
+    SplitOnRead,
+    SplitOnConflict,
+    SplitTopologyUnavailable,
 }
 
 #[derive(Debug)]
@@ -63,6 +67,7 @@ struct ScenarioClient {
     requests: Mutex<Vec<Observation>>,
     range_requests: AtomicUsize,
     item_requests: AtomicUsize,
+    response_gate: Mutex<Option<futures::channel::oneshot::Receiver<()>>>,
 }
 
 fn account_properties(regions: usize, thin_east: bool, thin_west: bool) -> serde_json::Value {
@@ -126,12 +131,28 @@ impl TransportClient for ScenarioClient {
         }
         if request.url.path().ends_with("/pkranges") {
             self.range_requests.fetch_add(1, Ordering::SeqCst);
-            headers.insert("etag", "ranges");
+            let split = self.item_requests.load(Ordering::SeqCst) > 0
+                && matches!(
+                    self.scenario,
+                    Scenario::SplitOnWrite
+                        | Scenario::SplitOnRead
+                        | Scenario::SplitOnConflict
+                        | Scenario::SplitTopologyUnavailable
+                );
+            if split && self.scenario == Scenario::SplitTopologyUnavailable {
+                return Ok(HttpResponse {
+                    status: 400,
+                    headers,
+                    body: br#"{"code":"BadRequest","message":"topology unavailable"}"#.to_vec(),
+                });
+            }
+            let etag = if split { "split-ranges" } else { "ranges" };
+            headers.insert("etag", etag);
             return Ok(
                 if request
                     .headers
                     .get_optional_str(&"if-none-match".into())
-                    .is_some()
+                    .is_some_and(|value| value == etag)
                 {
                     HttpResponse {
                         status: 304,
@@ -139,8 +160,15 @@ impl TransportClient for ScenarioClient {
                         body: Vec::new(),
                     }
                 } else {
-                    HttpResponse { status: 200, headers,
-                    body: br#"{"PartitionKeyRanges":[{"id":"0","minInclusive":"","maxExclusive":"FF","parents":[]}],"_count":1}"#.to_vec() }
+                    HttpResponse {
+                        status: 200,
+                        headers,
+                        body: if split {
+                            br#"{"PartitionKeyRanges":[{"id":"1","minInclusive":"","maxExclusive":"80","parents":["0"]},{"id":"2","minInclusive":"80","maxExclusive":"FF","parents":["0"]}],"_count":2}"#.to_vec()
+                        } else {
+                            br#"{"PartitionKeyRanges":[{"id":"0","minInclusive":"","maxExclusive":"FF","parents":[]}],"_count":1}"#.to_vec()
+                        },
+                    }
                 },
             );
         }
@@ -177,10 +205,35 @@ impl TransportClient for ScenarioClient {
             session,
         });
         let attempt = self.item_requests.fetch_add(1, Ordering::SeqCst);
-        if attempt == 0 && self.scenario != Scenario::Success {
+        let activates = matches!(
+            self.scenario,
+            Scenario::ActivateBeforeRetry | Scenario::ActivateBeforeHedge
+        );
+        if attempt == 0 && activates {
             self.publish(account_properties(2, true, true)).await;
         }
-        let status = if (attempt == 0 && self.scenario != Scenario::Success)
+        let split = matches!(
+            self.scenario,
+            Scenario::SplitOnWrite
+                | Scenario::SplitOnRead
+                | Scenario::SplitOnConflict
+                | Scenario::SplitTopologyUnavailable
+        );
+        let status = if split {
+            headers.insert("x-ms-documentdb-partitionkeyrangeid", "1");
+            headers.insert("x-ms-session-token", "1:1#300#1=30");
+            if attempt == 0 {
+                if self.scenario == Scenario::SplitOnConflict {
+                    409
+                } else if self.scenario == Scenario::SplitOnRead {
+                    200
+                } else {
+                    201
+                }
+            } else {
+                200
+            }
+        } else if (attempt == 0 && activates)
             || (attempt == 1 && self.scenario == Scenario::ActivateBeforeHedge)
         {
             503
@@ -196,6 +249,10 @@ impl TransportClient for ScenarioClient {
         } else {
             b"{}".to_vec()
         };
+        let response_gate = self.response_gate.lock().unwrap().take();
+        if let Some(gate) = response_gate {
+            gate.await.expect("test releases the response");
+        }
         if let Some(frame) = frame {
             Ok(thin_response(status, frame.activity_id, body))
         } else {
@@ -272,6 +329,14 @@ async fn setup(
     properties: serde_json::Value,
     scenario: Scenario,
 ) -> (Arc<CosmosDriver>, Arc<ScenarioClient>, CosmosOperation) {
+    setup_with_topology_mode(properties, scenario, PartitionTopologyCacheMode::Lazy).await
+}
+
+async fn setup_with_topology_mode(
+    properties: serde_json::Value,
+    scenario: Scenario,
+    topology_mode: PartitionTopologyCacheMode,
+) -> (Arc<CosmosDriver>, Arc<ScenarioClient>, CosmosOperation) {
     let client = Arc::new(ScenarioClient {
         driver: Mutex::new(Weak::new()),
         properties: Mutex::new(properties.clone()),
@@ -279,6 +344,7 @@ async fn setup(
         requests: Mutex::new(Vec::new()),
         range_requests: AtomicUsize::new(0),
         item_requests: AtomicUsize::new(0),
+        response_gate: Mutex::new(None),
     });
     let runtime = CosmosDriverRuntimeBuilder::new()
         .with_http_client_factory(Arc::new(ScenarioFactory(client.clone())))
@@ -303,7 +369,7 @@ async fn setup(
                 .with_preferred_regions(vec![Region::new("East US"), Region::new("West US")])
                 .with_partition_failover_options(
                     PartitionFailoverOptions::builder()
-                        .with_partition_topology_cache_mode(PartitionTopologyCacheMode::Lazy)
+                        .with_partition_topology_cache_mode(topology_mode)
                         .with_circuit_breaker_enabled(false)
                         .build()
                         .unwrap(),
@@ -341,7 +407,19 @@ async fn setup(
     driver.session_manager.capture_session_token(
         &operation,
         &CosmosResponseHeaders {
-            session_token: Some(SessionToken::new(COMPOSITE_TOKEN)),
+            session_token: Some(SessionToken::new(
+                if matches!(
+                    scenario,
+                    Scenario::SplitOnWrite
+                        | Scenario::SplitOnRead
+                        | Scenario::SplitOnConflict
+                        | Scenario::SplitTopologyUnavailable
+                ) {
+                    "0:1#100#1=10"
+                } else {
+                    COMPOSITE_TOKEN
+                },
+            )),
             ..Default::default()
         },
     );
@@ -356,6 +434,171 @@ fn options(hedging: bool) -> OperationOptions {
             HedgeThreshold::new(Duration::from_millis(1)).unwrap(),
         ))),
         ..Default::default()
+    }
+}
+
+#[tokio::test]
+async fn classic_session_progress_survives_an_overlapping_failed_topology_refresh() {
+    let (driver, client, read) = setup_with_topology_mode(
+        account_properties(1, false, false),
+        Scenario::SplitOnWrite,
+        PartitionTopologyCacheMode::Eager,
+    )
+    .await;
+    let container = read.container().unwrap().clone();
+    driver
+        .resolve_all_partition_key_ranges(&container, false)
+        .await
+        .unwrap();
+    let write = CosmosOperation::create_item(ItemReference::from_name(
+        &container,
+        PartitionKey::from("key"),
+        "one",
+    ))
+    .with_body(br#"{"id":"one","pk":"key"}"#.to_vec());
+    let (write_release, write_gate) = futures::channel::oneshot::channel();
+    *client.response_gate.lock().unwrap() = Some(write_gate);
+    let mut write = Box::pin(driver.execute_singleton_operation(write, options(false)));
+    assert!(futures::poll!(write.as_mut()).is_pending());
+    assert_eq!(client.item_requests.load(Ordering::SeqCst), 1);
+
+    let (refresh_release, refresh_gate) = futures::channel::oneshot::channel();
+    let refresh_gate = Mutex::new(Some(refresh_gate));
+    let mut refresh = Box::pin(driver.pk_range_cache.try_lookup_result(
+        &container,
+        true,
+        |_, _| {
+            let gate = refresh_gate.lock().unwrap().take();
+            async move {
+                if let Some(gate) = gate {
+                    gate.await.expect("test releases the refresh");
+                }
+                None::<crate::driver::cache::PkRangeFetchResult>
+            }
+        },
+    ));
+    assert!(futures::poll!(refresh.as_mut()).is_pending());
+    assert!(refresh_gate.lock().unwrap().is_none());
+    write_release.send(()).unwrap();
+    assert_eq!(write.await.unwrap().status(), StatusCode::Created);
+    refresh_release.send(()).unwrap();
+    let old_snapshot = refresh.await.unwrap().unwrap();
+    assert_eq!(old_snapshot.ranges()[0].id, "0");
+
+    driver
+        .execute_singleton_operation(read, options(false))
+        .await
+        .unwrap();
+    let requests = client.requests.lock().unwrap();
+    assert_eq!(requests.len(), 2);
+    assert_eq!(
+        requests[1].session.as_deref(),
+        Some("0:1#100#1=10,1:1#300#1=30")
+    );
+}
+
+#[tokio::test]
+async fn classic_logical_reads_preserve_child_progress_after_stale_parent_routing() {
+    for mode in [
+        PartitionTopologyCacheMode::Eager,
+        PartitionTopologyCacheMode::Lazy,
+    ] {
+        for hedging in [false, true] {
+            for scenario in [
+                Scenario::SplitOnWrite,
+                Scenario::SplitOnRead,
+                Scenario::SplitOnConflict,
+                Scenario::SplitTopologyUnavailable,
+            ] {
+                let (driver, client, read) =
+                    setup_with_topology_mode(account_properties(2, false, false), scenario, mode)
+                        .await;
+                let container = read.container().unwrap().clone();
+                driver
+                    .resolve_all_partition_key_ranges(&container, false)
+                    .await
+                    .unwrap();
+                let options = options(hedging);
+                let mut retained_plan = driver
+                    .plan_operation(read.clone(), &options, None, &PlanOptions::default())
+                    .await
+                    .unwrap();
+                let first = if scenario == Scenario::SplitOnRead {
+                    read.clone()
+                } else {
+                    CosmosOperation::create_item(ItemReference::from_name(
+                        &container,
+                        PartitionKey::from("key"),
+                        "one",
+                    ))
+                    .with_body(br#"{"id":"one","pk":"key"}"#.to_vec())
+                };
+                let result = driver
+                    .execute_singleton_operation(first, options.clone())
+                    .await;
+                if scenario == Scenario::SplitOnConflict {
+                    assert_eq!(
+                        result.unwrap_err().status().status_code(),
+                        StatusCode::Conflict
+                    );
+                } else {
+                    assert_eq!(
+                        result.unwrap().status(),
+                        if scenario == Scenario::SplitOnRead {
+                            StatusCode::Ok
+                        } else {
+                            StatusCode::Created
+                        }
+                    );
+                }
+                driver
+                    .execute_plan(&mut retained_plan, Some(container.clone()), options.clone())
+                    .await
+                    .unwrap()
+                    .unwrap();
+                driver
+                    .resolve_all_partition_key_ranges(&container, true)
+                    .await
+                    .unwrap();
+                let range_requests = client.range_requests.load(Ordering::SeqCst);
+                let response = driver
+                    .execute_singleton_operation(read, options)
+                    .await
+                    .unwrap();
+                assert_eq!(
+                    response.diagnostics_ref().hedge_diagnostics().is_some(),
+                    hedging
+                );
+                if scenario != Scenario::SplitTopologyUnavailable {
+                    assert_eq!(client.range_requests.load(Ordering::SeqCst), range_requests);
+                }
+                let requests = client.requests.lock().unwrap();
+                assert_eq!(
+                    requests.len(),
+                    3,
+                    "{mode:?}, {scenario:?}, hedging={hedging}"
+                );
+                assert_eq!(
+                    requests[0].session.as_deref(),
+                    if scenario == Scenario::SplitOnRead {
+                        Some("0:1#100#1=10")
+                    } else {
+                        None
+                    }
+                );
+                let expected = if scenario != Scenario::SplitTopologyUnavailable {
+                    "1:1#300#1=30"
+                } else {
+                    "0:1#100#1=10,1:1#300#1=30"
+                };
+                assert_eq!(
+                    requests[1].session.as_deref(),
+                    Some("0:1#100#1=10,1:1#300#1=30")
+                );
+                assert_eq!(requests[2].session.as_deref(), Some(expected));
+                assert!(requests.iter().all(|request| !request.thin));
+            }
+        }
     }
 }
 

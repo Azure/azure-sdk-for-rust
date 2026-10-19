@@ -19,6 +19,7 @@ use futures::FutureExt;
 use crate::{
     diagnostics::{DiagnosticsContextBuilder, ExecutionContext, PipelineKind, TransportSecurity},
     driver::{
+        cache::ContainerRoutingMap,
         routing::{
             can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
             partition_endpoint_state::{HealthStatus, PartitionStateUpdate},
@@ -159,20 +160,19 @@ fn resolve_session_token_for_attempt(
     overrides: &OperationOverrides,
 ) -> Option<SessionToken> {
     let user_token = operation.request_headers().session_token.as_ref();
-    if !matches!(transport_mode, TransportMode::GatewayV2) {
-        return session_manager.resolve_session_token(operation, user_token, None);
+    if matches!(transport_mode, TransportMode::Gateway) {
+        return session_manager.resolve_gateway_session_token(
+            operation,
+            user_token,
+            partition_key_range_id.map(PartitionKeyRangeId::as_str),
+            overrides.session_token_routing_map.as_deref(),
+        );
     }
-
     let Some(partition_key_range_id) = partition_key_range_id else {
-        // A logical request whose optional topology lookup failed must not send
-        // a multi-range composite token to RNTBD. Explicit user tokens remain
-        // authoritative; otherwise omit the token until a range ID is known.
+        // Unresolved logical requests cannot send cached composites to RNTBD.
         return if overrides.logical_partition_key_target {
             user_token.cloned()
         } else {
-            // Today an id-less non-logical target is non-partitioned, so this
-            // resolves to `None`. A future partitioned target must provide an
-            // ID or its own no-composite signal before reaching Gateway 2.0.
             session_manager.resolve_session_token(operation, user_token, None)
         };
     };
@@ -303,13 +303,16 @@ pub(crate) struct OperationOverrides {
 
     /// Physical partition identity resolved for a logical-partition request.
     ///
-    /// This seeds PPCB/PPAF and thin-client session-token scoping but is never
+    /// This seeds PPCB/PPAF and session-token scoping but is never
     /// emitted as a request header; the logical partition key remains the
     /// authoritative wire-routing target.
     pub resolved_partition_key_range_id: Option<String>,
 
     /// Ancestors whose session vectors remain valid for the resolved child.
     pub resolved_partition_key_range_parents: Vec<String>,
+
+    /// Snapshot used to validate automatic classic Gateway session scoping.
+    pub session_token_routing_map: Option<Arc<ContainerRoutingMap>>,
 
     /// Logical partition key (emits `x-ms-documentdb-partitionkey`).
     pub partition_key: Option<crate::models::PartitionKey>,
@@ -372,6 +375,7 @@ impl OperationOverrides {
     pub(crate) fn clear_resolved_partition_key_range(&mut self) {
         self.resolved_partition_key_range_id = None;
         self.resolved_partition_key_range_parents.clear();
+        self.session_token_routing_map = None;
     }
 
     /// Whether this request carries wire-routing constraints tied to one
@@ -3472,9 +3476,7 @@ async fn perform_single_attempt(
     shared_hub_region_latch: Option<&Arc<AtomicBool>>,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> crate::error::Result<TransportResult> {
-    // Resolve session token using the same precedence the main loop uses.
-    // Scope to the target range only for thin-client (Gateway 2.0); classic
-    // gateway keeps the composite token (see main-loop rationale).
+    // Resolve against this attempt's range and transport, just like the main loop.
     let resolved_session_token = ctx
         .session_token_resolution_active
         .then(|| {
@@ -4907,6 +4909,7 @@ mod tests {
     use crate::{
         diagnostics::ExecutionContext,
         driver::{
+            cache::ContainerRoutingMap,
             pipeline::components::{RoutingDecision, TransportMode},
             routing::{
                 partition_key_range_id::PartitionKeyRangeId, session_manager::SessionManager,
@@ -4964,6 +4967,14 @@ mod tests {
                 ..Default::default()
             },
         );
+    }
+
+    fn test_session_topology(ranges: serde_json::Value) -> Arc<ContainerRoutingMap> {
+        Arc::new(
+            ContainerRoutingMap::try_create(serde_json::from_value(ranges).unwrap(), None, None)
+                .unwrap()
+                .unwrap(),
+        )
     }
 
     #[test]
@@ -5194,6 +5205,239 @@ mod tests {
     }
 
     #[test]
+    fn classic_gateway_request_scopes_session_without_changing_logical_routing() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let manager = SessionManager::new();
+        capture_session_token(&manager, &operation, "0:1#100#1=10,1:1#200#1=20");
+        let overrides = OperationOverrides {
+            logical_partition_key_target: true,
+            resolved_partition_key_range_id: Some("1".to_owned()),
+            partition_key: Some(PartitionKey::from("pk")),
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"0","minInclusive":"","maxExclusive":"80"},
+                {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+            ]))),
+            ..Default::default()
+        };
+        let range = partition_key_range_id_from_overrides(&overrides);
+        let routing = test_routing();
+        let activity_id = ActivityId::from_string("session-scoping".to_owned());
+        let ctx = TransportRequestContext {
+            routing: &routing,
+            activity_id: &activity_id,
+            execution_context: ExecutionContext::Initial,
+            deadline: None,
+            effective_consistency: DefaultConsistencyLevel::Session,
+            read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+            resolved_session_token: resolve_session_token_for_attempt(
+                &manager,
+                &operation,
+                routing.transport_mode,
+                range.as_ref(),
+                &overrides,
+            ),
+            throughput_control: None,
+        };
+        let request = build_transport_request(&operation, &overrides, None, &ctx).unwrap();
+        assert_eq!(
+            request.headers.get_optional_str(&HeaderName::from_static(
+                request_header_names::SESSION_TOKEN
+            )),
+            Some("1:1#200#1=20"),
+        );
+        assert_eq!(
+            request.headers.get_optional_str(&HeaderName::from_static(
+                request_header_names::PARTITION_KEY
+            )),
+            Some(r#"["pk"]"#),
+        );
+        assert!(request
+            .headers
+            .get_optional_str(&HeaderName::from_static(
+                request_header_names::PARTITION_KEY_RANGE_ID
+            ),)
+            .is_none());
+    }
+
+    #[test]
+    fn shared_attempt_resolver_scopes_each_range_and_transport() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let manager = SessionManager::new();
+        let composite = "0:1#100#1=10,1:1#200#1=20";
+        capture_session_token(&manager, &operation, composite);
+        let overrides = OperationOverrides {
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"0","minInclusive":"","maxExclusive":"80"},
+                {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+            ]))),
+            ..Default::default()
+        };
+        for (mode, id, expected) in [
+            (TransportMode::Gateway, "0", "0:1#100#1=10"),
+            (TransportMode::GatewayV2, "1", "1:1#200#1=20"),
+            (TransportMode::Gateway, "1", "1:1#200#1=20"),
+        ] {
+            let range = PartitionKeyRangeId::from(id.to_owned());
+            let token = resolve_session_token_for_attempt(
+                &manager,
+                &operation,
+                mode,
+                Some(&range),
+                &overrides,
+            )
+            .unwrap();
+            assert_eq!(token.as_str(), expected, "{mode:?}");
+        }
+        assert_eq!(
+            manager
+                .resolve_session_token(&operation, None, None)
+                .unwrap()
+                .as_str(),
+            composite
+        );
+    }
+
+    #[test]
+    fn shared_attempt_resolver_preserves_fallback_when_range_cannot_be_scoped() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let manager = SessionManager::new();
+        let composite = "0:1#100#1=10,1:1#200#1=20";
+        capture_session_token(&manager, &operation, composite);
+        let unknown = PartitionKeyRangeId::from("unknown".to_owned());
+        let overrides = OperationOverrides {
+            logical_partition_key_target: true,
+            resolved_partition_key_range_id: Some("unknown".to_owned()),
+            resolved_partition_key_range_parents: vec!["uncached-parent".to_owned()],
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"0","minInclusive":"","maxExclusive":"80"},
+                {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+            ]))),
+            ..Default::default()
+        };
+        for range in [None, Some(&unknown)] {
+            assert_eq!(
+                resolve_session_token_for_attempt(
+                    &manager,
+                    &operation,
+                    TransportMode::Gateway,
+                    range,
+                    &overrides
+                )
+                .unwrap()
+                .as_str(),
+                composite,
+            );
+            assert!(resolve_session_token_for_attempt(
+                &manager,
+                &operation,
+                TransportMode::GatewayV2,
+                range,
+                &overrides,
+            )
+            .is_none());
+        }
+    }
+
+    #[test]
+    fn shared_attempt_resolver_preserves_explicit_tokens() {
+        let caller_token = "1:1#300#1=30,0:1#400#1=40";
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ))
+        .with_session_token(SessionToken::new(caller_token));
+        let manager = SessionManager::new();
+        capture_session_token(&manager, &operation, "0:1#100#1=10,1:1#200#1=20");
+        let known = PartitionKeyRangeId::from("1".to_owned());
+        let unknown = PartitionKeyRangeId::from("unknown".to_owned());
+        let overrides = OperationOverrides {
+            logical_partition_key_target: true,
+            ..Default::default()
+        };
+        for mode in [TransportMode::Gateway, TransportMode::GatewayV2] {
+            for range in [None, Some(&known), Some(&unknown)] {
+                assert_eq!(
+                    resolve_session_token_for_attempt(
+                        &manager, &operation, mode, range, &overrides
+                    )
+                    .unwrap()
+                    .as_str(),
+                    caller_token,
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn shared_attempt_resolver_merges_parents_only_for_matching_identity() {
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        let manager = SessionManager::new();
+        let composite = "other:1#900#1=90,parent_a:1#100#1=10,parent_b:1#200#2=20";
+        capture_session_token(&manager, &operation, composite);
+        let merged = PartitionKeyRangeId::from("merged".to_owned());
+        let different = PartitionKeyRangeId::from("different".to_owned());
+        let overrides = OperationOverrides {
+            logical_partition_key_target: true,
+            resolved_partition_key_range_id: Some("merged".to_owned()),
+            resolved_partition_key_range_parents: vec![
+                "parent_a".to_owned(),
+                "parent_b".to_owned(),
+            ],
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"merged","minInclusive":"","maxExclusive":"80","parents":["parent_a","parent_b"]},
+                {"id":"other","minInclusive":"80","maxExclusive":"FF"}
+            ]))),
+            ..Default::default()
+        };
+        for mode in [TransportMode::Gateway, TransportMode::GatewayV2] {
+            assert_eq!(
+                resolve_session_token_for_attempt(
+                    &manager,
+                    &operation,
+                    mode,
+                    Some(&merged),
+                    &overrides
+                )
+                .unwrap()
+                .as_str(),
+                "merged:1#200#1=10#2=20",
+            );
+            let token = resolve_session_token_for_attempt(
+                &manager,
+                &operation,
+                mode,
+                Some(&different),
+                &overrides,
+            );
+            assert_eq!(
+                token.as_ref().map(SessionToken::as_str),
+                if mode == TransportMode::Gateway {
+                    Some(composite)
+                } else {
+                    None
+                },
+            );
+        }
+    }
+
+    #[test]
     fn gateway_v2_unresolved_logical_target_omits_cached_composite_token() {
         let operation = CosmosOperation::read_item(ItemReference::from_name(
             &test_container(),
@@ -5253,20 +5497,24 @@ mod tests {
         let overrides = OperationOverrides {
             partition_key_range_id: Some("child".to_string()),
             resolved_partition_key_range_parents: vec!["parent".to_string()],
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"child","minInclusive":"","maxExclusive":"FF","parents":["parent"]}
+            ]))),
             ..Default::default()
         };
         let child = PartitionKeyRangeId::from("child".to_string());
 
-        let token = resolve_session_token_for_attempt(
-            &manager,
-            &operation,
-            TransportMode::GatewayV2,
-            Some(&child),
-            &overrides,
-        )
-        .unwrap();
-
-        assert_eq!(token.as_str(), "child:1#100#1=10");
+        for mode in [TransportMode::Gateway, TransportMode::GatewayV2] {
+            let token = resolve_session_token_for_attempt(
+                &manager,
+                &operation,
+                mode,
+                Some(&child),
+                &overrides,
+            )
+            .unwrap();
+            assert_eq!(token.as_str(), "child:1#100#1=10");
+        }
     }
 
     #[test]

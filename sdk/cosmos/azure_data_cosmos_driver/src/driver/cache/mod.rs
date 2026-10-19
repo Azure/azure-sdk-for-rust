@@ -28,6 +28,7 @@ pub(crate) use account_metadata_cache::{ConsistencyPolicy, ReadPolicy, Replicati
 pub(crate) use async_cache::AsyncCache;
 pub(crate) use async_lazy::AsyncLazy;
 pub(crate) use container_cache::ContainerCache;
+pub(crate) use container_routing_map::ContainerRoutingMap;
 pub(crate) use partition_key_range_cache::{
     parse_pk_ranges_response, PartitionKeyRangeCache, PkRangeFetchResult,
 };

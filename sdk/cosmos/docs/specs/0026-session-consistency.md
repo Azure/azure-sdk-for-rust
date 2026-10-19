@@ -249,22 +249,37 @@ Resolution happens in the operation pipeline just before the transport request i
 built (`driver/pipeline/operation_pipeline.rs`, "STAGE 3"), and only when session
 consistency is effective for that attempt.
 
-`SessionManager::resolve_session_token` applies a strict precedence:
+The shared attempt resolver applies this precedence for both sequential and
+hedged requests:
 
 1. **Caller-supplied token wins verbatim.** A token set through options is used
    as-is with no merge against the cache. This is what makes an externally
    carried session authoritative.
 2. **Partition-scoped token**, when the attempt has a resolved partition key
-   range ID *and* the attempt is on the Gateway V2 / thin-client path: emit only
-   `<pkRangeId>:<value>` for that range. The RNTBD backend rejects a multi-range
-   composite token on a partition-scoped request
-   (`"Session token specified is invalid."`), so scoping is required for
-   correctness there. If that range has no cached token, the request goes out
-   without one.
-3. **Composite collection token** otherwise — every cached range for the
-   container, sorted by range ID for deterministic output. Classic gateway
-   accepts the composite and maps parent to child across splits, so sending the
-   full token there stays read-your-writes safe.
+   range ID: use that range's cached token, or merge its known parent vectors
+   and re-key them to the target range. Classic Gateway additionally requires
+   an initialized topology snapshot in which the target is active and every
+   cached session range is either active or a known ancestor. Its parent
+   vectors come from that snapshot. Gateway V2 uses parent hints only when
+   they belong to the attempt's resolved identity.
+3. **Classic Gateway fallback** when identity or trusted topology is unavailable,
+   or no scoped token can be resolved: retain the container-wide composite,
+   sorted by range ID. The service can interpret ancestor tokens after topology
+   changes; do not discard cached progress merely to permit forwarding to the proxy.
+
+Gateway V2 retains its no-composite behavior for logical-partition requests:
+without a resolved range or an available range/parent token, no automatic token
+is emitted. Explicit caller tokens still win verbatim. The RNTBD backend rejects
+multi-range composites on partition-scoped requests. This change does not alter
+transport selection or the lazy-topology session guard.
+
+Classic topology validation and token selection share one session-cache read
+lock. A new child token therefore prevents scoping to an old parent snapshot,
+even if a concurrent failed topology refresh restores that snapshot. Until
+topology accounts for the observed ranges, preserve the composite rather than
+discarding the newer child progress. Once normal topology refresh supplies a
+usable map, range-local resolution resumes. This check does not fetch topology,
+wait for an in-flight refresh, invalidate routing maps, or clear session tokens.
 
 Operations with no container reference (account- and database-level metadata)
 never resolve a token.
@@ -317,20 +332,20 @@ and requests are *per region*. Three interactions follow:
 - **Partition scoping.** The attempt's partition key range ID comes first from
   PK-range pre-resolution (see 0007 (`0007-partition-key-range-cache.md`)) and
   otherwise from the first response's `x-ms-documentdb-partitionkeyrangeid`
-  header. It drives both Gateway V2 token scoping (§4) and partition-level
+  header. It drives both transports' token scoping (§4) and partition-level
   routing overrides.
 - **Region progress inside the token.** V2 tokens carry per-region LSNs, so a
   token gathered in one region is meaningful in another. Failing over to a
   region that has not yet replicated those LSNs is exactly the `1002` case in §7.
-- **Transport mode.** Classic gateway receives the composite token; Gateway V2 /
-  RNTBD receives a single-range token. This is the only place transport mode
-  changes session semantics on the request path.
+- **Transport mode.** Both gateways use a range-local automatic token when one
+  can be resolved. Classic Gateway retains a composite fallback when scoping
+  is unavailable; Gateway V2 never uses that fallback for a logical target.
 
 Session tokens are **never cleared** by routing decisions. Failover, hedging, and
 session retries all preserve the cache; discarding tokens to "make the read
 succeed" would silently downgrade the customer's chosen guarantee.
 
-Cross-region hedging races preserve the same token on both arms, and a `1002`
+Cross-region hedging resolves the token for each arm's range and transport, and a `1002`
 observed on either arm propagates into the surrounding retry state (see
 0009 (`0009-cross-region-hedging.md`)).
 
@@ -498,11 +513,10 @@ formatting of driver state.
 
 ## 13. Known limitations and open questions
 
-1. **No parent-range walk on the non-DTX resolve path.** After a split, a request
-   scoped to a fresh child range finds no cached token and is sent without one,
-   until the first capture for that child. The DTX path already walks parents
-   through the PK-range cache; unifying the two is tracked by
-   `TODO(partition-key-range-parents)` in `session_manager.rs`.
+1. **Classic Gateway scoping depends on trustworthy cached topology.** Missing
+   topology or an unrecognized cached range retains the composite token until
+   normal metadata refresh accounts for that progress. Resolving a session token
+   does not fetch topology. Known children can inherit merged parent progress.
 2. **Container recreation is only detected by name → RID mismatch.** A session
    retry does not itself re-validate RIDs; deterministic RID comparison on the
    retry path is noted as future work in the pipeline.
@@ -542,3 +556,20 @@ formatting of driver state.
 - **Cross-backend** — dual-backend tests compare response session tokens between
   the in-memory emulator and a real account, which is what keeps the emulator's
   modeled contract (§1.1) honest.
+- **Classic Gateway live wire checks** — the ignored
+  `classic_gateway_session_scope_live` driver test wraps the production HTTP
+  client and checks outgoing range IDs, transport, status, and returned versions.
+  It covers eager scoping, lazy composite fallback without topology fetches,
+  explicit topology warm-up, caller-token precedence, disabled capture, and
+  Eventual reads. Supply `COSMOS_SESSION_LIVE_ENDPOINT`,
+  `COSMOS_SESSION_LIVE_KEY`, and `COSMOS_SESSION_LIVE_DATABASE` for a disposable
+  database whose name starts with `test-db-session-scope-`, containing an `items`
+  container partitioned on `/pk` with two to eight physical ranges. Provisioning
+  and cleanup belong to the invoking harness. Output excludes full tokens.
+- **Service split** — the `classic_gateway_session_reads_across_service_split`
+  integration test uses a separate management runtime to split an isolated
+  container. It checks automatic and explicit-token reads of post-split writes,
+  including explicit tokens with automatic capture disabled, then repeats
+  automatic reads after topology refresh. It requires completed classic Gateway
+  requests and writes across every replacement range. It runs in the `split`
+  category; successful reads alone do not prove which fallback path executed.

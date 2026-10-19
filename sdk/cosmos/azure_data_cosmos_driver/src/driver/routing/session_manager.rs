@@ -8,9 +8,12 @@
 
 #[cfg(feature = "unstable_dtx")]
 use crate::models::partition_key_range::PartitionKeyRange;
-use crate::models::{
-    ContainerReference, CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType,
-    SessionToken,
+use crate::{
+    driver::cache::ContainerRoutingMap,
+    models::{
+        ContainerReference, CosmosOperation, CosmosResponseHeaders, OperationType, ResourceType,
+        SessionToken,
+    },
 };
 
 use super::session_container::SessionContainer;
@@ -80,6 +83,24 @@ impl SessionManager {
         pk_range_id: Option<&str>,
     ) -> Option<SessionToken> {
         self.resolve_session_token_with_parents(operation, user_token, pk_range_id, &[])
+    }
+
+    /// Scopes classic Gateway tokens only when topology accounts for all cached progress.
+    pub(crate) fn resolve_gateway_session_token(
+        &self,
+        operation: &CosmosOperation,
+        user_token: Option<&SessionToken>,
+        pk_range_id: Option<&str>,
+        topology: Option<&ContainerRoutingMap>,
+    ) -> Option<SessionToken> {
+        if let Some(token) = user_token {
+            return Some(token.clone());
+        }
+        self.container.resolve_session_token_for_gateway(
+            operation.container()?,
+            pk_range_id,
+            topology,
+        )
     }
 
     /// Checks whether automatic session resolution has any cached token to scope.
