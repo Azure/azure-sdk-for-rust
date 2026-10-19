@@ -2138,7 +2138,7 @@ impl CosmosDriver {
         self.location_state_store.apply_partition(|current| {
             let mut next = current.clone();
             next.per_partition_automatic_failover_enabled = true;
-            next
+            crate::driver::routing::partition_endpoint_state::PartitionStateUpdate::Updated(next)
         });
     }
 
@@ -4722,6 +4722,14 @@ async fn probe_endpoint_connectivity(
     // be reached.
     transport.send(&request).await.is_ok()
 }
+
+#[cfg(all(
+    test,
+    feature = "__internal_in_memory_emulator",
+    feature = "fault_injection"
+))]
+#[path = "request_hedge_feedback_tests.rs"]
+mod request_hedge_feedback_tests;
 
 #[cfg(test)]
 mod tests {

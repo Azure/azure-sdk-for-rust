@@ -113,10 +113,17 @@ impl Authorizer {
         }
     }
 
+    #[cfg(test)]
     pub(crate) async fn clear(&self) {
         debug!("Clearing authorization scopes.");
         let mut scopes = self.authorization_scopes.write().await;
         scopes.clear();
+    }
+
+    pub(crate) async fn lock_scopes(
+        &self,
+    ) -> async_lock::RwLockWriteGuard<'_, HashMap<Url, AccessToken>> {
+        self.authorization_scopes.write().await
     }
 
     pub(crate) async fn stop_refresh_task(&self) {
@@ -190,6 +197,11 @@ impl Authorizer {
         // cycle). `MAX_GENERATION_RETRIES` bounds the loop, so a storm of
         // back-to-back recoveries surfaces an error rather than spinning forever.
         for _ in 0..MAX_GENERATION_RETRIES {
+            if connection.is_closed() {
+                return Err(AmqpError::with_message(
+                    "The client that owns this connection is closed.",
+                ));
+            }
             // Fast path: cached token under a brief lock.
             if let Some(token) = self.authorization_scopes.read().await.get(path).cloned() {
                 debug!("Token already exists for path: {path}");

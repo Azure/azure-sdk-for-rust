@@ -21,9 +21,12 @@ use crate::{
     driver::{
         routing::{
             can_circuit_breaker_trigger_failover, is_eligible_for_ppaf, is_eligible_for_ppcb,
-            partition_endpoint_state::HealthStatus, partition_key_range_id::PartitionKeyRangeId,
-            remove_probe_succeeded_entry, session_manager::SessionManager, AccountEndpointState,
-            CosmosEndpoint, LocationEffect, LocationSnapshot, LocationStateStore,
+            partition_endpoint_state::{HealthStatus, PartitionStateUpdate},
+            partition_key_range_id::PartitionKeyRangeId,
+            remove_probe_succeeded_entry,
+            session_manager::SessionManager,
+            AccountEndpointState, CosmosEndpoint, LocationEffect, LocationSnapshot,
+            LocationStateStore,
         },
         transport::CosmosTransport,
         CosmosDriver,
@@ -2960,15 +2963,18 @@ fn try_cleanup_probe_candidate(
         return;
     }
 
+    #[cfg(test)]
+    probe_cleanup_tests::before_update(location_state_store);
+
     location_state_store.apply_partition(|current| {
         let is_probe = current
             .circuit_breaker_overrides
             .get(pk_range_id.as_str())
             .is_some_and(|e| e.health_status == HealthStatus::ProbeCandidate);
         if is_probe {
-            remove_probe_succeeded_entry(current, pk_range_id)
+            PartitionStateUpdate::Updated(remove_probe_succeeded_entry(current, pk_range_id))
         } else {
-            current.clone()
+            PartitionStateUpdate::Unchanged
         }
     });
 }
@@ -4881,6 +4887,10 @@ fn propagate_hedge_session_unavailable(
          session-retry counter for next attempt",
     );
 }
+
+#[cfg(test)]
+#[path = "probe_cleanup_tests.rs"]
+mod probe_cleanup_tests;
 
 #[cfg(test)]
 mod tests {

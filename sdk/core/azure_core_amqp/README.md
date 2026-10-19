@@ -27,6 +27,18 @@ azure_core_amqp = { version = "1.2.0-beta.3", default-features = false, features
 fe2o3-amqp = { version = "0.18", features = ["native-tls"] }
 ```
 
+## Transport lifetime
+
+Only one `AmqpConnection::open()` attempt can run on an object at a time. A failed or cancelled opening releases its provisional transport, and callers can retry on the same object. A successfully opened connection remains single-use, including after close or abort.
+
+Calling `abort()` during opening cancels TCP connection or protocol negotiation. The pending `open()` returns an error, and callers can immediately retry on the same object. Cleanup from the cancelled attempt cannot close its replacement.
+
+`AmqpConnection::abort()` terminates an opened transport without waiting for the peer's close handshake. Dropping the connection also releases its socket. Use `abort()` to retire a failed transport when an operation deadline expires.
+
+Pending sends and sender metadata waits return when their connection or session closes. A lost acknowledgement leaves delivery uncertain. Sending the message again can produce duplicate messages.
+
+Dropping the future while session creation, sender attachment, CBS attachment, or an active CBS authorization is pending aborts the transport used by that operation. This releases partially attached resources and wakes other operations on the same connection. Normal receive waiting has no additional deadline.
+
 ## Testing the AMQP Client
 
 The AMQP package is tested using the standard `cargo test` command line:

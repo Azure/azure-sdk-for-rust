@@ -17,6 +17,7 @@ categories = ["api-bindings"]
 documentation = "https://docs.rs/azure_messaging_eventhubs_checkpointstore_blob"
 edition.workspace = true
 rust-version.workspace = true
+exclude.workspace = true
 
 [dependencies]
 async-trait.workspace = true

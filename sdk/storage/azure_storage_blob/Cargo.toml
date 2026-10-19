@@ -12,6 +12,7 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_storage_blob"
 keywords = ["sdk", "cloud", "blobs"]
 categories = ["api-bindings"]
+exclude.workspace = true
 
 [features]
 default = ["tokio", "azure_core/default"]
