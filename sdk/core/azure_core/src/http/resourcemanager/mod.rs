@@ -5,4 +5,4 @@
 
 mod poller;
 
-pub use poller::{new_poller, FinalStateVia, OperationLocationResultCallback, PollerOptions};
+pub use poller::{new_poller, FinalStateVia, PollerOptions};
