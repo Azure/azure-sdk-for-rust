@@ -538,6 +538,20 @@ impl CosmosDriver {
         Ok((transport, metadata_transport))
     }
 
+    fn connectivity_probe_http_client_config(
+        connection_pool: &ConnectionPoolOptions,
+        account_endpoint: &AccountEndpoint,
+    ) -> HttpClientConfig {
+        let mut config = HttpClientConfig::dataplane_gateway_v2(connection_pool);
+        if connection_pool
+            .server_certificate_validation()
+            .allows_insecure_connection(account_endpoint)
+        {
+            config = config.with_allow_invalid_cert();
+        }
+        config
+    }
+
     async fn fetch_account_properties_with_version(
         runtime: &CosmosDriverRuntime,
         http_client_factory: &Arc<dyn super::transport::http_client_factory::HttpClientFactory>,
@@ -1817,8 +1831,10 @@ impl CosmosDriver {
             if runtime.connection_pool().gateway_v2_disabled() {
                 None
             } else {
-                let probe_config =
-                    HttpClientConfig::dataplane_gateway_v2(runtime.connection_pool());
+                let probe_config = Self::connectivity_probe_http_client_config(
+                    runtime.connection_pool(),
+                    &account_endpoint,
+                );
                 let probe_client =
                     http_client_factory.build(runtime.connection_pool(), probe_config)?;
                 Some(Arc::new(Http2ConnectivityProbe::new(
@@ -5737,6 +5753,31 @@ mod tests {
             matches!(config.version_policy, HttpVersionPolicy::Http11Only)
                 && config.allow_invalid_cert
         }));
+    }
+
+    #[test]
+    fn connectivity_probe_uses_emulator_certificate_policy() {
+        let connection_pool = ConnectionPoolOptions::builder()
+            .with_server_certificate_validation(
+                crate::options::ServerCertificateValidation::RequiredUnlessEmulator,
+            )
+            .build()
+            .unwrap();
+        let emulator = AccountEndpoint::try_from("https://localhost:8081/").unwrap();
+        let production =
+            AccountEndpoint::try_from("https://test.documents.azure.com:443/").unwrap();
+
+        let emulator_config =
+            CosmosDriver::connectivity_probe_http_client_config(&connection_pool, &emulator);
+        let production_config =
+            CosmosDriver::connectivity_probe_http_client_config(&connection_pool, &production);
+
+        assert!(emulator_config.allow_invalid_cert);
+        assert!(!production_config.allow_invalid_cert);
+        assert!(matches!(
+            emulator_config.version_policy,
+            HttpVersionPolicy::Http2Only
+        ));
     }
 
     #[tokio::test]
