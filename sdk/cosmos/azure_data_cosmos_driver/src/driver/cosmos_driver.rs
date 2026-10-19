@@ -354,10 +354,11 @@ impl RequestExecutor for DriverRequestExecutor<'_> {
             let mut result = driver
                 .execute_planned_operation_direct(&operation, overrides, self.options)
                 .await;
-            if operation.utf8_decoding_mode() == crate::options::Utf8DecodingMode::Lossy {
+            if operation.resolved_utf8_decoding_mode() == crate::options::Utf8DecodingMode::Lossy {
                 if let Ok(response) = &mut result {
-                    response
-                        .transcode_body_to_text_with_utf8_mode(operation.utf8_decoding_mode())?;
+                    response.transcode_body_to_text_with_utf8_mode(
+                        operation.resolved_utf8_decoding_mode(),
+                    )?;
                 }
             }
             if result.is_ok() {
@@ -2846,12 +2847,12 @@ impl CosmosDriver {
         options: &OperationOptions,
         resolved_binary: Option<crate::options::BinaryEncodingOptions>,
     ) -> CosmosOperation {
-        let utf8_decoding_mode = self
+        let resolved_utf8_decoding_mode = self
             .operation_options_view(options)
             .utf8_decoding_mode()
             .copied()
             .unwrap_or_default();
-        let operation = operation.with_utf8_decoding_mode(utf8_decoding_mode);
+        let operation = operation.with_resolved_utf8_decoding_mode(resolved_utf8_decoding_mode);
 
         if !Self::binary_negotiates_response(operation.resource_type(), operation.operation_type())
         {
@@ -3353,8 +3354,8 @@ impl CosmosDriver {
                 // `next_page` already committed every node's resume position.
                 // Poison the plan if transcoding fails so a later page or token
                 // cannot silently skip the lost page.
-                if let Err(error) =
-                    response.transcode_body_to_text_with_utf8_mode(plan.utf8_decoding_mode())
+                if let Err(error) = response
+                    .transcode_body_to_text_with_utf8_mode(plan.resolved_utf8_decoding_mode())
                 {
                     plan.poison_continuation();
                     return Err(error);

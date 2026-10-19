@@ -177,8 +177,8 @@ pub struct CosmosOperation {
     /// *emitted* format — see
     /// [`emits_binary_payload`](Self::emits_binary_payload).
     transcodes_response_to_text: bool,
-    /// Controls how invalid UTF-8 in response JSON strings is handled.
-    utf8_decoding_mode: Utf8DecodingMode,
+    /// Resolved handling for invalid UTF-8 in response JSON strings.
+    resolved_utf8_decoding_mode: Utf8DecodingMode,
     /// Internal routing constraint for reads whose correctness depends on
     /// observing the write region rather than the nearest read replica.
     internal_read_routing: InternalReadRouting,
@@ -499,21 +499,22 @@ impl CosmosOperation {
     /// `request_text_response` between pages cannot desynchronize the emitted
     /// encoding from what the pipeline nodes were built to produce.
     pub(crate) fn transcodes_response_to_text(&self) -> bool {
-        self.transcodes_response_to_text || self.utf8_decoding_mode == Utf8DecodingMode::Lossy
+        self.transcodes_response_to_text
+            || self.resolved_utf8_decoding_mode == Utf8DecodingMode::Lossy
     }
 
-    /// Sets how invalid UTF-8 in this operation's response is handled.
+    /// Stores the resolved handling for invalid UTF-8 in this operation's response.
     ///
     /// [`Utf8DecodingMode::Lossy`] preserves binary response negotiation but
     /// returns recovered text JSON so typed deserialization remains strict.
-    pub(crate) fn with_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
-        self.utf8_decoding_mode = mode;
+    pub(crate) fn with_resolved_utf8_decoding_mode(mut self, mode: Utf8DecodingMode) -> Self {
+        self.resolved_utf8_decoding_mode = mode;
         self
     }
 
-    /// Returns how invalid UTF-8 in this operation's response is handled.
-    pub(crate) fn utf8_decoding_mode(&self) -> Utf8DecodingMode {
-        self.utf8_decoding_mode
+    /// Returns the resolved handling for invalid UTF-8 in this operation's response.
+    pub(crate) fn resolved_utf8_decoding_mode(&self) -> Utf8DecodingMode {
+        self.resolved_utf8_decoding_mode
     }
 
     /// Whether pipeline nodes that synthesize a page should emit **binary**
@@ -752,7 +753,7 @@ impl CosmosOperation {
             is_patch_sub_operation: false,
             patch_retry_safe: None,
             transcodes_response_to_text: false,
-            utf8_decoding_mode: Utf8DecodingMode::Strict,
+            resolved_utf8_decoding_mode: Utf8DecodingMode::Strict,
             internal_read_routing: InternalReadRouting::Default,
             absolute_deadline: None,
         }
@@ -1449,7 +1450,10 @@ mod tests {
         let operation =
             CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()));
 
-        assert_eq!(operation.utf8_decoding_mode(), Utf8DecodingMode::Strict);
+        assert_eq!(
+            operation.resolved_utf8_decoding_mode(),
+            Utf8DecodingMode::Strict
+        );
         assert!(!operation.transcodes_response_to_text());
     }
 
@@ -1458,7 +1462,7 @@ mod tests {
         let operation =
             CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
                 .with_supported_serialization_formats("JsonText,CosmosBinary")
-                .with_utf8_decoding_mode(Utf8DecodingMode::Lossy);
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Lossy);
 
         assert!(operation.negotiates_binary_response());
         assert!(operation.transcodes_response_to_text());
@@ -1466,14 +1470,17 @@ mod tests {
     }
 
     #[test]
-    fn utf8_decoding_mode_is_reversible() {
+    fn resolved_utf8_decoding_mode_is_reversible() {
         let operation =
             CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
                 .with_supported_serialization_formats("JsonText,CosmosBinary")
-                .with_utf8_decoding_mode(Utf8DecodingMode::Lossy)
-                .with_utf8_decoding_mode(Utf8DecodingMode::Strict);
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Strict);
 
-        assert_eq!(operation.utf8_decoding_mode(), Utf8DecodingMode::Strict);
+        assert_eq!(
+            operation.resolved_utf8_decoding_mode(),
+            Utf8DecodingMode::Strict
+        );
         assert!(!operation.transcodes_response_to_text());
         assert!(operation.emits_binary_payload());
     }
@@ -1484,10 +1491,13 @@ mod tests {
             CosmosOperation::query_items(test_container(), Some(crate::models::FeedRange::full()))
                 .with_supported_serialization_formats("JsonText,CosmosBinary")
                 .transcoding_response_to_text()
-                .with_utf8_decoding_mode(Utf8DecodingMode::Lossy)
-                .with_utf8_decoding_mode(Utf8DecodingMode::Strict);
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Lossy)
+                .with_resolved_utf8_decoding_mode(Utf8DecodingMode::Strict);
 
-        assert_eq!(operation.utf8_decoding_mode(), Utf8DecodingMode::Strict);
+        assert_eq!(
+            operation.resolved_utf8_decoding_mode(),
+            Utf8DecodingMode::Strict
+        );
         assert!(operation.transcodes_response_to_text());
         assert!(!operation.emits_binary_payload());
     }
