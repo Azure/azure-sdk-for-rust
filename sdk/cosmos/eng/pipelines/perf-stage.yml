@@ -9,6 +9,9 @@ parameters:
 - name: Calibrate
   type: boolean
   default: false
+- name: Weekly
+  type: boolean
+  default: false
 - name: DependsOn
   type: object
   default: []
@@ -17,6 +20,7 @@ stages:
 - stage: CosmosPerf
   displayName: Cosmos Gateway V2 performance
   dependsOn: ${{ parameters.DependsOn }}
+  condition: succeededOrFailed()
   lockBehavior: sequential
   variables:
   - template: /eng/pipelines/templates/variables/rust.yml
@@ -57,6 +61,7 @@ stages:
         COSMOS_PERF_BASELINE_COMMIT: $(cosmos-perf-baseline-commit)
         COSMOS_PERF_ACCOUNT_RESOURCE_ID: $(cosmos-perf-account-resource-id)
         COSMOS_PERF_CALIBRATE: ${{ parameters.Calibrate }}
+        COSMOS_PERF_WEEKLY: ${{ parameters.Weekly }}
         AZURE_COSMOS_ENDPOINT: $(thinclient-test-endpoint)
     - pwsh: |
         . ./eng/scripts/shared/common.ps1
@@ -69,7 +74,6 @@ stages:
         filePath: sdk/cosmos/eng/pipelines/run-cosmos-perf.ps1
       env:
         COSMOS_PERF_OUTPUT: $(PerfOutput)
-        COSMOS_PERF_CALIBRATE: ${{ parameters.Calibrate }}
         AZURE_COSMOS_ENDPOINT: $(thinclient-test-endpoint)
         AZURE_COSMOS_KEY: $(thinclient-test-key)
     - task: PowerShell@2

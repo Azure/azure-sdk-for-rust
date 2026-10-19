@@ -145,6 +145,12 @@ per operation in one process and a shared SDK client. Existing CLI workloads
 and Cosmos result publishing are unchanged when `--perf-profile` is omitted.
 The feature enables the SDK's opt-in patch API.
 
+The internal weekly pipeline runs this workload automatically. Until a reviewed
+baseline is configured, it collects calibration results and reports
+`SucceededWithIssues`, not a threshold pass. After approval, weekly runs enforce
+the pinned baseline automatically. Unrelated build or live-test failures do not
+skip performance measurements, but missing runner/account prerequisites still fail.
+
 The weekly workload runs for 45 minutes after setup, excluding the first
 5 minutes from every gated metric. It checks successful operations/second,
 p99 latency, and error rate separately for every operation. Thresholds are

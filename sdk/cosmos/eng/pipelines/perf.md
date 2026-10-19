@@ -1,16 +1,19 @@
 # Weekly Cosmos performance gate
 
-The optional `CosmosPerf` stage in `sdk/cosmos/ci.yml` builds and executes
+The `CosmosPerf` stage in `sdk/cosmos/ci.yml` runs automatically in the internal
+`- weekly` pipeline definition, including manual runs of that definition. It builds and executes
 `azure_data_cosmos_perf` at the pipeline's exact `Build.SourceVersion`. It
 runs all 14 workload types concurrently for 2,700 seconds, excluding the first
 300 seconds from the gate. Setup and cleanup are outside that window.
 
 ## Onboarding status
 
-The infrastructure and thresholds are **not provisioned or calibrated by this
-change**. `EnableWeeklyPerf` defaults to false. `perf-thresholds.json` is
-explicitly unapproved and cannot produce a passing gate. Do not enable the
-weekly parameter until the following prerequisites are complete.
+Weekly execution requires no opt-in parameter. Missing infrastructure fails
+visibly rather than omitting the stage. The infrastructure and thresholds are
+**not provisioned or calibrated by this change**. The initial
+`perf-thresholds.json` is explicitly unapproved: weekly runs collect calibration
+measurements until a reviewed baseline is configured, without reporting a
+performance-gate pass. Complete these infrastructure prerequisites:
 
 1. Identify the Azure resource ID for the existing single-region Gateway V2
    account referenced by `thinclient-test-endpoint` / `thinclient-test-key`.
@@ -27,11 +30,13 @@ weekly parameter until the following prerequisites are complete.
    the account's owning tenant/subscription. `PerfServiceConnection` defaults to
    `cosmos-perf-reader`. Data-plane keys cannot supply this permission. The VM
    must reach Azure Instance Metadata Service directly, without a proxy.
-4. Add `cosmos-perf-account-resource-id` and `cosmos-perf-baseline-commit`
+4. Add `cosmos-perf-account-resource-id`
    to the existing protected variable group
-   `Test Secrets for Cosmos Live Tests - user administered`. The latter must be
-   a full reviewed commit SHA containing the workload profile and threshold
-   file, available in the pipeline checkout.
+   `Test Secrets for Cosmos Live Tests - user administered`.
+   After calibration, add `cosmos-perf-baseline-commit`: a full reviewed commit
+   SHA containing the workload profile and threshold file, available in the
+   pipeline checkout. Without it, weekly runs explicitly collect calibration
+   using the source commit's profile.
 5. Configure an **exclusive-lock check on that same shared variable group**.
    Both the existing Cosmos live-test stage and the new perf stage consume it.
    This check is essential: a dedicated agent alone cannot prevent other runs
@@ -42,10 +47,10 @@ weekly parameter until the following prerequisites are complete.
    Untrusted PR code must not automatically run with these credentials or on a
    privileged persistent agent. Review the source SHA, use an isolated/reset
    runner, and restrict network/identity access before approving such a run.
-7. Use the manual calibration flow below, review its measurements and thresholds,
-   then enable `EnableWeeklyPerf` on the `- weekly` definition. The repository's
-   existing external weekly schedule remains responsible for queuing that
-   definition; this change does not add another schedule.
+7. Review the weekly calibration measurements and thresholds, then pin the
+   approved baseline revision. The next weekly run enforces those thresholds
+   automatically. The repository's existing external weekly schedule remains
+   responsible for queuing that definition; this change does not add another schedule.
 
 Onboarding checks and approvals are external ADO/Azure configuration, not YAML
 settings that can be validated locally. Do not claim the gate is operational
@@ -53,8 +58,15 @@ until a real run has demonstrated them.
 
 ## Calibration and execution
 
-Queue a manual pipeline run with `CalibratePerf=true`. The profile comes from the
-pinned baseline revision; calibration omits thresholds and reports
+Weekly runs automatically collect calibration if no reviewed baseline revision
+is configured, or if the pinned revision contains the initial empty, unapproved
+threshold template. They enforce thresholds once the pinned baseline is approved.
+Malformed or partially configured pinned baselines fail; they do not silently
+downgrade to calibration.
+
+For explicit manual calibration, set `CalibratePerf=true`. The profile comes from
+the pinned baseline revision when configured, otherwise the source commit.
+Calibration omits thresholds and reports
 `calibration`, never `passed`. A successful collection is marked
 `SucceededWithIssues` in ADO to distinguish it from a passing validation.
 Repeat against the same source/profile/environment to measure variability.
@@ -75,18 +87,23 @@ For the reviewed `perf-thresholds.json`, set `approved` to true, copy the exact
 These numbers illustrate the schema only; **they are not recommended thresholds**.
 Repeat the entry with measured, reviewed values for every operation. Commit
 the configuration through normal review and pin `cosmos-perf-baseline-commit`
-to that revision. Missing entries, duplicates, unapproved baselines, and
-profile mismatches are errors, not implicit skips.
+to that revision. In validation mode, missing entries, duplicates, unapproved
+baselines, and profile mismatches are errors, not implicit skips. Candidate threshold edits
+cannot enable gating without a separately configured reviewed baseline revision.
 
 The weekly run tests its exact source commit. For manual PR validation, queue the
 same pipeline at the PR's exact head commit using Azure DevOps source-version
 selection and `RunPerfTests=true`. Ensure that commit is available to the pipeline
-repository. Synthetic `refs/pull/*` merge checkouts are rejected rather than
+repository. Exact `refs/pull/<number>/head` checkouts are accepted; synthetic
+`refs/pull/<number>/merge` checkouts are rejected rather than
 being mislabeled as PR-head measurements. The resulting artifacts include the
 source SHA and separate reviewed baseline SHA. Ordinary PR builds do not run
-this workload automatically.
+this workload automatically. Weekly perf waits for Build and the shared-account
+live tests to finish, but still runs when those stages fail, so unrelated test
+or packaging failures do not suppress measurements. Cancelled runs do not
+start perf. Those earlier failures still fail the overall pipeline.
 
-The selected baseline supplies both the profile and thresholds via `git show`;
+When configured, the selected baseline supplies both the profile and thresholds via `git show`;
 candidate threshold-file edits do not change the gate. Candidate code itself
 is still executed, so this is a review/approval boundary, not a sandbox against
 malicious source changes.
