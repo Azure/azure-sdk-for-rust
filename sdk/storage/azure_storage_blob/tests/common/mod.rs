@@ -42,6 +42,9 @@ pub const KB: usize = 1024;
 pub const MB: usize = KB * 1024;
 pub const GB: usize = MB * 1024;
 
+/// The OAuth scope used for Entra ID authentication against Storage.
+pub const STORAGE_SCOPE: &str = "https://storage.azure.com/.default";
+
 /// Returns a valid customer-provided key tuple used by blob encryption tests.
 pub fn get_cpk() -> (EncryptionAlgorithmType, String, String) {
     (

@@ -59,7 +59,6 @@ pub static STORAGE_ALLOWED_HEADERS: &[&str] = &[
     "x-ms-access-tier",
     "x-ms-access-tier-change-time",
     "x-ms-access-tier-inferred",
-    "x-ms-smart-access-tier",
     "x-ms-archive-status",
     "x-ms-rehydrate-priority",
     // Blob metadata
@@ -162,4 +161,18 @@ pub(crate) fn apply_storage_logging_defaults(options: &mut ClientOptions) {
             .iter()
             .map(|s| Cow::Borrowed(*s)),
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn authorization_is_not_logged() {
+        // The `authorization` header carries bearer or session credentials, so it
+        // must remain outside the allowlist and be redacted by the logging policy.
+        assert!(!STORAGE_ALLOWED_HEADERS
+            .iter()
+            .any(|h| h.eq_ignore_ascii_case("authorization")));
+    }
 }
