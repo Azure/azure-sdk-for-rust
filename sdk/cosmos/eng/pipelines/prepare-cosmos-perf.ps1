@@ -34,26 +34,35 @@ function Get-CosmosPerfCalibration([bool] $Weekly, [bool] $Requested, [bool] $Ha
     throw 'Performance thresholds are not approved. Use explicit manual calibration or the initial empty baseline.'
 }
 
-function Assert-CosmosPerfEnvironment($Account, $Vm, $Profile, [string] $Endpoint) {
+function Get-CosmosPerfPlacement($Account, $Vm, $Profile, [string] $Endpoint) {
     $uri = Get-CosmosPerfEndpoint $Endpoint
     if ([string]::IsNullOrWhiteSpace($Account.id) -or $uri.Host -ne "$($Account.id).documents.azure.com") {
         throw 'Fixed-account endpoint does not match the authenticated account metadata.'
     }
     if ($Account.readableLocations -isnot [array] -or $Account.writableLocations -isnot [array] -or
-        $Account.readableLocations.Count -ne 1 -or $Account.writableLocations.Count -ne 1) {
-        throw 'The performance profile requires a single-region account.'
+        $Account.readableLocations.Count -eq 0 -or $Account.writableLocations.Count -eq 0) {
+        throw 'Account metadata must contain readable and writable regions.'
     }
-    $region = ConvertTo-CanonicalRegion $Account.writableLocations[0].name
-    if ([string]::IsNullOrWhiteSpace($region) -or
-        $region -ne (ConvertTo-CanonicalRegion $Account.readableLocations[0].name) -or
-        $region -ne (ConvertTo-CanonicalRegion $Vm.location)) {
-        throw 'Load generator and account read/write regions are not colocated.'
+    $region = ConvertTo-CanonicalRegion $Vm.location
+    $regions = @{}
+    foreach ($location in @($Account.readableLocations) + @($Account.writableLocations)) {
+        if ([string]::IsNullOrWhiteSpace($location.name)) { throw 'Account metadata contains an empty region name.' }
+        $regions[(ConvertTo-CanonicalRegion $location.name)] = $location.name
+    }
+    $reads = @($Account.readableLocations | Where-Object { (ConvertTo-CanonicalRegion $_.name) -eq $region })
+    $writes = @($Account.writableLocations | Where-Object { (ConvertTo-CanonicalRegion $_.name) -eq $region })
+    if ([string]::IsNullOrWhiteSpace($region) -or $reads.Count -eq 0 -or $writes.Count -eq 0) {
+        throw "Agent region '$($Vm.location)' must be both readable and writable. Account reads: $($Account.readableLocations.name -join ', '); writes: $($Account.writableLocations.name -join ', ')."
     }
     if ($Vm.vmSize -ne $Profile.vm_size -or $Vm.osType -ne 'Linux') {
-        throw 'VM SKU or OS differs from the performance profile.'
+        throw "Agent SKU '$($Vm.vmSize)' / OS '$($Vm.osType)' does not match profile SKU '$($Profile.vm_size)' / Linux."
     }
     if ($Account.userConsistencyPolicy.defaultConsistencyLevel -ne $Profile.consistency) {
         throw 'Account consistency differs from the performance profile.'
+    }
+    return [PSCustomObject]@{
+        region = $writes[0].name
+        excluded_regions = [string[]]@($regions.Keys | Where-Object { $_ -ne $region } | ForEach-Object { $regions[$_] } | Sort-Object)
     }
 }
 
@@ -109,14 +118,15 @@ if ($calibrate) {
 $account = Get-CosmosPerfAccount $env:AZURE_COSMOS_ENDPOINT $env:AZURE_COSMOS_KEY
 $vm = Invoke-RestMethod -Uri 'http://169.254.169.254/metadata/instance/compute?api-version=2021-02-01' `
     -Headers @{ Metadata = 'true' } -NoProxy -TimeoutSec 10
-Assert-CosmosPerfEnvironment $account $vm $profile $env:AZURE_COSMOS_ENDPOINT
+$placement = Get-CosmosPerfPlacement $account $vm $profile $env:AZURE_COSMOS_ENDPOINT
 @{
     source_commit = $source
     baseline_commit = $baseline
     account_name = $account.id
     endpoint = $env:AZURE_COSMOS_ENDPOINT
-    region = $account.writableLocations[0].name
+    region = $placement.region
+    excluded_regions = $placement.excluded_regions
     vm_size = $vm.vmSize
     consistency = $account.userConsistencyPolicy.defaultConsistencyLevel
 } | ConvertTo-Json | Set-Content -Encoding utf8 ([System.IO.Path]::Combine($output, 'environment.json'))
-Write-Host 'Verified source SHA, baseline policy, single-region account, and colocated Linux VM.'
+Write-Host "Verified source SHA and baseline policy. Perf region: $($placement.region); VM SKU: $($vm.vmSize); excluded regions: $($placement.excluded_regions -join ', ')."

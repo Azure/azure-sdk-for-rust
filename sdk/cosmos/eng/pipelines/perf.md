@@ -17,14 +17,15 @@ resources. The initial
 measurements until a reviewed baseline is configured, without reporting a
 performance-gate pass. Confirm these prerequisites:
 
-1. Verify the existing single-region Gateway V2 account referenced by
+1. Verify the existing Gateway V2 account referenced by
    `thinclient-test-endpoint` / `thinclient-test-key` in
    `Test Secrets for Cosmos Live Tests - user administered`. These are the only
    Azure credentials needed. Do not use the unrelated `rust-ci` fixed-account
-   catalog or create another account.
+   catalog or create another account. Single- and multi-region accounts are
+   supported, provided the agent's region is advertised for both reads and writes.
 2. Authorize the pipeline to use the existing Linux perf pool.
    `PerfPool` defaults to `azsdk-pool-mms-ubuntu-2204-perf`, using its
-   `ubuntu-22.04` image. The agent must be in the account's region and match the
+   `ubuntu-22.04` image. The agent must be in a readable, writable account region and match the
    profile's VM SKU; preflight fails on a mismatch instead of accepting noisy
    or cross-region measurements. An alternate existing pool can be supplied
    through `PerfPool` only if it satisfies the same checks.
@@ -148,14 +149,21 @@ measurement denominator. Background metadata requests are not classified as
 item throughput or data-plane locality evidence.
 
 The preflight signs `GET /` against the configured Cosmos HTTPS endpoint using
-the existing account key. It compares the response's `readableLocations` and
-`writableLocations` with the VM's IMDS region and checks SKU, OS, the authenticated
+the existing account key. It requires the VM's IMDS region to be present in both
+`readableLocations` and `writableLocations` and checks SKU, OS, the authenticated
 account name, and `userConsistencyPolicy`. It does not query Azure Resource
 Manager, create an Azure account, or require an ARM resource-ID setting.
 Redirects, non-success responses, and missing metadata are errors. A point-read
 probe must actually use Gateway V2. During the workload, data-plane request
 diagnostics must remain local. Legitimate operation-specific wire behavior
 is not forced into Gateway V2 just to satisfy a protocol label.
+
+Preflight records the selected local region and every other advertised region.
+The shared client excludes those other regions through its default operation
+options, covering point operations, queries, change feed, and batch. A single-write
+account therefore requires the agent in its write region; multi-write accounts
+can use any region that is both readable and writable. Runtime diagnostics still
+reject nonlocal traffic, including traffic caused by a topology change during a run.
 
 ## Artifacts and cleanup
 

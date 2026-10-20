@@ -20,8 +20,23 @@ function New-Fixture {
 }
 
 $fixture = New-Fixture
-Assert-CosmosPerfEnvironment @fixture
+$placement = Get-CosmosPerfPlacement @fixture
+if ($placement.region -ne 'East US 2' -or $placement.excluded_regions.Count -ne 0) {
+    throw 'Single-region placement differs from the account metadata.'
+}
 Write-Host 'PASS: canonical and display region names match'
+
+$fixture.Account.readableLocations += @{ name = 'West US 3' }
+$placement = Get-CosmosPerfPlacement @fixture
+if ($placement.region -ne 'East US 2' -or ($placement.excluded_regions -join ',') -ne 'West US 3') {
+    throw 'Single-write multi-region placement did not exclude the remote read region.'
+}
+$fixture.Account.writableLocations = @(@{ name = 'West US 3' }, @{ name = 'East US 2' })
+$placement = Get-CosmosPerfPlacement @fixture
+if ($placement.region -ne 'East US 2' -or ($placement.excluded_regions -join ',') -ne 'West US 3') {
+    throw 'Multi-write placement did not select the agent region independently of account ordering.'
+}
+Write-Host 'PASS: multi-region accounts select a local writable region and exclude every other region'
 
 $cases = @{
     'remote VM' = { param($f) $f.Vm.location = 'westus3' }
@@ -30,7 +45,8 @@ $cases = @{
     'wrong consistency' = { param($f) $f.Account.userConsistencyPolicy.defaultConsistencyLevel = 'Eventual' }
     'wrong account' = { param($f) $f.Endpoint = 'https://another.documents.azure.com/' }
     'HTTP endpoint' = { param($f) $f.Endpoint = 'http://perf.documents.azure.com/' }
-    'multi-region account' = { param($f) $f.Account.readableLocations += @{ name = 'West US 3' } }
+    'read-only local region' = { param($f) $f.Account.readableLocations += @{ name = 'West US 3' }; $f.Vm.location = 'westus3' }
+    'write-only local region' = { param($f) $f.Account.writableLocations += @{ name = 'West US 3' }; $f.Vm.location = 'westus3' }
     'different write region' = { param($f) $f.Account.writableLocations[0].name = 'West US 3' }
     'missing locations' = { param($f) $f.Account.readableLocations = @() }
     'empty location names' = { param($f) $f.Account.writableLocations[0].name = ''; $f.Account.readableLocations[0].name = ''; $f.Vm.location = '' }
@@ -46,7 +62,7 @@ foreach ($name in $cases.Keys) {
     $fixture = New-Fixture
     & $cases[$name] $fixture
     $rejected = $false
-    try { Assert-CosmosPerfEnvironment @fixture } catch { $rejected = $true }
+    try { Get-CosmosPerfPlacement @fixture | Out-Null } catch { $rejected = $true }
     if (-not $rejected) { throw "Preflight accepted invalid fixture: $name" }
     Write-Host "PASS: rejects $name"
 }
@@ -201,7 +217,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the test checkout commit.' }
     $env:BUILD_SOURCEBRANCH = 'refs/pull/5469/head'
     $http.Requests = @()
-    $http.Response = @{ StatusCode = 200; Content = ((New-Fixture).Account | ConvertTo-Json -Depth 5) }
+    $multiRegion = (New-Fixture).Account
+    $multiRegion.readableLocations += @{ name = 'West US 3' }
+    $multiRegion.writableLocations = @(@{ name = 'West US 3' }, @{ name = 'East US 2' })
+    $http.Response = @{ StatusCode = 200; Content = ($multiRegion | ConvertTo-Json -Depth 5) }
     $http.Vm = (New-Fixture).Vm
     $http.MetadataCalls = 0
     # PowerShell@2 dot-sources filePath scripts; this must execute preflight, not only load functions.
@@ -211,6 +230,7 @@ try {
     if ($http.Requests.Count -ne 1 -or $http.MetadataCalls -ne 1 -or
         $recordedEnvironment.account_name -ne 'perf' -or $recordedEnvironment.region -ne 'East US 2' -or
         $recordedEnvironment.source_commit -ne $env:BUILD_SOURCEVERSION -or
+        ($recordedEnvironment.excluded_regions -join ',') -ne 'West US 3' -or
         $recordedEnvironment.PSObject.Properties.Name -contains 'account_resource_id' -or
         $recordedMode.calibrate -ne $true) {
         throw 'Pipeline-style invocation did not execute and persist verified preflight.'

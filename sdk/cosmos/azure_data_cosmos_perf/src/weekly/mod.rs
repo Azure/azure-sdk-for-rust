@@ -18,7 +18,7 @@ use azure_core::{credentials::Secret, http::Context};
 use azure_data_cosmos::{
     diagnostics::{DiagnosticsContext, DiagnosticsHandler},
     models::{ContainerProperties, ThroughputProperties},
-    options::CreateContainerOptions,
+    options::{CreateContainerOptions, ExcludedRegions, OperationOptions},
     AccountEndpoint, AccountReference, CosmosClient, CosmosClientBuilder, RoutingStrategy,
 };
 use serde::{de::DeserializeOwned, Serialize};
@@ -77,6 +77,21 @@ fn normalize_region(region: &str) -> String {
         .collect()
 }
 
+fn local_operation_options(region: &str, excluded: &[String]) -> Result<OperationOptions, String> {
+    let local = normalize_region(region);
+    if local.is_empty()
+        || excluded.iter().any(|r| {
+            let normalized = normalize_region(r);
+            normalized.is_empty() || normalized == local
+        })
+    {
+        return Err("invalid local region or excluded-region list".into());
+    }
+    let mut options = OperationOptions::default();
+    options.excluded_regions = Some(ExcludedRegions::from_iter(excluded.iter().cloned()));
+    Ok(options)
+}
+
 pub(crate) async fn run(config: &Config) -> Result<(), Error> {
     let profile: Profile =
         read_json(config.perf_profile.as_ref().ok_or("missing profile")?).await?;
@@ -132,6 +147,10 @@ pub(crate) async fn run(config: &Config) -> Result<(), Error> {
     });
     let endpoint: AccountEndpoint = config.endpoint.parse()?;
     let client = CosmosClientBuilder::new()
+        .with_default_operation_options(local_operation_options(
+            &environment.region,
+            &environment.excluded_regions,
+        )?)
         .with_diagnostics_handler(evidence.clone())
         .build(
             AccountReference::with_authentication_key(endpoint, Secret::from(key.clone())),
@@ -642,15 +661,17 @@ async fn write_json(path: PathBuf, value: &impl Serialize) -> Result<(), Error> 
 mod tests {
     use super::contract::{Baseline, Environment, Operation, Profile, Threshold};
     use super::{
-        classify_sample, measure, setup, with_owned_database, Attempt, RoutingEvidence, Sample,
+        classify_sample, local_operation_options, measure, setup, with_owned_database, Attempt,
+        RoutingEvidence, Sample,
     };
     use crate::stats::Stats;
     use azure_core::{credentials::Secret, http::Url};
     use azure_data_cosmos::{
-        AccountReference, CosmosClientBuilder, CosmosRuntimeBuilder, RoutingStrategy,
+        options::ExcludedRegions, AccountReference, CosmosClientBuilder, CosmosRuntimeBuilder,
+        RoutingStrategy,
     };
     use azure_data_cosmos_driver::in_memory_emulator::{
-        InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion,
+        InMemoryEmulatorHttpClient, VirtualAccountConfig, VirtualRegion, WriteMode,
     };
     use std::{
         sync::{
@@ -660,6 +681,24 @@ mod tests {
         time::Duration,
     };
     use tokio::{sync::oneshot, task::JoinSet, time::Instant};
+
+    #[test]
+    fn local_routing_excludes_remote_regions_but_never_the_selected_region() {
+        let options =
+            local_operation_options("East US", &["West US".into(), "North Europe".into()]).unwrap();
+        assert_eq!(
+            options.excluded_regions,
+            Some(ExcludedRegions::from_iter(["West US", "North Europe"]))
+        );
+        assert!(local_operation_options("East US", &["eastus".into()]).is_err());
+        assert!(local_operation_options("East US", &[" ".into()]).is_err());
+        assert!(local_operation_options("", &[]).is_err());
+        assert!(local_operation_options("East US", &[])
+            .unwrap()
+            .excluded_regions
+            .unwrap()
+            .is_empty());
+    }
 
     #[tokio::test]
     async fn aborting_peers_counts_only_unfinished_measured_attempts_once() {
@@ -807,18 +846,32 @@ mod tests {
     async fn all_workloads_execute_concurrently_without_deleting_reference_items() {
         let url = "https://eastus.emulator.local";
         let emulator = Arc::new(InMemoryEmulatorHttpClient::new(
-            VirtualAccountConfig::new(vec![VirtualRegion::new(
-                "East US",
-                Url::parse(url).unwrap(),
-            )])
-            .unwrap(),
+            VirtualAccountConfig::new(vec![
+                VirtualRegion::new(
+                    "West US",
+                    Url::parse("https://westus.emulator.local").unwrap(),
+                ),
+                VirtualRegion::new("East US", Url::parse(url).unwrap()),
+            ])
+            .unwrap()
+            .with_write_mode(WriteMode::Multi),
         ));
         let runtime = CosmosRuntimeBuilder::from(emulator.runtime_builder())
             .build()
             .await
             .unwrap();
+        let routing = Arc::new(RoutingEvidence {
+            region: "eastus".into(),
+            enabled: AtomicBool::new(true),
+            gateway_v2: AtomicU64::new(0),
+            remote_requests: AtomicU64::new(0),
+        });
         let client = CosmosClientBuilder::new()
             .with_runtime(runtime)
+            .with_default_operation_options(
+                local_operation_options("East US", &["West US".into()]).unwrap(),
+            )
+            .with_diagnostics_handler(routing.clone())
             .build(
                 AccountReference::with_authentication_key(
                     url.parse().unwrap(),
@@ -871,6 +924,7 @@ mod tests {
             .await
             .is_ok());
         assert!(reference.read_item("seed-0", "seed-0", None).await.is_ok());
+        assert_eq!(routing.remote_requests.load(Ordering::Relaxed), 0);
 
         client.create_database("perf-gate", None).await.unwrap();
         profile.duration_seconds = 2;
@@ -898,6 +952,7 @@ mod tests {
             account_name: "emulator".into(),
             endpoint: url.into(),
             region: "East US".into(),
+            excluded_regions: vec![],
             vm_size: profile.vm_size.clone(),
             consistency: profile.consistency.clone(),
         };
@@ -944,6 +999,7 @@ mod tests {
                 .iter()
                 .any(|v| v == "successful throughput below minimum"));
         }
+        assert_eq!(routing.remote_requests.load(Ordering::Relaxed), 0);
         tokio::task::spawn_blocking(move || std::fs::remove_dir_all(output))
             .await
             .unwrap()

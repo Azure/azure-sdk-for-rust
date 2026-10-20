@@ -172,6 +172,7 @@ pub(super) struct Environment {
     pub account_name: String,
     pub endpoint: String,
     pub region: String,
+    pub excluded_regions: Vec<String>,
     pub vm_size: String,
     pub consistency: String,
 }
@@ -267,6 +268,7 @@ mod tests {
             account_name: "perf".into(),
             endpoint: "https://perf.documents.azure.com:443/".into(),
             region: "East US 2".into(),
+            excluded_regions: vec![],
             vm_size: "Standard_D8s_v5".into(),
             consistency: "Session".into(),
         };

@@ -155,7 +155,9 @@ The job uses the existing SDK Linux perf pool and existing Gateway V2 account
 key; no Azure management-plane service connection is required. Each run creates
 and cleans up a fresh database containing isolated workload containers, never
 the fixed account itself. Preflight verifies the allocated agent's region and
-VM SKU rather than assuming the shared pool is colocated.
+VM SKU rather than assuming the shared pool is colocated. Multi-region accounts
+are supported when the agent's region accepts both reads and writes; all other
+advertised regions are excluded from workload routing.
 
 The weekly workload runs for 45 minutes after setup, excluding the first
 5 minutes from every gated metric. It checks successful operations/second,
