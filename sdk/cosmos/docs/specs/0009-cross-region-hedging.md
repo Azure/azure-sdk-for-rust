@@ -2578,11 +2578,12 @@ operations, stored procedure execution, adaptive threshold tuning.
   single-partition queries only (see the §1 note). Cross-partition fan-out
   remains blocked on data-plane hedge admission control
   ([#4916](https://github.com/Azure/azure-sdk-for-rust/issues/4916)).
-  Per-page continuation portability across regions is assumed (query
-  continuations resume on globally stable document rids, unlike the
-  region-affine change-feed ETag) and still needs live multi-region
-  validation; a lagging region surfaces as a transient 1002 that the other
-  leg wins, so the failure mode is availability, not correctness.
+  Per-page continuation portability across regions relies on query
+  continuations resuming on globally stable document rids, unlike the
+  region-affine change-feed ETag. The live multi-region test
+  `query_continuation_minted_in_primary_resumes_in_alternate` covers it; a
+  lagging region surfaces as a transient 1002 that the other leg wins, so the
+  failure mode is availability, not correctness.
 - `ReadMany` — hedged **per page**.
 - Change feed (`ReadFeed`) — hedged **per page**.
 - Metadata operations: Database / Container / Offer / Throughput
