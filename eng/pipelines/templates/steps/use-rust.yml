@@ -23,15 +23,24 @@ parameters:
     type: boolean
     # RustInstaller@1 handles installation for Microsoft Rust consumers.
     default: true
+  - name: SourcesDir
+    type: string
+    default: $(Build.SourcesDirectory)
+  - name: ToolsDirectory
+    type: string
+    # Optional flat tooling artifact containing Use-Rust.ps1, shared/, and config.toml.template.
+    default: ''
+  - name: ToolchainManifest
+    type: string
+    # Overrides Toolchain with the channel from this manifest.
+    default: ''
 
 steps:
 # `variables/rust.yml` relocates CARGO_HOME off the OS volume. Cargo finds its own
 # subcommands there, but tools invoked directly (taplo, cargo2junit) need it on PATH.
 - pwsh: |
     . ([System.IO.Path]::Combine(
-      '$(Build.SourcesDirectory)',
-      'eng',
-      'scripts',
+      '${{ coalesce(parameters.ToolsDirectory, format('{0}/eng/scripts', parameters.SourcesDir)) }}',
       'shared',
       'Rustup.ps1'
     ))
@@ -46,9 +55,7 @@ steps:
 - ${{ if parameters.ConfigureRegistry }}:
   - pwsh: |
       . ([System.IO.Path]::Combine(
-        '$(Build.SourcesDirectory)',
-        'eng',
-        'scripts',
+        '${{ coalesce(parameters.ToolsDirectory, format('{0}/eng/scripts', parameters.SourcesDir)) }}',
         'shared',
         'Rustup.ps1'
       ))
@@ -57,7 +64,7 @@ steps:
 
       $configPath = ([System.IO.Path]::Combine($cargoHome, 'config.toml'))
       Copy-Item `
-        -Path '$(Build.SourcesDirectory)/eng/templates/config.toml.template' `
+        -LiteralPath '${{ coalesce(parameters.ToolsDirectory, format('{0}/eng/templates', parameters.SourcesDir)) }}/config.toml.template' `
         -Destination $configPath `
         -Force
 
@@ -93,10 +100,11 @@ steps:
     displayName: "Use Rust ${{ parameters.Toolchain }}"
     inputs:
       pwsh: true
-      filePath: $(Build.SourcesDirectory)/eng/scripts/Use-Rust.ps1
+      filePath: ${{ coalesce(parameters.ToolsDirectory, format('{0}/eng/scripts', parameters.SourcesDir)) }}/Use-Rust.ps1
       arguments: >
         -Toolchain '${{ parameters.Toolchain }}'
+        -ToolchainManifest '${{ parameters.ToolchainManifest }}'
+        -SourceDir '${{ parameters.SourcesDir }}'
         -MaxAttempts ${{ parameters.MaxAttempts }}
         -SetDefault $${{ parameters.SetDefault }}
-        -OutsideDirectory '$(Pipeline.Workspace)'
       workingDirectory: ${{ parameters.WorkingDirectory }}
