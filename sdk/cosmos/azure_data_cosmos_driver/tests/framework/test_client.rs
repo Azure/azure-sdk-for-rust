@@ -645,7 +645,11 @@ impl DriverTestRunContext {
     /// configured by the hedging entry point, and any fault-injection rules
     /// configured by the FI entry points, so that every driver created by
     /// these helpers inherits them.
-    fn driver_options(&self) -> Result<DriverOptions, Box<dyn Error>> {
+    ///
+    /// Public so tests that drive the plan/execute API directly (paged
+    /// queries, change feed) can build a driver carrying the same
+    /// region and fault-injection configuration as the helpers.
+    pub fn driver_options(&self) -> Result<DriverOptions, Box<dyn Error>> {
         let mut builder = DriverOptions::builder(self.client.account.clone());
         if !self.client.preferred_regions.is_empty() {
             builder = builder.with_preferred_regions(self.client.preferred_regions.clone());
