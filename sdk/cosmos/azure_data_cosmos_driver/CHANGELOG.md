@@ -5,10 +5,12 @@
 ### Features Added
 
 - Added driver-owned change feed workload bootstrap with RID-based identity, persisted mode checks, TTL initialization claims, bounded retries, and create-only range leases without initial continuations.
-- Added `change_feed_processor::Processor` with equal lease balancing, renewal, progress watchdogs, and schema-agnostic batch receipts that gate durable checkpoints and subsequent polls.
+- Added `change_feed_processor::Processor` with equal lease balancing, renewal, and schema-agnostic batch receipts that gate durable checkpoints and subsequent polls.
 - Added automatic online processor split recovery with fenced parent retirement, recoverable child leases, independent merge checkpoints, and balanced child acquisition. ([#5476](https://github.com/Azure/azure-sdk-for-rust/pull/5476))
 
 ### Breaking Changes
+
+- `Processor::stop()` now drains issued receipts and returns shutdown errors; use `abort()` or `request_stop()` for forced cancellation. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 
 ### Bugs Fixed
 
@@ -19,6 +21,8 @@
 - Preserve bounded diagnostic history through partition split recovery, query buffering, and terminal `500/20206` errors. ([#5416](https://github.com/Azure/azure-sdk-for-rust/pull/5416))
 
 ### Other Changes
+
+- Derive processor renewal and acquisition schedules from the lease expiration budget, reuse checkpoint writes for renewal, and remove the implicit callback progress timeout. ([#5477](https://github.com/Azure/azure-sdk-for-rust/pull/5477))
 
 ## 1.0.0 (2026-10-08)
 
