@@ -245,16 +245,19 @@ needed; it does not disable automatic session management.
 
 ## 4. Request path — token resolution
 
-Resolution happens in the operation pipeline just before the transport request is
-built (`driver/pipeline/operation_pipeline.rs`, "STAGE 3"), and only when session
-consistency is effective for that attempt.
+Token preparation happens before each transport attempt. Automatic resolution
+requires effective session consistency and automatic session management enabled.
+Explicit tokens are prepared independently of those gates.
 
 The shared attempt resolver applies this precedence for both sequential and
 hedged requests:
 
-1. **Caller-supplied token wins verbatim.** A token set through options is used
-   as-is with no merge against the cache. This is what makes an externally
-   carried session authoritative.
+1. **Caller-supplied progress wins.** No cached session state is merged into an
+   explicit token. Classic Gateway and non-compound tokens retain their existing
+   passthrough behavior. Gateway V2 scopes compound tokens using the attempt's
+   physical range and an initialized routing snapshot, merging required parent
+   and target vectors with the shared version-aware rules. The original token is
+   retained for subsequent retries, hedge legs, and pages.
 2. **Partition-scoped token**, when the attempt has a resolved partition key
    range ID: use that range's cached token, or merge its known parent vectors
    and re-key them to the target range. Classic Gateway additionally requires
@@ -267,11 +270,18 @@ hedged requests:
    sorted by range ID. The service can interpret ancestor tokens after topology
    changes; do not discard cached progress merely to permit forwarding to the proxy.
 
-Gateway V2 retains its no-composite behavior for logical-partition requests:
-without a resolved range or an available range/parent token, no automatic token
-is emitted. Explicit caller tokens still win verbatim. The RNTBD backend rejects
-multi-range composites on partition-scoped requests. This change does not alter
-transport selection or the lazy-topology session guard.
+When an explicit compound token cannot be scoped safely, use classic Gateway
+with the entire original token. Missing or inactive targets, unknown range IDs,
+unresolved older ancestry, malformed or duplicate segments, and incompatible
+parent token formats take this fallback; never omit required caller progress.
+Scoping reads no session cache and performs no topology fetch, including when
+`session_capturing_disabled` is true or topology loading is lazy. Each hedge leg
+and sequential retry makes its own decision using the original caller token.
+The selected consistency strategy and automatic capture gates remain unchanged.
+
+Gateway V2 retains its existing automatic-token behavior for logical-partition
+requests: without a resolved range or an available range/parent token, no
+automatic token is emitted. The automatic lazy-topology session guard is unchanged.
 
 Classic topology validation and token selection share one session-cache read
 lock. A new child token therefore prevents scoping to an old parent snapshot,
@@ -281,8 +291,7 @@ discarding the newer child progress. Once normal topology refresh supplies a
 usable map, range-local resolution resumes. This check does not fetch topology,
 wait for an in-flight refresh, invalidate routing maps, or clear session tokens.
 
-Operations with no container reference (account- and database-level metadata)
-never resolve a token.
+Operations with no container reference never resolve an automatic token.
 
 The resolved value is stamped as `x-ms-session-token` on HTTP requests and as
 RNTBD token `0x0005` on the thin-client path.
@@ -566,6 +575,11 @@ formatting of driver state.
   database whose name starts with `test-db-session-scope-`, containing an `items`
   container partitioned on `/pk` with two to eight physical ranges. Provisioning
   and cleanup belong to the invoking harness. Output excludes full tokens.
+- **Explicit Gateway V2 tokens** — `gateway_v2_explicit_session_scope_live` uses
+  the same disposable fixture to check real caller-supplied compound tokens with
+  capture enabled and disabled. Cold lazy topology retains the original through
+  classic Gateway; explicit warm-up enables range-scoped Gateway V2 requests.
+  The disabled case asserts that responses do not populate the session cache.
 - **Service split** — the `classic_gateway_session_reads_across_service_split`
   integration test uses a separate management runtime to split an isolated
   container. It checks automatic and explicit-token reads of post-split writes,

@@ -7,10 +7,10 @@
 //! session retry, endpoint unavailability tracking, partition-level failover
 //! (PPAF/PPCB), and deadline enforcement.
 
-use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use std::{borrow::Cow, pin::Pin};
 
 use azure_core::http::headers::{AsHeaders, HeaderName, HeaderValue};
 use futures::future::{pending, select, Either, Future};
@@ -185,6 +185,56 @@ fn resolve_session_token_for_attempt(
     )
 }
 
+enum AttemptSessionToken {
+    Resolved(Option<SessionToken>),
+    RequiresClassic(SessionToken),
+}
+
+fn prepare_session_token_for_attempt(
+    session_manager: &SessionManager,
+    operation: &CosmosOperation,
+    transport_mode: TransportMode,
+    partition_key_range_id: Option<&PartitionKeyRangeId>,
+    overrides: &OperationOverrides,
+    automatic_resolution_active: bool,
+) -> AttemptSessionToken {
+    if let Some(token) = operation.request_headers().session_token.as_ref() {
+        if transport_mode == TransportMode::GatewayV2 && token.as_str().contains(',') {
+            if let Some(scoped) = SessionManager::scope_explicit_token(
+                token,
+                partition_key_range_id.map(PartitionKeyRangeId::as_str),
+                overrides.session_token_routing_map.as_deref(),
+            ) {
+                return AttemptSessionToken::Resolved(Some(scoped));
+            }
+            tracing::debug!(
+                "using classic Gateway because explicit compound session progress cannot be safely scoped"
+            );
+            return AttemptSessionToken::RequiresClassic(token.clone());
+        }
+        return AttemptSessionToken::Resolved(Some(token.clone()));
+    }
+    AttemptSessionToken::Resolved(
+        automatic_resolution_active
+            .then(|| {
+                resolve_session_token_for_attempt(
+                    session_manager,
+                    operation,
+                    transport_mode,
+                    partition_key_range_id,
+                    overrides,
+                )
+            })
+            .flatten(),
+    )
+}
+
+fn use_classic_gateway(routing: &mut RoutingDecision) {
+    routing.transport_mode = TransportMode::Gateway;
+    routing.selected_url = routing.endpoint.url().clone();
+    routing.endpoint_key = routing.endpoint.endpoint_key();
+}
+
 fn preserve_logical_session_routing(
     routing: &mut RoutingDecision,
     operation: &CosmosOperation,
@@ -204,9 +254,7 @@ fn preserve_logical_session_routing(
     {
         // Routing can adopt Gateway 2.0 after cache-only planning. Classic
         // gateway preserves the composite session until physical identity is known.
-        routing.transport_mode = TransportMode::Gateway;
-        routing.selected_url = routing.endpoint.url().clone();
-        routing.endpoint_key = routing.endpoint.endpoint_key();
+        use_classic_gateway(routing);
     }
 }
 
@@ -729,6 +777,20 @@ pub(crate) async fn execute_operation_pipeline(
             attempt_session_token_resolution_active,
             lazy_topology,
         );
+        let resolved_session_token = match prepare_session_token_for_attempt(
+            session_manager,
+            operation,
+            routing.transport_mode,
+            retry_state.partition_key_range_id.as_ref(),
+            &overrides,
+            attempt_session_token_resolution_active,
+        ) {
+            AttemptSessionToken::Resolved(token) => token,
+            AttemptSessionToken::RequiresClassic(token) => {
+                use_classic_gateway(&mut routing);
+                Some(token)
+            }
+        };
 
         // Emit one structured debug record per attempt with the chosen
         // routing decision. Tests and SREs filter on this to verify which
@@ -932,17 +994,7 @@ pub(crate) async fn execute_operation_pipeline(
             } else {
                 ReadConsistencyStrategy::Default
             },
-            resolved_session_token: attempt_session_token_resolution_active
-                .then(|| {
-                    resolve_session_token_for_attempt(
-                        session_manager,
-                        operation,
-                        routing.transport_mode,
-                        retry_state.partition_key_range_id.as_ref(),
-                        &overrides,
-                    )
-                })
-                .flatten(),
+            resolved_session_token,
             throughput_control,
         };
         let mut transport_request = build_transport_request_with_fault_injection(
@@ -3479,22 +3531,24 @@ async fn perform_single_attempt(
     shared_hub_region_latch: Option<&Arc<AtomicBool>>,
     diagnostics: &mut DiagnosticsContextBuilder,
 ) -> crate::error::Result<TransportResult> {
-    // Resolve against this attempt's range and transport, just like the main loop.
-    let resolved_session_token = ctx
-        .session_token_resolution_active
-        .then(|| {
-            resolve_session_token_for_attempt(
-                ctx.session_manager,
-                ctx.operation,
-                routing.transport_mode,
-                ctx.partition_key_range_id.as_ref(),
-                ctx.overrides,
-            )
-        })
-        .flatten();
+    let (routing, resolved_session_token) = match prepare_session_token_for_attempt(
+        ctx.session_manager,
+        ctx.operation,
+        routing.transport_mode,
+        ctx.partition_key_range_id.as_ref(),
+        ctx.overrides,
+        ctx.session_token_resolution_active,
+    ) {
+        AttemptSessionToken::Resolved(token) => (Cow::Borrowed(routing), token),
+        AttemptSessionToken::RequiresClassic(token) => {
+            let mut routing = routing.clone();
+            use_classic_gateway(&mut routing);
+            (Cow::Owned(routing), Some(token))
+        }
+    };
 
     let request_ctx = TransportRequestContext {
-        routing,
+        routing: &routing,
         activity_id: ctx.activity_id,
         execution_context,
         deadline: ctx.deadline,
@@ -4904,7 +4958,8 @@ mod tests {
     use super::build_transport_request_with_fault_injection;
     use super::{
         build_transport_request, container_recreation_retry_eligible,
-        partition_key_range_id_from_overrides, resolve_session_token_for_attempt,
+        partition_key_range_id_from_overrides, prepare_session_token_for_attempt,
+        resolve_session_token_for_attempt, use_classic_gateway, AttemptSessionToken,
         OperationOverrides, TransportRequestContext,
     };
     #[cfg(feature = "fault_injection")]
@@ -5264,6 +5319,159 @@ mod tests {
                 request_header_names::PARTITION_KEY_RANGE_ID
             ),)
             .is_none());
+    }
+
+    #[test]
+    fn explicit_tokens_are_prepared_per_attempt_without_cached_progress() {
+        let original = "0:1#10#1=9,1:1#20#2=19";
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ))
+        .with_session_token(original);
+        let manager = SessionManager::new();
+        capture_session_token(&manager, &operation, "0:1#900#1=899,1:1#800#2=799");
+        let cached = manager
+            .resolve_session_token(&operation, None, None)
+            .unwrap();
+        let overrides = OperationOverrides {
+            session_token_routing_map: Some(test_session_topology(serde_json::json!([
+                {"id":"0","minInclusive":"","maxExclusive":"80"},
+                {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+            ]))),
+            ..Default::default()
+        };
+        for automatic in [false, true] {
+            for (mode, id, expected) in [
+                (TransportMode::Gateway, "0", original),
+                (TransportMode::GatewayV2, "0", "0:1#10#1=9"),
+                (TransportMode::GatewayV2, "1", "1:1#20#2=19"),
+                (TransportMode::Gateway, "1", original),
+            ] {
+                let id = PartitionKeyRangeId::from(id.to_owned());
+                let AttemptSessionToken::Resolved(Some(token)) = prepare_session_token_for_attempt(
+                    &manager,
+                    &operation,
+                    mode,
+                    Some(&id),
+                    &overrides,
+                    automatic,
+                ) else {
+                    panic!("trusted explicit progress must resolve");
+                };
+                assert_eq!(token.as_str(), expected);
+                assert_eq!(
+                    operation
+                        .request_headers()
+                        .session_token
+                        .as_ref()
+                        .unwrap()
+                        .as_str(),
+                    original
+                );
+                assert_eq!(
+                    manager
+                        .resolve_session_token(&operation, None, None)
+                        .unwrap()
+                        .as_str(),
+                    cached.as_str()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn non_compound_tokens_and_disabled_automatic_resolution_keep_existing_behavior() {
+        let manager = SessionManager::new();
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ));
+        capture_session_token(&manager, &operation, "0:1#900");
+        assert!(matches!(
+            prepare_session_token_for_attempt(
+                &manager,
+                &operation,
+                TransportMode::GatewayV2,
+                None,
+                &OperationOverrides::default(),
+                false
+            ),
+            AttemptSessionToken::Resolved(None)
+        ));
+        for original in ["0:1#10", "opaque", ""] {
+            let operation = operation.clone().with_session_token(original);
+            let AttemptSessionToken::Resolved(Some(token)) = prepare_session_token_for_attempt(
+                &manager,
+                &operation,
+                TransportMode::GatewayV2,
+                None,
+                &OperationOverrides::default(),
+                false,
+            ) else {
+                panic!("single explicit tokens must keep existing passthrough behavior");
+            };
+            assert_eq!(token.as_str(), original);
+        }
+    }
+
+    #[test]
+    fn unresolved_explicit_scope_preserves_original_and_classic_endpoint() {
+        let original = "0:1#10,1:1#20";
+        let operation = CosmosOperation::read_item(ItemReference::from_name(
+            &test_container(),
+            PartitionKey::from("pk"),
+            "item",
+        ))
+        .with_session_token(original);
+        let manager = SessionManager::new();
+        let id = PartitionKeyRangeId::from("0".to_owned());
+        for automatic in [false, true] {
+            let AttemptSessionToken::RequiresClassic(token) = prepare_session_token_for_attempt(
+                &manager,
+                &operation,
+                TransportMode::GatewayV2,
+                Some(&id),
+                &OperationOverrides::default(),
+                automatic,
+            ) else {
+                panic!("missing topology must retain the original token through classic Gateway");
+            };
+            assert_eq!(token.as_str(), original);
+            let mut routing = test_routing();
+            routing.transport_mode = TransportMode::GatewayV2;
+            routing.selected_url = Url::parse("https://thin.documents.azure.com:10250/").unwrap();
+            routing.endpoint_key = EndpointKey::try_from(&routing.selected_url).unwrap();
+            use_classic_gateway(&mut routing);
+            assert_eq!(routing.transport_mode, TransportMode::Gateway);
+            assert_eq!(&routing.selected_url, routing.endpoint.url());
+            assert_eq!(routing.endpoint_key, routing.endpoint.endpoint_key());
+            let activity = ActivityId::from_string("explicit-fallback".to_owned());
+            let request = build_transport_request(
+                &operation,
+                &OperationOverrides::default(),
+                None,
+                &TransportRequestContext {
+                    routing: &routing,
+                    activity_id: &activity,
+                    execution_context: ExecutionContext::OperationRetry,
+                    deadline: None,
+                    effective_consistency: DefaultConsistencyLevel::Session,
+                    read_consistency_strategy: crate::options::ReadConsistencyStrategy::Default,
+                    resolved_session_token: Some(token),
+                    throughput_control: None,
+                },
+            )
+            .unwrap();
+            assert_eq!(
+                request.headers.get_optional_str(&HeaderName::from_static(
+                    request_header_names::SESSION_TOKEN
+                )),
+                Some(original)
+            );
+        }
     }
 
     #[test]

@@ -423,6 +423,9 @@ impl CosmosOperation {
     }
 
     /// Sets the session token request header for the operation.
+    ///
+    /// Caller tokens take precedence over cached state. See
+    /// [`SessionToken`](crate::models::SessionToken) for per-attempt transport scoping.
     pub fn with_session_token(
         mut self,
         session_token: impl Into<crate::models::SessionToken>,

@@ -12,6 +12,10 @@ use crate::{
         transport::{
             cosmos_transport_client::{HttpRequest, HttpResponse, TransportClient, TransportError},
             http_client_factory::{DefaultHttpClientFactory, HttpClientConfig, HttpClientFactory},
+            rntbd::{
+                tokens::{RntbdRequestToken, TokenValue},
+                RntbdRequestFrame,
+            },
         },
         CosmosDriverRuntimeBuilder,
     },
@@ -104,9 +108,31 @@ impl TransportClient for ObservingClient {
                 .fetch_add(1, Ordering::SeqCst);
         }
         let observation = if request.url.path().contains("/docs") {
-            let token = request
-                .headers
-                .get_optional_str(&"x-ms-session-token".into());
+            let frame = if self.transport == Some(TransportKind::GatewayV2) {
+                Some(
+                    RntbdRequestFrame::read(request.body.as_ref().expect("Gateway V2 frame"))
+                        .unwrap_or_else(|_| panic!("invalid Gateway V2 request frame")),
+                )
+            } else {
+                None
+            };
+            let token = match &frame {
+                Some(frame) => frame.metadata.iter().find_map(|token| {
+                    if RntbdRequestToken::try_from(token.id.0)
+                        == Ok(RntbdRequestToken::SessionToken)
+                    {
+                        match &token.value {
+                            TokenValue::String(value) => Some(value.as_str()),
+                            _ => panic!("unexpected session token encoding"),
+                        }
+                    } else {
+                        None
+                    }
+                }),
+                None => request
+                    .headers
+                    .get_optional_str(&"x-ms-session-token".into()),
+            };
             Some(Observation {
                 transport: self.transport,
                 token_present: token.is_some(),
@@ -135,13 +161,14 @@ impl TransportClient for ObservingClient {
 async fn client(
     account: AccountReference,
     mode: PartitionTopologyCacheMode,
+    gateway_v2_disabled: bool,
 ) -> (Arc<CosmosDriver>, Arc<Recorder>) {
     let recorder = Arc::new(Recorder::default());
     let runtime = CosmosDriverRuntimeBuilder::new()
         .with_mock_http_client_factory(Arc::new(ObservingFactory(recorder.clone())))
         .with_connection_pool(
             ConnectionPoolOptions::builder()
-                .with_gateway_v2_disabled(true)
+                .with_gateway_v2_disabled(gateway_v2_disabled)
                 .build()
                 .unwrap(),
         )
@@ -227,11 +254,27 @@ fn check_observations(
     expected_ids: &[String],
     explicit: bool,
 ) {
+    check_transport_observations(
+        recorder,
+        scenario,
+        expected_ids,
+        explicit,
+        TransportKind::Gateway,
+    );
+}
+
+fn check_transport_observations(
+    recorder: &Recorder,
+    scenario: &str,
+    expected_ids: &[String],
+    explicit: bool,
+    transport: TransportKind,
+) {
     let observations = std::mem::take(&mut *recorder.observations.lock().unwrap());
     assert!(!observations.is_empty(), "no outgoing data-plane request");
     for observation in observations {
         println!("scenario={scenario} {observation:?}");
-        assert_eq!(observation.transport, Some(TransportKind::Gateway));
+        assert_eq!(observation.transport, Some(transport));
         assert_eq!(observation.status, Some(200));
         assert_eq!(observation.token_present, !expected_ids.is_empty());
         let mut actual = observation.range_ids;
@@ -251,14 +294,12 @@ async fn read(driver: &CosmosDriver, operation: CosmosOperation, options: Operat
     assert_eq!(body["version"], 2, "read-your-writes version");
 }
 
-async fn scenarios(account: AccountReference, database: &str) {
-    let (eager, eager_recorder) = client(account.clone(), PartitionTopologyCacheMode::Eager).await;
-    let container = eager
-        .resolve_container(database, "items", OperationOptions::default())
-        .await
-        .unwrap_or_else(|_| panic!("live container unavailable"));
-    let ranges = eager
-        .resolve_all_partition_key_ranges(&container, true)
+async fn keys_for_all_ranges(
+    driver: &CosmosDriver,
+    container: &ContainerReference,
+) -> BTreeMap<String, String> {
+    let ranges = driver
+        .resolve_all_partition_key_ranges(container, true)
         .await
         .unwrap()
         .expect("live topology unavailable");
@@ -270,9 +311,9 @@ async fn scenarios(account: AccountReference, database: &str) {
     let mut keys = BTreeMap::new();
     for index in 0..256 {
         let key = format!("scope-{index}");
-        let resolved = eager
+        let resolved = driver
             .resolve_partition_key_ranges_for_key(
-                &container,
+                container,
                 &PartitionKey::from(key.clone()),
                 false,
             )
@@ -290,6 +331,17 @@ async fn scenarios(account: AccountReference, database: &str) {
         ranges.len(),
         "bounded key search must cover all ranges"
     );
+    keys
+}
+
+async fn scenarios(account: AccountReference, database: &str) {
+    let (eager, eager_recorder) =
+        client(account.clone(), PartitionTopologyCacheMode::Eager, true).await;
+    let container = eager
+        .resolve_container(database, "items", OperationOptions::default())
+        .await
+        .unwrap_or_else(|_| panic!("live container unavailable"));
+    let keys = keys_for_all_ranges(&eager, &container).await;
     let all_ids: Vec<_> = keys.keys().cloned().collect();
     seed(&eager, &container, &keys, "eager", false).await;
     eager_recorder.observations.lock().unwrap().clear();
@@ -308,7 +360,8 @@ async fn scenarios(account: AccountReference, database: &str) {
         );
     }
 
-    let (lazy, lazy_recorder) = client(account.clone(), PartitionTopologyCacheMode::Lazy).await;
+    let (lazy, lazy_recorder) =
+        client(account.clone(), PartitionTopologyCacheMode::Lazy, true).await;
     let lazy_container = lazy
         .resolve_container(database, "items", OperationOptions::default())
         .await
@@ -331,7 +384,7 @@ async fn scenarios(account: AccountReference, database: &str) {
         .await
         .unwrap()
         .expect("explicit topology warm-up failed");
-    assert_eq!(warm_ranges.len(), ranges.len());
+    assert_eq!(warm_ranges.len(), keys.len());
     assert!(lazy_recorder.topology_requests.load(Ordering::SeqCst) > 0);
     for (range, key) in &keys {
         read(
@@ -353,7 +406,7 @@ async fn scenarios(account: AccountReference, database: &str) {
         .session_manager
         .resolve_session_token(&operation, None, None)
         .expect("real response tokens must be cached");
-    assert_eq!(range_ids(explicit.as_str()).len(), ranges.len());
+    assert_eq!(range_ids(explicit.as_str()).len(), keys.len());
     *lazy_recorder.expected_token.lock().unwrap() = Some(explicit.as_str().to_owned());
     for disabled in [false, true] {
         read(
@@ -398,7 +451,7 @@ async fn scenarios(account: AccountReference, database: &str) {
     .await;
     check_observations(&lazy_recorder, "disabled-with-cached-state", &[], false);
 
-    let (disabled, recorder) = client(account, PartitionTopologyCacheMode::Eager).await;
+    let (disabled, recorder) = client(account, PartitionTopologyCacheMode::Eager, true).await;
     let disabled_container = disabled
         .resolve_container(database, "items", OperationOptions::default())
         .await
@@ -433,16 +486,111 @@ async fn scenarios(account: AccountReference, database: &str) {
     println!("all_classic_gateway_session_scenarios_passed=true");
 }
 
-#[tokio::test]
-#[ignore = "requires explicitly provisioned live Cosmos DB resources and credentials"]
-async fn classic_gateway_session_scope_live() {
+fn live_configuration() -> (AccountReference, String) {
     let endpoint = std::env::var("COSMOS_SESSION_LIVE_ENDPOINT").expect("live endpoint required");
     let key = std::env::var("COSMOS_SESSION_LIVE_KEY").expect("live key required");
     let database = std::env::var("COSMOS_SESSION_LIVE_DATABASE").expect("live database required");
     assert!(database.starts_with("test-db-session-scope-"));
     let endpoint = Url::parse(&endpoint).expect("valid endpoint required");
     let account = AccountReference::with_account_key(endpoint, key);
+    (account, database)
+}
+
+#[tokio::test]
+#[ignore = "requires explicitly provisioned live Cosmos DB resources and credentials"]
+async fn classic_gateway_session_scope_live() {
+    let (account, database) = live_configuration();
     tokio::time::timeout(Duration::from_secs(180), scenarios(account, &database))
         .await
         .expect("bounded live regression timed out");
+}
+
+#[tokio::test]
+#[ignore = "requires explicitly provisioned thin-client Cosmos DB resources and credentials"]
+async fn gateway_v2_explicit_session_scope_live() {
+    let (account, database) = live_configuration();
+    tokio::time::timeout(Duration::from_secs(180), async {
+        let (writer, _) = client(account.clone(), PartitionTopologyCacheMode::Eager, true).await;
+        let container = writer
+            .resolve_container(&database, "items", OperationOptions::default())
+            .await
+            .expect("live container available");
+        let keys = keys_for_all_ranges(&writer, &container).await;
+        seed(&writer, &container, &keys, "explicit-native", false).await;
+        let first_key = keys.values().next().unwrap();
+        let operation = CosmosOperation::read_item(item(&container, first_key, "explicit-native"));
+        let original = writer
+            .session_manager
+            .resolve_session_token(&operation, None, None)
+            .expect("writer accumulated a real compound token");
+        let all_ids: Vec<_> = keys.keys().cloned().collect();
+        assert_eq!(range_ids(original.as_str()).len(), keys.len());
+        for disabled in [false, true] {
+            let (reader, recorder) =
+                client(account.clone(), PartitionTopologyCacheMode::Lazy, false).await;
+            let container = reader
+                .resolve_container(&database, "items", OperationOptions::default())
+                .await
+                .expect("reader resolves existing container");
+            let options = OperationOptions {
+                session_capturing_disabled: Some(disabled),
+                ..Default::default()
+            };
+            *recorder.expected_token.lock().unwrap() = Some(original.as_str().to_owned());
+            read(
+                &reader,
+                CosmosOperation::read_item(item(&container, first_key, "explicit-native"))
+                    .with_session_token(original.clone()),
+                options.clone(),
+            )
+            .await;
+            check_transport_observations(
+                &recorder,
+                "explicit-cold-classic-fallback",
+                &all_ids,
+                true,
+                TransportKind::Gateway,
+            );
+            assert_eq!(recorder.topology_requests.load(Ordering::SeqCst), 0);
+            reader
+                .resolve_all_partition_key_ranges(&container, true)
+                .await
+                .unwrap()
+                .unwrap();
+            let fetches = recorder.topology_requests.load(Ordering::SeqCst);
+            for (id, key) in &keys {
+                let expected = original
+                    .as_str()
+                    .split(',')
+                    .find(|segment| {
+                        segment
+                            .split_once(':')
+                            .is_some_and(|(range, _)| range == id)
+                    })
+                    .expect("writer token covers each target");
+                *recorder.expected_token.lock().unwrap() = Some(expected.to_owned());
+                let operation =
+                    CosmosOperation::read_item(item(&container, key, "explicit-native"))
+                        .with_session_token(original.clone());
+                read(&reader, operation.clone(), options.clone()).await;
+                check_transport_observations(
+                    &recorder,
+                    if disabled {
+                        "explicit-native-capture-disabled"
+                    } else {
+                        "explicit-native"
+                    },
+                    std::slice::from_ref(id),
+                    true,
+                    TransportKind::GatewayV2,
+                );
+                assert_eq!(recorder.topology_requests.load(Ordering::SeqCst), fetches);
+                if disabled {
+                    assert!(!reader.session_manager.has_session_token(&operation));
+                }
+            }
+        }
+    })
+    .await
+    .expect("bounded explicit-token regression timed out");
 }

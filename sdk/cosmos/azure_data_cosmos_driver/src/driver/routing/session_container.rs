@@ -6,11 +6,11 @@
 use crate::{
     driver::cache::ContainerRoutingMap,
     models::{
-        resource_id::ResourceId, vector_session_token::SessionTokenValue, ContainerReference,
-        SessionToken,
+        partition_key_range::PartitionKeyRangeStatus, resource_id::ResourceId,
+        vector_session_token::SessionTokenValue, ContainerReference, SessionToken,
     },
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::RwLock;
 
 use azure_core::fmt::SafeDebug;
@@ -53,6 +53,59 @@ impl SessionContainer {
         Self {
             inner: RwLock::new(SessionContainerInner::default()),
         }
+    }
+
+    /// Scopes caller-owned progress without consulting or updating the session cache.
+    pub(crate) fn scope_explicit_token(
+        token: &SessionToken,
+        partition_key_range_id: Option<&str>,
+        topology: Option<&ContainerRoutingMap>,
+    ) -> Option<SessionToken> {
+        let map = topology?;
+        let range = map.range(partition_key_range_id?)?;
+        if range.status != PartitionKeyRangeStatus::Online {
+            return None;
+        }
+        let parents = range.parents.as_deref().unwrap_or(&[]);
+        let mut tokens = HashMap::new();
+        for segment in token.as_str().split(',') {
+            let (id, value) = segment.trim().split_once(':')?;
+            if id.is_empty() {
+                return None;
+            }
+            let recognized = match map.range(id) {
+                Some(active) => active.status == PartitionKeyRangeStatus::Online,
+                // A gone ID without a known relationship to this target may be an older ancestor.
+                None => parents.iter().any(|parent| parent == id),
+            };
+            if !recognized {
+                return None;
+            }
+            // The general parser tolerates repeated region fields; do not discard caller progress.
+            let mut regions = HashSet::new();
+            for progress in value.split('#').skip(2) {
+                let (region, _) = progress.split_once('=')?;
+                if !regions.insert(region.parse::<u64>().ok()?) {
+                    return None;
+                }
+            }
+            let value = SessionTokenValue::parse(value).ok()?;
+            if tokens.insert(id.to_owned(), value).is_some() {
+                return None;
+            }
+        }
+
+        let mut sources = parents.to_vec();
+        sources.push(range.id.clone());
+        let mut kind = None;
+        for value in sources.iter().filter_map(|id| tokens.get(id)) {
+            let current = std::mem::discriminant(value);
+            if kind.is_some_and(|previous| previous != current) {
+                return None;
+            }
+            kind = Some(current);
+        }
+        Self::build_parent_token(&tokens, &range.id, &sources)
     }
 
     /// Builds a composite session token string from the cached inner state.
@@ -381,6 +434,113 @@ mod tests {
             coll_rid.to_owned(),
             &props,
         )
+    }
+
+    fn topology(ranges: serde_json::Value) -> ContainerRoutingMap {
+        ContainerRoutingMap::try_create(serde_json::from_value(ranges).unwrap(), None, None)
+            .unwrap()
+            .unwrap()
+    }
+
+    #[test]
+    fn explicit_compound_scoping_preserves_complete_vectors_and_original() {
+        let map = topology(serde_json::json!([
+            {"id":"0","minInclusive":"","maxExclusive":"80"},
+            {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+        ]));
+        let original = "0:1#100#1=90#2=-1,1:2#20#3=18";
+        let token = SessionToken::new(original);
+        for (target, expected) in [("0", "0:1#100#1=90#2=-1"), ("1", "1:2#20#3=18")] {
+            let scoped =
+                SessionContainer::scope_explicit_token(&token, Some(target), Some(&map)).unwrap();
+            assert_eq!(scoped.as_str(), expected);
+            assert_eq!(token.as_str(), original);
+        }
+    }
+
+    #[test]
+    fn explicit_compound_scoping_merges_all_required_parent_and_child_progress() {
+        let map = topology(serde_json::json!([
+            {"id":"2","minInclusive":"","maxExclusive":"FF","parents":["0","1"]}
+        ]));
+        for (original, expected) in [
+            ("0:1#100#1=90,1:1#110#2=100", "2:1#110#1=90#2=100"),
+            (
+                "0:1#100#1=90,1:1#110#2=100,2:1#105#1=95",
+                "2:1#110#1=95#2=100",
+            ),
+            ("0:100,1:200", "2:200"),
+        ] {
+            let token = SessionToken::new(original);
+            let scoped =
+                SessionContainer::scope_explicit_token(&token, Some("2"), Some(&map)).unwrap();
+            assert_eq!(scoped.as_str(), expected);
+            assert_eq!(token.as_str(), original);
+        }
+        let mixed = SessionToken::new("0:100,1:1#10#2=9");
+        assert!(SessionContainer::scope_explicit_token(&mixed, Some("2"), Some(&map)).is_none());
+    }
+
+    #[test]
+    fn explicit_compound_scoping_preserves_split_parent_progress_for_either_child() {
+        let map = topology(serde_json::json!([
+            {"id":"2","minInclusive":"","maxExclusive":"40","parents":["0"]},
+            {"id":"3","minInclusive":"40","maxExclusive":"80","parents":["0"]},
+            {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+        ]));
+        let token = SessionToken::new("0:1#100#1=90,1:1#200#2=150");
+        for target in ["2", "3"] {
+            assert_eq!(
+                SessionContainer::scope_explicit_token(&token, Some(target), Some(&map))
+                    .unwrap()
+                    .as_str(),
+                format!("{target}:1#100#1=90")
+            );
+        }
+    }
+
+    #[test]
+    fn explicit_compound_scoping_declines_missing_or_untrusted_identity() {
+        let map = topology(serde_json::json!([
+            {"id":"0","minInclusive":"","maxExclusive":"80"},
+            {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+        ]));
+        let token = SessionToken::new("0:1#100,1:1#200");
+        assert!(SessionContainer::scope_explicit_token(&token, None, Some(&map)).is_none());
+        assert!(SessionContainer::scope_explicit_token(&token, Some("0"), None).is_none());
+        assert!(SessionContainer::scope_explicit_token(&token, Some("old"), Some(&map)).is_none());
+        for original in [
+            "0:1#100,child:1#300",
+            "1:1#100,1:1#200",
+            "0:1#100#1=90#1=1,1:1#200",
+            "0:1#100##1=90,1:1#200",
+            "0:1#100,1:future-format",
+            "0:1#100,",
+            ":1#100,1:1#200",
+        ] {
+            let token = SessionToken::new(original);
+            assert!(
+                SessionContainer::scope_explicit_token(&token, Some("0"), Some(&map)).is_none()
+            );
+            assert_eq!(token.as_str(), original);
+        }
+        let unknown_lineage = topology(serde_json::json!([
+            {"id":"2","minInclusive":"","maxExclusive":"80","parents":["1"]},
+            {"id":"3","minInclusive":"80","maxExclusive":"FF","parents":["0"]}
+        ]));
+        let token = SessionToken::new("0:1#300,2:1#100");
+        assert!(
+            SessionContainer::scope_explicit_token(&token, Some("2"), Some(&unknown_lineage))
+                .is_none()
+        );
+        let offline = topology(serde_json::json!([
+            {"id":"0","minInclusive":"","maxExclusive":"80","status":"offline"},
+            {"id":"1","minInclusive":"80","maxExclusive":"FF"}
+        ]));
+        let token = SessionToken::new("0:1#100,1:1#200");
+        assert!(
+            SessionContainer::scope_explicit_token(&token, Some("0"), Some(&offline)).is_none()
+        );
     }
 
     #[test]

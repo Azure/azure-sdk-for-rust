@@ -93,9 +93,11 @@ pub struct OperationOptions {
     ///
     /// When `None` or `Some(false)`, session tokens are captured from responses
     /// and sent on subsequent requests for session consistency. Set to `Some(true)`
-    /// to disable both automatic capture and automatic resolution. User-provided
-    /// session tokens are unaffected. This setting cannot enable automatic session
-    /// token management when the driver's partition key range cache is disabled.
+    /// to disable both automatic capture and automatic resolution.
+    ///
+    /// Explicit tokens still apply. Gateway V2 may scope a compound token using
+    /// available topology, or fall back to classic Gateway with the original token.
+    /// This transport normalization does not read or update the session cache.
     pub session_capturing_disabled: Option<bool>,
 
     /// Maximum number of session-consistency retries on 404/1002 errors.

@@ -61,6 +61,15 @@ impl SessionManager {
         }
     }
 
+    /// Scopes caller-owned progress using routing metadata, never cached session state.
+    pub(crate) fn scope_explicit_token(
+        token: &SessionToken,
+        pk_range_id: Option<&str>,
+        topology: Option<&ContainerRoutingMap>,
+    ) -> Option<SessionToken> {
+        SessionContainer::scope_explicit_token(token, pk_range_id, topology)
+    }
+
     /// Resolves the session token that should be sent on the next request.
     ///
     /// Resolution order:

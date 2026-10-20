@@ -44,6 +44,8 @@ const SCOPED_TOKEN: &str = "0:1#100#1=10";
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Scenario {
     Success,
+    ExplicitSession,
+    ExplicitSessionRetry,
     ActivateBeforeRetry,
     ActivateBeforeHedge,
     SplitOnWrite,
@@ -165,6 +167,11 @@ impl TransportClient for ScenarioClient {
                         headers,
                         body: if split {
                             br#"{"PartitionKeyRanges":[{"id":"1","minInclusive":"","maxExclusive":"80","parents":["0"]},{"id":"2","minInclusive":"80","maxExclusive":"FF","parents":["0"]}],"_count":2}"#.to_vec()
+                        } else if matches!(
+                            self.scenario,
+                            Scenario::ExplicitSession | Scenario::ExplicitSessionRetry
+                        ) {
+                            br#"{"PartitionKeyRanges":[{"id":"0","minInclusive":"","maxExclusive":"80"},{"id":"1","minInclusive":"80","maxExclusive":"FF"}],"_count":2}"#.to_vec()
                         } else {
                             br#"{"PartitionKeyRanges":[{"id":"0","minInclusive":"","maxExclusive":"FF","parents":[]}],"_count":1}"#.to_vec()
                         },
@@ -207,7 +214,9 @@ impl TransportClient for ScenarioClient {
         let attempt = self.item_requests.fetch_add(1, Ordering::SeqCst);
         let activates = matches!(
             self.scenario,
-            Scenario::ActivateBeforeRetry | Scenario::ActivateBeforeHedge
+            Scenario::ActivateBeforeRetry
+                | Scenario::ActivateBeforeHedge
+                | Scenario::ExplicitSessionRetry
         );
         if attempt == 0 && activates {
             self.publish(account_properties(2, true, true)).await;
@@ -249,12 +258,25 @@ impl TransportClient for ScenarioClient {
         } else {
             b"{}".to_vec()
         };
+        let response_session = matches!(
+            self.scenario,
+            Scenario::ExplicitSession | Scenario::ExplicitSessionRetry
+        )
+        .then(|| "0:1#900#1=90".to_owned());
+        if let Some(token) = response_session.as_ref() {
+            headers.insert("x-ms-session-token", token.clone());
+        }
         let response_gate = self.response_gate.lock().unwrap().take();
         if let Some(gate) = response_gate {
             gate.await.expect("test releases the response");
         }
         if let Some(frame) = frame {
-            Ok(thin_response(status, frame.activity_id, body))
+            Ok(thin_response(
+                status,
+                frame.activity_id,
+                body,
+                response_session,
+            ))
         } else {
             Ok(HttpResponse {
                 status,
@@ -265,7 +287,12 @@ impl TransportClient for ScenarioClient {
     }
 }
 
-fn thin_response(status: u16, activity_id: Uuid, body: Vec<u8>) -> HttpResponse {
+fn thin_response(
+    status: u16,
+    activity_id: Uuid,
+    body: Vec<u8>,
+    session_token: Option<String>,
+) -> HttpResponse {
     let response = RntbdResponse {
         status: CosmosStatus::new(StatusCode::from(status)),
         activity_id,
@@ -295,7 +322,7 @@ fn thin_response(status: u16, activity_id: Uuid, body: Vec<u8>) -> HttpResponse 
         quorum_acked_local_lsn: None,
         item_local_lsn: None,
         transport_request_id: None,
-        session_token: None,
+        session_token,
         query_metrics: None,
         index_utilization: None,
         query_execution_info: None,
@@ -435,6 +462,162 @@ fn options(hedging: bool) -> OperationOptions {
         ))),
         ..Default::default()
     }
+}
+
+#[tokio::test]
+async fn explicit_compound_tokens_scope_on_both_hedge_legs_independently_of_capture() {
+    for mode in [
+        PartitionTopologyCacheMode::Eager,
+        PartitionTopologyCacheMode::Lazy,
+    ] {
+        for disabled in [false, true] {
+            for hedging in [false, true] {
+                let (driver, client, read) = setup_with_topology_mode(
+                    account_properties(2, true, true),
+                    Scenario::ExplicitSession,
+                    mode,
+                )
+                .await;
+                driver
+                    .resolve_all_partition_key_ranges(read.container().unwrap(), true)
+                    .await
+                    .unwrap()
+                    .unwrap();
+                let fetches = client.range_requests.load(Ordering::SeqCst);
+                let original = "0:1#10#1=9,1:1#20#1=19";
+                let read = read.with_session_token(original);
+                let (_release, gate) = futures::channel::oneshot::channel();
+                if hedging {
+                    *client.response_gate.lock().unwrap() = Some(gate);
+                }
+                let mut request_options = options(hedging);
+                request_options.session_capturing_disabled = Some(disabled);
+                let response = driver
+                    .execute_singleton_operation(read.clone(), request_options)
+                    .await
+                    .unwrap();
+                assert_eq!(response.status(), StatusCode::Ok);
+                assert_eq!(client.range_requests.load(Ordering::SeqCst), fetches);
+                let requests = client.requests.lock().unwrap();
+                assert_eq!(requests.len(), if hedging { 2 } else { 1 });
+                assert!(requests.iter().all(|request| request.thin));
+                assert!(requests
+                    .iter()
+                    .all(|request| request.session.as_deref() == Some("0:1#10#1=9")));
+                assert_eq!(
+                    read.request_headers()
+                        .session_token
+                        .as_ref()
+                        .unwrap()
+                        .as_str(),
+                    original
+                );
+                let cached = driver
+                    .session_manager
+                    .resolve_session_token(&read, None, None)
+                    .unwrap();
+                assert_eq!(
+                    cached.as_str(),
+                    if disabled {
+                        COMPOSITE_TOKEN
+                    } else {
+                        "0:1#900#1=90,1:1#200#1=20"
+                    }
+                );
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn explicit_compound_cold_lazy_fallback_preserves_progress_without_capture_or_loading() {
+    for hedging in [false, true] {
+        let (driver, client, read) =
+            setup(account_properties(2, true, true), Scenario::ExplicitSession).await;
+        let original = "0:1#10#1=9,1:1#20#1=19";
+        let read = read.with_session_token(original);
+        let (_release, gate) = futures::channel::oneshot::channel();
+        if hedging {
+            *client.response_gate.lock().unwrap() = Some(gate);
+        }
+        let mut request_options = options(hedging);
+        request_options.session_capturing_disabled = Some(true);
+        driver
+            .execute_singleton_operation(read.clone(), request_options.clone())
+            .await
+            .unwrap();
+        assert_eq!(client.range_requests.load(Ordering::SeqCst), 0);
+        {
+            let requests = client.requests.lock().unwrap();
+            assert_eq!(requests.len(), if hedging { 2 } else { 1 });
+            assert!(requests.iter().all(|request| !request.thin));
+            assert!(requests
+                .iter()
+                .all(|request| request.session.as_deref() == Some(original)));
+        }
+        driver
+            .resolve_all_partition_key_ranges(read.container().unwrap(), true)
+            .await
+            .unwrap()
+            .unwrap();
+        let fetches = client.range_requests.load(Ordering::SeqCst);
+        driver
+            .execute_singleton_operation(read.clone(), request_options)
+            .await
+            .unwrap();
+        assert_eq!(client.range_requests.load(Ordering::SeqCst), fetches);
+        let requests = client.requests.lock().unwrap();
+        assert!(requests.last().unwrap().thin);
+        assert_eq!(
+            requests.last().unwrap().session.as_deref(),
+            Some("0:1#10#1=9")
+        );
+        assert_eq!(
+            driver
+                .session_manager
+                .resolve_session_token(&read, None, None)
+                .unwrap()
+                .as_str(),
+            COMPOSITE_TOKEN,
+        );
+    }
+}
+
+#[tokio::test]
+async fn explicit_compound_retry_uses_original_when_transport_changes() {
+    let (driver, client, read) = setup_with_topology_mode(
+        account_properties(2, false, false),
+        Scenario::ExplicitSessionRetry,
+        PartitionTopologyCacheMode::Eager,
+    )
+    .await;
+    driver
+        .resolve_all_partition_key_ranges(read.container().unwrap(), true)
+        .await
+        .unwrap()
+        .unwrap();
+    let original = "0:1#10#1=9,1:1#20#1=19";
+    let read = read.with_session_token(original);
+    let mut request_options = options(false);
+    request_options.session_capturing_disabled = Some(true);
+    driver
+        .execute_singleton_operation(read.clone(), request_options)
+        .await
+        .unwrap();
+    let requests = client.requests.lock().unwrap();
+    assert_eq!(requests.len(), 2);
+    assert!(!requests[0].thin);
+    assert_eq!(requests[0].session.as_deref(), Some(original));
+    assert!(requests[1].thin);
+    assert_eq!(requests[1].session.as_deref(), Some("0:1#10#1=9"));
+    assert_eq!(
+        read.request_headers()
+            .session_token
+            .as_ref()
+            .unwrap()
+            .as_str(),
+        original
+    );
 }
 
 #[tokio::test]
