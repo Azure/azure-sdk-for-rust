@@ -4,6 +4,7 @@
 mod balancing;
 #[cfg(all(test, feature = "__internal_in_memory_emulator"))]
 mod tests;
+mod topology;
 
 use crate::{
     change_feed_processor::{
@@ -11,13 +12,13 @@ use crate::{
         bootstrap::{
             error, namespace,
             store::{Store, Stored},
-            Identity, ProcessingLease, RangePlan, SCHEMA_VERSION,
+            Identity, ProcessingLease, SCHEMA_VERSION,
         },
         BootstrapOptions, ChangeFeedProcessorMode,
     },
     models::{
-        ChangeFeedStartFrom, ContainerReference, ContinuationToken, CosmosOperation,
-        CosmosResponse, MaxItemCountHint,
+        ChangeFeedStartFrom, ContainerReference, ContinuationToken, CosmosResponse, FeedRange,
+        MaxItemCountHint,
     },
     options::{OperationOptions, PlanOptions},
     CosmosDriver, Result,
@@ -134,6 +135,8 @@ struct Lease {
     incarnation: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     renewed_at: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    children: Option<Vec<FeedRange>>,
 }
 
 struct Context {
@@ -156,57 +159,28 @@ impl Context {
     }
 
     fn validate(&self, lease: &Lease) -> Result<()> {
-        if lease.base.record.workload != self.identity || lease.base.record.ttl != -1 {
-            return Err(error(
-                StatusCode::Conflict,
-                "Incompatible processing lease.",
-            ));
-        }
-        Ok(())
-    }
-
-    async fn list(&self) -> Result<Vec<Lease>> {
-        let plan = self
-            .store()
-            .read::<RangePlan>(&format!("{}.plan", self.namespace))
-            .await?
-            .ok_or_else(|| error(StatusCode::NotFound, "Bootstrap range plan is missing."))?;
-        if plan.value.record.workload != self.identity {
-            return Err(error(
-                StatusCode::Conflict,
-                "Incompatible bootstrap range plan.",
-            ));
-        }
-        let mut leases = Vec::with_capacity(plan.value.ranges.len());
-        for range in plan.value.ranges {
-            let id = format!(
-                "{}.lease.{}-{}",
-                self.namespace,
-                range.min_inclusive(),
-                range.max_exclusive()
-            );
-            let stored = self
-                .store()
-                .read::<Lease>(&id)
-                .await?
-                .ok_or_else(|| error(StatusCode::NotFound, "Processing lease is missing."))?;
-            self.validate(&stored.value)?;
-            if stored.value.base.record.id != id || stored.value.base.range != range {
+        bootstrap::validate_lease(&lease.base, &self.identity, &self.namespace)?;
+        if let Some(children) = &lease.children {
+            if lease.base.owner.is_some()
+                || lease.incarnation.is_some()
+                || lease.base.continuation.is_none()
+            {
                 return Err(error(
                     StatusCode::Conflict,
-                    "Processing lease range does not match the plan.",
+                    "Invalid retired processing lease.",
                 ));
             }
-            leases.push(stored.value);
+            topology::validate_children(&lease.base.range, children)?;
         }
-        Ok(leases)
+        Ok(())
     }
 
     async fn acquire(&self, observed: &Lease) -> Result<Stored<Lease>> {
         let id = &observed.base.record.id;
         let mut current = self.store().read::<Lease>(id).await?.ok_or_else(lost)?;
         self.validate(&current.value)?;
-        if current.value.base.owner != observed.base.owner
+        if current.value.children.is_some()
+            || current.value.base.owner != observed.base.owner
             || current.value.incarnation != observed.incarnation
         {
             return Err(lost());
@@ -222,7 +196,8 @@ impl Context {
         for _ in 0..5 {
             let mut current = self.store().read::<Lease>(&id).await?.ok_or_else(lost)?;
             self.validate(&current.value)?;
-            if current.value.base.owner != lease.value.base.owner
+            if current.value.children.is_some()
+                || current.value.base.owner != lease.value.base.owner
                 || current.value.incarnation != lease.value.incarnation
             {
                 return Err(lost());
@@ -231,6 +206,14 @@ impl Context {
                 Update::Renew => {}
                 Update::Checkpoint(token) => current.value.base.continuation = Some(token.clone()),
                 Update::Release => current.value.base.owner = None,
+                Update::Split(children) => {
+                    topology::validate_children(&current.value.base.range, children)?;
+                    let checkpoint = self.checkpoint(&current.value, &current.value.base.range)?;
+                    current.value.base.continuation = Some(checkpoint);
+                    current.value.base.owner = None;
+                    current.value.incarnation = None;
+                    current.value.children = Some(children.to_vec());
+                }
             }
             current.value.renewed_at = Some(now_millis());
             match self
@@ -257,6 +240,7 @@ enum Update<'a> {
     Renew,
     Checkpoint(&'a ContinuationToken),
     Release,
+    Split(&'a [FeedRange]),
 }
 
 fn now_millis() -> i64 {
@@ -373,6 +357,14 @@ struct Owner {
 ///
 /// Clones share a lifecycle. Dropping the last handle requests shutdown.
 /// Lease renewal and balancing continue while consumers process batches.
+///
+/// Splits retire the parent lease and create independently balanced child
+/// leases from acknowledged progress. Merges retain separate EPK-slice leases
+/// and their checkpoints. Retired parent records must not be deleted.
+///
+/// Splits and merges are recovered automatically while processor instances
+/// remain running. Only the affected lease's processing session is replaced;
+/// no application stop or restart is required.
 #[derive(Clone)]
 pub struct Processor {
     owner: Arc<Owner>,
@@ -657,6 +649,9 @@ async fn supervise(
         tracing::warn!(lease = %token, error = %err, "Lease processing stopped");
     }
     let mut lease = lease.lock().await;
+    if lease.value.children.is_some() {
+        return;
+    }
     if let Err(err) = context.update(&mut lease, Update::Release).await {
         tracing::warn!(lease = %token, error = %err, "Lease release failed; ownership will expire");
     }
@@ -695,31 +690,43 @@ async fn poll(
     progress: Arc<StdMutex<Instant>>,
     cancelled: Signal,
 ) -> Result<()> {
-    let initial = lease.lock().await.value.clone();
-    let operation = match context.options.bootstrap.mode {
-        ChangeFeedProcessorMode::LatestVersion => {
-            CosmosOperation::change_feed(context.source.clone(), Some(initial.base.range.clone()))
+    let result = poll_feed(context.clone(), state, lease.clone(), progress, cancelled).await;
+    match result {
+        Err(err) if err.status().is_partition_topology_change() => {
+            if context.recover(lease).await? {
+                Ok(())
+            } else {
+                // A merge or an unfinished transition re-enters through normal lease acquisition.
+                Err(err)
+            }
         }
-        ChangeFeedProcessorMode::AllVersionsAndDeletes => {
-            CosmosOperation::change_feed_all_versions_and_deletes(
-                context.source.clone(),
-                Some(initial.base.range.clone()),
-            )
-        }
+        result => result,
     }
-    .with_change_feed_start(context.options.start.clone())
-    .with_max_item_count(context.options.page_size);
+}
+
+async fn poll_feed(
+    context: Arc<Context>,
+    state: Arc<SharedState>,
+    lease: Arc<Mutex<Stored<Lease>>>,
+    progress: Arc<StdMutex<Instant>>,
+    cancelled: Signal,
+) -> Result<()> {
+    let initial = lease.lock().await.value.clone();
+    let operation = context
+        .operation(&initial.base.range)
+        .with_max_item_count(context.options.page_size);
+    let checkpoint = context.checkpoint(&initial, &initial.base.range)?;
+    let plan_options = PlanOptions {
+        change_feed_processor: true,
+        ..Default::default()
+    };
     let mut plan = context
         .source_driver
         .plan_operation(
             operation,
             &OperationOptions::default(),
-            initial
-                .base
-                .continuation
-                .as_ref()
-                .or(context.options.continuation.as_ref()),
-            &PlanOptions::default(),
+            Some(&checkpoint),
+            &plan_options,
         )
         .await?;
     loop {
@@ -738,6 +745,12 @@ async fn poll(
                 )
             })?;
         *progress.lock().unwrap_or_else(|e| e.into_inner()) = Instant::now();
+        if response.headers().etag.is_none() {
+            return Err(error(
+                StatusCode::InternalServerError,
+                "Change feed response has no checkpoint ETag.",
+            ));
+        }
         let idle = response.status().status_code() == StatusCode::NotModified;
         let token = plan.to_continuation_token()?;
         if idle {
