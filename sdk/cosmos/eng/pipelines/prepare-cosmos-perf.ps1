@@ -1,6 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
 
+param([switch] $FunctionsOnly)
+
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 . ([System.IO.Path]::Combine($PSScriptRoot, 'cosmos-perf-data-plane.ps1'))
@@ -55,7 +57,7 @@ function Assert-CosmosPerfEnvironment($Account, $Vm, $Profile, [string] $Endpoin
     }
 }
 
-if ($MyInvocation.InvocationName -eq '.') { return }
+if ($FunctionsOnly) { return }
 
 foreach ($name in @('COSMOS_PERF_OUTPUT',
     'AZURE_COSMOS_ENDPOINT', 'AZURE_COSMOS_KEY', 'BUILD_SOURCEVERSION')) {

@@ -61,6 +61,7 @@ stages:
         AZURE_COSMOS_ENDPOINT: $(thinclient-test-endpoint)
         AZURE_COSMOS_KEY: $(thinclient-test-key)
     - pwsh: |
+        . ./eng/common/scripts/common.ps1
         . ./eng/scripts/shared/common.ps1
         Invoke-LoggedCommand 'cargo build --release --locked -p azure_data_cosmos_perf --bin azure_data_cosmos_perf --features weekly-gate' -GroupOutput
       displayName: Build perf crate at the pipeline source commit

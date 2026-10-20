@@ -3,7 +3,7 @@
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-. ([System.IO.Path]::Combine($PSScriptRoot, 'prepare-cosmos-perf.ps1'))
+. ([System.IO.Path]::Combine($PSScriptRoot, 'prepare-cosmos-perf.ps1')) -FunctionsOnly
 
 function New-Fixture {
     return @{
@@ -133,9 +133,19 @@ $mockRequest = {
     return [PSCustomObject]$http.Response
 }.GetNewClosure()
 Set-Item Function:\Invoke-WebRequest $mockRequest
+$mockMetadata = {
+    param([Uri]$Uri, $Headers, $TimeoutSec, [switch]$NoProxy)
+    if ($Uri.Host -ne '169.254.169.254' -or $Headers.Metadata -ne 'true' -or -not $NoProxy -or $TimeoutSec -le 0) {
+        throw 'Expected a bounded direct IMDS query.'
+    }
+    $http.MetadataCalls++
+    return [PSCustomObject]$http.Vm
+}.GetNewClosure()
+Set-Item Function:\Invoke-RestMethod $mockMetadata
 $temporary = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), "cosmos-perf-script-$([Guid]::NewGuid())")
 $savedEnvironment = @{}
-foreach ($name in @('COSMOS_PERF_OUTPUT', 'AZURE_COSMOS_ENDPOINT', 'AZURE_COSMOS_KEY', 'BUILD_BUILDID')) {
+foreach ($name in @('COSMOS_PERF_OUTPUT', 'AZURE_COSMOS_ENDPOINT', 'AZURE_COSMOS_KEY', 'BUILD_BUILDID',
+    'COSMOS_PERF_BASELINE_COMMIT', 'COSMOS_PERF_CALIBRATE', 'COSMOS_PERF_WEEKLY', 'BUILD_SOURCEVERSION', 'BUILD_SOURCEBRANCH')) {
     $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name)
 }
 try {
@@ -183,8 +193,32 @@ try {
         if (-not $rejected -or $http.Requests.Count -ne 0) { throw 'Cleanup accepted unowned resources.' }
     }
     Write-Host 'PASS: cleanup deletes only this run database, never the account or other databases'
+
+    $env:COSMOS_PERF_BASELINE_COMMIT = '$(cosmos-perf-baseline-commit)'
+    $env:COSMOS_PERF_CALIBRATE = 'True'
+    $env:COSMOS_PERF_WEEKLY = 'False'
+    $env:BUILD_SOURCEVERSION = (& git rev-parse HEAD)
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the test checkout commit.' }
+    $env:BUILD_SOURCEBRANCH = 'refs/pull/5469/head'
+    $http.Requests = @()
+    $http.Response = @{ StatusCode = 200; Content = ((New-Fixture).Account | ConvertTo-Json -Depth 5) }
+    $http.Vm = (New-Fixture).Vm
+    $http.MetadataCalls = 0
+    # PowerShell@2 dot-sources filePath scripts; this must execute preflight, not only load functions.
+    . ([System.IO.Path]::Combine($PSScriptRoot, 'prepare-cosmos-perf.ps1'))
+    $recordedEnvironment = Get-Content -Raw ([System.IO.Path]::Combine($temporary, 'environment.json')) | ConvertFrom-Json
+    $recordedMode = Get-Content -Raw ([System.IO.Path]::Combine($temporary, 'execution-mode.json')) | ConvertFrom-Json
+    if ($http.Requests.Count -ne 1 -or $http.MetadataCalls -ne 1 -or
+        $recordedEnvironment.account_name -ne 'perf' -or $recordedEnvironment.region -ne 'East US 2' -or
+        $recordedEnvironment.source_commit -ne $env:BUILD_SOURCEVERSION -or
+        $recordedEnvironment.PSObject.Properties.Name -contains 'account_resource_id' -or
+        $recordedMode.calibrate -ne $true) {
+        throw 'Pipeline-style invocation did not execute and persist verified preflight.'
+    }
+    Write-Host 'PASS: PowerShell task-style dot-sourcing executes preflight and writes required manifests'
 } finally {
     Remove-Item Function:\Invoke-WebRequest
+    Remove-Item Function:\Invoke-RestMethod
     foreach ($name in $savedEnvironment.Keys) {
         [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name])
     }
