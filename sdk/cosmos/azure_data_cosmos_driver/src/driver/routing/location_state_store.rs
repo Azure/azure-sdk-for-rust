@@ -30,7 +30,8 @@ use crate::{
 use super::{
     advance_hub_region_discovery, build_account_endpoint_state, cache_hub_region,
     expire_partition_overrides, mark_endpoint_unavailable, mark_partition_unavailable,
-    partition_endpoint_state::PartitionEndpointState, partition_key_range_id::PartitionKeyRangeId,
+    partition_endpoint_state::{PartitionEndpointState, PartitionStateUpdate},
+    partition_key_range_id::PartitionKeyRangeId,
     record_hedge_alternate_win, record_hedge_primary_win, AccountEndpointState, CosmosEndpoint,
     LocationEffect,
 };
@@ -109,7 +110,7 @@ pub(crate) fn background_refresh_interval(get_env: &dyn Fn(&str) -> Option<Strin
 /// Unified location state store with lock-free reads and CAS-loop writes.
 pub(crate) struct LocationStateStore {
     account: Atomic<AccountEndpointState>,
-    partitions: Atomic<PartitionEndpointState>,
+    partitions: Atomic<Arc<PartitionEndpointState>>,
     account_metadata_cache: Arc<AccountMetadataCache>,
     account_endpoint: AccountEndpoint,
     account_refresh_fn: AccountRefreshFn,
@@ -225,6 +226,11 @@ impl Drop for RefreshClaimGuard<'_> {
 }
 
 impl LocationStateStore {
+    #[cfg(test)]
+    pub(crate) fn version_for_tests(&self) -> u64 {
+        self.account_version.load(Ordering::Acquire)
+    }
+
     /// Creates a new location store with a single-endpoint account snapshot.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -239,11 +245,11 @@ impl LocationStateStore {
         connectivity_probe: Option<Arc<dyn ConnectivityProbe>>,
     ) -> Self {
         let account_state = AccountEndpointState::single(default_endpoint.clone());
-        let partition_state = PartitionEndpointState::new(partition_failover_options);
+        let partition_state = Arc::new(PartitionEndpointState::new(partition_failover_options));
 
         let initial_snapshot = LocationSnapshot {
             account: Arc::new(account_state.clone()),
-            partitions: Arc::new(partition_state.clone()),
+            partitions: Arc::clone(&partition_state),
             cross_region_hedging_disabled: false,
         };
 
@@ -306,8 +312,8 @@ impl LocationStateStore {
     /// Uses a fast path when the version hasn't changed since the last
     /// snapshot: the cached `Arc` is cloned without touching the
     /// epoch-protected pointers. On a version mismatch (slow path),
-    /// the current state is loaded under an epoch guard, cloned into
-    /// fresh `Arc`s, and cached for subsequent callers.
+    /// the account state is copied and the partition `Arc` is shared under
+    /// an epoch guard, then cached for subsequent callers.
     pub fn snapshot(&self) -> LocationSnapshot {
         let current_version = self.account_version.load(Ordering::Acquire);
 
@@ -329,7 +335,7 @@ impl LocationStateStore {
         let partitions = {
             // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
             let current = unsafe { self.partitions.load(Ordering::Acquire, &guard).deref() };
-            Arc::new(current.clone())
+            Arc::clone(current)
         };
 
         let snapshot = LocationSnapshot {
@@ -493,22 +499,24 @@ impl LocationStateStore {
         }
     }
 
-    /// CAS loop on partition-level state.
+    /// CAS loop on partition-level state; returns whether an update was published.
     pub(crate) fn apply_partition(
         &self,
-        mut f: impl FnMut(&PartitionEndpointState) -> PartitionEndpointState,
-    ) {
+        mut f: impl FnMut(&PartitionEndpointState) -> PartitionStateUpdate,
+    ) -> bool {
         let guard = epoch::pin();
 
         loop {
             let current = self.partitions.load(Ordering::Acquire, &guard);
             // SAFETY: pointer comes from `Atomic` and stays valid while guard is pinned.
             let current_ref = unsafe { current.deref() };
-            let next_state = f(current_ref);
+            let PartitionStateUpdate::Updated(next_state) = f(current_ref) else {
+                return false;
+            };
 
             match self.partitions.compare_exchange(
                 current,
-                Owned::new(next_state),
+                Owned::new(Arc::new(next_state)),
                 Ordering::AcqRel,
                 Ordering::Acquire,
                 &guard,
@@ -521,7 +529,7 @@ impl LocationStateStore {
                     // the pattern in apply_account above).
                     unsafe { guard.defer_destroy(current) };
                     self.account_version.fetch_add(1, Ordering::Release);
-                    return;
+                    return true;
                 }
                 Err(_) => continue,
             }
@@ -905,20 +913,28 @@ impl LocationStateStore {
 
         *self.last_synced_properties.lock().unwrap() = Some(properties);
         self.apply_partition(|previous| {
-            let mut next = previous.clone();
-            next.per_partition_automatic_failover_enabled =
-                per_partition_automatic_failover_enabled;
             // The incident kill switch (`AZURE_COSMOS_PPCB_ENABLED_OVERRIDE`) is
             // authoritative: when set it wins over both the account property and
             // the base option. Only when it is unset does PPCB fall back to
             // `account property || option`.
-            next.per_partition_circuit_breaker_enabled = previous
+            let per_partition_circuit_breaker_enabled = previous
                 .config
                 .circuit_breaker_enabled_override()
                 .unwrap_or_else(|| {
                     per_partition_automatic_failover_enabled
                         || previous.config.circuit_breaker_enabled()
                 });
+            if previous.per_partition_automatic_failover_enabled
+                == per_partition_automatic_failover_enabled
+                && previous.per_partition_circuit_breaker_enabled
+                    == per_partition_circuit_breaker_enabled
+            {
+                return PartitionStateUpdate::Unchanged;
+            }
+            let mut next = previous.clone();
+            next.per_partition_automatic_failover_enabled =
+                per_partition_automatic_failover_enabled;
+            next.per_partition_circuit_breaker_enabled = per_partition_circuit_breaker_enabled;
 
             // Drop per-partition routing overrides on any edge of either
             // enablement flag. The eligibility gate in `is_eligible_for_ppaf` /
@@ -948,9 +964,10 @@ impl LocationStateStore {
                 // flip also flips PPCB and clears both maps -- exactly the
                 // intended invariant.
                 next.circuit_breaker_overrides.clear();
+                next.consecutive_hedge_wins.clear();
             }
 
-            next
+            PartitionStateUpdate::Updated(next)
         });
     }
 
@@ -1115,15 +1132,26 @@ impl LocationStateStore {
         partition: &PartitionKeyRangeId,
         primary_region: Option<&Region>,
     ) {
-        tracing::debug!(
-            partition = %partition,
-            primary_region = ?primary_region.map(Region::as_str),
-            "recorded alternate-region hedge win",
-        );
-        let account = self.account_snapshot();
-        self.apply_partition(|current| {
-            record_hedge_alternate_win(current, &account, partition, primary_region)
+        let mut account = None;
+        let updated = self.apply_partition(|current| {
+            if !current.per_partition_circuit_breaker_enabled {
+                return PartitionStateUpdate::Unchanged;
+            }
+            let account = account.get_or_insert_with(|| self.account_snapshot());
+            PartitionStateUpdate::Updated(record_hedge_alternate_win(
+                current,
+                account,
+                partition,
+                primary_region,
+            ))
         });
+        if updated {
+            tracing::debug!(
+                partition = %partition,
+                primary_region = ?primary_region.map(Region::as_str),
+                "recorded alternate-region hedge win",
+            );
+        }
     }
 
     /// Records that the primary attempt won in
@@ -1140,14 +1168,19 @@ impl LocationStateStore {
         partition: &PartitionKeyRangeId,
         primary_region: Option<&Region>,
     ) {
-        tracing::debug!(
-            partition = %partition,
-            primary_region = ?primary_region.map(Region::as_str),
-            "recorded primary-region hedge win",
-        );
-        self.apply_partition(|current| {
+        let updated = self.apply_partition(|current| {
+            if !current.per_partition_circuit_breaker_enabled {
+                return PartitionStateUpdate::Unchanged;
+            }
             record_hedge_primary_win(current, partition, primary_region)
         });
+        if updated {
+            tracing::debug!(
+                partition = %partition,
+                primary_region = ?primary_region.map(Region::as_str),
+                "recorded primary-region hedge win",
+            );
+        }
     }
 }
 
@@ -1248,6 +1281,10 @@ fn epoch_millis() -> u64 {
         .map(|d| d.as_millis() as u64)
         .unwrap_or(0)
 }
+
+#[cfg(test)]
+#[path = "hedge_feedback_tests.rs"]
+mod hedge_feedback_tests;
 
 #[cfg(test)]
 mod tests {
@@ -2653,7 +2690,7 @@ mod tests {
             next.per_partition_automatic_failover_enabled =
                 !current.per_partition_automatic_failover_enabled;
             next._test_canary = Some(canary_for_closure.clone());
-            next
+            PartitionStateUpdate::Updated(next)
         });
 
         // Drop our outer strong reference. The only remaining strong ref must
@@ -3054,7 +3091,7 @@ mod tests {
     // when the server flag flips off so they cannot silently re-apply if the
     // operator re-enables PPAF later.
 
-    fn build_store_for_ppaf_tests() -> LocationStateStore {
+    pub(super) fn build_store_for_ppaf_tests() -> LocationStateStore {
         let default_endpoint = CosmosEndpoint::global(test_endpoint().url().clone());
         let refresh = Arc::new(
             |_previous: Option<Arc<AccountProperties>>,
@@ -3241,6 +3278,64 @@ mod tests {
     }
 
     #[test]
+    fn ppcb_enablement_edges_clear_hedge_history() {
+        let store = build_store_for_ppaf_tests();
+        let endpoint = store.default_endpoint().clone();
+        store.apply_partition(|current| {
+            let mut next = current.clone();
+            next.config = PartitionFailoverOptions::builder()
+                .with_circuit_breaker_enabled(false)
+                .build()
+                .unwrap();
+            PartitionStateUpdate::Updated(next)
+        });
+        let key = "0".parse().unwrap();
+        store.sync_account_properties(Arc::new(test_payload_with_ppaf(true, "enabled")), &endpoint);
+        store.record_consecutive_hedge_win(&key, None);
+        assert_eq!(store.snapshot().partitions.consecutive_hedge_wins.len(), 1);
+
+        // A refresh with identical flags must retain the installed partition pointer.
+        let guard = epoch::pin();
+        let pointer = store.partitions.load(Ordering::Acquire, &guard);
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "still-enabled")),
+            &endpoint,
+        );
+        assert_eq!(pointer, store.partitions.load(Ordering::Acquire, &guard));
+
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(false, "disabled")),
+            &endpoint,
+        );
+        assert!(
+            !store
+                .snapshot()
+                .partitions
+                .per_partition_circuit_breaker_enabled
+        );
+        assert!(store
+            .snapshot()
+            .partitions
+            .consecutive_hedge_wins
+            .is_empty());
+        store.record_consecutive_hedge_win(&key, None);
+        store.sync_account_properties(
+            Arc::new(test_payload_with_ppaf(true, "reenabled")),
+            &endpoint,
+        );
+        assert!(store
+            .snapshot()
+            .partitions
+            .consecutive_hedge_wins
+            .is_empty());
+        store.record_consecutive_hedge_win(&key, None);
+        assert_eq!(
+            store.snapshot().partitions.consecutive_hedge_wins[&(key, None)],
+            1
+        );
+    }
+
+    #[test]
     fn disabling_ppaf_clears_failover_overrides() {
         use crate::driver::routing::partition_endpoint_state::{
             HealthStatus, PartitionFailoverEntry,
@@ -3287,7 +3382,7 @@ mod tests {
             let mut next = current.clone();
             next.failover_overrides
                 .insert(pkrange_id.clone(), entry.clone());
-            next
+            PartitionStateUpdate::Updated(next)
         });
         assert_eq!(
             store.snapshot().partitions.failover_overrides.len(),
@@ -3360,7 +3455,7 @@ mod tests {
             let mut next = current.clone();
             next.failover_overrides
                 .insert(pkrange_id.clone(), entry.clone());
-            next
+            PartitionStateUpdate::Updated(next)
         });
 
         // true -> true with a new etag (still enabled): clear path must not fire.
@@ -3423,7 +3518,7 @@ mod tests {
             let mut next = current.clone();
             next.failover_overrides
                 .insert(pkrange_id.clone(), stale_entry.clone());
-            next
+            PartitionStateUpdate::Updated(next)
         });
         assert_eq!(
             store.snapshot().partitions.failover_overrides.len(),

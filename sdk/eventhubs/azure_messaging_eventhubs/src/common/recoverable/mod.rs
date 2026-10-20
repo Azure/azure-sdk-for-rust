@@ -24,8 +24,8 @@ pub(crate) use sender::RecoverableSender;
 ///
 /// One recovery costs one pass in the usual case. It costs two for a task that
 /// captures its generation inside the recovery, because such a capture is odd and
-/// is rejected on parity, so the task attaches once more before it reaches a
-/// settled generation. The bound therefore covers at least four back-to-back
+/// is rejected before attachment. The task prepares its dependencies again under
+/// a settled generation. The bound therefore covers at least four back-to-back
 /// recoveries in the worst case.
 ///
 /// Every generation-guarded cache in this crate uses this one value, so the

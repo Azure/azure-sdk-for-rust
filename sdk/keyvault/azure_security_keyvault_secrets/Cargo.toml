@@ -12,6 +12,7 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_security_keyvault_secrets"
 keywords = ["sdk", "cloud"]
 categories = ["api-bindings"]
+exclude.workspace = true
 
 [features]
 default = ["azure_core/default"]
@@ -19,7 +20,7 @@ default = ["azure_core/default"]
 [dependencies]
 async-lock = { workspace = true }
 async-trait = { workspace = true }
-azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2" }
+azure_core = { path = "../../core/azure_core", version = "1.2.0-beta.2", default-features = false }
 clap = { workspace = true, features = ["derive"] }
 futures = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

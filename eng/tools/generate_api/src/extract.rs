@@ -799,11 +799,11 @@ fn extract_item(krate: &Crate, item: &Item) -> ApiItem {
     if let Some(attribute) = synthesize_pin_project_attribute(krate, item, &attributes) {
         prepend_attributes(&mut attributes, &[attribute]);
     }
-    if matches!(item.inner, ItemEnum::Trait(_)) && trait_uses_async_trait(krate, item) {
+    if let Some(mode) = trait_async_trait_mode(krate, item) {
         prepend_attributes(
             &mut attributes,
             &[ApiAttribute {
-                text: "#[async_trait]".to_string(),
+                text: mode.attribute().to_string(),
             }],
         );
     }
@@ -1167,7 +1167,14 @@ fn collect_function_declaration_path_references(
             references,
         );
     }
-    if let Some(output) = &function.sig.output {
+    if let Some(output) = async_trait_output(function) {
+        collect_type_path_references_with_elision(
+            krate,
+            output.type_,
+            &synthetic_lifetimes,
+            references,
+        );
+    } else if let Some(output) = &function.sig.output {
         collect_type_path_references_with_elision(krate, output, &synthetic_lifetimes, references);
     }
     collect_where_predicates_path_references_with_elision(
@@ -1913,6 +1920,15 @@ fn extract_trait_impl(
     let trait_path = impl_block.trait_.as_ref()?;
     let self_type = render_type(&impl_block.for_);
     let declaration = render_trait_impl_declaration(impl_block, trait_path, &self_type);
+    let mut attributes = extract_attributes(item);
+    if let Some(mode) = impl_async_trait_mode(krate, impl_block) {
+        prepend_attributes(
+            &mut attributes,
+            &[ApiAttribute {
+                text: mode.attribute().to_string(),
+            }],
+        );
+    }
 
     Some(ApiItem {
         name: self_type,
@@ -1930,7 +1946,7 @@ fn extract_trait_impl(
         owner_source_id: owner.map(|owner| qualified_source_id(krate, owner.id)),
         inherent_impl_sort_key: None,
         doc_comments: extract_doc_comments(item),
-        attributes: extract_attributes(item),
+        attributes,
         declaration,
         declaration_path_references: collect_trait_impl_declaration_path_references(
             krate, impl_block,
@@ -2180,12 +2196,32 @@ fn api_member(krate: &Crate, item: &Item, kind: ApiMemberKind, declaration: Stri
         kind,
         declaration_location: source_location(item),
         doc_comments: extract_doc_comments(item),
-        attributes: extract_attributes(item),
+        attributes: extract_associated_member_attributes(item),
         declaration,
         declaration_path_references: collect_associated_member_declaration_path_references(
             krate, item,
         ),
     }
+}
+
+fn extract_associated_member_attributes(item: &Item) -> Vec<ApiAttribute> {
+    let attributes = extract_attributes(item);
+    let ItemEnum::Function(function) = &item.inner else {
+        return attributes;
+    };
+    if !function_uses_async_trait(function) {
+        return attributes;
+    }
+
+    attributes
+        .into_iter()
+        .filter(|attribute| {
+            attribute.text != "#[must_use]"
+                && !(attribute.text.starts_with("#[allow(")
+                    && attribute.text.contains("clippy::type_complexity")
+                    && attribute.text.contains("clippy::type_repetition_in_bounds"))
+        })
+        .collect()
 }
 
 fn text_member(name: impl Into<String>, declaration: impl Into<String>) -> ApiMember {
@@ -2793,12 +2829,16 @@ fn find_matching_delimiter(
 
 fn render_function_declaration(name: &str, function: &Function, is_public: bool) -> String {
     let synthetic_lifetimes = synthetic_async_trait_lifetimes(function);
+    let async_trait_output = async_trait_output(function);
     let mut declaration = String::new();
     if is_public {
         declaration.push_str("pub ");
     }
 
-    declaration.push_str(&render_function_header(&function.header));
+    declaration.push_str(&render_function_header(
+        &function.header,
+        async_trait_output.is_some(),
+    ));
     declaration.push_str("fn ");
     declaration.push_str(name);
     declaration.push_str(&render_generics_declaration_with_elision(
@@ -2826,7 +2866,15 @@ fn render_function_declaration(name: &str, function: &Function, is_public: bool)
     }
     declaration.push(')');
 
-    if let Some(output) = &function.sig.output {
+    if let Some(output) = async_trait_output {
+        if !matches!(output.type_, Type::Tuple(types) if types.is_empty()) {
+            declaration.push_str(" -> ");
+            declaration.push_str(&render_type_with_elision(
+                output.type_,
+                &synthetic_lifetimes,
+            ));
+        }
+    } else if let Some(output) = &function.sig.output {
         declaration.push_str(" -> ");
         declaration.push_str(&render_type_with_elision(output, &synthetic_lifetimes));
     }
@@ -2874,12 +2922,12 @@ fn render_self_parameter(argument_name: &str, argument_type: &Type) -> Option<St
     }
 }
 
-fn render_function_header(header: &FunctionHeader) -> String {
+fn render_function_header(header: &FunctionHeader, force_async: bool) -> String {
     let mut parts = Vec::new();
     if header.is_const {
         parts.push("const".to_string());
     }
-    if header.is_async {
+    if header.is_async || force_async {
         parts.push("async".to_string());
     }
     if header.is_unsafe {
@@ -3495,7 +3543,7 @@ fn render_type_with_elision(type_: &Type, synthetic_lifetimes: &HashSet<String>)
         Type::Generic(name) => name.clone(),
         Type::Primitive(name) => name.clone(),
         Type::FunctionPointer(pointer) => {
-            let mut rendered = render_function_header(&pointer.header);
+            let mut rendered = render_function_header(&pointer.header, false);
             rendered.push_str("fn");
             let rendered_generic_params = pointer
                 .generic_params
@@ -3698,20 +3746,56 @@ fn render_assoc_constraint_with_elision(
     rendered
 }
 
-fn trait_uses_async_trait(krate: &Crate, item: &Item) -> bool {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum AsyncTraitMode {
+    Send,
+    NotSend,
+}
+
+impl AsyncTraitMode {
+    fn attribute(self) -> &'static str {
+        match self {
+            Self::Send => "#[async_trait]",
+            Self::NotSend => "#[async_trait(?Send)]",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+struct AsyncTraitOutput<'a> {
+    type_: &'a Type,
+    mode: AsyncTraitMode,
+}
+
+fn trait_async_trait_mode(krate: &Crate, item: &Item) -> Option<AsyncTraitMode> {
     let ItemEnum::Trait(trait_item) = &item.inner else {
-        return false;
+        return None;
     };
 
-    trait_item
-        .items
+    async_trait_mode(krate, &trait_item.items)
+}
+
+fn impl_async_trait_mode(krate: &Crate, impl_block: &Impl) -> Option<AsyncTraitMode> {
+    async_trait_mode(krate, &impl_block.items)
+}
+
+fn async_trait_mode(krate: &Crate, item_ids: &[Id]) -> Option<AsyncTraitMode> {
+    item_ids
         .iter()
         .filter_map(|item_id| krate.index.get(item_id))
         .filter_map(|item| match &item.inner {
             ItemEnum::Function(function) => Some(function),
             _ => None,
         })
-        .any(function_uses_async_trait)
+        .filter_map(async_trait_output)
+        .map(|output| output.mode)
+        .reduce(|left, right| {
+            if left == AsyncTraitMode::NotSend || right == AsyncTraitMode::NotSend {
+                AsyncTraitMode::NotSend
+            } else {
+                AsyncTraitMode::Send
+            }
+        })
 }
 
 fn synthetic_async_trait_lifetimes(function: &Function) -> HashSet<String> {
@@ -3730,7 +3814,78 @@ fn synthetic_async_trait_lifetimes(function: &Function) -> HashSet<String> {
 }
 
 fn function_uses_async_trait(function: &Function) -> bool {
-    !synthetic_async_trait_lifetimes(function).is_empty()
+    async_trait_output(function).is_some()
+}
+
+fn async_trait_output(function: &Function) -> Option<AsyncTraitOutput<'_>> {
+    if synthetic_async_trait_lifetimes(function).is_empty() {
+        return None;
+    }
+
+    let output = function.sig.output.as_ref()?;
+    let Type::ResolvedPath(pin) = output else {
+        return None;
+    };
+    if last_path_segment(&pin.path) != "Pin" {
+        return None;
+    }
+
+    let Type::ResolvedPath(boxed) = single_type_argument(pin)? else {
+        return None;
+    };
+    if last_path_segment(&boxed.path) != "Box" {
+        return None;
+    }
+
+    let Type::DynTrait(dyn_trait) = single_type_argument(boxed)? else {
+        return None;
+    };
+    if dyn_trait.lifetime.as_deref() != Some("'async_trait") {
+        return None;
+    }
+
+    let mode = if dyn_trait
+        .traits
+        .iter()
+        .any(|bound| last_path_segment(&bound.trait_.path) == "Send")
+    {
+        AsyncTraitMode::Send
+    } else {
+        AsyncTraitMode::NotSend
+    };
+
+    let type_ = dyn_trait.traits.iter().find_map(|bound| {
+        if last_path_segment(&bound.trait_.path) != "Future" {
+            return None;
+        }
+        let args = bound.trait_.args.as_deref()?;
+        let GenericArgs::AngleBracketed { constraints, .. } = args else {
+            return None;
+        };
+        constraints.iter().find_map(|constraint| {
+            if constraint.name != "Output" {
+                return None;
+            }
+            match &constraint.binding {
+                rustdoc_types::AssocItemConstraintKind::Equality(Term::Type(output)) => {
+                    Some(output)
+                }
+                _ => None,
+            }
+        })
+    })?;
+
+    Some(AsyncTraitOutput { type_, mode })
+}
+
+fn single_type_argument(path: &Path) -> Option<&Type> {
+    let GenericArgs::AngleBracketed { args, .. } = path.args.as_deref()? else {
+        return None;
+    };
+    let [GenericArg::Type(type_)] = args.as_slice() else {
+        return None;
+    };
+    Some(type_)
 }
 
 fn is_synthetic_async_trait_lifetime(name: &str) -> bool {
