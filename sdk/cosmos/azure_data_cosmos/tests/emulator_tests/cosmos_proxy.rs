@@ -139,6 +139,13 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
         })
         .collect();
 
+    // CI bypasses proxies for loopback addresses used by this test.
+    let no_proxy_keys = ["NO_PROXY", "no_proxy"];
+    let prev_no_proxy_values: Vec<_> = no_proxy_keys.iter().map(std::env::var_os).collect();
+    for key in no_proxy_keys {
+        std::env::remove_var(key);
+    }
+
     // Build a client manually with proxy enabled.
     let env_val = std::env::var(CONNECTION_STRING_ENV_VAR)
         .unwrap_or_else(|_| EMULATOR_CONNECTION_STRING.to_string());
@@ -193,6 +200,12 @@ pub async fn proxy_enabled_routes_through_proxy() -> Result<(), Box<dyn Error>> 
         .is_ok();
 
     for (key, prev) in proxy_keys.iter().zip(prev_values) {
+        match prev {
+            Some(v) => std::env::set_var(key, v),
+            None => std::env::remove_var(key),
+        }
+    }
+    for (key, prev) in no_proxy_keys.iter().zip(prev_no_proxy_values) {
         match prev {
             Some(v) => std::env::set_var(key, v),
             None => std::env::remove_var(key),
