@@ -24,7 +24,7 @@ toml = "1.0.1"
 use cargo_util_schemas::manifest::{InheritableDependency, TomlDependency, TomlManifest};
 use serde::Deserialize;
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     path::{Path, PathBuf},
     process::Command,
 };
@@ -224,7 +224,7 @@ fn core_feature_errors(
         let is_core = dependency.name == "azure_core";
         let is_http_library = workspace_packages
             .get(&dependency.name)
-            .is_some_and(forwards_core_defaults);
+            .is_some_and(|package| forwards_core_defaults(package, workspace_packages));
         if (is_core || is_http_library)
             && (dependency.uses_default_features
                 || dependency
@@ -250,12 +250,42 @@ fn core_feature_errors(
     errors
 }
 
-fn forwards_core_defaults(package: &ManifestPackage) -> bool {
+fn forwards_core_defaults(
+    package: &ManifestPackage,
+    workspace_packages: &HashMap<String, ManifestPackage>,
+) -> bool {
+    forwards_core_defaults_inner(package, workspace_packages, &mut HashSet::new())
+}
+
+fn forwards_core_defaults_inner(
+    package: &ManifestPackage,
+    workspace_packages: &HashMap<String, ManifestPackage>,
+    visited: &mut HashSet<String>,
+) -> bool {
+    if !visited.insert(package.name.clone()) {
+        return false;
+    }
+
     package
         .dependencies
         .iter()
-        .filter(|dependency| dependency.kind.is_none() && dependency.name == "azure_core")
-        .any(|dependency| forwards_dependency_defaults(package, dependency))
+        .filter(|dependency| dependency.kind.is_none())
+        .any(|dependency| {
+            if !forwards_dependency_defaults(package, dependency) {
+                return false;
+            }
+
+            dependency.name == "azure_core"
+                || workspace_packages
+                    .get(&dependency.name)
+                    .is_some_and(|dependency_package| {
+                        forwards_core_defaults_inner(
+                            dependency_package,
+                            workspace_packages,
+                            visited,
+                        )
+                    })
+        })
 }
 
 fn forwards_dependency_defaults(
@@ -483,11 +513,31 @@ mod tests {
 
     #[test]
     fn transitive_http_defaults_are_rejected() {
-        let mut client = package("client", "http_library", true);
+        let mut client = package("client", "wrapper", true);
+        let wrapper = package("wrapper", "http_library", false);
         let library = package("http_library", "azure_core", false);
-        let packages = HashMap::from([(library.name.clone(), library)]);
+        let packages = HashMap::from([
+            (wrapper.name.clone(), wrapper),
+            (library.name.clone(), library),
+        ]);
         assert_eq!(core_feature_errors(&client, &packages).len(), 1);
         client.dependencies[0].uses_default_features = false;
+        assert!(core_feature_errors(&client, &packages).is_empty());
+    }
+
+    #[test]
+    fn cyclic_default_features_do_not_forward_core_defaults() {
+        let client = package("client", "wrapper", false);
+        let wrapper = package("wrapper", "http_library", false);
+        let library = package("http_library", "wrapper", false);
+        let packages = HashMap::from([
+            (wrapper.name.clone(), wrapper),
+            (library.name.clone(), library),
+        ]);
+        assert!(!forwards_core_defaults(
+            packages.get("wrapper").expect("wrapper"),
+            &packages
+        ));
         assert!(core_feature_errors(&client, &packages).is_empty());
     }
 
@@ -523,7 +573,7 @@ mod tests {
     fn renamed_and_target_dependencies_are_checked() {
         let mut client = package("client", "azure_core", false);
         client.dependencies[0].rename = Some("core".to_string());
-        assert!(!forwards_core_defaults(&client));
+        assert!(!forwards_core_defaults(&client, &HashMap::new()));
         client
             .features
             .insert("default".to_string(), vec!["core/default".to_string()]);
