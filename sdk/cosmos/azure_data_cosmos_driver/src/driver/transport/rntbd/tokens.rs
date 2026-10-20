@@ -418,6 +418,20 @@ impl Token {
         )
     }
 
+    pub(crate) fn is_batch_atomic(value: bool) -> Self {
+        Self::new(
+            RntbdRequestToken::IsBatchAtomic,
+            TokenValue::Byte(u8::from(value)),
+        )
+    }
+
+    pub(crate) fn should_batch_continue_on_error(value: bool) -> Self {
+        Self::new(
+            RntbdRequestToken::ShouldBatchContinueOnError,
+            TokenValue::Byte(u8::from(value)),
+        )
+    }
+
     pub(crate) fn global_database_account_name(value: String) -> Self {
         Self::new(
             RntbdRequestToken::GlobalDatabaseAccountName,
@@ -642,6 +656,8 @@ pub(crate) enum RntbdRequestToken {
     StartEpk,
     EndEpk,
     ReadFeedKeyType,
+    IsBatchAtomic,
+    ShouldBatchContinueOnError,
 }
 
 impl TryFrom<u16> for RntbdRequestToken {
@@ -672,6 +688,8 @@ impl TryFrom<u16> for RntbdRequestToken {
             0x0063 => Ok(Self::EndEpk),
             0x0064 => Ok(Self::ReadFeedKeyType),
             0x0066 => Ok(Self::AllowTentativeWrites),
+            0x0073 => Ok(Self::IsBatchAtomic),
+            0x0074 => Ok(Self::ShouldBatchContinueOnError),
             0x0082 => Ok(Self::ReturnPreference),
             0x00A2 => Ok(Self::SDKSupportedCapabilities),
             0x00B2 => Ok(Self::ChangeFeedWireFormatVersion),
@@ -713,6 +731,8 @@ impl From<RntbdRequestToken> for u16 {
             RntbdRequestToken::EndEpk => 0x0063,
             RntbdRequestToken::ReadFeedKeyType => 0x0064,
             RntbdRequestToken::AllowTentativeWrites => 0x0066,
+            RntbdRequestToken::IsBatchAtomic => 0x0073,
+            RntbdRequestToken::ShouldBatchContinueOnError => 0x0074,
             RntbdRequestToken::ReturnPreference => 0x0082,
             RntbdRequestToken::SDKSupportedCapabilities => 0x00A2,
             RntbdRequestToken::ChangeFeedWireFormatVersion => 0x00B2,

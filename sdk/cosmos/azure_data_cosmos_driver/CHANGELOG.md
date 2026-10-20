@@ -8,6 +8,7 @@
 
 ### Bugs Fixed
 
+- Preserve batch atomicity and continue-on-error controls in Gateway 2.0 requests so failed transactional batches roll back instead of partially committing. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Scope explicitly supplied compound session tokens for Gateway 2.0 when topology permits, including when automatic session capture is disabled; otherwise preserve the original token through classic Gateway. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Avoid conflicting logical partition-key and EPK-range selectors in hierarchical partition-key prefix queries, including regional retries and continuation requests. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))
 - Retry transient account-discovery I/O failures within a bounded budget, including requests whose send outcome is uncertain. ([#5471](https://github.com/Azure/azure-sdk-for-rust/pull/5471))

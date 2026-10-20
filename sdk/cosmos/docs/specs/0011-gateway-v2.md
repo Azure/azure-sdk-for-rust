@@ -447,6 +447,16 @@ partition-key selectors.
 
 > **`Range` semantics pitfall** (from PR #4087): `compute_range` returns a Rust `std::ops::Range<EffectivePartitionKey>` where `start == end` denotes a **point operation**. Standard `Range` iteration treats that as empty, so code that uses `.contains()` or iterates the range directly will misbehave. Always treat `start == end` as the point case explicitly.
 
+#### Batch control wire format
+
+For `Batch` operations, translate `x-ms-cosmos-batch-atomic` into
+`IsBatchAtomic` (`0x0073`, `Byte`) and `x-ms-cosmos-batch-continue-on-error`
+into `ShouldBatchContinueOnError` (`0x0074`, `Byte`). Case-insensitive `true`
+and `false` values, after trimming whitespace, become `1` and `0`; absent
+headers omit the corresponding token. Invalid values fail request conversion.
+Do not force atomicity, add these controls to other operation types, or rely
+on outer HTTP headers to carry them. Forward the operation payload unchanged.
+
 #### Gateway 2.0 Header Injection Flow
 
 When `transport_mode == GatewayV2`:

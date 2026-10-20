@@ -229,6 +229,35 @@ pub(crate) fn wrap_request_for_gateway_v2(
     {
         metadata.push(Token::partition_key_range_id(pkr_id.to_owned()));
     }
+    if inputs.operation_type == OperationType::Batch {
+        for (name, constructor) in [
+            (
+                request_header_names::BATCH_ATOMIC,
+                Token::is_batch_atomic as fn(bool) -> Token,
+            ),
+            (
+                request_header_names::BATCH_CONTINUE_ON_ERROR,
+                Token::should_batch_continue_on_error,
+            ),
+        ] {
+            if let Some(value) = request
+                .headers
+                .get_optional_str(&HeaderName::from_static(name))
+            {
+                let value = value.trim();
+                let enabled = if value.eq_ignore_ascii_case("true") {
+                    true
+                } else if value.eq_ignore_ascii_case("false") {
+                    false
+                } else {
+                    return Err(data_conversion_error(format!(
+                        "{name} must be true or false"
+                    )));
+                };
+                metadata.push(constructor(enabled));
+            }
+        }
+    }
     // AllowTentativeWrites (0x0066) and ReturnPreference (0x0082) must be CONDITIONAL,
     // not unconditional — emit them only when the caller passes the corresponding
     // HTTP headers (`x-ms-cosmos-allow-tentative-writes` and `Prefer: return=minimal`).
@@ -907,6 +936,111 @@ mod tests {
             #[cfg(feature = "fault_injection")]
             evaluation_collector: None,
         }
+    }
+
+    #[test]
+    fn wrap_preserves_batch_controls_and_operation_payload() {
+        let body = br#"[{"operationType":"Read","id":"batch"},{"operationType":"Upsert","resourceBody":{"id":"batch","pk":"A","value":2}}]"#;
+        let context =
+            AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db1/colls/coll1");
+        let key = epk(
+            &PartitionKey::from("A"),
+            &PartitionKeyDefinition::new(vec![Cow::from("/pk")]),
+        );
+        for atomic in [None, Some("True"), Some("false")] {
+            for continue_on_error in [None, Some("true"), Some("False")] {
+                for formats in ["JsonText", "JsonText,CosmosBinary"] {
+                    let mut request = signed_request(Some(body));
+                    request.method = Method::Post;
+                    request.url.set_path("/dbs/db1/colls/coll1/docs");
+                    request
+                        .headers
+                        .insert(request_header_names::PARTITION_KEY, r#"["A"]"#);
+                    request.headers.insert(
+                        request_header_names::SUPPORTED_SERIALIZATION_FORMATS,
+                        formats,
+                    );
+                    for (name, value) in [
+                        (request_header_names::BATCH_ATOMIC, atomic),
+                        (
+                            request_header_names::BATCH_CONTINUE_ON_ERROR,
+                            continue_on_error,
+                        ),
+                    ] {
+                        if let Some(value) = value {
+                            request.headers.insert(HeaderName::from_static(name), value);
+                        }
+                    }
+                    let wrapped = wrap_request_for_gateway_v2(
+                        request,
+                        &wrap_inputs(&context, OperationType::Batch, Some(&key)),
+                    )
+                    .unwrap();
+                    let parsed = parse_wrapped_request(&wrapped, 0);
+                    assert_eq!(parsed.operation_type, 0x0025);
+                    for (id, value) in [(0x0073, atomic), (0x0074, continue_on_error)] {
+                        let expected = value.map(|value| {
+                            ParsedTokenValue::Byte(u8::from(value.eq_ignore_ascii_case("true")))
+                        });
+                        assert_eq!(
+                            parsed.tokens.get(&id),
+                            expected.as_ref(),
+                            "token {id:#06x}, {formats}"
+                        );
+                    }
+                    assert_eq!(parsed.body.as_deref(), Some(body.as_slice()));
+                    assert!(wrapped
+                        .headers
+                        .get_optional_str(&HeaderName::from_static(
+                            request_header_names::BATCH_ATOMIC
+                        ))
+                        .is_none());
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn wrap_rejects_invalid_batch_control_values() {
+        let context =
+            AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db1/colls/coll1");
+        for name in [
+            request_header_names::BATCH_ATOMIC,
+            request_header_names::BATCH_CONTINUE_ON_ERROR,
+        ] {
+            for value in ["", "1", "invalid"] {
+                let mut request = signed_request(Some(b"[]"));
+                request.headers.insert(HeaderName::from_static(name), value);
+                let error = wrap_request_for_gateway_v2(
+                    request,
+                    &wrap_inputs(&context, OperationType::Batch, None),
+                )
+                .expect_err("invalid controls must not silently weaken batch semantics");
+                assert!(error.to_string().contains(name));
+            }
+        }
+    }
+
+    #[test]
+    fn wrap_omits_batch_controls_for_non_batch_operations() {
+        let context = AuthorizationContext::new(
+            Method::Get,
+            ResourceType::Document,
+            "dbs/db1/colls/coll1/docs/doc1",
+        );
+        let mut request = signed_request(None);
+        request
+            .headers
+            .insert(request_header_names::BATCH_ATOMIC, "True");
+        request
+            .headers
+            .insert(request_header_names::BATCH_CONTINUE_ON_ERROR, "False");
+        let wrapped =
+            wrap_request_for_gateway_v2(request, &wrap_inputs(&context, OperationType::Read, None))
+                .unwrap();
+        let parsed = parse_wrapped_request(&wrapped, 0);
+        assert!(!parsed.tokens.contains_key(&0x0073));
+        assert!(!parsed.tokens.contains_key(&0x0074));
     }
 
     fn wrap_inputs<'a>(

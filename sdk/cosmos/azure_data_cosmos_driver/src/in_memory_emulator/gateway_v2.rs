@@ -148,6 +148,8 @@ struct RequestMetadata {
     read_feed_key_type: Option<&'static str>,
     page_size: Option<u32>,
     return_minimal: bool,
+    batch_atomic: Option<bool>,
+    batch_continue_on_error: Option<bool>,
     supported_query_features: Option<String>,
     query_version: Option<String>,
     allow_tentative_writes: bool,
@@ -392,9 +394,25 @@ fn decode_request(
         OperationType::QueryPlan => request
             .headers_mut()
             .insert("x-ms-cosmos-is-query-plan-request", "true"),
-        OperationType::Batch => request
-            .headers_mut()
-            .insert("x-ms-cosmos-is-batch-request", "true"),
+        OperationType::Batch => {
+            request
+                .headers_mut()
+                .insert(request_header_names::IS_BATCH_REQUEST, "true");
+            for (name, value) in [
+                (request_header_names::BATCH_ATOMIC, metadata.batch_atomic),
+                (
+                    request_header_names::BATCH_CONTINUE_ON_ERROR,
+                    metadata.batch_continue_on_error,
+                ),
+            ] {
+                if let Some(value) = value {
+                    request.headers_mut().insert(
+                        HeaderName::from_static(name),
+                        if value { "true" } else { "false" },
+                    );
+                }
+            }
+        }
         _ => {}
     }
     if let Some(body) = frame.body {
@@ -481,6 +499,12 @@ fn decode_metadata(
             }
             RntbdRequestToken::ReturnPreference => {
                 metadata.return_minimal = expect_byte(kind, token.value)? != 0;
+            }
+            RntbdRequestToken::IsBatchAtomic => {
+                metadata.batch_atomic = Some(expect_byte(kind, token.value)? != 0);
+            }
+            RntbdRequestToken::ShouldBatchContinueOnError => {
+                metadata.batch_continue_on_error = Some(expect_byte(kind, token.value)? != 0);
             }
             RntbdRequestToken::SupportedQueryFeatures => {
                 metadata.supported_query_features = Some(expect_string(kind, token.value)?);
@@ -716,6 +740,195 @@ mod tests {
         },
     };
     use url::Url;
+
+    #[test]
+    fn batch_control_tokens_preserve_explicit_false_and_absence() {
+        for atomic in [None, Some(false), Some(true)] {
+            for continue_on_error in [None, Some(false), Some(true)] {
+                let mut metadata = vec![
+                    Token::database_name("db".into()),
+                    Token::collection_name("coll".into()),
+                    Token::partition_key(r#"["A"]"#.into()),
+                    Token::payload_present(true),
+                ];
+                if let Some(value) = atomic {
+                    metadata.push(Token::is_batch_atomic(value));
+                }
+                if let Some(value) = continue_on_error {
+                    metadata.push(Token::should_batch_continue_on_error(value));
+                }
+                let frame = RntbdRequestFrame {
+                    resource_type: ResourceType::Document,
+                    operation_type: OperationType::Batch,
+                    activity_id: Uuid::nil(),
+                    metadata,
+                    body: Some(br#"[{"operationType":"Read","id":"batch"}]"#.to_vec()),
+                };
+                let outer = Request::new(
+                    "http://127.0.0.1:18444/dbs/db/colls/coll/docs"
+                        .parse()
+                        .unwrap(),
+                    Method::Post,
+                );
+                let decoded = decode_request(&outer, frame, ConsistencyLevel::Session).unwrap();
+                for (name, value) in [
+                    (request_header_names::BATCH_ATOMIC, atomic),
+                    (
+                        request_header_names::BATCH_CONTINUE_ON_ERROR,
+                        continue_on_error,
+                    ),
+                ] {
+                    assert_eq!(
+                        decoded
+                            .headers()
+                            .get_optional_str(&HeaderName::from_static(name)),
+                        value.map(|value| if value { "true" } else { "false" }),
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn batch_control_tokens_require_byte_values() {
+        for kind in [
+            RntbdRequestToken::IsBatchAtomic,
+            RntbdRequestToken::ShouldBatchContinueOnError,
+        ] {
+            let error = decode_metadata(vec![Token::new(kind, TokenValue::String("true".into()))])
+                .err()
+                .expect("batch controls must reject non-Byte tokens");
+            assert_eq!(error.status().status_code(), StatusCode::BadRequest);
+        }
+    }
+
+    async fn execute_encoded_atomic_batch(
+        emulator: &InMemoryEmulatorHttpClient,
+        thin_url: &Url,
+        operations: serde_json::Value,
+    ) -> serde_json::Value {
+        let payload = serde_json::to_vec(&operations).unwrap();
+        let mut headers = Headers::new();
+        headers.insert("authorization", "test-authorization");
+        headers.insert("x-ms-date", "Wed, 21 Oct 2015 07:28:00 GMT");
+        headers.insert("x-ms-activity-id", Uuid::nil().to_string());
+        headers.insert(request_header_names::PARTITION_KEY, r#"["A"]"#);
+        headers.insert(request_header_names::BATCH_ATOMIC, "True");
+        headers.insert(request_header_names::BATCH_CONTINUE_ON_ERROR, "True");
+        let context =
+            AuthorizationContext::new(Method::Post, ResourceType::Document, "dbs/db/colls/coll");
+        let wrapped = wrap_request_for_gateway_v2(
+            HttpRequest {
+                url: thin_url.join("dbs/db/colls/coll/docs").unwrap(),
+                method: Method::Post,
+                headers,
+                body: Some(Bytes::from(payload.clone())),
+                timeout: None,
+                #[cfg(feature = "fault_injection")]
+                evaluation_collector: None,
+            },
+            &WrapInputs {
+                auth_context: &context,
+                operation_type: OperationType::Batch,
+                resource_type: ResourceType::Document,
+                effective_partition_key: None,
+                effective_consistency: DefaultConsistencyLevel::Session,
+                read_consistency_strategy: ReadConsistencyStrategy::Default,
+                account_name: Some("account"),
+                collection_rid: None,
+            },
+        )
+        .unwrap();
+        let frame = RntbdRequestFrame::read(wrapped.body.as_ref().unwrap()).unwrap();
+        let controls: Vec<_> = frame
+            .metadata
+            .iter()
+            .filter(|token| matches!(token.id.value(), 0x0073 | 0x0074))
+            .map(|token| (token.id.value(), token.as_byte()))
+            .collect();
+        assert_eq!(controls, [(0x0073, Some(1)), (0x0074, Some(1))]);
+        assert_eq!(frame.body.as_deref(), Some(payload.as_slice()));
+        let response = execute_frame(emulator, thin_url, frame).await;
+        serde_json::from_slice(&response.body).unwrap()
+    }
+
+    #[tokio::test]
+    async fn encoded_atomic_batches_preserve_reads_updates_and_rollback() {
+        let gateway_url: Url = "http://127.0.0.1:18081/".parse().unwrap();
+        let thin_url: Url = "http://127.0.0.1:18444/".parse().unwrap();
+        let region = VirtualRegion::new("East US", gateway_url.clone())
+            .with_gateway_v2_url(thin_url.clone());
+        let emulator = InMemoryEmulatorHttpClient::new(
+            VirtualAccountConfig::new(vec![region])
+                .unwrap()
+                .with_consistency(ConsistencyLevel::Session),
+        );
+        let store = emulator.store();
+        store.create_database("db");
+        store.create_container(
+            "db",
+            "coll",
+            serde_json::from_value(serde_json::json!({
+                "paths":["/pk"],"kind":"Hash","version":2
+            }))
+            .unwrap(),
+        );
+        let created = execute_encoded_atomic_batch(
+            &emulator,
+            &thin_url,
+            serde_json::json!([
+                {"operationType":"Create","resourceBody":{"id":"existing","pk":"A","value":1}}
+            ]),
+        )
+        .await;
+        assert_eq!(created[0]["statusCode"], 201);
+        let read = execute_encoded_atomic_batch(
+            &emulator,
+            &thin_url,
+            serde_json::json!([
+                {"operationType":"Read","id":"existing"}
+            ]),
+        )
+        .await;
+        assert_eq!(read[0]["statusCode"], 200);
+        assert_eq!(read[0]["resourceBody"]["value"], 1);
+        let updated = execute_encoded_atomic_batch(
+            &emulator,
+            &thin_url,
+            serde_json::json!([
+                {"operationType":"Upsert","resourceBody":{"id":"existing","pk":"A","value":2}},
+                {"operationType":"Read","id":"existing"}
+            ]),
+        )
+        .await;
+        assert_eq!(updated[0]["statusCode"], 200);
+        assert_eq!(updated[1]["statusCode"], 200);
+        assert_eq!(updated[1]["resourceBody"]["value"], 2);
+        let failed = execute_encoded_atomic_batch(
+            &emulator,
+            &thin_url,
+            serde_json::json!([
+                {"operationType":"Create","resourceBody":{"id":"rolled-back","pk":"A"}},
+                {"operationType":"Read","id":"missing"}
+            ]),
+        )
+        .await;
+        assert_eq!(failed[0]["statusCode"], 424);
+        assert_eq!(failed[1]["statusCode"], 404);
+        let mut request = Request::new(
+            gateway_url
+                .join("dbs/db/colls/coll/docs/rolled-back")
+                .unwrap(),
+            Method::Get,
+        );
+        request
+            .headers_mut()
+            .insert(request_header_names::PARTITION_KEY, r#"["A"]"#);
+        assert_eq!(
+            emulator.execute_request(&request).await.unwrap().status(),
+            StatusCode::NotFound
+        );
+    }
 
     #[tokio::test]
     async fn create_item_round_trips_through_gateway_v2() {

@@ -1385,45 +1385,152 @@ pub async fn gateway_v2_v1_container_point_crud_round_trip(
     ignore = "requires test_category 'gateway_v2' and AZURE_COSMOS_GW_V2_ENDPOINT/_KEY"
 )]
 pub async fn gateway_v2_transactional_batch() -> Result<(), Box<dyn std::error::Error>> {
-    let Some((endpoint, key)) = live_credentials() else {
-        return Ok(());
-    };
+    let (endpoint, key) = live_credentials()
+        .ok_or("Gateway 2.0 batch tests require the selected category's endpoint and key")?;
+    for binary in [false, true] {
+        let client = tokio::time::timeout(Duration::from_secs(90), async {
+            if binary {
+                build_client_with_binary_encoding(&endpoint, &key).await
+            } else {
+                build_client_with_binary_disabled(&endpoint, &key).await
+            }
+        })
+        .await??;
+        let db_name = format!("test-db-gwv2-batch-{}", azure_core::Uuid::new_v4());
+        eprintln!("Gateway batch test cleanup target: {endpoint} dbs/{db_name}, binary={binary}");
+        let database = client.database_client(&db_name);
+        let mut creation_confirmed = false;
+        let result = AssertUnwindSafe(tokio::time::timeout(Duration::from_secs(360), async {
+            client.create_database(&db_name, None).await?;
+            creation_confirmed = true;
+            database
+                .create_container(ContainerProperties::new("batch", "/pk".into()), None)
+                .await?;
+            let container = wait_for_container_ready(&client, &database, "batch").await?;
+            let mut existing = GwV2TestItem {
+                id: "existing".into(),
+                pk: "A".into(),
+                value: 10,
+                label: "original".into(),
+            };
+            let created = container
+                .execute_transactional_batch(
+                    TransactionalBatch::new("A").create_item(&existing)?,
+                    None,
+                )
+                .await?;
+            assert_transport_kind(&created.diagnostics(), TransportKind::GatewayV2);
+            let created = created.into_model()?;
+            assert_eq!(
+                created
+                    .results()
+                    .iter()
+                    .map(|r| r.status_code())
+                    .collect::<Vec<_>>(),
+                [201]
+            );
 
-    let client = build_client(&endpoint, &key).await?;
-    let (db_name, container) = provision_database_and_container(&client).await?;
+            let read_only = container
+                .execute_transactional_batch(
+                    TransactionalBatch::new("A").read_item(existing.id.clone(), None),
+                    None,
+                )
+                .await?;
+            assert_transport_kind(&read_only.diagnostics(), TransportKind::GatewayV2);
+            let read_only = read_only.into_model()?;
+            assert_eq!(
+                read_only
+                    .results()
+                    .iter()
+                    .map(|r| r.status_code())
+                    .collect::<Vec<_>>(),
+                [200]
+            );
+            let read: GwV2TestItem = read_only.results()[0]
+                .into_model()?
+                .ok_or("batch read returned no item")?;
+            assert_eq!(
+                serde_json::to_value(read)?,
+                serde_json::to_value(&existing)?
+            );
 
-    let pk_value = format!("pk-{}", azure_core::Uuid::new_v4());
-    let item_a = GwV2TestItem {
-        id: "batch-a".into(),
-        pk: pk_value.clone(),
-        value: 10,
-        label: "a".into(),
-    };
-    let item_b = GwV2TestItem {
-        id: "batch-b".into(),
-        pk: pk_value.clone(),
-        value: 20,
-        label: "b".into(),
-    };
-    let upsert = GwV2TestItem {
-        id: "batch-c".into(),
-        pk: pk_value.clone(),
-        value: 30,
-        label: "c".into(),
-    };
+            existing.value = 20;
+            existing.label = "updated".into();
+            let updated = container
+                .execute_transactional_batch(
+                    TransactionalBatch::new("A")
+                        .upsert_item(&existing, None)?
+                        .read_item(existing.id.clone(), None),
+                    None,
+                )
+                .await?;
+            assert_transport_kind(&updated.diagnostics(), TransportKind::GatewayV2);
+            let updated = updated.into_model()?;
+            assert_eq!(
+                updated
+                    .results()
+                    .iter()
+                    .map(|r| r.status_code())
+                    .collect::<Vec<_>>(),
+                [200, 200]
+            );
+            let read: GwV2TestItem = updated.results()[1]
+                .into_model()?
+                .ok_or("batch update/read returned no item")?;
+            assert_eq!(
+                serde_json::to_value(read)?,
+                serde_json::to_value(&existing)?
+            );
 
-    let batch = TransactionalBatch::new(&pk_value)
-        .create_item(&item_a)?
-        .create_item(&item_b)?
-        .upsert_item(&upsert, None)?;
-
-    let response = container.execute_transactional_batch(batch, None).await?;
-    assert_transport_kind(&response.diagnostics(), TransportKind::GatewayV2);
-    let body = response.into_model()?;
-    let codes: Vec<u16> = body.results().iter().map(|r| r.status_code()).collect();
-    assert_eq!(codes, vec![201, 201, 201]);
-
-    drop_database(&client, &db_name).await;
+            let rolled_back = GwV2TestItem {
+                id: "rolled-back".into(),
+                pk: "A".into(),
+                value: 30,
+                label: "rollback".into(),
+            };
+            let failed = container
+                .execute_transactional_batch(
+                    TransactionalBatch::new("A")
+                        .create_item(&rolled_back)?
+                        .read_item("missing", None),
+                    None,
+                )
+                .await?;
+            assert_transport_kind(&failed.diagnostics(), TransportKind::GatewayV2);
+            let failed = failed.into_model()?;
+            assert_eq!(
+                failed
+                    .results()
+                    .iter()
+                    .map(|r| r.status_code())
+                    .collect::<Vec<_>>(),
+                [424, 404]
+            );
+            let missing = container
+                .read_item("A", &rolled_back.id, None)
+                .await
+                .expect_err("failed batch must roll back its successful create");
+            assert_eq!(missing.status().status_code(), StatusCode::NotFound);
+            let preserved: GwV2TestItem = container
+                .read_item("A", &existing.id, None)
+                .await?
+                .into_model()?;
+            assert_eq!(
+                serde_json::to_value(preserved)?,
+                serde_json::to_value(existing)?
+            );
+            Ok::<(), Box<dyn std::error::Error>>(())
+        }))
+        .catch_unwind()
+        .await;
+        if let Err(error) = cleanup_range_test_database(&database, creation_confirmed).await {
+            panic!("Batch database {db_name} cleanup failed: {error}; test result: {result:?}");
+        }
+        match result {
+            Ok(result) => result??,
+            Err(panic) => std::panic::resume_unwind(panic),
+        }
+    }
     Ok(())
 }
 
